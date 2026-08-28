@@ -37,7 +37,7 @@ class DeveloperInfoActivity : TilesInfoActivity() {
                 getString(R.string.about_dev_name_label),
                 name,
                 sectionTitle = getString(R.string.about_section_contact),
-                iconRes = R.drawable.account_box_24
+                iconRes = R.drawable.developer_mode_24
             ),
             Tile(
                 getString(R.string.about_email_label),

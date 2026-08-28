@@ -299,4 +299,10 @@
     <string name="home_custom_blocked_apps_summary">Zeigt die ausgewählten Apps des aktiven Profils und den Verwalten-Button.</string>
     <string name="home_custom_profile_dropdown_summary">Zeigt die Profilauswahl innerhalb der Schutzsteuerung.</string>
 
+    <!-- vivo/iQOO Accessibility process-resilience guard -->
+    <string name="oem_accessibility_guard_channel_name">Schutz-Zuverlässigkeit</string>
+    <string name="oem_accessibility_guard_channel_description">Hält den Switchly-Schutz auf Geräten zuverlässig aktiv, bei denen die Bedienungshilfe beim Entfernen aus den letzten Apps beendet werden kann.</string>
+    <string name="oem_accessibility_guard_title">Switchly-Schutz aktiv</string>
+    <string name="oem_accessibility_guard_text">Hält den Bedienungshilfe-Schutz auf diesem Gerät aktiv.</string>
+
 </resources>

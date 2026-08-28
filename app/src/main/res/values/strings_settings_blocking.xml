@@ -299,4 +299,10 @@
     <string name="home_custom_blocked_apps_summary">Shows the selected apps for the active profile and the manage button.</string>
     <string name="home_custom_profile_dropdown_summary">Shows the profile selector inside Protection Control.</string>
 
+    <!-- vivo/iQOO Accessibility process-resilience guard -->
+    <string name="oem_accessibility_guard_channel_name">Protection reliability</string>
+    <string name="oem_accessibility_guard_channel_description">Keeps Switchly protection reliable on devices that may stop Accessibility when the app is removed from Recent Apps.</string>
+    <string name="oem_accessibility_guard_title">Switchly protection active</string>
+    <string name="oem_accessibility_guard_text">Keeping Accessibility protection active on this device.</string>
+
 </resources>

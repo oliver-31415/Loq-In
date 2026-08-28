@@ -26,6 +26,21 @@
     <string name="update_available_message">Eine neue Switchly-Version ist im Google Play Store verfügbar.</string>
     <string name="update_available_cta">Aktualisieren</string>
     <string name="switchly_update_up_to_date">Du bist bereits auf dem neuesten Stand</string>
+    <string name="switchly_update_check_failed">Google Play konnte nicht auf Updates geprüft werden.</string>
+    <string name="update_maintenance_title">Wartungsupdate</string>
+    <string name="update_feature_title">Feature-Update</string>
+    <string name="update_major_title">Großes Update</string>
+    <string name="update_breaking_title">Wichtiges Update</string>
+    <string name="update_version_transition_fmt">Switchly %1$s → %2$s</string>
+    <string name="update_maintenance_intro">Ein kleineres Update mit Fokus auf Fehlerbehebungen, Zuverlässigkeit und Feinschliff.</string>
+    <string name="update_feature_intro">Das ist ein größeres Switchly-Update mit neuen Funktionen und Verhaltensänderungen, die sich anzusehen lohnen.</string>
+    <string name="update_major_intro">Das ist ein großes Update auf eine neue Switchly-Generation. Sieh dir die Änderungen vor dem Update an.</string>
+    <string name="update_breaking_intro">Dieses Release enthält ausdrücklich markierte Kompatibilitäts- oder Verhaltensänderungen. Sieh sie dir vor dem Update an.</string>
+    <string name="update_highlights_title">Highlights</string>
+    <string name="update_whats_new">Was ist neu?</string>
+    <string name="update_whats_new_for_fmt">Neu in %1$s</string>
+    <string name="update_changes_since_fmt">Änderungen seit %1$s</string>
+    <string name="update_release_timeline">Release-Verlauf</string>
 
     <!-- ====================================================== -->
     <!-- Accent colors -->

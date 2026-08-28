@@ -184,4 +184,6 @@
     <string name="dashboard_pause_until_next_schedule">Pause until next schedule change</string>
     <string name="dashboard_pause_until_leave_location">Pause until I leave this location</string>
     <string name="dashboard_pause_until_tomorrow">Pause until tomorrow</string>
+    <string name="dashboard_accessibility_not_connected">Accessibility service · not connected</string>
+
 </resources>

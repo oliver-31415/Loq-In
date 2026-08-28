@@ -7,9 +7,9 @@
     <string name="about_app_info_title">App-Info</string>
     <string name="about_app_info_summary">Version, Build und Links</string>
     <string name="about_device_info_title">Geräteinfo</string>
-    <string name="about_device_info_summary">Android-Version, Modell und Gerät</string>
+    <string name="about_device_info_summary">System, Hardware und technische Details</string>
     <string name="about_developer_info_title">Entwicklerinfo</string>
-    <string name="about_developer_info_summary">Entwickler- und Build-Details</string>
+    <string name="about_developer_info_summary">Entwickler- und Projektdetails</string>
     <string name="about_other_switchly_products_title">Weitere Switchly-Apps</string>
     <string name="about_other_switchly_products_summary">Switchly Lite, Launcher und verwandte Apps</string>
     <string name="about_section_app">App</string>
@@ -28,7 +28,8 @@
     <!-- Device and app info labels -->
     <!-- ====================================================== -->
     <string name="about_abi_label">ABI</string>
-    <string name="about_android_label">Android</string>
+    <string name="about_android_label">Android-Version</string>
+    <string name="about_api_level_label">API-Level</string>
     <string name="about_apk_variant_label">APK-Variante</string>
     <string name="about_app_name_label">App-Name</string>
     <string name="about_brand_label">Marke</string>
@@ -44,7 +45,7 @@
     <string name="about_last_update_label">Letztes Update</string>
     <string name="about_locale_label">Gebietsschema</string>
     <string name="about_manufacturer_label">Hersteller</string>
-    <string name="about_model_label">Modell</string>
+    <string name="about_model_label">Gerätemodell</string>
     <string name="about_package_label">Paketname</string>
     <string name="about_security_patch_label">Sicherheitspatch</string>
     <string name="about_version_label">Version</string>

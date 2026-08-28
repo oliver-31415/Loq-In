@@ -296,6 +296,7 @@ object BlockingRuntime {
             }
         }
         runCatching { at.saltyy.switchly.util.ProtectionStatusNotifier.refresh(ctx) }
+        runCatching { OemAccessibilityKeepAlive.sync(ctx) }
     }
 
     /**
@@ -307,5 +308,7 @@ object BlockingRuntime {
         runCatching { BlockerActivity.clearVisibilityState("runtime_stop") }
         runCatching { AppLogStore.append(ctx, "Blocking", "Runtime stopped and blocker state cleared") }
         runCatching { at.saltyy.switchly.util.ProtectionStatusNotifier.refresh(ctx) }
+        // sync() reads the real persisted Switchly state, so a transient UI-flow false value cannot accidentally tear down the OEM guard while protection is actually enabled.
+        runCatching { OemAccessibilityKeepAlive.sync(ctx) }
     }
 }

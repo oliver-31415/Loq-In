@@ -12,6 +12,7 @@
     <string name="permissions_toolbar_issues">Probleme</string>
     <string name="permissions_status_enabled">Aktiviert</string>
     <string name="permissions_status_disabled">Deaktiviert</string>
+    <string name="permissions_status_not_connected">Aktiviert, nicht verbunden</string>
     <string name="permissions_status_location_approx">Ungefähr (Präzise erforderlich)</string>
     <string name="permissions_status_location_background_missing">Nur während der App-Nutzung (WLAN evtl. weniger zuverlässig; standortbasierte Zeitpläne brauchen „Immer erlauben“)</string>
     <string name="permissions_status_nearby_wifi_missing">Berechtigung für WLAN-Geräte in der Nähe fehlt</string>
@@ -117,13 +118,15 @@ Du kannst diese Berechtigung ablehnen. App-, Website- und unterstützter In-App-
     <!-- ====================================================== -->
     <string name="protection_inactive_title">Schutz inaktiv</string>
     <string name="protection_inactive_text">Bedienungshilfe ist aus. Tippe zum Prüfen.</string>
+    <string name="protection_accessibility_not_connected_title">Bedienungshilfe nicht verbunden</string>
+    <string name="protection_accessibility_not_connected_text">Android meldet die Bedienungshilfe als aktiviert, aber Switchly empfängt keine Ereignisse. Tippe zum Prüfen.</string>
 
     <!-- ====================================================== -->
     <!-- Permission health diagnostics -->
     <!-- ====================================================== -->
     <string name="permissions_health_recheck">Neu prüfen</string>
     <string name="permissions_health_rechecked_all_good">Neuprüfung abgeschlossen:\nAlle erforderlichen Berechtigungen sind gesetzt</string>
-    <string name="permissions_health_rechecked_with_mismatch">Neuprüfung abgeschlossen:\nDer Status-Konflikt bei der Bedienungshilfe besteht weiterhin</string>
+    <string name="permissions_health_rechecked_with_mismatch">Neuprüfung abgeschlossen:\nDie Bedienungshilfe ist in Android aktiviert, aber Switchly ist nicht verbunden</string>
     <plurals name="permissions_health_rechecked_missing">
         <item quantity="one">Neuprüfung abgeschlossen:\n%1$d erforderliche Berechtigung fehlt</item>
         <item quantity="other">Neuprüfung abgeschlossen:\n%1$d erforderliche Berechtigungen fehlen</item>

@@ -102,6 +102,8 @@ class SwitchlyAccessibilityService : AccessibilityService() {
     // Foreground tracking for usage limits
     @Volatile private var currentTopPkg: String? = null
     @Volatile private var lastTickAt: Long = 0L
+    private var lastObservedProtectionEnabled: Boolean? = null
+    private var protectionRecheckGeneration: Long = 0L
 
     // Occasionally re-verify the true foreground app via UsageEvents.
     // Some OEMs/apps don't emit reliable WINDOW_STATE_CHANGED transitions.
@@ -207,11 +209,32 @@ class SwitchlyAccessibilityService : AccessibilityService() {
     private val YT_SHORTS_LABELS = listOf("shorts")
     private val YT_YOU_LABELS = listOf("you", "du", "library", "bibliothek")
 
-    private val YT_SHORTS_PLAYER_HINT_LABELS = listOf(
-        "like", "dislike", "share", "teilen", "remix",
-        "use this sound", "sound",
-        "subscribe", "abonnieren",
-        "comments", "kommentare"
+    // Shorts controls are intentionally grouped by meaning instead of relying on volatile
+    // YouTube view IDs. Accessibility labels are much more stable across app updates.
+    // Keep a few common locales because the YouTube UI language does not have to match Switchly.
+    private val YT_SHORTS_CONTROL_GROUPS = listOf(
+        listOf("like", "gefällt mir", "me gusta", "gosto", "j'aime"),
+        listOf("dislike", "mag ich nicht", "no me gusta", "não gostei", "je n'aime pas"),
+        listOf("comments", "comment", "kommentare", "comentarios", "comentários", "commentaires"),
+        listOf("share", "teilen", "compartir", "partilhar", "compartilhar", "partager"),
+        listOf("remix"),
+        listOf("subscribe", "abonnieren", "suscribirse", "inscrever-se", "s'abonner"),
+        listOf("use this sound", "sound", "diesen sound verwenden", "usar este sonido", "usar este som", "utiliser ce son")
+    )
+    private val YT_SHORTS_PLAYER_HINT_LABELS = YT_SHORTS_CONTROL_GROUPS.flatten()
+    private val YT_SHORTS_NATIVE_LIMIT_REACHED_LABELS = listOf(
+        "shorts feed limit reached",
+        "you've reached your shorts",
+        "you have reached your shorts",
+        "shorts limit reached",
+        "shorts-limit erreicht",
+        "limit für den shorts-feed erreicht",
+        "límite de shorts alcanzado",
+        "límite del feed de shorts alcanzado",
+        "limite de shorts atingido",
+        "limite do feed dos shorts atingido",
+        "limite shorts atteint",
+        "limite du flux shorts atteinte",
     )
     private val YT_SUBSCRIPTIONS_LABELS = listOf(
         "subscriptions", "subscription", "subscriptions tab",
@@ -708,6 +731,75 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         maybeBlockNow(pkg)
     }
 
+    /**
+     * Re-checks the currently visible surface when protection changes from disabled to enabled.
+     * Accessibility events are navigation-driven, so a browser can otherwise stay on a blocked website that was opened during a temporary disable window without emitting a fresh event when the timer expires. 
+     * The first probe re-runs normal app + website enforcement and the delayed browser-only probes give Chromium's stable-domain confirmation time to complete.
+     */
+    private fun observeProtectionState(enabledNow: Boolean) {
+        val previous = lastObservedProtectionEnabled
+        lastObservedProtectionEnabled = enabledNow
+
+        if (!enabledNow) {
+            if (previous == true) {
+                protectionRecheckGeneration++
+            }
+            return
+        }
+
+        if (previous == false) {
+            scheduleProtectionRecheck("protection_reenabled")
+        }
+    }
+
+    private fun scheduleProtectionRecheck(reason: String) {
+        val generation = ++protectionRecheckGeneration
+        val delays = longArrayOf(0L, 850L, 1_800L)
+
+        delays.forEachIndexed { index, delayMs ->
+            handler.postDelayed({
+                if (generation != protectionRecheckGeneration || !SwitchModeStore.isEnabled(this)) {
+                    return@postDelayed
+                }
+                recheckVisibleForegroundAfterProtectionEnabled(reason, index, delayMs)
+            }, delayMs)
+        }
+    }
+
+    private fun recheckVisibleForegroundAfterProtectionEnabled(reason: String, attempt: Int, delayMs: Long) {
+        val rootPkg = runCatching {
+            currentRoot()?.packageName?.toString()?.trim()
+        }.getOrNull().orEmpty()
+        val pkg = rootPkg.takeIf { it.isNotBlank() && it != packageName }
+            ?: currentTopPkg?.takeIf { it.isNotBlank() && it != packageName }
+            ?: return
+
+        if (rootPkg.isNotBlank() && rootPkg != packageName) {
+            currentTopPkg = rootPkg
+            BlockingRuntime.markForegroundPackage(this, rootPkg, "protection_recheck")
+        }
+
+        appendBlockingLog(
+            category = "protection_recheck",
+            key = "protection-recheck|$reason|$attempt|$pkg",
+            message = "reason=$reason attempt=$attempt delayMs=$delayMs pkg=$pkg browser=${supportsWebsiteRulesPackage(pkg)}",
+            throttleMs = 0L
+        )
+
+        if (attempt == 0) {
+            // Force only bypasses the short enforcement cadence.
+            // Limit decisions still verify that the configured time/open threshold has actually been reached.
+            maybeBlockNow(pkg, force = true)
+            return
+        }
+
+        // A loaded page may not emit another Accessibility event when a temporary break expires.
+        // Probe the already-visible browser tree directly so domain stability can be confirmed and an active blocked site can be redirected without requiring the user to leave/re-enter.
+        if (supportsWebsiteRulesPackage(pkg)) {
+            maybeBlockWebsite(pkg, null)
+        }
+    }
+
     private val tick = object : Runnable {
         override fun run() {
             try {
@@ -716,6 +808,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
                 // Ensure temporary enable/disable timers expire correctly even when UI isn't open.
                 SwitchModeStore.finishTemporaryEnableIfExpired(this@SwitchlyAccessibilityService)
                 SwitchModeStore.finishTemporaryDisableIfExpired(this@SwitchlyAccessibilityService)
+                observeProtectionState(SwitchModeStore.isEnabled(this@SwitchlyAccessibilityService))
                 maybeScheduleMinuteTick()
                 enforceCurrentForegroundIfNeeded()
                 usageTick()
@@ -724,6 +817,17 @@ class SwitchlyAccessibilityService : AccessibilityService() {
                 // ignore
             }
             handler.postDelayed(this, 1_000L)
+        }
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+        runCatching {
+            AppLogStore.append(
+                this,
+                "Accessibility",
+                "service created manufacturer=${Build.MANUFACTURER} brand=${Build.BRAND}",
+            )
         }
     }
 
@@ -753,12 +857,22 @@ class SwitchlyAccessibilityService : AccessibilityService() {
 
         runCatching { BlockingRuntime.markAccessibilityHeartbeat(this) }
         runCatching { at.saltyy.switchly.util.ProtectionStatusNotifier.refresh(this) }
+        runCatching { clearAccessibilityButtonRequest() }
+        runCatching { OemAccessibilityKeepAlive.sync(this) }
+        runCatching {
+            AppLogStore.append(
+                this,
+                "Accessibility",
+                "service connected stopWithTask=false oemGuard=${OemAccessibilityKeepAlive.isAffectedDevice()}",
+            )
+        }
 
         perf.clear()
         perfWindowStartedAt = System.currentTimeMillis()
         lastPerfFlushAt = 0L
 
         lastTickAt = System.currentTimeMillis()
+        lastObservedProtectionEnabled = SwitchModeStore.isEnabled(this)
         lastUsageOpenScanAt = lastTickAt
         usageWorkerThread?.quitSafely()
         usageWorkerThread = HandlerThread("switchly-usage-worker").apply { start() }
@@ -767,6 +881,37 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         usageOpenScanInFlight = false
         handler.removeCallbacks(tick)
         handler.postDelayed(tick, 1_000L)
+    }
+
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        // A normal Android task removal must not stop an AccessibilityService.
+        // Explicitly keep the heartbeat/tick armed and record this path so OEM-specific regressions are diagnosable.
+        handler.removeCallbacks(tick)
+        handler.post(tick)
+        runCatching { BlockingRuntime.markAccessibilityHeartbeat(this) }
+        runCatching { OemAccessibilityKeepAlive.sync(this) }
+        runCatching {
+            AppLogStore.append(
+                this,
+                "Accessibility",
+                "task removed; accessibility service retained stopWithTask=false",
+            )
+        }
+        super.onTaskRemoved(rootIntent)
+    }
+
+    private fun clearAccessibilityButtonRequest() {
+        val current = serviceInfo ?: return
+        val cleanedFlags = current.flags and AccessibilityServiceInfo.FLAG_REQUEST_ACCESSIBILITY_BUTTON.inv()
+        if (cleanedFlags == current.flags) return
+
+        current.flags = cleanedFlags
+        setServiceInfo(current)
+        AppLogStore.append(
+            this,
+            "Accessibility",
+            "removed accessibility-button request while connected",
+        )
     }
 
     override fun onInterrupt() {
@@ -780,7 +925,16 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         usageWorker = null
         topRefreshInFlight = false
         usageOpenScanInFlight = false
+        protectionRecheckGeneration++
+        lastObservedProtectionEnabled = null
         runCatching { BlockingRuntime.markAccessibilityDisconnected(this) }
+        runCatching {
+            AppLogStore.append(
+                this,
+                "Accessibility",
+                "service destroyed switchlyEnabled=${SwitchModeStore.isEnabled(this)} oemGuard=${OemAccessibilityKeepAlive.isAffectedDevice()}",
+            )
+        }
         runCatching { maybeFlushPerfCounters() }
         runCatching { at.saltyy.switchly.util.ProtectionStatusNotifier.refresh(this) }
         super.onDestroy()
@@ -1058,6 +1212,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
     private fun scheduleYouTubeContentRetryProbe(eventType: Int, now: Long) {
         val relevant =
             eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED ||
+                eventType == AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED ||
                 eventType == AccessibilityEvent.TYPE_VIEW_SCROLLED ||
                 eventType == AccessibilityEvent.TYPE_VIEW_CLICKED ||
                 eventType == AccessibilityEvent.TYPE_VIEW_SELECTED ||
@@ -1071,7 +1226,9 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         lastYouTubeRetryProbeAt = now
 
         val pkg = PACKAGE_YOUTUBE
-        longArrayOf(50L, 100L, 150L).forEach { delay ->
+        // YouTube frequently populates Shorts controls asynchronously after the navigation event.
+        // Probe after the first layout settles instead of betting everything on the initial event.
+        longArrayOf(100L, 180L, 320L).forEach { delay ->
             handler.postDelayed({
                 runCatching {
                     val retryNow = System.currentTimeMillis()
@@ -2093,15 +2250,20 @@ class SwitchlyAccessibilityService : AccessibilityService() {
     private fun isSettingsGuardStillActive(): Boolean = SwitchModeStore.isEnabled(this)
 
     private fun maybeBlockSwitchlySettingsBypassSurface(pkg: String, event: AccessibilityEvent?): Boolean {
-        if (!isLegacyUninstallFrictionActive(pkg)) {
+        if (!isSettingsBypassPackage(pkg)) {
             return false
         }
-        if (!isSettingsBypassPackage(pkg)) {
+        if (!SwitchModeStore.isEnabled(this) || EmergencyBypassStore.isActive(this) || TempAllowStore.isAllowed(this, pkg)) {
             return false
         }
 
         val root = currentRoot(event) ?: return false
         val signal = detectSwitchlySettingsBypassSurface(root, event) ?: return false
+        // The Accessibility service is the enforcement engine itself, so protect its system settings whenever Switchly is active.
+        // Other sensitive Settings surfaces keep the existing opt-in uninstall/strict-protection behaviour.
+        if (signal.reason != "accessibility" && !isLegacyUninstallFrictionActive(pkg)) {
+            return false
+        }
         val appLabel = safeAppLabel(pkg)
         appendBlockingLog(
             category = "settings_bypass",
@@ -5402,6 +5564,22 @@ class SwitchlyAccessibilityService : AccessibilityService() {
             val ytMiniPlayerGeometryNow = hasYouTubeMiniPlayerGeometry(root)
             val ytShortsGuardActive = surfaceGuardActive(pkg, "yt:shorts", now)
 
+            // Delayed YouTube retry probes call this path with a null event after the UI has had time to settle.
+            // Capture a throttled evidence snapshot there so support reports explain *why* Shorts was or was not classified without recording any visible text/content from the user's screen.
+            if (blockYtShortsEnabled && !ytShortsGuardActive &&
+                (event == null || ytShortsEntryNow || ytShortsPlayerNow || ytTappedSurface == "yt:shorts" || ytSelectedSurface == "yt:shorts")
+            ) {
+                maybeLogYouTubeShortsEvidence(
+                    root = root,
+                    event = event,
+                    tappedSurface = ytTappedSurface,
+                    selectedSurface = ytSelectedSurface,
+                    entryDetected = ytShortsEntryNow,
+                    playerDetected = ytShortsPlayerNow,
+                    guardActive = ytShortsGuardActive,
+                )
+            }
+
             if ((blockYtMiniPlayerEnabled || blockYtPipEnabled) && maybeBlockYouTubeFloatingPlayer(event, "in_app_scan", root)) {
                 return
             }
@@ -6167,6 +6345,44 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         )
     }
 
+    private fun maybeLogYouTubeShortsEvidence(
+        root: AccessibilityNodeInfo,
+        event: AccessibilityEvent?,
+        tappedSurface: String?,
+        selectedSurface: String?,
+        entryDetected: Boolean,
+        playerDetected: Boolean,
+        guardActive: Boolean,
+    ) {
+        val key = "inapp-evidence|$PACKAGE_YOUTUBE|yt:shorts"
+        val now = System.currentTimeMillis()
+        val throttleMs = 6_000L
+        val last = lastDiagnosticLogAtByKey[key] ?: 0L
+        if (now - last < throttleMs) {
+            return
+        }
+
+        // These are intentionally boolean/count diagnostics only.
+        // Never include Accessibility text, content descriptions, URLs, titles, or node IDs in support logs.
+        val semanticScore = youtubeShortsControlScore(root)
+        val playerGeometry = hasYouTubeShortsPlayerGeometry(root)
+        val nativeLimitReached = hasYouTubeNativeShortsLimitReachedSignal(root, event)
+        val eventHint = eventTextMatches(event, YT_SHORTS_PLAYER_HINT_LABELS)
+        val recentHint = recentSurfaceHintMatches(PACKAGE_YOUTUBE, "yt:shorts", now)
+        val decision = entryDetected || playerDetected
+
+        appendBlockingLog(
+            category = "in_app_evidence",
+            key = key,
+            message =
+                "pkg=$PACKAGE_YOUTUBE surface=yt:shorts event=${eventTypeLabel(event)} " +
+                    "tapped=$tappedSurface selected=$selectedSurface entry=$entryDetected player=$playerDetected " +
+                    "semanticScore=$semanticScore geometry=$playerGeometry nativeLimit=$nativeLimitReached " +
+                    "eventHint=$eventHint recentHint=$recentHint guard=$guardActive decision=$decision",
+            throttleMs = throttleMs,
+        )
+    }
+
     private fun captureSurfaceHintFromEvent(pkg: String, event: AccessibilityEvent?, now: Long = System.currentTimeMillis()) {
         if (event == null) {
             return
@@ -6832,6 +7048,9 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         if (isYouTubeShortsScreen(root, event)) {
             return true
         }
+        if (hasYouTubeNativeShortsLimitReachedSignal(root, event)) {
+            return true
+        }
         return hasYouTubeDeepShortsSignal(root) && hasYouTubeShortsPlayerGeometry(root)
     }
 
@@ -6863,6 +7082,35 @@ class SwitchlyAccessibilityService : AccessibilityService() {
             return true
         }
         return false
+    }
+
+    private fun hasYouTubeNativeShortsLimitReachedSignal(
+        root: AccessibilityNodeInfo,
+        event: AccessibilityEvent? = null,
+    ): Boolean {
+        if (!isRootFromPackage(root, PACKAGE_YOUTUBE) && !containsPackageNode(root, PACKAGE_YOUTUBE)) {
+            return false
+        }
+
+        val parts = ArrayList<String>(96)
+        event?.text?.forEach { value ->
+            value?.toString()?.takeIf { it.isNotBlank() }?.let(parts::add)
+        }
+        event?.contentDescription?.toString()?.takeIf { it.isNotBlank() }?.let(parts::add)
+
+        var visited = 0
+        findAnyNode(root) { node ->
+            if (visited++ >= 160) return@findAnyNode true
+            node.text?.toString()?.takeIf { it.isNotBlank() }?.let(parts::add)
+            node.contentDescription?.toString()?.takeIf { it.isNotBlank() }?.let(parts::add)
+            false
+        }
+
+        val signal = parts.joinToString(" ").lowercase(Locale.ROOT)
+        if (signal.isBlank()) return false
+        return YT_SHORTS_NATIVE_LIMIT_REACHED_LABELS.any { label ->
+            signal.contains(label.lowercase(Locale.ROOT))
+        }
     }
 
     private fun hasYouTubeShortsPlayerGeometry(root: AccessibilityNodeInfo): Boolean {
@@ -6905,26 +7153,47 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         if (!isRootFromPackage(root, PACKAGE_YOUTUBE) && !containsPackageNode(root, PACKAGE_YOUTUBE)) {
             return false
         }
-        val reelIdHit = findAnyNode(root) { node ->
+
+        // Prefer stable Accessibility semantics over internal IDs.
+        // Three distinct Shorts-style controls on the right side are already a strong signal even if YouTube renamed every view.
+        val semanticScore = youtubeShortsControlScore(root)
+        if (semanticScore >= 3) {
+            return true
+        }
+
+        // Two semantic controls plus the existing player geometry/ID hint is strong enough.
+        if (semanticScore >= 2 && hasYouTubeShortsPlayerGeometry(root)) {
+            return true
+        }
+
+        // IDs/classes remain only as weak compatibility evidence for older/current builds.
+        // Never classify Shorts from a reel/short ID alone.
+        val weakInternalHint = findAnyNode(root) { node ->
             val nodePkg = node.packageName?.toString()?.lowercase(Locale.getDefault()).orEmpty()
             if (nodePkg.isNotBlank() && nodePkg != PACKAGE_YOUTUBE) return@findAnyNode false
             val viewId = node.viewIdResourceName?.lowercase(Locale.getDefault()).orEmpty()
             val className = node.className?.toString()?.lowercase(Locale.getDefault()).orEmpty()
-            viewId.contains("reel") || className.contains("reel")
+            viewId.contains("reel") || viewId.contains("short") ||
+                className.contains("reel") || className.contains("short")
         } != null
-        if (reelIdHit) {
-            return true
-        }
 
-        return hasYouTubeShortsPlayerControl(root) && hasYouTubeShortsPlayerGeometry(root)
+        return weakInternalHint && semanticScore >= 1 && hasYouTubeShortsPlayerGeometry(root)
     }
 
-    private fun hasYouTubeShortsPlayerControl(root: AccessibilityNodeInfo): Boolean {
+    private fun hasYouTubeShortsPlayerControl(root: AccessibilityNodeInfo): Boolean =
+        youtubeShortsControlScore(root) >= 2
+
+    private fun youtubeShortsControlScore(root: AccessibilityNodeInfo): Int {
+        if (!isRootFromPackage(root, PACKAGE_YOUTUBE) && !containsPackageNode(root, PACKAGE_YOUTUBE)) {
+            return 0
+        }
+
         val width = resources.displayMetrics.widthPixels.coerceAtLeast(1)
         val height = resources.displayMetrics.heightPixels.coerceAtLeast(1)
         val bounds = Rect()
-        val matchedControls = LinkedHashSet<String>()
-        val found = findAnyNode(root) { node ->
+        val matchedGroups = LinkedHashSet<Int>()
+
+        findAnyNode(root) { node ->
             val nodePkg = node.packageName?.toString()?.lowercase(Locale.getDefault()).orEmpty()
             if (nodePkg.isNotBlank() && nodePkg != PACKAGE_YOUTUBE) return@findAnyNode false
 
@@ -6932,18 +7201,38 @@ class SwitchlyAccessibilityService : AccessibilityService() {
             if (bounds.isEmpty) return@findAnyNode false
             val centerX = bounds.exactCenterX() / width.toFloat()
             val centerY = bounds.exactCenterY() / height.toFloat()
-            if (centerX < 0.56f || centerY !in 0.18f..0.92f) return@findAnyNode false
+            // Shorts action buttons form a vertical rail on the right. Keeping this geometry
+            // requirement prevents ordinary watch-page labels from becoming false positives.
+            if (centerX < 0.52f || centerY !in 0.12f..0.94f) return@findAnyNode false
 
             val text = node.text?.toString().orEmpty()
             val desc = node.contentDescription?.toString().orEmpty()
-            val viewId = node.viewIdResourceName?.lowercase(Locale.getDefault()).orEmpty()
-            val signal = "$text $desc $viewId".lowercase(Locale.getDefault())
-            YT_SHORTS_PLAYER_HINT_LABELS.firstOrNull { raw ->
-                signal.contains(raw.lowercase(Locale.getDefault()))
-            }?.let { matchedControls += it }
-            matchedControls.size >= 2
+            val signal = "$text $desc".lowercase(Locale.ROOT)
+            if (signal.isBlank()) return@findAnyNode false
+
+            YT_SHORTS_CONTROL_GROUPS.forEachIndexed { index, tokens ->
+                if (index !in matchedGroups && tokens.any { containsSemanticToken(signal, it) }) {
+                    matchedGroups += index
+                }
+            }
+            matchedGroups.size >= 4
         }
-        return found != null
+
+        return matchedGroups.size
+    }
+
+    private fun containsSemanticToken(signal: String, rawToken: String): Boolean {
+        val token = rawToken.lowercase(Locale.ROOT).trim()
+        if (token.isEmpty()) return false
+        var start = signal.indexOf(token)
+        while (start >= 0) {
+            val beforeOk = start == 0 || !signal[start - 1].isLetterOrDigit()
+            val end = start + token.length
+            val afterOk = end >= signal.length || !signal[end].isLetterOrDigit()
+            if (beforeOk && afterOk) return true
+            start = signal.indexOf(token, start + 1)
+        }
+        return false
     }
 
     private fun isLikelyYouTubeMiniPlayerVisible(root: AccessibilityNodeInfo?): Boolean {

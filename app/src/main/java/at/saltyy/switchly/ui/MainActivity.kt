@@ -1553,7 +1553,13 @@ class MainActivity : AppCompatActivity() {
         // required for blocking
         val accessibilityOk = BlockingRuntime.isAccessibilityActive(this)
         if (!accessibilityOk) {
-            missing.add(getString(R.string.permissions_accessibility_title))
+            val accessibilityEnabledInSettings = BlockingRuntime.isAccessibilityEnabledInSettings(this)
+            missing.add(
+                getString(
+                    if (accessibilityEnabledInSettings) R.string.dashboard_accessibility_not_connected
+                    else R.string.permissions_accessibility_title
+                )
+            )
         }
 
         // allow notifications (optional, but recommended for tips + status)

@@ -214,6 +214,17 @@ object ProtectionStatusNotifier {
         }
 
         val nm = ctx.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val diagnostics = BlockingRuntime.getRuntimeDiagnostics(ctx)
+        val enabledButNotConnected =
+            diagnostics.accessibilityEnabledInSettings && !diagnostics.accessibilityActive
+        val notificationTitle = ctx.getString(
+            if (enabledButNotConnected) R.string.protection_accessibility_not_connected_title
+            else R.string.protection_inactive_title
+        )
+        val notificationText = ctx.getString(
+            if (enabledButNotConnected) R.string.protection_accessibility_not_connected_text
+            else R.string.protection_inactive_text
+        )
 
         // minSdk is 27, so NotificationChannel is always available.
         val channel = NotificationChannel(
@@ -221,7 +232,7 @@ object ProtectionStatusNotifier {
             ctx.getString(R.string.app_name),
             NotificationManager.IMPORTANCE_LOW
         ).apply {
-            description = ctx.getString(R.string.protection_inactive_text)
+            description = notificationText
             setSound(null, null)
             enableVibration(false)
             setShowBadge(false)
@@ -240,8 +251,8 @@ object ProtectionStatusNotifier {
 
         val notif = NotificationCompat.Builder(ctx, CHANNEL_ID)
             .setSmallIcon(R.drawable.lock_24)
-            .setContentTitle(ctx.getString(R.string.protection_inactive_title))
-            .setContentText(ctx.getString(R.string.protection_inactive_text))
+            .setContentTitle(notificationTitle)
+            .setContentText(notificationText)
             .setContentIntent(pi)
             .setOngoing(true)
             .setOnlyAlertOnce(true)

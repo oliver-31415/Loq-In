@@ -205,7 +205,7 @@ class SettingsActivity : AppCompatActivity() {
         add(R.string.ignored_usage_apps_title, "usage statistics ignored apps") { openRootCard(R.id.cardSettingsIgnoredApps) }
         add(R.string.settings_display_shortcuts_title, "${getString(R.string.settings_search_terms_display)} widgets Kacheln tiles quick settings shortcuts Verknüpfungen home Startseite") { openRootCard(R.id.cardSettingsDisplayShortcuts) }
         add(R.string.pref_permissions_title, "${getString(R.string.settings_search_terms_permissions)} battery Akku background Hintergrund accessibility Bedienungshilfe autostart Autostart notifications Benachrichtigungen NFC reliability Zuverlässigkeit") { openRootCard(R.id.cardSettingsPermissions) }
-        add(R.string.pref_app_lock_title, "app lock App-Sperre uninstall protection Deinstallationsschutz remove removal device admin Geräteadministrator bypass anti-bypass") { openRootCard(R.id.cardSettingsAppLock) }
+        add(R.string.pref_app_lock_title, "app lock App-Sperre uninstall protection Deinstallationsschutz remove removal device admin Geräteadministrator force stop force-stop Stopp erzwingen app data Daten löschen bypass anti-bypass") { openRootCard(R.id.cardSettingsAppLock) }
         add(R.string.settings_emergency_unlock_title, "emergency bypass unlock") { openRootCard(R.id.cardSettingsEmergencyUnlock) }
         add(R.string.settings_account_title, "${getString(R.string.settings_search_terms_account)} account Konto cloud Cloud backup Sicherung restore Wiederherstellung sync Synchronisierung data Daten") { openRootCard(R.id.cardSettingsAccountData) }
         add(R.string.premium_title, "premium billing purchase") { openRootCard(R.id.cardSettingsPremium) }

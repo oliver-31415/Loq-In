@@ -393,7 +393,11 @@ class PermissionsActivity : AppCompatActivity() {
 
         applyStatus(tvNotificationsStatus, notificationsOk)
         applyStatus(tvNotificationAccessStatus, notificationAccessGranted)
-        applyStatus(tvAccessibilityStatus, accessibilityEnabled)
+        applyAccessibilityStatus(
+            view = tvAccessibilityStatus,
+            runtimeActive = accessibilityRuntime,
+            enabledInSettings = accessibilityDirect,
+        )
         applyStatus(tvUsageAccessStatus, usageAccessOk)
 
         btnOpenNotifications.text =
@@ -588,6 +592,21 @@ class PermissionsActivity : AppCompatActivity() {
             else R.string.permissions_status_disabled
         )
         view.setTextColor(if (enabled) green else red)
+    }
+
+    private fun applyAccessibilityStatus(
+        view: TextView,
+        runtimeActive: Boolean,
+        enabledInSettings: Boolean,
+    ) {
+        when {
+            runtimeActive -> applyStatus(view, true)
+            enabledInSettings -> {
+                view.text = getString(R.string.permissions_status_not_connected)
+                view.setTextColor(ContextCompat.getColor(this, R.color.status_error))
+            }
+            else -> applyStatus(view, false)
+        }
     }
 
     private fun applyBatteryStatus(view: TextView, enabled: Boolean) {

@@ -12,6 +12,7 @@
     <string name="permissions_toolbar_issues">Issues</string>
     <string name="permissions_status_enabled">Enabled</string>
     <string name="permissions_status_disabled">Disabled</string>
+    <string name="permissions_status_not_connected">Enabled, not connected</string>
     <string name="permissions_status_location_approx">Approximate (Precise required)</string>
     <string name="permissions_status_location_background_missing">Only while app is in use (Wi-Fi may be less reliable; location schedules need “Allow all the time”)</string>
     <string name="permissions_status_nearby_wifi_missing">Nearby Wi-Fi devices permission missing</string>
@@ -117,13 +118,15 @@ You can decline this permission, but app, website, and supported in-app protecti
     <!-- ====================================================== -->
     <string name="protection_inactive_title">Protection inactive</string>
     <string name="protection_inactive_text">Accessibility is off. Tap to check.</string>
+    <string name="protection_accessibility_not_connected_title">Accessibility not connected</string>
+    <string name="protection_accessibility_not_connected_text">Android reports Accessibility as enabled, but Switchly is not receiving events. Tap to check.</string>
 
     <!-- ====================================================== -->
     <!-- Permission health diagnostics -->
     <!-- ====================================================== -->
     <string name="permissions_health_recheck">Re-check</string>
     <string name="permissions_health_rechecked_all_good">Re-check complete:\nAll required permissions look good</string>
-    <string name="permissions_health_rechecked_with_mismatch">Re-check complete:\nAccessibility status mismatch still detected</string>
+    <string name="permissions_health_rechecked_with_mismatch">Re-check complete:\nAccessibility is enabled in Android, but Switchly is not connected</string>
     <plurals name="permissions_health_rechecked_missing">
         <item quantity="one">Re-check complete:\n%1$d required permission is missing</item>
         <item quantity="other">Re-check complete:\n%1$d required permissions are missing</item>

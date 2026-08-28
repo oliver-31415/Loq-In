@@ -184,4 +184,6 @@
     <string name="dashboard_pause_until_next_schedule">Bis zum nächsten Zeitplanwechsel pausieren</string>
     <string name="dashboard_pause_until_leave_location">Pausieren bis ich den Ort verlasse</string>
     <string name="dashboard_pause_until_tomorrow">Bis morgen pausieren</string>
+    <string name="dashboard_accessibility_not_connected">Bedienungshilfe-Dienst · nicht verbunden</string>
+
 </resources>

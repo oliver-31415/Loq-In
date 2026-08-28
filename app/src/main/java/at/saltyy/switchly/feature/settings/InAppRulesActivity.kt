@@ -21,6 +21,7 @@ package at.saltyy.switchly.feature.settings
 
 import android.content.res.ColorStateList
 import android.graphics.drawable.Drawable
+import android.graphics.drawable.GradientDrawable
 import android.graphics.Typeface
 import android.os.Bundle
 import android.view.Gravity
@@ -33,6 +34,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
 import androidx.core.widget.NestedScrollView
 import at.saltyy.switchly.R
 import at.saltyy.switchly.blocking.BlockingRuntime
@@ -348,10 +350,98 @@ class InAppRulesActivity : AppCompatActivity() {
 
         group.surfaces.forEach { surface ->
             body.addView(buildSurfaceRow(surface, group.packageName))
+            if (group.packageName == "com.google.android.youtube" && surface.surfaceKey == "yt:shorts") {
+                body.addView(buildYouTubeNativeLimitRow())
+            }
         }
 
         card.addView(body)
         return card
+    }
+
+    private fun buildYouTubeNativeLimitRow(): View {
+        val accent = AccentColor.getAccentColorInt(this)
+        val rowBackground = GradientDrawable().apply {
+            shape = GradientDrawable.RECTANGLE
+            cornerRadius = dp(10).toFloat()
+            setColor(ColorUtils.setAlphaComponent(accent, 18))
+        }
+
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            background = rowBackground
+            isClickable = true
+            isFocusable = true
+            setPadding(dp(10), dp(9), dp(8), dp(9))
+            setOnClickListener { showYouTubeNativeLimitGuide() }
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply {
+                topMargin = dp(7)
+                bottomMargin = dp(2)
+                marginStart = dp(8)
+            }
+
+            addView(ImageView(this@InAppRulesActivity).apply {
+                setImageResource(R.drawable.timer_24)
+                imageTintList = ColorStateList.valueOf(accent)
+                contentDescription = null
+                layoutParams = LinearLayout.LayoutParams(dp(20), dp(20)).apply {
+                    marginEnd = dp(10)
+                }
+            })
+
+            addView(LinearLayout(this@InAppRulesActivity).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                addView(TextView(this@InAppRulesActivity).apply {
+                    setText(R.string.in_app_youtube_native_limit_compact_title)
+                    setTypeface(typeface, Typeface.BOLD)
+                    textSize = 13f
+                    setTextColor(onSurfaceColor())
+                })
+                addView(TextView(this@InAppRulesActivity).apply {
+                    setText(R.string.in_app_youtube_native_limit_compact_summary)
+                    textSize = 12f
+                    setTextColor(onSurfaceColor())
+                    alpha = 0.72f
+                })
+            })
+
+            addView(TextView(this@InAppRulesActivity).apply {
+                setText(R.string.in_app_youtube_native_limit_compact_action)
+                textSize = 12.5f
+                setTypeface(typeface, Typeface.BOLD)
+                setTextColor(accent)
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                ).apply { marginStart = dp(10) }
+            })
+
+            addView(ImageView(this@InAppRulesActivity).apply {
+                setImageResource(R.drawable.keyboard_arrow_right_24)
+                imageTintList = ColorStateList.valueOf(accent)
+                contentDescription = null
+                layoutParams = LinearLayout.LayoutParams(dp(18), dp(18)).apply {
+                    marginStart = dp(2)
+                }
+            })
+        }
+    }
+
+    private fun showYouTubeNativeLimitGuide() {
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.in_app_youtube_native_limit_guide_title)
+            .setMessage(R.string.in_app_youtube_native_limit_guide_body)
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.in_app_youtube_open_youtube) { _, _ ->
+                PackageLaunchIntentCompat.getLaunchIntent(this, "com.google.android.youtube")?.let { startActivity(it) }
+            }
+            .show()
+            .styleSwitchlyDialogButtons()
     }
 
     private fun appDiagnosticLabel(group: AppGroup): String {

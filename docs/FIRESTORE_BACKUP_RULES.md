@@ -1,4 +1,6 @@
 # Firestore rules for cloud backups
+> For the complete Switchly production rules, use the repository-root `firestore.rules` and see `docs/FIRESTORE_PRODUCTION_RULES.md`. The snippet below documents only the nested backup paths.
+
 Switchly stores backup metadata in:
 ```text
 switchly_users/{uid}/backups/{backupId}

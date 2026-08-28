@@ -862,6 +862,7 @@ class SupportActivity : AppCompatActivity() {
         val profileOwnerActive = dpm?.isProfileOwnerApp(packageName) == true
         val deviceOwnerActive = dpm?.isDeviceOwnerApp(packageName) == true
         val managedSelfUninstallBlocked = ManagedDevicePolicyHelper.isSelfUninstallBlocked(this@SupportActivity)
+        val managedSelfUserControlDisabled = ManagedDevicePolicyHelper.isSelfUserControlDisabled(this@SupportActivity)
         val uninstallProtectionEffective = when {
             (deviceOwnerActive || profileOwnerActive) && strictProtectionConfigured -> managedSelfUninstallBlocked == true
             strictProtectionConfigured && deviceAdminActive -> true
@@ -891,6 +892,21 @@ class SupportActivity : AppCompatActivity() {
         line(
             "Managed self-uninstall blocked",
             managedSelfUninstallBlocked?.toString() ?: "n/a"
+        )
+        line(
+            "Managed self user-control disabled",
+            managedSelfUserControlDisabled?.toString() ?: "n/a"
+        )
+        val forceStopProtection = when {
+            (deviceOwnerActive || profileOwnerActive) && strictProtectionConfigured && managedSelfUserControlDisabled == true ->
+                "managed user-control policy active"
+            strictProtectionConfigured && deviceAdminActive ->
+                "active Device Admin; standard Android disables Force Stop (OEM Settings may differ)"
+            else -> "not active"
+        }
+        line(
+            "Force-stop protection",
+            forceStopProtection
         )
         line(
             "Uninstall protection effective",
@@ -1283,6 +1299,14 @@ class SupportActivity : AppCompatActivity() {
         line(
             "Accessibility active heartbeat",
             runtimeDiagnostics.accessibilityActive
+        )
+        line(
+            "Accessibility connection state",
+            when {
+                runtimeDiagnostics.accessibilityActive -> "active"
+                runtimeDiagnostics.accessibilityEnabledInSettings -> "enabled_not_connected"
+                else -> "disabled"
+            }
         )
         line(
             "Accessibility heartbeat age ms",

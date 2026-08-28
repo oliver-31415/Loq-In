@@ -145,14 +145,19 @@ object UsageStatsRepo {
     }
 
     fun getTodaySummary(ctx: Context, topN: Int = 20): UsageSummary {
-        // Prefer Switchly's own per-day store for "today".
-        // Some devices/OEMs over-report UsageStats for the current day and can leak yesterday's total into today's app values, which then causes early blocking.
-        // If the internal store is still empty, fall back to a live system query so the Today tab doesn't look blank.
-        val byPkg = HashMap(UsageStore.getUsageMsMapToday(ctx))
-        if (byPkg.isEmpty()) {
-            return getSummary(ctx, startOfTodayLocal(), System.currentTimeMillis(), topN)
+        // User-facing Today statistics should represent the whole device day, not only the time during which Switchly protection happened to be enabled.
+        // When Usage Access is available and this query is already running off the main thread, prefer Android's live usage data.
+        // getSingleDayUsageByPackage() also merges Switchly's local counter as a floor, which keeps the result useful on OEMs that publish UsageStats with a delay.
+        // Important: profile/app-limit enforcement intentionally continues to use Switchly's own counters. 
+        // This display-only path must not make a delayed or OEM-inflated UsageStats value trigger a limit early.
+        if (!isMainThread() && hasUsageAccess(ctx)) {
+            val systemSummary = getSummary(ctx, startOfTodayLocal(), System.currentTimeMillis(), topN)
+            if (systemSummary.totalTimeMs > 0L || systemSummary.topApps.isNotEmpty()) {
+                return systemSummary
+            }
         }
 
+        val byPkg = HashMap(UsageStore.getUsageMsMapToday(ctx))
         val it = byPkg.keys.iterator()
         while (it.hasNext()) {
             val pkg = it.next()
