@@ -9,6 +9,7 @@
     android:paddingEnd="24dp"
     android:paddingBottom="24dp">
 
+    <!-- Close action -->
     <androidx.appcompat.widget.AppCompatImageButton
         android:id="@+id/closeButton"
         android:layout_width="40dp"
@@ -22,6 +23,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:tint="?attr/colorSecondary" />
 
+    <!-- Content -->
     <com.google.android.material.progressindicator.CircularProgressIndicator
         android:id="@+id/waitProgress"
         android:layout_width="56dp"
@@ -62,6 +64,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/waitTitle" />
 
+    <!-- Retry action -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/retryButton"
         style="@style/Widget.MaterialComponents.Button.OutlinedButton"

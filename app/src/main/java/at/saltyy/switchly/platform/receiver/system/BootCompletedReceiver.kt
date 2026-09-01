@@ -76,17 +76,17 @@ class BootCompletedReceiver : BroadcastReceiver() {
             )
         }
 
-        // Start runtime only if it can actually function
+        // Restore the appropriate protection runtime after boot
         if (!enabled || !autostart) {
             return
         }
 
-        if (hasA11y) {
-            runCatching {
-                BlockingRuntime.ensureRunning(ctx)
-            }.onFailure {
-                Log.w(TAG, "Blocking runtime start blocked after boot: ${it.message}")
-            }
+        runCatching {
+            // Full Accessibility will remain system-managed.
+            // If Android Advanced Protection makes it unavailable, ensureRunning() can reconcile the limited Usage Access fallback.
+            BlockingRuntime.ensureRunning(ctx)
+        }.onFailure {
+            Log.w(TAG, "Blocking runtime start blocked after boot: ${it.message}")
         }
 
         // If Switchly is enabled but Accessibility is OFF after boot, show a persistent warning notification so the user can fix it.

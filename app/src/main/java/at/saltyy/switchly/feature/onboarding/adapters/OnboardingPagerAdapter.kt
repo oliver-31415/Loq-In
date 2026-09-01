@@ -1417,8 +1417,10 @@ class OnboardingPagerAdapter(
                 textSize = 14.8f
                 typeface = android.graphics.Typeface.DEFAULT_BOLD
                 setTextColor(onSurface)
-                maxLines = 2
-                ellipsize = android.text.TextUtils.TruncateAt.END
+                // Onboarding copy must remain fully readable on narrow screens and with larger font scaling.
+                // The row/card uses wrap_content and the page itself scrolls, so truncating here only hides guidance.
+                maxLines = Int.MAX_VALUE
+                ellipsize = null
                 includeFontPadding = false
             }
             texts.addView(titleView)
@@ -1430,8 +1432,8 @@ class OnboardingPagerAdapter(
                     alpha = 0.78f
                     setTextColor(onSurface)
                     setPadding(0, dp(5f), 0, 0)
-                    maxLines = 3
-                    ellipsize = android.text.TextUtils.TruncateAt.END
+                    maxLines = Int.MAX_VALUE
+                    ellipsize = null
                     includeFontPadding = false
                 }
                 texts.addView(infoView)
@@ -1444,8 +1446,8 @@ class OnboardingPagerAdapter(
                     typeface = android.graphics.Typeface.DEFAULT_BOLD
                     setTextColor(if (highlighted) accent else ColorUtils.setAlphaComponent(onSurface, 185))
                     setPadding(0, dp(7f), 0, 0)
-                    maxLines = 2
-                    ellipsize = android.text.TextUtils.TruncateAt.END
+                    maxLines = Int.MAX_VALUE
+                    ellipsize = null
                     includeFontPadding = false
                 }
                 texts.addView(statusView)

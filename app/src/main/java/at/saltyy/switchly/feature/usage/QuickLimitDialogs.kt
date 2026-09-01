@@ -37,6 +37,7 @@ import at.saltyy.switchly.data.prefs.LimitReachedStore
 import at.saltyy.switchly.data.prefs.OpenCountStore
 import at.saltyy.switchly.data.prefs.ProfileRuleModeStore
 import at.saltyy.switchly.data.prefs.ProfileStore
+import at.saltyy.switchly.data.prefs.SessionLimitStore
 import at.saltyy.switchly.data.prefs.UsageLimitStore
 import at.saltyy.switchly.data.prefs.UsageLimitResetStore
 import at.saltyy.switchly.data.prefs.UsageStore
@@ -52,6 +53,7 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
+import java.util.Locale
 
 /**
  * Quick-edit dialogs for app/website limits.
@@ -114,54 +116,165 @@ object QuickLimitDialogs {
             return
         }
 
+        showAppLimitEditor(
+            activity = activity,
+            profile = profile,
+            pkg = pkg,
+            label = label,
+            focusAttempts = startOnAttempts == true,
+            onChanged = onChanged,
+        )
+    }
+
+    /**
+     * App limits intentionally use one editor instead of hopping through separate Time / Attempts /
+     * Session dialogs. This keeps combinations such as “4 opens/day + 8 min per visit” visible and editable as one atomic configuration.
+     */
+    private fun showAppLimitEditor(
+        activity: AppCompatActivity,
+        profile: String,
+        pkg: String,
+        label: String,
+        focusAttempts: Boolean,
+        onChanged: (() -> Unit)?,
+    ) {
+        val v = LayoutInflater.from(activity).inflate(R.layout.dialog_app_limits, FrameLayout(activity), false)
+        val tvSubtitle = v.findViewById<TextView>(R.id.tvAppLimitSubtitle)
+        val tilResetMode = v.findViewById<TextInputLayout>(R.id.tilAppLimitResetMode)
+        val etResetMode = v.findViewById<MaterialAutoCompleteTextView>(R.id.etAppLimitResetMode)
+        val tilTime = v.findViewById<TextInputLayout>(R.id.tilAppLimitTime)
+        val etTime = v.findViewById<TextInputEditText>(R.id.etAppLimitTime)
+        val tilAttempts = v.findViewById<TextInputLayout>(R.id.tilAppLimitAttempts)
+        val etAttempts = v.findViewById<TextInputEditText>(R.id.etAppLimitAttempts)
+        val tilPerVisit = v.findViewById<TextInputLayout>(R.id.tilAppLimitPerVisit)
+        val etPerVisit = v.findViewById<TextInputEditText>(R.id.etAppLimitPerVisit)
+        val btnClear = v.findViewById<MaterialButton>(R.id.btnAppLimitClear)
+        val btnCancel = v.findViewById<MaterialButton>(R.id.btnAppLimitCancel)
+        val btnSave = v.findViewById<MaterialButton>(R.id.btnAppLimitSave)
+
         val currentTime = UsageLimitStore.getLimitMinutes(activity, profile, pkg)
         val currentAttempts = AttemptLimitStore.getLimitAttempts(activity, profile, pkg)
+        val currentPerVisit = SessionLimitStore.getLimitMinutes(activity, profile, pkg)
         val currentResetMode = UsageLimitResetStore.getMode(activity, profile, pkg)
 
-        val initialMode = when (startOnAttempts) {
-            true -> MODE_ATTEMPTS
-            false -> MODE_TIME
-            else -> if (currentAttempts > 0 && currentTime == 0) MODE_ATTEMPTS else MODE_TIME
+        tvSubtitle.text = activity.getString(
+            R.string.app_limit_editor_subtitle_fmt,
+            label,
+            activity.getString(R.string.profile_active_fmt, profile),
+        )
+        etTime.setText(currentTime.takeIf { it > 0 }?.let { String.format(Locale.getDefault(), "%d", it) }.orEmpty())
+        etAttempts.setText(currentAttempts.takeIf { it > 0 }?.let { String.format(Locale.getDefault(), "%d", it) }.orEmpty())
+        etPerVisit.setText(currentPerVisit.takeIf { it > 0 }?.let { String.format(Locale.getDefault(), "%d", it) }.orEmpty())
+
+        val resetModes = listOf(UsageLimitResetStore.MODE_DAY, UsageLimitResetStore.MODE_SESSION)
+        val resetLabels = listOf(
+            activity.getString(R.string.limit_reset_per_day),
+            activity.getString(R.string.limit_reset_per_session),
+        )
+        val activeResetMode = arrayOf(
+            if (currentResetMode == UsageLimitResetStore.MODE_SESSION) {
+                UsageLimitResetStore.MODE_SESSION
+            } else {
+                UsageLimitResetStore.MODE_DAY
+            }
+        )
+        etResetMode.setAdapter(SwitchlyDropdownAdapter(activity, resetLabels))
+        etResetMode.setText(resetLabels[resetModes.indexOf(activeResetMode[0]).coerceAtLeast(0)], false)
+        etResetMode.setOnItemClickListener { _, _, position, _ ->
+            activeResetMode[0] = resetModes.getOrNull(position) ?: UsageLimitResetStore.MODE_DAY
         }
 
-        showCompactLimitDialog(
-            activity = activity,
-            title = activity.getString(R.string.edit_limits),
-            subtitle = "$label\n${activity.getString(R.string.profile_active_fmt, profile)}",
-            supportedModes = intArrayOf(MODE_TIME, MODE_ATTEMPTS),
-            initialMode = initialMode,
-            initialValueProvider = { mode ->
-                when (mode) {
-                    MODE_ATTEMPTS -> currentAttempts
-                    else -> currentTime
-                }
-            },
-            showTimeResetMode = true,
-            initialResetMode = currentResetMode
-        ) { mode, value, resetMode ->
-            when (mode) {
-                MODE_TIME -> {
-                    val m = value.coerceAtLeast(0)
-                    UsageLimitStore.setLimitMinutes(activity, profile, pkg, m)
-                    LimitReachedStore.clearToday(activity, pkg)
-                    if (m > 0) {
-                        UsageLimitResetStore.setMode(activity, profile, pkg, resetMode ?: UsageLimitResetStore.MODE_DAY)
-                        ensureManaged(activity, profile, pkg)
-                    } else {
-                        UsageLimitResetStore.clearMode(activity, profile, pkg)
-                        UsageStore.setUsageMsToday(activity, pkg, 0L)
-                    }
-                }
-                MODE_ATTEMPTS -> {
-                    val n = value.coerceAtLeast(0)
-                    AttemptLimitStore.setLimitAttempts(activity, profile, pkg, n)
-                    if (n > 0) ensureManaged(activity, profile, pkg)
-                    if (n == 0) OpenCountStore.setToday(activity, profile, pkg, 0)
-                }
+        val accent = AccentColor.getAccentColorInt(activity)
+        val accentList = ColorStateList.valueOf(accent)
+        listOf(tilResetMode, tilTime, tilAttempts, tilPerVisit).forEach { til ->
+            til.boxStrokeColor = accent
+            til.hintTextColor = accentList
+            til.defaultHintTextColor = accentList
+        }
+        tilResetMode.setEndIconTintList(accentList)
+
+        btnCancel.setTextColor(accent)
+        btnCancel.isAllCaps = false
+        btnCancel.backgroundTintList = null
+        runCatching { btnCancel.setBackgroundColor(android.graphics.Color.TRANSPARENT) }
+
+        val error = android.graphics.Color.rgb(186, 26, 26)
+        btnClear.setTextColor(error)
+        btnClear.isAllCaps = false
+        btnClear.backgroundTintList = null
+        runCatching { btnClear.setBackgroundColor(android.graphics.Color.TRANSPARENT) }
+
+        val onAccent = if (androidx.core.graphics.ColorUtils.calculateLuminance(accent) > 0.5) {
+            android.graphics.Color.BLACK
+        } else {
+            android.graphics.Color.WHITE
+        }
+        btnSave.setTextColor(onAccent)
+        btnSave.isAllCaps = false
+        btnSave.backgroundTintList = AccentColor.getActiveColor(activity)
+
+        fun parseNumber(field: TextInputEditText, max: Int): Int? {
+            val raw = field.text?.toString()?.trim().orEmpty()
+            if (raw.isBlank()) return 0
+            val value = raw.toIntOrNull() ?: return null
+            return value.takeIf { it in 0..max }
+        }
+
+        fun applyValues(timeMinutes: Int, attempts: Int, perVisitMinutes: Int) {
+            UsageLimitStore.setLimitMinutes(activity, profile, pkg, timeMinutes)
+            SessionLimitStore.setLimitMinutes(activity, profile, pkg, perVisitMinutes)
+            AttemptLimitStore.setLimitAttempts(activity, profile, pkg, attempts)
+
+            LimitReachedStore.clearToday(activity, pkg)
+            if (timeMinutes > 0) {
+                UsageLimitResetStore.setMode(activity, profile, pkg, activeResetMode[0])
+            } else {
+                UsageLimitResetStore.clearMode(activity, profile, pkg)
+                UsageStore.setUsageMsToday(activity, pkg, 0L)
             }
+            if (attempts == 0) {
+                OpenCountStore.setToday(activity, profile, pkg, 0)
+            }
+            if (timeMinutes > 0 || attempts > 0 || perVisitMinutes > 0) {
+                ensureManaged(activity, profile, pkg)
+            }
+
             BlockingRuntime.ensureRunning(activity)
             onChanged?.invoke()
         }
+
+        val dlg = Dialogs.builder(activity)
+            .setTitle(activity.getString(R.string.edit_limits))
+            .setView(v)
+            .create()
+
+        btnClear.setOnClickListener {
+            applyValues(0, 0, 0)
+            dlg.dismiss()
+        }
+        btnCancel.setOnClickListener { dlg.dismiss() }
+        btnSave.setOnClickListener {
+            val time = parseNumber(etTime, 24 * 60)
+            val attempts = parseNumber(etAttempts, 200)
+            val perVisit = parseNumber(etPerVisit, 24 * 60)
+            if (time == null || attempts == null || perVisit == null) {
+                Toast.makeText(activity, R.string.invalid_value, Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            applyValues(time, attempts, perVisit)
+            dlg.dismiss()
+        }
+
+        dlg.setOnShowListener {
+            dlg.applySwitchlyDialogWidth(0.94f)
+            runCatching { CustomAccentApplier.applyToDialog(dlg) }
+            val focus = if (focusAttempts) etAttempts else etTime
+            focus.post {
+                focus.requestFocus()
+                focus.setSelection(focus.text?.length ?: 0)
+            }
+        }
+        dlg.show()
     }
 
     fun showForWebsite(activity: AppCompatActivity, domain: String, label: String, onChanged: (() -> Unit)? = null) {

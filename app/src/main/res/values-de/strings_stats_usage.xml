@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
     <!-- ====================================================== -->
     <!-- Limit dialogs and quick edit -->
     <!-- ====================================================== -->
@@ -44,6 +45,18 @@
     <string name="limit_always_block_action_summary">Diese Website im aktuellen Profil immer blockieren.</string>
     <string name="no_profile_selected">Bitte wähle ein Profil.</string>
     <string name="profile_active_fmt">Profil: %1$s</string>
+
+    <!-- ====================================================== -->
+    <!-- Combined app limit editor -->
+    <!-- ====================================================== -->
+    <string name="app_limit_editor_subtitle_fmt">%1$s\n%2$s</string>
+    <string name="app_limit_editor_summary">Hier kannst du Limits kombinieren, z. B. 4 Öffnungen pro Tag mit 8 Minuten pro Besuch.</string>
+    <string name="app_limit_time_hint">Gesamt-Zeitlimit (Minuten)</string>
+    <string name="app_limit_attempts_hint">Öffnungen pro Tag</string>
+    <string name="app_limit_per_visit_hint">Minuten pro Besuch</string>
+    <string name="app_limit_blank_hint">Feld leer lassen, um dieses Limit zu deaktivieren.</string>
+    <string name="app_limit_clear_all">Limits löschen</string>
+
     <!-- ====================================================== -->
     <!-- Session limits -->
     <!-- ====================================================== -->
@@ -54,19 +67,21 @@
     <string name="limit_reset_per_session">Pro aktive Sitzung</string>
     <string name="session_limit_current_label">Aktuelle Sitzung</string>
     <string name="session_limit_usage_summary">Diese Sitzung: %1$s/%2$s (%3$s übrig)</string>
+
     <!-- ====================================================== -->
     <!-- Usage detail info -->
     <!-- ====================================================== -->
     <string name="usage_details_info_title">Nutzungsdetails</string>
+    <string name="app_usage_detail_title">App-Nutzungsdetails</string>
+    <string name="app_usage_detail_subtitle">Nutzung, Limits und Aktivität</string>
+    <string name="website_usage_detail_title">Website-Nutzungsdetails</string>
+    <string name="website_usage_detail_subtitle">Nutzung, Limit und Regelstatus</string>
     <string name="usage_details_info_body">Die Zusammenfassung zeigt:\n• Nutzungszeit\n• App-Öffnungen\n• Blockierungen\n\nNutze die Limit-Aktion oder eine Limit-Karte, um Limits zu bearbeiten. Tageslimits werden täglich zurückgesetzt. Sitzungslimits beginnen mit einer neuen aktiven Sitzung von Switchly oder dem Profil neu.</string>
     <string name="usage_details_limits_section">Limits</string>
     <string name="usage_details_activity_section">Nutzung im Zeitverlauf</string>
     <string name="website_usage_info_title">Website-Nutzungsdetails</string>
     <string name="website_usage_info_body">Dieser Bildschirm zeigt:\n• Erfasste Zeit der Domain\n• Aktuelles Tageslimit\n• Aktuellen Regelstatus\n\nNutze die Limit-Aktion zum Bearbeiten oder öffne die Website-Regeln, um den Zugriff zu ändern. Private, eingebettete oder nicht unterstützte Browser-Sitzungen können fehlen.</string>
-    <string name="app_usage_detail_title">App-Nutzungsdetails</string>
-    <string name="app_usage_detail_subtitle">Nutzung, Limits und Aktivität</string>
-    <string name="website_usage_detail_title">Website-Nutzungsdetails</string>
-    <string name="website_usage_detail_subtitle">Nutzung, Limit und Regelstatus</string>
+
     <!-- ====================================================== -->
     <!-- Unavailable apps -->
     <!-- ====================================================== -->
@@ -77,6 +92,7 @@
         <item quantity="one">%1$d nicht verfügbarer App-Eintrag wurde zur Bereinigung geladen.</item>
         <item quantity="other">%1$d nicht verfügbare App-Einträge wurden zur Bereinigung geladen.</item>
     </plurals>
+
     <!-- ====================================================== -->
     <!-- Activity entry points -->
     <!-- ====================================================== -->
@@ -84,6 +100,8 @@
     <string name="activity_hub_section_review">Überprüfen</string>
     <string name="activity_entry_app_website_usage">App- &amp; Website-Nutzung</string>
     <string name="activity_entry_app_website_usage_summary">Getrackte App- und Website-Zeit, Öffnungen, Blockierungen, Limits und Profilkontext.</string>
+    <string name="activity_entry_most_used_apps">Meistgenutzte Apps</string>
+    <string name="activity_entry_most_used_apps_summary">Bildschirmzeit-Verteilung und Rangliste deiner meistgenutzten Apps.</string>
     <string name="activity_entry_app_launches">App-Öffnungen</string>
     <string name="activity_entry_app_launches_summary">Öffnungszähler und App-Timelines aus Android-Nutzungszugriff.</string>
     <string name="activity_entry_screen_unlocks">Entsperrungen</string>
@@ -92,6 +110,20 @@
     <string name="activity_entry_active_time_summary">Gesamte Aktivzeit, Sessions und Tagesaktivität.</string>
     <string name="activity_entry_activity_history">Aktivitätsverlauf</string>
     <string name="activity_entry_activity_history_summary">Aktuelle Switchly-Profil-, Zeitplan-, Standort-, NFC-, QR-, Barcode-, temporäre und manuelle Ereignisse ansehen.</string>
+
+    <!-- ====================================================== -->
+    <!-- Most used apps -->
+    <!-- ====================================================== -->
+    <string name="most_used_apps_title">Meistgenutzte Apps</string>
+    <string name="most_used_apps_info_title">Über meistgenutzte Apps</string>
+    <string name="most_used_apps_info_body">Zeigt, wie sich deine App-Bildschirmzeit im ausgewählten Zeitraum verteilt. Der Donut hebt die Top-Apps hervor und fasst die restliche Nutzung als Andere zusammen. Tippe auf eine App in der Rangliste, um ihre detaillierte Nutzungsansicht zu öffnen.</string>
+    <string name="most_used_apps_total_title">Gesamte Bildschirmzeit</string>
+    <string name="most_used_apps_ranking_title">App-Rangliste</string>
+    <string name="most_used_apps_loading">App-Nutzung wird geladen…</string>
+    <string name="most_used_apps_usage_access_needed">Nutzungszugriff wird benötigt, um deine meistgenutzten Apps zu berechnen.</string>
+    <string name="most_used_apps_empty">Für diesen Zeitraum wurde keine App-Nutzung gefunden.</string>
+    <string name="most_used_apps_row_summary">%1$s · %2$s</string>
+
     <!-- ====================================================== -->
     <!-- Usage statistics -->
     <!-- ====================================================== -->
@@ -171,6 +203,7 @@
     <string name="website_timeline_title">Website-Timeline</string>
     <string name="website_timeline_empty">Keine Website-Nutzung für diesen Zeitraum gefunden.</string>
     <string name="website_timeline_row">%1$s · %2$s</string>
+
     <!-- ====================================================== -->
     <!-- Active time -->
     <!-- ====================================================== -->
@@ -193,6 +226,7 @@
     <string name="active_time_graph_days">Tages-Graph</string>
     <string name="active_time_activity_history_title">Aktivitätsverlauf</string>
     <string name="active_time_activity_history_empty">Für diesen Tag wurden noch keine Switchly-Aktivitäten gefunden.</string>
+
     <!-- ====================================================== -->
     <!-- Activity history -->
     <!-- ====================================================== -->
@@ -219,6 +253,7 @@
         <item quantity="one">%1$d Ereignis</item>
         <item quantity="other">%1$d Ereignisse</item>
     </plurals>
+
     <!-- ====================================================== -->
     <!-- Activity history blocked events and details -->
     <!-- ====================================================== -->
@@ -232,6 +267,7 @@
     <string name="activity_history_detail_source_line">Quelle: %1$s</string>
     <string name="activity_history_detail_action_line">Aktion: %1$s</string>
     <string name="activity_history_detail_raw_line">Rohdaten: %1$s</string>
+
     <!-- ====================================================== -->
     <!-- Activity history events -->
     <!-- ====================================================== -->
@@ -265,6 +301,7 @@
     <string name="activity_history_action_restore">Wiederherstellen</string>
     <string name="activity_history_action_blocked">Blockiert</string>
     <string name="activity_history_action_unknown">Unbekannt</string>
+
     <!-- ====================================================== -->
     <!-- Website usage details -->
     <!-- ====================================================== -->
@@ -275,6 +312,7 @@
     <string name="website_delete_remove_limit">Tageslimit entfernen</string>
     <string name="website_delete_remove_block_rule">Blockierungsregel entfernen</string>
     <string name="website_deleted_toast">Website-Daten gelöscht</string>
+
     <!-- ====================================================== -->
     <!-- Usage empty states -->
     <!-- ====================================================== -->
@@ -284,6 +322,7 @@
     <string name="usage_websites_no_accessibility">Website-Tracking benötigt aktivierte Switchly-Bedienungshilfe.</string>
     <string name="usage_websites_no_data">Noch keine Website-Daten. Öffne eine Website in einem unterstützten Browser (Chrome, Brave, Edge, Firefox, Ecosia …), während die Switchly-Bedienungshilfe aktiviert ist.</string>
     <string name="usage_websites_no_blocked">Im aktiven Profil sind noch keine Website-Regeln konfiguriert.</string>
+
     <!-- ====================================================== -->
     <!-- Usage labels and filters -->
     <!-- ====================================================== -->
@@ -309,15 +348,16 @@
     <string name="stats_sort_used_time_desc">Nutzungszeit (oben)</string>
     <string name="stats_sort_used_time_asc">Nutzungszeit (unten)</string>
     <string name="stats_sort_filter">Sortieren &amp; filtern</string>
+
     <!-- ====================================================== -->
     <!-- Ausgeblendete Apps -->
     <!-- ====================================================== -->
     <string name="ignored_usage_apps_title">Ausgeblendete Apps</string>
-    <string name="ignored_usage_apps_summary">Apps aus Insights oder App-Auswahlen ausblenden</string>
+    <string name="ignored_usage_apps_summary">Apps aus Insights oder dem Switchly-Schutz ausblenden</string>
     <string name="hidden_apps_tab_usage">Nutzung &amp; Insights</string>
-    <string name="hidden_apps_tab_pickers">App-Auswahl</string>
+    <string name="hidden_apps_tab_pickers">App-Liste</string>
     <string name="hidden_apps_usage_description">Hier ausgewählte Apps erscheinen nicht in Top-Apps, Nutzungsübersichten, Timelines, Öffnungszahlen oder im Nutzungsbericht des Onboardings. Blockierungsregeln und Profile werden nicht verändert.</string>
-    <string name="hidden_apps_picker_description">Hier ausgewählte Apps werden beim Hinzufügen unter Apps auswählen, App-Regeln, Profilen und anderen App-Auswahlen ausgeblendet. Bereits ausgewählte Apps und vorhandene Regeln bleiben sichtbar und bearbeitbar.</string>
+    <string name="hidden_apps_picker_description">Hier ausgewählte Apps werden in Switchly-App-Auswahlen ausgeblendet und solange sie ausgeblendet sind vom Switchly-Schutz ausgenommen. Switchly liest für diese Apps keine Accessibility-Inhalte, führt keine In-App- oder Website-Erkennung aus, blockiert die App nicht, erzwingt keine vorhandenen App-Limits und blendet ihre Benachrichtigungen nicht aus. Vorhandene Konfiguration bleibt gespeichert und wird wieder aktiv, sobald die App wieder eingeblendet wird. Hinweis: Banking- oder Wallet-Apps können trotzdem erkennen, dass auf dem Gerät ein Accessibility-Dienst eines Drittanbieters aktiviert ist.</string>
     <string name="ignored_usage_apps_search_hint">Apps suchen</string>
     <string name="ignored_usage_apps_info">Über ausgeblendete Apps</string>
     <string name="ignored_usage_apps_clear">Diese Liste leeren</string>
@@ -328,6 +368,7 @@
         <item quantity="one">%d App ausgeblendet</item>
         <item quantity="other">%d Apps ausgeblendet</item>
     </plurals>
+
     <!-- ====================================================== -->
     <!-- Usage support and premium -->
     <!-- ====================================================== -->
@@ -340,4 +381,6 @@
     <string name="usage_details_premium_action">Premium ansehen</string>
     <string name="cannot_set_limit_unavailable">Für eine nicht verfügbare App kann kein Limit gesetzt werden.</string>
     <string name="usage_timeline_recent_details_unavailable">Für diesen Zeitraum sind noch keine archivierten App-Öffnungen verfügbar. Switchly speichert exakte Sitzungen jetzt lokal und übernimmt sie in Statistik-Backups; der aktuelle Android-Verlauf wird importiert, wenn der Nutzungszugriff verfügbar ist.</string>
+    <string name="usage_chart_other_apps">Andere</string>
+
 </resources>

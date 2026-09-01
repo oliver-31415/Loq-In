@@ -54,7 +54,6 @@
     <!-- Developer and external links -->
     <!-- ====================================================== -->
     <string name="about_dev_name_label">Developer</string>
-    <string name="about_discord_label">Discord</string>
     <string name="about_email_label">Email</string>
     <string name="about_gitlab_label">GitLab Repository</string>
     <string name="about_store_label">Switchly Store</string>
@@ -68,9 +67,7 @@
     <string name="about_developer_website_url" translatable="false">https://saltyy.at</string>
     <string name="about_dev_mail_address" translatable="false">andi@saltyy.at</string>
     <string name="about_mail_address" translatable="false">support@saltyy.at</string>
-    <string name="about_discord_url" translatable="false">https://discord.gg/PC5zn2NeCg</string>
     <string name="about_gitlab_url" translatable="false">https://gitlab.com/Saltyy/switchly-public</string>
-    <string name="about_discord_copied">Discord link copied</string>
     <string name="about_mail_copied">Email copied</string>
 
     <!-- ====================================================== -->

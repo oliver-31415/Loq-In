@@ -41,6 +41,7 @@ import at.saltyy.switchly.blocking.isBrowserPackage
 import at.saltyy.switchly.data.prefs.AttemptLimitStore
 import at.saltyy.switchly.data.prefs.InAppRuleStore
 import at.saltyy.switchly.data.prefs.OpenCountStore
+import at.saltyy.switchly.data.prefs.ProfileStore
 import at.saltyy.switchly.data.prefs.SessionLimitStore
 import at.saltyy.switchly.data.prefs.UsageLimitStore
 import at.saltyy.switchly.data.prefs.UsageLimitResetStore
@@ -51,7 +52,7 @@ import com.google.android.material.card.MaterialCardView
 import java.util.Locale
 
 class AppListAdapter(
-    private val allApps: List<AppEntry>,
+    allApps: List<AppEntry>,
     preselectedManaged: Set<String>,
     private val currentProfileProvider: () -> String?,
     private val isAllowModeProvider: () -> Boolean = { false },
@@ -62,9 +63,11 @@ class AppListAdapter(
     private val onRowActionsClicked: ((app: AppEntry, hasWebsiteRules: Boolean, hasInAppRules: Boolean) -> Unit)? = null,
     private val onProtectedSelectionRequested: ((app: AppEntry, onAllowed: () -> Unit) -> Unit)? = null,
     private val onSelectionChanged: ((count: Int) -> Unit)? = null,
-    private val isReadOnlyProvider: () -> Boolean = { false }
+    private val isReadOnlyProvider: () -> Boolean = { false },
+    private val canChangeSelectionProvider: (currentlySelected: Boolean, requestedSelected: Boolean) -> Boolean = { _, _ -> true }
 ) : ListAdapter<AppEntry, AppListAdapter.VH>(DIFF) {
 
+    private val allApps = allApps.toMutableList()
     private val managed = preselectedManaged.toMutableSet()
 
     fun getManagedPackages(): Set<String> = managed.toSet()
@@ -93,12 +96,27 @@ class AppListAdapter(
         notifySelectionCountChanged()
     }
 
-    fun unavailableManagedCount(): Int = allApps.count { !it.isAvailable && it.packageName in managed }
+    private fun hasUnavailableConfiguration(context: Context, profile: String?, item: AppEntry): Boolean {
+        if (item.isAvailable) return false
+        if (item.packageName in managed) return true
+        if (profile.isNullOrBlank()) return false
+        if (item.packageName in ProfileStore.getSelectedForProfileMode(context, profile)) return true
+        return UsageLimitStore.getLimitMinutes(context, profile, item.packageName) > 0 ||
+            SessionLimitStore.getLimitMinutes(context, profile, item.packageName) > 0 ||
+            AttemptLimitStore.getLimitAttempts(context, profile, item.packageName) > 0 ||
+            InAppRuleStore.hasSelectedRulesForPackage(context, profile, item.packageName)
+    }
+
+    fun unavailableManagedCount(context: Context): Int {
+        val profile = currentProfileProvider.invoke()
+        return allApps.count { hasUnavailableConfiguration(context, profile, it) }
+    }
 
     fun selectAllVisible(): Int {
         var skipped = 0
         val isAllowMode = isAllowModeProvider.invoke()
         currentList.forEachIndexed { index, item ->
+            if (!item.isAvailable) return@forEachIndexed
             val shouldSkip = if (isAllowMode) {
                 false
             } else {
@@ -120,9 +138,8 @@ class AppListAdapter(
         val profile = currentProfileProvider.invoke()
         val unavailablePkgs = allApps
             .asSequence()
-            .filter { !it.isAvailable }
+            .filter { hasUnavailableConfiguration(context, profile, it) }
             .map { it.packageName }
-            .filter { it in managed }
             .toList()
 
         if (unavailablePkgs.isEmpty()) {
@@ -136,14 +153,13 @@ class AppListAdapter(
                 SessionLimitStore.setLimitMinutes(context, profile, pkg, 0)
                 AttemptLimitStore.setLimitAttempts(context, profile, pkg, 0)
                 OpenCountStore.setToday(context, profile, pkg, 0)
+                InAppRuleStore.clearRulesForPackage(context, profile, pkg)
             }
         }
 
-        unavailablePkgs.forEach { pkg ->
-            currentList.indexOfFirst { it.packageName == pkg }
-                .takeIf { it >= 0 }
-                ?.let { notifyItemChanged(it) }
-        }
+        val removed = unavailablePkgs.toSet()
+        allApps.removeAll { it.packageName in removed }
+        submitList(currentList.filterNot { it.packageName in removed })
         notifySelectionCountChanged()
         return unavailablePkgs.size
     }
@@ -266,6 +282,7 @@ class AppListAdapter(
             val protectedApp = item.blockSafety.level == AppBlockSafety.Level.PROTECTED
             val isAllowMode = isAllowModeProvider.invoke()
             val pinnedByInAppRules = hasPinnedInAppRule(ctx, profile, item)
+            val unavailableConfigured = hasUnavailableConfiguration(ctx, profile, item)
 
             ivAppIcon.setImageDrawable(AppIconCache.get(ctx, item.packageName))
 
@@ -362,11 +379,20 @@ class AppListAdapter(
 
             cb.setOnCheckedChangeListener(null)
 
-            cb.isChecked = managed.contains(item.packageName) || pinnedByInAppRules
-            cb.isEnabled = item.isAvailable && !readOnly
+            val currentlySelected = managed.contains(item.packageName) || pinnedByInAppRules || unavailableConfigured
+            val canToggleSelection = canChangeSelectionProvider(
+                currentlySelected,
+                !currentlySelected,
+            )
+            cb.isChecked = currentlySelected
+            cb.isEnabled = if (item.isAvailable) {
+                !readOnly || canToggleSelection
+            } else {
+                unavailableConfigured && (!readOnly || canToggleSelection)
+            }
             cb.alpha = when {
-                !item.isAvailable -> 0.65f
-                readOnly -> 0.45f
+                !cb.isEnabled -> 0.45f
+                !item.isAvailable -> 0.85f
                 else -> 1f
             }
 
@@ -378,10 +404,15 @@ class AppListAdapter(
             }
 
             listener = CompoundButton.OnCheckedChangeListener { _, checked ->
-                if (isReadOnlyProvider.invoke()) {
-                    setCheckedSilently(managed.contains(item.packageName) || pinnedByInAppRules)
-                    cb.isEnabled = false
-                    cb.alpha = 0.45f
+                val before = managed.contains(item.packageName) || pinnedByInAppRules || hasUnavailableConfiguration(ctx, profile, item)
+                if (!canChangeSelectionProvider(before, checked)) {
+                    setCheckedSilently(before)
+                    cb.isEnabled = if (item.isAvailable) {
+                        canChangeSelectionProvider(before, !before)
+                    } else {
+                        before && canChangeSelectionProvider(before, !before)
+                    }
+                    cb.alpha = if (cb.isEnabled) 1f else 0.45f
                     return@OnCheckedChangeListener
                 }
                 if (checked) {
@@ -426,12 +457,16 @@ class AppListAdapter(
                         managed.remove(item.packageName)
                         notifySelectionCountChanged()
 
-                        if (!item.isAvailable && !profile.isNullOrBlank()) {
-                            UsageLimitStore.setLimitMinutes(ctx, profile, item.packageName, 0)
-                            SessionLimitStore.setLimitMinutes(ctx, profile, item.packageName, 0)
-                            AttemptLimitStore.setLimitAttempts(ctx, profile, item.packageName, 0)
-                            OpenCountStore.setToday(ctx, profile, item.packageName, 0)
-                            notifyPkgChanged(item.packageName)
+                        if (!item.isAvailable) {
+                            if (!profile.isNullOrBlank()) {
+                                UsageLimitStore.setLimitMinutes(ctx, profile, item.packageName, 0)
+                                SessionLimitStore.setLimitMinutes(ctx, profile, item.packageName, 0)
+                                AttemptLimitStore.setLimitAttempts(ctx, profile, item.packageName, 0)
+                                OpenCountStore.setToday(ctx, profile, item.packageName, 0)
+                                InAppRuleStore.clearRulesForPackage(ctx, profile, item.packageName)
+                            }
+                            allApps.removeAll { it.packageName == item.packageName }
+                            submitList(currentList.filterNot { it.packageName == item.packageName })
                         }
                     }
                 }

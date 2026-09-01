@@ -38,10 +38,11 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import at.saltyy.switchly.R
 import at.saltyy.switchly.blocking.SwitchlyAccessibilityService
 import at.saltyy.switchly.data.prefs.AttemptLimitStore
+import at.saltyy.switchly.data.prefs.AppLogStore
 import at.saltyy.switchly.data.prefs.BlockAttemptStore
 import at.saltyy.switchly.data.prefs.DomainBlockStore
 import at.saltyy.switchly.data.prefs.DomainLimitStore
-import at.saltyy.switchly.data.prefs.OpenCountStore
+import at.saltyy.switchly.data.prefs.AppLaunchCountStore
 import at.saltyy.switchly.data.prefs.ProfileStore
 import at.saltyy.switchly.data.prefs.WebsiteRuleModeStore
 import at.saltyy.switchly.data.prefs.SessionLimitStore
@@ -295,7 +296,7 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
             return emptyMap()
         }
         val (startMs, endMs) = rangeBounds(range) ?: return emptyMap()
-        val opensByPackage = OpenCountStore.getMapForDateRangeAllProfiles(this, startMs, endMs)
+        val opensByPackage = AppLaunchCountStore.getMapForDateRange(this, startMs, endMs)
         val blocksByPackage = BlockAttemptStore.getMapForDateRange(this, startMs, endMs)
 
         return packages.associateWith { packageName ->
@@ -330,9 +331,8 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
         when (range) {
             Range.TODAY -> Unit
             Range.WEEK -> {
-                val daysSinceWeekStart =
-                    (7 + (start.get(Calendar.DAY_OF_WEEK) - start.firstDayOfWeek)) % 7
-                start.add(Calendar.DAY_OF_YEAR, -daysSinceWeekStart)
+                // Keep the Week definition consistent across all statistics pages: today plus the previous six local calendar days.
+                start.add(Calendar.DAY_OF_YEAR, -6)
             }
             Range.MONTH -> start.set(Calendar.DAY_OF_MONTH, 1)
             Range.YEAR -> {
@@ -614,7 +614,25 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
         refreshJob?.cancel()
         refreshJob = lifecycleScope.launch {
             val data = withContext(Dispatchers.IO) {
-                buildRefreshData(range, isWeb)
+                runCatching {
+                    buildRefreshData(range, isWeb)
+                }.getOrElse { error ->
+                    AppLogStore.appendRateLimited(
+                        this@AppWebsiteUsageActivity,
+                        "Statistics",
+                        "Usage refresh failed mode=${if (isWeb) "web" else "app"} range=${range.name} error=${error.javaClass.simpleName}",
+                        error,
+                        windowMs = 60_000L
+                    )
+                    RefreshData(
+                        summary = UsageSummary(0L, emptyList()),
+                        hasAccessibility = PermissionUtils.isAccessibilityServiceEnabled(
+                            this@AppWebsiteUsageActivity,
+                            SwitchlyAccessibilityService::class.java
+                        ),
+                        profile = ProfileStore.getCurrent(this@AppWebsiteUsageActivity)
+                    )
+                }
             }
             if (requestVersion != refreshVersion) return@launch
             applyRefreshData(range, isWeb, data)
@@ -643,6 +661,10 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
                 profile = profile,
                 websiteRuleSet = (blocked + limited).toSet()
             )
+        }
+
+        if (UsageStatsRepo.hasUsageAccess(this)) {
+            runCatching { StatsArchiveSync.sync(this) }
         }
 
         val summary = when {

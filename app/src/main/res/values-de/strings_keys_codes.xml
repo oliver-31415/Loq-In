@@ -28,7 +28,7 @@
     <!-- Info dialogs -->
     <!-- ====================================================== -->
     <string name="qr_info_title">QR-Code-Aktionen</string>
-    <string name="qr_info_body">QR-Codes können beim Scannen folgende Switchly-Aktionen ausführen:\n• Schutz aktivieren oder deaktivieren\n• Aktuellen Status umschalten\n• Temporäre Aktion starten\n• Profil wechseln\n\nFür eine strengere Einrichtung kannst du nur die gewünschten Steuerungskanäle aktiviert lassen.</string>
+    <string name="qr_info_body">QR-Codes können beim Scannen folgende Switchly-Aktionen ausführen:\n• Schutz aktivieren oder deaktivieren\n• Aktuellen Status umschalten\n• Temporäre Aktion starten\n• Profil wechseln\n\nFür das zuverlässigste Ergebnis solltest du Switchly-QR-Codes mit dem integrierten Switchly-QR-Scanner scannen. Manche externen Scanner, darunter Google Lens auf einigen Geräten, behandeln den Switchly-Aktionslink stattdessen als Suche.\n\nFür eine strengere Einrichtung kannst du nur die gewünschten Steuerungskanäle aktiviert lassen.</string>
     <string name="manage_barcodes_info_title">Barcode-Aktionen</string>
     <string name="manage_barcodes_info_body">Gespeicherte Barcodes verbinden einen physischen Code mit einer Switchly-Aktion:\n• Schutz aktivieren, deaktivieren oder umschalten\n• Temporäre Aktion starten\n• Profil wechseln\n\nFür eine größere Hürde kannst du den Barcode außer Reichweite aufbewahren. Mit „Beim Scannen fragen“ wählst du die Dauer während des Scans.</string>
     <string name="paired_tags_info_title">Gekoppelte NFC-Tags</string>

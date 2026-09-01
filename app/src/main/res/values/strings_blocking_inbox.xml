@@ -56,4 +56,7 @@
     <string name="blocked_inbox_empty_title">No blocked notifications yet</string>
     <string name="blocked_inbox_empty_body">Blocked notifications will appear here while notification blocking is active.</string>
 
+    <string name="blocked_inbox_clear_all">Delete all</string>
+    <string name="blocked_inbox_clear_all_confirm">Delete all blocked notification history?</string>
+
 </resources>

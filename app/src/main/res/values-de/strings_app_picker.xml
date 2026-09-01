@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
+    <!-- ====================================================== -->
+    <!-- Allow mode preview -->
+    <!-- ====================================================== -->
     <string name="app_allow_mode_preview_title">„Ausgewählte erlauben“ verwenden?</string>
     <string name="app_allow_mode_preview_body">Mit der aktuellen Liste gilt: %1$s und %2$s. Nicht in dieser Auswahl angezeigte Apps bleiben verfügbar.</string>
     <plurals name="app_allow_mode_preview_blocked_count">

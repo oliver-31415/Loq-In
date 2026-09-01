@@ -52,4 +52,7 @@
     <string name="blocked_inbox_empty_title">Noch keine blockierten Benachrichtigungen</string>
     <string name="blocked_inbox_empty_body">Blockierte Benachrichtigungen erscheinen hier, während Benachrichtigungsblockierung aktiv ist.</string>
 
+    <string name="blocked_inbox_clear_all">Alle löschen</string>
+    <string name="blocked_inbox_clear_all_confirm">Gesamten Verlauf blockierter Benachrichtigungen löschen?</string>
+
 </resources>

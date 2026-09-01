@@ -23,6 +23,7 @@
             app:title="@string/toggle_options_title" />
     </com.google.android.material.appbar.AppBarLayout>
 
+    <!-- Content -->
     <ScrollView
         android:id="@+id/scrollToggleOptions"
         android:layout_width="match_parent"

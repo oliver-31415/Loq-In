@@ -117,10 +117,15 @@ class AppLaunchDetailActivity : AppCompatActivity() {
             }
             val sessions = UsageTimelineRepo.appSessions(ctx, pkg, from, to, limit = 0)
             val storedLaunches = AppLaunchCountStore.getForDateRange(ctx, pkg, from, to)
-            val storedUsage = UsageStore.getUsageMsSeriesForDateRange(ctx, pkg, from, to).sum()
+            val localUsage = UsageStore.getUsageMsSeriesForDateRange(ctx, pkg, from, to).sum()
+            val usageTotal = if (hasUsageAccess) {
+                UsageStatsRepo.getTotalMsForWindow(ctx, from, to, pkg).takeIf { it > 0L } ?: localUsage
+            } else {
+                localUsage
+            }
             runOnUiThread {
                 if (isFinishing || isDestroyed) return@runOnUiThread
-                render(sessions, storedLaunches, storedUsage, hasUsageAccess)
+                render(sessions, storedLaunches, usageTotal, hasUsageAccess)
             }
         }.start()
     }

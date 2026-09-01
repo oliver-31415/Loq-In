@@ -13,11 +13,6 @@
     <!-- ====================================================== -->
     <string name="dashboard_blocked_app_action_edit_limits">Limits bearbeiten</string>
     <string name="dashboard_blocked_app_action_edit_limits_summary">Zeit- oder Öffnungslimits für %1$s setzen.</string>
-    <string name="dashboard_blocked_app_limits_title">Limits bearbeiten</string>
-    <string name="dashboard_blocked_app_action_time_limit">Zeitlimit bearbeiten</string>
-    <string name="dashboard_blocked_app_action_time_limit_summary">Erlaubte Minuten begrenzen, bevor blockiert wird.</string>
-    <string name="dashboard_blocked_app_action_open_limit">Öffnen-Limit bearbeiten</string>
-    <string name="dashboard_blocked_app_action_open_limit_summary">Begrenzen, wie oft die App heute geöffnet werden darf.</string>
     <string name="dashboard_blocked_app_action_remove">App entfernen</string>
     <string name="dashboard_blocked_app_action_remove_summary">%1$s aus dem aktuellen Profil entfernen.</string>
     <string name="dashboard_blocked_app_remove_title">App entfernen</string>

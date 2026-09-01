@@ -21,6 +21,7 @@
             app:title="@string/support_title" />
     </com.google.android.material.appbar.AppBarLayout>
 
+    <!-- Content -->
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -252,65 +253,216 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp">
 
-                <androidx.constraintlayout.widget.ConstraintLayout
+                <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:minHeight="76dp"
-                    android:paddingStart="16dp"
-                    android:paddingTop="12dp"
-                    android:paddingEnd="10dp"
-                    android:paddingBottom="12dp">
+                    android:orientation="vertical">
 
-                    <ImageView
-                        android:id="@+id/ivSupportEmail"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:contentDescription="@null"
-                        android:src="@drawable/mail_24"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:tint="?attr/colorPrimary" />
-
-                    <TextView
-                        android:id="@+id/tvSupportEmailLabel"
-                        android:layout_width="0dp"
+                    <androidx.constraintlayout.widget.ConstraintLayout
+                        android:id="@+id/rowSupportEmail"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="14dp"
-                        android:text="@string/support_email_label"
-                        android:textColor="?android:attr/textColorSecondary"
-                        android:textSize="12sp"
-                        app:layout_constraintEnd_toStartOf="@id/btnCopyEmailInline"
-                        app:layout_constraintStart_toEndOf="@id/ivSupportEmail"
-                        app:layout_constraintTop_toTopOf="parent" />
+                        android:minHeight="76dp"
+                        android:paddingStart="16dp"
+                        android:paddingTop="12dp"
+                        android:paddingEnd="10dp"
+                        android:paddingBottom="12dp"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true">
 
-                    <TextView
-                        android:id="@+id/tvSupportEmail"
-                        android:layout_width="0dp"
+                        <ImageView
+                            android:id="@+id/ivSupportEmail"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/mail_24"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent"
+                            app:tint="?attr/colorPrimary" />
+
+                        <TextView
+                            android:id="@+id/tvSupportEmailLabel"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="14dp"
+                            android:text="@string/support_email_label"
+                            android:textColor="?android:attr/textColorSecondary"
+                            android:textSize="12sp"
+                            app:layout_constraintEnd_toStartOf="@id/btnCopyEmailInline"
+                            app:layout_constraintStart_toEndOf="@id/ivSupportEmail"
+                            app:layout_constraintTop_toTopOf="parent" />
+
+                        <TextView
+                            android:id="@+id/tvSupportEmail"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="14dp"
+                            android:layout_marginTop="3dp"
+                            android:text="@string/about_mail_address"
+                            android:textColor="@color/contact_text"
+                            android:textSize="16sp"
+                            android:textStyle="bold"
+                            android:maxLines="1"
+                            app:layout_constraintEnd_toStartOf="@id/btnCopyEmailInline"
+                            app:layout_constraintStart_toEndOf="@id/ivSupportEmail"
+                            app:layout_constraintTop_toBottomOf="@id/tvSupportEmailLabel" />
+
+                        <ImageButton
+                            android:id="@+id/btnCopyEmailInline"
+                            android:layout_width="44dp"
+                            android:layout_height="44dp"
+                            android:padding="10dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:contentDescription="@string/support_copy_email"
+                            android:src="@drawable/content_copy_24"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintTop_toTopOf="parent"
+                            app:tint="?attr/colorOnSurface" />
+                    </androidx.constraintlayout.widget.ConstraintLayout>
+
+                    <com.google.android.material.divider.MaterialDivider
+                        style="@style/Switchly.Divider"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="14dp"
-                        android:layout_marginTop="3dp"
-                        android:text="@string/about_mail_address"
-                        android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                        android:textColor="@color/contact_text"
-                        android:maxLines="1"
-                        app:layout_constraintEnd_toStartOf="@id/btnCopyEmailInline"
-                        app:layout_constraintStart_toEndOf="@id/ivSupportEmail"
-                        app:layout_constraintTop_toBottomOf="@id/tvSupportEmailLabel" />
+                        android:layout_marginStart="54dp"
+                        android:layout_marginEnd="12dp" />
 
-                    <ImageButton
-                        android:id="@+id/btnCopyEmailInline"
-                        android:layout_width="44dp"
-                        android:layout_height="44dp"
-                        android:padding="10dp"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:contentDescription="@string/support_copy_email"
-                        android:src="@drawable/content_copy_24"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:tint="?attr/colorOnSurface" />
-                </androidx.constraintlayout.widget.ConstraintLayout>
+                    <androidx.constraintlayout.widget.ConstraintLayout
+                        android:id="@+id/rowSupportDiscord"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:minHeight="76dp"
+                        android:paddingStart="16dp"
+                        android:paddingTop="12dp"
+                        android:paddingEnd="14dp"
+                        android:paddingBottom="12dp"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <ImageView
+                            android:id="@+id/ivSupportDiscord"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/discord_24"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent" />
+
+                        <TextView
+                            android:id="@+id/tvSupportDiscordLabel"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="14dp"
+                            android:text="@string/support_discord_label"
+                            android:textStyle="bold"
+                            android:textSize="16sp"
+                            app:layout_constraintEnd_toStartOf="@id/btnCopyDiscordInline"
+                            app:layout_constraintStart_toEndOf="@id/ivSupportDiscord"
+                            app:layout_constraintTop_toTopOf="parent" />
+
+                        <TextView
+                            android:id="@+id/tvSupportDiscordUrl"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="14dp"
+                            android:layout_marginTop="3dp"
+                            android:textColor="?android:attr/textColorSecondary"
+                            android:textSize="13sp"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            app:layout_constraintEnd_toStartOf="@id/btnCopyDiscordInline"
+                            app:layout_constraintStart_toEndOf="@id/ivSupportDiscord"
+                            app:layout_constraintTop_toBottomOf="@id/tvSupportDiscordLabel" />
+
+                        <ImageButton
+                            android:id="@+id/btnCopyDiscordInline"
+                            android:layout_width="44dp"
+                            android:layout_height="44dp"
+                            android:padding="10dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:contentDescription="@string/support_copy_discord"
+                            android:src="@drawable/content_copy_24"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintTop_toTopOf="parent"
+                            app:tint="?attr/colorOnSurface" />
+                    </androidx.constraintlayout.widget.ConstraintLayout>
+
+                    <com.google.android.material.divider.MaterialDivider
+                        style="@style/Switchly.Divider"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="54dp"
+                        android:layout_marginEnd="12dp" />
+
+                    <androidx.constraintlayout.widget.ConstraintLayout
+                        android:id="@+id/rowSupportGitLabIssues"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:minHeight="76dp"
+                        android:paddingStart="16dp"
+                        android:paddingTop="12dp"
+                        android:paddingEnd="14dp"
+                        android:paddingBottom="12dp"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <ImageView
+                            android:id="@+id/ivSupportGitLabIssues"
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/gitlab_24"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintStart_toStartOf="parent"
+                            app:layout_constraintTop_toTopOf="parent" />
+
+                        <TextView
+                            android:id="@+id/tvSupportGitLabIssuesLabel"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="14dp"
+                            android:text="@string/support_gitlab_issues_label"
+                            android:textStyle="bold"
+                            android:textSize="16sp"
+                            app:layout_constraintEnd_toStartOf="@id/btnCopyGitLabIssuesInline"
+                            app:layout_constraintStart_toEndOf="@id/ivSupportGitLabIssues"
+                            app:layout_constraintTop_toTopOf="parent" />
+
+                        <TextView
+                            android:id="@+id/tvSupportGitLabIssuesUrl"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="14dp"
+                            android:layout_marginTop="3dp"
+                            android:textColor="?android:attr/textColorSecondary"
+                            android:textSize="13sp"
+                            android:maxLines="1"
+                            android:ellipsize="end"
+                            app:layout_constraintEnd_toStartOf="@id/btnCopyGitLabIssuesInline"
+                            app:layout_constraintStart_toEndOf="@id/ivSupportGitLabIssues"
+                            app:layout_constraintTop_toBottomOf="@id/tvSupportGitLabIssuesLabel" />
+
+                        <ImageButton
+                            android:id="@+id/btnCopyGitLabIssuesInline"
+                            android:layout_width="44dp"
+                            android:layout_height="44dp"
+                            android:padding="10dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:contentDescription="@string/support_copy_gitlab_issues"
+                            android:src="@drawable/content_copy_24"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:layout_constraintTop_toTopOf="parent"
+                            app:tint="?attr/colorOnSurface" />
+                    </androidx.constraintlayout.widget.ConstraintLayout>
+                </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

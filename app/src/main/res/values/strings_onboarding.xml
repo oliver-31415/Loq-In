@@ -24,7 +24,7 @@
     <string name="onb_core_point_choose">Pick the apps, websites and supported in-app sections you want each profile to protect.</string>
     <string name="onb_core_point_control">Choose the control channels you trust: NFC, schedules, QR, barcode or manual controls.</string>
     <string name="onb_core_point_enforce">Temporary actions end automatically, while protected settings stay read-only during active protection.</string>
-    
+
     <!-- ====================================================== -->
     <!-- Usage report onboarding step -->
     <!-- ====================================================== -->
@@ -81,7 +81,9 @@
     <!-- ====================================================== -->
     <string name="onb_permissions_hub_title">Permissions overview</string>
     <string name="onb_permissions_hub_mode_desc">Set up the permissions for %1$s. Accessibility and Usage Access are required to continue.</string>
+    <string name="onb_permissions_hub_mode_desc_advanced_protection">Set up the permissions for %1$s. Android Advanced Protection is active, so Accessibility may be unavailable. Usage Access enables Switchly’s limited basic app-blocking fallback; full website and in-app protection still requires Accessibility.</string>
     <string name="onb_required_permissions_hub">Please enable Accessibility and Usage Access before continuing. The other items can be set up now or later.</string>
+    <string name="onb_required_permissions_hub_advanced_protection">Advanced Protection is active. Enable Usage Access to continue with limited basic app blocking. Full website and in-app protection still requires Accessibility.</string>
     <string name="onb_perm_accessibility_title">Accessibility</string>
     <string name="onb_perm_accessibility_desc">Required for core app and website blocking.</string>
     <string name="onb_perm_usage_title">Usage Access</string>
@@ -154,6 +156,7 @@
 
     <string name="onb_home_customize_title">Choose your Home layout</string>
     <string name="onb_home_customize_desc">Choose a Home mode or use Custom to arrange cards and their contents.</string>
+
     <!-- ====================================================== -->
     <!-- Usage loading and Home mode selection -->
     <!-- ====================================================== -->
@@ -181,7 +184,9 @@
     <string name="onb_optional_support_title">Contact the developer</string>
     <string name="onb_optional_support_desc">Send a support request and attach generated logs and device information when reporting a bug.</string>
 
+    <!-- ====================================================== -->
     <!-- Optional setup previews -->
+    <!-- ====================================================== -->
     <string name="onb_optional_hidden_usage_row_title">Usage &amp; Insights</string>
     <string name="onb_optional_hidden_usage_row_desc">Keep selected apps out of usage reports and rankings.</string>
     <string name="onb_optional_hidden_picker_row_title">App Picker</string>
@@ -212,4 +217,5 @@
     <string name="onb_optional_access_more_action">More access controls</string>
     <string name="onb_optional_faq_open_action">Open the full FAQ</string>
     <string name="onb_optional_support_open_action">Open Support</string>
+
 </resources>

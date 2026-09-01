@@ -45,7 +45,6 @@ import at.saltyy.switchly.data.prefs.AttemptLimitStore
 import at.saltyy.switchly.data.prefs.ProfileStore
 import at.saltyy.switchly.data.prefs.SessionLimitStore
 import at.saltyy.switchly.data.prefs.UsageLimitStore
-import at.saltyy.switchly.data.prefs.UsageStore
 import at.saltyy.switchly.feature.stats.StatsFormat
 import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.ui.EdgeToEdgeUtils
@@ -190,7 +189,7 @@ class AppLaunchesActivity : AppCompatActivity() {
                 runCatching { StatsArchiveSync.sync(ctx) }
             }
             val launchCounts = AppLaunchCountStore.getMapForDateRange(ctx, from, to)
-            val usageTotals = UsageStore.getUsageMsMapForDateRange(ctx, from, to)
+            val usageTotals = usageTotalsForRange(ctx, range, from, to)
             val summaries = launchCounts
                 .filterKeys { pkg -> !UsageInsightsAppFilter.shouldHide(ctx, pkg) }
                 .map { (pkg, count) ->
@@ -227,6 +226,22 @@ class AppLaunchesActivity : AppCompatActivity() {
                 }
             }
         }.start()
+    }
+
+    private fun usageTotalsForRange(
+        ctx: Context,
+        range: Range,
+        from: Long,
+        to: Long,
+    ): Map<String, Long> {
+        val summary = when (range) {
+            Range.TODAY -> AppUsageRepo.getTodaySummary(ctx, Int.MAX_VALUE)
+            Range.WEEK -> AppUsageRepo.getLastNDaysSummary(ctx, 7, Int.MAX_VALUE)
+            Range.MONTH -> AppUsageRepo.getThisMonthSummary(ctx, Int.MAX_VALUE)
+            Range.YEAR -> AppUsageRepo.getThisYearSummary(ctx, Int.MAX_VALUE)
+            Range.CUSTOM -> AppUsageRepo.getDateRangeSummary(ctx, from, to, Int.MAX_VALUE)
+        }
+        return summary.topApps.associate { item -> item.packageName to item.timeMs }
     }
 
     private fun showSortFilterDialog() {

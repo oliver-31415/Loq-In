@@ -562,8 +562,7 @@ class WebsiteUsageDetailActivity : AppCompatActivity() {
             set(Calendar.MILLISECOND, 0)
         }
 
-        val dayMs = 24L * 60L * 60L * 1000L
-        val days = (((now.timeInMillis/dayMs) - (start.timeInMillis/dayMs)) + 1).toInt().coerceAtLeast(1).coerceAtMost(366)
+        val days = now.get(Calendar.DAY_OF_YEAR).coerceAtLeast(1).coerceAtMost(366)
         val daily = WebUsageStore.getUsageMsForLastNDays(this, domain, days)
 
         val cal = start.clone() as Calendar

@@ -39,6 +39,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import at.saltyy.switchly.R
+import at.saltyy.switchly.blocking.BlockingRuntime
 import at.saltyy.switchly.data.prefs.DomainBlockStore
 import at.saltyy.switchly.data.prefs.DomainLimitStore
 import at.saltyy.switchly.data.prefs.WebsiteRuleModeStore
@@ -56,6 +57,7 @@ import at.saltyy.switchly.ui.dialog.styleSwitchlyDestructivePositiveButton
 import at.saltyy.switchly.ui.dialog.showDestructiveAccented
 import at.saltyy.switchly.ui.dialog.showAccented
 import at.saltyy.switchly.util.EditingLockGuard
+import at.saltyy.switchly.util.ProtectionEditPolicy
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.checkbox.MaterialCheckBox
@@ -70,17 +72,21 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         return EditingLockGuard.isLocked(this)
     }
 
+    private fun canAddBlockedWebsite(): Boolean =
+        ProtectionEditPolicy.canAddBlockedWebsite(this, currentProfile(), isAllowMode())
+
     private fun syncEditingLockUi() {
         val locked = EditingLockGuard.isLocked(this)
+        val canAdd = canAddBlockedWebsite()
         findViewById<FloatingActionButton>(R.id.fabAdd)?.apply {
-            isEnabled = !locked && !isSelectionMode
-            isClickable = !locked && !isSelectionMode
-            alpha = if (locked) 0.45f else 1f
+            isEnabled = canAdd && !isSelectionMode
+            isClickable = canAdd && !isSelectionMode
+            alpha = if (isEnabled) 1f else 0.45f
         }
         findViewById<View>(R.id.btnEmptyAddWebsite)?.apply {
-            isEnabled = !locked
-            isClickable = !locked
-            alpha = if (locked) 0.45f else 1f
+            isEnabled = canAdd
+            isClickable = canAdd
+            alpha = if (canAdd) 1f else 0.45f
         }
         findViewById<MaterialButtonToggleGroup>(R.id.toggleWebsiteRuleMode)?.apply {
             isEnabled = !locked
@@ -225,11 +231,11 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         syncRuleModeUi()
 
         findViewById<FloatingActionButton>(R.id.fabAdd).setOnClickListener {
-            if (websiteEditingLocked()) return@setOnClickListener
+            if (!canAddBlockedWebsite()) return@setOnClickListener
             showAddDialog()
         }
         findViewById<View>(R.id.btnEmptyAddWebsite).setOnClickListener {
-            if (websiteEditingLocked()) return@setOnClickListener
+            if (!canAddBlockedWebsite()) return@setOnClickListener
             showAddDialog()
         }
 
@@ -436,7 +442,7 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
     }
 
     private fun showAddDialog() {
-        if (websiteEditingLocked()) {
+        if (!canAddBlockedWebsite()) {
             return
         }
         showRuleDialog(
@@ -492,7 +498,10 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
 
         val modeAdapter = SwitchlyDropdownAdapter(this, listOf(modeAlways, modeLimit))
         acMode.setAdapter(modeAdapter)
-        acMode.setText(if (initialHardBlock) modeAlways else modeLimit, false)
+        val tightenOnlyAdd = websiteEditingLocked() && allowDomainEdit && !isAllowMode()
+        acMode.setText(if (tightenOnlyAdd || initialHardBlock) modeAlways else modeLimit, false)
+        acMode.isEnabled = !tightenOnlyAdd
+        acMode.alpha = if (tightenOnlyAdd) 0.62f else 1f
 
         etLimit.inputType = InputType.TYPE_CLASS_NUMBER
         etLimit.setText(if (initialLimit > 0) initialLimit.toString() else "")
@@ -524,7 +533,7 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
             }
 
             dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                if (websiteEditingLocked()) {
+                if (websiteEditingLocked() && !tightenOnlyAdd) {
                     dlg.dismiss()
                     refreshList()
                     return@setOnClickListener
@@ -545,6 +554,10 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
 
                 val hardBlock = acMode.text?.toString() == modeAlways
                 val limitMin = etLimit.text?.toString()?.trim()?.toIntOrNull()?.coerceAtLeast(0) ?: 0
+
+                if (tightenOnlyAdd && (!hardBlock || isAllowMode())) {
+                    return@setOnClickListener
+                }
 
                 if (!hardBlock && limitMin <= 0) {
                     tilLimit.error = getString(R.string.domain_limit_required)
@@ -571,6 +584,7 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
                     DomainBlockStore.setDomainEnabled(this, normalized, true)
                 }
 
+                BlockingRuntime.ensureRunning(this)
                 refreshList()
                 dlg.dismiss()
             }

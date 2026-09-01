@@ -24,6 +24,7 @@
             app:title="@string/ignored_usage_apps_title" />
     </com.google.android.material.appbar.AppBarLayout>
 
+    <!-- Content -->
     <com.google.android.material.button.MaterialButtonToggleGroup
         android:id="@+id/toggleHiddenAppsSection"
         android:layout_width="0dp"

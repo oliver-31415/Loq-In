@@ -71,7 +71,6 @@ import at.saltyy.switchly.ui.applySwitchlyStyle
 import at.saltyy.switchly.ui.dialog.SwitchlyDialogOption
 import at.saltyy.switchly.ui.dialog.showSwitchlyOptionDialog
 import at.saltyy.switchly.ui.dialog.styleSwitchlyDialogButtons
-import at.saltyy.switchly.util.EditingLockGuard
 import at.saltyy.switchly.util.LocaleHelper
 import at.saltyy.switchly.util.PersistentStatusNotifier
 import at.saltyy.switchly.util.SwitchlyAppAccessGuard
@@ -103,7 +102,7 @@ open class ToggleOptionsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         ThemeUtils.applyAccentTheme(this)
         super.onCreate(savedInstanceState)
-        if (SwitchlyAppAccessGuard.blockIfLocked(this)) {
+        if (blockIfProtectionLockedForThisSection()) {
             return
         }
         setContentView(R.layout.activity_toggle_options)
@@ -614,7 +613,7 @@ open class ToggleOptionsActivity : AppCompatActivity() {
         }
 
         fun canChangeControlMode(showToast: Boolean = true): Boolean {
-            val allowed = !EditingLockGuard.isLocked(ctx)
+            val allowed = !SwitchlyAppAccessGuard.isControlSettingsLocked(ctx)
             if (!allowed && showToast) {
                 Toast.makeText(
                     ctx,
@@ -1214,7 +1213,7 @@ open class ToggleOptionsActivity : AppCompatActivity() {
                 AutomationModeStore.Mode.BARCODE to findViewById<SwitchMaterial>(R.id.switchModeBarcode),
                 AutomationModeStore.Mode.MIXED to findViewById<SwitchMaterial>(R.id.switchModeMixed),
             )
-            val modeSwitchingAllowed = !EditingLockGuard.isLocked(this)
+            val modeSwitchingAllowed = !SwitchlyAppAccessGuard.isControlSettingsLocked(this)
             rowMap.forEach { (key, row) ->
                 val selected = key == mode
                 val supported = AutomationModeStore.isModeSupported(this, key)
@@ -1248,11 +1247,26 @@ open class ToggleOptionsActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (SwitchlyAppAccessGuard.blockIfLocked(this)) {
+        if (blockIfProtectionLockedForThisSection()) {
             return
         }
         refreshLiveLockUi()
         CustomAccentApplier.applyIfNeeded(this)
+    }
+
+    private fun allowsControlSettingsRecovery(): Boolean {
+        if (intent?.hasExtra(EXTRA_VIEW_SECTION) != true) {
+            return false
+        }
+        return normalizeSection(intent?.getStringExtra(EXTRA_VIEW_SECTION)) == SECTION_BLOCKING
+    }
+
+    private fun blockIfProtectionLockedForThisSection(): Boolean {
+        return if (allowsControlSettingsRecovery()) {
+            SwitchlyAppAccessGuard.blockControlSettingsIfLocked(this)
+        } else {
+            SwitchlyAppAccessGuard.blockIfLocked(this)
+        }
     }
 
     private fun applySwitchAccentTints() {
@@ -1391,11 +1405,11 @@ open class ToggleOptionsActivity : AppCompatActivity() {
     }
 
     private fun isMixedChannelEditingLocked(): Boolean {
-        return EditingLockGuard.isLocked(this)
+        return SwitchlyAppAccessGuard.isControlSettingsLocked(this)
     }
 
     private fun isActiveAccessEditingLocked(): Boolean {
-        return EditingLockGuard.isLocked(this)
+        return SwitchlyAppAccessGuard.isControlSettingsLocked(this)
     }
 
     private fun canEditMixedChannels(showToast: Boolean = true): Boolean {

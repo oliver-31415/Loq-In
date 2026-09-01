@@ -161,7 +161,6 @@
                 android:text="@string/usage_attempts_zero" />
         </LinearLayout>
 
-
         <LinearLayout
             android:id="@+id/sessionUsageContainer"
             android:layout_width="match_parent"

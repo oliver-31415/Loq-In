@@ -23,6 +23,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.core.content.ContextCompat
+import androidx.core.content.edit
 import at.saltyy.switchly.data.prefs.AppLogStore
 import at.saltyy.switchly.data.prefs.SwitchModeStore
 import at.saltyy.switchly.util.PermissionUtils
@@ -33,6 +34,12 @@ import at.saltyy.switchly.util.PermissionUtils
  * Its only job is to keep the process at foreground-service importance while Switchly protection is active on the affected OEM family.
  */
 object OemAccessibilityKeepAlive {
+
+    private const val PREFS_NAME = "oem_accessibility_health"
+    private const val KEY_SEEN_ACCESSIBILITY_HEALTHY = "seen_accessibility_healthy"
+    private const val KEY_LAST_HEALTHY_MS = "last_accessibility_healthy_ms"
+    private const val KEY_LAST_SETTINGS_OFF_LOG_MS = "last_settings_off_log_ms"
+    private const val SETTINGS_OFF_LOG_THROTTLE_MS = 60 * 60 * 1_000L
 
     fun isAffectedDevice(): Boolean {
         val manufacturer = Build.MANUFACTURER.orEmpty().trim().lowercase()
@@ -62,8 +69,11 @@ object OemAccessibilityKeepAlive {
             SwitchlyAccessibilityService::class.java,
         )
         if (!accessibilityEnabled) {
+            recordLikelySettingsDisable(ctx)
             return
         }
+
+        recordAccessibilityHealthy(ctx)
 
         val intent = Intent(ctx, OemAccessibilityKeepAliveService::class.java)
         runCatching {
@@ -75,6 +85,55 @@ object OemAccessibilityKeepAlive {
                 "OEM keep-alive start skipped manufacturer=${Build.MANUFACTURER} reason=${error.javaClass.simpleName}: ${error.message.orEmpty()}",
             )
         }
+    }
+
+    fun recordAccessibilityHealthy(context: Context) {
+        if (!isAffectedDevice()) return
+        val now = System.currentTimeMillis()
+        context.applicationContext
+            .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .edit {
+                putBoolean(KEY_SEEN_ACCESSIBILITY_HEALTHY, true)
+                putLong(KEY_LAST_HEALTHY_MS, now)
+            }
+    }
+
+    fun hasSeenAccessibilityHealthy(context: Context): Boolean =
+        context.applicationContext
+            .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getBoolean(KEY_SEEN_ACCESSIBILITY_HEALTHY, false)
+
+    fun lastAccessibilityHealthyMs(context: Context): Long =
+        context.applicationContext
+            .getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+            .getLong(KEY_LAST_HEALTHY_MS, 0L)
+
+    fun isLikelyAccessibilityDisabledByOem(context: Context): Boolean {
+        val ctx = context.applicationContext
+        if (!isAffectedDevice() || !SwitchModeStore.isEnabled(ctx) || !hasSeenAccessibilityHealthy(ctx)) {
+            return false
+        }
+        return !PermissionUtils.isAccessibilityServiceEnabled(
+            ctx,
+            SwitchlyAccessibilityService::class.java,
+        )
+    }
+
+    private fun recordLikelySettingsDisable(context: Context) {
+        val ctx = context.applicationContext
+        if (!SwitchModeStore.isEnabled(ctx) || !hasSeenAccessibilityHealthy(ctx)) return
+
+        val prefs = ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        val now = System.currentTimeMillis()
+        val lastLog = prefs.getLong(KEY_LAST_SETTINGS_OFF_LOG_MS, 0L)
+        if (now - lastLog < SETTINGS_OFF_LOG_THROTTLE_MS) return
+
+        AppLogStore.append(
+            ctx,
+            "Accessibility",
+            "OEM accessibility setting appears disabled after previous healthy state manufacturer=${Build.MANUFACTURER} brand=${Build.BRAND} lastHealthyMs=${lastAccessibilityHealthyMs(ctx)}",
+        )
+        prefs.edit { putLong(KEY_LAST_SETTINGS_OFF_LOG_MS, now) }
     }
 
     fun stop(context: Context) {

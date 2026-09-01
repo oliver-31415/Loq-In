@@ -39,7 +39,7 @@ import at.saltyy.switchly.R
 import at.saltyy.switchly.data.prefs.ActiveDurationStore
 import at.saltyy.switchly.data.prefs.AppLaunchCountStore
 import at.saltyy.switchly.data.prefs.BarcodeScanCountStore
-import at.saltyy.switchly.data.prefs.BlockAttemptStore
+import at.saltyy.switchly.data.prefs.BlockCountStore
 import at.saltyy.switchly.data.prefs.EmergencyUnlockCountStore
 import at.saltyy.switchly.data.prefs.LimitHitCountStore
 import at.saltyy.switchly.data.prefs.NfcScanCountStore
@@ -81,6 +81,7 @@ class SwitchlyOverviewActivity : AppCompatActivity() {
 
     private val rangeButtons: MutableMap<Range, MaterialButton> = linkedMapOf()
     private var selectedRange: Range = Range.TODAY
+    @Volatile private var archiveSyncRunning = false
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(at.saltyy.switchly.util.LocaleHelper.wrapContext(newBase))
@@ -210,6 +211,24 @@ class SwitchlyOverviewActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         refresh()
+        syncStatsArchive()
+    }
+
+    private fun syncStatsArchive() {
+        if (archiveSyncRunning || !UsageStatsRepo.hasUsageAccess(this)) {
+            return
+        }
+        archiveSyncRunning = true
+        val ctx = applicationContext
+        Thread {
+            val changed = runCatching { StatsArchiveSync.sync(ctx) }.getOrDefault(false)
+            runOnUiThread {
+                archiveSyncRunning = false
+                if (changed && !isFinishing && !isDestroyed) {
+                    refresh()
+                }
+            }
+        }.start()
     }
 
     private fun addRangeButton(range: Range, labelRes: Int) {
@@ -347,24 +366,18 @@ class SwitchlyOverviewActivity : AppCompatActivity() {
             parent = activityCardContent,
             iconRes = R.drawable.apps_24,
             labelRes = R.string.switchly_overview_app_launches,
-            value = countForRange(
-                today = { AppLaunchCountStore.getTotalToday(this) },
-                week = { AppLaunchCountStore.getTotalForLastNDays(this, 7) },
-                month = { year, month -> AppLaunchCountStore.getTotalForMonth(this, year, month) },
-                year = { year -> AppLaunchCountStore.getTotalForYear(this, year) },
-                overall = { AppLaunchCountStore.getTotalOverall(this) }
-            )
+            value = visibleAppLaunchesForRange()
         )
         addStatRow(
             parent = activityCardContent,
             iconRes = R.drawable.security_24,
             labelRes = R.string.switchly_overview_blocks,
             value = countForRange(
-                today = { BlockAttemptStore.getTodayTotal(this) },
-                week = { BlockAttemptStore.getForLastNDaysTotal(this, 7) },
-                month = { year, month -> BlockAttemptStore.getForMonthTotal(this, year, month) },
-                year = { year -> BlockAttemptStore.getForYearTotal(this, year) },
-                overall = { BlockAttemptStore.getOverallTotal(this) }
+                today = { BlockCountStore.getTotalToday(this) },
+                week = { BlockCountStore.getTotalForLastNDays(this, 7) },
+                month = { year, month -> BlockCountStore.getTotalForMonth(this, year, month) },
+                year = { year -> BlockCountStore.getTotalForYear(this, year) },
+                overall = { BlockCountStore.getTotalOverall(this) }
             )
         )
         addStatRow(
@@ -446,6 +459,28 @@ class SwitchlyOverviewActivity : AppCompatActivity() {
             value = actionCount(SwitchlyActionCountStore.Action.SCHEDULE_DISABLE),
             last = true
         )
+    }
+
+    private fun visibleAppLaunchesForRange(): Int {
+        val counts = if (selectedRange == Range.OVERALL) {
+            AppLaunchCountStore.getMapOverall(this)
+        } else {
+            val rangeName = when (selectedRange) {
+                Range.TODAY -> "today"
+                Range.WEEK -> "week"
+                Range.MONTH -> "month"
+                Range.YEAR -> "year"
+                Range.OVERALL -> error("Handled above")
+            }
+            val (from, to) = UsageTimelineRepo.windowForRange(rangeName)
+            AppLaunchCountStore.getMapForDateRange(this, from, to)
+        }
+        return counts
+            .filterKeys { packageName -> !UsageInsightsAppFilter.shouldHide(this, packageName) }
+            .values
+            .sumOf { it.toLong() }
+            .coerceAtMost(Int.MAX_VALUE.toLong())
+            .toInt()
     }
 
     private fun activeTimeForRange(): Long {

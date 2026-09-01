@@ -23,6 +23,7 @@
             app:title="@string/pref_permissions_title" />
     </com.google.android.material.appbar.AppBarLayout>
 
+    <!-- Content -->
     <ScrollView
         android:id="@+id/permissionsScroll"
         android:layout_width="match_parent"

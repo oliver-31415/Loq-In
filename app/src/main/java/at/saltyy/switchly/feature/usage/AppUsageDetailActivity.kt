@@ -38,7 +38,7 @@ import at.saltyy.switchly.blocking.BlockingRuntime
 import at.saltyy.switchly.data.prefs.AttemptLimitStore
 import at.saltyy.switchly.data.prefs.BlockAttemptStore
 import at.saltyy.switchly.data.prefs.LimitReachedStore
-import at.saltyy.switchly.data.prefs.OpenCountStore
+import at.saltyy.switchly.data.prefs.AppLaunchCountStore
 import at.saltyy.switchly.data.prefs.ProfileStore
 import at.saltyy.switchly.data.prefs.SwitchModeStore
 import at.saltyy.switchly.data.prefs.UsageLimitStore
@@ -316,15 +316,29 @@ class AppUsageDetailActivity : AppCompatActivity() {
         updateMetricChips(pkg, range)
         when (range) {
             Range.TODAY -> {
-                currentSeries = UsageSanity.capSeriesToRange(this, UsageStatsRepo.getTodayPerHour(this, pkg), UsageSanity.RangeCap.TODAY)
-                currentXAxisLabels = buildTodayHourLabels(currentSeries.size)
                 b.chart.visibility = View.GONE
                 b.weekdayRow.visibility = View.GONE
                 b.lineChart.visibility = View.VISIBLE
-                b.lineChart.setValues(currentSeries)
-                b.lineChart.setXAxisLabels(currentXAxisLabels)
-                val total = UsageSanity.capTotalToRange(this, currentSeries.sum(), UsageSanity.RangeCap.TODAY)
-                setHeaderUsageTotal(R.string.usage_today, total)
+                rangeJob = lifecycleScope.launch {
+                    val series = withContext(Dispatchers.IO) {
+                        UsageSanity.capSeriesToRange(
+                            this@AppUsageDetailActivity,
+                            UsageStatsRepo.getTodayPerHour(this@AppUsageDetailActivity, pkg),
+                            UsageSanity.RangeCap.TODAY
+                        )
+                    }
+                    if (currentRange != Range.TODAY) return@launch
+                    currentSeries = series
+                    currentXAxisLabels = buildTodayHourLabels(series.size)
+                    b.lineChart.setValues(series)
+                    b.lineChart.setXAxisLabels(currentXAxisLabels)
+                    val total = UsageSanity.capTotalToRange(
+                        this@AppUsageDetailActivity,
+                        series.sum(),
+                        UsageSanity.RangeCap.TODAY
+                    )
+                    setHeaderUsageTotal(R.string.usage_today, total)
+                }
             }
 
             Range.WEEK -> {
@@ -389,28 +403,26 @@ class AppUsageDetailActivity : AppCompatActivity() {
         metricJob?.cancel()
         metricJob = lifecycleScope.launch {
             val (opens, attempts) = withContext(Dispatchers.IO) {
-                val selectedOpens = when (range) {
-                    Range.TODAY -> OpenCountStore.getTodayAllProfiles(this@AppUsageDetailActivity, pkg)
-                    Range.WEEK -> OpenCountStore.getForCurrentWeekAllProfiles(this@AppUsageDetailActivity, pkg)
-                    Range.MONTH -> OpenCountStore.getForCurrentMonthAllProfiles(this@AppUsageDetailActivity, pkg)
-                    Range.YEAR -> OpenCountStore.getForCurrentYearAllProfiles(this@AppUsageDetailActivity, pkg)
-                    Range.CUSTOM -> {
-                        val start = customRangeStartMillis ?: startOfTodayMillis()
-                        val end = customRangeEndMillis ?: System.currentTimeMillis()
-                        OpenCountStore.getForDateRangeAllProfiles(this@AppUsageDetailActivity, pkg, start, end)
-                    }
+                val (start, end) = when (range) {
+                    Range.TODAY -> UsageTimelineRepo.windowForRange("today")
+                    Range.WEEK -> UsageTimelineRepo.windowForRange("week")
+                    Range.MONTH -> UsageTimelineRepo.windowForRange("month")
+                    Range.YEAR -> UsageTimelineRepo.windowForRange("year")
+                    Range.CUSTOM -> (customRangeStartMillis ?: startOfTodayMillis()) to
+                        (customRangeEndMillis ?: System.currentTimeMillis())
                 }
-                val selectedAttempts = when (range) {
-                    Range.TODAY -> BlockAttemptStore.getToday(this@AppUsageDetailActivity, pkg)
-                    Range.WEEK -> BlockAttemptStore.getForCurrentWeek(this@AppUsageDetailActivity, pkg)
-                    Range.MONTH -> BlockAttemptStore.getForCurrentMonth(this@AppUsageDetailActivity, pkg)
-                    Range.YEAR -> BlockAttemptStore.getForCurrentYear(this@AppUsageDetailActivity, pkg)
-                    Range.CUSTOM -> {
-                        val start = customRangeStartMillis ?: startOfTodayMillis()
-                        val end = customRangeEndMillis ?: System.currentTimeMillis()
-                        BlockAttemptStore.getForDateRange(this@AppUsageDetailActivity, pkg, start, end)
-                    }
-                }
+                val selectedOpens = AppLaunchCountStore.getForDateRange(
+                    this@AppUsageDetailActivity,
+                    pkg,
+                    start,
+                    end
+                )
+                val selectedAttempts = BlockAttemptStore.getForDateRange(
+                    this@AppUsageDetailActivity,
+                    pkg,
+                    start,
+                    end
+                )
                 selectedOpens to selectedAttempts
             }
             if (currentRange != range) {

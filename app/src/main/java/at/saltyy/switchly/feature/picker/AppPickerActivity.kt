@@ -37,6 +37,7 @@ import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -72,6 +73,7 @@ import at.saltyy.switchly.util.AppBlockSafety
 import at.saltyy.switchly.util.EditingLockGuard
 import at.saltyy.switchly.util.LocaleHelper
 import at.saltyy.switchly.util.PackageLaunchIntentCompat
+import at.saltyy.switchly.util.ProtectionEditPolicy
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
@@ -91,6 +93,7 @@ class AppPickerActivity : AppCompatActivity() {
     private var currentProfile: String? = null
     private var currentRuleMode: String = ProfileRuleModeStore.MODE_BLOCK_SELECTED
     private var autoBlockNewAppsCheckbox: CheckBox? = null
+    private var originalManagedPackages: Set<String> = emptySet()
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(LocaleHelper.wrapContext(newBase))
@@ -120,8 +123,21 @@ class AppPickerActivity : AppCompatActivity() {
         return !EditingLockGuard.isLocked(this)
     }
 
+    private fun canTightenCurrentProfile(): Boolean =
+        ProtectionEditPolicy.canTightenActiveProfile(this, currentProfile)
+
+    private fun canChangeSelection(currentlySelected: Boolean, requestedSelected: Boolean): Boolean =
+        ProtectionEditPolicy.canChangeSelection(
+            context = this,
+            profile = currentProfile,
+            allowMode = currentRuleMode == ProfileRuleModeStore.MODE_ALLOW_SELECTED,
+            currentlySelected = currentlySelected,
+            requestedSelected = requestedSelected,
+        )
+
     private fun syncReadOnlyUi() {
         val readOnly = EditingLockGuard.isLocked(this)
+        val canTighten = readOnly && canTightenCurrentProfile()
 
         findViewById<MaterialButtonToggleGroup>(R.id.toggleProfileRuleMode)?.apply {
             isEnabled = !readOnly
@@ -133,16 +149,17 @@ class AppPickerActivity : AppCompatActivity() {
             isEnabled = !readOnly && currentRuleMode != ProfileRuleModeStore.MODE_ALLOW_SELECTED && !currentProfile.isNullOrBlank()
             alpha = if (readOnly) 0.45f else if (isEnabled) 1f else 0.55f
         }
-        listOf(
-            R.id.btnSelectAll,
-            R.id.btnClearAll,
-            R.id.btnSave
-        ).forEach { viewId ->
+        listOf(R.id.btnSelectAll, R.id.btnClearAll).forEach { viewId ->
             findViewById<View>(viewId)?.apply {
                 isEnabled = !readOnly
                 isClickable = !readOnly
                 alpha = if (readOnly) 0.45f else 1f
             }
+        }
+        findViewById<View>(R.id.btnSave)?.apply {
+            isEnabled = !readOnly || canTighten
+            isClickable = !readOnly || canTighten
+            alpha = if (isEnabled) 1f else 0.45f
         }
 
         if (::adapter.isInitialized && adapter.itemCount > 0) {
@@ -175,6 +192,9 @@ class AppPickerActivity : AppCompatActivity() {
         val btnBlockSelectedMode = findViewById<MaterialButton>(R.id.btnBlockSelectedMode)
         val btnAllowSelectedMode = findViewById<MaterialButton>(R.id.btnAllowSelectedMode)
         val tvProfileRuleModeSummary = findViewById<TextView>(R.id.tvProfileRuleModeSummary)
+        val rowRuleSettingsHeader = findViewById<View>(R.id.rowRuleSettingsHeader)
+        val ruleSettingsPanel = findViewById<View>(R.id.ruleSettingsPanel)
+        val ivRuleSettingsChevron = findViewById<ImageView>(R.id.ivRuleSettingsChevron)
         findViewById<ImageButton>(R.id.btnAppRulesInfo).apply {
             imageTintList = ColorStateList.valueOf(toolbarIconColor)
             setColorFilter(toolbarIconColor)
@@ -185,6 +205,17 @@ class AppPickerActivity : AppCompatActivity() {
             setOnClickListener { showAppRulesInfo() }
         }
         autoBlockNewAppsCheckbox = cbAutoBlockNewApps
+
+        fun setRuleSettingsExpanded(expanded: Boolean) {
+            ruleSettingsPanel.visibility = if (expanded) View.VISIBLE else View.GONE
+            ivRuleSettingsChevron.setImageResource(
+                if (expanded) R.drawable.keyboard_arrow_up_24 else R.drawable.keyboard_arrow_down_24
+            )
+        }
+        setRuleSettingsExpanded(false)
+        rowRuleSettingsHeader.setOnClickListener {
+            setRuleSettingsExpanded(ruleSettingsPanel.visibility != View.VISIBLE)
+        }
 
         rvApps.layoutManager = LinearLayoutManager(this)
 
@@ -207,6 +238,7 @@ class AppPickerActivity : AppCompatActivity() {
         val preselectedManaged: Set<String> = currentProfile?.takeIf { it.isNotBlank() }
             ?.let { selectedPackagesForCurrentMode(it) }
             ?: emptySet()
+        originalManagedPackages = AppBlockSafety.sanitizeManagedPackages(this, preselectedManaged)
 
         adapter = AppListAdapter(
             allApps = emptyList(),
@@ -222,7 +254,13 @@ class AppPickerActivity : AppCompatActivity() {
                     adapter.notifyPkgChanged(app.packageName)
                 }
             },
-            onSetSessionLimitClicked = { app -> showSessionLimitDialog(app) },
+            onSetSessionLimitClicked = { app ->
+                QuickLimitDialogs.showForApp(
+                    activity = this,
+                    pkg = app.packageName,
+                    label = app.label
+                ) { adapter.notifyPkgChanged(app.packageName) }
+            },
             onWebsiteRulesClicked = { app -> openWebsiteRulesFromPicker(app) },
             onInAppRulesClicked = { app -> openInAppRulesFromPicker(app) },
             onRowActionsClicked = { app, hasWebsiteRules, hasInAppRules ->
@@ -231,7 +269,9 @@ class AppPickerActivity : AppCompatActivity() {
             onProtectedSelectionRequested = { app, onAllowed ->
                 ensureAppCanBeManaged(app, onAllowed)
             },
-            isReadOnlyProvider = { EditingLockGuard.isLocked(this) }
+            onSelectionChanged = { updateClearButtonLabel(btnClearAll) },
+            isReadOnlyProvider = { EditingLockGuard.isLocked(this) },
+            canChangeSelectionProvider = { current, requested -> canChangeSelection(current, requested) }
         )
         rvApps.adapter = adapter
 
@@ -271,7 +311,13 @@ class AppPickerActivity : AppCompatActivity() {
                             adapter.notifyPkgChanged(app.packageName)
                         }
                     },
-                    onSetSessionLimitClicked = { app -> showSessionLimitDialog(app) },
+                    onSetSessionLimitClicked = { app ->
+                        QuickLimitDialogs.showForApp(
+                            activity = this,
+                            pkg = app.packageName,
+                            label = app.label
+                        ) { adapter.notifyPkgChanged(app.packageName) }
+                    },
                     onWebsiteRulesClicked = { app -> openWebsiteRulesFromPicker(app) },
                     onInAppRulesClicked = { app -> openInAppRulesFromPicker(app) },
                     onRowActionsClicked = { app, hasWebsiteRules, hasInAppRules ->
@@ -280,7 +326,9 @@ class AppPickerActivity : AppCompatActivity() {
                     onProtectedSelectionRequested = { app, onAllowed ->
                         ensureAppCanBeManaged(app, onAllowed)
                     },
-                    isReadOnlyProvider = { EditingLockGuard.isLocked(this) }
+                    onSelectionChanged = { updateClearButtonLabel(btnClearAll) },
+                    isReadOnlyProvider = { EditingLockGuard.isLocked(this) },
+                    canChangeSelectionProvider = { current, requested -> canChangeSelection(current, requested) }
                 )
                 rvApps.adapter = adapter
 
@@ -340,7 +388,7 @@ class AppPickerActivity : AppCompatActivity() {
                 addAll(AttemptLimitStore.getAllLimitedPackages(context, profile))
             }
         }.orEmpty()
-        // Hidden apps disappear only from new selections. Existing profile entries and rules remain visible and editable.
+        // Hidden apps disappear from new selections. Existing configuration stays visible/editable, but protection is ignored for the package until it is unhidden.
         val packagesToResolve = preselectedManaged + activeInAppRulePackages + activeLimitPackages
 
         if (packagesToResolve.isEmpty()) {
@@ -668,7 +716,6 @@ class AppPickerActivity : AppCompatActivity() {
         )
     }
 
-
     private fun setupSearch(etSearch: TextInputEditText) {
         etSearch.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -732,7 +779,7 @@ class AppPickerActivity : AppCompatActivity() {
 
         btnClearAll.setOnClickListener {
             if (!ensureSwitchlyDisabledForAppRules()) return@setOnClickListener
-            val unavailableCount = adapter.unavailableManagedCount()
+            val unavailableCount = adapter.unavailableManagedCount(this)
             if (unavailableCount > 0) {
                 val removed = adapter.clearUnavailable(this)
                 updateClearButtonLabel(btnClearAll)
@@ -754,7 +801,7 @@ class AppPickerActivity : AppCompatActivity() {
 
     private fun updateClearButtonLabel(btnClearAll: MaterialButton) {
         btnClearAll.setText(
-            if (::adapter.isInitialized && adapter.unavailableManagedCount() > 0) {
+            if (::adapter.isInitialized && adapter.unavailableManagedCount(this) > 0) {
                 R.string.app_picker_clear_unavailable
             } else if (currentRuleMode == ProfileRuleModeStore.MODE_ALLOW_SELECTED) {
                 R.string.app_picker_clear_all_allow
@@ -773,7 +820,6 @@ class AppPickerActivity : AppCompatActivity() {
 
     private fun setupSaveButton(btnSave: Button) {
         btnSave.setOnClickListener {
-            if (!ensureSwitchlyDisabledForAppRules()) return@setOnClickListener
             val profile = currentProfile
             if (profile.isNullOrEmpty()) {
                 Toast.makeText(this, R.string.select_profile_first, Toast.LENGTH_SHORT).show()
@@ -782,6 +828,18 @@ class AppPickerActivity : AppCompatActivity() {
 
             val managed = AppBlockSafety.sanitizeManagedPackages(this, adapter.getManagedPackages())
             val allowMode = currentRuleMode == ProfileRuleModeStore.MODE_ALLOW_SELECTED
+            if (!ProtectionEditPolicy.canSaveSelection(
+                    context = this,
+                    profile = profile,
+                    allowMode = allowMode,
+                    original = originalManagedPackages,
+                    requested = managed,
+                )
+            ) {
+                EditingLockGuard.showLockedDialog(this, R.string.rules_tighten_only_active_message)
+                syncReadOnlyUi()
+                return@setOnClickListener
+            }
             if (allowMode && managed.isEmpty()) {
                 AlertDialog.Builder(this)
                     .setTitle(R.string.allow_mode_empty_save_title)
@@ -799,11 +857,19 @@ class AppPickerActivity : AppCompatActivity() {
     }
 
     private fun saveManagedApps(profile: String, managed: Set<String>) {
-        if (EditingLockGuard.isLocked(this)) {
+        val allowMode = currentRuleMode == ProfileRuleModeStore.MODE_ALLOW_SELECTED
+        if (!ProtectionEditPolicy.canSaveSelection(
+                context = this,
+                profile = profile,
+                allowMode = allowMode,
+                original = originalManagedPackages,
+                requested = managed,
+            )
+        ) {
             syncReadOnlyUi()
             return
         }
-        if (currentRuleMode == ProfileRuleModeStore.MODE_ALLOW_SELECTED) {
+        if (allowMode) {
             ProfileStore.setAllowedForProfile(this, profile, managed)
         } else {
             ProfileStore.setBlockedForProfile(this, profile, managed)

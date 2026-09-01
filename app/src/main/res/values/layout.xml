@@ -1,6 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Runtime-applied only on inconsistent API-34+ framework images. -->
+    <style name="SwitchlyApi34FrameworkCompatOverlay">
+        <!-- Prevent MaterialTextView from routing text-appearance line heights through
+             TextViewCompat.setLineHeight(int, float), which is absent on the broken image. -->
+        <item name="textAppearanceLineHeightEnabled">false</item>
+    </style>
+
     <!-- =========================
          THEME: Blocker variant
          ========================= -->

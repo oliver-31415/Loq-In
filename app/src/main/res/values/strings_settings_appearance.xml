@@ -92,7 +92,9 @@
         <item>de</item>
     </string-array>
 
+    <!-- ====================================================== -->
     <!-- SETTINGS - Blocking and feature preferences -->
+    <!-- ====================================================== -->
     <string name="pref_block_notifications_title">Hide blocked app notifications</string>
 
 </resources>

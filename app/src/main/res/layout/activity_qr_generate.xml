@@ -21,6 +21,7 @@
             app:title="@string/qr_generate_title" />
     </com.google.android.material.appbar.AppBarLayout>
 
+    <!-- Content -->
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -42,6 +43,17 @@
                 android:layout_marginTop="16dp"
                 android:contentDescription="@string/qr_title"
                 android:scaleType="fitCenter" />
+
+            <!-- Scanner guidance -->
+            <TextView
+                android:id="@+id/tvScannerHint"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:text="@string/qr_scan_with_switchly_hint"
+                android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                android:textColor="?android:attr/textColorSecondary" />
 
             <!-- URI text -->
             <TextView

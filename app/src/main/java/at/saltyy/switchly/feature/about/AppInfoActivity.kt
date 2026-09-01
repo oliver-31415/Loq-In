@@ -57,7 +57,6 @@ class AppInfoActivity : TilesInfoActivity() {
         val store = getString(R.string.about_store_url)
         val downloads = getString(R.string.about_downloads_url)
         val repo = getString(R.string.about_gitlab_url)
-        val discord = getString(R.string.about_discord_url)
 
         return listOf(
             Tile(
@@ -166,17 +165,6 @@ class AppInfoActivity : TilesInfoActivity() {
                 iconRes = R.drawable.gitlab_24,
                 tintIcon = false,
                 copiedToast = getString(R.string.copied)
-            ),
-            Tile(
-                getString(R.string.about_discord_label),
-                displayUrl(discord),
-                sectionTitle = getString(R.string.about_section_links),
-                onClick = { openUrl(discord) },
-                copyValue = discord,
-                showCopyButton = true,
-                iconRes = R.drawable.discord_24,
-                tintIcon = false,
-                copiedToast = getString(R.string.about_discord_copied)
             ),
         )
     }

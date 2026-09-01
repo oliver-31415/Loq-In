@@ -21,6 +21,7 @@
             app:title="@string/app_lock_screen_title" />
     </com.google.android.material.appbar.AppBarLayout>
 
+    <!-- Content -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"

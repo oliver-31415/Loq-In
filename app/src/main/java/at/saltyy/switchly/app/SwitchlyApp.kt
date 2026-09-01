@@ -34,6 +34,8 @@ import at.saltyy.switchly.platform.receiver.wifi.WifiTriggerMonitor
 import at.saltyy.switchly.security.AppLockManager
 import at.saltyy.switchly.security.PlayIntegrityRuntime
 import at.saltyy.switchly.util.LocaleHelper
+import at.saltyy.switchly.util.AdvancedProtectionCompat
+import at.saltyy.switchly.util.FrameworkApi34Compat
 import at.saltyy.switchly.util.ManagedDevicePolicyHelper
 import at.saltyy.switchly.util.PersistentStatusNotifier
 import com.google.firebase.FirebaseApp
@@ -48,6 +50,10 @@ class SwitchlyApp : Application() {
 
     override fun onCreate() {
         super.onCreate()
+
+        // Install the API-34 compatibility shield before any activity is created.
+        // It is a no-op on conforming Android framework builds.
+        FrameworkApi34Compat.installActivityCrashShield(this)
 
         // Firebase (Auth/Cloud Sync) is only initialized for Firebase-enabled APK builds.
         // Offline/file-backup builds skip Firebase startup completely.
@@ -75,6 +81,18 @@ class SwitchlyApp : Application() {
 
         val appContext = applicationContext
 
+        // Android 16 Advanced Protection can change while Switchly is running.
+        // Reconcile the limited UsageEvents fallback whenever the public AAPM state changes.
+        AdvancedProtectionCompat.registerProcessObserver(appContext) {
+            startupExecutor.execute {
+                if (SwitchModeStore.isEnabled(appContext)) {
+                    BlockingRuntime.ensureRunning(appContext)
+                } else {
+                    BlockingRuntime.stop(appContext)
+                }
+            }
+        }
+
         // Startup work below can touch system services, Google Play services or disk.
         // Do it after Application.onCreate() returns so Android/Samsung cold starts do not get stuck in finishAttachApplication or slow binder calls.
         startupExecutor.execute {
@@ -95,10 +113,8 @@ class SwitchlyApp : Application() {
             // Diagnostic-only Play Integrity probe. Never blocks users.
             runCatching { PlayIntegrityRuntime.requestSoftCheck(appContext, "app_start") }
 
-            // Accessibility checks may call system services via binder.
-            val enabled = SwitchModeStore.isEnabled(appContext)
-            val canRun = BlockingRuntime.isAccessibilityActive(appContext)
-            if (enabled && canRun) {
+            // Reconcile the full Accessibility runtime health and, on Android 16 Advanced Protection devices, the limited UsageEvents fallback when needed.
+            if (SwitchModeStore.isEnabled(appContext)) {
                 BlockingRuntime.ensureRunning(appContext)
             }
             PersistentStatusNotifier.refresh(appContext)

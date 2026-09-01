@@ -1048,9 +1048,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun isAppPickingLockedWhileEnabled(): Boolean {
-        // Editing the app list must never be possible while protection is enabled, even during a temporary disable window.
-        // The old mixed-mode allowance is intentionally ignored here; users may still open read-only/status screens, but app-rule changes require Switchly to be disabled first.
-        return EditingLockGuard.isLocked(this)
+        if (!EditingLockGuard.isLocked(this)) return false
+        return !AutomationModeStore.isMixedAllowAppPicking(this)
     }
 
     private fun isProfileSwitchLockedWhileEnabled(): Boolean {
@@ -1076,19 +1075,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         return !AutomationModeStore.isProfileSwitchingAllowedWhileEnabled(this)
-    }
-
-    private fun ensureCanOpenAppPicker(showFeedback: Boolean = true): Boolean {
-        if (isNfcLocked() || isAppPickingLockedWhileEnabled()) {
-            if (showFeedback) {
-                EditingLockGuard.showLockedDialog(
-                    this,
-                    R.string.toast_disable_switchly_to_edit_blocked_apps,
-                )
-            }
-            return false
-        }
-        return true
     }
 
     private fun ensureCanRemoveBlockedApp(showFeedback: Boolean = true): Boolean {
@@ -1475,9 +1461,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openAppPickerIfUnlocked() {
-        if (!ensureCanOpenAppPicker(showFeedback = true)) {
+        if (isAppPickingLockedWhileEnabled()) {
+            EditingLockGuard.showLockedDialog(this, R.string.toast_disable_switchly_to_edit_blocked_apps)
             return
         }
+        // AppPickerActivity enforces one-way strictness while protection is active.
         startActivity(Intent(this, AppPickerActivity::class.java))
     }
 
@@ -2351,8 +2339,25 @@ class MainActivity : AppCompatActivity() {
             val spanFullRow = chunk.size == 1
             chunk.forEach { tile ->
                 tile.visibility = View.VISIBLE
+                tile.minimumHeight = dpQuickAction(136)
                 tile.layoutParams = quickActionTileLayoutParams(spanFullRow)
                 row.addView(tile)
+            }
+            equalizeQuickActionRowHeights(row)
+        }
+    }
+
+    private fun equalizeQuickActionRowHeights(row: LinearLayout) {
+        row.post {
+            val tiles = (0 until row.childCount).map { row.getChildAt(it) }
+                .filter { it.isVisible }
+            val maxHeight = tiles.maxOfOrNull { it.measuredHeight } ?: return@post
+            tiles.forEach { tile ->
+                val lp = tile.layoutParams
+                if (lp.height != maxHeight) {
+                    lp.height = maxHeight
+                    tile.layoutParams = lp
+                }
             }
         }
     }
@@ -2370,13 +2375,15 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun dpQuickAction(value: Int): Int =
+        (value * resources.displayMetrics.density).toInt()
+
     private fun quickActionTileLayoutParams(spanFullRow: Boolean): LinearLayout.LayoutParams {
         val density = resources.displayMetrics.density
         val margin = (6 * density).toInt()
-        val tileHeight = (136 * density).toInt()
         return LinearLayout.LayoutParams(
             0,
-            tileHeight,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
             if (spanFullRow) 2f else 1f
         ).apply {
             setMargins(margin, margin, margin, margin)
@@ -2879,7 +2886,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun applyLockedUi(locked: Boolean) {
         val profileLocked = locked || isProfileSwitchLockedWhileEnabled()
-        val appPickingLocked = locked || isAppPickingLockedWhileEnabled()
+        val appPickingLocked = isAppPickingLockedWhileEnabled()
         val websitesLocked = EditingLockGuard.isLocked(this)
         val inAppLocked = EditingLockGuard.isLocked(this)
         val nfcWriteLocked = isNfcTagWritingLocked()
@@ -3047,46 +3054,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showBlockedAppLimitActions(item: AppDisplay) {
-        val options = arrayOf(
-            getString(R.string.dashboard_blocked_app_action_time_limit),
-            getString(R.string.dashboard_blocked_app_action_open_limit)
+        QuickLimitDialogs.showForApp(
+            activity = this,
+            pkg = item.pkg,
+            label = item.label,
+            onChanged = { refreshBlockedList() }
         )
-
-        showSwitchlyOptionDialog(
-            title = getString(R.string.dashboard_blocked_app_limits_title),
-            subtitle = item.label,
-            options = options.mapIndexed { index, label ->
-                SwitchlyDialogOption(
-                    title = label,
-                    summary = getString(
-                        if (index == 0) {
-                            R.string.dashboard_blocked_app_action_time_limit_summary
-                        } else {
-                            R.string.dashboard_blocked_app_action_open_limit_summary
-                        }
-                    ),
-                    iconRes = if (index == 0) R.drawable.schedule_24 else R.drawable.login_24
-                )
-            },
-            showCancelButton = false
-        ) { which ->
-            when (which) {
-                0 -> QuickLimitDialogs.showForApp(
-                    activity = this,
-                    pkg = item.pkg,
-                    label = item.label,
-                    startOnAttempts = false,
-                    onChanged = { refreshBlockedList() }
-                )
-                1 -> QuickLimitDialogs.showForApp(
-                    activity = this,
-                    pkg = item.pkg,
-                    label = item.label,
-                    startOnAttempts = true,
-                    onChanged = { refreshBlockedList() }
-                )
-            }
-        }
     }
 
     private fun confirmRemoveBlockedApp(item: AppDisplay) {
@@ -3221,9 +3194,12 @@ class MainActivity : AppCompatActivity() {
             }
 
             blockedAdapter.submitList(items) {
-                // The managed-app rows include live status chips (e.g. "Limit reached") that are derived from runtime state rather than DiffUtil item content.
-                // When the list contents themselves have not changed, returning to Home after a limit is hit would otherwise keep the old chip text until some unrelated state change forced a rebind.
-                notifyBlockedChipsChanged()
+                // Rule/limit summaries are backed by stores rather than AppDisplay fields, so DiffUtil can legitimately see the same item after an edit.
+                // Rebind the committed managed-app rows without invalidating the whole RecyclerView.
+                val itemCount = blockedAdapter.itemCount
+                if (itemCount > 0) {
+                    blockedAdapter.notifyItemRangeChanged(0, itemCount)
+                }
             }
 
         }

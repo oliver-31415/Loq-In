@@ -89,8 +89,8 @@
     <string name="pref_lock_active_temporary_timer_summary">Home kann einen laufenden Schutz-Timer nicht ersetzen oder verkürzen. Eine temporäre Pause kann nur beendet werden, um den Schutz wiederherzustellen. Erlaubte NFC-, QR- und Barcode-Aktionen funktionieren weiter.</string>
     <string name="mixed_channels_locked_while_switchly_enabled">Deaktiviere Switchly, um Steuerungsmethoden und Zugriffsregeln zu bearbeiten.</string>
     <string name="pref_mixed_allow_app_picking_title">App-Auswahl erlauben</string>
-    <string name="pref_mixed_allow_app_picking_summary">Erlaubt das Öffnen der App-Auswahl, während Switchly aktiv ist.</string>
-    <string name="toggle_detail_mixed_allow_app_picking">Standardmäßig ist das aus Sicherheitsgründen gesperrt, solange Switchly aktiv ist. Aktiviere dies nur, wenn App-Listen-Änderungen trotz aktivem Schutz gewünscht sind.</string>
+    <string name="pref_mixed_allow_app_picking_summary">Erlaubt das Öffnen der App-Regeln, während Switchly aktiv ist. Es sind nur Änderungen erlaubt, die den Schutz verstärken.</string>
+    <string name="toggle_detail_mixed_allow_app_picking">Wenn aktiviert, können App-Regeln auch bei aktivem Switchly geöffnet werden. Bestehender Schutz kann weiterhin nicht entfernt werden: Bei Ausgewählte blockieren sind nur Ergänzungen möglich, bei Ausgewählte erlauben nur das Entfernen erlaubter Ausnahmen.</string>
     <string name="pref_mixed_allow_profile_switching_title">Profile verwalten/wechseln erlauben</string>
     <string name="pref_mixed_allow_profile_switching_summary">Erlaubt das Verwalten oder Wechseln von Profilen, während Switchly aktiv ist.</string>
     <string name="toggle_detail_mixed_allow_profile_switching">Standardmäßig gesperrt, solange Switchly aktiv ist. Aktiviere das nur, wenn Profile bewusst während aktivem Schutz verwaltet oder gewechselt werden dürfen.</string>
@@ -209,7 +209,7 @@
     <string name="toggle_subsection_status">Systemstatus</string>
     <string name="toggle_subsection_status_summary">Konfiguriert die optionale dauerhafte Benachrichtigung in der Android-Systemleiste.</string>
     <string name="pref_persistent_status_notification_title">Dauerhafte Statusbenachrichtigung</string>
-    <string name="pref_persistent_status_notification_summary">Zeigt eine lautlose dauerhafte Benachrichtigung mit optionaler Aktivzeit und App-Information.</string>
+    <string name="pref_persistent_status_notification_summary">Zeigt eine lautlose dauerhafte Benachrichtigung mit optionaler Aktivzeit, App-Information und Countdown für temporäre Zustände.</string>
     <string name="pref_persistent_status_notification_mode_title">Benachrichtigungsdetails</string>
     <string name="status_notification_mode_status_only">Nur Status</string>
     <string name="status_notification_mode_active_time">Status + Aktivzeit</string>
@@ -299,10 +299,20 @@
     <string name="home_custom_blocked_apps_summary">Zeigt die ausgewählten Apps des aktiven Profils und den Verwalten-Button.</string>
     <string name="home_custom_profile_dropdown_summary">Zeigt die Profilauswahl innerhalb der Schutzsteuerung.</string>
 
+    <!-- ====================================================== -->
     <!-- vivo/iQOO Accessibility process-resilience guard -->
+    <!-- ====================================================== -->
     <string name="oem_accessibility_guard_channel_name">Schutz-Zuverlässigkeit</string>
     <string name="oem_accessibility_guard_channel_description">Hält den Switchly-Schutz auf Geräten zuverlässig aktiv, bei denen die Bedienungshilfe beim Entfernen aus den letzten Apps beendet werden kann.</string>
     <string name="oem_accessibility_guard_title">Switchly-Schutz aktiv</string>
     <string name="oem_accessibility_guard_text">Hält den Bedienungshilfe-Schutz auf diesem Gerät aktiv.</string>
+
+    <!-- ====================================================== -->
+    <!-- Temporary status notification -->
+    <!-- ====================================================== -->
+    <string name="status_notification_temp_disable_title">Temporäre Pause</string>
+    <string name="status_notification_temp_enable_title">Temporärer Schutz</string>
+    <string name="status_notification_temp_disable_body">Der Schutz wird nach Ablauf des Timers wieder aktiviert</string>
+    <string name="status_notification_temp_enable_body">Der temporäre Schutz endet nach Ablauf des Timers</string>
 
 </resources>

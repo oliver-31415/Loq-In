@@ -49,6 +49,8 @@ import androidx.preference.PreferenceManager
 import at.saltyy.switchly.BuildConfig
 import at.saltyy.switchly.R
 import at.saltyy.switchly.blocking.BlockingRuntime
+import at.saltyy.switchly.blocking.OemAccessibilityKeepAlive
+import at.saltyy.switchly.blocking.UsageAccessFallbackBlocking
 import at.saltyy.switchly.data.prefs.AdvancedModeStore
 import at.saltyy.switchly.data.prefs.AppLogStore
 import at.saltyy.switchly.data.prefs.AutomationModeStore
@@ -57,6 +59,7 @@ import at.saltyy.switchly.data.prefs.BlockedInboxStore
 import at.saltyy.switchly.data.prefs.BarcodeScanCountStore
 import at.saltyy.switchly.data.prefs.DomainBlockStore
 import at.saltyy.switchly.data.prefs.EmergencyBypassStore
+import at.saltyy.switchly.data.prefs.IgnoredUsageAppsStore
 import at.saltyy.switchly.data.prefs.InAppRuleStore
 import at.saltyy.switchly.data.prefs.LastBlockReasonStore
 import at.saltyy.switchly.data.prefs.NfcDiagnosticsStore
@@ -90,6 +93,7 @@ import at.saltyy.switchly.ui.dialog.SwitchlyDialogOption
 import at.saltyy.switchly.ui.dialog.showAccented
 import at.saltyy.switchly.ui.dialog.showSwitchlyMultiChoiceDialog
 import at.saltyy.switchly.util.AppSigningInfo
+import at.saltyy.switchly.util.AdvancedProtectionCompat
 import at.saltyy.switchly.util.EditingLockGuard
 import at.saltyy.switchly.util.BatteryOptimizationCompat
 import at.saltyy.switchly.util.NfcLaunchAccessCompat
@@ -147,11 +151,34 @@ class SupportActivity : AppCompatActivity() {
             alpha = 1f
         }
 
+        findViewById<View>(R.id.rowSupportEmail).setOnClickListener { openEmail(email) }
         findViewById<ImageButton>(R.id.btnCopyEmailInline).apply {
             ImageViewCompat.setImageTintList(this, AccentColor.getActiveColor(this@SupportActivity))
             setOnClickListener {
                 copyToClipboard(label = getString(R.string.support_copy_email), text = email)
                 Toast.makeText(this@SupportActivity, getString(R.string.support_copied), Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        val discord = getString(R.string.support_discord_url)
+        findViewById<TextView>(R.id.tvSupportDiscordUrl).text = displayUrl(discord)
+        findViewById<View>(R.id.rowSupportDiscord).setOnClickListener { openUrl(discord) }
+        findViewById<ImageButton>(R.id.btnCopyDiscordInline).apply {
+            ImageViewCompat.setImageTintList(this, AccentColor.getActiveColor(this@SupportActivity))
+            setOnClickListener {
+                copyToClipboard(label = getString(R.string.support_discord_label), text = discord)
+                Toast.makeText(this@SupportActivity, getString(R.string.support_discord_copied), Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        val issues = getString(R.string.support_gitlab_issues_url)
+        findViewById<TextView>(R.id.tvSupportGitLabIssuesUrl).text = displayUrl(issues)
+        findViewById<View>(R.id.rowSupportGitLabIssues).setOnClickListener { openUrl(issues) }
+        findViewById<ImageButton>(R.id.btnCopyGitLabIssuesInline).apply {
+            ImageViewCompat.setImageTintList(this, AccentColor.getActiveColor(this@SupportActivity))
+            setOnClickListener {
+                copyToClipboard(label = getString(R.string.support_gitlab_issues_label), text = issues)
+                Toast.makeText(this@SupportActivity, getString(R.string.support_gitlab_issues_copied), Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -198,6 +225,23 @@ class SupportActivity : AppCompatActivity() {
         val cm = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
         cm.setPrimaryClip(ClipData.newPlainText(label, text))
     }
+
+    private fun openEmail(email: String) {
+        val uri = "mailto:$email?subject=${android.net.Uri.encode(getString(R.string.support_email_subject))}".toUri()
+        runCatching { startActivity(Intent(Intent.ACTION_SENDTO, uri)) }
+            .onFailure {
+                Toast.makeText(this, getString(R.string.support_no_email_app), Toast.LENGTH_SHORT).show()
+            }
+    }
+
+    private fun openUrl(url: String) {
+        runCatching { startActivity(Intent(Intent.ACTION_VIEW, url.toUri())) }
+    }
+
+    private fun displayUrl(url: String): String =
+        url.removePrefix("https://")
+            .removePrefix("http://")
+            .removeSuffix("/")
 
     private fun showReportSelectionDialog() {
         val sp = PreferenceManager.getDefaultSharedPreferences(this)
@@ -580,6 +624,14 @@ class SupportActivity : AppCompatActivity() {
         line(
             "Selected apps (active profile)",
             blockedCurrentProfile
+        )
+        line(
+            "Hidden usage apps",
+            IgnoredUsageAppsStore.getIgnoredPackages(this@SupportActivity).size
+        )
+        line(
+            "Hidden app list / protection exclusions",
+            IgnoredUsageAppsStore.getAppPickerHiddenPackages(this@SupportActivity).size
         )
         line(
             "Website rules enabled",
@@ -1027,8 +1079,16 @@ class SupportActivity : AppCompatActivity() {
             BlockingRuntime.isAccessibilityActive(this@SupportActivity)
         )
         line(
+            "Android Advanced Protection",
+            AdvancedProtectionCompat.isEnabled(this@SupportActivity)
+        )
+        line(
             "Usage access",
             UsageStatsRepo.hasUsageAccess(this@SupportActivity)
+        )
+        line(
+            "Limited app-block fallback running",
+            UsageAccessFallbackBlocking.isRunning(this@SupportActivity)
         )
         line(
             "Location services enabled",
@@ -1300,14 +1360,31 @@ class SupportActivity : AppCompatActivity() {
             "Accessibility active heartbeat",
             runtimeDiagnostics.accessibilityActive
         )
+        val advancedProtectionEnabled = AdvancedProtectionCompat.isEnabled(this@SupportActivity)
+        val limitedFallbackRunning = UsageAccessFallbackBlocking.isRunning(this@SupportActivity)
         line(
             "Accessibility connection state",
             when {
                 runtimeDiagnostics.accessibilityActive -> "active"
+                advancedProtectionEnabled && limitedFallbackRunning -> "advanced_protection_limited_fallback"
+                advancedProtectionEnabled -> "advanced_protection_accessibility_unavailable"
                 runtimeDiagnostics.accessibilityEnabledInSettings -> "enabled_not_connected"
                 else -> "disabled"
             }
         )
+        line("Advanced Protection Mode", advancedProtectionEnabled)
+        line("Limited UsageEvents fallback running", limitedFallbackRunning)
+        line(
+            "Limited UsageEvents fallback eligible",
+            advancedProtectionEnabled &&
+                !runtimeDiagnostics.accessibilityActive &&
+                UsageStatsRepo.hasUsageAccess(this@SupportActivity) &&
+                SwitchModeStore.isEnabled(this@SupportActivity)
+        )
+        line("OEM Accessibility guard device", OemAccessibilityKeepAlive.isAffectedDevice())
+        line("Accessibility previously healthy on OEM", OemAccessibilityKeepAlive.hasSeenAccessibilityHealthy(this@SupportActivity))
+        line("Last OEM Accessibility healthy", formatDateTime(OemAccessibilityKeepAlive.lastAccessibilityHealthyMs(this@SupportActivity)))
+        line("Likely OEM Accessibility disable", OemAccessibilityKeepAlive.isLikelyAccessibilityDisabledByOem(this@SupportActivity))
         line(
             "Accessibility heartbeat age ms",
             runtimeDiagnostics.heartbeatAgeMs

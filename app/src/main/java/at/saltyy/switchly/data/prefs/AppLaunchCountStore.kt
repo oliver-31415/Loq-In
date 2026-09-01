@@ -103,6 +103,26 @@ object AppLaunchCountStore {
     fun getForDateRange(context: Context, packageName: String, startMs: Long, endMs: Long): Int =
         getMapForDateRange(context, startMs, endMs)[packageName] ?: 0
 
+    fun getMapOverall(context: Context): Map<String, Int> {
+        val prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val out = linkedMapOf<String, Int>()
+        prefs.all.forEach { (key, value) ->
+            if (!key.startsWith(PREFIX)) return@forEach
+            val rest = key.removePrefix(PREFIX)
+            if (rest.length < 10 || rest.getOrNull(8) != '_') return@forEach
+            if (rest.take(8).toIntOrNull() == null) return@forEach
+            val pkg = rest.substring(9)
+            if (pkg.isBlank()) return@forEach
+            val count = numericValue(value).coerceIn(0L, Int.MAX_VALUE.toLong()).toInt()
+            if (count > 0) {
+                out[pkg] = ((out[pkg] ?: 0).toLong() + count.toLong())
+                    .coerceAtMost(Int.MAX_VALUE.toLong())
+                    .toInt()
+            }
+        }
+        return out
+    }
+
     fun getTotalToday(context: Context): Int = totalForDays(context, setOf(todayYmd()))
 
     fun getTotalForLastNDays(context: Context, days: Int): Int {

@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
+    <!-- ====================================================== -->
+    <!-- Relative time -->
+    <!-- ====================================================== -->
     <string name="relative_time_just_now">just now</string>
     <string name="relative_time_yesterday">yesterday</string>
     <plurals name="relative_time_minutes_ago">
@@ -14,4 +18,5 @@
         <item quantity="one">%1$d day ago</item>
         <item quantity="other">%1$d days ago</item>
     </plurals>
+
 </resources>

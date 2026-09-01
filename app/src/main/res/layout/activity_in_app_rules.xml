@@ -21,6 +21,7 @@
             app:title="@string/in_app_rules_title" />
     </com.google.android.material.appbar.AppBarLayout>
 
+    <!-- Content -->
     <androidx.core.widget.NestedScrollView
         android:id="@+id/scrollContent"
         android:layout_width="match_parent"

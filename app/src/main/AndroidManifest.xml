@@ -11,6 +11,9 @@
     <!-- Usage access for screen-time statistics and app blocking decisions -->
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:ignore="ProtectedPermissions" />
 
+    <!-- Android 16+ public API used to detect Advanced Protection Mode and explain limited fallback behavior -->
+    <uses-permission android:name="android.permission.QUERY_ADVANCED_PROTECTION_MODE" tools:targetApi="36" />
+
     <!-- Direct system prompt for excluding Switchly from battery optimization -->
     <uses-permission
         android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"
@@ -127,6 +130,12 @@
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules">
+
+        <!-- Maps SDK 20.0.0 no longer declares this itself.
+              The legacy renderer can still be selected by older Google Play services and otherwise crashes on org.apache.http.*. -->
+        <uses-library
+            android:name="org.apache.http.legacy"
+            android:required="false" />
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
@@ -401,6 +410,11 @@
         <!-- App and website usage overview -->
         <activity
             android:name=".feature.usage.AppWebsiteUsageActivity"
+            android:exported="false" />
+
+        <!-- Most-used app screen-time distribution -->
+        <activity
+            android:name=".feature.usage.MostUsedAppsActivity"
             android:exported="false" />
 
         <!-- App usage detail screen -->
@@ -757,6 +771,20 @@
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="Keeps the user-enabled Switchly Accessibility blocking runtime alive on vivo/iQOO devices that otherwise terminate the app process when its Recent Apps task is removed." />
+        </service>
+
+        <!--
+             Android 16 Advanced Protection can make Accessibility unavailable. When that happens, this service provides a limited best-effort whole-app fallback using UsageEvents only.
+             It does not provide website or in-app Accessibility enforcement.
+        -->
+        <service
+            android:name=".blocking.UsageAccessFallbackBlockingService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse"
+            android:stopWithTask="false">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Provides limited user-configured whole-app blocking when Android Advanced Protection makes the Accessibility-based runtime unavailable and the user has granted Usage Access." />
         </service>
 
         <!-- Notification listener service used to hide notifications from blocked apps -->

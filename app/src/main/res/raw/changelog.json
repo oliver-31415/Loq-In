@@ -1,6 +1,63 @@
 {
     "releases": [
         {
+            "version": "v2.2.7",
+            "date": "August 31, 2026",
+            "releaseType": "public",
+            "sourceVersions": [
+                "v2.2.0",
+                "v2.2.1",
+                "v2.2.2",
+                "v2.2.3",
+                "v2.2.4",
+                "v2.2.5",
+                "v2.2.6"
+            ],
+            "body": [
+                "Switchly 2.2 is a major update to setup, protection, profiles, statistics, automation, reliability, and day-to-day usability across the app.",
+                "Reworked onboarding and Home around clearer protection setup, app selection, control channels, configurable Home layouts, Quick Actions, setup health, and a more focused first-run experience.",
+                "Expanded profile-based protection with separate Block selected / Allow selected modes for Apps, Websites, and supported In-app rules, including safer profile migration, clearer previews, and one-way rule editing that allows protection to be made stricter while Switchly is active without allowing existing restrictions to be weakened.",
+                "Added universal Temporary Enable and Temporary Disable actions for NFC, QR, barcodes, and Home controls, improved overlapping temporary-state restoration, Emergency Unlock handling, recovery access to control-mode settings, and live countdowns in the optional persistent status notification.",
+                "Reworked Keys & codes and NFC handling with improved writable and UID-only tag support, structured profile/action/duration configuration, per-tag limits and cooldowns, safer rewrite flows, better tag-loss recovery, direct scanner access, and protected QR/barcode creation while Switchly is active.",
+                "Improved schedules with profile targeting, overlap and conflict detection, detailed diagnostics, permission recovery, event history, more reliable Wi-Fi/Bluetooth/location monitoring, and protection against repeated or unchanged schedule actions.",
+                "Greatly expanded Activity and statistics with Active time, App Opens, Blocks, App & Website Usage, Website statistics, Activity History, screen unlocks, blocked notifications, profile/range filters, custom ranges, and durable local history that survives Android UsageEvents expiry and can be included in backup and restore.",
+                "Aligned usage statistics across Overview, App Opens, App & Website Usage, app details, and Website statistics so counters, screen-time sources, hidden-app filtering, confirmed blocks, and Today, Week, Month, Year, and custom ranges behave consistently.",
+                "Added a dedicated Most used apps statistics screen with screen-time distribution, ranked apps, Today, Week, Month, Year, and custom ranges plus direct access to detailed per-app usage.",
+                "Fixed Today screen time carrying usage across the local midnight boundary by deriving current-day usage from timestamped UsageEvents, including correct handling for apps that remain open across midnight.",
+                "Expanded Hidden apps with separate Usage & Insights and App list controls. Apps hidden from the App list are now also excluded from Switchly protection while hidden, so Accessibility inspection, app and In-app rules, limits, notification blocking, and the Advanced Protection fallback ignore them while their existing configuration remains saved for when they are unhidden.",
+                "Added Android 16 Advanced Protection awareness with clearer Permissions and Support diagnostics plus a limited best-effort Usage Access fallback for basic whole-app Block selected / Allow selected protection when Accessibility is unavailable. Website, In-app, navigation, and usage-limit protection continue to require Accessibility.",
+                "Strengthened Accessibility reliability and diagnostics with improved reconnect handling, clearer not-connected and system-disabled states, battery/background guidance, manufacturer-specific Help content, and additional vivo/iQOO recovery support including Associated startup and Phone Manager diagnostics.",
+                "Improved Website and In-app protection with profile-aware rules, clearer diagnostics and supported-version information, Chromium stability re-checks, Brave and Messenger WebView fallbacks, and extensive YouTube Shorts detection improvements designed to reduce false positives while keeping Shorts blocking reliable.",
+                "Refined app safety rules so selected system and Google apps can be blocked with appropriate warnings while core dependencies and Switchly itself remain protected from unsafe configuration.",
+                "Redesigned Support and Permissions with clearer health states, richer diagnostics and logs, direct Email, Discord and GitLab Issues actions, device and signing information, manufacturer-specific guidance, and improved QR scanner guidance for switchly:// actions.",
+                "Expanded backup, restore, and privacy tools with category selection, previews, compatibility handling, durable statistics coverage, local export and deletion controls, cloud-backup improvements, and self-service Switchly account deletion while preserving local data where appropriate.",
+                "Improved notification features with an optional synchronized protection-status notification, active profile and session information, temporary-state countdowns, improved blocked-notification history, and a protected Delete all action.",
+                "Improved Android 14 and Android 16 compatibility and general stability, including startup ANR hardening, foreground-service reliability, NFC and schedule fixes, Google Maps legacy-renderer compatibility, defensive framework fallbacks, Billing improvements, preference migration, resource cleanup, and extensive lint and crash hardening.",
+                "Polished navigation, dialogs, lists, icons, spacing, empty states, scaling, accessibility guidance, German and other localized layouts, larger-font handling, and visual consistency throughout Home, Rules, Activity, Settings, onboarding, profiles, schedules, statistics, and support."
+            ]
+        },
+        {
+            "version": "v2.2.6-beta",
+            "date": "August 28, 2026",
+            "releaseType": "beta",
+            "body": [
+                "Added Android 16 Advanced Protection awareness with clearer Permissions and Support diagnostics plus a limited best-effort Usage Access fallback for basic whole-app Block selected / Allow selected protection when Accessibility is unavailable.",
+                "Improved statistics consistency across Overview, App Opens, App & Website Usage, app details, and Website statistics by aligning counters, screen-time sources, filters, confirmed block counts, calendar ranges, legacy values, and DST-safe Month/Year calculations.",
+                "Added a dedicated Most used apps statistics screen with Today, Week, Month, Year, and custom ranges, a usage-distribution chart, ranked apps, and direct access to usage details.",
+                "Reworked App rules with a compact collapsible rule-mode panel, Search directly above the app list, improved unavailable-app cleanup, and one combined editor for time, daily opens, and session limits.",
+                "Improved protected rule editing while Switchly is active: Block selected profiles can add restrictions and Allow selected profiles can remove exceptions, while changes that could weaken protection remain locked.",
+                "Allowed active Temporary Disable and Emergency Unlock windows to restore access to control-mode settings while unrelated protection-sensitive settings remain locked.",
+                "Improved onboarding, App rules, Home Quick Actions, and other guidance cards for narrow displays and larger font scaling, and fixed onboarding Skip reopening after it had already been chosen.",
+                "Expanded vivo/iQOO reliability support with Associated startup guidance, Phone Manager detection, OEM-interference diagnostics, and clearer recovery information when Android disables Accessibility.",
+                "Reduced YouTube Shorts false positives around sponsored overlays and improved Chromium website blocking with a one-shot stability re-check instead of waiting for another Accessibility event.",
+                "Fixed Google Maps legacy-renderer crashes caused by missing org.apache.http.legacy and added defensive compatibility handling for rare Android 14 system images with incomplete framework APIs.",
+                "Improved Support with clearer Email, Discord, and GitLab Issues actions, dedicated copy buttons, richer diagnostics, and QR guidance recommending Switchly's built-in scanner for switchly:// actions.",
+                "Fixed managed-app limit summaries on Home not refreshing immediately after edits and improved several app-rule and Quick Action layout edge cases.",
+                "Added a Delete all action for blocked notification history with confirmation and protection-lock handling.",
+                "Enhanced the optional persistent status notification with a live countdown while Temporary Disable or Temporary Enable is active."
+            ]
+        },
+        {
             "version": "v2.2.5-beta",
             "date": "August 22, 2026",
             "releaseType": "beta",

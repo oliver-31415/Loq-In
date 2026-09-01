@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
+    <!-- ====================================================== -->
+    <!-- Scan history -->
+    <!-- ====================================================== -->
     <string name="scan_last_action_none">Noch kein erfolgreicher Scan</string>
     <string name="scan_last_action_fmt">Letzte Aktion: %1$s · %2$s</string>
     <string name="scan_last_action_profile_fmt">%1$s · %2$s</string>
@@ -11,4 +15,5 @@
     <string name="scan_last_action_profile_switched">Profil gewechselt</string>
     <string name="scan_last_action_emergency">Notfallaktion</string>
     <string name="scan_last_action_applied">Aktion ausgeführt</string>
+
 </resources>

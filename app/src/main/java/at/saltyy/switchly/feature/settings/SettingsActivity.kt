@@ -164,12 +164,19 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         fun openToggleSection(section: String, displayTarget: String? = null) {
-            openProtectedActivity(Intent(this, ToggleOptionsActivity::class.java).apply {
-                putExtra(ToggleOptionsActivity.EXTRA_VIEW_SECTION, section)
-                if (!displayTarget.isNullOrBlank()) {
-                    putExtra(ToggleOptionsActivity.EXTRA_DISPLAY_TARGET, displayTarget)
-                }
-            })
+            val open = {
+                startActivity(Intent(this, ToggleOptionsActivity::class.java).apply {
+                    putExtra(ToggleOptionsActivity.EXTRA_VIEW_SECTION, section)
+                    if (!displayTarget.isNullOrBlank()) {
+                        putExtra(ToggleOptionsActivity.EXTRA_DISPLAY_TARGET, displayTarget)
+                    }
+                })
+            }
+            if (section == ToggleOptionsActivity.SECTION_BLOCKING) {
+                openControlSettingsSection(open)
+            } else {
+                openProtectedSettingsSection(open)
+            }
         }
 
         fun openPermissionSection(section: String, target: String? = null) {
@@ -454,7 +461,7 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun setupRootCards() {
         findViewById<View>(R.id.cardSettingsBlockingModes).setOnClickListener {
-            openProtectedSettingsSection {
+            openControlSettingsSection {
                 startActivity(Intent(this, BlockingModesActivity::class.java))
             }
         }
@@ -520,6 +527,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         val restricted = isRestrictedAccessActive()
+        val controlSettingsRestricted = SwitchlyAppAccessGuard.isControlSettingsLocked(this)
         val developerVisible = AdvancedModeStore.isEnabled(this)
         findViewById<View>(R.id.tvSettingsDeveloperSection).isVisible = developerVisible
         findViewById<View>(R.id.cardSettingsDeveloper).isVisible = developerVisible
@@ -527,8 +535,14 @@ class SettingsActivity : AppCompatActivity() {
         toolbar.subtitle = null
         supportActionBar?.subtitle = null
 
-        val restrictedCards = listOf(
+        val recoveryControlCards = listOf(
             R.id.cardSettingsBlockingModes,
+        )
+        recoveryControlCards.forEach { cardId ->
+            applyRestrictedCardState(findViewById(cardId), controlSettingsRestricted)
+        }
+
+        val restrictedCards = listOf(
             R.id.cardSettingsBlockingFeatures,
             R.id.cardSettingsKeysCodes,
             R.id.cardSettingsDisplayShortcuts,
@@ -546,6 +560,15 @@ class SettingsActivity : AppCompatActivity() {
         card.isClickable = !restricted
         card.isFocusable = !restricted
         card.alpha = if (restricted) LockedUi.cardAlpha(this) else 1f
+    }
+
+    private fun openControlSettingsSection(open: () -> Unit) {
+        if (SwitchlyAppAccessGuard.isControlSettingsLocked(this)) {
+            applyRestrictedAccessState()
+            return
+        }
+
+        open()
     }
 
     private fun openProtectedSettingsSection(open: () -> Unit) {

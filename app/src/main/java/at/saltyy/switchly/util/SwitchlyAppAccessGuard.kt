@@ -22,11 +22,36 @@ package at.saltyy.switchly.util
 import android.app.Activity
 import android.content.Context
 import at.saltyy.switchly.R
+import at.saltyy.switchly.data.prefs.EmergencyBypassStore
+import at.saltyy.switchly.data.prefs.SwitchModeStore
 
 object SwitchlyAppAccessGuard {
 
     fun isLocked(context: Context): Boolean {
         return EditingLockGuard.isLocked(context)
+    }
+
+    /**
+     * Recovery access is intentionally narrow: an active Emergency Unlock or Temporary Disable may be used to repair control settings that could otherwise leave the user locked out.
+     * Temporary Enable is not a recovery state and must keep the normal editing lock.
+     */
+    fun isControlSettingsRecoveryActive(context: Context): Boolean {
+        return EmergencyBypassStore.isActive(context) ||
+            SwitchModeStore.getTemporaryRemainingMillis(context) > 0L
+    }
+
+    fun isControlSettingsLocked(context: Context): Boolean {
+        return isLocked(context) && !isControlSettingsRecoveryActive(context)
+    }
+
+    fun blockControlSettingsIfLocked(activity: Activity): Boolean {
+        if (!isControlSettingsLocked(activity)) {
+            return false
+        }
+        return EditingLockGuard.blockWithDialog(
+            activity = activity,
+            messageRes = R.string.settings_restricted_action_unavailable,
+        )
     }
 
     fun blockIfLocked(activity: Activity): Boolean {

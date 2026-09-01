@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
+    <!-- ====================================================== -->
+    <!-- Allow mode preview -->
+    <!-- ====================================================== -->
     <string name="app_allow_mode_preview_title">Use Allow selected?</string>
     <string name="app_allow_mode_preview_body">With the current list, %1$s and %2$s. Apps not shown in this picker remain available.</string>
     <plurals name="app_allow_mode_preview_blocked_count">

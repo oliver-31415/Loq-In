@@ -21,6 +21,7 @@
             app:title="@string/premium_redeem_title" />
     </com.google.android.material.appbar.AppBarLayout>
 
+    <!-- Content -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"

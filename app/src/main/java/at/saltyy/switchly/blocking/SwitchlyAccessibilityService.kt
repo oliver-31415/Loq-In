@@ -51,6 +51,7 @@ import at.saltyy.switchly.data.prefs.BlockingToggleKeys
 import at.saltyy.switchly.data.prefs.DomainBlockStore
 import at.saltyy.switchly.data.prefs.DomainLimitStore
 import at.saltyy.switchly.data.prefs.EmergencyBypassStore
+import at.saltyy.switchly.data.prefs.IgnoredUsageAppsStore
 import at.saltyy.switchly.data.prefs.InAppRuleStore
 import at.saltyy.switchly.data.prefs.InAppDetectionStore
 import at.saltyy.switchly.data.prefs.LimitReachedStore
@@ -125,6 +126,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
 
     // Browser state cache for website blocking + per-domain website stats
     private val browserWebsiteState = BrowserWebsiteState()
+    private val pendingWebsiteCandidateProbeHostByPkg = HashMap<String, String>()
     private val lastDiagnosticLogAtByKey = HashMap<String, Long>()
 
     // In-app surface tracking for usage + limits (Shorts/Reels/Explore)
@@ -222,6 +224,23 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         listOf("use this sound", "sound", "diesen sound verwenden", "usar este sonido", "usar este som", "utiliser ce son")
     )
     private val YT_SHORTS_PLAYER_HINT_LABELS = YT_SHORTS_CONTROL_GROUPS.flatten()
+    // Normal watch-page ad overlays can expose buttons such as Share plus a vertical action menu, which can otherwise resemble Shorts semantics for a few frames.
+    // Keep these as negative evidence unless YouTube itself clearly marks the Shorts tab as selected.
+    private val YT_WATCH_AD_CENTER_LABELS = listOf(
+        "my ad center", "ad center",
+        "mein werbecenter", "werbecenter",
+        "mi centro de anuncios", "centro de anuncios",
+        "mon centre d'annonces", "centre d'annonces",
+        "meu centro de anúncios", "centro de anúncios",
+    )
+    private val YT_WATCH_AD_SPONSORED_LABELS = listOf(
+        "sponsored", "gesponsert", "anzeige", "patrocinado", "sponsorisé", "patrocinée",
+    )
+    private val YT_WATCH_AD_VISIT_LABELS = listOf(
+        "visit site", "visit website", "website besuchen", "site besuchen",
+        "visitar sitio", "visitar site", "visiter le site",
+    )
+
     private val YT_SHORTS_NATIVE_LIMIT_REACHED_LABELS = listOf(
         "shorts feed limit reached",
         "you've reached your shorts",
@@ -859,6 +878,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         runCatching { at.saltyy.switchly.util.ProtectionStatusNotifier.refresh(this) }
         runCatching { clearAccessibilityButtonRequest() }
         runCatching { OemAccessibilityKeepAlive.sync(this) }
+        runCatching { UsageAccessFallbackBlocking.sync(this) }
         runCatching {
             AppLogStore.append(
                 this,
@@ -937,6 +957,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         }
         runCatching { maybeFlushPerfCounters() }
         runCatching { at.saltyy.switchly.util.ProtectionStatusNotifier.refresh(this) }
+        runCatching { UsageAccessFallbackBlocking.sync(this) }
         super.onDestroy()
     }
 
@@ -953,6 +974,25 @@ class SwitchlyAccessibilityService : AccessibilityService() {
             return // avoid loops
         }
         BlockingRuntime.markAccessibilityEvent(this, pkg, event?.eventType ?: 0)
+
+        // Apps hidden from Switchly's app list are treated as protection exclusions.
+        // Keep foreground/event metadata only; do not inspect their Accessibility tree or enforce rules.
+        if (IgnoredUsageAppsStore.isExcludedFromProtection(this, pkg)) {
+            if (currentSurfacePkg == pkg) {
+                currentSurfaceKey = null
+                currentSurfacePkg = null
+            }
+            clearSurfaceEvidenceForPackage(pkg)
+            clearSurfaceHintForPackage(pkg)
+            browserWebsiteState.clearCurrent()
+            BlockingRuntime.markBlockingCheck(
+                this,
+                pkg,
+                "hidden_app_protection_excluded",
+                "source=accessibility_event"
+            )
+            return
+        }
 
         if (maybeBlockSwitchlySettingsBypassSurface(pkg, event)) {
             return
@@ -1652,6 +1692,11 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         // General launch statistics are independent from attempt limits and Switchly's active state.
         AppLaunchCountStore.incrementToday(this, pkg)
 
+        // App-list hidden packages can still appear in statistics unless separately hidden there, but they must not participate in blocking/open-limit enforcement.
+        if (IgnoredUsageAppsStore.isExcludedFromProtection(this, pkg)) {
+            return
+        }
+
         if (!SwitchModeStore.isEnabled(this)) {
             return
         }
@@ -1706,6 +1751,10 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         }
         if (AppBlockSafety.isAlwaysExcluded(this, pkg)) {
             markRuntimeBlockCheck("always_excluded")
+            return
+        }
+        if (IgnoredUsageAppsStore.isExcludedFromProtection(this, pkg)) {
+            markRuntimeBlockCheck("hidden_app_protection_excluded")
             return
         }
         val now = System.currentTimeMillis()
@@ -3409,13 +3458,23 @@ class SwitchlyAccessibilityService : AccessibilityService() {
     }
 
     private fun currentRoot(event: AccessibilityEvent? = null): AccessibilityNodeInfo? {
-        return rootInActiveWindow
+        val root = rootInActiveWindow
             ?: event?.source
             ?: runCatching { windows?.firstOrNull { it.isActive }?.root }.getOrNull()
             ?: runCatching { windows?.firstOrNull()?.root }.getOrNull()
+            ?: return null
+
+        val rootPackage = runCatching { root.packageName?.toString()?.trim().orEmpty() }.getOrDefault("")
+        if (rootPackage.isNotBlank() && IgnoredUsageAppsStore.isExcludedFromProtection(this, rootPackage)) {
+            return null
+        }
+        return root
     }
 
     private fun youtubeCurrentRoot(event: AccessibilityEvent? = null): AccessibilityNodeInfo? {
+        if (IgnoredUsageAppsStore.isExcludedFromProtection(this, PACKAGE_YOUTUBE)) {
+            return null
+        }
         val active = rootInActiveWindow
         if (isRootFromPackage(active, PACKAGE_YOUTUBE)) {
             return active
@@ -3428,6 +3487,9 @@ class SwitchlyAccessibilityService : AccessibilityService() {
     }
 
     private fun findYouTubeWindowRoot(): AccessibilityNodeInfo? {
+        if (IgnoredUsageAppsStore.isExcludedFromProtection(this, PACKAGE_YOUTUBE)) {
+            return null
+        }
         val activeWindows = runCatching { windows }.getOrNull().orEmpty()
         for (window in activeWindows) {
             val isAppWindow = runCatching { window.type == AccessibilityWindowInfo.TYPE_APPLICATION }.getOrDefault(false)
@@ -3623,6 +3685,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
                 // For Chromium-based browsers, blocking still waits for a short stable signal to avoid reacting to autocomplete/address-bar noise.
                 // Usage statistics can already keep the visible host as the best current signal, otherwise dynamic pages such as Instagram may be under-counted while every event stays in candidate/waiting state.
                 browserWebsiteState.updateCurrentDomain(pkg, host, now)
+                scheduleStableWebsiteCandidateProbe(pkg, host)
                 return
             }
         }
@@ -3717,6 +3780,27 @@ class SwitchlyAccessibilityService : AccessibilityService() {
             deferNavigationUntilAcknowledge = !redirected,
             returnToPackageOnClose = true
         )
+    }
+
+    private fun scheduleStableWebsiteCandidateProbe(pkg: String, host: String) {
+        pendingWebsiteCandidateProbeHostByPkg[pkg] = host
+        handler.postDelayed({
+            val expectedHost = pendingWebsiteCandidateProbeHostByPkg[pkg]
+            if (expectedHost != host) {
+                return@postDelayed
+            }
+            pendingWebsiteCandidateProbeHostByPkg.remove(pkg)
+            if (!SwitchModeStore.isEnabled(this)) {
+                return@postDelayed
+            }
+
+            val rootPkg = runCatching { currentRoot()?.packageName?.toString() }.getOrNull()
+            if (rootPkg == pkg || currentTopPkg == pkg) {
+                // Chromium can go quiet after the first committed URL event.
+                // Re-probe once the existing stability window has elapsed instead of waiting seconds for another unrelated Accessibility event.
+                maybeBlockWebsite(pkg, null)
+            }
+        }, BrowserWebsiteState.DOMAIN_CONFIRM_MS + 80L)
     }
 
     private fun scheduleFirefoxShortcutWebsiteProbe(pkg: String, blockedDomains: List<String>) {
@@ -5565,7 +5649,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
             val ytShortsGuardActive = surfaceGuardActive(pkg, "yt:shorts", now)
 
             // Delayed YouTube retry probes call this path with a null event after the UI has had time to settle.
-            // Capture a throttled evidence snapshot there so support reports explain *why* Shorts was or was not classified without recording any visible text/content from the user's screen.
+            // Capture a throttled evidence snapshot there so support reports explain why Shorts was or was not classified without recording any visible text/content from the user's screen.
             if (blockYtShortsEnabled && !ytShortsGuardActive &&
                 (event == null || ytShortsEntryNow || ytShortsPlayerNow || ytTappedSurface == "yt:shorts" || ytSelectedSurface == "yt:shorts")
             ) {
@@ -6367,6 +6451,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         val semanticScore = youtubeShortsControlScore(root)
         val playerGeometry = hasYouTubeShortsPlayerGeometry(root)
         val nativeLimitReached = hasYouTubeNativeShortsLimitReachedSignal(root, event)
+        val adOverlay = hasYouTubeWatchAdOverlaySignal(root, event)
         val eventHint = eventTextMatches(event, YT_SHORTS_PLAYER_HINT_LABELS)
         val recentHint = recentSurfaceHintMatches(PACKAGE_YOUTUBE, "yt:shorts", now)
         val decision = entryDetected || playerDetected
@@ -6378,7 +6463,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
                 "pkg=$PACKAGE_YOUTUBE surface=yt:shorts event=${eventTypeLabel(event)} " +
                     "tapped=$tappedSurface selected=$selectedSurface entry=$entryDetected player=$playerDetected " +
                     "semanticScore=$semanticScore geometry=$playerGeometry nativeLimit=$nativeLimitReached " +
-                    "eventHint=$eventHint recentHint=$recentHint guard=$guardActive decision=$decision",
+                    "adOverlay=$adOverlay eventHint=$eventHint recentHint=$recentHint guard=$guardActive decision=$decision",
             throttleMs = throttleMs,
         )
     }
@@ -7045,6 +7130,9 @@ class SwitchlyAccessibilityService : AccessibilityService() {
     }
 
     private fun isLikelyYouTubeShortsPlayer(root: AccessibilityNodeInfo, event: AccessibilityEvent? = null): Boolean {
+        if (hasYouTubeWatchAdOverlaySignal(root, event)) {
+            return false
+        }
         if (isYouTubeShortsScreen(root, event)) {
             return true
         }
@@ -7056,6 +7144,9 @@ class SwitchlyAccessibilityService : AccessibilityService() {
 
     private fun isYouTubeHomeFeedShortsPlayer(root: AccessibilityNodeInfo, event: AccessibilityEvent? = null): Boolean {
         if (!isRootFromPackage(root, PACKAGE_YOUTUBE)) {
+            return false
+        }
+        if (hasYouTubeWatchAdOverlaySignal(root, event)) {
             return false
         }
         val type = event?.eventType ?: return false
@@ -7082,6 +7173,45 @@ class SwitchlyAccessibilityService : AccessibilityService() {
             return true
         }
         return false
+    }
+
+    private fun hasYouTubeWatchAdOverlaySignal(
+        root: AccessibilityNodeInfo,
+        event: AccessibilityEvent? = null,
+    ): Boolean {
+        if (!isRootFromPackage(root, PACKAGE_YOUTUBE) && !containsPackageNode(root, PACKAGE_YOUTUBE)) {
+            return false
+        }
+
+        // Never suppress a real Shorts surface just because the Short itself is an advertisement.
+        if (detectYouTubeSelectedSurface(root) == "yt:shorts") {
+            return false
+        }
+
+        val parts = ArrayList<String>(96)
+        event?.text?.forEach { value ->
+            value?.toString()?.takeIf { it.isNotBlank() }?.let(parts::add)
+        }
+        event?.contentDescription?.toString()?.takeIf { it.isNotBlank() }?.let(parts::add)
+
+        var visited = 0
+        findAnyNode(root) { node ->
+            if (visited++ >= 180) return@findAnyNode true
+            val nodePkg = node.packageName?.toString()?.lowercase(Locale.ROOT).orEmpty()
+            if (nodePkg.isBlank() || nodePkg == PACKAGE_YOUTUBE) {
+                node.text?.toString()?.takeIf { it.isNotBlank() }?.let(parts::add)
+                node.contentDescription?.toString()?.takeIf { it.isNotBlank() }?.let(parts::add)
+            }
+            false
+        }
+
+        val signal = parts.joinToString(" ").lowercase(Locale.ROOT)
+        if (signal.isBlank()) return false
+
+        val adCenter = YT_WATCH_AD_CENTER_LABELS.any(signal::contains)
+        val sponsored = YT_WATCH_AD_SPONSORED_LABELS.any { containsSemanticToken(signal, it) }
+        val visitSite = YT_WATCH_AD_VISIT_LABELS.any(signal::contains)
+        return adCenter || (sponsored && visitSite)
     }
 
     private fun hasYouTubeNativeShortsLimitReachedSignal(
@@ -7151,6 +7281,9 @@ class SwitchlyAccessibilityService : AccessibilityService() {
 
     private fun hasYouTubeDeepShortsSignal(root: AccessibilityNodeInfo): Boolean {
         if (!isRootFromPackage(root, PACKAGE_YOUTUBE) && !containsPackageNode(root, PACKAGE_YOUTUBE)) {
+            return false
+        }
+        if (hasYouTubeWatchAdOverlaySignal(root, null)) {
             return false
         }
 
@@ -7374,6 +7507,9 @@ class SwitchlyAccessibilityService : AccessibilityService() {
     }
 
     private fun isYouTubeShortsScreen(root: AccessibilityNodeInfo, event: AccessibilityEvent? = null): Boolean {
+        if (hasYouTubeWatchAdOverlaySignal(root, event)) {
+            return false
+        }
         // Do not treat any visible "Shorts" text as the Shorts surface.
         // YouTube keeps the bottom navigation visible on unrelated screens such as Subscriptions and the profile/You tab.
         return detectYouTubeSelectedSurface(root) == "yt:shorts" || resolveYouTubeSurfaceFromEvent(event) == "yt:shorts"

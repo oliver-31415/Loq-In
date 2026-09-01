@@ -21,6 +21,7 @@
             app:title="@string/blocked_inbox_title" />
     </com.google.android.material.appbar.AppBarLayout>
 
+    <!-- Content -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"

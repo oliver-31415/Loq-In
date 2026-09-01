@@ -21,6 +21,7 @@
             app:title="@string/paired_tags_title" />
     </com.google.android.material.appbar.AppBarLayout>
 
+    <!-- Content -->
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"

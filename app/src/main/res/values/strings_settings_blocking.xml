@@ -89,8 +89,8 @@
     <string name="pref_lock_active_temporary_timer_summary">Home cannot replace or shorten a running protection timer. A temporary pause can only be ended to restore protection. Allowed NFC, QR, and barcode actions still work.</string>
     <string name="mixed_channels_locked_while_switchly_enabled">Disable Switchly to edit control methods and access rules.</string>
     <string name="pref_mixed_allow_app_picking_title">Allow picking apps</string>
-    <string name="pref_mixed_allow_app_picking_summary">Lets you open app picker while Switchly is active.</string>
-    <string name="toggle_detail_mixed_allow_app_picking">Safety default is locked while Switchly is enabled. Enable this only if you intentionally want app list edits while protection is active, regardless of the selected control mode.</string>
+    <string name="pref_mixed_allow_app_picking_summary">Lets you open App rules while Switchly is active. Only changes that increase protection are allowed.</string>
+    <string name="toggle_detail_mixed_allow_app_picking">When enabled, App rules can be opened while Switchly is active. Existing protection still cannot be removed: Block selected only allows additions, while Allow selected only allows removing allowed exceptions.</string>
     <string name="pref_mixed_allow_profile_switching_title">Allow managing profiles</string>
     <string name="pref_mixed_allow_profile_switching_summary">Lets you manage or switch profiles while Switchly is active.</string>
     <string name="toggle_detail_mixed_allow_profile_switching">Safety default is locked while Switchly is enabled. Enable this only if you intentionally want profile management or switching while protection is active.</string>
@@ -209,7 +209,7 @@
     <string name="toggle_subsection_status">System status</string>
     <string name="toggle_subsection_status_summary">Configure the optional ongoing notification shown in Android’s notification shade.</string>
     <string name="pref_persistent_status_notification_title">Persistent status notification</string>
-    <string name="pref_persistent_status_notification_summary">Show a silent ongoing notification with optional time and app details.</string>
+    <string name="pref_persistent_status_notification_summary">Show a silent ongoing notification with optional time, app details, and temporary-state countdowns.</string>
     <string name="pref_persistent_status_notification_mode_title">Notification details</string>
     <string name="status_notification_mode_status_only">Status only</string>
     <string name="status_notification_mode_active_time">Status + active time</string>
@@ -299,10 +299,20 @@
     <string name="home_custom_blocked_apps_summary">Shows the selected apps for the active profile and the manage button.</string>
     <string name="home_custom_profile_dropdown_summary">Shows the profile selector inside Protection Control.</string>
 
+    <!-- ====================================================== -->
     <!-- vivo/iQOO Accessibility process-resilience guard -->
+    <!-- ====================================================== -->
     <string name="oem_accessibility_guard_channel_name">Protection reliability</string>
     <string name="oem_accessibility_guard_channel_description">Keeps Switchly protection reliable on devices that may stop Accessibility when the app is removed from Recent Apps.</string>
     <string name="oem_accessibility_guard_title">Switchly protection active</string>
     <string name="oem_accessibility_guard_text">Keeping Accessibility protection active on this device.</string>
+
+    <!-- ====================================================== -->
+    <!-- Temporary status notification -->
+    <!-- ====================================================== -->
+    <string name="status_notification_temp_disable_title">Temporary break</string>
+    <string name="status_notification_temp_enable_title">Temporary protection</string>
+    <string name="status_notification_temp_disable_body">Protection resumes when the timer ends</string>
+    <string name="status_notification_temp_enable_body">Temporary protection ends when the timer ends</string>
 
 </resources>

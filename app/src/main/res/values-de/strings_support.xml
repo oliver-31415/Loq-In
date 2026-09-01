@@ -49,6 +49,13 @@
     <string name="support_logs_view_copy">Logs kopieren</string>
     <string name="support_logs_view_empty">Keine aktuellen App-Logs.</string>
     <string name="support_email_label">Support-E-Mail</string>
+    <string name="support_discord_label">Discord</string>
+    <string name="support_gitlab_issues_label">GitLab-Issues</string>
+    <string name="support_copy_discord">Discord-Link kopieren</string>
+    <string name="support_discord_copied">Discord-Link kopiert</string>
+    <string name="support_copy_gitlab_issues">GitLab-Issues-Link kopieren</string>
+    <string name="support_gitlab_issues_copied">GitLab-Issues-Link kopiert</string>
+    <string name="support_no_email_app">Keine E-Mail-App verfügbar</string>
     <string name="support_logs_card_title">Aktuelle Logs kopieren</string>
     <string name="support_logs_card_desc">Kopiere aktuelle Switchly-Ereignisse für eine bestehende Nachricht oder ein Issue.</string>
 

@@ -56,6 +56,7 @@ import at.saltyy.switchly.ui.dialog.showSwitchlyInfoDialog
 import at.saltyy.switchly.util.RelativeTimeFormatter
 import at.saltyy.switchly.util.EditingLockGuard
 import at.saltyy.switchly.util.PackageLaunchIntentCompat
+import at.saltyy.switchly.util.ProtectionEditPolicy
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
@@ -488,34 +489,49 @@ class InAppRulesActivity : AppCompatActivity() {
 
         val prefKey = surface.prefKey
         val readOnly = EditingLockGuard.isLocked(this)
+        val currentChecked = prefKey?.let { readProfileBool(it) } ?: false
+        val canToggleWhileLocked = prefKey != null && ProtectionEditPolicy.canChangeSelection(
+            context = this,
+            profile = currentProfile(),
+            allowMode = isInAppAllowMode(),
+            currentlySelected = currentChecked,
+            requestedSelected = !currentChecked,
+        )
         val sw = SwitchCompat(this).apply {
-            isEnabled = prefKey != null && !readOnly
+            isEnabled = prefKey != null && (!readOnly || canToggleWhileLocked)
             alpha = when {
                 prefKey == null -> 0.52f
-                readOnly -> 0.45f
+                readOnly && !canToggleWhileLocked -> 0.45f
                 else -> 1f
             }
             if (prefKey != null) {
-                isChecked = readProfileBool(prefKey)
+                isChecked = currentChecked
                 if (isChecked && !readOnly) {
                     surface.surfaceKey?.let { setSurfaceRuleForMode(it, checked = true) }
                 }
-                if (!readOnly) {
-                    setOnCheckedChangeListener { button, checked ->
-                        if (EditingLockGuard.isLocked(this@InAppRulesActivity)) {
-                            button.setOnCheckedChangeListener(null)
-                            button.isChecked = readProfileBool(prefKey)
-                            button.isEnabled = false
-                            button.alpha = 0.45f
-                            button.post { render() }
-                            return@setOnCheckedChangeListener
-                        }
-                        writeProfileBool(prefKey, checked)
-                        surface.surfaceKey?.let { surfaceKey ->
-                            setSurfaceRuleForMode(surfaceKey, checked)
-                        }
-                        keepAppAllowedForInAppRule(packageName, prefKey, checked)
-                        BlockingRuntime.ensureRunning(this@InAppRulesActivity)
+                setOnCheckedChangeListener { button, checked ->
+                    val before = readProfileBool(prefKey)
+                    if (!ProtectionEditPolicy.canChangeSelection(
+                            context = this@InAppRulesActivity,
+                            profile = currentProfile(),
+                            allowMode = isInAppAllowMode(),
+                            currentlySelected = before,
+                            requestedSelected = checked,
+                        )
+                    ) {
+                        button.setOnCheckedChangeListener(null)
+                        button.isChecked = before
+                        button.post { render() }
+                        return@setOnCheckedChangeListener
+                    }
+                    writeProfileBool(prefKey, checked)
+                    surface.surfaceKey?.let { surfaceKey ->
+                        setSurfaceRuleForMode(surfaceKey, checked)
+                    }
+                    keepAppAllowedForInAppRule(packageName, prefKey, checked)
+                    BlockingRuntime.ensureRunning(this@InAppRulesActivity)
+                    if (EditingLockGuard.isLocked(this@InAppRulesActivity)) {
+                        button.post { render() }
                     }
                 }
             }
