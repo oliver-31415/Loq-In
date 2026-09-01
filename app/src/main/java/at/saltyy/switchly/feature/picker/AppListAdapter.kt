@@ -284,7 +284,19 @@ class AppListAdapter(
             val pinnedByInAppRules = hasPinnedInAppRule(ctx, profile, item)
             val unavailableConfigured = hasUnavailableConfiguration(ctx, profile, item)
 
-            ivAppIcon.setImageDrawable(AppIconCache.get(ctx, item.packageName))
+            val iconPackage = item.packageName
+            ivAppIcon.tag = iconPackage
+            val cachedIcon = AppIconCache.getCached(ctx, iconPackage)
+            if (cachedIcon != null) {
+                ivAppIcon.setImageDrawable(cachedIcon)
+            } else {
+                ivAppIcon.setImageDrawable(AppIconCache.placeholder(ctx))
+                AppIconCache.load(ctx, iconPackage) { icon ->
+                    if (ivAppIcon.tag == iconPackage) {
+                        ivAppIcon.setImageDrawable(icon)
+                    }
+                }
+            }
 
             tvLabel.text = item.label
             tvPkg.text = item.packageName

@@ -73,10 +73,10 @@
     <string name="pref_mixed_allow_nfc_title">NFC-Steuerung</string>
     <string name="pref_mixed_allow_nfc_summary">Erlaubt NFC-Aktionen zur Steuerung von Switchly.</string>
     <string name="toggle_detail_mixed_allow_nfc">Wenn aktiviert, werden NFC-Aktionen im gemischten Modus akzeptiert, inklusive geschriebener Tags und gekoppelter Tags. Andere erlaubte Kanäle funktionieren weiterhin.</string>
-    <string name="pref_mixed_allow_qr_title">QR-Kanal erlauben</string>
+    <string name="pref_mixed_allow_qr_title">QR-Steuerung</string>
     <string name="pref_mixed_allow_qr_summary">Erlaubt QR-Aktionen zur Steuerung.</string>
     <string name="toggle_detail_mixed_allow_qr">Wenn aktiviert, ist die QR-Steuerung im gemischten Modus erlaubt.</string>
-    <string name="pref_mixed_allow_barcode_title">Barcode-Kanal erlauben</string>
+    <string name="pref_mixed_allow_barcode_title">Barcode-Steuerung</string>
     <string name="pref_mixed_allow_barcode_summary">Erlaubt Barcode-Aktionen zur Steuerung von Switchly.</string>
     <string name="toggle_detail_mixed_allow_barcode">Wenn aktiviert, werden gespeicherte Barcode-Aktionen im gemischten Modus akzeptiert.</string>
     <string name="pref_mixed_allow_button_title">Manuelle Steuerung</string>
@@ -265,7 +265,7 @@
     <string name="edit_locked_manage_qr_codes">Deaktiviere Switchly, um QR-Codes zu erstellen, anzuzeigen, zu kopieren oder zu teilen.</string>
     <string name="edit_locked_manage_barcodes">Deaktiviere Switchly, um Barcodes zu verwalten.</string>
     <string name="edit_locked_manage_websites">Deaktiviere Switchly, um Website-Regeln zu bearbeiten.</string>
-    <string name="edit_locked_manage_profiles">Deaktiviere Switchly, um Profile zu verwalten.</string>
+    <string name="edit_locked_manage_profiles">Einige Profilaktionen bleiben gesperrt, solange Switchly aktiv ist. Du kannst Profile ansehen, erstellen, duplizieren und umbenennen sowie App-Auswahlen verschärfen. Deaktiviere Switchly zum Löschen oder Wechseln von Profilen.</string>
     <string name="edit_locked_write_nfc_tags">Deaktiviere Switchly, um NFC-Tags zu schreiben oder zu koppeln.</string>
     <string name="edit_locked_manage_blocked_notifications">Deaktiviere Switchly, um blockierte Benachrichtigungen zu öffnen.</string>
     <string name="toast_disable_switchly_to_edit_blocked_apps">Deaktiviere Switchly vollständig, um App-Regeln zu bearbeiten.</string>

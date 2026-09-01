@@ -101,13 +101,12 @@ import at.saltyy.switchly.data.prefs.SwitchModeStore
 import at.saltyy.switchly.data.prefs.UsageLimitStore
 import at.saltyy.switchly.data.prefs.UsageLimitResetStore
 import at.saltyy.switchly.data.prefs.UsageLimitSessionRuntimeStore
-import at.saltyy.switchly.feature.barcode.BarcodeScanActivity
 import at.saltyy.switchly.feature.inbox.BlockedInboxActivity
 import at.saltyy.switchly.feature.onboarding.OnboardingActivity
 import at.saltyy.switchly.feature.picker.AppPickerActivity
 import at.saltyy.switchly.feature.profiles.ManageProfilesActivity
 import at.saltyy.switchly.feature.qr.QrGenerateActivity
-import at.saltyy.switchly.feature.qr.QrScanActivity
+import at.saltyy.switchly.feature.scan.UnifiedScanActivity
 import at.saltyy.switchly.feature.schedule.SchedulesActivity
 import at.saltyy.switchly.feature.settings.ManageBarcodesActivity
 import at.saltyy.switchly.feature.settings.ManageBlockedWebsitesActivity
@@ -472,7 +471,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         // Active profile quick-jump
-        rowActiveProfile.setOnClickListener { openProfilesIfUnlocked() }
+        rowActiveProfile.setOnClickListener { openProfiles() }
 
         // Setup CTA
         btnFinishSetup.setOnClickListener {
@@ -1469,10 +1468,9 @@ class MainActivity : AppCompatActivity() {
         startActivity(Intent(this, AppPickerActivity::class.java))
     }
 
-    private fun openProfilesIfUnlocked() {
-        if (!ensureCanSwitchProfiles(showFeedback = true)) {
-            return
-        }
+    private fun openProfiles() {
+        // Viewing and non-destructive profile management are safe.
+        // ManageProfilesActivity keeps Set active/Delete locked while protection is active and permits create/duplicate/rename plus strictness-only app edits.
         startActivity(Intent(this, ManageProfilesActivity::class.java))
     }
 
@@ -3544,7 +3542,7 @@ class MainActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.action_scanner_header -> {
-                showScannerChoiceDialog()
+                openHeaderScanner()
                 true
             }
             R.id.action_info -> {
@@ -3570,63 +3568,32 @@ class MainActivity : AppCompatActivity() {
             .showAccented()
     }
 
-    private fun showScannerChoiceDialog() {
-        data class ScannerChoice(
-            val option: SwitchlyDialogOption,
-            val open: () -> Unit,
+    private fun openHeaderScanner() {
+        val qrAllowed = AutomationModeStore.isQrAllowed(this)
+        val barcodeAllowed = AutomationModeStore.isBarcodeAllowed(this)
+        val mode = when {
+            qrAllowed && barcodeAllowed -> UnifiedScanActivity.ScanMode.AUTO
+            qrAllowed -> UnifiedScanActivity.ScanMode.QR_ONLY
+            barcodeAllowed -> UnifiedScanActivity.ScanMode.BARCODE_ONLY
+            else -> return
+        }
+        openUnifiedScannerDirectly(mode)
+    }
+
+    private fun openUnifiedScannerDirectly(mode: UnifiedScanActivity.ScanMode) {
+        startActivity(
+            Intent(this, UnifiedScanActivity::class.java)
+                .putExtra(UnifiedScanActivity.EXTRA_ALLOW_DIRECT_OPEN, true)
+                .putExtra(UnifiedScanActivity.EXTRA_SCAN_MODE, mode.raw)
         )
-
-        val choices = buildList<ScannerChoice> {
-            if (AutomationModeStore.isQrAllowed(this@MainActivity)) {
-                add(
-                    ScannerChoice(
-                        option = SwitchlyDialogOption(
-                            title = getString(R.string.qr_scan_title),
-                            summary = getString(R.string.qr_scan_option_summary),
-                            iconRes = R.drawable.qr_code_24,
-                        ),
-                        open = ::openQrScannerDirectly,
-                    )
-                )
-            }
-            if (AutomationModeStore.isBarcodeAllowed(this@MainActivity)) {
-                add(
-                    ScannerChoice(
-                        option = SwitchlyDialogOption(
-                            title = getString(R.string.barcode_scan_title),
-                            summary = getString(R.string.barcode_scan_option_summary),
-                            iconRes = R.drawable.barcode_24,
-                        ),
-                        open = ::openBarcodeScannerDirectly,
-                    )
-                )
-            }
-        }
-
-        when (choices.size) {
-            0 -> Unit
-            1 -> choices.first().open()
-            else -> showSwitchlyOptionDialog(
-                title = getString(R.string.scanner_choice_title),
-                options = choices.map { it.option },
-            ) { index ->
-                choices.getOrNull(index)?.open?.invoke()
-            }
-        }
     }
 
     private fun openQrScannerDirectly() {
-        startActivity(
-            Intent(this, QrScanActivity::class.java)
-                .putExtra(QrScanActivity.EXTRA_ALLOW_DIRECT_OPEN, true)
-        )
+        openUnifiedScannerDirectly(UnifiedScanActivity.ScanMode.QR_ONLY)
     }
 
     private fun openBarcodeScannerDirectly() {
-        startActivity(
-            Intent(this, BarcodeScanActivity::class.java)
-                .putExtra(BarcodeScanActivity.EXTRA_ALLOW_DIRECT_OPEN, true)
-        )
+        openUnifiedScannerDirectly(UnifiedScanActivity.ScanMode.BARCODE_ONLY)
     }
 
     private fun showBarcodeChoiceDialog() {

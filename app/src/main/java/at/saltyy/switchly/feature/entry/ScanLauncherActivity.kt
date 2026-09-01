@@ -24,9 +24,8 @@ import android.content.Intent
 import android.os.Bundle
 import androidx.core.content.pm.ShortcutManagerCompat
 import at.saltyy.switchly.data.prefs.AppLogStore
-import at.saltyy.switchly.feature.barcode.BarcodeScanActivity
 import at.saltyy.switchly.feature.inbox.BlockedInboxActivity
-import at.saltyy.switchly.feature.qr.QrScanActivity
+import at.saltyy.switchly.feature.scan.UnifiedScanActivity
 import at.saltyy.switchly.nfc.NfcWriterActivity
 import at.saltyy.switchly.ui.MainActivity
 import at.saltyy.switchly.util.ActivityTransitionCompat
@@ -87,11 +86,13 @@ class ScanLauncherActivity : Activity() {
         }
 
         val launchIntent = when (intent?.action) {
-            ACTION_OPEN_QR_SCAN -> Intent(this, QrScanActivity::class.java)
-                .putExtra(QrScanActivity.EXTRA_ALLOW_DIRECT_OPEN, true)
+            ACTION_OPEN_QR_SCAN -> Intent(this, UnifiedScanActivity::class.java)
+                .putExtra(UnifiedScanActivity.EXTRA_ALLOW_DIRECT_OPEN, true)
+                .putExtra(UnifiedScanActivity.EXTRA_SCAN_MODE, UnifiedScanActivity.ScanMode.QR_ONLY.raw)
 
-            ACTION_OPEN_BARCODE_SCAN -> Intent(this, BarcodeScanActivity::class.java)
-                .putExtra(BarcodeScanActivity.EXTRA_ALLOW_DIRECT_OPEN, true)
+            ACTION_OPEN_BARCODE_SCAN -> Intent(this, UnifiedScanActivity::class.java)
+                .putExtra(UnifiedScanActivity.EXTRA_ALLOW_DIRECT_OPEN, true)
+                .putExtra(UnifiedScanActivity.EXTRA_SCAN_MODE, UnifiedScanActivity.ScanMode.BARCODE_ONLY.raw)
 
             ACTION_OPEN_NFC_WRITE -> Intent(this, NfcWriterActivity::class.java)
             ACTION_OPEN_BLOCKED_NOTIFICATIONS -> Intent(this, BlockedInboxActivity::class.java)

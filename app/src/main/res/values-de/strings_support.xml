@@ -5,7 +5,7 @@
     <!-- Support contact flow -->
     <!-- ====================================================== -->
     <string name="support_title">Support</string>
-    <string name="support_desc">Kontaktiere den Support per E-Mail und wähle, welche Diagnosedaten mitgesendet werden sollen, oder prüfe vorher die aktuellen Logs.</string>
+    <string name="support_desc">Support per E-Mail kontaktieren und Diagnosedaten auswählen.</string>
     <string name="support_email_subject">Switchly-Support</string>
     <string name="support_open_email">Support kontaktieren</string>
     <string name="support_copy_email">E-Mail kopieren</string>
@@ -56,6 +56,8 @@
     <string name="support_copy_gitlab_issues">GitLab-Issues-Link kopieren</string>
     <string name="support_gitlab_issues_copied">GitLab-Issues-Link kopiert</string>
     <string name="support_no_email_app">Keine E-Mail-App verfügbar</string>
+    <string name="support_report_clipboard_label">Switchly-Supportbericht</string>
+    <string name="support_email_fallback_copied">E-Mail-App konnte nicht geöffnet werden. Der Supportbericht wurde in die Zwischenablage kopiert.</string>
     <string name="support_logs_card_title">Aktuelle Logs kopieren</string>
     <string name="support_logs_card_desc">Kopiere aktuelle Switchly-Ereignisse für eine bestehende Nachricht oder ein Issue.</string>
 

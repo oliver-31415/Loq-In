@@ -208,7 +208,7 @@
     <string name="schedules_priority_info_body">Priority when actions overlap:\n1. Manual/NFC override\n2. Emergency unlock\n3. Temporary actions\n4. Location schedules\n5. Wi-Fi/Bluetooth schedules\n6. Time schedules\n\nIf multiple schedules match, Switchly logs the conflict and applies the winning schedule instead of silently hiding it.</string>
 
     <!-- ====================================================== -->
-    <!-- Entry point / dialog -->
+    <!-- Entry point/dialog -->
     <!-- ====================================================== -->
     <string name="schedules_test_title">Check schedule</string>
 
@@ -237,7 +237,7 @@
     <!-- ====================================================== -->
     <string name="schedules_test_status_time_fmt">Time %1$s</string>
     <string name="schedules_test_status_wifi_fmt">Wi-Fi “%1$s”</string>
-    <string name="schedules_test_status_wifi_none">Wi-Fi not connected / SSID unavailable</string>
+    <string name="schedules_test_status_wifi_none">Wi-Fi not connected/SSID unavailable</string>
     <string name="schedules_test_status_bt_fmt">Bluetooth %1$s</string>
     <string name="schedules_test_status_bt_none">no matching Bluetooth device connected</string>
     <string name="schedules_test_status_location_inside_fmt">inside area · %1$d m from center</string>
@@ -247,7 +247,7 @@
     <!-- ====================================================== -->
     <!-- Permission names -->
     <!-- ====================================================== -->
-    <string name="schedules_test_permission_wifi">Wi-Fi / location</string>
+    <string name="schedules_test_permission_wifi">Wi-Fi/location</string>
     <string name="schedules_test_permission_bluetooth">Bluetooth</string>
     <string name="schedules_test_permission_location">Location</string>
     <string name="schedules_test_permission_accessibility">Accessibility</string>

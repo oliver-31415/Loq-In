@@ -229,13 +229,13 @@ class SettingsActivity : AppCompatActivity() {
         add(R.string.pref_require_nfc_unlock_title, "NFC required disable lock") { openToggleSection(ToggleOptionsActivity.SECTION_SAFETY) }
         add(R.string.schedules_title, "schedule Wi-Fi Bluetooth location time automation") { startActivity(Intent(this, SchedulesActivity::class.java)) }
 
-        // NFC / QR / barcode tools.
+        // NFC/QR/barcode tools.
         add(R.string.nfc_writer_title, "write NFC tag") { openProtectedActivity(Intent(this, NfcWriterActivity::class.java)) }
         add(R.string.keys_codes_paired_tags_title, "paired NFC UID tags") { openProtectedActivity(Intent(this, ManagePairedTagsActivity::class.java)) }
         add(R.string.qr_generate_title, "QR generate manage") { openProtectedActivity(Intent(this, QrGenerateActivity::class.java)) }
         add(R.string.manage_barcodes_title, "barcode manage scan") { openProtectedActivity(Intent(this, ManageBarcodesActivity::class.java)) }
 
-        // Display / Home / shortcuts.
+        // Display/Home/shortcuts.
         add(R.string.onb_optional_display_tiles_title, "Quick Settings tiles NFC QR barcode") {
             openToggleSection(ToggleOptionsActivity.SECTION_DISPLAY, ToggleOptionsActivity.DISPLAY_TARGET_TILES)
         }

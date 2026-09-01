@@ -43,7 +43,6 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.addCallback
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
@@ -164,8 +163,9 @@ class OnboardingActivity : ComponentActivity() {
             return
         }
 
-        enableEdgeToEdge()
-        WindowCompat.setDecorFitsSystemWindows(window, false)
+        if (!FrameworkApi34Compat.needsWindowInsetsCrashShield()) {
+            WindowCompat.enableEdgeToEdge(window)
+        }
 
         pager = findViewById(R.id.viewPager)
         compatPageContainer = findViewById(R.id.compatPageContainer)
@@ -218,7 +218,7 @@ class OnboardingActivity : ComponentActivity() {
                 leaveOnboarding()
             } else {
                 // "Skip" should stay skipped for this onboarding version. Missing setup is still
-                // surfaced through Permissions / Setup Health without reopening onboarding on launch.
+                // surfaced through Permissions/Setup Health without reopening onboarding on launch.
                 markSkipped()
                 leaveOnboarding()
             }
@@ -825,6 +825,10 @@ class OnboardingActivity : ComponentActivity() {
     }
 
     private fun applySystemBarInsets() {
+        if (FrameworkApi34Compat.needsWindowInsetsCrashShield()) {
+            FrameworkApi34Compat.applyWindowInsetsWorkaround(this)
+            return
+        }
         val density = resources.displayMetrics.density
         fun dp(value: Float): Int = (value * density).toInt()
 

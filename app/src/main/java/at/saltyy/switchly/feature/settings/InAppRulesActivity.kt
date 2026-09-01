@@ -101,6 +101,20 @@ class InAppRulesActivity : AppCompatActivity() {
         modeBlockButton = findViewById(R.id.btnInAppModeBlock)
         modeAllowButton = findViewById(R.id.btnInAppModeAllow)
         modeSummary = findViewById(R.id.tvInAppRuleModeSummary)
+        val ruleSettingsHeader = findViewById<View>(R.id.rowInAppRuleSettingsHeader)
+        val ruleSettingsPanel = findViewById<View>(R.id.inAppRuleSettingsPanel)
+        val ruleSettingsChevron = findViewById<ImageView>(R.id.ivInAppRuleSettingsChevron)
+
+        fun setRuleSettingsExpanded(expanded: Boolean) {
+            ruleSettingsPanel.visibility = if (expanded) View.VISIBLE else View.GONE
+            ruleSettingsChevron.setImageResource(
+                if (expanded) R.drawable.keyboard_arrow_up_24 else R.drawable.keyboard_arrow_down_24
+            )
+        }
+        setRuleSettingsExpanded(false)
+        ruleSettingsHeader.setOnClickListener {
+            setRuleSettingsExpanded(ruleSettingsPanel.visibility != View.VISIBLE)
+        }
 
         EdgeToEdgeUtils.setupClassic(activity = this, toolbar = toolbar)
         toolbar.setBackgroundColor(AccentColor.getToolbarColor(this))

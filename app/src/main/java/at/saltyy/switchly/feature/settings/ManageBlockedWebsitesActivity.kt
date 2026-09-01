@@ -30,6 +30,7 @@ import android.view.ViewGroup
 import android.widget.AutoCompleteTextView
 import android.widget.FrameLayout
 import android.widget.ImageButton
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -205,6 +206,20 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         emptyTitle = findViewById(R.id.tvEmptyTitle)
         emptyBody = findViewById(R.id.tvEmptyBody)
         emptyCard = findViewById(R.id.emptyCard)
+
+        val ruleSettingsHeader = findViewById<View>(R.id.rowWebsiteRuleSettingsHeader)
+        val ruleSettingsPanel = findViewById<View>(R.id.websiteRuleSettingsPanel)
+        val ruleSettingsChevron = findViewById<ImageView>(R.id.ivWebsiteRuleSettingsChevron)
+        fun setRuleSettingsExpanded(expanded: Boolean) {
+            ruleSettingsPanel.visibility = if (expanded) View.VISIBLE else View.GONE
+            ruleSettingsChevron.setImageResource(
+                if (expanded) R.drawable.keyboard_arrow_up_24 else R.drawable.keyboard_arrow_down_24
+            )
+        }
+        setRuleSettingsExpanded(false)
+        ruleSettingsHeader.setOnClickListener {
+            setRuleSettingsExpanded(ruleSettingsPanel.visibility != View.VISIBLE)
+        }
 
         adapter = DomainRuleAdapter(
             onEdit = { showEditDialog(it) },

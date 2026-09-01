@@ -27,10 +27,17 @@ import at.saltyy.switchly.data.prefs.ProfileStore
  * This intentionally does not cover limits yet; limit changes keep their existing lock until they can be compared safely across all limit types.
  */
 object ProtectionEditPolicy {
-    fun canTightenActiveProfile(context: Context, profile: String?): Boolean {
+    fun canTightenActiveProfile(context: Context, profile: String?): Boolean =
+        canTightenProfileWhileLocked(context, profile, allowInactiveProfile = false)
+
+    private fun canTightenProfileWhileLocked(
+        context: Context,
+        profile: String?,
+        allowInactiveProfile: Boolean,
+    ): Boolean {
         if (!EditingLockGuard.isLocked(context)) return true
         if (profile.isNullOrBlank()) return false
-        return ProfileStore.getCurrent(context) == profile
+        return allowInactiveProfile || ProfileStore.getCurrent(context) == profile
     }
 
     fun canChangeSelection(
@@ -39,9 +46,10 @@ object ProtectionEditPolicy {
         allowMode: Boolean,
         currentlySelected: Boolean,
         requestedSelected: Boolean,
+        allowInactiveProfile: Boolean = false,
     ): Boolean {
         if (!EditingLockGuard.isLocked(context)) return true
-        if (!canTightenActiveProfile(context, profile)) return false
+        if (!canTightenProfileWhileLocked(context, profile, allowInactiveProfile)) return false
         if (currentlySelected == requestedSelected) return true
 
         // Block selected: selecting another item increases protection.
@@ -59,9 +67,10 @@ object ProtectionEditPolicy {
         allowMode: Boolean,
         original: Set<String>,
         requested: Set<String>,
+        allowInactiveProfile: Boolean = false,
     ): Boolean {
         if (!EditingLockGuard.isLocked(context)) return true
-        if (!canTightenActiveProfile(context, profile)) return false
+        if (!canTightenProfileWhileLocked(context, profile, allowInactiveProfile)) return false
 
         return if (allowMode) {
             requested.all { it in original }

@@ -64,6 +64,9 @@
     <!-- NFC tag reading and writing -->
     <uses-permission android:name="android.permission.NFC" />
 
+    <!-- Explicit success haptic after NFC writes; no runtime permission is required -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
     <!-- Notification runtime permission on Android 13+ -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
@@ -366,6 +369,11 @@
         <!-- Barcode scanner screen -->
         <activity
             android:name=".feature.barcode.BarcodeScanActivity"
+            android:exported="false" />
+
+        <!-- Unified QR + barcode scanner screen -->
+        <activity
+            android:name=".feature.scan.UnifiedScanActivity"
             android:exported="false" />
 
         <!-- QR action generator screen -->

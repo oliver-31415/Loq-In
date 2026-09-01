@@ -3,9 +3,87 @@
 
     <!-- Runtime-applied only on inconsistent API-34+ framework images. -->
     <style name="SwitchlyApi34FrameworkCompatOverlay">
-        <!-- Prevent MaterialTextView from routing text-appearance line heights through
-             TextViewCompat.setLineHeight(int, float), which is absent on the broken image. -->
+        <!--
+            Some Android 14 system images report API 34 while missing TextView.setLineHeight(int, float).
+            AppCompat 1.7+ preserves the original text dimension unit and therefore reaches that framework overload while inflating.
+
+            Route common Material typography through line-height-free AppCompat appearances only on the detected broken framework.
+            Normal Android builds keep the regular Material typography because this overlay is never applied there.
+        -->
         <item name="textAppearanceLineHeightEnabled">false</item>
+        <item name="textAppearanceBody1">@style/Switchly.Api34SafeText.Body1</item>
+        <item name="textAppearanceBody2">@style/Switchly.Api34SafeText.Body2</item>
+        <item name="textAppearanceCaption">@style/Switchly.Api34SafeText.Caption</item>
+        <item name="textAppearanceButton">@style/Switchly.Api34SafeText.Button</item>
+        <item name="textAppearanceHeadline6">@style/Switchly.Api34SafeText.Title</item>
+        <item name="textAppearanceSubtitle1">@style/Switchly.Api34SafeText.Subhead</item>
+        <item name="textAppearanceSubtitle2">@style/Switchly.Api34SafeText.Body2</item>
+
+        <item name="textAppearanceBodyLarge">@style/Switchly.Api34SafeText.BodyLarge</item>
+        <item name="textAppearanceBodyMedium">@style/Switchly.Api34SafeText.BodyMedium</item>
+        <item name="textAppearanceBodySmall">@style/Switchly.Api34SafeText.BodySmall</item>
+        <item name="textAppearanceLabelMedium">@style/Switchly.Api34SafeText.LabelMedium</item>
+        <item name="textAppearanceTitleLarge">@style/Switchly.Api34SafeText.TitleLarge</item>
+        <item name="textAppearanceTitleMedium">@style/Switchly.Api34SafeText.TitleMedium</item>
+        <item name="textAppearanceHeadlineLarge">@style/Switchly.Api34SafeText.HeadlineLarge</item>
+    </style>
+
+    <!--
+        Explicitly avoid the platform android:lineHeight attribute. The compat
+        lineHeight attribute is cleared instead, which keeps minSdk 27 lint-clean
+        and prevents AppCompat from selecting the API-34 unit-aware framework path.
+    -->
+    <style name="Switchly.Api34SafeText.Body1" parent="TextAppearance.AppCompat.Body1">
+        <item name="lineHeight">@null</item>
+    </style>
+
+    <style name="Switchly.Api34SafeText.Body2" parent="TextAppearance.AppCompat.Body2">
+        <item name="lineHeight">@null</item>
+    </style>
+
+    <style name="Switchly.Api34SafeText.Caption" parent="TextAppearance.AppCompat.Caption">
+        <item name="lineHeight">@null</item>
+    </style>
+
+    <style name="Switchly.Api34SafeText.Button" parent="TextAppearance.AppCompat.Button">
+        <item name="lineHeight">@null</item>
+    </style>
+
+    <style name="Switchly.Api34SafeText.Title" parent="TextAppearance.AppCompat.Title">
+        <item name="lineHeight">@null</item>
+    </style>
+
+    <style name="Switchly.Api34SafeText.Subhead" parent="TextAppearance.AppCompat.Subhead">
+        <item name="lineHeight">@null</item>
+    </style>
+
+    <style name="Switchly.Api34SafeText.BodyLarge" parent="Switchly.Api34SafeText.Body1">
+        <item name="android:textSize">16sp</item>
+    </style>
+
+    <style name="Switchly.Api34SafeText.BodyMedium" parent="Switchly.Api34SafeText.Body2">
+        <item name="android:textSize">14sp</item>
+    </style>
+
+    <style name="Switchly.Api34SafeText.BodySmall" parent="Switchly.Api34SafeText.Caption">
+        <item name="android:textSize">12sp</item>
+    </style>
+
+    <style name="Switchly.Api34SafeText.LabelMedium" parent="Switchly.Api34SafeText.Caption">
+        <item name="android:textSize">12sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="Switchly.Api34SafeText.TitleLarge" parent="Switchly.Api34SafeText.Title">
+        <item name="android:textSize">22sp</item>
+    </style>
+
+    <style name="Switchly.Api34SafeText.TitleMedium" parent="Switchly.Api34SafeText.Subhead">
+        <item name="android:textSize">16sp</item>
+    </style>
+
+    <style name="Switchly.Api34SafeText.HeadlineLarge" parent="Switchly.Api34SafeText.Title">
+        <item name="android:textSize">32sp</item>
     </style>
 
     <!-- =========================
@@ -18,8 +96,6 @@
         <item name="android:windowTranslucentStatus">false</item>
         <item name="android:windowTranslucentNavigation">false</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
-        <item name="android:statusBarColor">?android:attr/colorBackground</item>
-        <item name="android:navigationBarColor">?android:attr/colorBackground</item>
         <item name="android:windowBackground">?android:attr/colorBackground</item>
         <item name="android:windowNoTitle">true</item>
         <item name="windowNoTitle">true</item>
@@ -209,7 +285,7 @@
         <item name="android:minHeight">56dp</item>
         <item name="android:paddingTop">12dp</item>
         <item name="android:paddingBottom">12dp</item>
-        <item name="android:textAppearance">@style/TextAppearance.MaterialComponents.Body1</item>
+        <item name="android:textAppearance">?attr/textAppearanceBody1</item>
     </style>
 
     <!-- Layout container for exposed dropdown menus -->
@@ -226,7 +302,6 @@
 
     <!-- Hint text styling inside dropdowns -->
     <style name="Switchly.DropdownHint" parent="TextAppearance.MaterialComponents.Body2">
-        <item name="android:lineHeight" tools:targetApi="28">14sp</item>
     </style>
 
     <!-- Text appearance for dropdown input field -->
@@ -234,7 +309,7 @@
         <item name="android:minHeight">56dp</item>
         <item name="android:paddingTop">12dp</item>
         <item name="android:paddingBottom">12dp</item>
-        <item name="android:textAppearance">@style/TextAppearance.MaterialComponents.Body1</item>
+        <item name="android:textAppearance">?attr/textAppearanceBody1</item>
     </style>
 
 </resources>

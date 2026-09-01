@@ -2,6 +2,7 @@ import groovy.json.JsonSlurper
 import java.io.File
 import java.util.Locale
 import java.util.Properties
+import com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsExtension
 
 plugins {
     id("com.android.application")
@@ -11,8 +12,8 @@ plugins {
     id("com.google.firebase.crashlytics") apply false
 }
 
-val switchlyVersionCode = 227
-val switchlyVersionName = "2.2.7"
+val switchlyVersionCode = 228
+val switchlyVersionName = "2.2.8"
 
 val switchlySecretPropertiesFile = rootProject.file("signing.properties")
 val switchlySecretProperties = Properties().apply {
@@ -206,6 +207,10 @@ android {
         create("offline") {
             dimension = "services"
 
+            configure<CrashlyticsExtension> {
+                mappingFileUploadEnabled = false
+            }
+
             buildConfigField("Boolean", "SWITCHLY_FIREBASE_ENABLED", "false")
             buildConfigField("Boolean", "SWITCHLY_GOOGLE_SIGN_IN_ENABLED", "false")
             buildConfigField("Boolean", "SWITCHLY_PLAY_BILLING_ENABLED", "false")
@@ -214,7 +219,11 @@ android {
             buildConfigField("Boolean", "SWITCHLY_ONLINE_REDEEM_CODES_ENABLED", "false")
             buildConfigField("Boolean", "SWITCHLY_OFFLINE_REDEEM_CODES_ENABLED", offlineRedeemEnabled.get())
             buildConfigField("String", "SWITCHLY_REDEEM_API_URL", buildConfigString(""))
-            buildConfigField("String", "SWITCHLY_OFFLINE_REDEEM_CODE_ALLOWLIST", buildConfigString(offlineRedeemCodeAllowlist.get()))
+            buildConfigField(
+                "String",
+                "SWITCHLY_OFFLINE_REDEEM_CODE_ALLOWLIST",
+                buildConfigString(offlineRedeemCodeAllowlist.get())
+            )
             buildConfigField("String", "SWITCHLY_EXTERNAL_PAYMENT_PROVIDER", buildConfigString("none"))
             buildConfigField("String", "SWITCHLY_EXTERNAL_CHECKOUT_URL", buildConfigString(""))
             buildConfigField("String", "SWITCHLY_EXTERNAL_CUSTOMER_PORTAL_URL", buildConfigString(""))

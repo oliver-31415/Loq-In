@@ -32,7 +32,7 @@
     <string name="qr_minutes_hint">Enter minutes</string>
     <string name="qr_clipboard_label">Switchly URI</string>
     <string name="qr_profile_fallback">Profile</string>
-    <string name="qr_scan_with_switchly_hint">Scan with Switchly’s built-in QR scanner. External scanners such as Google Lens may open the action as a search instead.</string>
+    <string name="qr_scan_with_switchly_hint">Scan with Switchly. External scanners may open it as a search.</string>
 
     <!-- ====================================================== -->
     <!-- QR scanner and errors -->

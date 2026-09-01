@@ -87,6 +87,7 @@ class AppPickerActivity : AppCompatActivity() {
 
     companion object {
         const val EXTRA_PROFILE_NAME = "extra_profile_name"
+        const val EXTRA_ALLOW_LOCKED_PROFILE_STRICT_EDITS = "extra_allow_locked_profile_strict_edits"
     }
 
     private lateinit var adapter: AppListAdapter
@@ -94,6 +95,7 @@ class AppPickerActivity : AppCompatActivity() {
     private var currentRuleMode: String = ProfileRuleModeStore.MODE_BLOCK_SELECTED
     private var autoBlockNewAppsCheckbox: CheckBox? = null
     private var originalManagedPackages: Set<String> = emptySet()
+    private var allowLockedProfileStrictEdits: Boolean = false
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(LocaleHelper.wrapContext(newBase))
@@ -124,7 +126,11 @@ class AppPickerActivity : AppCompatActivity() {
     }
 
     private fun canTightenCurrentProfile(): Boolean =
-        ProtectionEditPolicy.canTightenActiveProfile(this, currentProfile)
+        if (allowLockedProfileStrictEdits && !currentProfile.isNullOrBlank()) {
+            true
+        } else {
+            ProtectionEditPolicy.canTightenActiveProfile(this, currentProfile)
+        }
 
     private fun canChangeSelection(currentlySelected: Boolean, requestedSelected: Boolean): Boolean =
         ProtectionEditPolicy.canChangeSelection(
@@ -133,6 +139,7 @@ class AppPickerActivity : AppCompatActivity() {
             allowMode = currentRuleMode == ProfileRuleModeStore.MODE_ALLOW_SELECTED,
             currentlySelected = currentlySelected,
             requestedSelected = requestedSelected,
+            allowInactiveProfile = allowLockedProfileStrictEdits,
         )
 
     private fun syncReadOnlyUi() {
@@ -220,8 +227,11 @@ class AppPickerActivity : AppCompatActivity() {
         rvApps.layoutManager = LinearLayoutManager(this)
 
         val requestedProfile = intent.getStringExtra(EXTRA_PROFILE_NAME)?.trim().orEmpty()
-        currentProfile = requestedProfile.takeIf { it.isNotBlank() && ProfileStore.getProfiles(this).contains(it) }
+        val requestedProfileExists = requestedProfile.isNotBlank() && ProfileStore.getProfiles(this).contains(requestedProfile)
+        currentProfile = requestedProfile.takeIf { requestedProfileExists }
             ?: ProfileStore.getCurrent(this)
+        allowLockedProfileStrictEdits =
+            requestedProfileExists && intent.getBooleanExtra(EXTRA_ALLOW_LOCKED_PROFILE_STRICT_EDITS, false)
         currentRuleMode = currentProfile?.let { ProfileRuleModeStore.getMode(this, it) }
             ?: ProfileRuleModeStore.MODE_BLOCK_SELECTED
         setupProfileRuleMode(
@@ -834,6 +844,7 @@ class AppPickerActivity : AppCompatActivity() {
                     allowMode = allowMode,
                     original = originalManagedPackages,
                     requested = managed,
+                    allowInactiveProfile = allowLockedProfileStrictEdits,
                 )
             ) {
                 EditingLockGuard.showLockedDialog(this, R.string.rules_tighten_only_active_message)
@@ -864,6 +875,7 @@ class AppPickerActivity : AppCompatActivity() {
                 allowMode = allowMode,
                 original = originalManagedPackages,
                 requested = managed,
+                allowInactiveProfile = allowLockedProfileStrictEdits,
             )
         ) {
             syncReadOnlyUi()

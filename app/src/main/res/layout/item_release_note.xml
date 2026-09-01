@@ -26,6 +26,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
+                android:textColor="@color/switchly_text_primary"
                 tools:text="v2.2.1-beta" />
 
             <TextView
@@ -33,7 +34,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textAppearance="@style/TextAppearance.Material3.LabelMedium"
-                android:textColor="?android:attr/textColorSecondary"
+                android:textColor="@color/switchly_text_secondary"
                 tools:text="Jul 9, 2026" />
         </LinearLayout>
 
@@ -43,6 +44,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
             android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+            android:textColor="@color/switchly_text_primary"
             android:lineSpacingExtra="4dp"
             android:breakStrategy="balanced"
             android:hyphenationFrequency="normal"

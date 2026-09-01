@@ -73,10 +73,10 @@
     <string name="pref_mixed_allow_nfc_title">NFC control</string>
     <string name="pref_mixed_allow_nfc_summary">Lets NFC actions control Switchly.</string>
     <string name="toggle_detail_mixed_allow_nfc">When enabled, NFC actions are accepted while Mixed mode is active, including written tags and paired tags. Other allowed channels continue to work too.</string>
-    <string name="pref_mixed_allow_qr_title">Allow QR channel</string>
+    <string name="pref_mixed_allow_qr_title">QR control</string>
     <string name="pref_mixed_allow_qr_summary">Lets QR actions control Switchly.</string>
     <string name="toggle_detail_mixed_allow_qr">When enabled, QR control is allowed in Mixed mode.</string>
-    <string name="pref_mixed_allow_barcode_title">Allow barcode channel</string>
+    <string name="pref_mixed_allow_barcode_title">Barcode control</string>
     <string name="pref_mixed_allow_barcode_summary">Lets barcode actions control Switchly.</string>
     <string name="toggle_detail_mixed_allow_barcode">When enabled, saved barcode actions are accepted in Mixed mode.</string>
     <string name="pref_mixed_allow_button_title">Manual controls</string>
@@ -265,7 +265,7 @@
     <string name="edit_locked_manage_qr_codes">Turn off Switchly to create, view, copy, or share QR codes.</string>
     <string name="edit_locked_manage_barcodes">Turn off Switchly to manage barcodes.</string>
     <string name="edit_locked_manage_websites">Turn off Switchly to edit website rules.</string>
-    <string name="edit_locked_manage_profiles">Turn off Switchly to manage profiles.</string>
+    <string name="edit_locked_manage_profiles">Some profile actions stay locked while Switchly is active. You can review, create, duplicate, and rename profiles and tighten app selections. Disable Switchly to delete or switch profiles.</string>
     <string name="edit_locked_write_nfc_tags">Turn off Switchly to write or pair NFC tags.</string>
     <string name="edit_locked_manage_blocked_notifications">Turn off Switchly to open blocked notifications.</string>
     <string name="toast_disable_switchly_to_edit_blocked_apps">Fully disable Switchly to edit app rules.</string>

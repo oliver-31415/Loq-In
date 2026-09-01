@@ -27,6 +27,7 @@ object AndroidSystemPackages {
     const val SETTINGS = "com.android.settings"
     const val GOOGLE_SETTINGS = "com.google.android.settings"
     const val SAMSUNG_SETTINGS = "com.samsung.android.settings"
+    const val SAMSUNG_ACCESSIBILITY = "com.samsung.accessibility"
     const val SETTINGS_DEVICE_ADMIN_CLASS = "com.android.settings.DeviceAdminSettings"
 
     const val PLAY_STORE = "com.android.vending"
@@ -54,6 +55,11 @@ object AndroidSystemPackages {
         SAMSUNG_SETTINGS,
     )
 
+    // OEM Accessibility settings helpers can be reported by UsageStats as if they were standalone apps even though they are not normal launcher/blocking targets.
+    val ACCESSIBILITY_SYSTEM_PACKAGES: Set<String> = setOf(
+        SAMSUNG_ACCESSIBILITY,
+    )
+
     val PACKAGE_INSTALLER_PACKAGES: Set<String> = setOf(
         ANDROID_PACKAGE_INSTALLER,
         GOOGLE_PACKAGE_INSTALLER,
@@ -74,6 +80,7 @@ object AndroidSystemPackages {
     )
 
     val SETTINGS_BYPASS_PACKAGES: Set<String> = SETTINGS_PACKAGES +
+        ACCESSIBILITY_SYSTEM_PACKAGES +
         PERMISSION_CONTROLLER_PACKAGES +
         setOf(
             "com.miui.securitycenter",

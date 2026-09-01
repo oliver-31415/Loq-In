@@ -36,7 +36,6 @@ import android.view.WindowManager
 import android.widget.Button
 import android.widget.TextView
 import androidx.activity.ComponentActivity
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.OnBackPressedCallback
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
@@ -49,6 +48,7 @@ import at.saltyy.switchly.data.prefs.SwitchModeStore
 import at.saltyy.switchly.data.prefs.LastBlockReasonStore
 import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.ui.ThemeUtils
+import at.saltyy.switchly.util.FrameworkApi34Compat
 import at.saltyy.switchly.ui.dialog.showAccented
 import at.saltyy.switchly.ui.dialog.SwitchlyInfoRow
 import at.saltyy.switchly.ui.dialog.showSwitchlyInfoDialog
@@ -84,7 +84,9 @@ class BlockerActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         ThemeUtils.applyAccentTheme(this)
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
+        if (!FrameworkApi34Compat.needsWindowInsetsCrashShield()) {
+            WindowCompat.enableEdgeToEdge(window)
+        }
         suppressOpenActivityTransition()
         suppressLegacyPendingTransition()
         currentActivityRef = WeakReference(this)
@@ -120,7 +122,6 @@ class BlockerActivity : ComponentActivity() {
             window.decorView.setBackgroundColor(bg)
 
             // Set correct status/nav icon appearance (dark icons on light bg, light icons on dark bg)
-            WindowCompat.setDecorFitsSystemWindows(window, false)
             val controller = WindowInsetsControllerCompat(window, window.decorView)
             val isLightBg = isColorLight(bg)
             controller.isAppearanceLightStatusBars = isLightBg
@@ -397,6 +398,10 @@ class BlockerActivity : ComponentActivity() {
     }
 
     private fun applySystemBarInsets() {
+        if (FrameworkApi34Compat.needsWindowInsetsCrashShield()) {
+            FrameworkApi34Compat.applyWindowInsetsWorkaround(this)
+            return
+        }
         val root = findViewById<View>(R.id.blocker_root)
         val initialLeft = root.paddingLeft
         val initialTop = root.paddingTop

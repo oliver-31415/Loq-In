@@ -22,7 +22,7 @@
     <!-- ====================================================== -->
     <string name="permissions_accessibility_title">Accessibility service</string>
     <string name="permissions_accessibility_desc">Required for app, website, supported in-app, and usage-limit protection: lets Switchly detect foreground changes and the visible information needed for configured rules.</string>
-    <string name="permissions_accessibility_desc_advanced_protection">Android Advanced Protection is enabled. It can prevent Switchly’s Accessibility service from being available. Full website, in-app, navigation, and usage-limit protection still needs Accessibility. If Usage Access is granted, Switchly can run a limited best-effort fallback for basic whole-app Block selected / Allow selected rules. Android can still restrict blocker screens started from the background, so this fallback is not equivalent to full Accessibility protection. For full Switchly protection, disable Device protection under Android Settings → Security &amp; privacy → Advanced Protection.</string>
+    <string name="permissions_accessibility_desc_advanced_protection">Android Advanced Protection is enabled. It can prevent Switchly’s Accessibility service from being available. Full website, in-app, navigation, and usage-limit protection still needs Accessibility. If Usage Access is granted, Switchly can run a limited best-effort fallback for basic whole-app Block selected/Allow selected rules. Android can still restrict blocker screens started from the background, so this fallback is not equivalent to full Accessibility protection. For full Switchly protection, disable Device protection under Android Settings → Security &amp; privacy → Advanced Protection.</string>
     <string name="permissions_usage_access_title">App usage access</string>
     <string name="permissions_usage_access_desc">Required for screen-time statistics and daily app limits. Enable “App usage data” access for Switchly.</string>
     <string name="permissions_battery_oem_note">Some devices do not offer an “Unrestricted” battery option. If you already enabled the highest available background setting for Switchly, that may already be the maximum supported on your device.</string>
@@ -125,7 +125,7 @@ You can decline this permission, but app, website, and supported in-app protecti
     <string name="protection_accessibility_not_connected_text">Android reports Accessibility as enabled, but Switchly is not receiving events. Tap to check.</string>
     <string name="protection_accessibility_oem_disabled_title">Accessibility was turned off</string>
     <string name="protection_accessibility_oem_disabled_text">On vivo/iQOO, Phone Manager may disable Switchly Accessibility. Enable Associated startup, then turn Accessibility back on.</string>
-    <string name="permissions_status_oem_accessibility_disabled">Disabled by system / Phone Manager</string>
+    <string name="permissions_status_oem_accessibility_disabled">Disabled by system/Phone Manager</string>
     <string name="permissions_status_advanced_protection">Advanced Protection active - Accessibility unavailable</string>
     <string name="permissions_status_advanced_protection_fallback_starting">Advanced Protection - limited app fallback starting</string>
     <string name="permissions_status_advanced_protection_fallback_active">Advanced Protection - limited app fallback active</string>

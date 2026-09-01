@@ -28,6 +28,7 @@ import at.saltyy.switchly.feature.barcode.BarcodeScanActivity
 import at.saltyy.switchly.feature.blocker.BlockerActivity
 import at.saltyy.switchly.feature.entry.ScanLauncherActivity
 import at.saltyy.switchly.feature.qr.QrScanActivity
+import at.saltyy.switchly.feature.scan.UnifiedScanActivity
 import at.saltyy.switchly.feature.settings.AppLockActivity
 import at.saltyy.switchly.nfc.NfcEntryActivity
 import at.saltyy.switchly.util.ActivityTransitionCompat
@@ -116,6 +117,7 @@ object AppLockManager {
             // Direct scanner shortcuts must stay usable as physical unlock controls even when the rest of Switchly is PIN-protected.
             is QrScanActivity -> !activity.intent.getBooleanExtra(QrScanActivity.EXTRA_ALLOW_DIRECT_OPEN, false)
             is BarcodeScanActivity -> !activity.intent.getBooleanExtra(BarcodeScanActivity.EXTRA_ALLOW_DIRECT_OPEN, false)
+            is UnifiedScanActivity -> !activity.intent.getBooleanExtra(UnifiedScanActivity.EXTRA_ALLOW_DIRECT_OPEN, false)
             is ScanLauncherActivity -> activity.intent?.action !in DIRECT_SCANNER_ACTIONS
             else -> true
         }

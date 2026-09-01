@@ -54,6 +54,7 @@
                         android:layout_height="wrap_content"
                         android:text="@string/support_hero_title"
                         android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
+                        android:textColor="@color/switchly_text_primary"
                         android:textStyle="bold" />
 
                     <TextView
@@ -62,7 +63,7 @@
                         android:layout_marginTop="4dp"
                         android:text="@string/support_desc"
                         android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-                        android:textColor="?android:attr/textColorSecondary" />
+                        android:textColor="@color/switchly_text_secondary" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnOpenEmail"
@@ -83,7 +84,7 @@
                         android:gravity="center"
                         android:text="@string/support_response_time_short"
                         android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                        android:textColor="?android:attr/textColorSecondary" />
+                        android:textColor="@color/switchly_text_secondary" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -148,7 +149,7 @@
                             android:layout_marginStart="14dp"
                             android:layout_marginTop="3dp"
                             android:text="@string/support_view_logs_desc"
-                            android:textColor="?android:attr/textColorSecondary"
+                            android:textColor="@color/switchly_text_secondary"
                             android:textSize="12sp"
                             android:maxLines="2"
                             app:layout_constraintEnd_toStartOf="@id/ivViewLogsChevron"
@@ -165,7 +166,7 @@
                             app:layout_constraintBottom_toBottomOf="parent"
                             app:layout_constraintEnd_toEndOf="parent"
                             app:layout_constraintTop_toTopOf="parent"
-                            app:tint="?android:attr/textColorSecondary" />
+                            app:tint="@color/switchly_text_secondary" />
                     </androidx.constraintlayout.widget.ConstraintLayout>
 
                     <com.google.android.material.divider.MaterialDivider
@@ -217,7 +218,7 @@
                             android:layout_marginStart="14dp"
                             android:layout_marginTop="3dp"
                             android:text="@string/support_logs_card_desc"
-                            android:textColor="?android:attr/textColorSecondary"
+                            android:textColor="@color/switchly_text_secondary"
                             android:textSize="12sp"
                             android:maxLines="2"
                             app:layout_constraintEnd_toStartOf="@id/ivCopyLogsAction"
@@ -288,7 +289,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="14dp"
                             android:text="@string/support_email_label"
-                            android:textColor="?android:attr/textColorSecondary"
+                            android:textColor="@color/switchly_text_secondary"
                             android:textSize="12sp"
                             app:layout_constraintEnd_toStartOf="@id/btnCopyEmailInline"
                             app:layout_constraintStart_toEndOf="@id/ivSupportEmail"
@@ -371,7 +372,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="14dp"
                             android:layout_marginTop="3dp"
-                            android:textColor="?android:attr/textColorSecondary"
+                            android:textColor="@color/switchly_text_secondary"
                             android:textSize="13sp"
                             android:maxLines="1"
                             android:ellipsize="end"
@@ -441,7 +442,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="14dp"
                             android:layout_marginTop="3dp"
-                            android:textColor="?android:attr/textColorSecondary"
+                            android:textColor="@color/switchly_text_secondary"
                             android:textSize="13sp"
                             android:maxLines="1"
                             android:ellipsize="end"

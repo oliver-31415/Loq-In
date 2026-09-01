@@ -126,7 +126,7 @@ class UsageAccessFallbackBlockingService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        // Eligibility checks touch Usage Access / system services, so keep them on the worker thread.
+        // Eligibility checks touch Usage Access/system services, so keep them on the worker thread.
         if (!::worker.isInitialized) {
             return START_NOT_STICKY
         }

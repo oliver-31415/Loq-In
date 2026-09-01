@@ -85,7 +85,7 @@
 
                 <TextView
                     android:id="@+id/tvFaqEmptyTitle"
-                    style="@style/TextAppearance.MaterialComponents.Subtitle1"
+                    android:textAppearance="?attr/textAppearanceSubtitle1"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:gravity="center"
@@ -93,7 +93,7 @@
 
                 <TextView
                     android:id="@+id/tvFaqEmptyBody"
-                    style="@style/TextAppearance.MaterialComponents.Body2"
+                    android:textAppearance="?attr/textAppearanceBody2"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"

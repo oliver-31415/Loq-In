@@ -49,7 +49,7 @@
 
             <TextView
                 android:id="@+id/tvName"
-                style="@style/TextAppearance.MaterialComponents.Body1"
+                android:textAppearance="?attr/textAppearanceBody1"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/profile_label_default"
@@ -57,7 +57,7 @@
 
             <TextView
                 android:id="@+id/tvSubtitle"
-                style="@style/TextAppearance.MaterialComponents.Body2"
+                android:textAppearance="?attr/textAppearanceBody2"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
@@ -85,6 +85,7 @@
             android:layout_height="1dp" />
 
         <ImageView
+            android:id="@+id/ivProfileActionState"
             android:layout_width="18dp"
             android:layout_height="18dp"
             android:contentDescription="@string/edit"

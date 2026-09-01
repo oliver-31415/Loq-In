@@ -20,11 +20,11 @@
 package at.saltyy.switchly.ui
 
 import android.view.View
-import androidx.activity.enableEdgeToEdge
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
+import at.saltyy.switchly.util.FrameworkApi34Compat
 
 /**
  * System-bars setup for classic Views/XML screens.
@@ -47,14 +47,50 @@ object EdgeToEdgeUtils {
         toolbar: View? = null,
         bottomNav: View? = null
     ) {
-        activity.enableEdgeToEdge()
+        // A few malformed Android 14 images report SDK 34 while missing the API-34 WindowInsets.Type.systemOverlays() method.
+        // Any AndroidX WindowInsetsCompat listener crashes before our callback on those images.
+        // Android 14 does not enforce edge-to-edge, so keep the platform's normal decor-fitting behavior.
+        if (FrameworkApi34Compat.needsWindowInsetsCrashShield()) {
+            FrameworkApi34Compat.applyWindowInsetsWorkaround(activity)
+            return
+        }
 
-        // Let the system apply insets (toolbar below status bar, bottom nav above nav bar)
-        WindowCompat.setDecorFitsSystemWindows(activity.window, true)
+        // Android 15+ enforces edge-to-edge for targetSdk 35+.
+        // Do not try to opt back out with decorFitsSystemWindows=true; use the compatibility helper and apply the system-bar insets required by Switchly's classic XML screens explicitly.
+        WindowCompat.enableEdgeToEdge(activity.window)
 
-        // Ensure we don't carry over any previous listeners
+        // Every current classic Toolbar lives in an AppBarLayout with fitsSystemWindows=true.
+        // Do not add the status-bar inset a second time to the Toolbar itself.
         toolbar?.let { ViewCompat.setOnApplyWindowInsetsListener(it, null) }
-        bottomNav?.let { ViewCompat.setOnApplyWindowInsetsListener(it, null) }
+
+        bottomNav?.let { bn ->
+            val initialBottom = bn.paddingBottom
+            ViewCompat.setOnApplyWindowInsetsListener(bn) { v, insets ->
+                val nav = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
+                val gestures = insets.getInsets(WindowInsetsCompat.Type.systemGestures()).bottom
+                v.updatePadding(bottom = maxOf(initialBottom, nav, gestures))
+                insets
+            }
+        }
+
+        // Keep classic screens clear of side cutouts and the bottom system bar. When a
+        // BottomNavigationView is present it owns the bottom inset to avoid double-padding.
+        activity.findViewById<View>(android.R.id.content)?.let { content ->
+            val initialLeft = content.paddingLeft
+            val initialRight = content.paddingRight
+            val initialBottom = content.paddingBottom
+            ViewCompat.setOnApplyWindowInsetsListener(content) { v, insets ->
+                val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+                v.updatePadding(
+                    left = initialLeft + bars.left,
+                    right = initialRight + bars.right,
+                    bottom = if (bottomNav == null) initialBottom + bars.bottom else initialBottom
+                )
+                insets
+            }
+        }
+
+        ViewCompat.requestApplyInsets(activity.window.decorView)
     }
 
     /**
@@ -63,6 +99,9 @@ object EdgeToEdgeUtils {
      * Using systemGestures() makes the bottom items sit higher, matching the look of the Schedules screen.
      */
     fun applyBottomNavGestureInset(bottomNav: View) {
+        if (FrameworkApi34Compat.needsWindowInsetsCrashShield()) {
+            return
+        }
         val initialBottom = bottomNav.paddingBottom
         ViewCompat.setOnApplyWindowInsetsListener(bottomNav) { v, insets ->
             val nav = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
@@ -80,10 +119,13 @@ object EdgeToEdgeUtils {
         bottomNav: View? = null,
         contentRoot: View? = null
     ) {
-        activity.enableEdgeToEdge()
+        if (FrameworkApi34Compat.needsWindowInsetsCrashShield()) {
+            FrameworkApi34Compat.applyWindowInsetsWorkaround(activity)
+            return
+        }
+        WindowCompat.enableEdgeToEdge(activity.window)
 
-        // Edge-to-edge, but we apply insets manually.
-        WindowCompat.setDecorFitsSystemWindows(activity.window, false)
+        // Edge-to-edge is enforced on Android 15+; apply insets manually.
 
         toolbar?.let { tb ->
             val initialTop = tb.paddingTop

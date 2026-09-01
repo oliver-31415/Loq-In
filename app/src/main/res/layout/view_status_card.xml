@@ -36,7 +36,7 @@
 
             <TextView
                 android:id="@+id/tvStatusTitle"
-                style="@style/TextAppearance.Material3.BodyMedium"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
@@ -58,7 +58,7 @@
         <!-- Optional body text -->
         <TextView
             android:id="@+id/tvStatusBody"
-            style="@style/TextAppearance.Material3.BodyMedium"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
@@ -85,7 +85,7 @@
 
             <TextView
                 android:id="@+id/tvStatusActionTitle"
-                style="@style/TextAppearance.Material3.BodySmall"
+                android:textAppearance="?attr/textAppearanceBodySmall"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:alpha="0.8" />
@@ -102,7 +102,7 @@
         <!-- Optional footer text -->
         <TextView
             android:id="@+id/tvStatusFooter"
-            style="@style/TextAppearance.Material3.BodySmall"
+            android:textAppearance="?attr/textAppearanceBodySmall"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"

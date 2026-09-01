@@ -28,9 +28,13 @@ import android.nfc.Tag
 import android.nfc.TagLostException
 import android.nfc.tech.Ndef
 import android.nfc.tech.NdefFormatable
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.os.VibrationEffect
+import android.os.Vibrator
+import android.os.VibratorManager
 import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -87,7 +91,7 @@ class NfcWriteWaitingActivity : AppCompatActivity() {
         @Volatile
         private var writeSessionActive: Boolean = false
 
-        private const val SUCCESS_TAG_DEBOUNCE_MS = 1200
+        private const val TAG_REDISCOVERY_DEBOUNCE_MS = 1200
 
         fun isWriteSessionActive(): Boolean = writeSessionActive
     }
@@ -110,8 +114,10 @@ class NfcWriteWaitingActivity : AppCompatActivity() {
     private var nfcAdapter: NfcAdapter? = null
     private val handler = Handler(Looper.getMainLooper())
     private var isProcessingTag = false
+    private var waitingForRetry = false
     private var transientFailureCount = 0
     private var lastTransientUid: String = ""
+    private var successHapticPlayed = false
 
     private lateinit var progress: CircularProgressIndicator
     private lateinit var tvTitle: TextView
@@ -195,23 +201,25 @@ class NfcWriteWaitingActivity : AppCompatActivity() {
     }
 
     private fun handleDiscoveredTag(tag: Tag) {
-        if (isFinishing || isDestroyed || isProcessingTag) {
+        if (isFinishing || isDestroyed || isProcessingTag || waitingForRetry) {
             return
         }
 
         val actualUid = NfcTagUid.normalizeUidHex(NfcTagUid.uidHex(tag))
         if (expectedUid.isNotBlank() && actualUid != expectedUid) {
-            showWrongTag(actualUid)
+            showWrongTag(tag, actualUid)
             return
         }
 
         isProcessingTag = true
+        waitingForRetry = false
         // Keep reader mode active for the complete NFC transaction.
         // Disabling reader mode here can tear down the RF connection before Ndef.connect()/writeNdefMessage() finishes and surface as a false TagLostException even when the tag has not moved. 
         // Duplicate callbacks are already ignored by isProcessingTag.
         btnRetry.visibility = android.view.View.GONE
         tvTitle.text = getString(R.string.nfc_writing)
         tvHint.text = getString(R.string.nfc_hold_still)
+        progress.visibility = android.view.View.VISIBLE
         progress.isIndeterminate = true
 
         lifecycleScope.launch {
@@ -227,7 +235,7 @@ class NfcWriteWaitingActivity : AppCompatActivity() {
 
         val uri = uriToWrite
         if (uri.isNullOrBlank()) {
-            finishWithError(RESULT_FAILED_STR)
+            finishWithError(RESULT_FAILED_STR, tag)
             return
         }
 
@@ -236,22 +244,25 @@ class NfcWriteWaitingActivity : AppCompatActivity() {
         when (result) {
             WriteResult.OK -> handleSuccessfulWrite(tag, uid)
             WriteResult.TOO_SMALL -> showUidFallback(
+                tag,
                 RESULT_TOO_SMALL_STR,
                 uid,
                 NfcUidPairingStore.TagKind.WRITABLE,
             )
             WriteResult.NOT_WRITABLE -> showUidFallback(
+                tag,
                 RESULT_NOT_WRITABLE_STR,
                 uid,
                 NfcUidPairingStore.TagKind.READ_ONLY,
             )
             WriteResult.UNSUPPORTED -> showUidFallback(
+                tag,
                 RESULT_UNSUPPORTED_STR,
                 uid,
                 NfcUidPairingStore.TagKind.READ_ONLY,
             )
-            WriteResult.TRANSIENT_FAILURE -> handleTransientWriteFailure(uid)
-            WriteResult.FAILED -> finishWithError(RESULT_FAILED_STR)
+            WriteResult.TRANSIENT_FAILURE -> handleTransientWriteFailure(tag, uid)
+            WriteResult.FAILED -> finishWithError(RESULT_FAILED_STR, tag)
         }
     }
 
@@ -259,7 +270,7 @@ class NfcWriteWaitingActivity : AppCompatActivity() {
         val uid = NfcTagUid.uidHex(tag)
         if (uid.isNullOrBlank()) {
             NfcDiagnosticsStore.recordWriteResult(this, RESULT_FAILED_STR)
-            finishWithError(RESULT_FAILED_STR)
+            finishWithError(RESULT_FAILED_STR, tag)
             return
         }
 
@@ -269,6 +280,7 @@ class NfcWriteWaitingActivity : AppCompatActivity() {
                 WritableCapability.NOT_WRITABLE -> {
                     NfcDiagnosticsStore.recordWriteResult(this, RESULT_NOT_WRITABLE_STR)
                     showUidFallback(
+                        tag,
                         RESULT_NOT_WRITABLE_STR,
                         uid,
                         NfcUidPairingStore.TagKind.READ_ONLY,
@@ -276,7 +288,7 @@ class NfcWriteWaitingActivity : AppCompatActivity() {
                     return
                 }
                 WritableCapability.TRANSIENT_FAILURE -> {
-                    handleTransientWriteFailure(uid)
+                    handleTransientWriteFailure(tag, uid)
                     return
                 }
             }
@@ -293,10 +305,11 @@ class NfcWriteWaitingActivity : AppCompatActivity() {
     }
 
     private fun handleSuccessfulWrite(tag: Tag, uid: String?) {
+        performSuccessHapticOnce()
         // The write is complete, but the physical tag is usually still on the antenna.
         // If reader mode is torn down immediately Android can rediscover the same tag through normal NFC dispatch, which causes a second NFC haptic/notification on some devices.
         // Debounce this tag while it remains in range and keep reader mode active until the Activity finishes.
-        suppressRediscoveryAfterSuccess(tag)
+        suppressRediscovery(tag)
         transientFailureCount = 0
         lastTransientUid = ""
         NfcDiagnosticsStore.recordWriteResult(this, RESULT_OK_STR)
@@ -318,7 +331,7 @@ class NfcWriteWaitingActivity : AppCompatActivity() {
         finishWithOk(uidHex = null, guardUidHex = uid ?: NfcTagUid.uidHex(tag))
     }
 
-    private fun handleTransientWriteFailure(uid: String?) {
+    private fun handleTransientWriteFailure(tag: Tag, uid: String?) {
         val cleanUid = NfcTagUid.normalizeUidHex(uid)
         if (cleanUid != lastTransientUid) {
             transientFailureCount = 0
@@ -328,6 +341,7 @@ class NfcWriteWaitingActivity : AppCompatActivity() {
         NfcDiagnosticsStore.recordWriteResult(this, RESULT_TRANSIENT_STR)
         if (transientFailureCount >= MAX_TRANSIENT_FAILURES_BEFORE_FALLBACK && !uid.isNullOrBlank()) {
             showUidFallback(
+                tag,
                 RESULT_TRANSIENT_STR,
                 uid,
                 NfcUidPairingStore.TagKind.WRITABLE,
@@ -335,26 +349,31 @@ class NfcWriteWaitingActivity : AppCompatActivity() {
             return
         }
 
-        // Stop polling after a real transient failure.
-        // Automatically re-enabling reader mode while the same tag is still sitting on the antenna causes an immediate rediscovery/retry loop.
-        // Let the user remove the tag and explicitly arm the writer again instead.
-        safeDisableReaderMode()
+        // The write attempt is over. Stay in reader mode with NO_PLATFORM_SOUNDS so Android
+        // cannot fall back to normal NFC dispatch and spam haptics while the same tag is still
+        // touching the antenna. The callback remains gated until the user explicitly taps Retry.
+        suppressRediscovery(tag)
+        waitingForRetry = true
+        isProcessingTag = true
+        progress.visibility = android.view.View.GONE
         tvTitle.text = getString(R.string.nfc_write_transient_title)
         tvHint.text = getString(R.string.nfc_write_transient_retry)
         btnRetry.visibility = android.view.View.VISIBLE
     }
 
     private fun showUidFallback(
+        tag: Tag,
         result: String,
         uid: String?,
         tagKind: NfcUidPairingStore.TagKind,
     ) {
         val cleanUid = NfcTagUid.normalizeUidHex(uid)
         if (cleanUid.isBlank()) {
-            finishWithError(result)
+            finishWithError(result, tag)
             return
         }
 
+        suppressRediscovery(tag)
         safeDisableReaderMode()
         val title = when (result) {
             RESULT_TOO_SMALL_STR -> getString(R.string.nfc_write_error_too_small_title)
@@ -388,7 +407,7 @@ class NfcWriteWaitingActivity : AppCompatActivity() {
                 resetForNextTag()
             }
             .setNeutralButton(R.string.cancel) { _, _ ->
-                finishWithError(result)
+                finishWithError(result, tag)
             }
             .setCancelable(false)
             .showAccented()
@@ -429,9 +448,11 @@ class NfcWriteWaitingActivity : AppCompatActivity() {
         }
     }
 
-    private fun showWrongTag(actualUid: String) {
+    private fun showWrongTag(tag: Tag, actualUid: String) {
         isProcessingTag = true
-        safeDisableReaderMode()
+        waitingForRetry = true
+        suppressRediscovery(tag)
+        progress.visibility = android.view.View.GONE
         tvTitle.text = getString(R.string.nfc_rewrite_wrong_tag_title)
         tvHint.text = getString(
             R.string.nfc_rewrite_wrong_tag_message,
@@ -442,6 +463,7 @@ class NfcWriteWaitingActivity : AppCompatActivity() {
     }
 
     private fun showWaitingState() {
+        progress.visibility = android.view.View.VISIBLE
         progress.isIndeterminate = true
         if (::btnRetry.isInitialized) btnRetry.visibility = android.view.View.GONE
         tvTitle.text = getString(R.string.nfc_waiting_tag)
@@ -460,14 +482,17 @@ class NfcWriteWaitingActivity : AppCompatActivity() {
         if (isFinishing || isDestroyed) {
             return
         }
+        // Retry is the only transition that re-arms tag handling after an interrupted/wrong-tag state.
+        // Recreate reader mode here so the next deliberate tag presentation starts a fresh transaction.
         safeDisableReaderMode()
+        waitingForRetry = false
         isProcessingTag = false
         showWaitingState()
         enableReaderModeIfReady()
     }
 
     private fun enableReaderModeIfReady() {
-        if (isFinishing || isDestroyed || isProcessingTag) {
+        if (isFinishing || isDestroyed || isProcessingTag || waitingForRetry) {
             return
         }
 
@@ -499,17 +524,17 @@ class NfcWriteWaitingActivity : AppCompatActivity() {
         runCatching { nfcAdapter?.disableReaderMode(this) }
     }
 
-    private fun suppressRediscoveryAfterSuccess(tag: Tag) {
+    private fun suppressRediscovery(tag: Tag) {
         runCatching {
             // minSdk is 27, so NfcAdapter.ignore() is available on every supported Switchly device.
-            // Once the write has completed we no longer need to communicate with this tag.
-            // Ignore it until it has genuinely left the field to prevent duplicate reader/intent discovery.
-            nfcAdapter?.ignore(tag, SUCCESS_TAG_DEBOUNCE_MS, null, handler)
+            // The current result is already known.
+            // Ignore this physical tag briefly so a reader-mode transition cannot immediately re-dispatch it through Android's normal NFC path.
+            nfcAdapter?.ignore(tag, TAG_REDISCOVERY_DEBOUNCE_MS, null, handler)
         }.onFailure { error ->
             AppLogStore.append(
                 this,
                 "NFC",
-                "Writer success debounce failed: ${error.javaClass.simpleName}: ${error.message.orEmpty()}",
+                "Writer tag debounce failed: ${error.javaClass.simpleName}: ${error.message.orEmpty()}",
             )
         }
     }
@@ -544,11 +569,38 @@ class NfcWriteWaitingActivity : AppCompatActivity() {
             .showAccented()
     }
 
+    private fun performSuccessHapticOnce() {
+        if (successHapticPlayed) return
+        successHapticPlayed = true
+
+        // Reader mode deliberately uses FLAG_READER_NO_PLATFORM_SOUNDS so Android cannot produce duplicate NFC sounds/haptics while the tag remains on the antenna.
+        // Give a successful write one explicit, short vibration instead of relying on View haptics, which some OEMs suppress or make imperceptible depending on system haptic settings.
+        runCatching {
+            val vibrator: Vibrator = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                getSystemService(VibratorManager::class.java).defaultVibrator
+            } else {
+                getSystemService(Vibrator::class.java)
+            }
+            if (vibrator.hasVibrator()) {
+                vibrator.vibrate(
+                    VibrationEffect.createOneShot(45L, VibrationEffect.DEFAULT_AMPLITUDE),
+                )
+            }
+        }.onFailure { error ->
+            AppLogStore.append(
+                this,
+                "NFC",
+                "Writer success haptic failed: ${error.javaClass.simpleName}: ${error.message.orEmpty()}",
+            )
+        }
+    }
+
     private fun finishWithOk(
         uidHex: String?,
         alreadyPaired: Boolean = false,
         guardUidHex: String? = uidHex,
     ) {
+        performSuccessHapticOnce()
         // Do not disable reader mode here while the tag may still be touching the phone. onPause() will tear it down when this Activity actually finishes. 
         // This avoids an immediate fallback to normal NFC dispatch and the resulting duplicate haptic/scan.
         NfcRecentWriteGuard.markUid(this, guardUidHex)
@@ -558,7 +610,7 @@ class NfcWriteWaitingActivity : AppCompatActivity() {
             else -> getString(R.string.nfc_write_ok)
         }
         tvHint.text = if (uidHex != null) getString(R.string.nfc_pair_ok_with_uid, uidHex) else ""
-        progress.isIndeterminate = true
+        progress.visibility = android.view.View.GONE
 
         Toast.makeText(
             this,
@@ -583,7 +635,8 @@ class NfcWriteWaitingActivity : AppCompatActivity() {
         }, 500L)
     }
 
-    private fun finishWithError(result: String) {
+    private fun finishWithError(result: String, tag: Tag? = null) {
+        tag?.let(::suppressRediscovery)
         safeDisableReaderMode()
         tvTitle.text = when (result) {
             RESULT_TOO_SMALL_STR -> getString(R.string.nfc_write_error_too_small_title)
@@ -593,7 +646,7 @@ class NfcWriteWaitingActivity : AppCompatActivity() {
             else -> getString(R.string.nfc_write_error_generic)
         }
         tvHint.text = ""
-        progress.isIndeterminate = true
+        progress.visibility = android.view.View.GONE
 
         handler.postDelayed({
             val data = Intent().apply { putExtra(EXTRA_RESULT, result) }

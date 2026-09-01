@@ -32,6 +32,7 @@ import android.os.Handler
 import android.os.HandlerThread
 import android.os.Looper
 import android.os.PowerManager
+import android.os.SystemClock
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
@@ -384,6 +385,12 @@ class SwitchlyAccessibilityService : AccessibilityService() {
 
     private val MAX_NODE_SCAN_COUNT = 120
     private val MAX_NODE_SCAN_DEPTH = 12
+    // Selected YouTube bottom-nav detection runs on AccessibilityService's main thread.
+    // Keep this much tighter than general-purpose scans because getChild() is a cross-process
+    // Binder call and has been observed stalling for seconds on Samsung Android 12 devices.
+    private val YT_SELECTED_NODE_SCAN_COUNT = 48
+    private val YT_SELECTED_NODE_SCAN_DEPTH = 8
+    private val YT_SELECTED_NODE_SCAN_BUDGET_MS = 18L
 
     // Short-lived policy cache to avoid repeated SharedPreferences/ProfileStore reads on every event.
     private val POLICY_CACHE_TTL_MS = 1_200L
@@ -1260,32 +1267,30 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         if (!relevant) {
             return
         }
-        if (now - lastYouTubeRetryProbeAt < 260L) {
+        // Event storms used to schedule three full accessibility-tree probes (100/180/320 ms) every ~260 ms.
+        // On slower Samsung Android 12 Accessibility binders that can keep the service main thread in getChild() long enough to trigger an ANR.
+        // One settled retry is enough: normal accessibility events still provide the fast path in between.
+        if (now - lastYouTubeRetryProbeAt < 650L) {
             return
         }
         lastYouTubeRetryProbeAt = now
 
         val pkg = PACKAGE_YOUTUBE
-        // YouTube frequently populates Shorts controls asynchronously after the navigation event.
-        // Probe after the first layout settles instead of betting everything on the initial event.
-        longArrayOf(100L, 180L, 320L).forEach { delay ->
-            handler.postDelayed({
-                runCatching {
-                    val retryNow = System.currentTimeMillis()
-                    if (surfaceGuardActive(pkg, "yt:shorts", retryNow)) {
-                        return@runCatching
-                    }
-                    val root = youtubeCurrentRoot()
-                    if (root != null && isYouTubeShortsScreen(root)) {
-                        rememberSurfaceHint(pkg, "yt:shorts", retryNow)
-                    }
-                    if (root != null || findYouTubeWindowRoot() != null) {
-                        maybeBlockNow(pkg, null)
-                        maybeBlockYouTubeFloatingPlayer(null, "retry_$delay")
-                    }
+        handler.postDelayed({
+            runCatching {
+                val retryNow = System.currentTimeMillis()
+                if (surfaceGuardActive(pkg, "yt:shorts", retryNow)) {
+                    return@runCatching
                 }
-            }, delay)
-        }
+                // Do not pre-scan isYouTubeShortsScreen() here.
+                // maybeBlockNow() already performs the in-app classification, so the old pre-scan only duplicated expensive Binder traversal work.
+                // Also require the active root itself to still be YouTube: the old youtubeCurrentRoot() fallback could return another app's root after the user left YouTube, causing a stale retry to traverse an unrelated accessibility tree.
+                val activeRoot = rootInActiveWindow
+                if (isRootFromPackage(activeRoot, pkg)) {
+                    maybeBlockNow(pkg, null)
+                }
+            }
+        }, 520L)
     }
 
     private fun usageTick() {
@@ -1611,7 +1616,6 @@ class SwitchlyAccessibilityService : AccessibilityService() {
 
     /**
      * Scans UsageEvents for ACTIVITY_RESUMED to count app opens reliably.
-     *
      * Some OEMs (and some navigation flows) do not emit consistent accessibility transition events when leaving/returning to apps (especially via Recents).
      * UsageEvents is the most reliable cross-device signal for "app became foreground".
      * This is only used when the user has configured at least one attempt limit.
@@ -2307,7 +2311,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         }
 
         val root = currentRoot(event) ?: return false
-        val signal = detectSwitchlySettingsBypassSurface(root, event) ?: return false
+        val signal = detectSwitchlySettingsBypassSurface(pkg, root, event) ?: return false
         // The Accessibility service is the enforcement engine itself, so protect its system settings whenever Switchly is active.
         // Other sensitive Settings surfaces keep the existing opt-in uninstall/strict-protection behaviour.
         if (signal.reason != "accessibility" && !isLegacyUninstallFrictionActive(pkg)) {
@@ -2400,6 +2404,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         pkg in AndroidSystemPackages.SETTINGS_BYPASS_PACKAGES
 
     private fun detectSwitchlySettingsBypassSurface(
+        pkg: String,
         root: AccessibilityNodeInfo,
         event: AccessibilityEvent?
     ): SettingsBypassSurfaceSignal? {
@@ -2412,10 +2417,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
                 lowered.contains(packageLower) ||
                 loweredIds.contains(packageLower)
 
-        if (!mentionsSwitchly) {
-            return null
-        }
-
+        val eventClass = event?.className?.toString()?.lowercase(Locale.ROOT).orEmpty()
         val hasAccessibility =
             lowered.contains("accessibility") ||
                 lowered.contains("bedienungshilfe") ||
@@ -2425,6 +2427,56 @@ class SwitchlyAccessibilityService : AccessibilityService() {
                 lowered.contains("use switchly") ||
                 lowered.contains("switchly verwenden") ||
                 loweredIds.contains("accessibility")
+
+        // Protect only Switchly's own Accessibility service controls, not the general Accessibility landing page.
+        // Users must still be able to reach unrelated features such as TalkBack, hearing/visibility tools and other installed services.
+        // AOSP and OEM Settings implementations expose this page differently.
+        // Samsung can surface it through com.samsung.accessibility and, as seen on current One UI, the detail page may only show "Switchly", "On", "Switchly shortcut" and our service description without the literal word "Accessibility".
+        // Use several high-confidence signals so direct Search/deep-link entry points are guarded too without blanket-blocking the parent Accessibility screen.
+        val accessibilityDetailClass =
+            eventClass.contains("accessibilityservicedetails") ||
+                eventClass.contains("toggleaccessibilityservice") ||
+                eventClass.contains("accessibilitydetails") ||
+                eventClass.contains("accessibilityservicewarning") ||
+                eventClass.contains("accessibilityservicepreference")
+        val accessibilityToggleIds =
+            loweredIds.contains("accessibility_service") ||
+                loweredIds.contains("service_switch") ||
+                loweredIds.contains("toggle_service") ||
+                loweredIds.contains("switch_widget") ||
+                loweredIds.contains("switch_bar")
+        val ownServiceDescription = getString(R.string.accessibility_service_desc)
+            .lowercase(Locale.ROOT)
+            .trim()
+        val ownDescriptionPrefix = ownServiceDescription.take(32)
+        val hasOwnAccessibilityDescription =
+            ownDescriptionPrefix.length >= 20 && lowered.contains(ownDescriptionPrefix)
+        val hasSwitchlyServiceControls =
+            lowered.contains("switchly shortcut") ||
+                lowered.contains("switchly-verknüpfung") ||
+                lowered.contains("switchly kurzbefehl") ||
+                lowered.contains("switchly shortcut button")
+        val isAccessibilityHelperPackage = pkg in AndroidSystemPackages.ACCESSIBILITY_SYSTEM_PACKAGES
+
+        val directSwitchlyAccessibilityDetail =
+            mentionsSwitchly && (
+                hasAccessibility ||
+                    accessibilityDetailClass ||
+                    accessibilityToggleIds ||
+                    hasOwnAccessibilityDescription ||
+                    hasSwitchlyServiceControls ||
+                    (isAccessibilityHelperPackage && (accessibilityDetailClass || accessibilityToggleIds))
+                )
+        val highConfidenceAccessibilityControl =
+            hasAccessibility && (accessibilityDetailClass || accessibilityToggleIds)
+
+        if (directSwitchlyAccessibilityDetail || highConfidenceAccessibilityControl) {
+            return SettingsBypassSurfaceSignal("accessibility")
+        }
+
+        if (!mentionsSwitchly) {
+            return null
+        }
 
         val hasUsageAccess =
             lowered.contains("usage access") ||
@@ -2480,7 +2532,6 @@ class SwitchlyAccessibilityService : AccessibilityService() {
 
         return when {
             hasDeviceAdmin -> SettingsBypassSurfaceSignal("device_admin")
-            hasAccessibility -> SettingsBypassSurfaceSignal("accessibility")
             hasUsageAccess -> SettingsBypassSurfaceSignal("usage_access")
             hasNotificationAccess -> SettingsBypassSurfaceSignal("notification_access")
             hasBatteryOrBackground -> SettingsBypassSurfaceSignal("battery_background")
@@ -3987,14 +4038,21 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         return false
     }
 
-    private fun findAnyNode(root: AccessibilityNodeInfo, pred: (AccessibilityNodeInfo) -> Boolean): AccessibilityNodeInfo? {
+    private fun findAnyNode(
+        root: AccessibilityNodeInfo,
+        maxNodes: Int = MAX_NODE_SCAN_COUNT,
+        maxDepth: Int = MAX_NODE_SCAN_DEPTH,
+        timeBudgetMs: Long = 0L,
+        pred: (AccessibilityNodeInfo) -> Boolean,
+    ): AccessibilityNodeInfo? {
         data class WorkItem(val node: AccessibilityNodeInfo, val depth: Int, val owned: Boolean)
 
         val stack = ArrayDeque<WorkItem>()
         stack.addLast(WorkItem(root, 0, false))
         var visited = 0
+        val deadline = if (timeBudgetMs > 0L) SystemClock.uptimeMillis() + timeBudgetMs else Long.MAX_VALUE
 
-        while (stack.isNotEmpty() && visited < MAX_NODE_SCAN_COUNT) {
+        while (stack.isNotEmpty() && visited < maxNodes && SystemClock.uptimeMillis() < deadline) {
             val item = stack.removeLast()
             val current = item.node
             try {
@@ -4003,11 +4061,11 @@ class SwitchlyAccessibilityService : AccessibilityService() {
                     return current
                 }
 
-                if (item.depth >= MAX_NODE_SCAN_DEPTH) continue
+                if (item.depth >= maxDepth) continue
 
                 val childCount = runCatching { current.childCount }.getOrDefault(0)
                 for (i in childCount - 1 downTo 0) {
-                    if (visited + stack.size >= MAX_NODE_SCAN_COUNT) break
+                    if (visited + stack.size >= maxNodes || SystemClock.uptimeMillis() >= deadline) break
                     val child = runCatching { current.getChild(i) }.getOrNull() ?: continue
                     stack.addLast(WorkItem(child, item.depth + 1, true))
                 }
@@ -6798,23 +6856,23 @@ class SwitchlyAccessibilityService : AccessibilityService() {
     }
 
     private fun detectYouTubeSelectedSurface(root: AccessibilityNodeInfo): String? {
-        detectYouTubeSelectedSurfaceByPosition(root)?.let { return it }
-        return when {
-            hasActiveYouTubeBottomLabel(root, YT_HOME_LABELS) -> "yt:home"
-            hasActiveYouTubeBottomLabel(root, YT_SHORTS_LABELS) -> "yt:shorts"
-            hasActiveYouTubeBottomLabel(root, YT_SUBSCRIPTIONS_LABELS) -> "yt:subscriptions"
-            hasActiveYouTubeBottomLabel(root, YT_YOU_LABELS) -> "yt:you"
-            else -> null
-        }
-    }
-
-    private fun detectYouTubeSelectedSurfaceByPosition(root: AccessibilityNodeInfo): String? {
         val width = resources.displayMetrics.widthPixels.coerceAtLeast(1)
         val height = resources.displayMetrics.heightPixels.coerceAtLeast(1)
-        val found = findAnyNode(root) { node ->
+        var positionCandidate: String? = null
+        var labelCandidate: String? = null
+
+        // Older code first scanned by position and then could scan the entire tree four more times for Home/Shorts/Subscriptions/You labels.
+        // Collapse that into one bounded pass.
+        findAnyNode(
+            root = root,
+            maxNodes = YT_SELECTED_NODE_SCAN_COUNT,
+            maxDepth = YT_SELECTED_NODE_SCAN_DEPTH,
+            timeBudgetMs = YT_SELECTED_NODE_SCAN_BUDGET_MS,
+        ) { node ->
             val active = node.isSelected || node.isCheckedCompat()
             if (!active) return@findAnyNode false
-            val nodePkg = node.packageName?.toString()?.lowercase(Locale.getDefault()).orEmpty()
+
+            val nodePkg = node.packageName?.toString()?.lowercase(Locale.ROOT).orEmpty()
             if (nodePkg.isNotBlank() && nodePkg != PACKAGE_YOUTUBE) return@findAnyNode false
 
             val bounds = Rect()
@@ -6827,15 +6885,29 @@ class SwitchlyAccessibilityService : AccessibilityService() {
             val heightRatio = bounds.height() / height.toFloat()
             if (widthRatio > 0.35f || heightRatio > 0.22f) return@findAnyNode false
 
-            true
-        } ?: return null
+            val t = node.text?.toString().orEmpty()
+            val cd = node.contentDescription?.toString().orEmpty()
+            val vid = node.viewIdResourceName?.lowercase(Locale.ROOT).orEmpty()
+            val direct = listOf(t, cd, vid).filter { it.isNotBlank() }.joinToString(" ")
 
-        val bounds = Rect()
-        runCatching { found.getBoundsInScreen(bounds) }.getOrNull()
-        if (bounds.isEmpty) {
-            return null
+            labelCandidate = when {
+                anyNeedleMatches(direct, YT_SHORTS_LABELS) -> "yt:shorts"
+                anyNeedleMatches(direct, YT_SUBSCRIPTIONS_LABELS) -> "yt:subscriptions"
+                anyNeedleMatches(direct, YT_YOU_LABELS) -> "yt:you"
+                anyNeedleMatches(direct, YT_HOME_LABELS) -> "yt:home"
+                else -> null
+            }
+            if (labelCandidate != null) {
+                true
+            } else {
+                if (positionCandidate == null) {
+                    positionCandidate = youtubeSurfaceFromBottomCenter(bounds.exactCenterX() / width.toFloat())
+                }
+                false
+            }
         }
-        return youtubeSurfaceFromBottomCenter(bounds.exactCenterX() / width.toFloat())
+
+        return labelCandidate ?: positionCandidate
     }
 
     private fun youtubeSurfaceFromBottomCenter(centerX: Float): String? {
@@ -7178,13 +7250,23 @@ class SwitchlyAccessibilityService : AccessibilityService() {
     private fun hasYouTubeWatchAdOverlaySignal(
         root: AccessibilityNodeInfo,
         event: AccessibilityEvent? = null,
+    ): Boolean = hasYouTubeWatchAdOverlaySignal(
+        root = root,
+        event = event,
+        selectedSurface = detectYouTubeSelectedSurface(root),
+    )
+
+    private fun hasYouTubeWatchAdOverlaySignal(
+        root: AccessibilityNodeInfo,
+        event: AccessibilityEvent?,
+        selectedSurface: String?,
     ): Boolean {
         if (!isRootFromPackage(root, PACKAGE_YOUTUBE) && !containsPackageNode(root, PACKAGE_YOUTUBE)) {
             return false
         }
 
         // Never suppress a real Shorts surface just because the Short itself is an advertisement.
-        if (detectYouTubeSelectedSurface(root) == "yt:shorts") {
+        if (selectedSurface == "yt:shorts") {
             return false
         }
 
@@ -7507,12 +7589,18 @@ class SwitchlyAccessibilityService : AccessibilityService() {
     }
 
     private fun isYouTubeShortsScreen(root: AccessibilityNodeInfo, event: AccessibilityEvent? = null): Boolean {
-        if (hasYouTubeWatchAdOverlaySignal(root, event)) {
+        // Resolve the selected surface once and reuse it for the ad-overlay check.
+        // The old order caused detectYouTubeSelectedSurface() to run twice on the same root for common paths.
+        val selectedSurface = detectYouTubeSelectedSurface(root)
+        if (selectedSurface == "yt:shorts") {
+            return true
+        }
+        if (hasYouTubeWatchAdOverlaySignal(root, event, selectedSurface)) {
             return false
         }
         // Do not treat any visible "Shorts" text as the Shorts surface.
         // YouTube keeps the bottom navigation visible on unrelated screens such as Subscriptions and the profile/You tab.
-        return detectYouTubeSelectedSurface(root) == "yt:shorts" || resolveYouTubeSurfaceFromEvent(event) == "yt:shorts"
+        return resolveYouTubeSurfaceFromEvent(event) == "yt:shorts"
     }
 
     private fun isYouTubeSubscriptionsScreen(root: AccessibilityNodeInfo, event: AccessibilityEvent? = null): Boolean {

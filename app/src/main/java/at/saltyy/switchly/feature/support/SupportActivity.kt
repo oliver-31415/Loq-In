@@ -286,7 +286,9 @@ class SupportActivity : AppCompatActivity() {
             checked = checked,
             positiveTextRes = R.string.support_open_email,
             compact = false,
-            forceHorizontalButtons = true
+            // Keep the action buttons in AlertDialog's fixed button panel instead of  placing them below the custom list.
+            // On shorter displays / larger font scales the old inline footer could end up below the visible dialog, leaving users able to change checkboxes but unable to continue.
+            forceHorizontalButtons = false
         ) { states ->
             val selection = ReportSelection(
                 includeDebug = states.getOrNull(0) == true,
@@ -333,18 +335,42 @@ class SupportActivity : AppCompatActivity() {
             }
         }
 
-        val intent = Intent(Intent.ACTION_SENDTO).apply {
-            data = "mailto:".toUri()
+        val subject = getString(R.string.support_email_subject)
+        val body = sections.filter { it.isNotBlank() }
+            .joinToString("\n\n")
+            .takeIf { it.isNotBlank() }
+
+        // Put the recipient directly into the mailto URI.
+        // Some Android mail clients do not reliably honour EXTRA_EMAIL on ACTION_SENDTO when the URI is only `mailto:`.
+        // Keep subject/body extras too so large diagnostic reports do not need to be encoded into the URI.
+        val uri = "mailto:$SUPPORT_EMAIL?subject=${android.net.Uri.encode(subject)}".toUri()
+        val intent = Intent(Intent.ACTION_SENDTO, uri).apply {
             putExtra(Intent.EXTRA_EMAIL, arrayOf(SUPPORT_EMAIL))
-            putExtra(Intent.EXTRA_SUBJECT, getString(R.string.support_email_subject))
-            sections.filter { it.isNotBlank() }
-                .joinToString("\n\n")
-                .takeIf { it.isNotBlank() }
-                ?.let { putExtra(Intent.EXTRA_TEXT, it) }
+            putExtra(Intent.EXTRA_SUBJECT, subject)
+            body?.let { putExtra(Intent.EXTRA_TEXT, it) }
         }
 
         runCatching {
             startActivity(Intent.createChooser(intent, getString(R.string.support_open_email)))
+        }.onFailure {
+            // Never leave the user at a dead end if Android cannot hand the intent to a mail client.
+            // Preserve the complete report on the clipboard instead.
+            val fallback = buildString {
+                append("To: ").append(SUPPORT_EMAIL).append("\n")
+                append("Subject: ").append(subject).append("\n")
+                if (!body.isNullOrBlank()) {
+                    append("\n").append(body)
+                }
+            }
+            copyToClipboard(
+                label = getString(R.string.support_report_clipboard_label),
+                text = fallback
+            )
+            Toast.makeText(
+                this,
+                getString(R.string.support_email_fallback_copied),
+                Toast.LENGTH_LONG
+            ).show()
         }
     }
 
