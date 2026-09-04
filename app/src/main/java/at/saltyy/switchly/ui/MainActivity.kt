@@ -2232,19 +2232,48 @@ class MainActivity : AppCompatActivity() {
         )
         val mixedSubmenu = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
-            visibility = if (current == AutomationModeStore.Mode.MIXED) View.VISIBLE else View.GONE
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT,
             ).apply { topMargin = homeDp(8f) }
         }
-        mixedSubmenu.addView(TextView(ctx).apply {
-            text = getString(R.string.toggle_section_mixed_channels)
-            textSize = 13f
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-            setTextColor(onSurfaceSoft)
-            setPadding(homeDp(10f), 0, homeDp(10f), 0)
-        })
+
+        // Collapsible disclosure for the mixed channel toggles
+        var mixedExpanded = true
+        val mixedChannelsArrow = ImageView(ctx).apply {
+            setImageResource(R.drawable.keyboard_arrow_right_24)
+            setColorFilter(onSurfaceSoft)
+        }
+
+        fun applyMixedChannelsVisibility() {
+            val showChannels = current == AutomationModeStore.Mode.MIXED && mixedExpanded
+            mixedSubmenu.isVisible = showChannels
+            mixedChannelsArrow.animate()
+                .rotation(if (mixedExpanded) 90f else 0f)
+                .setDuration(140)
+                .start()
+        }
+
+        val mixedChannelsHeader = LinearLayout(ctx).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            setPadding(homeDp(10f), homeDp(8f), homeDp(10f), homeDp(4f))
+            isClickable = true
+            isFocusable = true
+            setBackgroundResource(android.R.attr.selectableItemBackground.resId(ctx))
+            addView(TextView(ctx).apply {
+                text = getString(R.string.toggle_section_mixed_channels)
+                textSize = 13f
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+                setTextColor(onSurfaceSoft)
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            })
+            addView(mixedChannelsArrow)
+            setOnClickListener {
+                mixedExpanded = !mixedExpanded
+                applyMixedChannelsVisibility()
+            }
+        }
 
         fun channelSwitchRow(
             iconRes: Int,
@@ -2253,6 +2282,9 @@ class MainActivity : AppCompatActivity() {
             supported: Boolean,
             getter: () -> Boolean,
             setter: (Boolean) -> Unit,
+            onChanged: ((Boolean) -> Unit)? = null,
+            indent: Boolean = false,
+            into: LinearLayout = mixedSubmenu,
         ) {
             val switch = com.google.android.material.materialswitch.MaterialSwitch(ctx).apply {
                 isChecked = getter()
@@ -2279,6 +2311,7 @@ class MainActivity : AppCompatActivity() {
                     return@setOnCheckedChangeListener
                 }
                 setter(checked)
+                onChanged?.invoke(checked)
             }
             val row = LinearLayout(ctx).apply {
                 orientation = LinearLayout.HORIZONTAL
@@ -2288,7 +2321,9 @@ class MainActivity : AppCompatActivity() {
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT,
-                )
+                ).apply {
+                    marginStart = if (indent) homeDp(14f) else 0
+                }
                 setOnClickListener { switch.toggle() }
             }
             row.addView(FrameLayout(ctx).apply {
@@ -2321,9 +2356,16 @@ class MainActivity : AppCompatActivity() {
             })
             row.addView(texts)
             row.addView(switch)
-            mixedSubmenu.addView(row)
+            into.addView(row)
         }
 
+        // Manual controls toggle: when full control is OFF, buttons/tiles may still
+        // ENABLE protection — the nested "enable-only" switch mirrors the Feature
+        // access setting elsewhere in the app.
+        val enableOnlyRow = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            visibility = if (AutomationModeStore.isMixedAllowButton(ctx)) View.GONE else View.VISIBLE
+        }
         channelSwitchRow(
             R.drawable.security_24,
             R.string.pref_mixed_allow_button_title,
@@ -2331,7 +2373,19 @@ class MainActivity : AppCompatActivity() {
             supported = true,
             getter = { AutomationModeStore.isMixedAllowButton(ctx) },
             setter = { AutomationModeStore.setMixedAllowButton(ctx, it) },
+            onChanged = { manualAllowed -> enableOnlyRow.isVisible = !manualAllowed },
         )
+        channelSwitchRow(
+            R.drawable.lock_24,
+            R.string.pref_allow_button_enable_title,
+            R.string.pref_allow_button_enable_summary,
+            supported = true,
+            getter = { AutomationModeStore.isButtonEnableAllowed(ctx) },
+            setter = { AutomationModeStore.setButtonEnableAllowed(ctx, it) },
+            indent = true,
+            into = enableOnlyRow,
+        )
+        mixedSubmenu.addView(enableOnlyRow)
         channelSwitchRow(
             R.drawable.schedule_24,
             R.string.pref_mixed_allow_schedule_title,
@@ -2374,12 +2428,12 @@ class MainActivity : AppCompatActivity() {
             }
             mixedRow.findViewWithTag<TextView>("mode_check")?.visibility =
                 if (mode == AutomationModeStore.Mode.MIXED) View.VISIBLE else View.GONE
-            mixedSubmenu.visibility =
-                if (mode == AutomationModeStore.Mode.MIXED) View.VISIBLE else View.GONE
+            applyMixedChannelsVisibility()
         }
 
         mixedRow.setOnClickListener { selectMode(AutomationModeStore.Mode.MIXED) }
         list.addView(mixedRow)
+        list.addView(mixedChannelsHeader)
         list.addView(mixedSubmenu)
 
         // ---- Single-channel modes: select and close ----
@@ -2410,6 +2464,8 @@ class MainActivity : AppCompatActivity() {
             }
             list.addView(row)
         }
+
+        applyMixedChannelsVisibility()
 
         sheet.setContentView(list)
         sheet.show()
