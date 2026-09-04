@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
+    <!-- ====================================================== -->
+    <!-- Settings search -->
+    <!-- ====================================================== -->
     <string name="settings_find_title">Einstellung finden</string>
     <string name="settings_find_hint">NFC, Akku, Backup … eingeben</string>
     <string name="settings_search_terms_keys">NFC, QR, Barcode, Tags</string>

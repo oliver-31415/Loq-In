@@ -139,8 +139,11 @@
 
                 <TextView
                     android:id="@+id/tvLimit"
-                    android:layout_width="wrap_content"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:maxLines="2"
+                    android:ellipsize="end"
                     android:text="@string/daily_limit_10"
                     android:textColor="?android:attr/textColorSecondary"
                     android:textSize="12sp" />

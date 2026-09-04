@@ -240,7 +240,6 @@ class QrGenerateActivity : AppCompatActivity() {
             .showAccented()
     }
 
-
     private fun refreshProfiles() {
         val profiles = ProfileStore.getProfiles(this).toList().sorted()
         b.profileDropdown.setAdapter(

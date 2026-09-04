@@ -74,7 +74,7 @@
 
             <TextView
                 android:id="@+id/textActionNfcHint"
-                style="@style/TextAppearance.MaterialComponents.Body2"
+                android:textAppearance="?attr/textAppearanceBody2"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="4dp"
@@ -178,7 +178,7 @@
 
             <TextView
                 android:id="@+id/textConnAllDayHint"
-                style="@style/TextAppearance.MaterialComponents.Body2"
+                android:textAppearance="?attr/textAppearanceBody2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="4dp"
@@ -374,7 +374,7 @@
 
             <TextView
                 android:id="@+id/textLocationSummary"
-                style="@style/TextAppearance.MaterialComponents.Body2"
+                android:textAppearance="?attr/textAppearanceBody2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="4dp"
@@ -392,7 +392,7 @@
                 app:iconGravity="textStart" />
 
             <TextView
-                style="@style/TextAppearance.MaterialComponents.Subtitle2"
+                android:textAppearance="?attr/textAppearanceSubtitle2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="4dp"
@@ -464,7 +464,7 @@
             android:orientation="vertical">
 
             <TextView
-                style="@style/TextAppearance.MaterialComponents.Subtitle2"
+                android:textAppearance="?attr/textAppearanceSubtitle2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="4dp"
@@ -550,7 +550,7 @@
             </HorizontalScrollView>
 
             <TextView
-                style="@style/TextAppearance.MaterialComponents.Subtitle2"
+                android:textAppearance="?attr/textAppearanceSubtitle2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="4dp"
@@ -610,7 +610,7 @@
             android:visibility="gone">
 
             <TextView
-                style="@style/TextAppearance.MaterialComponents.Subtitle2"
+                android:textAppearance="?attr/textAppearanceSubtitle2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="4dp"

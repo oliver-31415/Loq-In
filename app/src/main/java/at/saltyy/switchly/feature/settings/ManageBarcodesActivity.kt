@@ -255,7 +255,6 @@ class ManageBarcodesActivity : AppCompatActivity() {
             .showAccented()
     }
 
-
     private fun refresh() {
         val entries = ScanCodeStore.getEntries(this).filter { it.kind == ScanCodeStore.Kind.BARCODE }
         val validRaws = entries.map { it.rawValue }.toSet()

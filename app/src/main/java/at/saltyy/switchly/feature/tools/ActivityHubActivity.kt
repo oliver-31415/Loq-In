@@ -32,6 +32,7 @@ import at.saltyy.switchly.feature.settings.SettingsActivity
 import at.saltyy.switchly.feature.usage.ActiveTimeActivity
 import at.saltyy.switchly.feature.usage.ActivityHistoryActivity
 import at.saltyy.switchly.feature.usage.AppLaunchesActivity
+import at.saltyy.switchly.feature.usage.MostUsedAppsActivity
 import at.saltyy.switchly.feature.usage.AppWebsiteUsageActivity
 import at.saltyy.switchly.feature.usage.ScreenUnlocksActivity
 import at.saltyy.switchly.feature.usage.SwitchlyOverviewActivity
@@ -86,6 +87,7 @@ class ActivityHubActivity : AppCompatActivity() {
             R.id.ivSwitchlyOverviewIcon,
             R.id.ivActiveTimeIcon,
             R.id.ivAppWebsiteUsageIcon,
+            R.id.ivMostUsedAppsIcon,
             R.id.ivAppLaunchesIcon,
             R.id.ivScreenUnlocksIcon,
             R.id.ivActivityHistoryIcon,
@@ -109,6 +111,9 @@ class ActivityHubActivity : AppCompatActivity() {
         }
         findViewById<View>(R.id.cardAppWebsiteUsage).setOnClickListener {
             startActivity(AppWebsiteUsageActivity.intent(this))
+        }
+        findViewById<View>(R.id.cardMostUsedApps).setOnClickListener {
+            startActivity(MostUsedAppsActivity.intent(this))
         }
         findViewById<View>(R.id.cardAppLaunches).setOnClickListener {
             startActivity(AppLaunchesActivity.intent(this))

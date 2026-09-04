@@ -9,6 +9,7 @@
     android:paddingEnd="24dp"
     android:paddingBottom="24dp">
 
+    <!-- Close action -->
     <androidx.appcompat.widget.AppCompatImageButton
         android:id="@+id/closeButton"
         android:layout_width="40dp"
@@ -22,6 +23,7 @@
         app:layout_constraintTop_toTopOf="parent"
         app:tint="?attr/colorSecondary" />
 
+    <!-- Content -->
     <com.google.android.material.progressindicator.CircularProgressIndicator
         android:id="@+id/waitProgress"
         android:layout_width="56dp"
@@ -41,7 +43,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:gravity="center"
-        android:textAppearance="@style/TextAppearance.MaterialComponents.Headline6"
+        android:textAppearance="?attr/textAppearanceHeadline6"
         android:textColor="?attr/colorOnBackground"
         app:layout_constraintBottom_toTopOf="@id/waitHint"
         app:layout_constraintEnd_toEndOf="parent"
@@ -55,13 +57,14 @@
         android:layout_marginTop="8dp"
         android:gravity="center"
         android:alpha="0.75"
-        android:textAppearance="@style/TextAppearance.MaterialComponents.Body2"
+        android:textAppearance="?attr/textAppearanceBody2"
         android:textColor="?attr/colorOnBackground"
         app:layout_constraintBottom_toTopOf="@id/retryButton"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/waitTitle" />
 
+    <!-- Retry action -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/retryButton"
         style="@style/Widget.MaterialComponents.Button.OutlinedButton"

@@ -23,6 +23,7 @@
             app:title="@string/pref_permissions_title" />
     </com.google.android.material.appbar.AppBarLayout>
 
+    <!-- Content -->
     <ScrollView
         android:id="@+id/permissionsScroll"
         android:layout_width="match_parent"
@@ -42,7 +43,7 @@
             <!-- SECTION: Core -->
             <TextView
                 android:id="@+id/sectionCore"
-                style="@style/TextAppearance.Material3.TitleMedium"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
@@ -92,14 +93,14 @@
                                 android:orientation="vertical">
 
                                 <TextView
-                                    style="@style/TextAppearance.Material3.BodyLarge"
+                                    android:textAppearance="?attr/textAppearanceBodyLarge"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:text="@string/permissions_accessibility_title" />
 
                                 <TextView
                                     android:id="@+id/tvAccessibilityStatus"
-                                    style="@style/TextAppearance.Material3.BodyMedium"
+                                    android:textAppearance="?attr/textAppearanceBodyMedium"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_marginTop="2dp"
@@ -163,14 +164,14 @@
                                 android:orientation="vertical">
 
                                 <TextView
-                                    style="@style/TextAppearance.Material3.BodyLarge"
+                                    android:textAppearance="?attr/textAppearanceBodyLarge"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:text="@string/permissions_usage_access_title" />
 
                                 <TextView
                                     android:id="@+id/tvUsageAccessStatus"
-                                    style="@style/TextAppearance.Material3.BodyMedium"
+                                    android:textAppearance="?attr/textAppearanceBodyMedium"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_marginTop="2dp"
@@ -202,7 +203,7 @@
             <!-- SECTION: Notifications -->
             <TextView
                 android:id="@+id/sectionNotifications"
-                style="@style/TextAppearance.Material3.TitleMedium"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="18dp"
@@ -253,14 +254,14 @@
                                 android:orientation="vertical">
 
                                 <TextView
-                                    style="@style/TextAppearance.Material3.BodyLarge"
+                                    android:textAppearance="?attr/textAppearanceBodyLarge"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:text="@string/permissions_notifications_title" />
 
                                 <TextView
                                     android:id="@+id/tvNotificationsStatus"
-                                    style="@style/TextAppearance.Material3.BodyMedium"
+                                    android:textAppearance="?attr/textAppearanceBodyMedium"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_marginTop="2dp"
@@ -324,14 +325,14 @@
                                 android:orientation="vertical">
 
                                 <TextView
-                                    style="@style/TextAppearance.Material3.BodyLarge"
+                                    android:textAppearance="?attr/textAppearanceBodyLarge"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:text="@string/permissions_notification_access_title" />
 
                                 <TextView
                                     android:id="@+id/tvNotificationAccessStatus"
-                                    style="@style/TextAppearance.Material3.BodyMedium"
+                                    android:textAppearance="?attr/textAppearanceBodyMedium"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_marginTop="2dp"
@@ -363,7 +364,7 @@
             <!-- SECTION: Extra triggers -->
             <TextView
                 android:id="@+id/sectionTriggers"
-                style="@style/TextAppearance.Material3.TitleMedium"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="18dp"
@@ -414,14 +415,14 @@
                                 android:orientation="vertical">
 
                                 <TextView
-                                    style="@style/TextAppearance.Material3.BodyLarge"
+                                    android:textAppearance="?attr/textAppearanceBodyLarge"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:text="@string/permissions_exact_alarms_title" />
 
                                 <TextView
                                     android:id="@+id/tvExactAlarmsStatus"
-                                    style="@style/TextAppearance.Material3.BodyMedium"
+                                    android:textAppearance="?attr/textAppearanceBodyMedium"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_marginTop="2dp"
@@ -485,14 +486,14 @@
                                 android:orientation="vertical">
 
                                 <TextView
-                                    style="@style/TextAppearance.Material3.BodyLarge"
+                                    android:textAppearance="?attr/textAppearanceBodyLarge"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:text="@string/permissions_nfc_title" />
 
                                 <TextView
                                     android:id="@+id/tvNfcStatus"
-                                    style="@style/TextAppearance.Material3.BodyMedium"
+                                    android:textAppearance="?attr/textAppearanceBodyMedium"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_marginTop="2dp"
@@ -556,14 +557,14 @@
                                 android:orientation="vertical">
 
                                 <TextView
-                                    style="@style/TextAppearance.Material3.BodyLarge"
+                                    android:textAppearance="?attr/textAppearanceBodyLarge"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:text="@string/permissions_location_title" />
 
                                 <TextView
                                     android:id="@+id/tvLocationStatus"
-                                    style="@style/TextAppearance.Material3.BodyMedium"
+                                    android:textAppearance="?attr/textAppearanceBodyMedium"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_marginTop="2dp"
@@ -635,14 +636,14 @@
                                 android:orientation="vertical">
 
                                 <TextView
-                                    style="@style/TextAppearance.Material3.BodyLarge"
+                                    android:textAppearance="?attr/textAppearanceBodyLarge"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:text="@string/permissions_bluetooth_title" />
 
                                 <TextView
                                     android:id="@+id/tvBluetoothStatus"
-                                    style="@style/TextAppearance.Material3.BodyMedium"
+                                    android:textAppearance="?attr/textAppearanceBodyMedium"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_marginTop="2dp"
@@ -682,7 +683,7 @@
             <!-- SECTION: Battery and background -->
             <TextView
                 android:id="@+id/sectionBattery"
-                style="@style/TextAppearance.Material3.TitleMedium"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="18dp"
@@ -726,14 +727,14 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.Material3.BodyLarge"
+                                android:textAppearance="?attr/textAppearanceBodyLarge"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/permissions_battery_title" />
 
                             <TextView
                                 android:id="@+id/tvBatteryStatus"
-                                style="@style/TextAppearance.Material3.BodyMedium"
+                                android:textAppearance="?attr/textAppearanceBodyMedium"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -779,7 +780,7 @@
                 android:visibility="gone">
 
                 <TextView
-                    style="@style/TextAppearance.Material3.TitleMedium"
+                    android:textAppearance="?attr/textAppearanceTitleMedium"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginBottom="8dp"
@@ -816,7 +817,7 @@
                                 android:layout_height="1dp" />
 
                             <TextView
-                                style="@style/TextAppearance.Material3.BodyLarge"
+                                android:textAppearance="?attr/textAppearanceBodyLarge"
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
@@ -835,7 +836,7 @@
 
                         <TextView
                             android:id="@+id/tvAutostartHint"
-                            style="@style/TextAppearance.Material3.BodyMedium"
+                            android:textAppearance="?attr/textAppearanceBodyMedium"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="6dp"

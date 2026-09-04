@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
+    <!-- ====================================================== -->
+    <!-- Allow mode preview -->
+    <!-- ====================================================== -->
     <string name="website_allow_mode_preview_title">„Ausgewählte erlauben“ verwenden?</string>
     <plurals name="website_allow_mode_preview_body">
         <item quantity="one">%d gespeicherte Website bleibt verfügbar. Andere erkannte Websites werden blockiert, solange dieses Profil aktiv ist.</item>
@@ -62,4 +66,5 @@
     <string name="blocked_websites_profile_subtitle">Regeln für: %1$s</string>
     <string name="rule_allowed">Erlaubt</string>
     <string name="rule_allowed_always">Immer erlaubt</string>
+
 </resources>

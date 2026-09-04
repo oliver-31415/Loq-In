@@ -344,26 +344,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
         findPreference<Preference>("pref_manage_profiles")?.apply {
             isVisible = true
             setOnPreferenceClickListener {
-                val ctx = requireContext()
-                val enabled = SwitchModeStore.isEnabled(ctx)
-                val emergencyActive = EmergencyBypassStore.isActive(ctx)
-                val emergencyPaused = EmergencyBypassStore.isPaused(ctx)
-                val requireNfc = SwitchModeStore.isNfcRequiredForDisable(ctx)
-                val profileLocked = when {
-                    emergencyActive -> false
-                    !enabled -> false
-                    requireNfc || emergencyPaused -> true
-                    else -> !AutomationModeStore.isProfileSwitchingAllowedWhileEnabled(ctx)
-                }
-                if (profileLocked) {
-                    val msgRes = if (enabled && !requireNfc && !emergencyPaused) {
-                        R.string.edit_locked_manage_profiles
-                    } else {
-                        R.string.toast_cannot_change_profile_while_locked
-                    }
-                    EditingLockGuard.showLockedDialog(ctx, msgRes)
-                    return@setOnPreferenceClickListener true
-                }
+                // Manage Profiles remains available while protection is active.
+                // The destination itself allows review/create/duplicate/rename/strictness-only app edits and keeps switching/deletion locked.
                 startActivity(Intent(requireContext(), ManageProfilesActivity::class.java))
                 true
             }

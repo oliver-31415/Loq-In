@@ -33,6 +33,18 @@ Path attributes:
 
 Drawable XML files omit the XML declaration to match the existing Android resource style.
 
+## Intentional exceptions
+These files may differ from the standard template:
+- brand icons such as Google, Discord, and GitLab preserve their official colours;
+- Quick Settings source icons use a fixed dark fill because Android System UI receives a rendered monochrome bitmap;
+- widget icons use the widget-specific colour resource;
+- blocker-only icons may use a fixed white fill;
+- stroked artwork such as the globe icon needs transparent fills and stroke attributes;
+- 20dp widget icons retain their physical size while keeping the 960 × 960 viewport;
+- rectangular widget previews retain their own viewport and aspect ratio.
+
+Do not create a separate viewport only because an imported SVG used one. Convert normal 24dp icons to 960 × 960 instead.
+
 ## Validation
 Run from the repository root:
 ```bash

@@ -208,13 +208,13 @@
     <string name="schedules_priority_info_body">Priorität bei Überschneidungen:\n1. Manuelle/NFC-Übersteuerung\n2. Notfall-Entsperrung\n3. Temporäre Aktionen\n4. Standort-Zeitpläne\n5. WLAN-/Bluetooth-Zeitpläne\n6. Zeit-Zeitpläne\n\nWenn mehrere Zeitpläne passen, protokolliert Switchly den Konflikt und wendet den Gewinner an, statt ihn still zu verstecken.</string>
 
     <!-- ====================================================== -->
-    <!-- Schedule test                                         -->
+    <!-- Entry point/dialog -->
     <!-- ====================================================== -->
-
-    <!-- Entry point / dialog -->
     <string name="schedules_test_title">Zeitplan prüfen</string>
 
+    <!-- ====================================================== -->
     <!-- Dialog fields -->
+    <!-- ====================================================== -->
     <string name="schedules_test_field_schedule">Zeitplan</string>
     <string name="schedules_test_field_condition">Bedingung</string>
     <string name="schedules_test_field_permissions">Berechtigungen</string>
@@ -222,7 +222,9 @@
     <string name="schedules_test_field_action">Aktion</string>
     <string name="schedules_test_field_result">Ergebnis</string>
 
+    <!-- ====================================================== -->
     <!-- Field values -->
+    <!-- ====================================================== -->
     <string name="schedules_test_value_enabled">Aktiviert</string>
     <string name="schedules_test_value_disabled">Deaktiviert</string>
     <string name="schedules_test_value_condition_met">Erfüllt</string>
@@ -230,23 +232,29 @@
     <string name="schedules_test_value_permissions_ready">Bereit</string>
     <string name="schedules_test_value_permission_missing_fmt">Fehlt: %1$s</string>
 
+    <!-- ====================================================== -->
     <!-- Detected state -->
+    <!-- ====================================================== -->
     <string name="schedules_test_status_time_fmt">Zeit %1$s</string>
     <string name="schedules_test_status_wifi_fmt">WLAN „%1$s“</string>
-    <string name="schedules_test_status_wifi_none">WLAN nicht verbunden / SSID nicht verfügbar</string>
+    <string name="schedules_test_status_wifi_none">WLAN nicht verbunden/SSID nicht verfügbar</string>
     <string name="schedules_test_status_bt_fmt">Bluetooth %1$s</string>
     <string name="schedules_test_status_bt_none">kein passendes Bluetooth-Gerät verbunden</string>
     <string name="schedules_test_status_location_inside_fmt">im Bereich · %1$d m vom Mittelpunkt</string>
     <string name="schedules_test_status_location_outside_fmt">außerhalb · %1$d m vom Mittelpunkt</string>
     <string name="schedules_test_status_location_unknown">aktueller Standort nicht verfügbar</string>
 
+    <!-- ====================================================== -->
     <!-- Permission names -->
-    <string name="schedules_test_permission_wifi">WLAN / Standort</string>
+    <!-- ====================================================== -->
+    <string name="schedules_test_permission_wifi">WLAN/Standort</string>
     <string name="schedules_test_permission_bluetooth">Bluetooth</string>
     <string name="schedules_test_permission_location">Standort</string>
     <string name="schedules_test_permission_accessibility">Bedienungshilfe</string>
 
+    <!-- ====================================================== -->
     <!-- Result messages -->
+    <!-- ====================================================== -->
     <string name="schedules_test_result_would_change">würde den Schutzstatus ändern</string>
     <string name="schedules_test_result_profile_change">würde das aktive Profil wechseln</string>
     <string name="schedules_test_result_already_enabled">keine Änderung — bereits aktiviert</string>

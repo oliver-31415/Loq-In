@@ -15,4 +15,9 @@
         android:title="@string/delete"
         app:showAsAction="ifRoom" />
 
+    <item
+        android:id="@+id/action_clear_all"
+        android:title="@string/blocked_inbox_clear_all"
+        app:showAsAction="never" />
+
 </menu>

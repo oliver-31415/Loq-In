@@ -55,6 +55,7 @@ import java.util.Locale
 
 /**
  * Manages separate visibility filters for Usage & Insights and app-selection screens.
+ * Apps hidden from app-selection screens are also excluded from Switchly protection while hidden.
  * Changes in either tab remain staged until Save is pressed.
  */
 class IgnoredUsageAppsActivity : AppCompatActivity() {

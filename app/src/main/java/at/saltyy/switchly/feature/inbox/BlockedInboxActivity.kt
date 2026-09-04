@@ -340,6 +340,7 @@ class BlockedInboxActivity : AppCompatActivity() {
         // In selection mode, delete action is "Delete selected". Outside, it enters selection mode.
         menu.findItem(R.id.action_delete)?.title =
             if (selectionMode) getString(R.string.delete) else getString(R.string.select)
+        menu.findItem(R.id.action_clear_all)?.isVisible = !readOnly && !selectionMode && allItems.isNotEmpty()
         return super.onPrepareOptionsMenu(menu)
     }
 
@@ -366,6 +367,10 @@ class BlockedInboxActivity : AppCompatActivity() {
                 } else {
                     enterSelectionMode(); true
                 }
+            }
+
+            R.id.action_clear_all -> {
+                confirmClearAll(); true
             }
 
             else -> super.onOptionsItemSelected(item)
@@ -439,6 +444,26 @@ class BlockedInboxActivity : AppCompatActivity() {
             .create()
         dialog.setOnShowListener { dialog.styleSwitchlyDialogButtons() }
         dialog.show()
+    }
+
+    private fun confirmClearAll() {
+        if (isReadOnly() || allItems.isEmpty()) {
+            return
+        }
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.blocked_inbox_clear_all)
+            .setMessage(getString(R.string.blocked_inbox_clear_all_confirm) + "\n\n" + getString(R.string.destructive_cannot_be_undone))
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.delete) { _, _ ->
+                if (isReadOnly()) {
+                    return@setPositiveButton
+                }
+                BlockedInboxStore.clear(this)
+                BlockedNotificationsWidgetProvider.refreshAll(this)
+                exitSelectionMode()
+                load()
+            }
+            .showDestructiveAccented()
     }
 
     private fun confirmDeleteSelected() {

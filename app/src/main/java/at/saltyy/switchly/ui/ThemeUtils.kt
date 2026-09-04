@@ -28,6 +28,7 @@ import androidx.preference.PreferenceManager
 import at.saltyy.switchly.R
 import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.theme.CustomAccentApplier
+import at.saltyy.switchly.util.FrameworkApi34Compat
 
 object ThemeUtils {
 
@@ -49,6 +50,10 @@ object ThemeUtils {
         }
 
         activity.setTheme(themeRes)
+
+        // A small number of API-34 system images report SDK 34 while missing finalized framework members used by current AndroidX. 
+        // Apply the defensive overlay only there.
+        FrameworkApi34Compat.applyThemeWorkaround(activity)
 
         // Run one shared late UI pass after inflation.
         // Custom accents first replace any remaining compile-time theme green; the consistency pass then normalizes late-bound widget states.

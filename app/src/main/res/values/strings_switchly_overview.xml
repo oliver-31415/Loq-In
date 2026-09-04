@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
+    <!-- ====================================================== -->
+    <!-- Switchly overview -->
+    <!-- ====================================================== -->
     <string name="switchly_overview_title">Switchly overview</string>
     <string name="switchly_overview_summary">Scans, active time, opens, blocks, limits, actions, and schedules</string>
     <string name="switchly_overview_info_title">About Switchly overview</string>
@@ -24,4 +28,5 @@
     <string name="switchly_overview_schedules_executed">Schedules executed</string>
     <string name="switchly_overview_schedule_enables">Schedules that enabled Switchly</string>
     <string name="switchly_overview_schedule_disables">Schedules that disabled Switchly</string>
+
 </resources>

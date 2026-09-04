@@ -24,7 +24,7 @@
     <string name="onb_core_point_choose">Wähle Apps, Websites und unterstützte In-App-Bereiche, die jedes Profil schützen soll.</string>
     <string name="onb_core_point_control">Wähle die Steuerkanäle, denen du vertraust: NFC, Zeitpläne, QR, Barcode oder manuelle Steuerung.</string>
     <string name="onb_core_point_enforce">Temporäre Aktionen enden automatisch, während geschützte Einstellungen bei aktivem Schutz schreibgeschützt bleiben.</string>
-    
+
     <!-- ====================================================== -->
     <!-- Usage report onboarding step -->
     <!-- ====================================================== -->
@@ -81,7 +81,9 @@
     <!-- ====================================================== -->
     <string name="onb_permissions_hub_title">Berechtigungsübersicht</string>
     <string name="onb_permissions_hub_mode_desc">Richte die Berechtigungen für %1$s ein. Bedienungshilfe und Nutzungszugriff sind zum Fortfahren erforderlich.</string>
+    <string name="onb_permissions_hub_mode_desc_advanced_protection">Richte die Berechtigungen für %1$s ein. Android Advanced Protection ist aktiv, daher kann die Bedienungshilfe nicht verfügbar sein. Mit Nutzungszugriff kann Switchly den eingeschränkten einfachen App-Blocking-Fallback verwenden; vollständiger Website- und In-App-Schutz benötigt weiterhin die Bedienungshilfe.</string>
     <string name="onb_required_permissions_hub">Bitte aktiviere Bedienungshilfe und Nutzungszugriff, bevor du fortfährst. Die anderen Punkte kannst du jetzt oder später einrichten.</string>
+    <string name="onb_required_permissions_hub_advanced_protection">Advanced Protection ist aktiv. Aktiviere den Nutzungszugriff, um mit eingeschränktem einfachem App-Blocking fortzufahren. Vollständiger Website- und In-App-Schutz benötigt weiterhin die Bedienungshilfe.</string>
     <string name="onb_perm_accessibility_title">Bedienungshilfe</string>
     <string name="onb_perm_accessibility_desc">Erforderlich für die App- und Webseitenblockierung.</string>
     <string name="onb_perm_usage_title">Nutzungszugriff</string>
@@ -154,6 +156,7 @@
 
     <string name="onb_home_customize_title">Dein Home-Layout wählen</string>
     <string name="onb_home_customize_desc">Wähle einen Startseitenmodus oder ordne Karten und Inhalte selbst an.</string>
+
     <!-- ====================================================== -->
     <!-- Usage-Ladevorgang und Home-Modus-Auswahl -->
     <!-- ====================================================== -->
@@ -181,7 +184,9 @@
     <string name="onb_optional_support_title">Entwickler kontaktieren</string>
     <string name="onb_optional_support_desc">Sende eine Supportanfrage und hänge bei Fehlern die generierten Logs und Geräteinformationen an.</string>
 
+    <!-- ====================================================== -->
     <!-- Vorschauen für die optionale Einrichtung -->
+    <!-- ====================================================== -->
     <string name="onb_optional_hidden_usage_row_title">Nutzung &amp; Einblicke</string>
     <string name="onb_optional_hidden_usage_row_desc">Blende ausgewählte Apps aus Nutzungsberichten und Ranglisten aus.</string>
     <string name="onb_optional_hidden_picker_row_title">App-Auswahl</string>
@@ -212,4 +217,5 @@
     <string name="onb_optional_access_more_action">Weitere Zugriffskontrollen</string>
     <string name="onb_optional_faq_open_action">Vollständige FAQ öffnen</string>
     <string name="onb_optional_support_open_action">Support öffnen</string>
+
 </resources>

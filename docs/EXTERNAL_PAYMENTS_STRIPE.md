@@ -43,7 +43,7 @@ Do not rely on client-provided values alone for granting Premium. They are only 
 5. Configure a Stripe webhook endpoint.
 6. Verify the webhook signature server-side.
 7. Only after a verified payment, grant the user an entitlement.
-8. For the Firebase/direct APK, store the entitlement in Firestore, for example `switchly_users/<uid>` with `hasPremiumExternal=true` or `hasPremium=true`.
+8. For the Firebase/direct APK, store the verified entitlement in Firestore as `switchly_users/<uid>.hasPremiumExternal=true`.
 9. Let the app restore the verified entitlement from the Premium screen.
 10. Keep the Offline build independent from online account restore.
 
@@ -51,6 +51,8 @@ Do not rely on client-provided values alone for granting Premium. They are only 
 Opening checkout is not the same as activating Premium.
 
 The app should only open the configured external payment URL. Premium should only be activated after the backend verifies the payment or redeem code.
+
+`hasPremiumExternal` is server-managed and is the only Firestore field trusted for external entitlement restore. Client-side mirrors such as `hasPremiumClientMirror` are diagnostic only. The legacy `hasPremium` field is intentionally ignored for entitlement restore.
 
 Do not unlock Premium immediately after a checkout page opens.
 

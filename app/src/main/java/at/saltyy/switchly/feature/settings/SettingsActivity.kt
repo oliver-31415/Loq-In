@@ -164,12 +164,19 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         fun openToggleSection(section: String, displayTarget: String? = null) {
-            openProtectedActivity(Intent(this, ToggleOptionsActivity::class.java).apply {
-                putExtra(ToggleOptionsActivity.EXTRA_VIEW_SECTION, section)
-                if (!displayTarget.isNullOrBlank()) {
-                    putExtra(ToggleOptionsActivity.EXTRA_DISPLAY_TARGET, displayTarget)
-                }
-            })
+            val open = {
+                startActivity(Intent(this, ToggleOptionsActivity::class.java).apply {
+                    putExtra(ToggleOptionsActivity.EXTRA_VIEW_SECTION, section)
+                    if (!displayTarget.isNullOrBlank()) {
+                        putExtra(ToggleOptionsActivity.EXTRA_DISPLAY_TARGET, displayTarget)
+                    }
+                })
+            }
+            if (section == ToggleOptionsActivity.SECTION_BLOCKING) {
+                openControlSettingsSection(open)
+            } else {
+                openProtectedSettingsSection(open)
+            }
         }
 
         fun openPermissionSection(section: String, target: String? = null) {
@@ -205,7 +212,7 @@ class SettingsActivity : AppCompatActivity() {
         add(R.string.ignored_usage_apps_title, "usage statistics ignored apps") { openRootCard(R.id.cardSettingsIgnoredApps) }
         add(R.string.settings_display_shortcuts_title, "${getString(R.string.settings_search_terms_display)} widgets Kacheln tiles quick settings shortcuts Verknüpfungen home Startseite") { openRootCard(R.id.cardSettingsDisplayShortcuts) }
         add(R.string.pref_permissions_title, "${getString(R.string.settings_search_terms_permissions)} battery Akku background Hintergrund accessibility Bedienungshilfe autostart Autostart notifications Benachrichtigungen NFC reliability Zuverlässigkeit") { openRootCard(R.id.cardSettingsPermissions) }
-        add(R.string.pref_app_lock_title, "app lock App-Sperre uninstall protection Deinstallationsschutz remove removal device admin Geräteadministrator bypass anti-bypass") { openRootCard(R.id.cardSettingsAppLock) }
+        add(R.string.pref_app_lock_title, "app lock App-Sperre uninstall protection Deinstallationsschutz remove removal device admin Geräteadministrator force stop force-stop Stopp erzwingen app data Daten löschen bypass anti-bypass") { openRootCard(R.id.cardSettingsAppLock) }
         add(R.string.settings_emergency_unlock_title, "emergency bypass unlock") { openRootCard(R.id.cardSettingsEmergencyUnlock) }
         add(R.string.settings_account_title, "${getString(R.string.settings_search_terms_account)} account Konto cloud Cloud backup Sicherung restore Wiederherstellung sync Synchronisierung data Daten") { openRootCard(R.id.cardSettingsAccountData) }
         add(R.string.premium_title, "premium billing purchase") { openRootCard(R.id.cardSettingsPremium) }
@@ -222,13 +229,13 @@ class SettingsActivity : AppCompatActivity() {
         add(R.string.pref_require_nfc_unlock_title, "NFC required disable lock") { openToggleSection(ToggleOptionsActivity.SECTION_SAFETY) }
         add(R.string.schedules_title, "schedule Wi-Fi Bluetooth location time automation") { startActivity(Intent(this, SchedulesActivity::class.java)) }
 
-        // NFC / QR / barcode tools.
+        // NFC/QR/barcode tools.
         add(R.string.nfc_writer_title, "write NFC tag") { openProtectedActivity(Intent(this, NfcWriterActivity::class.java)) }
         add(R.string.keys_codes_paired_tags_title, "paired NFC UID tags") { openProtectedActivity(Intent(this, ManagePairedTagsActivity::class.java)) }
         add(R.string.qr_generate_title, "QR generate manage") { openProtectedActivity(Intent(this, QrGenerateActivity::class.java)) }
         add(R.string.manage_barcodes_title, "barcode manage scan") { openProtectedActivity(Intent(this, ManageBarcodesActivity::class.java)) }
 
-        // Display / Home / shortcuts.
+        // Display/Home/shortcuts.
         add(R.string.onb_optional_display_tiles_title, "Quick Settings tiles NFC QR barcode") {
             openToggleSection(ToggleOptionsActivity.SECTION_DISPLAY, ToggleOptionsActivity.DISPLAY_TARGET_TILES)
         }
@@ -454,7 +461,7 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun setupRootCards() {
         findViewById<View>(R.id.cardSettingsBlockingModes).setOnClickListener {
-            openProtectedSettingsSection {
+            openControlSettingsSection {
                 startActivity(Intent(this, BlockingModesActivity::class.java))
             }
         }
@@ -520,6 +527,7 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         val restricted = isRestrictedAccessActive()
+        val controlSettingsRestricted = SwitchlyAppAccessGuard.isControlSettingsLocked(this)
         val developerVisible = AdvancedModeStore.isEnabled(this)
         findViewById<View>(R.id.tvSettingsDeveloperSection).isVisible = developerVisible
         findViewById<View>(R.id.cardSettingsDeveloper).isVisible = developerVisible
@@ -527,8 +535,14 @@ class SettingsActivity : AppCompatActivity() {
         toolbar.subtitle = null
         supportActionBar?.subtitle = null
 
-        val restrictedCards = listOf(
+        val recoveryControlCards = listOf(
             R.id.cardSettingsBlockingModes,
+        )
+        recoveryControlCards.forEach { cardId ->
+            applyRestrictedCardState(findViewById(cardId), controlSettingsRestricted)
+        }
+
+        val restrictedCards = listOf(
             R.id.cardSettingsBlockingFeatures,
             R.id.cardSettingsKeysCodes,
             R.id.cardSettingsDisplayShortcuts,
@@ -546,6 +560,15 @@ class SettingsActivity : AppCompatActivity() {
         card.isClickable = !restricted
         card.isFocusable = !restricted
         card.alpha = if (restricted) LockedUi.cardAlpha(this) else 1f
+    }
+
+    private fun openControlSettingsSection(open: () -> Unit) {
+        if (SwitchlyAppAccessGuard.isControlSettingsLocked(this)) {
+            applyRestrictedAccessState()
+            return
+        }
+
+        open()
     }
 
     private fun openProtectedSettingsSection(open: () -> Unit) {

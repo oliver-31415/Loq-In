@@ -104,13 +104,12 @@ import at.saltyy.switchly.data.prefs.SwitchModeStore
 import at.saltyy.switchly.data.prefs.UsageLimitStore
 import at.saltyy.switchly.data.prefs.UsageLimitResetStore
 import at.saltyy.switchly.data.prefs.UsageLimitSessionRuntimeStore
-import at.saltyy.switchly.feature.barcode.BarcodeScanActivity
 import at.saltyy.switchly.feature.inbox.BlockedInboxActivity
 import at.saltyy.switchly.feature.onboarding.OnboardingActivity
 import at.saltyy.switchly.feature.picker.AppPickerActivity
 import at.saltyy.switchly.feature.profiles.ManageProfilesActivity
 import at.saltyy.switchly.feature.qr.QrGenerateActivity
-import at.saltyy.switchly.feature.qr.QrScanActivity
+import at.saltyy.switchly.feature.scan.UnifiedScanActivity
 import at.saltyy.switchly.feature.schedule.SchedulesActivity
 import at.saltyy.switchly.feature.settings.ManageBarcodesActivity
 import at.saltyy.switchly.feature.settings.ManageBlockedWebsitesActivity
@@ -552,7 +551,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         // Active profile quick-jump
-        rowActiveProfile.setOnClickListener { openProfilesIfUnlocked() }
+        rowActiveProfile.setOnClickListener { openProfiles() }
 
         // Setup CTA
         btnFinishSetup.setOnClickListener {
@@ -1123,9 +1122,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun isAppPickingLockedWhileEnabled(): Boolean {
-        // Editing the app list must never be possible while protection is enabled, even during a temporary disable window.
-        // The old mixed-mode allowance is intentionally ignored here; users may still open read-only/status screens, but app-rule changes require Switchly to be disabled first.
-        return EditingLockGuard.isLocked(this)
+        if (!EditingLockGuard.isLocked(this)) return false
+        return !AutomationModeStore.isMixedAllowAppPicking(this)
     }
 
     private fun isProfileSwitchLockedWhileEnabled(): Boolean {
@@ -1151,19 +1149,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         return !AutomationModeStore.isProfileSwitchingAllowedWhileEnabled(this)
-    }
-
-    private fun ensureCanOpenAppPicker(showFeedback: Boolean = true): Boolean {
-        if (isNfcLocked() || isAppPickingLockedWhileEnabled()) {
-            if (showFeedback) {
-                EditingLockGuard.showLockedDialog(
-                    this,
-                    R.string.toast_disable_switchly_to_edit_blocked_apps,
-                )
-            }
-            return false
-        }
-        return true
     }
 
     private fun ensureCanRemoveBlockedApp(showFeedback: Boolean = true): Boolean {
@@ -1550,16 +1535,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openAppPickerIfUnlocked() {
-        if (!ensureCanOpenAppPicker(showFeedback = true)) {
+        if (isAppPickingLockedWhileEnabled()) {
+            EditingLockGuard.showLockedDialog(this, R.string.toast_disable_switchly_to_edit_blocked_apps)
             return
         }
+        // AppPickerActivity enforces one-way strictness while protection is active.
         startActivity(Intent(this, AppPickerActivity::class.java))
     }
 
-    private fun openProfilesIfUnlocked() {
-        if (!ensureCanSwitchProfiles(showFeedback = true)) {
-            return
-        }
+    private fun openProfiles() {
+        // Viewing and non-destructive profile management are safe.
+        // ManageProfilesActivity keeps Set active/Delete locked while protection is active and permits create/duplicate/rename plus strictness-only app edits.
         startActivity(Intent(this, ManageProfilesActivity::class.java))
     }
 
@@ -2174,7 +2160,13 @@ class MainActivity : AppCompatActivity() {
         // required for blocking
         val accessibilityOk = BlockingRuntime.isAccessibilityActive(this)
         if (!accessibilityOk) {
-            missing.add(getString(R.string.permissions_accessibility_title))
+            val accessibilityEnabledInSettings = BlockingRuntime.isAccessibilityEnabledInSettings(this)
+            missing.add(
+                getString(
+                    if (accessibilityEnabledInSettings) R.string.dashboard_accessibility_not_connected
+                    else R.string.permissions_accessibility_title
+                )
+            )
         }
 
         // allow notifications (optional, but recommended for tips + status)
@@ -2957,8 +2949,25 @@ class MainActivity : AppCompatActivity() {
             val spanFullRow = chunk.size == 1
             chunk.forEach { tile ->
                 tile.visibility = View.VISIBLE
+                tile.minimumHeight = dpQuickAction(136)
                 tile.layoutParams = quickActionTileLayoutParams(spanFullRow)
                 row.addView(tile)
+            }
+            equalizeQuickActionRowHeights(row)
+        }
+    }
+
+    private fun equalizeQuickActionRowHeights(row: LinearLayout) {
+        row.post {
+            val tiles = (0 until row.childCount).map { row.getChildAt(it) }
+                .filter { it.isVisible }
+            val maxHeight = tiles.maxOfOrNull { it.measuredHeight } ?: return@post
+            tiles.forEach { tile ->
+                val lp = tile.layoutParams
+                if (lp.height != maxHeight) {
+                    lp.height = maxHeight
+                    tile.layoutParams = lp
+                }
             }
         }
     }
@@ -2976,13 +2985,15 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun dpQuickAction(value: Int): Int =
+        (value * resources.displayMetrics.density).toInt()
+
     private fun quickActionTileLayoutParams(spanFullRow: Boolean): LinearLayout.LayoutParams {
         val density = resources.displayMetrics.density
         val margin = (6 * density).toInt()
-        val tileHeight = (136 * density).toInt()
         return LinearLayout.LayoutParams(
             0,
-            tileHeight,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
             if (spanFullRow) 2f else 1f
         ).apply {
             setMargins(margin, margin, margin, margin)
@@ -3563,7 +3574,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun applyLockedUi(locked: Boolean) {
         val profileLocked = locked || isProfileSwitchLockedWhileEnabled()
-        val appPickingLocked = locked || isAppPickingLockedWhileEnabled()
+        val appPickingLocked = isAppPickingLockedWhileEnabled()
         val websitesLocked = EditingLockGuard.isLocked(this)
         val inAppLocked = EditingLockGuard.isLocked(this)
         val nfcWriteLocked = isNfcTagWritingLocked()
@@ -3795,46 +3806,12 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showBlockedAppLimitActions(item: AppDisplay) {
-        val options = arrayOf(
-            getString(R.string.dashboard_blocked_app_action_time_limit),
-            getString(R.string.dashboard_blocked_app_action_open_limit)
+        QuickLimitDialogs.showForApp(
+            activity = this,
+            pkg = item.pkg,
+            label = item.label,
+            onChanged = { refreshBlockedList() }
         )
-
-        showSwitchlyOptionDialog(
-            title = getString(R.string.dashboard_blocked_app_limits_title),
-            subtitle = item.label,
-            options = options.mapIndexed { index, label ->
-                SwitchlyDialogOption(
-                    title = label,
-                    summary = getString(
-                        if (index == 0) {
-                            R.string.dashboard_blocked_app_action_time_limit_summary
-                        } else {
-                            R.string.dashboard_blocked_app_action_open_limit_summary
-                        }
-                    ),
-                    iconRes = if (index == 0) R.drawable.schedule_24 else R.drawable.login_24
-                )
-            },
-            showCancelButton = false
-        ) { which ->
-            when (which) {
-                0 -> QuickLimitDialogs.showForApp(
-                    activity = this,
-                    pkg = item.pkg,
-                    label = item.label,
-                    startOnAttempts = false,
-                    onChanged = { refreshBlockedList() }
-                )
-                1 -> QuickLimitDialogs.showForApp(
-                    activity = this,
-                    pkg = item.pkg,
-                    label = item.label,
-                    startOnAttempts = true,
-                    onChanged = { refreshBlockedList() }
-                )
-            }
-        }
     }
 
     private fun confirmRemoveBlockedApp(item: AppDisplay) {
@@ -3969,9 +3946,12 @@ class MainActivity : AppCompatActivity() {
             }
 
             blockedAdapter.submitList(items) {
-                // The managed-app rows include live status chips (e.g. "Limit reached") that are derived from runtime state rather than DiffUtil item content.
-                // When the list contents themselves have not changed, returning to Home after a limit is hit would otherwise keep the old chip text until some unrelated state change forced a rebind.
-                notifyBlockedChipsChanged()
+                // Rule/limit summaries are backed by stores rather than AppDisplay fields, so DiffUtil can legitimately see the same item after an edit.
+                // Rebind the committed managed-app rows without invalidating the whole RecyclerView.
+                val itemCount = blockedAdapter.itemCount
+                if (itemCount > 0) {
+                    blockedAdapter.notifyItemRangeChanged(0, itemCount)
+                }
             }
 
         }
@@ -4316,7 +4296,7 @@ class MainActivity : AppCompatActivity() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.action_scanner_header -> {
-                showScannerChoiceDialog()
+                openHeaderScanner()
                 true
             }
             R.id.action_settings_gear -> {
@@ -4346,63 +4326,32 @@ class MainActivity : AppCompatActivity() {
             .showAccented()
     }
 
-    private fun showScannerChoiceDialog() {
-        data class ScannerChoice(
-            val option: SwitchlyDialogOption,
-            val open: () -> Unit,
+    private fun openHeaderScanner() {
+        val qrAllowed = AutomationModeStore.isQrAllowed(this)
+        val barcodeAllowed = AutomationModeStore.isBarcodeAllowed(this)
+        val mode = when {
+            qrAllowed && barcodeAllowed -> UnifiedScanActivity.ScanMode.AUTO
+            qrAllowed -> UnifiedScanActivity.ScanMode.QR_ONLY
+            barcodeAllowed -> UnifiedScanActivity.ScanMode.BARCODE_ONLY
+            else -> return
+        }
+        openUnifiedScannerDirectly(mode)
+    }
+
+    private fun openUnifiedScannerDirectly(mode: UnifiedScanActivity.ScanMode) {
+        startActivity(
+            Intent(this, UnifiedScanActivity::class.java)
+                .putExtra(UnifiedScanActivity.EXTRA_ALLOW_DIRECT_OPEN, true)
+                .putExtra(UnifiedScanActivity.EXTRA_SCAN_MODE, mode.raw)
         )
-
-        val choices = buildList<ScannerChoice> {
-            if (AutomationModeStore.isQrAllowed(this@MainActivity)) {
-                add(
-                    ScannerChoice(
-                        option = SwitchlyDialogOption(
-                            title = getString(R.string.qr_scan_title),
-                            summary = getString(R.string.qr_scan_option_summary),
-                            iconRes = R.drawable.qr_code_24,
-                        ),
-                        open = ::openQrScannerDirectly,
-                    )
-                )
-            }
-            if (AutomationModeStore.isBarcodeAllowed(this@MainActivity)) {
-                add(
-                    ScannerChoice(
-                        option = SwitchlyDialogOption(
-                            title = getString(R.string.barcode_scan_title),
-                            summary = getString(R.string.barcode_scan_option_summary),
-                            iconRes = R.drawable.barcode_24,
-                        ),
-                        open = ::openBarcodeScannerDirectly,
-                    )
-                )
-            }
-        }
-
-        when (choices.size) {
-            0 -> Unit
-            1 -> choices.first().open()
-            else -> showSwitchlyOptionDialog(
-                title = getString(R.string.scanner_choice_title),
-                options = choices.map { it.option },
-            ) { index ->
-                choices.getOrNull(index)?.open?.invoke()
-            }
-        }
     }
 
     private fun openQrScannerDirectly() {
-        startActivity(
-            Intent(this, QrScanActivity::class.java)
-                .putExtra(QrScanActivity.EXTRA_ALLOW_DIRECT_OPEN, true)
-        )
+        openUnifiedScannerDirectly(UnifiedScanActivity.ScanMode.QR_ONLY)
     }
 
     private fun openBarcodeScannerDirectly() {
-        startActivity(
-            Intent(this, BarcodeScanActivity::class.java)
-                .putExtra(BarcodeScanActivity.EXTRA_ALLOW_DIRECT_OPEN, true)
-        )
+        openUnifiedScannerDirectly(UnifiedScanActivity.ScanMode.BARCODE_ONLY)
     }
 
     private fun showBarcodeChoiceDialog() {

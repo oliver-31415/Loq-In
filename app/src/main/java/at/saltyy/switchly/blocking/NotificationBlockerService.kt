@@ -29,6 +29,7 @@ import androidx.core.content.edit
 import at.saltyy.switchly.data.prefs.BlockedInboxStore
 import at.saltyy.switchly.data.prefs.BlockedNotificationEvent
 import at.saltyy.switchly.data.prefs.EmergencyBypassStore
+import at.saltyy.switchly.data.prefs.IgnoredUsageAppsStore
 import at.saltyy.switchly.data.prefs.ProfileStore
 import at.saltyy.switchly.data.prefs.ProfileRuleModeStore
 import at.saltyy.switchly.data.prefs.SwitchModeStore
@@ -159,6 +160,11 @@ class NotificationBlockerService : NotificationListenerService() {
 
     override fun onNotificationPosted(sbn: StatusBarNotification) {
         val pkg = sbn.packageName ?: return
+
+        // App-list hidden packages are intentionally outside Switchly protection.
+        if (IgnoredUsageAppsStore.isExcludedFromProtection(this, pkg)) {
+            return
+        }
 
         // Global toggle (cached + refreshed via prefs listener)
         if (!cachedEnabled) {

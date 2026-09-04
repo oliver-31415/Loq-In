@@ -43,7 +43,6 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.addCallback
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
@@ -83,11 +82,13 @@ import at.saltyy.switchly.ui.ThemeUtils
 import at.saltyy.switchly.ui.dialog.showAccented
 import at.saltyy.switchly.ui.dialog.styleSwitchlyDialogButtons
 import at.saltyy.switchly.util.BatteryOptimizationRequest
+import at.saltyy.switchly.util.AdvancedProtectionCompat
 import at.saltyy.switchly.util.PackageManagerApiCompat
 import at.saltyy.switchly.util.PermissionSetupChecks
 import at.saltyy.switchly.util.PermissionUtils
 import at.saltyy.switchly.util.NfcLaunchAccessCompat
 import at.saltyy.switchly.util.getIntCompat
+import at.saltyy.switchly.util.FrameworkApi34Compat
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.checkbox.MaterialCheckBox
@@ -121,8 +122,11 @@ class OnboardingActivity : ComponentActivity() {
 
     private var forced: Boolean = false
     private lateinit var pager: ViewPager2
+    private lateinit var compatPageContainer: FrameLayout
     private lateinit var pages: List<OnboardingPage>
     private lateinit var pagerAdapter: OnboardingPagerAdapter
+    private var useCompatPagerFallback: Boolean = false
+    private var compatPageIndex: Int = 0
     private lateinit var btnNext: MaterialButton
     private lateinit var btnSkip: MaterialButton
     private lateinit var btnOptionalSetup: MaterialButton
@@ -132,7 +136,11 @@ class OnboardingActivity : ComponentActivity() {
         ActivityResultContracts.RequestMultiplePermissions()
     ) {
         if (::pager.isInitialized && ::pagerAdapter.isInitialized) {
-            pagerAdapter.notifyItemChanged(pager.currentItem)
+            if (useCompatPagerFallback) {
+                renderCompatPage()
+            } else {
+                pagerAdapter.notifyItemChanged(pager.currentItem)
+            }
         }
     }
 
@@ -155,10 +163,13 @@ class OnboardingActivity : ComponentActivity() {
             return
         }
 
-        enableEdgeToEdge()
-        WindowCompat.setDecorFitsSystemWindows(window, false)
+        if (!FrameworkApi34Compat.needsWindowInsetsCrashShield()) {
+            WindowCompat.enableEdgeToEdge(window)
+        }
 
         pager = findViewById(R.id.viewPager)
+        compatPageContainer = findViewById(R.id.compatPageContainer)
+        useCompatPagerFallback = FrameworkApi34Compat.needsCrashShield()
         btnNext = findViewById(R.id.btn_next)
         btnSkip = findViewById(R.id.btn_skip)
         btnOptionalSetup = findViewById(R.id.btn_optional_setup)
@@ -172,32 +183,43 @@ class OnboardingActivity : ComponentActivity() {
             activity = this,
             pages = pages
         )
-        pager.adapter = pagerAdapter
-        installRequiredPageSwipeGuard()
+        if (useCompatPagerFallback) {
+            // ViewPager2 initializes AndroidX accessibility actions while setting its adapter.
+            // On the inconsistent API-34 image that direct link itself crashes, so render the exact same page view manually and keep Next/Back navigation in this activity.
+            pager.visibility = View.GONE
+            compatPageContainer.visibility = View.VISIBLE
+            renderCompatPage()
+        } else {
+            pager.adapter = pagerAdapter
+            installRequiredPageSwipeGuard()
+            pager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+                override fun onPageSelected(position: Int) {
+                    updateButtons(position)
+                }
+            })
+        }
         onBackPressedDispatcher.addCallback(this) {
-            val position = pager.currentItem
+            val position = currentPageIndex()
             if (position > 0) {
-                pager.setCurrentItem(position - 1, true)
+                setPageIndex(position - 1, smooth = true)
             } else {
                 leaveOnboarding()
             }
         }
 
-        updateButtons(pager.currentItem)
-
-        pager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
-            override fun onPageSelected(position: Int) {
-                updateButtons(position)
-            }
-        })
+        updateButtons(currentPageIndex())
 
         btnSkip.setOnClickListener {
-            val currentPage = pages.getOrNull(pager.currentItem)
+            val currentPage = pages.getOrNull(currentPageIndex())
             if (currentPage?.type == OnboardingPage.Type.OPTIONAL_SETUP) {
                 finishOnboarding()
+            } else if (forced) {
+                // Forced tutorial views return to their caller without changing onboarding state.
+                leaveOnboarding()
             } else {
-                // Leaving required setup early intentionally does not mark onboarding as completed, so it can be continued on the next launch.
-                // Forced tutorial views return to their caller.
+                // "Skip" should stay skipped for this onboarding version. Missing setup is still
+                // surfaced through Permissions/Setup Health without reopening onboarding on launch.
+                markSkipped()
                 leaveOnboarding()
             }
         }
@@ -205,12 +227,12 @@ class OnboardingActivity : ComponentActivity() {
         btnOptionalSetup.setOnClickListener {
             val optionalPage = pages.indexOfFirst { it.type == OnboardingPage.Type.OPTIONAL_SETUP }
             if (optionalPage >= 0) {
-                pager.setCurrentItem(optionalPage, true)
+                setPageIndex(optionalPage, smooth = true)
             }
         }
 
         btnNext.setOnClickListener {
-            val pos = pager.currentItem
+            val pos = currentPageIndex()
             val page = pages.getOrNull(pos)
 
             // The review list is editable.
@@ -247,7 +269,7 @@ class OnboardingActivity : ComponentActivity() {
                 pos == pages.lastIndex
 
             if (!finishesOnboarding) {
-                pager.currentItem = pos + 1
+                setPageIndex(pos + 1, smooth = true)
             } else {
                 finishOnboarding()
             }
@@ -270,13 +292,44 @@ class OnboardingActivity : ComponentActivity() {
             OnboardingUsagePreviewRenderer.prefetch(this)
         }
         rebuildPagesKeepingPosition()
-        val pos = pager.currentItem.coerceIn(0, pages.lastIndex)
+        val pos = currentPageIndex().coerceIn(0, pages.lastIndex)
         val page = pages.getOrNull(pos) ?: return
         if (page.level == OnboardingPage.Level.REQUIRED && page.completionCheck?.invoke(this) == true) {
             if (pos < pages.lastIndex && shouldAutoAdvanceAfterReturn(page)) {
-                pager.post { pager.currentItem = pos + 1 }
+                activePageHost().post { setPageIndex(pos + 1, smooth = true) }
             }
         }
+    }
+
+    private fun currentPageIndex(): Int =
+        if (useCompatPagerFallback) compatPageIndex else pager.currentItem
+
+    private fun activePageHost(): View =
+        if (useCompatPagerFallback) compatPageContainer else pager
+
+    private fun setPageIndex(index: Int, smooth: Boolean) {
+        if (!::pages.isInitialized || pages.isEmpty()) return
+        val safeIndex = index.coerceIn(0, pages.lastIndex)
+        if (useCompatPagerFallback) {
+            compatPageIndex = safeIndex
+            renderCompatPage()
+            updateButtons(safeIndex)
+        } else {
+            pager.setCurrentItem(safeIndex, smooth)
+        }
+    }
+
+    private fun renderCompatPage() {
+        if (!useCompatPagerFallback || !::compatPageContainer.isInitialized || pages.isEmpty()) return
+        compatPageIndex = compatPageIndex.coerceIn(0, pages.lastIndex)
+        compatPageContainer.removeAllViews()
+        val pageView = layoutInflater.inflate(
+            R.layout.item_onboarding_page,
+            compatPageContainer,
+            false,
+        )
+        OnboardingPagerAdapter.StandardVH(pageView).bind(this, pages[compatPageIndex])
+        compatPageContainer.addView(pageView)
     }
 
     private fun finishOnboarding() {
@@ -346,7 +399,7 @@ class OnboardingActivity : ComponentActivity() {
 
         // App selection, permissions and optional setup can all change while another screen is open.
         // Rebuild the lightweight page model and keep the user on the same logical step.
-        val oldPos = pager.currentItem.coerceIn(0, pages.lastIndex)
+        val oldPos = currentPageIndex().coerceIn(0, pages.lastIndex)
         val oldPage = pages.getOrNull(oldPos)
 
         pages = buildPages()
@@ -354,14 +407,16 @@ class OnboardingActivity : ComponentActivity() {
             activity = this,
             pages = pages
         )
-        pager.adapter = pagerAdapter
+        if (!useCompatPagerFallback) {
+            pager.adapter = pagerAdapter
+        }
 
         val matchingPage = oldPage?.let { old ->
             pages.indexOfFirst { page -> page.type == old.type && page.title == old.title }
         } ?: -1
         val target = matchingPage.takeIf { it >= 0 } ?: oldPos.coerceIn(0, pages.lastIndex)
 
-        pager.setCurrentItem(target, false)
+        setPageIndex(target, smooth = false)
         updateButtons(target)
     }
 
@@ -557,12 +612,18 @@ class OnboardingActivity : ComponentActivity() {
         return PermissionSetupChecks.notificationsReady(ctx, requireListenerAccess = true)
     }
 
-    // Checks the two permissions required for reliable blocking and usage-aware insights.
+    // Full protection needs Accessibility + Usage Access.
+    // Android 16 Advanced Protection can make Accessibility unavailable;
+    // in that specific case Usage Access is enough to continue with Switchly's clearly-labelled limited whole-app fallback.
     private fun isCorePermissionsReady(ctx: Context): Boolean {
-        return PermissionUtils.isAccessibilityServiceEnabled(
+        val accessibilityEnabled = PermissionUtils.isAccessibilityServiceEnabled(
             ctx,
             SwitchlyAccessibilityService::class.java
-        ) && UsageStatsRepo.hasUsageAccess(ctx)
+        )
+        val usageAccessEnabled = UsageStatsRepo.hasUsageAccess(ctx)
+        val limitedAdvancedProtectionPath =
+            AdvancedProtectionCompat.isEnabled(ctx) && usageAccessEnabled
+        return usageAccessEnabled && (accessibilityEnabled || limitedAdvancedProtectionPath)
     }
 
     private fun ensureOnboardingProfile(ctx: Context): String {
@@ -597,11 +658,12 @@ class OnboardingActivity : ComponentActivity() {
 
     private fun openFirstMissingPermissionSetting() {
         when {
-            !PermissionUtils.isAccessibilityServiceEnabled(this, SwitchlyAccessibilityService::class.java) -> {
-                AccessibilityDisclosure.openSettingsWithDisclosure(this, forceShow = true)
-            }
             !UsageStatsRepo.hasUsageAccess(this) -> {
                 startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
+            }
+            !PermissionUtils.isAccessibilityServiceEnabled(this, SwitchlyAccessibilityService::class.java) &&
+                !AdvancedProtectionCompat.isEnabled(this) -> {
+                AccessibilityDisclosure.openSettingsWithDisclosure(this, forceShow = true)
             }
             NotificationBlockStore.isEnabled(this) && !isNotificationBlockingSetupReady(this) -> {
                 openNotificationSetupFromOnboarding()
@@ -751,18 +813,31 @@ class OnboardingActivity : ComponentActivity() {
         if (AutomationModeStore.isQrChannelAllowed(ctx)) parts += getString(R.string.pref_mode_qr_title)
         if (AutomationModeStore.isBarcodeChannelAllowed(ctx)) parts += getString(R.string.pref_mode_barcode_title)
         val channels = parts.takeIf { it.isNotEmpty() }?.joinToString(" / ") ?: selectedControlModeLabel(ctx)
-        return getString(R.string.onb_permissions_hub_mode_desc, channels)
+        return getString(
+            if (AdvancedProtectionCompat.isEnabled(ctx) &&
+                !PermissionUtils.isAccessibilityServiceEnabled(ctx, SwitchlyAccessibilityService::class.java)) {
+                R.string.onb_permissions_hub_mode_desc_advanced_protection
+            } else {
+                R.string.onb_permissions_hub_mode_desc
+            },
+            channels
+        )
     }
 
     private fun applySystemBarInsets() {
+        if (FrameworkApi34Compat.needsWindowInsetsCrashShield()) {
+            FrameworkApi34Compat.applyWindowInsetsWorkaround(this)
+            return
+        }
         val density = resources.displayMetrics.density
         fun dp(value: Float): Int = (value * density).toInt()
 
-        val initialPagerLeft = pager.paddingLeft
-        val initialPagerTop = pager.paddingTop
-        val initialPagerRight = pager.paddingRight
-        val initialPagerBottom = pager.paddingBottom
-        ViewCompat.setOnApplyWindowInsetsListener(pager) { view, insets ->
+        val pageHost = activePageHost()
+        val initialPagerLeft = pageHost.paddingLeft
+        val initialPagerTop = pageHost.paddingTop
+        val initialPagerRight = pageHost.paddingRight
+        val initialPagerBottom = pageHost.paddingBottom
+        ViewCompat.setOnApplyWindowInsetsListener(pageHost) { view, insets ->
             val bars = insets.getInsets(
                 WindowInsetsCompat.Type.statusBars() or WindowInsetsCompat.Type.displayCutout()
             )
@@ -782,7 +857,7 @@ class OnboardingActivity : ComponentActivity() {
 
         fun updatePagerFooterSpace() {
             val params = bottomBar.layoutParams as? ViewGroup.MarginLayoutParams ?: return
-            pager.updatePadding(
+            pageHost.updatePadding(
                 bottom = initialPagerBottom + bottomBar.height + params.bottomMargin + dp(8f)
             )
         }
@@ -806,7 +881,7 @@ class OnboardingActivity : ComponentActivity() {
             updatePagerFooterSpace()
         }
 
-        ViewCompat.requestApplyInsets(pager)
+        ViewCompat.requestApplyInsets(pageHost)
         ViewCompat.requestApplyInsets(bottomBar)
     }
 
@@ -904,7 +979,14 @@ class OnboardingActivity : ComponentActivity() {
             actionLabel = getString(R.string.onb_permissions_action),
             action = { act -> (act as? OnboardingActivity)?.openFirstMissingPermissionSetting() },
             completionCheck = { ctx -> isCorePermissionsReady(ctx) },
-            requiredMessage = getString(R.string.onb_required_permissions_hub)
+            requiredMessage = getString(
+                if (AdvancedProtectionCompat.isEnabled(this) &&
+                    !PermissionUtils.isAccessibilityServiceEnabled(this, SwitchlyAccessibilityService::class.java)) {
+                    R.string.onb_required_permissions_hub_advanced_protection
+                } else {
+                    R.string.onb_required_permissions_hub
+                }
+            )
         )
 
         if (shouldOfferKeySetup(this)) {
@@ -1246,6 +1328,13 @@ class OnboardingActivity : ComponentActivity() {
             putInt(KEY_VERSION, ONBOARDING_VERSION)
         }
         MainActivity.queueBottomNavTour(this)
+    }
+
+    private fun markSkipped() {
+        getSharedPreferences(PREFS, MODE_PRIVATE).edit(commit = true) {
+            putBoolean(KEY_DONE, true)
+            putInt(KEY_VERSION, ONBOARDING_VERSION)
+        }
     }
 
     private fun leaveOnboarding() {

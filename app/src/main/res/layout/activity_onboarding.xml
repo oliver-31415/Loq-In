@@ -13,6 +13,16 @@
         android:paddingTop="8dp"
         android:paddingBottom="0dp" />
 
+    <!-- Fallback host used only when the OS reports API 34+ but is missing finalized API-34 framework members. 
+         It avoids ViewPager2's AndroidX accessibility action setup. -->
+    <FrameLayout
+        android:id="@+id/compatPageContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingTop="8dp"
+        android:paddingBottom="0dp"
+        android:visibility="gone" />
+
     <!-- Bottom action bar -->
     <com.google.android.material.card.MaterialCardView
         android:id="@+id/bottomBar"

@@ -21,6 +21,7 @@ package at.saltyy.switchly.data.prefs
 
 import android.content.Context
 import androidx.core.content.edit
+import at.saltyy.switchly.data.statistics.UsageInsightsAppCatalog
 import java.util.Calendar
 
 // Daily app-launch counters independent from attempt-limit enforcement.
@@ -30,7 +31,7 @@ object AppLaunchCountStore {
 
     @Synchronized
     fun incrementToday(context: Context, packageName: String): Int {
-        if (packageName.isBlank()) {
+        if (packageName.isBlank() || UsageInsightsAppCatalog.shouldAlwaysHide(packageName)) {
             return 0
         }
         val prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -43,7 +44,7 @@ object AppLaunchCountStore {
     // Uses max rather than addition so repeated UsageStats backfills cannot double-count.
     @Synchronized
     fun mergeForDay(context: Context, ymd: Int, packageName: String, count: Int) {
-        if (packageName.isBlank() || count <= 0) {
+        if (packageName.isBlank() || count <= 0 || UsageInsightsAppCatalog.shouldAlwaysHide(packageName)) {
             return
         }
         val prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -89,7 +90,7 @@ object AppLaunchCountStore {
                 return@forEach
             }
             val pkg = rest.substring(9)
-            if (pkg.isBlank()) {
+            if (pkg.isBlank() || UsageInsightsAppCatalog.shouldAlwaysHide(pkg)) {
                 return@forEach
             }
             val value = readInt(prefs, key)
@@ -102,6 +103,26 @@ object AppLaunchCountStore {
 
     fun getForDateRange(context: Context, packageName: String, startMs: Long, endMs: Long): Int =
         getMapForDateRange(context, startMs, endMs)[packageName] ?: 0
+
+    fun getMapOverall(context: Context): Map<String, Int> {
+        val prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val out = linkedMapOf<String, Int>()
+        prefs.all.forEach { (key, value) ->
+            if (!key.startsWith(PREFIX)) return@forEach
+            val rest = key.removePrefix(PREFIX)
+            if (rest.length < 10 || rest.getOrNull(8) != '_') return@forEach
+            if (rest.take(8).toIntOrNull() == null) return@forEach
+            val pkg = rest.substring(9)
+            if (pkg.isBlank() || UsageInsightsAppCatalog.shouldAlwaysHide(pkg)) return@forEach
+            val count = numericValue(value).coerceIn(0L, Int.MAX_VALUE.toLong()).toInt()
+            if (count > 0) {
+                out[pkg] = ((out[pkg] ?: 0).toLong() + count.toLong())
+                    .coerceAtMost(Int.MAX_VALUE.toLong())
+                    .toInt()
+            }
+        }
+        return out
+    }
 
     fun getTotalToday(context: Context): Int = totalForDays(context, setOf(todayYmd()))
 
@@ -157,7 +178,10 @@ object AppLaunchCountStore {
         val prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         var total = 0L
         prefs.all.forEach { (key, value) ->
-            if (key.startsWith(PREFIX)) total += numericValue(value)
+            val pkg = packageFromKey(key) ?: return@forEach
+            if (!UsageInsightsAppCatalog.shouldAlwaysHide(pkg)) {
+                total += numericValue(value)
+            }
         }
         return total.coerceIn(0L, Int.MAX_VALUE.toLong()).toInt()
     }
@@ -168,7 +192,10 @@ object AppLaunchCountStore {
         var total = 0L
         prefs.all.forEach { (key, value) ->
             val day = dayFromKey(key) ?: return@forEach
-            if (day in wantedDays) total += numericValue(value)
+            val pkg = packageFromKey(key) ?: return@forEach
+            if (day in wantedDays && !UsageInsightsAppCatalog.shouldAlwaysHide(pkg)) {
+                total += numericValue(value)
+            }
         }
         return total.coerceIn(0L, Int.MAX_VALUE.toLong()).toInt()
     }
@@ -178,6 +205,13 @@ object AppLaunchCountStore {
         val separator = key.indexOf('_', startIndex = PREFIX.length)
         if (separator <= PREFIX.length) return null
         return key.substring(PREFIX.length, separator).toIntOrNull()
+    }
+
+    private fun packageFromKey(key: String): String? {
+        if (!key.startsWith(PREFIX)) return null
+        val separator = key.indexOf('_', startIndex = PREFIX.length)
+        if (separator <= PREFIX.length || separator >= key.lastIndex) return null
+        return key.substring(separator + 1).takeIf { it.isNotBlank() }
     }
 
     private fun numericValue(value: Any?): Long = when (value) {

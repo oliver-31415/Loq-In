@@ -59,6 +59,8 @@ object UsageInsightsAppCatalog {
 
     private val PERMISSION_CONTROLLER_PACKAGES = AndroidSystemPackages.PERMISSION_CONTROLLER_PACKAGES
 
+    private val ACCESSIBILITY_SYSTEM_PACKAGES = AndroidSystemPackages.ACCESSIBILITY_SYSTEM_PACKAGES
+
     private val BACKGROUND_SYSTEM_SERVICE_PACKAGES = setOf(
         "com.android.certinstaller",
         "com.android.keychain",
@@ -101,6 +103,7 @@ object UsageInsightsAppCatalog {
             VPN_DIALOG_PACKAGES +
             PACKAGE_INSTALLER_PACKAGES +
             PERMISSION_CONTROLLER_PACKAGES +
+            ACCESSIBILITY_SYSTEM_PACKAGES +
             BACKGROUND_SYSTEM_SERVICE_PACKAGES
 
     fun shouldAlwaysHide(packageName: String): Boolean {

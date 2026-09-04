@@ -297,7 +297,6 @@ class ManagePairedTagsActivity : AppCompatActivity() {
             .showAccented()
     }
 
-
     private fun showAddDialog() {
         val entries = listOf(
             getString(R.string.paired_tags_add_writable_title),

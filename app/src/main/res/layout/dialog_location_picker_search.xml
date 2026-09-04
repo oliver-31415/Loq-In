@@ -11,7 +11,7 @@
     android:paddingBottom="4dp">
 
     <TextView
-        style="@style/TextAppearance.MaterialComponents.Body2"
+        android:textAppearance="?attr/textAppearanceBody2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginStart="4dp"

@@ -193,6 +193,18 @@ object InAppRuleStore {
             .filterTo(linkedSetOf()) { hasEnabledRulesForPackage(context, profile, it) }
     }
 
+    // Clears profile-scoped in-app rules for one package, used when cleaning up an uninstalled app entry.
+    fun clearRulesForPackage(context: Context, profile: String, packageName: String) {
+        if (profile.isBlank() || packageName.isBlank()) {
+            return
+        }
+        val keys = PACKAGE_TO_RULE_KEYS[packageName] ?: return
+        migrateLegacyRulesIntoProfileIfNeeded(context, profile)
+        prefs(context).edit {
+            keys.forEach { baseKey -> remove(key(profile, baseKey)) }
+        }
+    }
+
     fun onProfileRenamed(context: Context, oldProfile: String, newProfile: String) {
         val sp = prefs(context)
         sp.edit {

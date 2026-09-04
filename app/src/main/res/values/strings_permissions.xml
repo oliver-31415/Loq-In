@@ -12,6 +12,7 @@
     <string name="permissions_toolbar_issues">Issues</string>
     <string name="permissions_status_enabled">Enabled</string>
     <string name="permissions_status_disabled">Disabled</string>
+    <string name="permissions_status_not_connected">Enabled, not connected</string>
     <string name="permissions_status_location_approx">Approximate (Precise required)</string>
     <string name="permissions_status_location_background_missing">Only while app is in use (Wi-Fi may be less reliable; location schedules need “Allow all the time”)</string>
     <string name="permissions_status_nearby_wifi_missing">Nearby Wi-Fi devices permission missing</string>
@@ -21,6 +22,7 @@
     <!-- ====================================================== -->
     <string name="permissions_accessibility_title">Accessibility service</string>
     <string name="permissions_accessibility_desc">Required for app, website, supported in-app, and usage-limit protection: lets Switchly detect foreground changes and the visible information needed for configured rules.</string>
+    <string name="permissions_accessibility_desc_advanced_protection">Android Advanced Protection is enabled. It can prevent Switchly’s Accessibility service from being available. Full website, in-app, navigation, and usage-limit protection still needs Accessibility. If Usage Access is granted, Switchly can run a limited best-effort fallback for basic whole-app Block selected/Allow selected rules. Android can still restrict blocker screens started from the background, so this fallback is not equivalent to full Accessibility protection. For full Switchly protection, disable Device protection under Android Settings → Security &amp; privacy → Advanced Protection.</string>
     <string name="permissions_usage_access_title">App usage access</string>
     <string name="permissions_usage_access_desc">Required for screen-time statistics and daily app limits. Enable “App usage data” access for Switchly.</string>
     <string name="permissions_battery_oem_note">Some devices do not offer an “Unrestricted” battery option. If you already enabled the highest available background setting for Switchly, that may already be the maximum supported on your device.</string>
@@ -58,6 +60,8 @@
     <!-- ====================================================== -->
     <string name="permissions_autostart_title">Manufacturer background settings</string>
     <string name="permissions_autostart_desc">Some devices add sleep, battery, auto-start, or background activity controls beyond standard Android. Review the guide for your manufacturer so Switchly is not restricted.</string>
+    <string name="permissions_autostart_desc_vivo">vivo/iQOO: check Autostart, Associated startup, and Unrestricted battery/background access. Associated startup is separate on some devices and may be needed to keep Accessibility connected after Switchly is removed from Recents.</string>
+    <string name="permissions_autostart_desc_vivo_accessibility_disabled">vivo/iQOO appears to have turned Accessibility off after it was previously working. Enable Associated startup, keep Switchly unrestricted in battery/background settings, then turn Switchly Accessibility back on. If Phone Manager shows an App risks warning, choose “Turn it back on”.</string>
 
     <!-- ====================================================== -->
     <!-- Permission action buttons -->
@@ -117,13 +121,27 @@ You can decline this permission, but app, website, and supported in-app protecti
     <!-- ====================================================== -->
     <string name="protection_inactive_title">Protection inactive</string>
     <string name="protection_inactive_text">Accessibility is off. Tap to check.</string>
+    <string name="protection_accessibility_not_connected_title">Accessibility not connected</string>
+    <string name="protection_accessibility_not_connected_text">Android reports Accessibility as enabled, but Switchly is not receiving events. Tap to check.</string>
+    <string name="protection_accessibility_oem_disabled_title">Accessibility was turned off</string>
+    <string name="protection_accessibility_oem_disabled_text">On vivo/iQOO, Phone Manager may disable Switchly Accessibility. Enable Associated startup, then turn Accessibility back on.</string>
+    <string name="permissions_status_oem_accessibility_disabled">Disabled by system/Phone Manager</string>
+    <string name="permissions_status_advanced_protection">Advanced Protection active - Accessibility unavailable</string>
+    <string name="permissions_status_advanced_protection_fallback_starting">Advanced Protection - limited app fallback starting</string>
+    <string name="permissions_status_advanced_protection_fallback_active">Advanced Protection - limited app fallback active</string>
+    <string name="protection_advanced_protection_title">Limited protection - Advanced Protection</string>
+    <string name="protection_advanced_protection_no_fallback_text">Accessibility is unavailable while Advanced Protection is enabled. Grant Usage Access for limited basic app blocking, or disable Device protection for full Switchly protection.</string>
+    <string name="advanced_protection_fallback_channel_name">Limited app protection</string>
+    <string name="advanced_protection_fallback_channel_description">Runs basic app blocking from Usage Access when Android Advanced Protection makes Accessibility unavailable.</string>
+    <string name="advanced_protection_fallback_notification_title">Switchly limited app protection</string>
+    <string name="advanced_protection_fallback_notification_text">Advanced Protection is active. Basic app blocking is running through Usage Access; website and in-app rules are unavailable.</string>
 
     <!-- ====================================================== -->
     <!-- Permission health diagnostics -->
     <!-- ====================================================== -->
     <string name="permissions_health_recheck">Re-check</string>
     <string name="permissions_health_rechecked_all_good">Re-check complete:\nAll required permissions look good</string>
-    <string name="permissions_health_rechecked_with_mismatch">Re-check complete:\nAccessibility status mismatch still detected</string>
+    <string name="permissions_health_rechecked_with_mismatch">Re-check complete:\nAccessibility is enabled in Android, but Switchly is not connected</string>
     <plurals name="permissions_health_rechecked_missing">
         <item quantity="one">Re-check complete:\n%1$d required permission is missing</item>
         <item quantity="other">Re-check complete:\n%1$d required permissions are missing</item>

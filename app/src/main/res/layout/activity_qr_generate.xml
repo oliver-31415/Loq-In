@@ -21,6 +21,7 @@
             app:title="@string/qr_generate_title" />
     </com.google.android.material.appbar.AppBarLayout>
 
+    <!-- Content -->
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
@@ -43,13 +44,15 @@
                 android:contentDescription="@string/qr_title"
                 android:scaleType="fitCenter" />
 
-            <!-- URI text -->
+            <!-- URI text: keep the generated action link directly below the QR preview. -->
             <TextView
                 android:id="@+id/tvUri"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="@color/switchly_text_primary"
                 android:textIsSelectable="true" />
 
             <!-- Action dropdown -->
@@ -140,6 +143,17 @@
                     app:iconGravity="textStart"
                     app:iconPadding="8dp" />
             </LinearLayout>
+
+            <!-- Scanner guidance belongs after the primary actions so the QR/link/actions stay visually grouped. -->
+            <TextView
+                android:id="@+id/tvScannerHint"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:gravity="center"
+                android:text="@string/qr_scan_with_switchly_hint"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="@color/switchly_text_secondary" />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -90,9 +90,27 @@ object UsageTimelineRepo {
         val now = System.currentTimeMillis()
         return when (rangeName) {
             "today" -> startOfToday() to now
-            "week" -> now - TimeUnit.DAYS.toMillis(7) to now
-            "month" -> now - TimeUnit.DAYS.toMillis(30) to now
-            "year" -> now - TimeUnit.DAYS.toMillis(365) to now
+            "week" -> Calendar.getInstance().apply {
+                timeInMillis = startOfToday()
+                add(Calendar.DAY_OF_YEAR, -6)
+            }.timeInMillis to now
+            "month" -> Calendar.getInstance().apply {
+                timeInMillis = now
+                set(Calendar.DAY_OF_MONTH, 1)
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }.timeInMillis to now
+            "year" -> Calendar.getInstance().apply {
+                timeInMillis = now
+                set(Calendar.MONTH, Calendar.JANUARY)
+                set(Calendar.DAY_OF_MONTH, 1)
+                set(Calendar.HOUR_OF_DAY, 0)
+                set(Calendar.MINUTE, 0)
+                set(Calendar.SECOND, 0)
+                set(Calendar.MILLISECOND, 0)
+            }.timeInMillis to now
             else -> 0L to now
         }
     }

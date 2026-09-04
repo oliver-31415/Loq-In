@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
+    <!-- ====================================================== -->
+    <!-- Allow mode preview -->
+    <!-- ====================================================== -->
     <string name="app_allow_mode_preview_title">Use Allow selected?</string>
     <string name="app_allow_mode_preview_body">With the current list, %1$s and %2$s. Apps not shown in this picker remain available.</string>
     <plurals name="app_allow_mode_preview_blocked_count">
@@ -138,8 +142,8 @@
     <string name="app_picker_open_website_rules_for">Website rules for %1$s</string>
     <string name="app_picker_open_in_app_rules_for">In-app rules for %1$s</string>
     <string name="app_picker_in_app_rules_chip">In-app</string>
-    <string name="app_picker_in_app_rules_pinned_hint">Selected because in-app rules are enabled.\nRemove the in-app rules first to turn this app off.</string>
-    <string name="app_picker_in_app_rules_pinned_toast">Remove the in-app rules first to turn this app off.</string>
+    <string name="app_picker_in_app_rules_pinned_hint">Remove in-app rules first.</string>
+    <string name="app_picker_in_app_rules_pinned_toast">Remove in-app rules first.</string>
 
     <!-- ====================================================== -->
     <!-- Picker row action menu -->

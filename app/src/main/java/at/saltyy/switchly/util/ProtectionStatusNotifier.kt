@@ -35,6 +35,8 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import at.saltyy.switchly.R
 import at.saltyy.switchly.blocking.BlockingRuntime
+import at.saltyy.switchly.blocking.OemAccessibilityKeepAlive
+import at.saltyy.switchly.blocking.UsageAccessFallbackBlocking
 import at.saltyy.switchly.data.prefs.AppLogStore
 import at.saltyy.switchly.data.prefs.ProfileStore
 import at.saltyy.switchly.data.prefs.SwitchModeStore
@@ -68,6 +70,8 @@ object ProtectionStatusNotifier {
      */
     fun onAccessibilityHeartbeat(context: Context) {
         val ctx = context.applicationContext
+        OemAccessibilityKeepAlive.recordAccessibilityHealthy(ctx)
+
         val prefs = ctx.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val hasPendingOrConfirmedWarning =
             prefs.contains(KEY_INACTIVE_SINCE_MS) || prefs.getBoolean(KEY_WARNING_CONFIRMED, false)
@@ -147,10 +151,14 @@ object ProtectionStatusNotifier {
                     "Protection",
                     "accessibility_warning_confirmed settingsEnabled=${diagnostics.accessibilityEnabledInSettings} " +
                         "runtimeActive=${diagnostics.accessibilityActive} heartbeatAgeMs=${diagnostics.heartbeatAgeMs} " +
+                        "advancedProtection=${AdvancedProtectionCompat.isEnabled(ctx)} " +
+                        "limitedFallback=${UsageAccessFallbackBlocking.isRunning(ctx)} " +
+                        "oemLikelyDisabled=${OemAccessibilityKeepAlive.isLikelyAccessibilityDisabledByOem(ctx)} " +
                         "graceMs=$WARNING_GRACE_MS"
                 )
                 prefs.edit { putBoolean(KEY_WARNING_CONFIRMED, true) }
             }
+            runCatching { UsageAccessFallbackBlocking.sync(ctx) }
             show(ctx)
         }
     }
@@ -214,6 +222,34 @@ object ProtectionStatusNotifier {
         }
 
         val nm = ctx.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        val diagnostics = BlockingRuntime.getRuntimeDiagnostics(ctx)
+        val enabledButNotConnected =
+            diagnostics.accessibilityEnabledInSettings && !diagnostics.accessibilityActive
+        val likelyOemDisabled = OemAccessibilityKeepAlive.isLikelyAccessibilityDisabledByOem(ctx)
+        val advancedProtectionEnabled = AdvancedProtectionCompat.isEnabled(ctx)
+        val limitedFallbackRunning = UsageAccessFallbackBlocking.isRunning(ctx)
+        if (advancedProtectionEnabled && limitedFallbackRunning) {
+            // The fallback foreground service already owns the required ongoing notification and explains the reduced protection level.
+            // Avoid showing a second duplicate warning.
+            cancel(ctx)
+            return
+        }
+        val notificationTitle = ctx.getString(
+            when {
+                advancedProtectionEnabled -> R.string.protection_advanced_protection_title
+                likelyOemDisabled -> R.string.protection_accessibility_oem_disabled_title
+                enabledButNotConnected -> R.string.protection_accessibility_not_connected_title
+                else -> R.string.protection_inactive_title
+            }
+        )
+        val notificationText = ctx.getString(
+            when {
+                advancedProtectionEnabled -> R.string.protection_advanced_protection_no_fallback_text
+                likelyOemDisabled -> R.string.protection_accessibility_oem_disabled_text
+                enabledButNotConnected -> R.string.protection_accessibility_not_connected_text
+                else -> R.string.protection_inactive_text
+            }
+        )
 
         // minSdk is 27, so NotificationChannel is always available.
         val channel = NotificationChannel(
@@ -221,7 +257,7 @@ object ProtectionStatusNotifier {
             ctx.getString(R.string.app_name),
             NotificationManager.IMPORTANCE_LOW
         ).apply {
-            description = ctx.getString(R.string.protection_inactive_text)
+            description = notificationText
             setSound(null, null)
             enableVibration(false)
             setShowBadge(false)
@@ -240,8 +276,8 @@ object ProtectionStatusNotifier {
 
         val notif = NotificationCompat.Builder(ctx, CHANNEL_ID)
             .setSmallIcon(R.drawable.lock_24)
-            .setContentTitle(ctx.getString(R.string.protection_inactive_title))
-            .setContentText(ctx.getString(R.string.protection_inactive_text))
+            .setContentTitle(notificationTitle)
+            .setContentText(notificationText)
             .setContentIntent(pi)
             .setOngoing(true)
             .setOnlyAlertOnce(true)

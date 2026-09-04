@@ -279,7 +279,7 @@
                 android:layout="@layout/item_pref_card"
                 android:title="@string/about_device_info_title"
                 android:summary="@string/about_device_info_summary"
-                android:icon="@drawable/info_24"
+                android:icon="@drawable/mobile_24"
                 app:iconSpaceReserved="false" />
 
             <Preference
@@ -287,7 +287,7 @@
                 android:layout="@layout/item_pref_card"
                 android:title="@string/about_developer_info_title"
                 android:summary="@string/about_developer_info_summary"
-                android:icon="@drawable/info_24"
+                android:icon="@drawable/developer_mode_24"
                 app:iconSpaceReserved="false" />
 
             <Preference

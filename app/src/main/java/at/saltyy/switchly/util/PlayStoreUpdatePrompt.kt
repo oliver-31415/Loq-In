@@ -21,14 +21,17 @@ package at.saltyy.switchly.util
 
 import android.app.Activity
 import android.content.Intent
+import android.widget.Toast
 import androidx.core.content.pm.PackageInfoCompat
 import androidx.core.net.toUri
 import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.lifecycleScope
+import at.saltyy.switchly.BuildConfig
 import at.saltyy.switchly.R
 import at.saltyy.switchly.data.prefs.AppPreferences
 import at.saltyy.switchly.ui.dialog.showAccented
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.play.core.appupdate.AppUpdateInfo
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
 import com.google.android.play.core.install.model.AppUpdateType
 import com.google.android.play.core.install.model.UpdateAvailability
@@ -36,107 +39,186 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
- * Lightweight "Update available" prompt.
- * Uses Play Core to detect if an update is available on Google Play.
- * When one is available, we show a dialog and open the Play Store listing.
+ * Play Store update prompt with optional release context from release.saltyy.at. 
+ * Remote metadata is an enhancement only; Play remains the source of truth for whether an update is actually available.
  */
 object PlayStoreUpdatePrompt {
 
     fun check(activity: Activity) {
-        // Only works when installed from Google Play. For sideload/dev installs this can fail.
         runCatching {
-            val mgr = AppUpdateManagerFactory.create(activity)
-            val task = mgr.appUpdateInfo
+            val manager = AppUpdateManagerFactory.create(activity)
+            manager.appUpdateInfo
+                .addOnSuccessListener { info ->
+                    if (!isUsableUpdate(info)) return@addOnSuccessListener
 
-            task.addOnSuccessListener { info ->
-                val available = info.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE
-                if (!available) return@addOnSuccessListener
+                    val owner = activity as? LifecycleOwner ?: return@addOnSuccessListener
+                    val currentVersionCode = activity.packageManager
+                        .getPackageInfo(activity.packageName, 0)
+                        .let(PackageInfoCompat::getLongVersionCode)
 
-                // If Play doesn't allow flexible update checks here, we still can open Play Store.
-                val allowed = info.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE) ||
-                    info.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE)
-                if (!allowed) return@addOnSuccessListener
+                    owner.lifecycleScope.launch {
+                        val prefs = AppPreferences(activity.applicationContext)
+                        if (prefs.lastUpdatePromptedVersionCode.first() == currentVersionCode) return@launch
 
-                val currentVersionCode = activity.packageManager
-                    .getPackageInfo(activity.packageName, 0)
-                    .let(PackageInfoCompat::getLongVersionCode)
-
-                // Store the "prompted" version in DataStore (single source of truth).
-                val owner = activity as? LifecycleOwner
-                if (owner == null) {
-                    // Very defensive fallback (shouldn't happen for AppCompatActivity).
-                    return@addOnSuccessListener
+                        val details = UpdateReleaseInfo.resolve(
+                            context = activity.applicationContext,
+                            currentVersionName = BuildConfig.VERSION_NAME,
+                            targetVersionCode = info.availableVersionCode().toLong(),
+                        )
+                        showUpdateDialog(activity, details)
+                        prefs.setLastUpdatePromptedVersionCode(currentVersionCode)
+                    }
                 }
-
-                owner.lifecycleScope.launch {
-                    val prefs = AppPreferences(activity.applicationContext)
-                    val lastPrompted = prefs.lastUpdatePromptedVersionCode.first()
-
-                    // Avoid spamming the user: show once per installed version.
-                    if (lastPrompted == currentVersionCode) return@launch
-
-                    MaterialAlertDialogBuilder(activity)
-                        .setTitle(activity.getString(R.string.update_available_title))
-                        .setMessage(activity.getString(R.string.update_available_message))
-                        .setPositiveButton(activity.getString(R.string.update_available_cta)) { _, _ ->
-                            openPlayStore(activity)
-                        }
-                        .setNegativeButton(activity.getString(R.string.not_now), null)
-                        .showAccented()
-
-                    prefs.setLastUpdatePromptedVersionCode(currentVersionCode)
+                .addOnFailureListener {
+                    // Play update availability is optional and must never block startup.
                 }
-            }
-
-            task.addOnFailureListener {
-                // ignore
-            }
         }
     }
 
-    /**
-     * Checks if an update is available on Google Play.
-     * This is useful for UI hints (e.g. showing "(update available)" in About).
-     */
     fun checkAvailability(activity: Activity, onResult: (available: Boolean) -> Unit) {
         runCatching {
-            val mgr = AppUpdateManagerFactory.create(activity)
-            mgr.appUpdateInfo
-                .addOnSuccessListener { info ->
-                    onResult(info.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE)
-                }
-                .addOnFailureListener {
-                    onResult(false)
-                }
+            val manager = AppUpdateManagerFactory.create(activity)
+            manager.appUpdateInfo
+                .addOnSuccessListener { info -> onResult(isUsableUpdate(info)) }
+                .addOnFailureListener { onResult(false) }
         }.onFailure {
             onResult(false)
         }
     }
 
-    /**
-     * Manual/user initiated update prompt.
-     * - If an update is available: shows the dialog.
-     * - If not: shows a small "up to date" toast.
-     */
     fun promptNow(activity: Activity) {
-        checkAvailability(activity) { available ->
-            if (available) {
-                MaterialAlertDialogBuilder(activity)
-                    .setTitle(activity.getString(R.string.update_available_title))
-                    .setMessage(activity.getString(R.string.update_available_message))
-                    .setPositiveButton(activity.getString(R.string.update_available_cta)) { _, _ ->
-                        openPlayStore(activity)
+        runCatching {
+            val manager = AppUpdateManagerFactory.create(activity)
+            manager.appUpdateInfo
+                .addOnSuccessListener { info ->
+                    if (!isUsableUpdate(info)) {
+                        Toast.makeText(
+                            activity,
+                            activity.getString(R.string.switchly_update_up_to_date),
+                            Toast.LENGTH_SHORT,
+                        ).show()
+                        return@addOnSuccessListener
                     }
-                    .setNegativeButton(activity.getString(R.string.cancel), null)
-                    .showAccented()
-            } else {
-                android.widget.Toast.makeText(
-                    activity,
-                    activity.getString(R.string.switchly_update_up_to_date),
-                    android.widget.Toast.LENGTH_SHORT
-                ).show()
+
+                    val owner = activity as? LifecycleOwner
+                    if (owner == null) {
+                        showUpdateDialog(activity, null)
+                        return@addOnSuccessListener
+                    }
+
+                    owner.lifecycleScope.launch {
+                        val details = UpdateReleaseInfo.resolve(
+                            context = activity.applicationContext,
+                            currentVersionName = BuildConfig.VERSION_NAME,
+                            targetVersionCode = info.availableVersionCode().toLong(),
+                        )
+                        showUpdateDialog(activity, details)
+                    }
+                }
+                .addOnFailureListener {
+                    Toast.makeText(
+                        activity,
+                        activity.getString(R.string.switchly_update_check_failed),
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                }
+        }.onFailure {
+            Toast.makeText(
+                activity,
+                activity.getString(R.string.switchly_update_check_failed),
+                Toast.LENGTH_SHORT,
+            ).show()
+        }
+    }
+
+    private fun isUsableUpdate(info: AppUpdateInfo): Boolean {
+        if (info.updateAvailability() != UpdateAvailability.UPDATE_AVAILABLE) return false
+        return info.isUpdateTypeAllowed(AppUpdateType.FLEXIBLE) ||
+            info.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE)
+    }
+
+    private fun showUpdateDialog(activity: Activity, details: UpdateReleaseDetails?) {
+        val builder = MaterialAlertDialogBuilder(activity)
+            .setTitle(updateTitle(activity, details))
+            .setMessage(updateMessage(activity, details))
+            .setPositiveButton(activity.getString(R.string.update_available_cta)) { _, _ ->
+                openPlayStore(activity)
+            }
+            .setNegativeButton(activity.getString(R.string.not_now), null)
+
+        if (details != null && details.allChanges.isNotEmpty()) {
+            builder.setNeutralButton(activity.getString(R.string.update_whats_new)) { _, _ ->
+                showReleaseDetailsDialog(activity, details)
             }
         }
+
+        builder.showAccented()
+    }
+
+    private fun updateTitle(activity: Activity, details: UpdateReleaseDetails?): String {
+        if (details == null) return activity.getString(R.string.update_available_title)
+        if (details.breaking) return activity.getString(R.string.update_breaking_title)
+        return when (details.impact) {
+            UpdateImpact.MAINTENANCE -> activity.getString(R.string.update_maintenance_title)
+            UpdateImpact.FEATURE -> activity.getString(R.string.update_feature_title)
+            UpdateImpact.MAJOR -> activity.getString(R.string.update_major_title)
+        }
+    }
+
+    private fun updateMessage(activity: Activity, details: UpdateReleaseDetails?): String {
+        if (details == null) return activity.getString(R.string.update_available_message)
+
+        val intro = when {
+            details.breaking -> activity.getString(R.string.update_breaking_intro)
+            details.impact == UpdateImpact.MAJOR -> activity.getString(R.string.update_major_intro)
+            details.impact == UpdateImpact.FEATURE -> activity.getString(R.string.update_feature_intro)
+            else -> activity.getString(R.string.update_maintenance_intro)
+        }
+
+        val body = StringBuilder()
+            .append(activity.getString(
+                R.string.update_version_transition_fmt,
+                BuildConfig.VERSION_NAME,
+                details.targetVersion,
+            ))
+            .append("\n\n")
+            .append(intro)
+
+        if (details.highlights.isNotEmpty()) {
+            body.append("\n\n")
+                .append(activity.getString(R.string.update_highlights_title))
+                .append('\n')
+            details.highlights.take(4).forEach { line ->
+                body.append("• ").append(line).append('\n')
+            }
+        }
+
+        return body.toString().trim()
+    }
+
+    private fun showReleaseDetailsDialog(activity: Activity, details: UpdateReleaseDetails) {
+        val message = buildString {
+            append(activity.getString(
+                R.string.update_changes_since_fmt,
+                BuildConfig.VERSION_NAME,
+            ))
+            append("\n\n")
+            details.allChanges.take(16).forEach { line ->
+                append("• ").append(line).append('\n')
+            }
+        }.trim()
+
+        MaterialAlertDialogBuilder(activity)
+            .setTitle(activity.getString(R.string.update_whats_new_for_fmt, details.targetVersion))
+            .setMessage(message)
+            .setPositiveButton(activity.getString(R.string.update_available_cta)) { _, _ ->
+                openPlayStore(activity)
+            }
+            .setNeutralButton(activity.getString(R.string.update_release_timeline)) { _, _ ->
+                openReleaseTimeline(activity)
+            }
+            .setNegativeButton(activity.getString(R.string.close), null)
+            .showAccented()
     }
 
     private fun openPlayStore(activity: Activity) {
@@ -149,5 +231,9 @@ object PlayStoreUpdatePrompt {
         } else {
             activity.startActivity(web)
         }
+    }
+
+    private fun openReleaseTimeline(activity: Activity) {
+        activity.startActivity(Intent(Intent.ACTION_VIEW, "https://release.saltyy.at/".toUri()))
     }
 }

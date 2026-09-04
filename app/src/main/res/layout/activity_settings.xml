@@ -22,6 +22,7 @@
             app:title="@string/settings" />
     </com.google.android.material.appbar.AppBarLayout>
 
+    <!-- Content -->
     <androidx.core.widget.NestedScrollView
         android:id="@+id/settingsRootScroll"
         android:layout_width="match_parent"
@@ -892,7 +893,7 @@
         android:visibility="gone"
         app:layout_behavior="@string/appbar_scrolling_view_behavior" />
 
-    <!-- Bottom-Navigation -->
+    <!-- Bottom navigation -->
     <com.google.android.material.bottomnavigation.BottomNavigationView
         android:id="@+id/bottomNav"
         android:layout_width="match_parent"

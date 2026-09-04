@@ -46,6 +46,8 @@ import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import at.saltyy.switchly.R
 import at.saltyy.switchly.blocking.BlockingRuntime
+import at.saltyy.switchly.blocking.OemAccessibilityKeepAlive
+import at.saltyy.switchly.blocking.UsageAccessFallbackBlocking
 import at.saltyy.switchly.data.prefs.AppPreferences
 import at.saltyy.switchly.data.prefs.AutomationModeStore
 import at.saltyy.switchly.data.prefs.ExactAlarmPermissionSync
@@ -63,6 +65,7 @@ import at.saltyy.switchly.ui.dialog.showAccented
 import at.saltyy.switchly.ui.dialog.SwitchlyInfoRow
 import at.saltyy.switchly.ui.dialog.showSwitchlyInfoDialog
 import at.saltyy.switchly.util.BatteryOptimizationRequest
+import at.saltyy.switchly.util.AdvancedProtectionCompat
 import at.saltyy.switchly.util.BatteryOptimizationCompat
 import at.saltyy.switchly.util.LocaleHelper
 import at.saltyy.switchly.util.NfcLaunchAccessCompat
@@ -233,7 +236,11 @@ class PermissionsActivity : AppCompatActivity() {
                 FaqActivity.intent(
                     context = this,
                     category = FaqActivity.CATEGORY_BACKGROUND_ACCESS,
-                    questionResId = R.string.faq_q_device_background_steps
+                    questionResId = if (isVivoOrIqooDevice()) {
+                        R.string.faq_q_vivo_iqoo_background
+                    } else {
+                        R.string.faq_q_device_background_steps
+                    }
                 )
             )
         }
@@ -275,7 +282,13 @@ class PermissionsActivity : AppCompatActivity() {
         btnWhyAccessibility.setOnClickListener {
             showWhyDialog(
                 getString(R.string.permissions_accessibility_title),
-                getString(R.string.permissions_accessibility_desc)
+                getString(
+                    if (AdvancedProtectionCompat.isEnabled(this)) {
+                        R.string.permissions_accessibility_desc_advanced_protection
+                    } else {
+                        R.string.permissions_accessibility_desc
+                    }
+                )
             )
         }
 
@@ -367,6 +380,11 @@ class PermissionsActivity : AppCompatActivity() {
         val accessibilityEnabled = accessibilityRuntime
 
         val usageAccessOk = UsageStatsRepo.hasUsageAccess(this)
+        val advancedProtectionEnabled = AdvancedProtectionCompat.isEnabled(this)
+        if (advancedProtectionEnabled && SwitchModeStore.isEnabled(this)) {
+            runCatching { UsageAccessFallbackBlocking.sync(this) }
+        }
+        val fallbackRunning = UsageAccessFallbackBlocking.isRunning(this)
         val locationState = getLocationStateForWifi()
         val locationOk = locationState == LocationState.OK
 
@@ -393,7 +411,14 @@ class PermissionsActivity : AppCompatActivity() {
 
         applyStatus(tvNotificationsStatus, notificationsOk)
         applyStatus(tvNotificationAccessStatus, notificationAccessGranted)
-        applyStatus(tvAccessibilityStatus, accessibilityEnabled)
+        applyAccessibilityStatus(
+            view = tvAccessibilityStatus,
+            runtimeActive = accessibilityRuntime,
+            enabledInSettings = accessibilityDirect,
+            advancedProtectionEnabled = advancedProtectionEnabled,
+            usageAccessEnabled = usageAccessOk,
+            fallbackRunning = fallbackRunning,
+        )
         applyStatus(tvUsageAccessStatus, usageAccessOk)
 
         btnOpenNotifications.text =
@@ -445,6 +470,14 @@ class PermissionsActivity : AppCompatActivity() {
         val showOem = isLikelyAggressiveOem()
         groupAutostart.visibility = if (showOem) View.VISIBLE else View.GONE
         tvAutostartHint.visibility = if (showOem) View.VISIBLE else View.GONE
+        tvAutostartHint.setText(
+            when {
+                OemAccessibilityKeepAlive.isLikelyAccessibilityDisabledByOem(this) ->
+                    R.string.permissions_autostart_desc_vivo_accessibility_disabled
+                isVivoOrIqooDevice() -> R.string.permissions_autostart_desc_vivo
+                else -> R.string.permissions_autostart_desc
+            }
+        )
         btnOpenAutostart.visibility = if (showOem) View.VISIBLE else View.GONE
 
         applyProtectedButtonState(btnOpenAccessibility, permissionsLocked && accessibilityEnabled)
@@ -588,6 +621,42 @@ class PermissionsActivity : AppCompatActivity() {
             else R.string.permissions_status_disabled
         )
         view.setTextColor(if (enabled) green else red)
+    }
+
+    private fun applyAccessibilityStatus(
+        view: TextView,
+        runtimeActive: Boolean,
+        enabledInSettings: Boolean,
+        advancedProtectionEnabled: Boolean,
+        usageAccessEnabled: Boolean,
+        fallbackRunning: Boolean,
+    ) {
+        when {
+            runtimeActive -> applyStatus(view, true)
+            advancedProtectionEnabled && usageAccessEnabled && SwitchModeStore.isEnabled(this) -> {
+                view.text = getString(
+                    if (fallbackRunning) {
+                        R.string.permissions_status_advanced_protection_fallback_active
+                    } else {
+                        R.string.permissions_status_advanced_protection_fallback_starting
+                    }
+                )
+                view.setTextColor(AccentColor.getAccentColorInt(this))
+            }
+            advancedProtectionEnabled -> {
+                view.text = getString(R.string.permissions_status_advanced_protection)
+                view.setTextColor(ContextCompat.getColor(this, R.color.status_error))
+            }
+            enabledInSettings -> {
+                view.text = getString(R.string.permissions_status_not_connected)
+                view.setTextColor(ContextCompat.getColor(this, R.color.status_error))
+            }
+            OemAccessibilityKeepAlive.isLikelyAccessibilityDisabledByOem(this) -> {
+                view.text = getString(R.string.permissions_status_oem_accessibility_disabled)
+                view.setTextColor(ContextCompat.getColor(this, R.color.status_error))
+            }
+            else -> applyStatus(view, false)
+        }
     }
 
     private fun applyBatteryStatus(view: TextView, enabled: Boolean) {
@@ -958,6 +1027,13 @@ class PermissionsActivity : AppCompatActivity() {
         if (!safeStart(Intent(Settings.ACTION_BLUETOOTH_SETTINGS))) {
             openAppDetails()
         }
+    }
+
+    private fun isVivoOrIqooDevice(): Boolean {
+        val manufacturer = (Build.MANUFACTURER ?: "").lowercase()
+        val brand = (Build.BRAND ?: "").lowercase()
+        val combined = "$manufacturer $brand"
+        return combined.contains("vivo") || combined.contains("iqoo")
     }
 
     private fun isLikelyAggressiveOem(): Boolean {

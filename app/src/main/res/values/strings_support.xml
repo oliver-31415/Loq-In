@@ -5,7 +5,7 @@
     <!-- Support contact flow -->
     <!-- ====================================================== -->
     <string name="support_title">Support</string>
-    <string name="support_desc">Contact support by email and choose which diagnostic details to include, or inspect recent logs first.</string>
+    <string name="support_desc">Email support and choose which diagnostics to include.</string>
     <string name="support_email_subject">Switchly Support</string>
     <string name="support_open_email">Contact Support</string>
     <string name="support_copy_email">Copy email</string>
@@ -49,6 +49,17 @@
     <string name="support_logs_view_copy">Copy logs</string>
     <string name="support_logs_view_empty">No recent app logs.</string>
     <string name="support_email_label">Support email</string>
+    <string name="support_discord_label">Discord</string>
+    <string name="support_gitlab_issues_label">GitLab Issues</string>
+    <string name="support_discord_url" translatable="false">https://discord.gg/PC5zn2NeCg</string>
+    <string name="support_gitlab_issues_url" translatable="false">https://gitlab.com/Saltyy/switchly-public/-/issues</string>
+    <string name="support_copy_discord">Copy Discord link</string>
+    <string name="support_discord_copied">Discord link copied</string>
+    <string name="support_copy_gitlab_issues">Copy GitLab Issues link</string>
+    <string name="support_gitlab_issues_copied">GitLab Issues link copied</string>
+    <string name="support_no_email_app">No email app available</string>
+    <string name="support_report_clipboard_label">Switchly support report</string>
+    <string name="support_email_fallback_copied">Could not open an email app. The support report was copied to the clipboard.</string>
     <string name="support_logs_card_title">Copy latest logs</string>
     <string name="support_logs_card_desc">Copy recent Switchly events to paste them into an existing message or issue.</string>
 

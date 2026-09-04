@@ -28,30 +28,28 @@ class DeviceInfoActivity : TilesInfoActivity() {
     override fun screenTitle(): String = getString(R.string.about_device_info_title)
 
     override fun tiles(): List<Tile> {
-        val android = "${Build.VERSION.RELEASE} (SDK ${Build.VERSION.SDK_INT})"
+        val androidVersion = Build.VERSION.RELEASE.orEmpty().ifBlank { "-" }
+        val apiLevel = Build.VERSION.SDK_INT.toString()
         val manufacturer = Build.MANUFACTURER.orEmpty()
         val model = Build.MODEL.orEmpty()
         val abi = Build.SUPPORTED_ABIS.joinToString()
-        Build.DEVICE.orEmpty()
-
         val brand = Build.BRAND.orEmpty()
-        Build.PRODUCT.orEmpty()
-        Build.HARDWARE.orEmpty()
         val fingerprint = Build.FINGERPRINT.orEmpty()
         val securityPatch = runCatching { Build.VERSION.SECURITY_PATCH }.getOrNull().orEmpty()
         val locale = runCatching { Locale.getDefault().toLanguageTag() }.getOrDefault("")
 
         return buildList {
-            add(Tile(getString(R.string.about_android_label), android, sectionTitle = getString(R.string.about_section_system), iconRes = R.drawable.info_24))
+            add(Tile(getString(R.string.about_android_label), androidVersion, sectionTitle = getString(R.string.about_section_system), iconRes = R.drawable.android_24))
+            add(Tile(getString(R.string.about_api_level_label), apiLevel, sectionTitle = getString(R.string.about_section_system), iconRes = R.drawable.memory_24))
             add(Tile(getString(R.string.about_security_patch_label), securityPatch.ifBlank { "-" }, sectionTitle = getString(R.string.about_section_system), iconRes = R.drawable.security_24))
-            add(Tile(getString(R.string.about_manufacturer_label), manufacturer, sectionTitle = getString(R.string.about_section_device), iconRes = R.drawable.account_box_24))
-            add(Tile(getString(R.string.about_model_label), model, sectionTitle = getString(R.string.about_section_device), iconRes = R.drawable.apps_24))
+            add(Tile(getString(R.string.about_manufacturer_label), manufacturer.ifBlank { "-" }, sectionTitle = getString(R.string.about_section_device), iconRes = R.drawable.factory_24))
+            add(Tile(getString(R.string.about_model_label), model.ifBlank { "-" }, sectionTitle = getString(R.string.about_section_device), iconRes = R.drawable.devices_24))
             if (!brand.equals(manufacturer, ignoreCase = true)) {
                 add(Tile(getString(R.string.about_brand_label), brand.ifBlank { "-" }, sectionTitle = getString(R.string.about_section_device), iconRes = R.drawable.layers_24))
             }
-            add(Tile(getString(R.string.about_abi_label), abi, sectionTitle = getString(R.string.about_section_technical), iconRes = R.drawable.tune_24))
+            add(Tile(getString(R.string.about_abi_label), abi, sectionTitle = getString(R.string.about_section_technical), iconRes = R.drawable.developer_mode_24))
             add(Tile(getString(R.string.about_locale_label), locale.ifBlank { "-" }, sectionTitle = getString(R.string.about_section_technical), iconRes = R.drawable.language_24))
-            add(Tile(getString(R.string.about_fingerprint_label), fingerprint.ifBlank { "-" }, sectionTitle = getString(R.string.about_section_technical), showCopyButton = true, iconRes = R.drawable.content_copy_24))
+            add(Tile(getString(R.string.about_fingerprint_label), fingerprint.ifBlank { "-" }, sectionTitle = getString(R.string.about_section_technical), showCopyButton = true, iconRes = R.drawable.fingerprint_24))
         }
     }
 }

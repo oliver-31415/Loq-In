@@ -169,7 +169,10 @@ class AppLockSettingsActivity : AppCompatActivity() {
         val profileOwner = dpm?.isProfileOwnerApp(packageName) == true
         val deviceAdmin = dpm?.isAdminActive(adminComponent) == true
         val managedBlock = ManagedDevicePolicyHelper.isSelfUninstallBlocked(this)
-        if (strictProtectionConfigured && (deviceOwner || profileOwner) && managedBlock == false && !managedPolicySyncAttempted) {
+        val managedUserControlDisabled = ManagedDevicePolicyHelper.isSelfUserControlDisabled(this)
+        val managedPolicyNeedsSync = managedBlock == false ||
+            (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.R && managedUserControlDisabled == false)
+        if (strictProtectionConfigured && (deviceOwner || profileOwner) && managedPolicyNeedsSync && !managedPolicySyncAttempted) {
             managedPolicySyncAttempted = true
             ManagedDevicePolicyHelper.syncSelfUninstallBlock(this)
             switchStrictProtection.postDelayed({
@@ -182,9 +185,11 @@ class AppLockSettingsActivity : AppCompatActivity() {
         switchStrictProtection.isEnabled = true
         findViewById<View>(R.id.rowStrictProtection).alpha = 1f
         tvStrictProtectionSummary.text = when {
-            strictProtectionConfigured && deviceOwner && managedBlock == true ->
+            strictProtectionConfigured && deviceOwner && managedBlock == true &&
+                (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.R || managedUserControlDisabled == true) ->
                 getString(R.string.app_lock_strict_protection_summary_device_owner_active)
-            strictProtectionConfigured && profileOwner && managedBlock == true ->
+            strictProtectionConfigured && profileOwner && managedBlock == true &&
+                (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.R || managedUserControlDisabled == true) ->
                 getString(R.string.app_lock_strict_protection_summary_profile_owner_active)
             strictProtectionConfigured && (deviceOwner || profileOwner) && managedBlock != true ->
                 getString(R.string.app_lock_strict_protection_summary_managed_not_active)
