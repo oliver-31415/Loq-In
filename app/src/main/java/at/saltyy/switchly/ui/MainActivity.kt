@@ -4832,38 +4832,41 @@ class MainActivity : AppCompatActivity() {
     }
 }
 
-/** Foqos-style hero artwork: three STACKED gradient blobs with lava-lamp outlines.
- *  The masses cascade diagonally like the Foqos hero: a dark mass peeking in the
- *  top-right corner, a mid mass filling the bottom-right, and a big light mass
- *  covering the left — each with its own vertical light->dark gradient, derived
- *  from the live accent. Seamlessly loops (integer time frequencies), zero
- *  intrinsic size, animates while visible. */
+/**
+ * Foqos-style hero artwork v4: a living lava lamp.
+ *
+ * Three stacked tonal layers (back dark corner mass, mid mass, front light mass)
+ * drawn over a diagonal base gradient — and within a layer, sibling BLOBS drift
+ * toward and away from each other, connected by liquid "metaball" bridges that
+ * stretch as they approach and snap apart as they separate. All colors derive
+ * from the live accent; the loop is seamless (integer time frequencies).
+ */
 private class HeroArtDrawable(private val accent: Int, private val radiusPx: Float) : android.graphics.drawable.Drawable() {
+
     private class Blob(
-        val fx: Float, val fy: Float,   // center (fractions of card)
+        val fx: Float, val fy: Float,   // home center (fractions of card)
         val fr: Float,                  // base radius (fraction of min dimension)
-        val light: Int,                 // gradient top color
-        val dark: Int,                  // gradient bottom color
         val seed: Float,                // per-blob wobble offsets
+        val driftX: Float = 0.025f,     // slow drift amplitude (fraction of min dim)
+        val driftY: Float = 0.02f,
     )
+
+    /** Two blobs of one tonal layer that repeatedly merge and split. */
+    private class Pair(
+        val a: Blob,
+        val b: Blob,
+        val phase: Float,               // loop phase of the merge cycle
+        val converge: Float,            // max travel toward each other (fraction of min dim)
+    )
+
+    private class Layer(val shaderTop: Int, val shaderBottom: Int, val pair: Pair?, val single: Blob?)
 
     private val basePaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
-    private val blobPaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
+    private val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
     private val clipPath = android.graphics.Path()
-    private val path = android.graphics.Path()
-    private val blobShaders = arrayOfNulls<android.graphics.Shader>(3)
-
-    // Back -> front: mid mass (bottom-right), dark mass (top-right corner),
-    // light mass (left, front-most) — the Foqos "stack". The front mass runs
-    // deep at the top (white title stays legible) and pales toward its base.
-    private val blobs = listOf(
-        Blob(1.10f, 0.80f, 0.62f, vary(0.16f, 0.95f, 0xFF, 0.80f), vary(-0.12f, 1.10f, 0xFF), 4.3f),
-        Blob(1.05f, 0.08f, 0.52f, vary(-0.02f, 1.05f, 0xFF), vary(-0.34f, 1.15f, 0xFF), 2.1f),
-        Blob(-0.12f, 0.58f, 0.80f, vary(-0.02f, 0.95f, 0xFF), vary(0.32f, 0.62f, 0xFF, 0.78f), 0.6f),
-    )
-    private var phase = 0f
-    private var animator: android.animation.ValueAnimator? = null
-    private var builtBounds = false
+    private val layerPath = android.graphics.Path()
+    private val tempPath = android.graphics.Path()
+    private val shaders = arrayOfNulls<android.graphics.Shader>(4)
 
     private fun vary(lighten: Float, satMul: Float, alpha: Int, maxV: Float = 1f): Int {
         val hsv = FloatArray(3)
@@ -4873,6 +4876,29 @@ private class HeroArtDrawable(private val accent: Int, private val radiusPx: Flo
         val c = android.graphics.Color.HSVToColor(hsv)
         return android.graphics.Color.argb(alpha, android.graphics.Color.red(c), android.graphics.Color.green(c), android.graphics.Color.blue(c))
     }
+
+    // Back -> front. Pairs merge and split on offset phases so the surface is
+    // always breathing somewhere.
+    private val midPair = Pair(
+        Blob(0.98f, 0.92f, 0.52f, seed = 2.1f),
+        Blob(0.62f, 1.32f, 0.38f, seed = 4.3f),
+        phase = 0.0f, converge = 0.42f,
+    )
+    private val darkSingle = Blob(1.05f, 0.08f, 0.52f, seed = 2.1f)
+    private val lightPair = Pair(
+        Blob(-0.06f, 0.85f, 0.55f, seed = 0.6f),
+        Blob(0.28f, 1.38f, 0.46f, seed = 5.2f),
+        phase = Math.PI.toFloat(), converge = 0.46f,
+    )
+    private val layers = listOf(
+        Layer(vary(0.16f, 0.95f, 0xFF, 0.80f), vary(-0.12f, 1.10f, 0xFF), midPair, null),
+        Layer(vary(-0.02f, 1.05f, 0xFF), vary(-0.34f, 1.15f, 0xFF), null, darkSingle),
+        Layer(vary(-0.02f, 0.95f, 0xFF), vary(0.32f, 0.62f, 0xFF, 0.78f), lightPair, null),
+    )
+
+    private var phase = 0f
+    private var animator: android.animation.ValueAnimator? = null
+    private var builtBounds = false
 
     override fun onBoundsChange(bounds: android.graphics.Rect) {
         rebuildShaders(bounds)
@@ -4886,17 +4912,117 @@ private class HeroArtDrawable(private val accent: Int, private val radiusPx: Flo
         )
         val w = b.width().toFloat().coerceAtLeast(1f)
         val h = b.height().toFloat().coerceAtLeast(1f)
-        val minDim = minOf(w, h)
-        blobs.forEachIndexed { i, blob ->
-            val r = blob.fr * minDim
-            val cy = b.top + blob.fy * h
-            blobShaders[i] = android.graphics.LinearGradient(
-                0f, cy - r, 0f, cy + r * 0.4f,
-                blob.light, blob.dark,
-                android.graphics.Shader.TileMode.CLAMP,
-            )
+        layers.forEachIndexed { i, layer ->
+            val pair = layer.pair
+            val single = layer.single
+            val blob = pair?.a ?: single
+            if (blob != null) {
+                val cx = b.left + blob.fx * w
+                val cy = b.top + blob.fy * h
+                val r = blob.fr * kotlin.math.min(w, h)
+                shaders[i] = android.graphics.LinearGradient(
+                    0f, cy - r * 1.1f, 0f, cy + r * 0.7f,
+                    layer.shaderTop, layer.shaderBottom,
+                    android.graphics.Shader.TileMode.CLAMP,
+                )
+            }
         }
         builtBounds = true
+    }
+
+    /** Adds one wobbling organic blob (72-step closed path). */
+    private fun addBlob(path: android.graphics.Path, cx: Float, cy: Float, r: Float, seed: Float, t: Float) {
+        val steps = 72
+        var first = true
+        for (k in 0..steps) {
+            val theta = (k % steps) * (Math.PI * 2 / steps).toFloat()
+            val wobble = 1f +
+                0.06f * kotlin.math.sin(2f * theta + seed + t) +
+                0.04f * kotlin.math.sin(3f * theta - seed * 1.7f - t * 2f)
+            val x = cx + r * wobble * kotlin.math.cos(theta)
+            val y = cy + r * wobble * kotlin.math.sin(theta)
+            if (first) { path.moveTo(x, y); first = false } else { path.lineTo(x, y) }
+        }
+        path.close()
+    }
+
+    /** Liquid metaball bridge between two close circles: stretches as they near,
+     *  snaps apart as they drift beyond the merge distance. */
+    private fun addBridge(path: android.graphics.Path, ax: Float, ay: Float, ar: Float, bx: Float, by: Float, br: Float) {
+        val dx = bx - ax
+        val dy = by - ay
+        val d = kotlin.math.sqrt(dx * dx + dy * dy)
+        if (d < 1f) return
+        val maxD = (ar + br) * 1.15f
+        if (d >= maxD) return
+        val t = 1f - d / maxD
+        val s = t * t * (3f - 2f * t)              // smoothstep: soft snap
+        val ux = dx / d
+        val uy = dy / d
+        val px = -uy
+        val py = ux
+        val w1 = ar * 0.62f * s
+        val w2 = br * 0.62f * s
+        val m1x = ax + px * w1; val m1y = ay + py * w1
+        val m2x = bx + px * w2; val m2y = by + py * w2
+        val m3x = bx - px * w2; val m3y = by - py * w2
+        val m4x = ax - px * w1; val m4y = ay - py * w1
+        val cx = (ax + bx) / 2f
+        val cy = (ay + by) / 2f
+        val nx = px * (w1 + w2) * 0.5f * 0.9f
+        val ny = py * (w1 + w2) * 0.5f * 0.9f
+        path.moveTo(m1x, m1y)
+        path.quadTo(cx + nx, cy + ny, m2x, m2y)
+        path.lineTo(m3x, m3y)
+        path.quadTo(cx - nx, cy - ny, m4x, m4y)
+        path.close()
+    }
+
+    /** Animated center of a blob: home + slow drift + pair convergence. */
+    private fun centerOf(
+        b: android.graphics.Rect, w: Float, h: Float, minDim: Float, t: Float,
+        fx: Float, fy: Float, seed: Float, driftX: Float, driftY: Float,
+        dirX: Float, dirY: Float, converge: Float, phase: Float, roleSign: Float,
+    ): FloatArray {
+        val merge = converge * minDim * (0.5f - 0.5f * kotlin.math.cos(t + phase)) * roleSign
+        return floatArrayOf(
+            b.left + fx * w + kotlin.math.sin(t + seed) * minDim * driftX + dirX * merge,
+            b.top + fy * h + kotlin.math.cos(t * 2f + seed) * minDim * driftY + dirY * merge,
+        )
+    }
+
+    private fun drawPairLayer(canvas: android.graphics.Canvas, b: android.graphics.Rect, layer: Layer, shaderIdx: Int, t: Float) {
+        val pair = layer.pair ?: return
+        val w = b.width().toFloat().coerceAtLeast(1f)
+        val h = b.height().toFloat().coerceAtLeast(1f)
+        val minDim = kotlin.math.min(w, h)
+        val dxh = pair.b.fx * w - pair.a.fx * w
+        val dyh = pair.b.fy * h - pair.a.fy * h
+        val dh = kotlin.math.sqrt(dxh * dxh + dyh * dyh).coerceAtLeast(1f)
+        val dirX = dxh / dh
+        val dirY = dyh / dh
+        val ca = centerOf(b, w, h, minDim, t, pair.a.fx, pair.a.fy, pair.a.seed, pair.a.driftX, pair.a.driftY, dirX, dirY, pair.converge, pair.phase, +0.5f)
+        val cb = centerOf(b, w, h, minDim, t, pair.b.fx, pair.b.fy, pair.b.seed, pair.b.driftX, pair.b.driftY, dirX, dirY, pair.converge, pair.phase, -0.5f)
+        paint.shader = shaders[shaderIdx]
+        layerPath.reset()
+        addBlob(layerPath, ca[0], ca[1], pair.a.fr * minDim, pair.a.seed, t)
+        addBlob(layerPath, cb[0], cb[1], pair.b.fr * minDim, pair.b.seed, t)
+        tempPath.reset()
+        addBridge(tempPath, ca[0], ca[1], pair.a.fr * minDim, cb[0], cb[1], pair.b.fr * minDim)
+        layerPath.addPath(tempPath)
+        canvas.drawPath(layerPath, paint)
+    }
+
+    private fun drawSingleLayer(canvas: android.graphics.Canvas, b: android.graphics.Rect, layer: Layer, shaderIdx: Int, t: Float) {
+        val single = layer.single ?: return
+        val w = b.width().toFloat().coerceAtLeast(1f)
+        val h = b.height().toFloat().coerceAtLeast(1f)
+        val minDim = kotlin.math.min(w, h)
+        val c = centerOf(b, w, h, minDim, t, single.fx, single.fy, single.seed, single.driftX, single.driftY, 0f, 0f, 0f, 0f, 0f)
+        paint.shader = shaders[shaderIdx]
+        layerPath.reset()
+        addBlob(layerPath, c[0], c[1], single.fr * minDim, single.seed, t)
+        canvas.drawPath(layerPath, paint)
     }
 
     override fun draw(canvas: android.graphics.Canvas) {
@@ -4906,7 +5032,7 @@ private class HeroArtDrawable(private val accent: Int, private val radiusPx: Flo
         // lazy start: setVisible(true) never fires for a background set while the view is already visible
         if (animator == null) {
             animator = android.animation.ValueAnimator.ofFloat(0f, (2 * Math.PI).toFloat()).apply {
-                duration = 20000
+                duration = 26000
                 repeatCount = android.animation.ValueAnimator.INFINITE
                 interpolator = android.view.animation.LinearInterpolator()
                 addUpdateListener {
@@ -4927,33 +5053,10 @@ private class HeroArtDrawable(private val accent: Int, private val radiusPx: Flo
             b.left.toFloat(), b.top.toFloat(), b.right.toFloat(), b.bottom.toFloat(),
             radiusPx, radiusPx, basePaint,
         )
-
-        val w = b.width().toFloat().coerceAtLeast(1f)
-        val h = b.height().toFloat().coerceAtLeast(1f)
-        val minDim = minOf(w, h)
         val t = phase // 0..2PI, seamless loop (all time terms are integer multiples)
-
-        for ((i, blob) in blobs.withIndex()) {
-            val cx = b.left + blob.fx * w + kotlin.math.sin(t + blob.seed) * minDim * 0.035f
-            val cy = b.top + blob.fy * h + kotlin.math.cos(t * 2f + blob.seed) * minDim * 0.03f
-            path.reset()
-            val steps = 72
-            val radius = blob.fr * minDim
-            var first = true
-            for (k in 0..steps) {
-                val theta = (k % steps) * (Math.PI * 2 / steps).toFloat()
-                // Gentle lava-lamp wobble: one soft mass per blob, not many lobes.
-                val wobble = 1f +
-                    0.07f * kotlin.math.sin(2f * theta + blob.seed + t) +
-                    0.04f * kotlin.math.sin(3f * theta - blob.seed * 1.7f - t * 2f)
-                val r = radius * wobble
-                val x = cx + r * kotlin.math.cos(theta)
-                val y = cy + r * kotlin.math.sin(theta)
-                if (first) { path.moveTo(x, y); first = false } else { path.lineTo(x, y) }
-            }
-            path.close()
-            blobPaint.shader = blobShaders[i]
-            canvas.drawPath(path, blobPaint)
+        layers.forEachIndexed { i, layer ->
+            if (layer.pair != null) drawPairLayer(canvas, b, layer, i, t)
+            else drawSingleLayer(canvas, b, layer, i, t)
         }
         canvas.restore()
     }
