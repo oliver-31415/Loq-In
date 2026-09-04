@@ -2086,86 +2086,328 @@ class MainActivity : AppCompatActivity() {
     private fun openBlockingModeSheet() {
         val sheet = BottomSheetDialog(this)
         val ctx = this
+        val onSurface = ContextCompat.getColor(ctx, at.saltyy.switchly.R.color.foqos_on_surface)
+        val onSurfaceSoft = ContextCompat.getColor(ctx, at.saltyy.switchly.R.color.foqos_on_surface_variant)
+        val accent = AccentColor.getAccentColorInt(this)
+
+        fun tileBg(): android.graphics.drawable.GradientDrawable =
+            android.graphics.drawable.GradientDrawable().apply {
+                cornerRadius = homeDp(16f).toFloat()
+                setColor(ContextCompat.getColor(ctx, at.saltyy.switchly.R.color.foqos_surface_variant))
+            }
+
+        fun roundelBg(): android.graphics.drawable.GradientDrawable =
+            android.graphics.drawable.GradientDrawable().apply {
+                shape = android.graphics.drawable.GradientDrawable.OVAL
+                setColor(ContextCompat.getColor(ctx, at.saltyy.switchly.R.color.foqos_surface))
+            }
+
         val list = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
-            val pad = homeDp(20f)
-            setPadding(pad, homeDp(18f), pad, homeDp(22f))
+            val pad = homeDp(16f)
+            setPadding(pad, homeDp(8f), pad, homeDp(22f))
             setBackgroundColor(ContextCompat.getColor(ctx, at.saltyy.switchly.R.color.foqos_surface))
         }
-        val title = TextView(ctx).apply {
-            text = getString(R.string.blocking_mode_title)
-            textSize = 20f
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-            setTextColor(ContextCompat.getColor(ctx, at.saltyy.switchly.R.color.foqos_on_surface))
+
+        // Grab handle
+        list.addView(View(ctx).apply {
+            background = android.graphics.drawable.GradientDrawable().apply {
+                cornerRadius = homeDp(2f).toFloat()
+                setColor(ColorUtils.setAlphaComponent(onSurfaceSoft, 0x61))
+            }
+            layoutParams = LinearLayout.LayoutParams(homeDp(36f), homeDp(4f)).apply {
+                gravity = android.view.Gravity.CENTER_HORIZONTAL
+            }
+        })
+
+        // Title + close
+        val header = LinearLayout(ctx).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            setPadding(0, homeDp(12f), 0, homeDp(4f))
         }
-        list.addView(title)
+        header.addView(TextView(ctx).apply {
+            text = getString(R.string.blocking_mode_title)
+            textSize = 22f
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            setTextColor(onSurface)
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        })
+        header.addView(FrameLayout(ctx).apply {
+            background = roundelBg()
+            isClickable = true
+            isFocusable = true
+            setOnClickListener { sheet.dismiss() }
+            addView(TextView(ctx).apply {
+                text = "\u2715"
+                textSize = 14f
+                setTextColor(onSurface)
+                layoutParams = FrameLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                ).apply { gravity = android.view.Gravity.CENTER }
+            })
+            layoutParams = LinearLayout.LayoutParams(homeDp(34f), homeDp(34f))
+        })
+        list.addView(header)
 
-        val current = AutomationModeStore.getMode(ctx)
-        val entries = listOf(
-            Triple(AutomationModeStore.Mode.MIXED, R.string.blocking_mode_mixed, R.string.blocking_mode_mixed_desc),
-            Triple(AutomationModeStore.Mode.NFC, R.string.blocking_mode_nfc, R.string.blocking_mode_nfc_desc),
-            Triple(AutomationModeStore.Mode.QR, R.string.blocking_mode_qr, R.string.blocking_mode_qr_desc),
-            Triple(AutomationModeStore.Mode.BARCODE, R.string.blocking_mode_barcode, R.string.blocking_mode_barcode_desc),
-            Triple(AutomationModeStore.Mode.SCHEDULE, R.string.blocking_mode_schedule, R.string.blocking_mode_schedule_desc),
-        )
+        var current = AutomationModeStore.getMode(ctx)
 
-        entries.forEach { (mode, nameRes, descRes) ->
-            val supported = AutomationModeStore.isModeSupported(ctx, mode)
+        fun setHero(mode: AutomationModeStore.Mode) {
+            tvHeroStrategy.text = blockingModeLabel(mode)
+            findViewById<ImageView>(R.id.ivHeroStrategyIcon)?.setImageResource(blockingModeIcon(mode))
+        }
+
+        fun modeRow(
+            mode: AutomationModeStore.Mode,
+            nameRes: Int,
+            descRes: Int,
+            iconRes: Int,
+            supported: Boolean,
+        ): LinearLayout {
             val row = LinearLayout(ctx).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = android.view.Gravity.CENTER_VERTICAL
-                val padV = homeDp(12f)
-                setPadding(0, padV, 0, padV)
-                isClickable = true
-                isFocusable = true
+                setPadding(homeDp(10f), homeDp(9f), homeDp(10f), homeDp(9f))
+                background = tileBg()
+                isClickable = supported
+                isFocusable = supported
                 alpha = if (supported) 1f else 0.4f
-                setBackgroundResource(android.R.attr.selectableItemBackground.resId(ctx))
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                )
             }
+            row.addView(FrameLayout(ctx).apply {
+                background = roundelBg()
+                addView(ImageView(ctx).apply {
+                    setImageResource(iconRes)
+                    setColorFilter(accent)
+                    layoutParams = FrameLayout.LayoutParams(homeDp(19f), homeDp(19f)).apply {
+                        gravity = android.view.Gravity.CENTER
+                    }
+                })
+                layoutParams = LinearLayout.LayoutParams(homeDp(38f), homeDp(38f))
+            })
             val texts = LinearLayout(ctx).apply {
                 orientation = LinearLayout.VERTICAL
-                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                    marginStart = homeDp(12f)
+                }
             }
-            val name = TextView(ctx).apply {
+            texts.addView(TextView(ctx).apply {
                 text = getString(nameRes)
                 textSize = 15f
                 setTypeface(typeface, android.graphics.Typeface.BOLD)
-                setTextColor(ContextCompat.getColor(ctx, at.saltyy.switchly.R.color.foqos_on_surface))
-            }
-            val desc = TextView(ctx).apply {
+                setTextColor(onSurface)
+            })
+            texts.addView(TextView(ctx).apply {
                 text = if (supported) getString(descRes) else getString(R.string.blocking_mode_unsupported)
                 textSize = 12f
-                setTextColor(ContextCompat.getColor(ctx, at.saltyy.switchly.R.color.foqos_on_surface_variant))
-            }
-            texts.addView(name)
-            texts.addView(desc)
-            val check = TextView(ctx).apply {
+                setTextColor(onSurfaceSoft)
+            })
+            row.addView(texts)
+            row.addView(TextView(ctx).apply {
                 text = "\u2713"
                 textSize = 16f
-                setTextColor(ContextCompat.getColor(ctx, at.saltyy.switchly.R.color.foqos_primary))
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+                setTextColor(accent)
                 visibility = if (mode == current) View.VISIBLE else View.GONE
+                tag = "mode_check"
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.WRAP_CONTENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT,
                 ).apply { marginStart = homeDp(12f) }
+            })
+            return row
+        }
+
+        // ---- Mixed mode: expands an inline channel sub-menu ----
+        val mixedRow = modeRow(
+            AutomationModeStore.Mode.MIXED,
+            R.string.blocking_mode_mixed,
+            R.string.blocking_mode_mixed_desc,
+            R.drawable.security_24,
+            supported = true,
+        )
+        val mixedSubmenu = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            visibility = if (current == AutomationModeStore.Mode.MIXED) View.VISIBLE else View.GONE
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply { topMargin = homeDp(8f) }
+        }
+        mixedSubmenu.addView(TextView(ctx).apply {
+            text = getString(R.string.toggle_section_mixed_channels)
+            textSize = 13f
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            setTextColor(onSurfaceSoft)
+            setPadding(homeDp(10f), 0, homeDp(10f), 0)
+        })
+
+        fun channelSwitchRow(
+            iconRes: Int,
+            titleRes: Int,
+            summaryRes: Int,
+            supported: Boolean,
+            getter: () -> Boolean,
+            setter: (Boolean) -> Unit,
+        ) {
+            val switch = com.google.android.material.materialswitch.MaterialSwitch(ctx).apply {
+                isChecked = getter()
+                isEnabled = supported
+                alpha = if (supported) 1f else 0.4f
+                thumbTintList = android.content.res.ColorStateList(
+                    arrayOf(intArrayOf(-android.R.attr.state_checked), intArrayOf(android.R.attr.state_checked)),
+                    intArrayOf(Color.WHITE, Color.WHITE),
+                )
+                trackTintList = android.content.res.ColorStateList(
+                    arrayOf(
+                        intArrayOf(-android.R.attr.state_checked),
+                        intArrayOf(android.R.attr.state_checked),
+                    ),
+                    intArrayOf(
+                        ColorUtils.setAlphaComponent(onSurfaceSoft, 0x55),
+                        ColorUtils.setAlphaComponent(accent, 0x88),
+                    ),
+                )
             }
+            switch.setOnCheckedChangeListener { _, checked ->
+                if (checked && !supported) {
+                    switch.isChecked = false
+                    return@setOnCheckedChangeListener
+                }
+                setter(checked)
+            }
+            val row = LinearLayout(ctx).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                setPadding(homeDp(10f), homeDp(6f), homeDp(10f), homeDp(6f))
+                alpha = if (supported) 1f else 0.4f
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                )
+                setOnClickListener { switch.toggle() }
+            }
+            row.addView(FrameLayout(ctx).apply {
+                background = roundelBg()
+                addView(ImageView(ctx).apply {
+                    setImageResource(iconRes)
+                    setColorFilter(if (supported) accent else onSurfaceSoft)
+                    layoutParams = FrameLayout.LayoutParams(homeDp(17f), homeDp(17f)).apply {
+                        gravity = android.view.Gravity.CENTER
+                    }
+                })
+                layoutParams = LinearLayout.LayoutParams(homeDp(34f), homeDp(34f))
+            })
+            val texts = LinearLayout(ctx).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                    marginStart = homeDp(12f)
+                }
+            }
+            texts.addView(TextView(ctx).apply {
+                text = getString(titleRes)
+                textSize = 14f
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+                setTextColor(onSurface)
+            })
+            texts.addView(TextView(ctx).apply {
+                text = getString(summaryRes)
+                textSize = 11.5f
+                setTextColor(onSurfaceSoft)
+            })
             row.addView(texts)
-            row.addView(check)
+            row.addView(switch)
+            mixedSubmenu.addView(row)
+        }
+
+        channelSwitchRow(
+            R.drawable.security_24,
+            R.string.pref_mixed_allow_button_title,
+            R.string.pref_mixed_allow_button_summary,
+            supported = true,
+            getter = { AutomationModeStore.isMixedAllowButton(ctx) },
+            setter = { AutomationModeStore.setMixedAllowButton(ctx, it) },
+        )
+        channelSwitchRow(
+            R.drawable.schedule_24,
+            R.string.pref_mixed_allow_schedule_title,
+            R.string.pref_mixed_allow_schedule_summary,
+            supported = true,
+            getter = { AutomationModeStore.isMixedAllowSchedule(ctx) },
+            setter = { AutomationModeStore.setMixedAllowSchedule(ctx, it) },
+        )
+        channelSwitchRow(
+            R.drawable.nfc_24,
+            R.string.pref_mixed_allow_nfc_title,
+            R.string.pref_mixed_allow_nfc_summary,
+            supported = AutomationModeStore.isNfcSupported(ctx),
+            getter = { AutomationModeStore.isMixedAllowNfc(ctx) },
+            setter = { AutomationModeStore.setMixedAllowNfc(ctx, it) },
+        )
+        channelSwitchRow(
+            R.drawable.qr_code_24,
+            R.string.pref_mixed_allow_qr_title,
+            R.string.pref_mixed_allow_qr_summary,
+            supported = AutomationModeStore.isCameraSupported(ctx),
+            getter = { AutomationModeStore.isMixedAllowQr(ctx) },
+            setter = { AutomationModeStore.setMixedAllowQr(ctx, it) },
+        )
+        channelSwitchRow(
+            R.drawable.barcode_24,
+            R.string.pref_mixed_allow_barcode_title,
+            R.string.pref_mixed_allow_barcode_summary,
+            supported = AutomationModeStore.isCameraSupported(ctx),
+            getter = { AutomationModeStore.isMixedAllowBarcode(ctx) },
+            setter = { AutomationModeStore.setMixedAllowBarcode(ctx, it) },
+        )
+
+        fun selectMode(mode: AutomationModeStore.Mode) {
+            current = mode
+            AutomationModeStore.setMode(ctx, mode)
+            setHero(mode)
+            for (i in 0 until list.childCount) {
+                list.getChildAt(i).findViewWithTag<TextView>("mode_check")?.visibility = View.GONE
+            }
+            mixedRow.findViewWithTag<TextView>("mode_check")?.visibility =
+                if (mode == AutomationModeStore.Mode.MIXED) View.VISIBLE else View.GONE
+            mixedSubmenu.visibility =
+                if (mode == AutomationModeStore.Mode.MIXED) View.VISIBLE else View.GONE
+        }
+
+        mixedRow.setOnClickListener { selectMode(AutomationModeStore.Mode.MIXED) }
+        list.addView(mixedRow)
+        list.addView(mixedSubmenu)
+
+        // ---- Single-channel modes: select and close ----
+        val singleModes = listOf(
+            Triple(AutomationModeStore.Mode.NFC, R.drawable.nfc_24 to R.string.blocking_mode_nfc, R.string.blocking_mode_nfc_desc),
+            Triple(AutomationModeStore.Mode.QR, R.drawable.qr_code_24 to R.string.blocking_mode_qr, R.string.blocking_mode_qr_desc),
+            Triple(AutomationModeStore.Mode.BARCODE, R.drawable.barcode_24 to R.string.blocking_mode_barcode, R.string.blocking_mode_barcode_desc),
+            Triple(AutomationModeStore.Mode.SCHEDULE, R.drawable.schedule_24 to R.string.blocking_mode_schedule, R.string.blocking_mode_schedule_desc),
+        )
+        singleModes.forEach { (mode, nameIcon, descRes) ->
+            val (iconRes, nameRes) = nameIcon
+            val row = modeRow(
+                mode,
+                nameRes,
+                descRes,
+                iconRes,
+                supported = AutomationModeStore.isModeSupported(ctx, mode),
+            )
+            row.layoutParams = (row.layoutParams as LinearLayout.LayoutParams).apply {
+                topMargin = homeDp(8f)
+            }
             row.setOnClickListener {
-                if (!supported) {
+                if (!AutomationModeStore.isModeSupported(ctx, mode)) {
                     return@setOnClickListener
                 }
-                AutomationModeStore.setMode(ctx, mode)
-                tvHeroStrategy.text = blockingModeLabel(mode)
-                findViewById<ImageView>(R.id.ivHeroStrategyIcon)?.setImageResource(blockingModeIcon(mode))
-                // refresh check marks
-                for (i in 0 until list.childCount) {
-                    val child = list.getChildAt(i)
-                    val mark = child.findViewWithTag<TextView>("mode_check") ?: continue
-                    mark.visibility = View.GONE
-                }
-                check.visibility = View.VISIBLE
+                selectMode(mode)
+                sheet.dismiss()
             }
-            check.tag = "mode_check"
             list.addView(row)
         }
 
