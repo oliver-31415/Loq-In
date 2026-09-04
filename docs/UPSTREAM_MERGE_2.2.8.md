@@ -1,6 +1,14 @@
 # Upstream merge plan — 2.2.4 → 2.2.8 (test → foqos-ui)
 
-> Prepared 2026-09-04. Upstream `test` = `be4ab60` (2.2.8); our `main` = `2d5cd95` (2.2.4,
+> **STATUS: DONE** (2026-09-04). Merged as `856abee`, post-fixes in `4f090d2`.
+> Rollback point: tag `backup/foqos-ui-pre-2.2.8` (= `0c5e6c5`).
+> Extra fix discovered during verification: upstream's offline-flavor
+> `configure<CrashlyticsExtension>` assumed the (conditionally applied) Crashlytics
+> plugin — now deferred via `pluginManager.withPlugin` so public builds configure.
+> Also fixed during verification: hardcoded-white toolbar menu icons (light mode) and
+> idle-hero white-on-light text (`applyHeroIdleContrast`).
+
+Prepared 2026-09-04. Upstream `test` = `be4ab60` (2.2.8); our `main` = `2d5cd95` (2.2.4,
 > already merged base). `foqos-ui` carries the restyle. Upstream ships the new work on
 > `test` and merges `test → main` as release MRs; 2.2.5/2.2.7/2.2.8 are the three commits
 > to integrate (`git log main..upstream/test`).
