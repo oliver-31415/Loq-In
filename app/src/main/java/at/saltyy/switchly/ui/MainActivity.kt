@@ -1568,40 +1568,100 @@ class MainActivity : AppCompatActivity() {
         val profiles = ProfileStore.getProfiles(this).toList().sorted()
         val current = ProfileStore.getCurrent(this)
         val sheet = BottomSheetDialog(this)
+        val onSurface = ContextCompat.getColor(this@MainActivity, at.saltyy.switchly.R.color.foqos_on_surface)
+        val onSurfaceSoft = ContextCompat.getColor(this@MainActivity, at.saltyy.switchly.R.color.foqos_on_surface_variant)
+        val accent = AccentColor.getAccentColorInt(this)
+
+        fun tileBg(): android.graphics.drawable.GradientDrawable =
+            android.graphics.drawable.GradientDrawable().apply {
+                cornerRadius = homeDp(16f).toFloat()
+                setColor(ContextCompat.getColor(this@MainActivity, at.saltyy.switchly.R.color.foqos_surface_variant))
+            }
+
+        fun roundelBg(): android.graphics.drawable.GradientDrawable =
+            android.graphics.drawable.GradientDrawable().apply {
+                shape = android.graphics.drawable.GradientDrawable.OVAL
+                setColor(foqosSurfaceColor())
+            }
+
         val list = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            val pad = homeDp(20f)
-            setPadding(pad, homeDp(18f), pad, homeDp(22f))
+            val pad = homeDp(16f)
+            setPadding(pad, homeDp(8f), pad, homeDp(22f))
             setBackgroundColor(ContextCompat.getColor(this@MainActivity, at.saltyy.switchly.R.color.foqos_surface))
         }
-        val title = TextView(this).apply {
-            text = getString(R.string.profile_rows_switch)
-            textSize = 20f
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-            setTextColor(ContextCompat.getColor(this@MainActivity, at.saltyy.switchly.R.color.foqos_on_surface))
-        }
-        list.addView(title)
 
-        // Create new profile
+        // Grab handle
+        list.addView(View(this).apply {
+            background = android.graphics.drawable.GradientDrawable().apply {
+                cornerRadius = homeDp(2f).toFloat()
+                setColor(ColorUtils.setAlphaComponent(onSurfaceSoft, 0x61))
+            }
+            layoutParams = LinearLayout.LayoutParams(homeDp(36f), homeDp(4f)).apply {
+                gravity = android.view.Gravity.CENTER_HORIZONTAL
+            }
+        })
+
+        // Title + close
+        val header = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            setPadding(0, homeDp(12f), 0, 0)
+        }
+        header.addView(TextView(this).apply {
+            text = getString(R.string.profile_rows_switch)
+            textSize = 22f
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            setTextColor(onSurface)
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        })
+        header.addView(FrameLayout(this).apply {
+            background = roundelBg()
+            isClickable = true
+            isFocusable = true
+            setOnClickListener { sheet.dismiss() }
+            addView(TextView(this@MainActivity).apply {
+                text = "\u2715"
+                textSize = 14f
+                setTextColor(onSurface)
+                layoutParams = FrameLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                ).apply { gravity = android.view.Gravity.CENTER }
+            })
+            layoutParams = LinearLayout.LayoutParams(homeDp(34f), homeDp(34f))
+        })
+        list.addView(header)
+
+        // Create new profile (accent tile)
         val newRow = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = android.view.Gravity.CENTER_VERTICAL
-            val padV = homeDp(14f)
-            setPadding(0, padV, 0, padV)
+            val padV = homeDp(11f)
+            setPadding(homeDp(10f), padV, homeDp(10f), padV)
+            background = tileBg().apply { setStroke(homeDp(1f), ColorUtils.setAlphaComponent(accent, 0x66)) }
             isClickable = true
             isFocusable = true
-            setBackgroundResource(android.R.attr.selectableItemBackground.resId(this@MainActivity))
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply { topMargin = homeDp(14f) }
         }
         val newIcon = TextView(this).apply {
             text = "\uFF0B"
             textSize = 16f
-            setTextColor(ContextCompat.getColor(this@MainActivity, at.saltyy.switchly.R.color.foqos_primary))
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            setTextColor(accent)
+            gravity = android.view.Gravity.CENTER
+            layoutParams = LinearLayout.LayoutParams(homeDp(38f), homeDp(38f)).apply {
+                background = roundelBg()
+            }
         }
         val newLabel = TextView(this).apply {
             text = getString(R.string.profile_sheet_new_profile)
             textSize = 15f
             setTypeface(typeface, android.graphics.Typeface.BOLD)
-            setTextColor(ContextCompat.getColor(this@MainActivity, at.saltyy.switchly.R.color.foqos_primary))
+            setTextColor(accent)
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
                 marginStart = homeDp(12f)
             }
@@ -1614,27 +1674,32 @@ class MainActivity : AppCompatActivity() {
         }
         list.addView(newRow)
 
-        profiles.forEach { profile ->
+        profiles.forEachIndexed { index, profile ->
             val row = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = android.view.Gravity.CENTER_VERTICAL
-                val padV = homeDp(14f)
-                setPadding(0, padV, 0, padV)
+                val padV = homeDp(11f)
+                setPadding(homeDp(10f), padV, homeDp(10f), padV)
+                background = tileBg()
                 isClickable = true
                 isFocusable = true
-                setBackgroundResource(android.R.attr.selectableItemBackground.resId(this@MainActivity))
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                ).apply { topMargin = homeDp(8f) }
             }
             val name = TextView(this).apply {
                 text = profile
-                textSize = 15f
+                textSize = 16f
                 setTypeface(typeface, android.graphics.Typeface.BOLD)
-                setTextColor(ContextCompat.getColor(this@MainActivity, at.saltyy.switchly.R.color.foqos_on_surface))
+                setTextColor(onSurface)
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             }
             val check = TextView(this).apply {
                 text = "\u2713"
                 textSize = 16f
-                setTextColor(ContextCompat.getColor(this@MainActivity, at.saltyy.switchly.R.color.foqos_primary))
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+                setTextColor(accent)
                 visibility = if (profile == current) View.VISIBLE else View.GONE
                 tag = "switch_check"
             }
@@ -1656,6 +1721,9 @@ class MainActivity : AppCompatActivity() {
         sheet.setContentView(list)
         sheet.show()
     }
+
+    private fun foqosSurfaceColor(): Int =
+        ContextCompat.getColor(this@MainActivity, at.saltyy.switchly.R.color.foqos_surface)
 
     private fun openProfileEditSheet(profile: String) {
         val sheet = BottomSheetDialog(this)
@@ -1726,6 +1794,7 @@ class MainActivity : AppCompatActivity() {
             refreshProfileRowsUi()
         }
 
+        view.findViewById<View>(R.id.btnSheetClose).setOnClickListener { sheet.dismiss() }
         view.findViewById<View>(R.id.rowSheetRename).setOnClickListener {
             showRenameDialog(profile) { newName ->
                 nameView.text = newName
@@ -1904,6 +1973,9 @@ class MainActivity : AppCompatActivity() {
         }
         tvHeroChips.text = chips.joinToString("  ·  ")
         tvHeroStrategy.text = blockingModeLabel(AutomationModeStore.getMode(this))
+        findViewById<ImageView>(R.id.ivHeroStrategyIcon)?.setImageResource(
+            blockingModeIcon(AutomationModeStore.getMode(this))
+        )
     }
 
     private var lastHeroArtActive: Boolean? = null
@@ -1992,8 +2064,16 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun blockingModeLabel(mode: AutomationModeStore.Mode): String = getString(
-        when (mode) {
+    /** Hero strategy icon mirrors the active control channel (shield = mixed/manual). */
+    private fun blockingModeIcon(mode: AutomationModeStore.Mode): Int = when (mode) {
+        AutomationModeStore.Mode.MIXED -> R.drawable.security_24
+        AutomationModeStore.Mode.NFC -> R.drawable.nfc_24
+        AutomationModeStore.Mode.QR -> R.drawable.qr_code_24
+        AutomationModeStore.Mode.BARCODE -> R.drawable.barcode_24
+        AutomationModeStore.Mode.SCHEDULE -> R.drawable.schedule_24
+    }
+
+    private fun blockingModeLabel(mode: AutomationModeStore.Mode): String = getString(        when (mode) {
             AutomationModeStore.Mode.MIXED -> R.string.blocking_mode_mixed
             AutomationModeStore.Mode.NFC -> R.string.blocking_mode_nfc
             AutomationModeStore.Mode.QR -> R.string.blocking_mode_qr
@@ -2076,6 +2156,7 @@ class MainActivity : AppCompatActivity() {
                 }
                 AutomationModeStore.setMode(ctx, mode)
                 tvHeroStrategy.text = blockingModeLabel(mode)
+                findViewById<ImageView>(R.id.ivHeroStrategyIcon)?.setImageResource(blockingModeIcon(mode))
                 // refresh check marks
                 for (i in 0 until list.childCount) {
                     val child = list.getChildAt(i)

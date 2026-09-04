@@ -5,19 +5,55 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:paddingStart="20dp"
-    android:paddingTop="18dp"
-    android:paddingEnd="20dp"
+    android:paddingStart="16dp"
+    android:paddingTop="8dp"
+    android:paddingEnd="16dp"
     android:paddingBottom="22dp"
     android:background="@drawable/sheet_profile_bg">
 
-    <TextView
+    <!-- Grab handle -->
+    <View
+        android:layout_width="36dp"
+        android:layout_height="4dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="6dp"
+        android:background="@drawable/bg_grab_handle" />
+
+    <!-- Title + close -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/profile_sheet_edit_profile"
-        android:textSize="20sp"
-        android:textStyle="bold"
-        android:textColor="?attr/colorOnSurface" />
+        android:layout_marginTop="12dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/profile_sheet_edit_profile"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:textColor="?attr/colorOnSurface" />
+
+        <FrameLayout
+            android:id="@+id/btnSheetClose"
+            android:layout_width="34dp"
+            android:layout_height="34dp"
+            android:background="@drawable/bg_roundel_neutral"
+            android:clickable="true"
+            android:focusable="true"
+            tools:ignore="UseCompoundDrawables">
+
+            <ImageView
+                android:layout_width="16dp"
+                android:layout_height="16dp"
+                android:layout_gravity="center"
+                android:contentDescription="@string/cancel"
+                android:src="@drawable/close_24"
+                app:tint="?attr/colorOnSurface" />
+        </FrameLayout>
+    </LinearLayout>
 
     <!-- Name row -->
     <LinearLayout
@@ -27,26 +63,39 @@
         android:layout_marginTop="14dp"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:background="?attr/selectableItemBackground"
+        android:paddingStart="12dp"
+        android:paddingTop="10dp"
+        android:paddingEnd="12dp"
+        android:paddingBottom="10dp"
+        android:background="@drawable/bg_tile_neutral"
+        android:foreground="?attr/selectableItemBackground"
         android:clickable="true"
         android:focusable="true"
-        android:minHeight="52dp">
+        android:minHeight="58dp">
 
-        <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:contentDescription="@null"
-            android:src="@drawable/edit_24"
-            app:tint="?attr/colorPrimary" />
+        <FrameLayout
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:background="@drawable/bg_roundel_neutral">
+
+            <ImageView
+                android:layout_width="19dp"
+                android:layout_height="19dp"
+                android:layout_gravity="center"
+                android:contentDescription="@null"
+                android:src="@drawable/edit_24"
+                app:tint="?attr/colorPrimary" />
+        </FrameLayout>
 
         <TextView
             android:id="@+id/tvSheetProfileName"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="14dp"
+            android:layout_marginStart="12dp"
             android:layout_weight="1"
-            android:textSize="16sp"
+            android:textSize="17sp"
             android:textStyle="bold"
+            android:textColor="?attr/colorOnSurface"
             tools:text="Work Profile" />
 
         <TextView
@@ -54,6 +103,7 @@
             android:layout_height="wrap_content"
             android:text="@string/profile_sheet_rename"
             android:textSize="13sp"
+            android:textStyle="bold"
             android:textColor="?attr/colorPrimary" />
     </LinearLayout>
 
@@ -61,7 +111,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
+        android:layout_marginTop="16dp"
         android:text="@string/profile_sheet_mode_title"
         android:textSize="13sp"
         android:textColor="?android:attr/textColorSecondary" />
@@ -95,19 +145,32 @@
         android:id="@+id/rowSheetApps"
         style="@style/Switchly.SheetRow"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:paddingStart="10dp"
+        android:paddingTop="9dp"
+        android:paddingEnd="10dp"
+        android:paddingBottom="9dp"
+        android:background="@drawable/bg_tile_neutral">
 
-        <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:contentDescription="@null"
-            android:src="@drawable/apps_24"
-            app:tint="?attr/colorPrimary" />
+        <FrameLayout
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:background="@drawable/bg_roundel_neutral">
+
+            <ImageView
+                android:layout_width="19dp"
+                android:layout_height="19dp"
+                android:layout_gravity="center"
+                android:contentDescription="@null"
+                android:src="@drawable/apps_24"
+                app:tint="?attr/colorPrimary" />
+        </FrameLayout>
 
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="14dp"
+            android:layout_marginStart="12dp"
             android:layout_weight="1"
             android:orientation="vertical">
 
@@ -116,14 +179,16 @@
                 android:layout_height="wrap_content"
                 android:text="@string/profile_sheet_apps"
                 android:textSize="15sp"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:textColor="?attr/colorOnSurface" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/profile_sheet_apps_summary"
                 android:textSize="12sp"
-                android:alpha="0.75" />
+                android:alpha="0.75"
+                android:textColor="?attr/colorOnSurface" />
         </LinearLayout>
 
         <ImageView
@@ -139,19 +204,32 @@
         android:id="@+id/rowSheetWebsites"
         style="@style/Switchly.SheetRow"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:paddingStart="10dp"
+        android:paddingTop="9dp"
+        android:paddingEnd="10dp"
+        android:paddingBottom="9dp"
+        android:background="@drawable/bg_tile_neutral">
 
-        <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:contentDescription="@null"
-            android:src="@drawable/language_24"
-            app:tint="?attr/colorPrimary" />
+        <FrameLayout
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:background="@drawable/bg_roundel_neutral">
+
+            <ImageView
+                android:layout_width="19dp"
+                android:layout_height="19dp"
+                android:layout_gravity="center"
+                android:contentDescription="@null"
+                android:src="@drawable/language_24"
+                app:tint="?attr/colorPrimary" />
+        </FrameLayout>
 
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="14dp"
+            android:layout_marginStart="12dp"
             android:layout_weight="1"
             android:orientation="vertical">
 
@@ -160,14 +238,16 @@
                 android:layout_height="wrap_content"
                 android:text="@string/profile_sheet_websites"
                 android:textSize="15sp"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:textColor="?attr/colorOnSurface" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/profile_sheet_websites_summary"
                 android:textSize="12sp"
-                android:alpha="0.75" />
+                android:alpha="0.75"
+                android:textColor="?attr/colorOnSurface" />
         </LinearLayout>
 
         <ImageView
@@ -183,19 +263,32 @@
         android:id="@+id/rowSheetInApp"
         style="@style/Switchly.SheetRow"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:paddingStart="10dp"
+        android:paddingTop="9dp"
+        android:paddingEnd="10dp"
+        android:paddingBottom="9dp"
+        android:background="@drawable/bg_tile_neutral">
 
-        <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:contentDescription="@null"
-            android:src="@drawable/layers_24"
-            app:tint="?attr/colorPrimary" />
+        <FrameLayout
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:background="@drawable/bg_roundel_neutral">
+
+            <ImageView
+                android:layout_width="19dp"
+                android:layout_height="19dp"
+                android:layout_gravity="center"
+                android:contentDescription="@null"
+                android:src="@drawable/layers_24"
+                app:tint="?attr/colorPrimary" />
+        </FrameLayout>
 
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="14dp"
+            android:layout_marginStart="12dp"
             android:layout_weight="1"
             android:orientation="vertical">
 
@@ -204,14 +297,16 @@
                 android:layout_height="wrap_content"
                 android:text="@string/profile_sheet_inapp"
                 android:textSize="15sp"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:textColor="?attr/colorOnSurface" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/profile_sheet_inapp_summary"
                 android:textSize="12sp"
-                android:alpha="0.75" />
+                android:alpha="0.75"
+                android:textColor="?attr/colorOnSurface" />
         </LinearLayout>
 
         <ImageView
@@ -227,19 +322,32 @@
         android:id="@+id/rowSheetSchedules"
         style="@style/Switchly.SheetRow"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:paddingStart="10dp"
+        android:paddingTop="9dp"
+        android:paddingEnd="10dp"
+        android:paddingBottom="9dp"
+        android:background="@drawable/bg_tile_neutral">
 
-        <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:contentDescription="@null"
-            android:src="@drawable/schedule_24"
-            app:tint="?attr/colorPrimary" />
+        <FrameLayout
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:background="@drawable/bg_roundel_neutral">
+
+            <ImageView
+                android:layout_width="19dp"
+                android:layout_height="19dp"
+                android:layout_gravity="center"
+                android:contentDescription="@null"
+                android:src="@drawable/schedule_24"
+                app:tint="?attr/colorPrimary" />
+        </FrameLayout>
 
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="14dp"
+            android:layout_marginStart="12dp"
             android:layout_weight="1"
             android:orientation="vertical">
 
@@ -248,14 +356,16 @@
                 android:layout_height="wrap_content"
                 android:text="@string/profile_sheet_schedules"
                 android:textSize="15sp"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:textColor="?attr/colorOnSurface" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/profile_sheet_schedules_summary"
                 android:textSize="12sp"
-                android:alpha="0.75" />
+                android:alpha="0.75"
+                android:textColor="?attr/colorOnSurface" />
         </LinearLayout>
 
         <ImageView
@@ -271,19 +381,32 @@
         android:id="@+id/rowSheetInsights"
         style="@style/Switchly.SheetRow"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:paddingStart="10dp"
+        android:paddingTop="9dp"
+        android:paddingEnd="10dp"
+        android:paddingBottom="9dp"
+        android:background="@drawable/bg_tile_neutral">
 
-        <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:contentDescription="@null"
-            android:src="@drawable/bar_chart_24"
-            app:tint="?attr/colorPrimary" />
+        <FrameLayout
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:background="@drawable/bg_roundel_neutral">
+
+            <ImageView
+                android:layout_width="19dp"
+                android:layout_height="19dp"
+                android:layout_gravity="center"
+                android:contentDescription="@null"
+                android:src="@drawable/bar_chart_24"
+                app:tint="?attr/colorPrimary" />
+        </FrameLayout>
 
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="14dp"
+            android:layout_marginStart="12dp"
             android:layout_weight="1"
             android:orientation="vertical">
 
@@ -292,14 +415,16 @@
                 android:layout_height="wrap_content"
                 android:text="@string/profile_sheet_insights"
                 android:textSize="15sp"
-                android:textStyle="bold" />
+                android:textStyle="bold"
+                android:textColor="?attr/colorOnSurface" />
 
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/profile_sheet_insights_summary"
                 android:textSize="12sp"
-                android:alpha="0.75" />
+                android:alpha="0.75"
+                android:textColor="?attr/colorOnSurface" />
         </LinearLayout>
 
         <ImageView
@@ -316,19 +441,32 @@
         android:id="@+id/rowSheetDelete"
         style="@style/Switchly.SheetRow"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:paddingStart="10dp"
+        android:paddingTop="9dp"
+        android:paddingEnd="10dp"
+        android:paddingBottom="9dp"
+        android:background="@drawable/bg_tile_danger">
 
-        <ImageView
-            android:layout_width="20dp"
-            android:layout_height="20dp"
-            android:contentDescription="@null"
-            android:src="@drawable/delete_24"
-            app:tint="@color/status_error" />
+        <FrameLayout
+            android:layout_width="38dp"
+            android:layout_height="38dp"
+            android:background="@drawable/bg_roundel_danger">
+
+            <ImageView
+                android:layout_width="19dp"
+                android:layout_height="19dp"
+                android:layout_gravity="center"
+                android:contentDescription="@null"
+                android:src="@drawable/delete_24"
+                app:tint="@color/status_error" />
+        </FrameLayout>
 
         <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="14dp"
+            android:layout_marginStart="12dp"
             android:layout_weight="1"
             android:text="@string/profile_sheet_delete"
             android:textSize="15sp"
