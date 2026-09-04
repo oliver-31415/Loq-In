@@ -349,6 +349,7 @@
                                 android:background="@drawable/bg_round_white_soft">
 
                                 <ImageView
+                                    android:id="@+id/ivHeroStrategyIcon"
                                     android:layout_width="18dp"
                                     android:layout_height="18dp"
                                     android:layout_gravity="center"
@@ -383,6 +384,7 @@
                                 android:orientation="vertical">
 
                                 <TextView
+                                    android:id="@+id/tvHeroStatAppsLabel"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:text="@string/hero_stat_apps"
@@ -406,6 +408,7 @@
                                 android:orientation="vertical">
 
                                 <TextView
+                                    android:id="@+id/tvHeroStatDomainsLabel"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:text="@string/hero_stat_domains"
@@ -429,6 +432,7 @@
                                 android:orientation="vertical">
 
                                 <TextView
+                                    android:id="@+id/tvHeroStatBlocksLabel"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:text="@string/hero_stat_blocks"

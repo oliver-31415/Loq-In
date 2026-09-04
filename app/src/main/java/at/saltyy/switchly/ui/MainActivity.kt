@@ -1930,9 +1930,40 @@ class MainActivity : AppCompatActivity() {
                 setStroke(homeDp(1f), ContextCompat.getColor(this@MainActivity, at.saltyy.switchly.R.color.foqos_outline))
             }
             heroProfileRoot.background = gd
+        } else {
+            heroProfileRoot.background = HeroArtDrawable(accent, radius)
+        }
+        applyHeroIdleContrast(!active)
+    }
+
+    /**
+     * The hero's text is white (designed for the saturated blob art). While IDLE the
+     * card is a light surface in light mode, so the text flips to on-surface colors
+     * and back when protection runs.
+     */
+    private fun applyHeroIdleContrast(idle: Boolean) {
+        if (!::heroProfileRoot.isInitialized) {
             return
         }
-        heroProfileRoot.background = HeroArtDrawable(accent, radius)
+        val onSurface = ContextCompat.getColor(this, at.saltyy.switchly.R.color.foqos_on_surface)
+        val onSurfaceSoft = ContextCompat.getColor(this, at.saltyy.switchly.R.color.foqos_on_surface_variant)
+        val white = Color.WHITE
+        val whiteSoft = ColorUtils.setAlphaComponent(Color.WHITE, 0xCC)
+        fun tv(id: Int, activeColor: Int, idleColor: Int) {
+            findViewById<TextView>(id)?.setTextColor(if (idle) idleColor else activeColor)
+        }
+        tv(R.id.tvHeroProfileName, white, onSurface)
+        tv(R.id.tvHeroChips, whiteSoft, onSurfaceSoft)
+        tv(R.id.tvHeroStrategy, white, onSurface)
+        tv(R.id.tvHeroStatAppsLabel, whiteSoft, onSurfaceSoft)
+        tv(R.id.tvHeroStatDomainsLabel, whiteSoft, onSurfaceSoft)
+        tv(R.id.tvHeroStatBlocksLabel, whiteSoft, onSurfaceSoft)
+        tv(R.id.tvHeroStatApps, white, onSurface)
+        tv(R.id.tvHeroStatDomains, white, onSurface)
+        tv(R.id.tvHeroStatBlocks, white, onSurface)
+        listOf(R.id.ibtnHeroEdit, R.id.ivHeroStrategyIcon).forEach { id ->
+            findViewById<ImageView>(id)?.setColorFilter(if (idle) onSurface else white)
+        }
     }
 
     private var lastHeroToggleActive: Boolean? = null
@@ -4275,10 +4306,15 @@ class MainActivity : AppCompatActivity() {
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.menu_top_main, menu)
 
-        val white = ContextCompat.getColor(this, R.color.font_white)
-
+        // Icons follow the surface text color (the old hardcoded white vanishes on the
+        // light header; night keeps them light via the foqos_* night tokens).
+        val onSurface = MaterialColors.getColor(
+            this,
+            com.google.android.material.R.attr.colorOnSurface,
+            android.graphics.Color.BLACK,
+        )
         for (item in menu) {
-            item.icon?.mutate()?.setTint(white)
+            item.icon?.mutate()?.setTint(onSurface)
         }
 
         return true
