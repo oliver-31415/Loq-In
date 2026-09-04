@@ -29,15 +29,17 @@ import android.util.TypedValue
 import android.view.View
 import at.saltyy.switchly.theme.AccentColor
 import java.util.Calendar
-import java.util.Locale
 import kotlin.math.max
+import kotlin.math.roundToInt
 
 /**
- * Foqos-style 4-week focus heatmap (BlockedSessionsHabitTracker / FourWeekHeatmapView).
+ * Foqos-style 4-week calendar heatmap (FourWeekHeatmapView).
  *
- * Renders the last 28 days (4 rows x 7 columns, oldest first) as rounded cells whose
- * fill intensity encodes blocked-time for that day. Weekday initials run along the top,
- * tappable cells report the selected day index (0 = oldest, 27 = today).
+ * A REAL calendar grid: columns are weekdays (Monday-first), rows are weeks —
+ * the current week plus the three before it. Day-of-month numbers are drawn
+ * ABOVE every cell (like a calendar), the last row shows the rest of the
+ * current week as empty future cells, and each filled cell carries its day
+ * number inside. Fill intensity encodes blocked time for that day.
  */
 class FoqosHeatmapView @JvmOverloads constructor(
     context: Context,
@@ -50,7 +52,8 @@ class FoqosHeatmapView @JvmOverloads constructor(
     /** Index of today inside dayValuesMs (DAYS - 1). */
     private var todayIndex: Int = DAYS - 1
 
-    private var selectedDay: Int = -1
+    /** Selected cell in GRID coordinates (0..DAYS-1), -1 when cleared. */
+    private var selectedCell: Int = -1
 
     /** Delivered via [onDaySelected]; index into dayValuesMs, -1 when cleared. */
     var onDaySelected: ((Int) -> Unit)? = null
@@ -70,25 +73,36 @@ class FoqosHeatmapView @JvmOverloads constructor(
     private val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
         textAlign = Paint.Align.CENTER
-        textSize = sp(12f)
+        textSize = sp(11f)
     }
     private val numberPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         style = Paint.Style.FILL
         textAlign = Paint.Align.CENTER
-        textSize = sp(15f)
+        textSize = sp(13f)
         isFakeBoldText = true
     }
 
     private val cellRect = RectF()
 
     /** Grid geometry, computed in onSizeChanged. */
-    private var gridTop = 0f
+    private var labelHeight = 0f
     private var cellSize = 0f
     private var gap = 0f
+    private var offsetX = 0f
+
+    /** Real-calendar mapping: cellDates[i] = midnight of the day cell i represents. */
+    private val cellDates = LongArray(DAYS)
+    private var todayMillis = 0L
 
     init {
-        // Monday-first column order like Foqos.
+        // Monday-first columns like Foqos.
         setWillNotDraw(false)
+        // Initialize geometry BEFORE the first measure pass: onMeasure depends on
+        // labelHeight/gap, and onSizeChanged only runs AFTER the first layout —
+        // otherwise the first measure underestimates the height and the grid cells
+        // get squeezed (shrunken + left-aligned dead space).
+        labelHeight = sp(12f)
+        gap = dp(3f)
         contentDescription = contentDescription ?: context.getString(
             at.saltyy.switchly.R.string.activity_heatmap_content_desc
         )
@@ -97,7 +111,7 @@ class FoqosHeatmapView @JvmOverloads constructor(
     fun setData(valuesMs: LongArray, todayIdx: Int = valuesMs.size - 1) {
         dayValuesMs = if (valuesMs.size == DAYS) valuesMs else padOrTrim(valuesMs)
         todayIndex = todayIdx.coerceIn(0, dayValuesMs.size - 1)
-        selectedDay = -1
+        selectedCell = -1
         invalidate()
     }
 
@@ -109,34 +123,90 @@ class FoqosHeatmapView @JvmOverloads constructor(
     }
 
     fun clearSelection() {
-        if (selectedDay != -1) {
-            selectedDay = -1
+        if (selectedCell != -1) {
+            selectedCell = -1
             invalidate()
         }
     }
 
+    /** Compact duration label for inside filled cells ("45m", "2h"). */
+    private fun durationLabel(ms: Long): String {
+        val totalMin = ms / 60_000L
+        val h = totalMin / 60
+        val m = totalMin % 60
+        return when {
+            h > 0 -> "${h}h"
+            m > 0 -> "${m}m"
+            else -> "<1m"
+        }
+    }
+
+    /** Live-update today's value (array tail) without clearing the selection. */
+    fun updateTodayValue(ms: Long) {
+        if (dayValuesMs.isEmpty()) {
+            return
+        }
+        val idx = dayValuesMs.size - 1
+        if (dayValuesMs[idx] == ms) {
+            return
+        }
+        dayValuesMs[idx] = ms
+        invalidate()
+    }
+
+    /** Monday-first calendar window: current week + the 3 before it. */
+    private fun refreshCalendar() {
+        val cal = Calendar.getInstance()
+        cal.set(Calendar.HOUR_OF_DAY, 0)
+        cal.set(Calendar.MINUTE, 0)
+        cal.set(Calendar.SECOND, 0)
+        cal.set(Calendar.MILLISECOND, 0)
+        todayMillis = cal.timeInMillis
+        val dow = cal.get(Calendar.DAY_OF_WEEK)
+        val daysSinceMonday = if (dow == Calendar.SUNDAY) 6 else dow - Calendar.MONDAY
+        cal.add(Calendar.DAY_OF_YEAR, -(daysSinceMonday + (ROWS - 1) * COLS))
+        for (i in 0 until DAYS) {
+            cellDates[i] = cal.timeInMillis
+            cal.add(Calendar.DAY_OF_YEAR, 1)
+        }
+    }
+
+    /** Day offset between midnight [fromMillis] and today, DST-safe. */
+    private fun daysAgo(fromMillis: Long): Int =
+        ((todayMillis - fromMillis).toDouble() / DAY_MS).roundToInt()
+
+    /** Blocked ms for grid cell [i]; -1 when the day is future/outside the window. */
+    private fun valueFor(i: Int): Long {
+        if (cellDates[i] > todayMillis) return -1L
+        val back = daysAgo(cellDates[i])
+        if (back >= dayValuesMs.size) return -1L
+        return dayValuesMs[dayValuesMs.size - 1 - back]
+    }
+
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
-        val labelHeight = sp(14f)
-        gridTop = labelHeight + dp(4f)
         gap = dp(3f)
         val availW = w - paddingLeft - paddingRight
-        val availH = h - paddingTop - paddingBottom - gridTop
+        val availH = h - paddingTop - paddingBottom
         cellSize = max(
             0f,
-            minOf((availW - gap * (COLS - 1)) / COLS, (availH - gap * (ROWS - 1)) / ROWS)
+            minOf(
+                (availW - gap * (COLS - 1)) / COLS,
+                (availH - labelHeight * ROWS - gap * (ROWS - 1)) / ROWS
+            )
         )
+        // Center the grid horizontally when the height constraint shrank the cells.
+        val gridW = COLS * cellSize + (COLS - 1) * gap
+        offsetX = ((availW - gridW) / 2f).coerceAtLeast(0f)
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         val w = MeasureSpec.getSize(widthMeasureSpec).coerceAtLeast(paddingLeft + paddingRight)
         val cell = (w - paddingLeft - paddingRight - dp(3f) * (COLS - 1)) / COLS
-        val h = (sp(14f) + dp(4f) + ROWS * cell + (ROWS - 1) * dp(3f) + paddingTop + paddingBottom)
-            .toInt()
-            .coerceAtLeast(minHeightHint())
+        val h = ROWS * (labelHeight + cell) + (ROWS - 1) * dp(3f) + paddingTop + paddingBottom
         setMeasuredDimension(
             w,
-            resolveSize(h.toInt(), heightMeasureSpec)
+            resolveSize(h.toInt().coerceAtLeast(minHeightHint()), heightMeasureSpec)
         )
     }
 
@@ -144,58 +214,56 @@ class FoqosHeatmapView @JvmOverloads constructor(
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
-
-        // Foqos FourWeekHeatmapView: day-of-month labels run ABOVE each column —
-        // one label per column (the oldest day in that column), never stacked.
-        labelPaint.color = textColor
+        refreshCalendar()
         val cal = Calendar.getInstance()
-        for (i in dayValuesMs.indices) {
-            val pos = gridPosition(i) ?: continue
-            if (pos.second != 0) continue
-            cal.timeInMillis = System.currentTimeMillis()
-            cal.add(Calendar.DAY_OF_YEAR, -(dayValuesMs.size - 1 - i))
-            val dayLabel = cal.get(Calendar.DAY_OF_MONTH).toString()
-            val x = paddingLeft + pos.first * (cellSize + gap) + cellSize / 2f
-            canvas.drawText(dayLabel, x, paddingTop + sp(12f), labelPaint)
-        }
 
-        for (i in dayValuesMs.indices) {
-            val pos = gridPosition(i) ?: continue
-            val (col, row) = pos
+        for (i in 0 until DAYS) {
+            val col = i % COLS
+            val row = i / COLS
 
-            val left = paddingLeft + col * (cellSize + gap)
-            val top = gridTop + row * (cellSize + gap)
+            val left = paddingLeft + offsetX + col * (cellSize + gap)
+            val top = paddingTop + row * (labelHeight + cellSize + gap) + labelHeight
             cellRect.set(left, top, left + cellSize, top + cellSize)
 
-            val v = dayValuesMs[i]
+            cal.timeInMillis = cellDates[i]
+            val dayLabel = cal.get(Calendar.DAY_OF_MONTH).toString()
+
+            // Day-of-month label ABOVE every cell (real-calendar look).
+            labelPaint.color = textColor
+            canvas.drawText(
+                dayLabel,
+                left + cellSize / 2f,
+                paddingTop + row * (labelHeight + cellSize + gap) + labelHeight - dp(2f),
+                labelPaint
+            )
+
+            val v = valueFor(i)
+            val isFuture = v < 0L && cellDates[i] > todayMillis
             cellPaint.color = colorFor(v)
             val radius = cellSize * 0.26f
             canvas.drawRoundRect(cellRect, radius, radius, cellPaint)
 
-            if (i == todayIndex || i == selectedDay) {
+            if (cellDates[i] == todayMillis || (!isFuture && i == selectedCell)) {
                 cellStrokePaint.color = accent
                 canvas.drawRoundRect(cellRect, radius, radius, cellStrokePaint)
             }
 
-            // Day number renders INSIDE the cell when it has data or is selected.
+                        // Day number INSIDE cells that have data (or the selected one).
             val hasValue = v > 0L
-            if (hasValue || i == selectedDay) {
-                cal.timeInMillis = System.currentTimeMillis()
-                cal.add(Calendar.DAY_OF_YEAR, -(dayValuesMs.size - 1 - i))
-                val label = cal.get(Calendar.DAY_OF_MONTH).toString()
-                val onColor = onBucketColor(v)
-                numberPaint.color = onColor
+            if (hasValue || (!isFuture && i == selectedCell)) {
+                numberPaint.color = if (hasValue) onBucketColor(v) else textColor
                 val x = left + cellSize / 2f
                 val y = top + cellSize / 2f - (numberPaint.descent() + numberPaint.ascent()) / 2f
-                canvas.drawText(label, x, y, numberPaint)
+                // Filled cells carry the blocked DURATION (e.g. "10m", "2h") — the
+                // day number already sits above every cell like a calendar.
+                canvas.drawText(
+                    if (hasValue) durationLabel(v) else dayLabel,
+                    x,
+                    y,
+                    numberPaint
+                )
             }
         }
-    }
-
-    /** Column/row for an index in the 28-day sequence: left->right, top->bottom. */
-    private fun gridPosition(index: Int): Pair<Int, Int>? {
-        if (index < 0 || index >= dayValuesMs.size) return null
-        return (index % COLS) to (index / COLS)
     }
 
     private fun colorFor(valueMs: Long): Int {
@@ -215,22 +283,24 @@ class FoqosHeatmapView @JvmOverloads constructor(
     override fun onTouchEvent(event: android.view.MotionEvent): Boolean {
         when (event.actionMasked) {
             android.view.MotionEvent.ACTION_UP -> {
-                val x = event.x - paddingLeft
-                val y = event.y - gridTop
+                val x = event.x - paddingLeft - offsetX
+                val y = event.y - paddingTop
                 if (x < 0 || y < 0) return performClick()
                 val col = (x / (cellSize + gap)).toInt()
-                val row = (y / (cellSize + gap)).toInt()
+                val pitch = labelHeight + cellSize + gap
+                val row = (y / pitch).toInt()
                 if (col < 0 || col >= COLS || row < 0 || row >= ROWS) return performClick()
-                // Same geometry as drawing: sequential grid.
                 val idx = row * COLS + col
-                if (idx in dayValuesMs.indices) {
-                    selectedDay = if (selectedDay == idx) -1 else idx
-                    invalidate()
-                    onDaySelected?.invoke(selectedDay)
-                    performClick()
-                    return true
-                }
-                return performClick()
+                if (idx !in 0 until DAYS) return performClick()
+                val v = valueFor(idx)
+                if (v < 0L || cellDates[idx] > todayMillis) return performClick()
+                // Translate grid cell -> index into the oldest->today data array.
+                val arrayIdx = dayValuesMs.size - 1 - daysAgo(cellDates[idx])
+                selectedCell = if (selectedCell == idx) -1 else idx
+                invalidate()
+                onDaySelected?.invoke(if (selectedCell == -1) -1 else arrayIdx)
+                performClick()
+                return true
             }
         }
         return true
@@ -248,6 +318,7 @@ class FoqosHeatmapView @JvmOverloads constructor(
         const val DAYS = 28
         const val ROWS = 4
         const val COLS = 7
+        private const val DAY_MS = 86_400_000L
 
         /** Intensity bucket for a day value in ms (Foqos legend: <1h, 1-3h, 3-5h, >5h). */
         fun bucketFor(valueMs: Long): Int = when {

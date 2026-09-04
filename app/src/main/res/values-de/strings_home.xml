@@ -99,6 +99,24 @@
     <string name="dashboard_temp_active_changes_locked">This timer is protected. Home cannot replace or shorten it. A temporary pause can still be ended early to restore protection.</string>
     <string name="dashboard_temp_discovery_done">Temporary mode is ready. Open it from the status card anytime.</string>
 
+    <!-- Quick-entry action tiles (temporary timer / emergency bypass) -->
+    <string name="tile_temp_title_plain">Zeitmodus</string>
+    <string name="tile_temp_title_pause">Zeitweise pausieren</string>
+    <string name="tile_temp_title_enable">Zeitweise aktivieren</string>
+    <string name="tile_temp_title_active_paused">Zeitweise pausiert</string>
+    <string name="tile_temp_title_active_enabled">Zeitweise aktiviert</string>
+    <string name="tile_temp_subtitle_choose">Dauer wählen</string>
+    <string name="tile_temp_subtitle_time">%1$s übrig</string>
+    <string name="tile_temp_subtitle_locked">Nicht verfügbar, solange NFC-Entsperrung aktiv ist</string>
+    <string name="tile_emergency_title">Notfall-Entsperrung</string>
+    <string name="tile_emergency_title_active">Notfall aktiv</string>
+    <string name="tile_emergency_title_paused">Notfall pausiert</string>
+    <string name="tile_emergency_subtitle_ready">Bereit · einmal pro Tag</string>
+    <string name="tile_emergency_subtitle_used">Heute bereits verwendet</string>
+    <string name="tile_emergency_subtitle_off">Aus · in den Switchly-Einstellungen aktivieren</string>
+    <string name="tile_emergency_subtitle_active">%1$d Min. · Tippen: Pause</string>
+    <string name="tile_emergency_subtitle_paused">%1$d Min. · Tippen: Fortsetzen</string>
+
     <!-- ====================================================== -->
     <!-- Home actions and tiles -->
     <!-- ====================================================== -->
@@ -188,7 +206,6 @@
     <!-- Activity heatmap (Foqos-style habit tracker) -->
     <string name="activity_section_title">4 Week Activity</string>
     <string name="activity_heatmap_content_desc">Heatmap of blocked focus time for the last 28 days</string>
-    <string name="activity_week_fmt">Diese Woche: %1$s</string>
     <string name="profile_row_meta_fmt">%1$s | %2$s</string>
     <string name="activity_day_detail_fmt">%1$s · %2$s blocked</string>
     <string name="activity_day_none_fmt">%1$s · nothing blocked</string>
@@ -218,8 +235,6 @@
     <string name="profile_rows_title">Profiles</string>
     <string name="profile_rows_manage">Manage</string>
     <string name="profile_row_active">Active</string>
-    <string name="activity_chart_mode_heatmap">28 days</string>
-    <string name="activity_chart_mode_week">Week</string>
     <string name="activity_hide">Hide</string>
     <string name="activity_show">Show</string>
     <string name="hero_stat_apps">Apps</string>

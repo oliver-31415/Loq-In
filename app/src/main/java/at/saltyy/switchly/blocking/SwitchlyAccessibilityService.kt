@@ -1091,8 +1091,41 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         }
     }
 
+    /** Protection-time accrual, decoupled from the app-usage tick bookkeeping. */
+    private var lastProtectionTickAt = 0L
+
+    private fun trackProtectionTime(now: Long) {
+        val last = lastProtectionTickAt
+        lastProtectionTickAt = now
+        val delta = (now - last).coerceIn(0L, 5_000L)
+        if (delta <= 0L) {
+            return
+        }
+        if (!SwitchModeStore.isEnabled(this)) {
+            return
+        }
+        if (EmergencyBypassStore.isActive(this)) {
+            return
+        }
+        runCatching { BlockedTimeStore.addProtectionMsToday(this, delta) }
+        // Wall-clock reconciliation: while blocking runs, the live session duration is
+        // the floor for today's total, so gaps from reinstalls or paused accrual
+        // (screen off/keyguard) still end up counted.
+        runCatching {
+            BlockedTimeStore.ensureProtectionTodayAtLeast(
+                this,
+                SwitchModeStore.getActiveDurationMillis(this)
+            )
+        }
+    }
+
     private fun usageTick() {
         val now = System.currentTimeMillis()
+
+        // Protection time (feeds the Home "4 Week Activity" heatmap): every tick
+        // while Switchly is enabled & enforcing counts toward today's total —
+        // independent of which app is foreground, including our own blocker UI.
+        trackProtectionTime(now)
 
         // Some apps produce very few accessibility events.
         // To avoid tracking the wrong foreground package (which would break real-time limits), prefer the active window package when available.

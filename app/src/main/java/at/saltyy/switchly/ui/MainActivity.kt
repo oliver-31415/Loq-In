@@ -71,7 +71,7 @@ import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.updatePadding
 import androidx.core.view.isVisible
 import androidx.core.view.iterator
-import androidx.core.widget.TextViewCompat
+import androidx.core.widget.NestedScrollView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -130,6 +130,8 @@ import at.saltyy.switchly.premium.PremiumManager
 import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.ui.dialog.Dialogs
 import at.saltyy.switchly.ui.dialog.showAccented
+import at.saltyy.switchly.ui.dialog.showDestructiveAccented
+import at.saltyy.switchly.ui.dialog.showSwitchlyInputDialog
 import at.saltyy.switchly.ui.dialog.styleSwitchlyDialogButtons
 import at.saltyy.switchly.ui.dialog.SwitchlyDialogOption
 import at.saltyy.switchly.ui.dialog.showSwitchlyOptionDialog
@@ -160,7 +162,6 @@ import java.text.DateFormat
 import at.saltyy.switchly.data.prefs.BlockedTimeStore
 import at.saltyy.switchly.data.prefs.BlockCountStore
 import at.saltyy.switchly.ui.widgets.FoqosHeatmapView
-import at.saltyy.switchly.ui.widgets.WeeklyBarChartView
 import at.saltyy.switchly.ui.SegmentedToggleUi
 import kotlin.concurrent.thread
 import kotlinx.coroutines.Dispatchers
@@ -214,8 +215,12 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvNfcLockedHint: TextView
     private lateinit var btnToggle: MaterialButton
     private lateinit var btnSimplePickApps: MaterialButton
-    private lateinit var tvTempHint: TextView
-    private lateinit var tvEmergencyHint: TextView
+    private lateinit var tvTempHint: LinearLayout
+    private lateinit var tvEmergencyHint: LinearLayout
+    private lateinit var tvTempTileTitle: TextView
+    private lateinit var tvTempTileSubtitle: TextView
+    private lateinit var tvEmergencyTileTitle: TextView
+    private lateinit var tvEmergencyTileSubtitle: TextView
     private lateinit var layoutHomeRoot: LinearLayout
     private lateinit var layoutStatusContent: LinearLayout
     private lateinit var layoutProtectionStatus: View
@@ -241,6 +246,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var btnFinishSetup: MaterialButton
 
     // Activity heatmap (Foqos-style)
+    private lateinit var cardActivity: MaterialCardView
     private lateinit var activityHeatmap: FoqosHeatmapView
     private lateinit var tvHeatmapLegend: TextView
     private lateinit var btnActivityHide: LinearLayout
@@ -253,10 +259,6 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvHeroStatDomains: TextView
     private lateinit var tvHeroStatBlocks: TextView
     private var activityHidden = false
-    private lateinit var activityWeekChart: WeeklyBarChartView
-    private lateinit var btnChartHeatmap: MaterialButton
-    private lateinit var btnChartWeek: MaterialButton
-    private lateinit var tvActivityWeek: TextView
     private lateinit var tvActivityDetail: TextView
     @Volatile private var activityDaysMs: LongArray = LongArray(FoqosHeatmapView.DAYS)
 
@@ -432,6 +434,10 @@ class MainActivity : AppCompatActivity() {
         btnSimplePickApps = findViewById(R.id.btnSimplePickApps)
         tvTempHint = findViewById(R.id.tvTempHint)
         tvEmergencyHint = findViewById(R.id.tvEmergencyHint)
+        tvTempTileTitle = findViewById(R.id.tvTempTileTitle)
+        tvTempTileSubtitle = findViewById(R.id.tvTempTileSubtitle)
+        tvEmergencyTileTitle = findViewById(R.id.tvEmergencyTileTitle)
+        tvEmergencyTileSubtitle = findViewById(R.id.tvEmergencyTileSubtitle)
 
         profileDropdown = findViewById(R.id.profileDropdown)
         layoutProfileDropdown = findViewById(R.id.layoutProfileDropdown)
@@ -442,9 +448,11 @@ class MainActivity : AppCompatActivity() {
         tvSetupDesc = findViewById(R.id.tvSetupDesc)
         btnFinishSetup = findViewById(R.id.btnFinishSetup)
 
+        cardActivity = findViewById(R.id.cardActivity)
         activityHeatmap = findViewById(R.id.activityHeatmap)
         tvHeatmapLegend = findViewById(R.id.tvHeatmapLegend)
         btnActivityHide = findViewById(R.id.btnActivityHide)
+        tvActivityDetail = findViewById(R.id.tvActivityDetail)
         tvHeroProfileName = findViewById(R.id.tvHeroProfileName)
         tvHeroChips = findViewById(R.id.tvHeroChips)
         tvHeroStrategy = findViewById(R.id.tvHeroStrategy)
@@ -464,23 +472,12 @@ class MainActivity : AppCompatActivity() {
         btnActivityHide.setOnClickListener {
             activityHidden = !activityHidden
             val gridVisible = !activityHidden
-            tvHeatmapLegend.visibility = if (gridVisible) View.VISIBLE else View.GONE
-            activityHeatmap.visibility = if (gridVisible) View.VISIBLE else View.GONE
-            activityWeekChart.visibility = if (gridVisible && !isHeatmapMode()) View.VISIBLE else View.GONE
-            tvActivityDetail.visibility = if (gridVisible) View.VISIBLE else View.GONE
+            cardActivity.visibility = if (gridVisible) View.VISIBLE else View.GONE
             btnActivityHide.findViewById<TextView>(R.id.tvHeaderPillLabel)?.text =
                 getString(if (gridVisible) R.string.activity_hide else R.string.activity_show)
         }
         applyHeatmapLegend()
-        activityWeekChart = findViewById(R.id.activityWeekChart)
-        btnChartHeatmap = findViewById(R.id.btnChartHeatmap)
-        btnChartWeek = findViewById(R.id.btnChartWeek)
-        tvActivityWeek = findViewById(R.id.tvActivityWeek)
-        tvActivityDetail = findViewById(R.id.tvActivityDetail)
         activityHeatmap.onDaySelected = { index -> onHeatmapDaySelected(index) }
-        btnChartHeatmap.setOnClickListener { setActivityChartMode(true) }
-        btnChartWeek.setOnClickListener { setActivityChartMode(false) }
-        setActivityChartMode(true)
         refreshActivityHeatmap()
 
         profileRowsContainer = findViewById(R.id.profileRowsContainer)
@@ -1048,12 +1045,6 @@ class MainActivity : AppCompatActivity() {
         btnFinishSetup.setTextColor(onAccent)
         // Make the icon match the button text (otherwise it may stay default/black).
         btnFinishSetup.iconTint = ColorStateList.valueOf(onAccent)
-
-        // Inline info/hint rows should look like normal text (not accent-colored).
-        // Tint their icons to the text color for consistency.
-        val hintTint = ColorStateList.valueOf(tvTempHint.currentTextColor)
-        TextViewCompat.setCompoundDrawableTintList(tvTempHint, hintTint)
-        TextViewCompat.setCompoundDrawableTintList(tvEmergencyHint, hintTint)
 
     }
 
@@ -1686,6 +1677,37 @@ class MainActivity : AppCompatActivity() {
         sheet.setContentView(view)
         sheet.behavior.peekHeight = resources.displayMetrics.heightPixels / 2
 
+        // Row icons + green labels follow the live accent (?attr/colorPrimary would fall
+        // back to the compile-time green since Home never applies an accent theme variant).
+        val sheetAccent = AccentColor.getAccentColorInt(this)
+        val sheetGreen = ContextCompat.getColor(this, R.color.accent_default_green) and 0x00FFFFFF
+        val dangerRow = view.findViewById<View>(R.id.rowSheetDelete)
+        fun inDangerRow(v: android.view.View): Boolean {
+            var p = v.parent
+            while (p is android.view.View) {
+                if (p === dangerRow) return true
+                p = p.parent
+            }
+            return false
+        }
+        fun tintAccented(v: android.view.View) {
+            when (v) {
+                is android.view.ViewGroup -> for (i in 0 until v.childCount) tintAccented(v.getChildAt(i))
+                is android.widget.TextView -> if (!inDangerRow(v) &&
+                    (v.currentTextColor and 0x00FFFFFF) == sheetGreen
+                ) {
+                    v.setTextColor(sheetAccent)
+                }
+                is android.widget.ImageView -> if (!inDangerRow(v)) {
+                    androidx.core.widget.ImageViewCompat.setImageTintList(
+                        v,
+                        android.content.res.ColorStateList.valueOf(sheetAccent)
+                    )
+                }
+            }
+        }
+        tintAccented(view)
+
         val nameView = view.findViewById<TextView>(R.id.tvSheetProfileName)
         val modeBlock = view.findViewById<MaterialButton>(R.id.btnSheetModeBlock)
         val modeAllow = view.findViewById<MaterialButton>(R.id.btnSheetModeAllow)
@@ -1757,7 +1779,7 @@ class MainActivity : AppCompatActivity() {
                 ).applySwitchlyStyle().show()
                 return@setOnClickListener
             }
-            androidx.appcompat.app.AlertDialog.Builder(this)
+            MaterialAlertDialogBuilder(this)
                 .setTitle(getString(R.string.profile_sheet_delete))
                 .setMessage(getString(R.string.profile_sheet_delete_confirm, profile))
                 .setPositiveButton(getString(R.string.delete)) { _, _ ->
@@ -1768,27 +1790,17 @@ class MainActivity : AppCompatActivity() {
                     updateSwitchState()
                 }
                 .setNegativeButton(getString(android.R.string.cancel), null)
-                .show()
+                .showDestructiveAccented()
         }
 
         sheet.show()
     }
 
     private fun showCreateProfileDialog() {
-        val input = android.widget.EditText(this).apply {
-            hint = getString(R.string.profile_sheet_rename_hint)
-            setSingleLine(true)
-        }
-        val container = android.widget.FrameLayout(this).apply {
-            val pad = homeDp(20f)
-            setPadding(pad, homeDp(8f), pad, 0)
-            addView(input)
-        }
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle(getString(R.string.profile_sheet_new_profile))
-            .setView(container)
-            .setPositiveButton(getString(R.string.save)) { _, _ ->
-                val name = input.text.toString().trim()
+        showSwitchlyInputDialog(
+            title = getString(R.string.profile_sheet_new_profile),
+            hint = getString(R.string.profile_sheet_rename_hint),
+            onConfirm = { name ->
                 if (name.isNotEmpty() && ProfileStore.addProfile(this, name)) {
                     ProfileStore.setCurrent(this, name)
                     refreshProfileRowsUi()
@@ -1796,8 +1808,7 @@ class MainActivity : AppCompatActivity() {
                     updateSwitchState()
                 }
             }
-            .setNegativeButton(getString(android.R.string.cancel), null)
-            .show()
+        )
     }
 
     private fun refreshProfileRowsUi() {
@@ -1807,21 +1818,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showRenameDialog(profile: String, onRenamed: (String) -> Unit) {
-        val input = android.widget.EditText(this).apply {
-            setText(profile)
-            setSelection(profile.length)
-            setSingleLine(true)
-        }
-        val container = android.widget.FrameLayout(this).apply {
-            val pad = homeDp(20f)
-            setPadding(pad, homeDp(8f), pad, 0)
-            addView(input)
-        }
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle(getString(R.string.profile_sheet_rename))
-            .setView(container)
-            .setPositiveButton(getString(R.string.save)) { _, _ ->
-                val newName = input.text.toString().trim()
+        showSwitchlyInputDialog(
+            title = getString(R.string.profile_sheet_rename),
+            initialText = profile,
+            onConfirm = { newName ->
                 if (newName.isNotEmpty() && newName != profile &&
                     ProfileStore.renameProfile(this, profile, newName)
                 ) {
@@ -1830,8 +1830,7 @@ class MainActivity : AppCompatActivity() {
                     updateSwitchState()
                 }
             }
-            .setNegativeButton(getString(android.R.string.cancel), null)
-            .show()
+        )
     }
 
     // =========================
@@ -1842,24 +1841,22 @@ class MainActivity : AppCompatActivity() {
             return
         }
         thread {
-            val days = BlockedTimeStore.getDayTotalsMs(this, FoqosHeatmapView.DAYS)
+            // "4 Week Activity" = time Switchly was actually up & blocking each day.
+            val days = BlockedTimeStore.getFocusDayTotalsMs(this, FoqosHeatmapView.DAYS)
+            if (SwitchModeStore.isEnabled(this)) {
+                val active = SwitchModeStore.getActiveDurationMillis(this)
+                val last = days.size - 1
+                if (active > days[last]) {
+                    days[last] = active
+                }
+            }
             runOnUiThread {
                 activityDaysMs = days
                 activityHeatmap.setData(days)
-                val week = days.takeLast(7)
-                if (::activityWeekChart.isInitialized) {
-                    activityWeekChart.setValues(week.toList())
-                }
-                tvActivityWeek.text = getString(
-                    R.string.activity_week_fmt,
-                    formatDurationShort(week.sum())
-                )
                 onHeatmapDaySelected(-1)
             }
         }
     }
-
-    private fun isHeatmapMode(): Boolean = activityHeatmap.visibility == View.VISIBLE
 
     /** Foqos legend chips: colored dots + hour-range labels, colors from bucket ramp. */
     private fun applyHeatmapLegend() {
@@ -1950,6 +1947,32 @@ class MainActivity : AppCompatActivity() {
             return
         }
         heroProfileRoot.background = HeroArtDrawable(accent, radius)
+    }
+
+    private var lastHeroToggleActive: Boolean? = null
+
+    /**
+     * The launcher pill inside the hero card (Foqos "Hold to Start"): frosted
+     * translucent white while blocking is active (reads on the saturated blob art),
+     * plain accent pill while idle (reads on the neutral card).
+     */
+    private fun styleHeroToggle(active: Boolean) {
+        if (lastHeroToggleActive == active) {
+            return
+        }
+        lastHeroToggleActive = active
+        if (active) {
+            btnToggle.backgroundTintList =
+                ColorStateList.valueOf(ColorUtils.setAlphaComponent(Color.WHITE, 0x2B))
+            btnToggle.setTextColor(Color.WHITE)
+            btnToggle.rippleColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(Color.WHITE, 0x40))
+        } else {
+            val accent = AccentColor.getAccentColorInt(this)
+            btnToggle.backgroundTintList = ColorStateList.valueOf(accent)
+            btnToggle.setTextColor(
+                if (ColorUtils.calculateLuminance(accent) > 0.52) Color.BLACK else Color.WHITE
+            )
+        }
     }
 
     private fun blockingModeLabel(mode: AutomationModeStore.Mode): String = getString(
@@ -2058,21 +2081,13 @@ class MainActivity : AppCompatActivity() {
         return tv.resourceId
     }
 
-    private fun setActivityChartMode(heatmapMode: Boolean) {
-        if (!::activityHeatmap.isInitialized) {
-            return
-        }
-        activityHeatmap.visibility = if (heatmapMode) View.VISIBLE else View.GONE
-        activityWeekChart.visibility = if (heatmapMode) View.GONE else View.VISIBLE
-        SegmentedToggleUi.apply(this, listOf(btnChartHeatmap, btnChartWeek), if (heatmapMode) R.id.btnChartHeatmap else R.id.btnChartWeek)
-    }
-
     private fun onHeatmapDaySelected(index: Int) {
         if (!::tvActivityDetail.isInitialized) {
             return
         }
         if (index < 0 || index >= activityDaysMs.size) {
             tvActivityDetail.text = ""
+            tvActivityDetail.isVisible = false
             return
         }
         val daysAgo = (activityDaysMs.size - 1) - index
@@ -2087,6 +2102,7 @@ class MainActivity : AppCompatActivity() {
         } else {
             getString(R.string.activity_day_none_fmt, label)
         }
+        tvActivityDetail.isVisible = true
     }
 
     private fun formatDurationShort(ms: Long): String {
@@ -2100,17 +2116,21 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Active-session timer pill next to the launcher pill inside the hero card.
+     * Only shown while blocking is active (saturated hero art), so it is styled
+     * as a frosted translucent white pill — color-independent.
+     */
     private fun styleActiveDurationPill() {
-        val accent = AccentColor.getAccentColorInt(this)
         val bg = GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
             cornerRadius = homeDp(999f).toFloat()
-            setColor(ColorUtils.setAlphaComponent(accent, 0x20))
-            setStroke(homeDp(1f), ColorUtils.setAlphaComponent(accent, 0x55))
+            setColor(ColorUtils.setAlphaComponent(Color.WHITE, 0x2B))
+            setStroke(homeDp(1f), ColorUtils.setAlphaComponent(Color.WHITE, 0x55))
         }
         tvActiveDuration.background = bg
-        tvActiveDuration.setTextColor(accent)
-        tvActiveDuration.setPadding(homeDp(10f), homeDp(4f), homeDp(10f), homeDp(4f))
+        tvActiveDuration.setTextColor(Color.WHITE)
+        tvActiveDuration.setPadding(homeDp(14f), homeDp(4f), homeDp(14f), homeDp(4f))
     }
 
     private fun homeDp(value: Float): Int =
@@ -3074,6 +3094,7 @@ class MainActivity : AppCompatActivity() {
         // while blocking is active; calm neutral card while idle.
         if (::heroProfileRoot.isInitialized) {
             applyHeroBackground(enabled)
+            styleHeroToggle(enabled)
         }
 
         // Profile label
@@ -3133,6 +3154,21 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
+        // The heatmap's "today" must never read BELOW the running session: tick accrual
+        // pauses on reinstalls/screen-off, so while blocking is active we lift the
+        // STORED total to the live session length (persisted — later sessions then
+        // accumulate on top of it) and read the accumulated value back for display.
+        if (::activityHeatmap.isInitialized && activityDaysMs.isNotEmpty()) {
+            if (enabled) {
+                BlockedTimeStore.ensureProtectionTodayAtLeast(this, activeDurationMs)
+            }
+            val todayMs = BlockedTimeStore.getProtectionTodayMs(this)
+            if (todayMs != activityDaysMs.last()) {
+                activityDaysMs[activityDaysMs.size - 1] = todayMs
+            }
+            activityHeatmap.updateTodayValue(todayMs)
+        }
+
         // Keep quick-entry text in sync with current state
         updateEmergencyHintVisibility()
         updateTempHintVisibility()
@@ -3177,28 +3213,43 @@ class MainActivity : AppCompatActivity() {
 
         tvTempHint.isVisible = hasActiveTemp || (shouldShowHomeTemporaryShortcut() && showTemporaryMode)
 
-        tvTempHint.text = when {
-            tempDisableRemaining > 0L -> getString(
-                R.string.dashboard_temp_status_disabled,
-                formatRemainingShort(tempDisableRemaining)
-            )
-            tempEnableRemaining > 0L -> getString(
-                R.string.dashboard_temp_status_enabled,
-                formatRemainingShort(tempEnableRemaining)
-            )
-            lockedByNfc -> getString(R.string.dashboard_temp_hint_locked_nfc)
-            SwitchModeStore.isEnabled(this) -> getString(R.string.dashboard_temp_hint_disable)
+        var active = false
+        when {
+            tempDisableRemaining > 0L -> {
+                tvTempTileTitle.text = getString(R.string.tile_temp_title_active_paused)
+                tvTempTileSubtitle.text = getString(
+                    R.string.tile_temp_subtitle_time,
+                    formatRemainingShort(tempDisableRemaining)
+                )
+                active = true
+            }
+            tempEnableRemaining > 0L -> {
+                tvTempTileTitle.text = getString(R.string.tile_temp_title_active_enabled)
+                tvTempTileSubtitle.text = getString(
+                    R.string.tile_temp_subtitle_time,
+                    formatRemainingShort(tempEnableRemaining)
+                )
+                active = true
+            }
+            lockedByNfc -> {
+                tvTempTileTitle.text = getString(R.string.tile_temp_title_plain)
+                tvTempTileSubtitle.text = getString(R.string.tile_temp_subtitle_locked)
+            }
+            SwitchModeStore.isEnabled(this) -> {
+                tvTempTileTitle.text = getString(R.string.tile_temp_title_pause)
+                tvTempTileSubtitle.text = getString(R.string.tile_temp_subtitle_choose)
+            }
             else -> {
                 val currentProfile = ProfileStore.getCurrent(this).orEmpty().trim()
-                if (currentProfile.isBlank()) {
-                    getString(R.string.dashboard_temp_hint_enable)
+                tvTempTileTitle.text = getString(R.string.tile_temp_title_enable)
+                tvTempTileSubtitle.text = if (currentProfile.isBlank()) {
+                    getString(R.string.tile_temp_subtitle_choose)
                 } else {
-                    getString(R.string.dashboard_temp_hint_enable_profile, currentProfile)
+                    currentProfile
                 }
             }
         }
-
-        tvTempHint.alpha = 1f
+        styleQuickTile(tvTempHint, tvTempTileTitle, active)
     }
 
     private fun updateEmergencyHintVisibility() {
@@ -3213,13 +3264,58 @@ class MainActivity : AppCompatActivity() {
 
         tvEmergencyHint.isVisible = shouldShowHomeEmergencyShortcut() && ((showEmergencyUnlock && featureEnabled) || active || paused)
 
-        tvEmergencyHint.text = when {
-            active -> getString(R.string.dashboard_emergency_hint_active, rem)
-            paused -> getString(R.string.dashboard_emergency_hint_paused, rem)
-            !featureEnabled -> getString(R.string.dashboard_emergency_hint_disabled)
-            usedToday -> getString(R.string.dashboard_emergency_hint_used_today)
-            else -> getString(R.string.dashboard_emergency_hint_ready)
+        var running = false
+        when {
+            active -> {
+                tvEmergencyTileTitle.text = getString(R.string.tile_emergency_title_active)
+                tvEmergencyTileSubtitle.text = getString(R.string.tile_emergency_subtitle_active, rem)
+                running = true
+            }
+            paused -> {
+                tvEmergencyTileTitle.text = getString(R.string.tile_emergency_title_paused)
+                tvEmergencyTileSubtitle.text = getString(R.string.tile_emergency_subtitle_paused, rem)
+                running = true
+            }
+            !featureEnabled -> {
+                tvEmergencyTileTitle.text = getString(R.string.tile_emergency_title)
+                tvEmergencyTileSubtitle.text = getString(R.string.tile_emergency_subtitle_off)
+            }
+            usedToday -> {
+                tvEmergencyTileTitle.text = getString(R.string.tile_emergency_title)
+                tvEmergencyTileSubtitle.text = getString(R.string.tile_emergency_subtitle_used)
+            }
+            else -> {
+                tvEmergencyTileTitle.text = getString(R.string.tile_emergency_title)
+                tvEmergencyTileSubtitle.text = getString(R.string.tile_emergency_subtitle_ready)
+            }
         }
+        styleQuickTile(tvEmergencyHint, tvEmergencyTileTitle, running)
+    }
+
+    /**
+     * Quick-entry action tiles (temporary timer / emergency bypass): neutral
+     * sub-card at rest, accent-tinted while their feature is running — the same
+     * tile design reads in both enabled and disabled mode.
+     */
+    private fun styleQuickTile(tile: LinearLayout, title: TextView, active: Boolean) {
+        val bg = GradientDrawable().apply {
+            cornerRadius = homeDp(16f).toFloat()
+            if (active) {
+                val accent = AccentColor.getAccentColorInt(this@MainActivity)
+                setColor(ColorUtils.setAlphaComponent(accent, 0x1F))
+                setStroke(homeDp(1f), ColorUtils.setAlphaComponent(accent, 0x55))
+            } else {
+                setColor(ContextCompat.getColor(this@MainActivity, R.color.foqos_surface_variant))
+            }
+        }
+        tile.background = bg
+        title.setTextColor(
+            if (active) {
+                AccentColor.getAccentColorInt(this)
+            } else {
+                ContextCompat.getColor(this, R.color.foqos_on_surface)
+            }
+        )
     }
 
     private fun requestEmergencyPinBeforeStart() {
@@ -4372,8 +4468,12 @@ class MainActivity : AppCompatActivity() {
     }
 }
 
-/** Foqos-style hero artwork: three stacked gradient blobs with lava-lamp outlines.
- *  Seamlessly loops (integer time frequencies), zero intrinsic size, animates while visible. */
+/** Foqos-style hero artwork: three STACKED gradient blobs with lava-lamp outlines.
+ *  The masses cascade diagonally like the Foqos hero: a dark mass peeking in the
+ *  top-right corner, a mid mass filling the bottom-right, and a big light mass
+ *  covering the left — each with its own vertical light->dark gradient, derived
+ *  from the live accent. Seamlessly loops (integer time frequencies), zero
+ *  intrinsic size, animates while visible. */
 private class HeroArtDrawable(private val accent: Int, private val radiusPx: Float) : android.graphics.drawable.Drawable() {
     private class Blob(
         val fx: Float, val fy: Float,   // center (fractions of card)
@@ -4389,21 +4489,23 @@ private class HeroArtDrawable(private val accent: Int, private val radiusPx: Flo
     private val path = android.graphics.Path()
     private val blobShaders = arrayOfNulls<android.graphics.Shader>(3)
 
-    // Back -> front: dark base wave, big saturated mid, light shape on top (smaller).
+    // Back -> front: mid mass (bottom-right), dark mass (top-right corner),
+    // light mass (left, front-most) — the Foqos "stack". The front mass runs
+    // deep at the top (white title stays legible) and pales toward its base.
     private val blobs = listOf(
-        Blob(0.85f, 1.10f, 0.95f, vary(0.22f, 1.0f, 0xFF), vary(-0.10f, 1.15f, 0xFF), 2.1f),
-        Blob(0.45f, 0.85f, 1.00f, vary(0.12f, 1.05f, 0xFF), vary(-0.06f, 1.1f, 0xFF), 4.3f),
-        Blob(0.45f, 0.05f, 0.78f, vary(0.42f, 0.72f, 0xFF), vary(0.16f, 0.92f, 0xFF), 0.6f),
+        Blob(1.10f, 0.80f, 0.62f, vary(0.16f, 0.95f, 0xFF, 0.80f), vary(-0.12f, 1.10f, 0xFF), 4.3f),
+        Blob(1.05f, 0.08f, 0.52f, vary(-0.02f, 1.05f, 0xFF), vary(-0.34f, 1.15f, 0xFF), 2.1f),
+        Blob(-0.12f, 0.58f, 0.80f, vary(-0.02f, 0.95f, 0xFF), vary(0.32f, 0.62f, 0xFF, 0.78f), 0.6f),
     )
     private var phase = 0f
     private var animator: android.animation.ValueAnimator? = null
     private var builtBounds = false
 
-    private fun vary(lighten: Float, satMul: Float, alpha: Int): Int {
+    private fun vary(lighten: Float, satMul: Float, alpha: Int, maxV: Float = 1f): Int {
         val hsv = FloatArray(3)
         android.graphics.Color.colorToHSV(accent, hsv)
         hsv[1] = (hsv[1] * satMul).coerceIn(0.3f, 1f)
-        hsv[2] = (hsv[2] + lighten).coerceIn(0f, 1f)
+        hsv[2] = (hsv[2] + lighten).coerceIn(0f, maxV)
         val c = android.graphics.Color.HSVToColor(hsv)
         return android.graphics.Color.argb(alpha, android.graphics.Color.red(c), android.graphics.Color.green(c), android.graphics.Color.blue(c))
     }
@@ -4415,7 +4517,7 @@ private class HeroArtDrawable(private val accent: Int, private val radiusPx: Flo
     private fun rebuildShaders(b: android.graphics.Rect) {
         basePaint.shader = android.graphics.LinearGradient(
             b.left.toFloat(), b.top.toFloat(), b.right.toFloat(), b.bottom.toFloat(),
-            vary(0.10f, 1.0f, 0xFF), vary(-0.32f, 1.15f, 0xFF),
+            vary(0.08f, 1.0f, 0xFF, 0.80f), vary(-0.24f, 1.10f, 0xFF),
             android.graphics.Shader.TileMode.CLAMP,
         )
         val w = b.width().toFloat().coerceAtLeast(1f)
@@ -4468,18 +4570,18 @@ private class HeroArtDrawable(private val accent: Int, private val radiusPx: Flo
         val t = phase // 0..2PI, seamless loop (all time terms are integer multiples)
 
         for ((i, blob) in blobs.withIndex()) {
-            val cx = b.left + blob.fx * w + kotlin.math.sin(t + blob.seed) * minDim * 0.05f
-            val cy = b.top + blob.fy * h + kotlin.math.cos(t * 2f + blob.seed) * minDim * 0.04f
+            val cx = b.left + blob.fx * w + kotlin.math.sin(t + blob.seed) * minDim * 0.035f
+            val cy = b.top + blob.fy * h + kotlin.math.cos(t * 2f + blob.seed) * minDim * 0.03f
             path.reset()
             val steps = 72
             val radius = blob.fr * minDim
             var first = true
             for (k in 0..steps) {
                 val theta = (k % steps) * (Math.PI * 2 / steps).toFloat()
+                // Gentle lava-lamp wobble: one soft mass per blob, not many lobes.
                 val wobble = 1f +
-                    0.14f * kotlin.math.sin(2f * theta + blob.seed + t) +
-                    0.09f * kotlin.math.sin(3f * theta - blob.seed * 1.7f - t * 2f) +
-                    0.05f * kotlin.math.sin(5f * theta + blob.seed * 2.3f + t)
+                    0.07f * kotlin.math.sin(2f * theta + blob.seed + t) +
+                    0.04f * kotlin.math.sin(3f * theta - blob.seed * 1.7f - t * 2f)
                 val r = radius * wobble
                 val x = cx + r * kotlin.math.cos(theta)
                 val y = cy + r * kotlin.math.sin(theta)

@@ -57,6 +57,69 @@ object Dialogs {
     fun builder(ctx: Context): MaterialAlertDialogBuilder = MaterialAlertDialogBuilder(ctx)
 }
 
+/**
+ * Rounded, dark-aware text input for dialogs (replaces the old underline EditText).
+ * Colors resolve from the caller's theme — Theme.Switchly maps all M3 roles to the
+ * night-aware foqos_* tokens, so the field reads correctly in light AND dark mode.
+ */
+fun Context.styledDialogEditText(): android.widget.EditText {
+    fun dp(v: Int): Int = (v * resources.displayMetrics.density + 0.5f).toInt()
+    val onSurface = MaterialColors.getColor(this, com.google.android.material.R.attr.colorOnSurface, Color.BLACK)
+    val bg = android.graphics.drawable.GradientDrawable().apply {
+        cornerRadius = dp(14).toFloat()
+        setColor(MaterialColors.getColor(this@styledDialogEditText, com.google.android.material.R.attr.colorSurfaceVariant, Color.TRANSPARENT))
+    }
+    return android.widget.EditText(this).apply {
+        isSingleLine = true
+        setTextColor(onSurface)
+        setHintTextColor(ColorUtils.setAlphaComponent(onSurface, 0x66))
+        background = bg
+        setPadding(dp(14), dp(12), dp(14), dp(12))
+        textSize = 15f
+    }
+}
+
+/**
+ * Foqos-style single-input dialog (rename / create): dark-aware surface,
+ * rounded field, accent-filled Save button, keyboard raised.
+ */
+fun Context.showSwitchlyInputDialog(
+    title: CharSequence,
+    initialText: String? = null,
+    hint: CharSequence? = null,
+    confirmText: CharSequence = getString(R.string.save),
+    onConfirm: (String) -> Unit
+): AlertDialog {
+    val input = styledDialogEditText().apply {
+        initialText?.let {
+            setText(it)
+            setSelection(it.length)
+        }
+        hint?.let { this.hint = it }
+    }
+    val container = android.widget.FrameLayout(this).apply {
+        val pad = (20 * resources.displayMetrics.density + 0.5f).toInt()
+        setPadding(pad, (4 * resources.displayMetrics.density).toInt(), pad, 0)
+        addView(input)
+    }
+    val dialog = MaterialAlertDialogBuilder(this)
+        .setTitle(title)
+        .setView(container)
+        .setPositiveButton(confirmText) { _, _ -> onConfirm(input.text.toString().trim()) }
+        .setNegativeButton(R.string.cancel, null)
+        .create()
+    dialog.setOnShowListener {
+        dialog.styleSwitchlyDialogButtons()
+        dialog.applySwitchlyDialogWidth(0.90f)
+        dialog.window?.setSoftInputMode(
+            android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE
+        )
+        input.requestFocus()
+    }
+    dialog.show()
+    return dialog
+}
+
 data class SwitchlyDialogOption(
     val title: CharSequence,
     val summary: CharSequence? = null,

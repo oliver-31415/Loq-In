@@ -20,8 +20,13 @@
 package at.saltyy.switchly.ui
 
 import android.app.Activity
+import android.content.res.ColorStateList
+import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
 import androidx.preference.PreferenceManager
 import at.saltyy.switchly.R
+import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.theme.CustomAccentApplier
 
 object ThemeUtils {
@@ -51,7 +56,37 @@ object ThemeUtils {
             if (accent == "custom") {
                 runCatching { CustomAccentApplier.applyIfNeeded(activity) }
             }
+            runCatching { retintUnthemedPrimaryIcons(activity) }
             runCatching { UiConsistency.apply(activity) }
+        }
+    }
+
+    /**
+     * Safety net for icons whose `?attr/colorPrimary` fails to pick up the accent
+     * theme variant (observed on Settings rows): anything still carrying the
+     * compile-time default green gets the live accent at runtime. Neutral tints
+     * (chevrons, white icons) are left alone — only the exact default green matches.
+     */
+    private fun retintUnthemedPrimaryIcons(activity: Activity) {
+        val accent = AccentColor.getAccentColorInt(activity)
+        val fallback = activity.getColor(R.color.accent_default_green) and 0x00FFFFFF
+        val root = activity.findViewById<View>(android.R.id.content) ?: return
+
+        fun walk(v: View) {
+            when (v) {
+                is ViewGroup -> for (i in 0 until v.childCount) walk(v.getChildAt(i))
+                is ImageView -> v.imageTintList?.let { list ->
+                    if ((list.defaultColor and 0x00FFFFFF) == fallback) {
+                        v.imageTintList = ColorStateList.valueOf(accent)
+                    }
+                }
+            }
+        }
+
+        walk(root)
+        // Late passes for rows bound after the first layout.
+        longArrayOf(200L, 600L).forEach { delay ->
+            root.postDelayed({ runCatching { walk(root) } }, delay)
         }
     }
 }

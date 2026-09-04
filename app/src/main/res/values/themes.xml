@@ -328,13 +328,35 @@
 
         <!-- Dialog overlay -->
         <item name="materialAlertDialogTheme">@style/ThemeOverlay.Switchly.Dialog</item>
+        <item name="alertDialogTheme">@style/ThemeOverlay.Switchly.Dialog.Alert</item>
+        <item name="colorBackgroundFloating">@color/foqos_surface</item>
+        <item name="android:colorBackgroundFloating">@color/foqos_surface</item>
     </style>
 
-    <!-- Dialog overlay that keeps controls in sync with the current accent theme. -->
+    <!-- Dialog overlay that keeps controls in sync with the current accent theme.
+         Colors are night-aware: plain (framework/appcompat) dialogs and Material
+         dialogs both resolve foqos_* tokens, which flip via values-night. -->
     <style name="ThemeOverlay.Switchly.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
-        <item name="colorControlActivated">?attr/colorPrimary</item>
-        <item name="colorControlHighlight">?attr/colorPrimary</item>
-        <item name="colorAccent">?attr/colorPrimary</item>
+        <item name="colorPrimary">@color/foqos_on_surface</item>
+        <item name="colorSecondary">@color/foqos_on_surface</item>
+        <item name="colorSurface">@color/foqos_surface</item>
+        <item name="colorOnSurface">@color/foqos_on_surface</item>
+        <item name="colorOnSurfaceVariant">@color/foqos_on_surface_variant</item>
+        <item name="colorControlActivated">@color/foqos_on_surface</item>
+        <item name="colorControlHighlight">?attr/colorOnSurface</item>
+        <item name="colorAccent">@color/foqos_on_surface</item>
+    </style>
+
+    <!-- Same tokens for plain androidx AlertDialog.Builder panels (alertDialogTheme). -->
+    <style name="ThemeOverlay.Switchly.Dialog.Alert" parent="ThemeOverlay.Material3.Dialog.Alert">
+        <item name="colorPrimary">@color/foqos_on_surface</item>
+        <item name="colorSecondary">@color/foqos_on_surface</item>
+        <item name="colorSurface">@color/foqos_surface</item>
+        <item name="colorOnSurface">@color/foqos_on_surface</item>
+        <item name="colorOnSurfaceVariant">@color/foqos_on_surface_variant</item>
+        <item name="colorControlActivated">@color/foqos_on_surface</item>
+        <item name="colorControlHighlight">?attr/colorOnSurface</item>
+        <item name="colorAccent">@color/foqos_on_surface</item>
     </style>
 
     <!-- =========================

@@ -230,7 +230,7 @@ and reuses `Switchly.OutlinedButton.CompactSegment`.
   the hero card; it previously re-showed itself at runtime via the home-layout-mode check,
   which is why XML visibility=gone alone didn't stick).
 
-### Commit 10 — "feat - SPA rebuild" (current head)
+### Commit 10 — "feat - SPA rebuild"
 
 **Files:** `activity_main.xml`, `sheet_profile_edit.xml` (new), `sheet_profile_bg.xml`/
 `bg_round_white*.xml` (new), `menu_top_main.xml`, `activity_settings.xml`, `MainActivity.kt`,
@@ -254,6 +254,130 @@ and reuses `Switchly.OutlinedButton.CompactSegment`.
 cards' VISIBILITY logic (updateQuickActionsVisibility etc.), those views are now
 XML-hidden — leave the XML gone flags intact. The sheet's delete flow must keep the
 last-profile guard.
+
+### Commit 11 — "feat - real-calendar heatmap, hero launcher pill, stacked blob art"
+
+**Files:** `FoqosHeatmapView.kt` (rework), `HeroArtDrawable` in `MainActivity.kt` (rework),
+`activity_main.xml`, `MainActivity.kt`, `strings_home.xml` (EN+DE)
+
+User-requested corrections to commits 8-10 (Foqos parity screenshots):
+
+- **Real-calendar heatmap**: `FoqosHeatmapView` now renders a true calendar — columns are
+  weekdays (Monday-first), rows are weeks (current week + 3 previous). Day-of-month labels
+  are drawn ABOVE EVERY cell (not just row 0 — that's what produced the confusing lone
+  "8 9 10 11 12 13 14" header). The current week's remaining days render as empty future
+  cells (like Foqos). Day-of-month inside filled cells kept; today ring kept. Data contract
+  unchanged (`setData(valuesMs, todayIdx)`, oldest→today); the view maps grid cells to the
+  array via DST-safe midnight math (`cellDates[]`/`daysAgo`). `onDaySelected` still passes
+  an index into the data array. NOTE: `todayIndex` param of `setData` is now unused.
+- **Activity section header floats above the card** (Foqos): `tvActivityTitle` +
+  `btnActivityHide` moved OUT of `cardActivity` into a page-level row. Hide now toggles the
+  whole `cardActivity` (label flips Hide/Show) — `tvHeatmapLegend`/`activityHeatmap`/
+  `tvActivityDetail` stay bound for data refreshes.
+- **Removed**: "This week" label (`tvActivityWeek`), 28 days/Week segmented toggle
+  (`btnChartHeatmap`/`btnChartWeek`), and the `WeeklyBarChartView` instance on Home
+  (`setActivityChartMode`/`isHeatmapMode` deleted; the widget class stays — statistics
+  screens still use it). Strings `activity_week_fmt`, `activity_chart_mode_*` removed EN+DE.
+- **Hero launcher pill**: `btnToggle` + `tvActiveDuration` moved INTO the hero card
+  (`rowHeroActions`, Foqos "Hold to Start" position); bottom dock `layoutLauncher` removed
+  (`layoutBottomDock` kept holding only the gone `bottomNav` for Kotlin compat); Home scroll
+  padding-bottom 120dp → 24dp (big screens now fit without scrolling).
+  Pill styling is state-dependent: frosted translucent-white when blocking is active
+  (`styleHeroToggle` + `styleActiveDurationPill` — both color-independent), plain accent
+  pill while idle. `applyProtectionChildOrder` skips views not parented to
+  `layoutStatusContent` (btnToggle now lives in the hero) — reorder logic already filters
+  by parent, no change needed there.
+- **Hero artwork = stacked**: `HeroArtDrawable` rebuilt to the Foqos cascade — exactly
+  three masses back→front (mid bottom-right → dark top-right corner → big light left),
+  each with its own vertical gradient (light→dark per blob) over a diagonal base gradient.
+  Wobble reduced to two gentle harmonics (one soft mass per blob, not multi-lobe) and
+  drift slowed; still a seamless 20s integer-frequency loop. `vary()` gained a `maxV`
+  lightness clamp; the front blob runs deep at the top (white title stays legible) and
+  pales toward its base. All colors derive from the live accent (color-independent).
+  Idle (not blocking) hero stays a neutral card.
+
+**Merge advice:** `cardActivity`, `tvActivityTitle` are page-level now; keep the
+header-row + card structure if upstream edits `cardActivity`'s children. The heatmap's
+calendar helpers (`refreshCalendar/cellDates/daysAgo/valueFor`) are new — don't lose them
+on upstream widget merges. `rowHeroActions` is new; `btnToggle`/`tvActiveDuration` still
+exist EXACTLY ONCE (inside the hero now) — keep Kotlin refs pointed there.
+
+### Commit 12 — "fix - heatmap first-measure squeeze; quick-entry action tiles"
+
+**Files:** `FoqosHeatmapView.kt`, `bg_tile_neutral.xml`/`bg_roundel_neutral.xml` (new),
+`activity_main.xml`, `MainActivity.kt`, `strings_home.xml` (EN+DE)
+
+- **Heatmap fit fix**: the view measured its height before `labelHeight`/`gap` were
+  initialized (onMeasure runs before onSizeChanged) → first measure underestimated the
+  height → cells got squeezed and left-aligned with dead space on the right. Geometry
+  (labelHeight/gap) is now initialized in `init`, the grid centers horizontally when a
+  height constraint shrinks cells (`offsetX`, also applied to touch mapping).
+- **Temporary / Emergency rows → action tiles**: the plain text hint rows are now compact
+  rounded sub-cards (icon roundel + bold title + state subtitle), side-by-side under the
+  hero. Same design in enabled and disabled mode; while a temporary timer or emergency
+  bypass is running the tile is accent-tinted (`styleQuickTile` — accent 12% fill + stroke,
+  accent title). `tvTempHint`/`tvEmergencyHint` changed from TextView to LinearLayout
+  (IDs kept for click listeners + custom-home order groups); texts moved to
+  `tvTempTileTitle`/`tvTempTileSubtitle`/`tvEmergencyTileTitle`/`tvEmergencyTileSubtitle`.
+  Tiles sit in a wrapper row → `applyProtectionChildOrder` skips them (parent filter),
+  like btnToggle. The hairline divider between hero and the hidden status block stays.
+- Compact strings added (`tile_temp_*`, `tile_emergency_*` EN+DE); old
+  `dashboard_temp_hint_*`/`dashboard_emergency_hint_*` strings remain for other screens
+  (`dashboard_temp_hint_locked_nfc` is still used by the temp sheet note).
+
+**Merge advice:** keep `tvTempHint`/`tvEmergencyHint` as LinearLayouts; if upstream edits
+their texts, mirror the change into the tile title/subtitle updates instead.
+
+### Commit 13 — "fix - real blocking-time heatmap, dark-aware accent dialogs, compact Home" (current head)
+
+**Files:** `BlockedTimeStore.kt`, `SwitchlyAccessibilityService.kt`, `themes.xml`,
+`Dialogs.kt`, `MainActivity.kt`, `sheet_profile_edit.xml` (via code), `activity_main.xml`,
+`FoqosHeatmapView.kt`
+
+- **Heatmap = actual blocking time**: the old data counted per-app "blocked foreground"
+  moments only (usageTick returned early while Switchly's own blocker UI was foreground,
+  deltas capped at 5s) — days showed tiny values. NEW `protection_ms_yyyymmdd` counter
+  accrues every 1s service heartbeat while enabled + interactive + keyguard-unlocked +
+  no emergency bypass (`SwitchlyAccessibilityService.trackProtectionTime`). Home heatmap
+  now reads `BlockedTimeStore.getFocusDayTotalsMs` = per-day `max(protection, legacy
+  blocked)` so old days keep their data and new days never double-count.
+  `getDayTotalsMs` kept (other callers).
+- **Dialogs dark-aware + accent**: root causes — Home never calls
+  `ThemeUtils.applyAccentTheme`, so `?attr/colorPrimary` resolved to the compile-time
+  green; plain `AlertDialog.Builder` panels use `colorBackgroundFloating`, which the
+  light-pinned theme never overrode (bright panel in dark mode). Fixes: Base theme now
+  sets `colorBackgroundFloating` (framework + appcompat) → `foqos_surface`,
+  `alertDialogTheme` → new `ThemeOverlay.Switchly.Dialog.Alert`, and
+  `ThemeOverlay.Switchly.Dialog` (materialAlertDialogTheme) got night-aware foqos_* color
+  items + neutral control colors (accent buttons still come from runtime
+  `styleSwitchlyDialogButtons`). Home's rename/create/delete dialogs now use
+  `MaterialAlertDialogBuilder` + `showSwitchlyInputDialog` (new helper in `Dialogs.kt`:
+  rounded `foqos_surface_variant` field, keyboard raised) + `showDestructiveAccented` for
+  delete. The remaining old-style `AlertDialog.Builder` sites in OTHER classes get the
+  panel fix for free via the theme.
+- **Profile sheet icons** tinted with the live accent at inflate time
+  (recursive pass, delete row skipped) instead of `?attr/colorPrimary` (green).
+- **Home compacted** (~90dp): scroll/toolbar padding, section margins, card paddings
+  18/16→14/12, hero padding 16→14 + tighter internal margins, toggle 52→50dp, tiles
+  58→54dp, heatmap labels sp13→sp12, `tvActivityDetail` hidden when empty.
+- **Heatmap cells show durations** (user preference over Foqos's day-number-in-cell):
+  filled cells render the blocked duration ("45m"/"2h") instead of repeating the day
+  number (which sits above every cell). TODAY's total reconciles against the live session
+  (`BlockedTimeStore.ensureProtectionTodayAtLeast(activeDurationMs)`, called from the
+  service tick every second while enabled) and is PERSISTED — so sessions accumulate
+  across enable/disable cycles and reinstalls never lose the running session's time.
+  Display reads `getProtectionTodayMs` each tick, never a stale in-memory lift.
+- **Accent-theme fallback** (verified green Settings icons while a preset accent was
+  active): `ThemeUtils` now runs `retintUnthemedPrimaryIcons` on every activity that
+  applies an accent theme — any ImageView still tinted exactly `accent_default_green`
+  gets the live accent (late passes at 200/600ms for rows bound after layout). Root
+  cause of the theme-variant miss is unresolved; this net is mode-independent.
+  The profile-sheet tint pass now skips by ancestry (delete row's red icon stays red).
+
+**Merge advice:** `ThemeOverlay.Switchly.Dialog.Alert` is new; keep BOTH dialog overlays'
+color items in sync. `getFocusDayTotalsMs`/`addProtectionMsToday` are additive to
+`BlockedTimeStore` — don't lose them on upstream merges; `trackProtectionTime` in the
+service must stay called from the 1s `tick` (early in `usageTick`).
 
 ## Known pitfalls (verified on device: Pixel 10 Pro XL, Android 17)
 
