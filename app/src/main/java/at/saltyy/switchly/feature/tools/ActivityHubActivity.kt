@@ -28,11 +28,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowInsetsControllerCompat
 import at.saltyy.switchly.R
 import at.saltyy.switchly.feature.inbox.BlockedInboxActivity
-import at.saltyy.switchly.feature.usage.ActiveTimeActivity
-import at.saltyy.switchly.feature.usage.ActivityHistoryActivity
 import at.saltyy.switchly.feature.usage.AppWebsiteUsageActivity
 import at.saltyy.switchly.feature.usage.ScreenUnlocksActivity
-import at.saltyy.switchly.feature.usage.SwitchlyOverviewActivity
 import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.ui.EdgeToEdgeUtils
 import at.saltyy.switchly.ui.ThemeUtils
@@ -75,11 +72,8 @@ class ActivityHubActivity : AppCompatActivity() {
         val iconTint = ColorStateList.valueOf(AccentColor.getAccentColorInt(this))
 
         listOf(
-            R.id.ivSwitchlyOverviewIcon,
-            R.id.ivActiveTimeIcon,
             R.id.ivAppWebsiteUsageIcon,
             R.id.ivScreenUnlocksIcon,
-            R.id.ivActivityHistoryIcon,
             R.id.ivBlockedNotificationsIcon,
         ).forEach { iconId ->
             findViewById<ImageView>(iconId)?.let { icon ->
@@ -92,20 +86,11 @@ class ActivityHubActivity : AppCompatActivity() {
     }
 
     private fun setupActivityCardActions() {
-        findViewById<View>(R.id.cardSwitchlyOverview).setOnClickListener {
-            startActivity(SwitchlyOverviewActivity.intent(this))
-        }
-        findViewById<View>(R.id.cardActiveTime).setOnClickListener {
-            startActivity(ActiveTimeActivity.intent(this))
-        }
         findViewById<View>(R.id.cardAppWebsiteUsage).setOnClickListener {
             startActivity(Intent(this, AppWebsiteUsageActivity::class.java))
         }
         findViewById<View>(R.id.cardScreenUnlocks).setOnClickListener {
             startActivity(ScreenUnlocksActivity.intent(this))
-        }
-        findViewById<View>(R.id.cardActivityHistory).setOnClickListener {
-            startActivity(ActivityHistoryActivity.intent(this))
         }
         findViewById<View>(R.id.cardBlockedNotifications).setOnClickListener {
             startActivity(Intent(this, BlockedInboxActivity::class.java))

@@ -357,7 +357,7 @@ class MostUsedAppsActivity : AppCompatActivity() {
         val start = customRangeStartMillis ?: startOfTodayMillis()
         val end = customRangeEndMillis ?: now
         val picker = MaterialDatePicker.Builder.dateRangePicker()
-            .setTheme(at.saltyy.switchly.R.style.ThemeOverlay_Switchly_DatePicker)
+            .setTheme(at.saltyy.switchly.theme.AccentColor.getDatePickerTheme(this))
             .setTitleText(R.string.activity_history_range_custom)
             .setSelection(Pair(localDayToDatePickerUtcMillis(start), localDayToDatePickerUtcMillis(end)))
             .build()

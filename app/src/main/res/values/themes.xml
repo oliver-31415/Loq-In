@@ -342,17 +342,51 @@
         <item name="android:colorBackgroundFloating">@color/foqos_surface</item>
     </style>
 
-    <!-- Date picker: follow the live accent (the stock M3 calendar overlay
-         resolves its own baseline palette, which reads as all-green here). -->
+    <!-- Date picker: concrete accent colors (no ?attr refs — a dialog theme
+         overlay cannot resolve attributes from the activity theme, and the
+         stock M3 calendar overlay otherwise falls back to its baseline
+         green palette). Per-accent copies below override these. -->
     <style name="ThemeOverlay.Switchly.DatePicker" parent="ThemeOverlay.Material3.MaterialCalendar">
-        <item name="colorPrimary">?attr/colorPrimary</item>
-        <item name="colorOnPrimary">?attr/colorOnPrimary</item>
-        <item name="colorSecondary">?attr/colorPrimary</item>
-        <item name="colorOnSecondary">?attr/colorOnPrimary</item>
+        <item name="colorPrimary">@color/accent_default_green</item>
+        <item name="colorOnPrimary">@color/foqos_on_primary</item>
+        <item name="colorSecondary">@color/accent_default_green</item>
+        <item name="colorOnSecondary">@color/foqos_on_primary</item>
         <item name="colorSurface">@color/foqos_surface</item>
         <item name="colorOnSurface">@color/foqos_on_surface</item>
         <item name="colorOnSurfaceVariant">@color/foqos_on_surface_variant</item>
         <item name="colorSurfaceContainerHigh">@color/foqos_surface_container_high</item>
+    </style>
+    <style name="ThemeOverlay.Switchly.DatePicker.Blue" parent="ThemeOverlay.Switchly.DatePicker">
+        <item name="colorPrimary">@color/accent_blue</item>
+        <item name="colorSecondary">@color/accent_blue</item>
+    </style>
+    <style name="ThemeOverlay.Switchly.DatePicker.Orange" parent="ThemeOverlay.Switchly.DatePicker">
+        <item name="colorPrimary">@color/accent_orange</item>
+        <item name="colorSecondary">@color/accent_orange</item>
+    </style>
+    <style name="ThemeOverlay.Switchly.DatePicker.Purple" parent="ThemeOverlay.Switchly.DatePicker">
+        <item name="colorPrimary">@color/accent_purple</item>
+        <item name="colorSecondary">@color/accent_purple</item>
+    </style>
+    <style name="ThemeOverlay.Switchly.DatePicker.Red" parent="ThemeOverlay.Switchly.DatePicker">
+        <item name="colorPrimary">@color/accent_red</item>
+        <item name="colorSecondary">@color/accent_red</item>
+    </style>
+    <style name="ThemeOverlay.Switchly.DatePicker.Pink" parent="ThemeOverlay.Switchly.DatePicker">
+        <item name="colorPrimary">@color/accent_pink</item>
+        <item name="colorSecondary">@color/accent_pink</item>
+    </style>
+    <style name="ThemeOverlay.Switchly.DatePicker.Teal" parent="ThemeOverlay.Switchly.DatePicker">
+        <item name="colorPrimary">@color/accent_teal</item>
+        <item name="colorSecondary">@color/accent_teal</item>
+    </style>
+    <style name="ThemeOverlay.Switchly.DatePicker.Amber" parent="ThemeOverlay.Switchly.DatePicker">
+        <item name="colorPrimary">@color/accent_amber</item>
+        <item name="colorSecondary">@color/accent_amber</item>
+    </style>
+    <style name="ThemeOverlay.Switchly.DatePicker.Gray" parent="ThemeOverlay.Switchly.DatePicker">
+        <item name="colorPrimary">@color/accent_gray</item>
+        <item name="colorSecondary">@color/accent_gray</item>
     </style>
 
     <!-- Dialog overlay that keeps controls in sync with the current accent theme.

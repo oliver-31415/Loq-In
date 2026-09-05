@@ -89,4 +89,23 @@ object AccentColor {
     fun getToolbarColor(context: Context): Int = ContextCompat.getColor(context, R.color.foqos_surface)
 
     fun getActiveColor(context: Context): ColorStateList = ColorStateList.valueOf(getAccentColorInt(context))
+
+    /**
+     * Concrete date-picker dialog theme for the current accent. The picker is
+     * themed with setTheme(), which resolves against a dialog overlay — not
+     * the activity theme — so ?attr references to the live accent cannot
+     * resolve there (they crash inflation). One overlay per accent carries
+     * concrete colors instead.
+     */
+    fun getDatePickerTheme(context: Context): Int = when (getOption(context)) {
+        Option.BLUE   -> R.style.ThemeOverlay_Switchly_DatePicker_Blue
+        Option.ORANGE -> R.style.ThemeOverlay_Switchly_DatePicker_Orange
+        Option.PURPLE -> R.style.ThemeOverlay_Switchly_DatePicker_Purple
+        Option.PINK   -> R.style.ThemeOverlay_Switchly_DatePicker_Pink
+        Option.TEAL   -> R.style.ThemeOverlay_Switchly_DatePicker_Teal
+        Option.RED    -> R.style.ThemeOverlay_Switchly_DatePicker_Red
+        Option.AMBER  -> R.style.ThemeOverlay_Switchly_DatePicker_Amber
+        Option.GRAY   -> R.style.ThemeOverlay_Switchly_DatePicker_Gray
+        else          -> R.style.ThemeOverlay_Switchly_DatePicker
+    }
 }

@@ -477,7 +477,7 @@ class ActivityHistoryActivity : AppCompatActivity() {
         val currentStart = customRangeStartMillis
         val currentEnd = customRangeEndMillis
         val builder = MaterialDatePicker.Builder.dateRangePicker()
-            .setTheme(at.saltyy.switchly.R.style.ThemeOverlay_Switchly_DatePicker)
+            .setTheme(at.saltyy.switchly.theme.AccentColor.getDatePickerTheme(this))
             .setTitleText(R.string.activity_history_range_custom_title)
 
         if (currentStart != null && currentEnd != null && currentStart <= currentEnd) {

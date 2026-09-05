@@ -2678,7 +2678,7 @@ class SchedulesActivity : AppCompatActivity() {
             }
 
             val picker = MaterialDatePicker.Builder.datePicker()
-                .setTheme(at.saltyy.switchly.R.style.ThemeOverlay_Switchly_DatePicker)
+                .setTheme(at.saltyy.switchly.theme.AccentColor.getDatePickerTheme(this@SchedulesActivity))
                 .setSelection(cal.timeInMillis)
                 .build()
             picker.addOnPositiveButtonClickListener { millis ->
