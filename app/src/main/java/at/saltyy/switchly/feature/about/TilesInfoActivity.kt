@@ -131,8 +131,8 @@ abstract class TilesInfoActivity : AppCompatActivity() {
                     cardElevation = dp(1).toFloat()
                     useCompatPadding = true
                     strokeWidth = dp(1)
-                    strokeColor = ContextCompat.getColor(this@TilesInfoActivity, R.color.switchly_card_stroke)
-                    setCardBackgroundColor(ContextCompat.getColor(this@TilesInfoActivity, R.color.switchly_card_bg))
+                    strokeColor = ContextCompat.getColor(this@TilesInfoActivity, R.color.foqos_outline_variant)
+                    setCardBackgroundColor(ContextCompat.getColor(this@TilesInfoActivity, R.color.foqos_surface))
                 }
                 val groupContainer = LinearLayout(this).apply {
                     orientation = LinearLayout.VERTICAL

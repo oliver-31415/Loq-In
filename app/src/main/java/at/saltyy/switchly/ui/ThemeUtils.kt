@@ -24,6 +24,7 @@ import android.content.res.ColorStateList
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
+import androidx.core.graphics.ColorUtils
 import androidx.preference.PreferenceManager
 import at.saltyy.switchly.R
 import at.saltyy.switchly.theme.AccentColor
@@ -37,6 +38,7 @@ object ThemeUtils {
         val accent = prefs.getString("pref_accent", "default") ?: "default"
 
         val themeRes = when (accent) {
+            "green"  -> R.style.Theme_Switchly_Accent_Green
             "blue"   -> R.style.Theme_Switchly_Accent_Blue
             "orange" -> R.style.Theme_Switchly_Accent_Orange
             "purple" -> R.style.Theme_Switchly_Accent_Purple
@@ -67,22 +69,62 @@ object ThemeUtils {
     }
 
     /**
-     * Safety net for icons whose `?attr/colorPrimary` fails to pick up the accent
-     * theme variant (observed on Settings rows): anything still carrying the
-     * compile-time default green gets the live accent at runtime. Neutral tints
-     * (chevrons, white icons) are left alone — only the exact default green matches.
+     * Safety net for views whose `?attr/colorPrimary` fails to pick up the accent
+     * theme variant (observed on Settings rows and the Schedules empty state):
+     * anything still carrying the compile-time default green gets the live
+     * accent at runtime. Neutral tints (chevrons, white icons) are left alone —
+     * only the exact default green matches. Covers icons, buttons (text, icon,
+     * stroke, filled backgrounds) and FABs.
      */
     private fun retintUnthemedPrimaryIcons(activity: Activity) {
         val accent = AccentColor.getAccentColorInt(activity)
         val fallback = activity.getColor(R.color.accent_default_green) and 0x00FFFFFF
         val root = activity.findViewById<View>(android.R.id.content) ?: return
 
+        fun matchesGreen(color: Int): Boolean {
+            return (color and 0x00FFFFFF) == fallback
+        }
+
         fun walk(v: View) {
             when (v) {
                 is ViewGroup -> for (i in 0 until v.childCount) walk(v.getChildAt(i))
                 is ImageView -> v.imageTintList?.let { list ->
-                    if ((list.defaultColor and 0x00FFFFFF) == fallback) {
+                    if (matchesGreen(list.defaultColor)) {
                         v.imageTintList = ColorStateList.valueOf(accent)
+                    }
+                }
+                is com.google.android.material.button.MaterialButton -> {
+                    v.strokeColor?.let { stroke ->
+                        if (matchesGreen(stroke.defaultColor)) {
+                            v.strokeColor = ColorStateList.valueOf(accent)
+                        }
+                    }
+                    if (matchesGreen(v.currentTextColor)) {
+                        v.setTextColor(accent)
+                    }
+                    v.iconTint?.let { iconTint ->
+                        if (matchesGreen(iconTint.defaultColor)) {
+                            v.iconTint = ColorStateList.valueOf(accent)
+                        }
+                    }
+                    v.backgroundTintList?.let { bg ->
+                        if (matchesGreen(bg.defaultColor) && android.graphics.Color.alpha(bg.defaultColor) > 24) {
+                            v.backgroundTintList = ColorStateList.valueOf(accent)
+                            val onAccent = if (ColorUtils.calculateLuminance(accent) > 0.5) {
+                                android.graphics.Color.BLACK
+                            } else {
+                                android.graphics.Color.WHITE
+                            }
+                            v.setTextColor(onAccent)
+                            v.iconTint = ColorStateList.valueOf(onAccent)
+                        }
+                    }
+                }
+                is com.google.android.material.floatingactionbutton.FloatingActionButton -> {
+                    v.backgroundTintList?.let { bg ->
+                        if (matchesGreen(bg.defaultColor)) {
+                            v.backgroundTintList = ColorStateList.valueOf(accent)
+                        }
                     }
                 }
             }

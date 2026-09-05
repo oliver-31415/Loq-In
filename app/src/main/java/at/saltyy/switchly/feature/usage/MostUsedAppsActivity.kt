@@ -269,7 +269,7 @@ class MostUsedAppsActivity : AppCompatActivity() {
                 insetTop = 0
                 insetBottom = 0
                 setPadding(dp(4), 0, dp(4), 0)
-                cornerRadius = dp(4)
+                cornerRadius = dp(14)
                 setAllCaps(false)
                 isCheckable = true
                 if (range == Range.CUSTOM) {
@@ -357,7 +357,7 @@ class MostUsedAppsActivity : AppCompatActivity() {
         val start = customRangeStartMillis ?: startOfTodayMillis()
         val end = customRangeEndMillis ?: now
         val picker = MaterialDatePicker.Builder.dateRangePicker()
-            .setTheme(com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialCalendar)
+            .setTheme(at.saltyy.switchly.R.style.ThemeOverlay_Switchly_DatePicker)
             .setTitleText(R.string.activity_history_range_custom)
             .setSelection(Pair(localDayToDatePickerUtcMillis(start), localDayToDatePickerUtcMillis(end)))
             .build()
@@ -567,8 +567,8 @@ class MostUsedAppsActivity : AppCompatActivity() {
         radius = dp(20).toFloat()
         cardElevation = dp(1).toFloat()
         strokeWidth = dp(1)
-        strokeColor = ContextCompat.getColor(this@MostUsedAppsActivity, R.color.switchly_card_stroke)
-        setCardBackgroundColor(ContextCompat.getColor(this@MostUsedAppsActivity, R.color.switchly_card_bg))
+        strokeColor = ContextCompat.getColor(this@MostUsedAppsActivity, R.color.foqos_outline_variant)
+        setCardBackgroundColor(ContextCompat.getColor(this@MostUsedAppsActivity, R.color.foqos_surface))
     }
 
     private fun sectionCardLayoutParams(): LinearLayout.LayoutParams = LinearLayout.LayoutParams(

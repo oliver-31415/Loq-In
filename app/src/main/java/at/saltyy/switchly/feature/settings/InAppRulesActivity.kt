@@ -321,10 +321,10 @@ class InAppRulesActivity : AppCompatActivity() {
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply { topMargin = dp(10) }
-            setCardBackgroundColor(ContextCompat.getColor(this@InAppRulesActivity, R.color.switchly_card_bg))
-            strokeColor = ContextCompat.getColor(this@InAppRulesActivity, R.color.switchly_card_stroke)
+            setCardBackgroundColor(ContextCompat.getColor(this@InAppRulesActivity, R.color.foqos_surface))
+            strokeColor = ContextCompat.getColor(this@InAppRulesActivity, R.color.foqos_outline_variant)
             strokeWidth = dp(1)
-            radius = dp(8).toFloat()
+            radius = dp(16).toFloat()
         }
 
         val body = LinearLayout(this).apply {
@@ -616,8 +616,8 @@ class InAppRulesActivity : AppCompatActivity() {
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT,
             ).apply { topMargin = dp(10) }
-            setCardBackgroundColor(ContextCompat.getColor(this@InAppRulesActivity, R.color.switchly_card_bg))
-            strokeColor = ContextCompat.getColor(this@InAppRulesActivity, R.color.switchly_card_stroke)
+            setCardBackgroundColor(ContextCompat.getColor(this@InAppRulesActivity, R.color.foqos_surface))
+            strokeColor = ContextCompat.getColor(this@InAppRulesActivity, R.color.foqos_outline_variant)
             strokeWidth = dp(1)
             radius = dp(20).toFloat()
             cardElevation = 0f

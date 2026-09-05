@@ -266,7 +266,7 @@ class ActiveTimeActivity : AppCompatActivity() {
             minHeight = dp(40)
             insetTop = 0
             insetBottom = 0
-            cornerRadius = dp(4)
+            cornerRadius = dp(14)
             setAllCaps(false)
             layoutParams = LinearLayout.LayoutParams(0, dp(40), 1f)
             setOnClickListener {
@@ -292,7 +292,7 @@ class ActiveTimeActivity : AppCompatActivity() {
             minHeight = dp(40)
             insetTop = 0
             insetBottom = 0
-            cornerRadius = dp(4)
+            cornerRadius = dp(14)
             setAllCaps(false)
             layoutParams = LinearLayout.LayoutParams(dp(44), dp(40))
             setOnClickListener {
@@ -334,26 +334,9 @@ class ActiveTimeActivity : AppCompatActivity() {
     }
 
     private fun syncRangeChipUi(activeChipId: Int) {
-        val activeBg = AccentColor.getAccentColorInt(this)
-        val activeText = if (MaterialColors.isColorLight(activeBg)) Color.BLACK else Color.WHITE
-        val inactiveBg = MaterialColors.getColor(this, com.google.android.material.R.attr.colorSurfaceVariant, 0)
-        val inactiveText = MaterialColors.getColor(this, com.google.android.material.R.attr.colorOnSurface, 0)
-        val outline = MaterialColors.getColor(this, com.google.android.material.R.attr.colorOutline, inactiveText)
-
-        listOf(chipToday, chipWeek, chipMonth, chipYear, chipCustom).forEach { button ->
-            val active = button.id == activeChipId
-            button.isChecked = active
-            button.isCheckable = true
-            button.isActivated = active
-            button.backgroundTintList = ColorStateList.valueOf(if (active) activeBg else inactiveBg)
-            button.setTextColor(if (active) activeText else inactiveText)
-            button.iconTint = ColorStateList.valueOf(if (active) activeText else inactiveText)
-            button.strokeColor = ColorStateList.valueOf(if (active) activeBg else outline)
-            button.strokeWidth = resources.displayMetrics.density.toInt().coerceAtLeast(1)
-            button.rippleColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(activeBg, 0x35))
-            button.jumpDrawablesToCurrentState()
-            button.refreshDrawableState()
-        }
+        val buttons = listOf(chipToday, chipWeek, chipMonth, chipYear, chipCustom)
+        buttons.forEach { it.isChecked = (it.id == activeChipId) }
+        at.saltyy.switchly.ui.SegmentedToggleUi.apply(this, buttons, activeChipId)
         updateCustomRangeSummary()
     }
 
@@ -386,7 +369,7 @@ class ActiveTimeActivity : AppCompatActivity() {
         val currentStart = customRangeStartMillis ?: startOfTodayMillis()
         val currentEnd = customRangeEndMillis ?: now
         val picker = MaterialDatePicker.Builder.dateRangePicker()
-            .setTheme(com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialCalendar)
+            .setTheme(at.saltyy.switchly.R.style.ThemeOverlay_Switchly_DatePicker)
             .setTitleText(R.string.activity_history_range_custom)
             .setSelection(androidx.core.util.Pair(localDayToDatePickerUtcMillis(currentStart), localDayToDatePickerUtcMillis(currentEnd)))
             .build()
@@ -725,8 +708,8 @@ class ActiveTimeActivity : AppCompatActivity() {
         (value * resources.displayMetrics.density + 0.5f).toInt()
 
     private fun MaterialCardView.applySwitchlyCardColors() {
-        setCardBackgroundColor(ContextCompat.getColor(this@ActiveTimeActivity, R.color.switchly_card_bg))
-        strokeColor = ContextCompat.getColor(this@ActiveTimeActivity, R.color.switchly_card_stroke)
+        setCardBackgroundColor(ContextCompat.getColor(this@ActiveTimeActivity, R.color.foqos_surface))
+        strokeColor = ContextCompat.getColor(this@ActiveTimeActivity, R.color.foqos_outline_variant)
         strokeWidth = dp(1)
     }
 

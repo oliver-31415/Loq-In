@@ -36,11 +36,8 @@ object WebUsageRepo {
     }
 
     fun getThisMonthSummary(ctx: Context, topN: Int = 20): UsageSummary {
-        val days = java.util.Calendar.getInstance()
-            .get(java.util.Calendar.DAY_OF_MONTH)
-            .coerceAtLeast(1)
-            .coerceAtMost(31)
-        return getSummary(ctx, days = days, topN = topN)
+        // Trailing 30 days, NOT the calendar month.
+        return getSummary(ctx, days = 30, topN = topN)
     }
 
     fun getThisYearSummary(ctx: Context, topN: Int = 20): UsageSummary {

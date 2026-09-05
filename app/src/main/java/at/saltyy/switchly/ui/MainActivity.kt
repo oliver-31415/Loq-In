@@ -161,7 +161,6 @@ import java.text.DateFormat
 import at.saltyy.switchly.data.prefs.BlockedTimeStore
 import at.saltyy.switchly.data.prefs.BlockCountStore
 import at.saltyy.switchly.ui.widgets.FoqosHeatmapView
-import at.saltyy.switchly.ui.SegmentedToggleUi
 import kotlin.concurrent.thread
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -474,6 +473,20 @@ class MainActivity : AppCompatActivity() {
             cardActivity.visibility = if (gridVisible) View.VISIBLE else View.GONE
             btnActivityHide.findViewById<TextView>(R.id.tvHeaderPillLabel)?.text =
                 getString(if (gridVisible) R.string.activity_hide else R.string.activity_show)
+        }
+        findViewById<View>(R.id.btnMoreInsights)?.setOnClickListener {
+            ActivityTransitionCompat.switchWithoutAnimation(
+                activity = this,
+                intent = Intent(this, ActivityHubActivity::class.java),
+            )
+        }
+        // Accent pill uses live code colors (never ?attr — the manifest theme
+        // can't resolve per-accent tokens, which is how green leaked in).
+        runCatching {
+            val pillAccent = AccentColor.getAccentColorInt(this)
+            findViewById<ImageView>(R.id.ivMoreInsightsIcon)?.imageTintList =
+                ColorStateList.valueOf(pillAccent)
+            findViewById<TextView>(R.id.tvMoreInsightsLabel)?.setTextColor(pillAccent)
         }
         applyHeatmapLegend()
         activityHeatmap.onDaySelected = { index -> onHeatmapDaySelected(index) }
@@ -1348,6 +1361,10 @@ class MainActivity : AppCompatActivity() {
                 isAllCaps = false
                 setTextColor(accent)
                 strokeColor = tint
+                strokeWidth = (1.25f * resources.displayMetrics.density + 0.5f).toInt()
+                cornerRadius = (14 * resources.displayMetrics.density + 0.5f).toInt()
+                minimumHeight = (52 * resources.displayMetrics.density + 0.5f).toInt()
+                iconTint = tint
                 rippleColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 0x22))
                 layoutParams = ViewGroup.MarginLayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
@@ -1706,7 +1723,9 @@ class MainActivity : AppCompatActivity() {
             row.addView(name)
             row.addView(check)
             row.setOnClickListener {
-                if (profile != current) {
+                // Read the live current profile: the `current` snapshot above
+                // goes stale after the first switch while the sheet is open.
+                if (profile != ProfileStore.getCurrent(this@MainActivity)) {
                     switchToProfile(profile)
                 }
                 // update checks in place
@@ -1763,36 +1782,8 @@ class MainActivity : AppCompatActivity() {
         tintAccented(view)
 
         val nameView = view.findViewById<TextView>(R.id.tvSheetProfileName)
-        val modeBlock = view.findViewById<MaterialButton>(R.id.btnSheetModeBlock)
-        val modeAllow = view.findViewById<MaterialButton>(R.id.btnSheetModeAllow)
 
         nameView.text = profile
-        val allowMode = ProfileRuleModeStore.isAllowMode(this, profile)
-        SegmentedToggleUi.apply(
-            this,
-            listOf(modeBlock, modeAllow),
-            if (allowMode) R.id.btnSheetModeAllow else R.id.btnSheetModeBlock,
-        )
-
-        fun refreshSheetMode() {
-            val allow = ProfileRuleModeStore.isAllowMode(this, profile)
-            SegmentedToggleUi.apply(
-                this,
-                listOf(modeBlock, modeAllow),
-                if (allow) R.id.btnSheetModeAllow else R.id.btnSheetModeBlock,
-            )
-        }
-
-        modeBlock.setOnClickListener {
-            ProfileRuleModeStore.setMode(this, profile, ProfileRuleModeStore.MODE_BLOCK_SELECTED)
-            refreshSheetMode()
-            refreshProfileRowsUi()
-        }
-        modeAllow.setOnClickListener {
-            ProfileRuleModeStore.setMode(this, profile, ProfileRuleModeStore.MODE_ALLOW_SELECTED)
-            refreshSheetMode()
-            refreshProfileRowsUi()
-        }
 
         view.findViewById<View>(R.id.btnSheetClose).setOnClickListener { sheet.dismiss() }
         view.findViewById<View>(R.id.rowSheetRename).setOnClickListener {
@@ -1816,13 +1807,6 @@ class MainActivity : AppCompatActivity() {
         view.findViewById<View>(R.id.rowSheetSchedules).setOnClickListener {
             sheet.dismiss()
             openRulesDestination(Intent(this, SchedulesActivity::class.java))
-        }
-        view.findViewById<View>(R.id.rowSheetInsights).setOnClickListener {
-            sheet.dismiss()
-            ActivityTransitionCompat.switchWithoutAnimation(
-                activity = this,
-                intent = Intent(this, ActivityHubActivity::class.java),
-            )
         }
         view.findViewById<View>(R.id.rowSheetDelete).setOnClickListener {
             val profiles = ProfileStore.getProfiles(this)
@@ -3920,9 +3904,15 @@ class MainActivity : AppCompatActivity() {
         if (labels.isNotEmpty()) {
             showSwitchlyOptionDialog(
                 title = title,
+                subtitle = getString(R.string.emergency_manage_subtitle),
                 options = labels.map { label ->
                     SwitchlyDialogOption(
                         title = label,
+                        iconRes = when (label) {
+                            getString(R.string.emergency_action_pause) -> R.drawable.schedule_24
+                            getString(R.string.emergency_action_resume) -> R.drawable.play_arrow_24
+                            else -> R.drawable.security_24
+                        },
                         destructive = label == getString(R.string.emergency_action_end)
                     )
                 }
@@ -4587,8 +4577,8 @@ class MainActivity : AppCompatActivity() {
                     name.text = item.label
                     rule.text = buildRuleText(ctx, item.pkg)
                     rule.visibility = View.VISIBLE
-                    cardRoot.setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.switchly_card_bg))
-                    cardRoot.strokeColor = ContextCompat.getColor(ctx, R.color.switchly_card_stroke)
+                    cardRoot.setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.foqos_surface))
+                    cardRoot.strokeColor = ContextCompat.getColor(ctx, R.color.foqos_outline_variant)
                     unavailableChip.visibility = View.GONE
                     unavailableHint.visibility = View.GONE
                 } else {

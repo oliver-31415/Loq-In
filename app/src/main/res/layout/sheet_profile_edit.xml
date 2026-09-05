@@ -107,38 +107,6 @@
             android:textColor="?attr/colorPrimary" />
     </LinearLayout>
 
-    <!-- Rule mode -->
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:text="@string/profile_sheet_mode_title"
-        android:textSize="13sp"
-        android:textColor="?android:attr/textColorSecondary" />
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:orientation="horizontal">
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSheetModeBlock"
-            style="@style/Switchly.OutlinedButton.CompactSegment"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="44dp"
-            android:text="@string/hero_chip_mode_block" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSheetModeAllow"
-            style="@style/Switchly.OutlinedButton.CompactSegment"
-            android:layout_width="0dp"
-            android:layout_weight="1"
-            android:layout_height="44dp"
-            android:layout_marginStart="8dp"
-            android:text="@string/hero_chip_mode_allow" />
-    </LinearLayout>
 
     <!-- Destinations -->
     <LinearLayout
@@ -363,65 +331,6 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/profile_sheet_schedules_summary"
-                android:textSize="12sp"
-                android:alpha="0.75"
-                android:textColor="?attr/colorOnSurface" />
-        </LinearLayout>
-
-        <ImageView
-            android:layout_width="18dp"
-            android:layout_height="18dp"
-            android:alpha="0.6"
-            android:contentDescription="@null"
-            android:src="@drawable/keyboard_arrow_right_24"
-            app:tint="?attr/colorOnSurface" />
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/rowSheetInsights"
-        style="@style/Switchly.SheetRow"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:paddingStart="10dp"
-        android:paddingTop="9dp"
-        android:paddingEnd="10dp"
-        android:paddingBottom="9dp"
-        android:background="@drawable/bg_tile_neutral">
-
-        <FrameLayout
-            android:layout_width="38dp"
-            android:layout_height="38dp"
-            android:background="@drawable/bg_roundel_neutral">
-
-            <ImageView
-                android:layout_width="19dp"
-                android:layout_height="19dp"
-                android:layout_gravity="center"
-                android:contentDescription="@null"
-                android:src="@drawable/bar_chart_24"
-                app:tint="?attr/colorPrimary" />
-        </FrameLayout>
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_weight="1"
-            android:orientation="vertical">
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/profile_sheet_insights"
-                android:textSize="15sp"
-                android:textStyle="bold"
-                android:textColor="?attr/colorOnSurface" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/profile_sheet_insights_summary"
                 android:textSize="12sp"
                 android:alpha="0.75"
                 android:textColor="?attr/colorOnSurface" />

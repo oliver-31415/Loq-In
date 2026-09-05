@@ -612,15 +612,22 @@ class PermissionsActivity : AppCompatActivity() {
         )
     }
 
+    private fun accentOkColor(): Int =
+        com.google.android.material.color.MaterialColors.getColor(
+            this, androidx.appcompat.R.attr.colorPrimary,
+            at.saltyy.switchly.theme.AccentColor.getAccentColorInt(this))
+
     private fun applyStatus(view: TextView, enabled: Boolean) {
-        val green = ContextCompat.getColor(this, R.color.status_ok)
+        val ok = com.google.android.material.color.MaterialColors.getColor(
+            view, androidx.appcompat.R.attr.colorPrimary,
+            at.saltyy.switchly.theme.AccentColor.getAccentColorInt(this))
         val red = ContextCompat.getColor(this, R.color.status_error)
 
         view.text = getString(
             if (enabled) R.string.permissions_status_enabled
             else R.string.permissions_status_disabled
         )
-        view.setTextColor(if (enabled) green else red)
+        view.setTextColor(if (enabled) ok else red)
     }
 
     private fun applyAccessibilityStatus(
@@ -660,7 +667,6 @@ class PermissionsActivity : AppCompatActivity() {
     }
 
     private fun applyBatteryStatus(view: TextView, enabled: Boolean) {
-        val green = ContextCompat.getColor(this, R.color.status_ok)
         val red = ContextCompat.getColor(this, R.color.status_error)
 
         val manuallyConfirmed = isBatteryOptimizationUserConfirmedMaxAvailable()
@@ -669,18 +675,17 @@ class PermissionsActivity : AppCompatActivity() {
             enabled -> getString(R.string.permissions_battery_allowed)
             else -> getString(R.string.permissions_battery_not_allowed)
         }
-        view.setTextColor(if (enabled) green else red)
+        view.setTextColor(if (enabled) accentOkColor() else red)
     }
 
     private fun applyExactAlarmsStatus(view: TextView, enabled: Boolean) {
-        val green = ContextCompat.getColor(this, R.color.status_ok)
         val red = ContextCompat.getColor(this, R.color.status_error)
 
         view.text = getString(
             if (enabled) R.string.permissions_exact_alarms_allowed
             else R.string.permissions_exact_alarms_not_allowed
         )
-        view.setTextColor(if (enabled) green else red)
+        view.setTextColor(if (enabled) accentOkColor() else red)
     }
 
     private fun applyNfcStatus(view: TextView) {

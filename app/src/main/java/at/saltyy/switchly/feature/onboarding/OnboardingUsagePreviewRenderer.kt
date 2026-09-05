@@ -202,7 +202,7 @@ object OnboardingUsagePreviewRenderer {
             cardElevation = 0f
             strokeWidth = dp(1f)
             strokeColor = ColorUtils.setAlphaComponent(accent, 0x72)
-            setCardBackgroundColor(ContextCompat.getColor(activity, R.color.switchly_card_bg))
+            setCardBackgroundColor(ContextCompat.getColor(activity, R.color.foqos_surface))
         }
         val content = LinearLayout(activity).apply {
             orientation = LinearLayout.VERTICAL
@@ -256,8 +256,8 @@ object OnboardingUsagePreviewRenderer {
             radius = dp(20f).toFloat()
             cardElevation = 0f
             strokeWidth = dp(1f)
-            strokeColor = ContextCompat.getColor(activity, R.color.switchly_card_stroke)
-            setCardBackgroundColor(ContextCompat.getColor(activity, R.color.switchly_card_bg))
+            strokeColor = ContextCompat.getColor(activity, R.color.foqos_outline_variant)
+            setCardBackgroundColor(ContextCompat.getColor(activity, R.color.foqos_surface))
         }
 
         val content = LinearLayout(activity).apply {
@@ -374,8 +374,8 @@ object OnboardingUsagePreviewRenderer {
             radius = dp(17f).toFloat()
             cardElevation = 0f
             strokeWidth = dp(1f)
-            strokeColor = ContextCompat.getColor(activity, R.color.switchly_card_stroke)
-            setCardBackgroundColor(ContextCompat.getColor(activity, R.color.switchly_card_bg))
+            strokeColor = ContextCompat.getColor(activity, R.color.foqos_outline_variant)
+            setCardBackgroundColor(ContextCompat.getColor(activity, R.color.foqos_surface))
         }
 
         val row = LinearLayout(activity).apply {

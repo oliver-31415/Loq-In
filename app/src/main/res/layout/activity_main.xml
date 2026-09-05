@@ -156,7 +156,8 @@
                     android:id="@+id/btnActivityHide"
                     style="@style/Switchly.HeaderPill"
                     android:layout_width="wrap_content"
-                    android:layout_height="38dp">
+                    android:layout_height="38dp"
+                    android:layout_marginEnd="8dp">
 
                     <ImageView
                         android:layout_width="15dp"
@@ -174,6 +175,29 @@
                         android:textSize="13sp"
                         android:textStyle="bold"
                         android:textColor="?attr/colorOnSurface" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/btnMoreInsights"
+                    style="@style/Switchly.HeaderPill"
+                    android:layout_width="wrap_content"
+                    android:layout_height="38dp">
+
+                    <ImageView
+                        android:id="@+id/ivMoreInsightsIcon"
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/bar_chart_24" />
+
+                    <TextView
+                        android:id="@+id/tvMoreInsightsLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="7dp"
+                        android:text="@string/activity_more_insights"
+                        android:textSize="13sp"
+                        android:textStyle="bold" />
                 </LinearLayout>
             </LinearLayout>
 

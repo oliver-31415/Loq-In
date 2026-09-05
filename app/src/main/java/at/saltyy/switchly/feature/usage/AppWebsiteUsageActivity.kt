@@ -334,7 +334,7 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
                 // Keep the Week definition consistent across all statistics pages: today plus the previous six local calendar days.
                 start.add(Calendar.DAY_OF_YEAR, -6)
             }
-            Range.MONTH -> start.set(Calendar.DAY_OF_MONTH, 1)
+            Range.MONTH -> start.add(Calendar.DAY_OF_YEAR, -29)
             Range.YEAR -> {
                 start.set(Calendar.MONTH, Calendar.JANUARY)
                 start.set(Calendar.DAY_OF_MONTH, 1)
@@ -445,7 +445,7 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
         val currentStart = customRangeStartMillis ?: startOfTodayMillis()
         val currentEnd = customRangeEndMillis ?: now
         val picker = MaterialDatePicker.Builder.dateRangePicker()
-            .setTheme(com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialCalendar)
+            .setTheme(at.saltyy.switchly.R.style.ThemeOverlay_Switchly_DatePicker)
             .setTitleText(R.string.activity_history_range_custom)
             .setSelection(androidx.core.util.Pair(localDayToDatePickerUtcMillis(currentStart), localDayToDatePickerUtcMillis(currentEnd)))
             .build()

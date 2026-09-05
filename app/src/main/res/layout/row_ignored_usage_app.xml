@@ -11,7 +11,7 @@
     android:clickable="true"
     android:focusable="true"
     app:cardElevation="0dp"
-    app:strokeColor="@color/switchly_card_stroke"
+    app:strokeColor="@color/foqos_outline_variant"
     app:strokeWidth="1dp">
 
     <LinearLayout

@@ -28,26 +28,19 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowInsetsControllerCompat
 import at.saltyy.switchly.R
 import at.saltyy.switchly.feature.inbox.BlockedInboxActivity
-import at.saltyy.switchly.feature.settings.SettingsActivity
 import at.saltyy.switchly.feature.usage.ActiveTimeActivity
 import at.saltyy.switchly.feature.usage.ActivityHistoryActivity
-import at.saltyy.switchly.feature.usage.AppLaunchesActivity
-import at.saltyy.switchly.feature.usage.MostUsedAppsActivity
 import at.saltyy.switchly.feature.usage.AppWebsiteUsageActivity
 import at.saltyy.switchly.feature.usage.ScreenUnlocksActivity
 import at.saltyy.switchly.feature.usage.SwitchlyOverviewActivity
 import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.ui.EdgeToEdgeUtils
-import at.saltyy.switchly.ui.MainActivity
 import at.saltyy.switchly.ui.ThemeUtils
-import at.saltyy.switchly.util.ActivityTransitionCompat
 import com.google.android.material.appbar.MaterialToolbar
-import com.google.android.material.bottomnavigation.BottomNavigationView
 
 class ActivityHubActivity : AppCompatActivity() {
 
     private lateinit var toolbar: MaterialToolbar
-    private lateinit var bottomNav: BottomNavigationView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         ThemeUtils.applyAccentTheme(this)
@@ -58,23 +51,21 @@ class ActivityHubActivity : AppCompatActivity() {
         setupToolbar()
         tintActivityIcons()
         setupActivityCardActions()
-        setupBottomNav()
     }
 
     private fun setupViews() {
         toolbar = findViewById(R.id.toolbar)
-        bottomNav = findViewById(R.id.bottomNav)
     }
 
     private fun setupToolbar() {
-        EdgeToEdgeUtils.setupClassic(activity = this, toolbar = toolbar, bottomNav = bottomNav)
-        EdgeToEdgeUtils.applyBottomNavGestureInset(bottomNav)
+        EdgeToEdgeUtils.setupClassic(activity = this, toolbar = toolbar)
         WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
         WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightNavigationBars = false
 
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(false)
-        toolbar.navigationIcon = null
+        toolbar.setNavigationIcon(R.drawable.keyboard_arrow_left_24)
+        toolbar.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
         toolbar.setBackgroundColor(AccentColor.getToolbarColor(this))
         toolbar.title = getString(R.string.nav_activity)
         supportActionBar?.title = getString(R.string.nav_activity)
@@ -87,8 +78,6 @@ class ActivityHubActivity : AppCompatActivity() {
             R.id.ivSwitchlyOverviewIcon,
             R.id.ivActiveTimeIcon,
             R.id.ivAppWebsiteUsageIcon,
-            R.id.ivMostUsedAppsIcon,
-            R.id.ivAppLaunchesIcon,
             R.id.ivScreenUnlocksIcon,
             R.id.ivActivityHistoryIcon,
             R.id.ivBlockedNotificationsIcon,
@@ -110,13 +99,7 @@ class ActivityHubActivity : AppCompatActivity() {
             startActivity(ActiveTimeActivity.intent(this))
         }
         findViewById<View>(R.id.cardAppWebsiteUsage).setOnClickListener {
-            startActivity(AppWebsiteUsageActivity.intent(this))
-        }
-        findViewById<View>(R.id.cardMostUsedApps).setOnClickListener {
-            startActivity(MostUsedAppsActivity.intent(this))
-        }
-        findViewById<View>(R.id.cardAppLaunches).setOnClickListener {
-            startActivity(AppLaunchesActivity.intent(this))
+            startActivity(Intent(this, AppWebsiteUsageActivity::class.java))
         }
         findViewById<View>(R.id.cardScreenUnlocks).setOnClickListener {
             startActivity(ScreenUnlocksActivity.intent(this))
@@ -126,38 +109,6 @@ class ActivityHubActivity : AppCompatActivity() {
         }
         findViewById<View>(R.id.cardBlockedNotifications).setOnClickListener {
             startActivity(Intent(this, BlockedInboxActivity::class.java))
-        }
-    }
-
-    private fun setupBottomNav() {
-        bottomNav.selectedItemId = R.id.nav_activity
-        bottomNav.setOnItemSelectedListener { item ->
-            when (item.itemId) {
-                R.id.nav_home -> {
-                    ActivityTransitionCompat.switchWithoutAnimation(
-                        activity = this,
-                        intent = Intent(this, MainActivity::class.java).apply {
-                            addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-                        },
-                        finishCurrent = true,
-                    )
-                    true
-                }
-                R.id.nav_rules -> {
-                    RulesHubActivity.openWithAccessCheck(
-                        source = this,
-                        finishSourceAfterOpen = true
-                    )
-                }
-                R.id.nav_activity -> true
-                R.id.nav_settings -> {
-                    SettingsActivity.openWithAccessCheck(
-                        source = this,
-                        finishSourceAfterOpen = true
-                    )
-                }
-                else -> false
-            }
         }
     }
 

@@ -43,11 +43,11 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                app:cardBackgroundColor="@color/switchly_card_bg"
+                app:cardBackgroundColor="@color/foqos_surface"
                 app:cardCornerRadius="16dp"
                 app:cardElevation="1dp"
                 app:cardUseCompatPadding="false"
-                app:strokeColor="@color/switchly_card_stroke"
+                app:strokeColor="@color/foqos_outline_variant"
                 app:strokeWidth="1dp">
 
                 <LinearLayout
@@ -165,11 +165,11 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                app:cardBackgroundColor="@color/switchly_card_bg"
+                app:cardBackgroundColor="@color/foqos_surface"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="1dp"
                 app:cardUseCompatPadding="true"
-                app:strokeColor="@color/switchly_card_stroke"
+                app:strokeColor="@color/foqos_outline_variant"
                 app:strokeWidth="1dp">
 
                 <LinearLayout
@@ -207,11 +207,11 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                app:cardBackgroundColor="@color/switchly_card_bg"
+                app:cardBackgroundColor="@color/foqos_surface"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="1dp"
                 app:cardUseCompatPadding="true"
-                app:strokeColor="@color/switchly_card_stroke"
+                app:strokeColor="@color/foqos_outline_variant"
                 app:strokeWidth="1dp">
 
                 <LinearLayout
@@ -249,11 +249,11 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                app:cardBackgroundColor="@color/switchly_card_bg"
+                app:cardBackgroundColor="@color/foqos_surface"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="1dp"
                 app:cardUseCompatPadding="true"
-                app:strokeColor="@color/switchly_card_stroke"
+                app:strokeColor="@color/foqos_outline_variant"
                 app:strokeWidth="1dp">
 
                 <LinearLayout
@@ -291,11 +291,11 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
-                app:cardBackgroundColor="@color/switchly_card_bg"
+                app:cardBackgroundColor="@color/foqos_surface"
                 app:cardCornerRadius="12dp"
                 app:cardElevation="1dp"
                 app:cardUseCompatPadding="true"
-                app:strokeColor="@color/switchly_card_stroke"
+                app:strokeColor="@color/foqos_outline_variant"
                 app:strokeWidth="1dp">
 
                 <LinearLayout

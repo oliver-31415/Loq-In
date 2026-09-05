@@ -247,7 +247,7 @@ class SwitchlyOverviewActivity : AppCompatActivity() {
             insetTop = 0
             insetBottom = 0
             setPadding(dp(3), 0, dp(3), 0)
-            cornerRadius = dp(4)
+            cornerRadius = dp(14)
             setAllCaps(false)
             textSize = 12f
             layoutParams = LinearLayout.LayoutParams(0, dp(40), 1f)
@@ -360,7 +360,8 @@ class SwitchlyOverviewActivity : AppCompatActivity() {
             parent = activityCardContent,
             iconRes = R.drawable.timer_24,
             labelRes = R.string.switchly_overview_active_time,
-            valueText = StatsFormat.prettyMsWithSeconds(activeTimeForRange())
+            valueText = StatsFormat.prettyMsWithSeconds(activeTimeForRange()),
+            onClick = { startActivity(ActiveTimeActivity.intent(this)) }
         )
         addStatRow(
             parent = activityCardContent,
@@ -554,11 +555,11 @@ class SwitchlyOverviewActivity : AppCompatActivity() {
             cardElevation = dp(1).toFloat()
             useCompatPadding = true
             setCardBackgroundColor(
-                ContextCompat.getColor(this@SwitchlyOverviewActivity, R.color.switchly_card_bg)
+                ContextCompat.getColor(this@SwitchlyOverviewActivity, R.color.foqos_surface)
             )
             strokeColor = ContextCompat.getColor(
                 this@SwitchlyOverviewActivity,
-                R.color.switchly_card_stroke
+                R.color.foqos_outline_variant
             )
             strokeWidth = dp(1)
             addView(content)
@@ -596,12 +597,26 @@ class SwitchlyOverviewActivity : AppCompatActivity() {
         labelRes: Int,
         valueText: String,
         last: Boolean = false,
+        onClick: (() -> Unit)? = null,
     ) {
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             minimumHeight = dp(58)
             setPadding(dp(16), dp(12), dp(16), dp(12))
+            if (onClick != null) {
+                isClickable = true
+                isFocusable = true
+                foreground = com.google.android.material.color.MaterialColors.getColor(
+                    this@SwitchlyOverviewActivity,
+                    com.google.android.material.R.attr.colorOnSurface,
+                    android.graphics.Color.TRANSPARENT
+                ).let { rippleColor ->
+                    android.content.res.ColorStateList.valueOf(rippleColor)
+                        .let { android.graphics.drawable.RippleDrawable(it, null, null) }
+                }
+                setOnClickListener { onClick() }
+            }
         }
         row.addView(ImageView(this).apply {
             setImageResource(iconRes)
@@ -632,7 +647,7 @@ class SwitchlyOverviewActivity : AppCompatActivity() {
         if (!last) {
             parent.addView(View(this).apply {
                 setBackgroundColor(
-                    ContextCompat.getColor(this@SwitchlyOverviewActivity, R.color.switchly_card_stroke)
+                    ContextCompat.getColor(this@SwitchlyOverviewActivity, R.color.foqos_outline_variant)
                 )
             }, LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,

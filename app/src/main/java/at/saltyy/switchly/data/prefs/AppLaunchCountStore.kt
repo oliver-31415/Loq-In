@@ -60,9 +60,11 @@ object AppLaunchCountStore {
             return emptyMap()
         }
         val wantedDays = linkedSetOf<Int>()
+        // Normalize to start-of-day (NOT noon): a noon anchor lands in the
+        // future for same-day morning windows, emptying the whole query.
         val cal = Calendar.getInstance().apply {
             timeInMillis = startMs
-            set(Calendar.HOUR_OF_DAY, 12)
+            set(Calendar.HOUR_OF_DAY, 0)
             set(Calendar.MINUTE, 0)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)

@@ -230,6 +230,8 @@
     <string name="profile_row_active">Selected</string>
     <string name="activity_hide">Hide</string>
     <string name="activity_show">Show</string>
+    <string name="activity_more_insights">More insights</string>
+    <string name="emergency_manage_subtitle">Once per day · 15 minutes · protection pauses while active</string>
     <string name="hero_stat_apps">Apps</string>
     <string name="hero_stat_domains">Domains</string>
     <string name="hero_stat_blocks">Blocks · 28d</string>

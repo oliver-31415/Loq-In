@@ -46,7 +46,7 @@
             android:minHeight="48dp"
             android:text="@string/hidden_apps_tab_usage"
             android:maxLines="1"
-            app:cornerRadius="4dp" />
+            app:cornerRadius="14dp" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnHiddenAppPickers"
@@ -56,7 +56,7 @@
             android:minHeight="48dp"
             android:text="@string/hidden_apps_tab_pickers"
             android:maxLines="1"
-            app:cornerRadius="4dp" />
+            app:cornerRadius="14dp" />
     </com.google.android.material.button.MaterialButtonToggleGroup>
 
     <com.google.android.material.textfield.TextInputLayout

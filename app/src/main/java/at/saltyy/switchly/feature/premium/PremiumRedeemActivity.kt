@@ -182,10 +182,8 @@ class PremiumRedeemActivity : AppCompatActivity() {
     private fun showStatus(message: String, isError: Boolean) {
         statusText.text = message
         statusText.setTextColor(
-            ContextCompat.getColor(
-                this,
-                if (isError) R.color.status_error else R.color.status_ok,
-            )
+            if (isError) ContextCompat.getColor(this, R.color.status_error)
+            else AccentColor.getAccentColorInt(this)
         )
         statusText.isVisible = true
     }

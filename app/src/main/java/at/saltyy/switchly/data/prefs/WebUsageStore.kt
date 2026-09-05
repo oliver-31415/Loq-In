@@ -149,7 +149,9 @@ object WebUsageStore {
         val wanted = HashSet<String>()
         val cal = Calendar.getInstance().apply {
             timeInMillis = startMs
-            set(Calendar.HOUR_OF_DAY, 12)
+            // Start-of-day anchor: noon lands in the future for same-day
+            // morning windows and empties the query.
+            set(Calendar.HOUR_OF_DAY, 0)
             set(Calendar.MINUTE, 0)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
@@ -182,7 +184,9 @@ object WebUsageStore {
         val out = ArrayList<WebsiteSession>()
         val cal = Calendar.getInstance().apply {
             timeInMillis = startMs
-            set(Calendar.HOUR_OF_DAY, 12)
+            // Start-of-day anchor: noon lands in the future for same-day
+            // morning windows and empties the query.
+            set(Calendar.HOUR_OF_DAY, 0)
             set(Calendar.MINUTE, 0)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)

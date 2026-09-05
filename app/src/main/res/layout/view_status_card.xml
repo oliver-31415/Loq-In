@@ -5,11 +5,11 @@
     android:id="@+id/statusCard"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    app:cardBackgroundColor="@color/switchly_card_bg"
+    app:cardBackgroundColor="@color/foqos_surface"
     app:cardCornerRadius="16dp"
     app:cardElevation="0dp"
     app:cardUseCompatPadding="false"
-    app:strokeColor="@color/switchly_card_stroke"
+    app:strokeColor="@color/foqos_outline_variant"
     app:strokeWidth="1dp">
 
     <LinearLayout

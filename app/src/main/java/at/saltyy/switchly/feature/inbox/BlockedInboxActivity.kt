@@ -578,8 +578,8 @@ class BlockedInboxActivity : AppCompatActivity() {
                     card.setCardBackgroundColor(ColorUtils.setAlphaComponent(accent, 0x14))
                 } else {
                     card.strokeWidth = (1 * holder.itemView.resources.displayMetrics.density).toInt().coerceAtLeast(1)
-                    card.strokeColor = ContextCompat.getColor(ctx, R.color.switchly_card_stroke)
-                    card.setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.switchly_card_bg))
+                    card.strokeColor = ContextCompat.getColor(ctx, R.color.foqos_outline_variant)
+                    card.setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.foqos_surface))
                 }
             }
             holder.more.visibility = if (selecting) View.GONE else View.VISIBLE

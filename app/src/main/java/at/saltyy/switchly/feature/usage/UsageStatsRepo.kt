@@ -121,15 +121,9 @@ object UsageStatsRepo {
     }
 
     fun getThisMonthSummary(ctx: Context, topN: Int = 20): UsageSummary {
-        val c = Calendar.getInstance()
-        c.set(Calendar.DAY_OF_MONTH, 1)
-        c.set(Calendar.HOUR_OF_DAY, 0)
-        c.set(Calendar.MINUTE, 0)
-        c.set(Calendar.SECOND, 0)
-        c.set(Calendar.MILLISECOND, 0)
-        val from = c.timeInMillis
-        val to = System.currentTimeMillis()
-        return getSummary(ctx, from, to, topN)
+        // Trailing 30 days (today + previous 29), NOT the calendar month —
+        // matches every other Month range in the app.
+        return getLastNDaysSummary(ctx, 30, topN)
     }
 
     fun getThisYearSummary(ctx: Context, topN: Int = 20): UsageSummary {

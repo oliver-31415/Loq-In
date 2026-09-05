@@ -52,6 +52,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.view.ViewCompat
+import androidx.core.view.children
 import at.saltyy.switchly.R
 import at.saltyy.switchly.data.prefs.ActivityHistoryLogStore
 import at.saltyy.switchly.theme.AccentColor
@@ -179,6 +180,9 @@ class ActivityHistoryActivity : AppCompatActivity() {
 
         coordinator.addView(FloatingActionButton(this).apply {
             setImageResource(R.drawable.tune_24)
+            val accent = AccentColor.getAccentColorInt(this@ActivityHistoryActivity)
+            backgroundTintList = ColorStateList.valueOf(accent)
+            imageTintList = ColorStateList.valueOf(if (MaterialColors.isColorLight(accent)) Color.BLACK else Color.WHITE)
             contentDescription = getString(R.string.stats_sort_filter)
             setOnClickListener { showSortFilterDialog() }
             useCompatPadding = true
@@ -356,7 +360,7 @@ class ActivityHistoryActivity : AppCompatActivity() {
             minHeight = dp(40)
             insetTop = 0
             insetBottom = 0
-            cornerRadius = dp(4)
+            cornerRadius = dp(14)
             setAllCaps(false)
             layoutParams = if (option == RangeFilter.CUSTOM) {
                 LinearLayout.LayoutParams(dp(44), dp(40))
@@ -473,7 +477,7 @@ class ActivityHistoryActivity : AppCompatActivity() {
         val currentStart = customRangeStartMillis
         val currentEnd = customRangeEndMillis
         val builder = MaterialDatePicker.Builder.dateRangePicker()
-            .setTheme(com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialCalendar)
+            .setTheme(at.saltyy.switchly.R.style.ThemeOverlay_Switchly_DatePicker)
             .setTitleText(R.string.activity_history_range_custom_title)
 
         if (currentStart != null && currentEnd != null && currentStart <= currentEnd) {
@@ -779,21 +783,16 @@ class ActivityHistoryActivity : AppCompatActivity() {
             .showAccented()
     }
 
-    private fun styleRangeButton(button: MaterialButton, active: Boolean) {
-        val activeBg = AccentColor.getAccentColorInt(this)
-        val activeText = readableAccentTextColor(activeBg)
-        val inactiveBg = MaterialColors.getColor(this, com.google.android.material.R.attr.colorSurfaceVariant, 0)
-        val inactiveText = MaterialColors.getColor(this, com.google.android.material.R.attr.colorOnSurface, 0)
-        val outline = MaterialColors.getColor(this, com.google.android.material.R.attr.colorOutline, inactiveText)
 
-        button.backgroundTintList = ColorStateList.valueOf(if (active) activeBg else inactiveBg)
-        button.setTextColor(if (active) activeText else inactiveText)
-        button.iconTint = ColorStateList.valueOf(if (active) activeText else inactiveText)
-        button.strokeColor = ColorStateList.valueOf(if (active) activeBg else outline)
-        button.strokeWidth = resources.displayMetrics.density.toInt().coerceAtLeast(1)
-        button.rippleColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(activeBg, 0x35))
-        button.jumpDrawablesToCurrentState()
-        button.refreshDrawableState()
+    private fun styleRangeButton(button: MaterialButton, active: Boolean) {
+        // Shared segmented look: one pill control, filled-accent selection.
+        // (Same language as SegmentedToggleUi on the detail pages.)
+        val buttons = (button.parent as? android.view.ViewGroup)
+            ?.children
+            ?.filterIsInstance<com.google.android.material.button.MaterialButton>()
+            ?.toList() ?: listOf(button)
+        val selectedId = buttons.firstOrNull { it.isChecked }?.id ?: button.id
+        at.saltyy.switchly.ui.SegmentedToggleUi.apply(this, buttons, selectedId)
     }
 
     private fun rowCard(
@@ -889,8 +888,8 @@ class ActivityHistoryActivity : AppCompatActivity() {
         }
 
     private fun MaterialCardView.applySwitchlyCardColors() {
-        setCardBackgroundColor(ContextCompat.getColor(this@ActivityHistoryActivity, R.color.switchly_card_bg))
-        strokeColor = ContextCompat.getColor(this@ActivityHistoryActivity, R.color.switchly_card_stroke)
+        setCardBackgroundColor(ContextCompat.getColor(this@ActivityHistoryActivity, R.color.foqos_surface))
+        strokeColor = ContextCompat.getColor(this@ActivityHistoryActivity, R.color.foqos_outline_variant)
         strokeWidth = dp(1)
     }
 

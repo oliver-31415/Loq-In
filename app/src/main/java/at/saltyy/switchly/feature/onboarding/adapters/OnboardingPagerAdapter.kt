@@ -24,7 +24,6 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.content.res.Configuration
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.Drawable
@@ -135,12 +134,11 @@ class OnboardingPagerAdapter(
             val completed = page.completionCheck?.invoke(activity) == true
             val accent = AccentColor.getAccentColorInt(activity)
             val onAccent = readableOnColor(accent)
-            val heroIconTint = onboardingHeroIconTint(activity)
 
-            // Keep onboarding hero icon card in sync with selected accent (including custom color).
-            iconCard.setCardBackgroundColor(accent)
-            icon.imageTintList = ColorStateList.valueOf(heroIconTint)
-            icon.setColorFilter(heroIconTint)
+            // Hero icon sits on a neutral foqos card with an accent icon —
+            // same language as the rest of the app (tiles, hub rows).
+            icon.setColorFilter(accent)
+            icon.imageTintList = ColorStateList.valueOf(accent)
 
             placeActionButton(page)
             renderDetails(activity, page, accent)
@@ -249,12 +247,12 @@ class OnboardingPagerAdapter(
 
                 // Every standard onboarding page uses the same hero and icon dimensions so the visual anchor does not jump vertically while swiping between steps.
                 iconCard.updateLayoutParams<ViewGroup.LayoutParams> {
-                    width = dp(144f)
-                    height = dp(144f)
+                    width = dp(112f)
+                    height = dp(112f)
                 }
                 icon.updateLayoutParams<ViewGroup.LayoutParams> {
-                    width = dp(84f)
-                    height = dp(84f)
+                    width = dp(52f)
+                    height = dp(52f)
                 }
             }
 
@@ -703,8 +701,8 @@ class OnboardingPagerAdapter(
             val density = itemView.resources.displayMetrics.density
             fun dp(value: Float): Int = (value * density).toInt()
 
-            val surface = ContextCompat.getColor(activity, R.color.switchly_card_bg)
-            val outline = ContextCompat.getColor(activity, R.color.switchly_card_stroke)
+            val surface = ContextCompat.getColor(activity, R.color.foqos_surface)
+            val outline = ContextCompat.getColor(activity, R.color.foqos_outline_variant)
             val onSurface = MaterialColors.getColor(itemView, com.google.android.material.R.attr.colorOnSurface)
             val choices = HomeModeDialogHelper.homeLayoutModeChoices(activity)
 
@@ -794,8 +792,8 @@ class OnboardingPagerAdapter(
             val density = itemView.resources.displayMetrics.density
             fun dp(value: Float): Int = (value * density).toInt()
 
-            val surface = ContextCompat.getColor(activity, R.color.switchly_card_bg)
-            val outline = ContextCompat.getColor(activity, R.color.switchly_card_stroke)
+            val surface = ContextCompat.getColor(activity, R.color.foqos_surface)
+            val outline = ContextCompat.getColor(activity, R.color.foqos_outline_variant)
             val onSurface = MaterialColors.getColor(itemView, com.google.android.material.R.attr.colorOnSurface)
 
             val card = MaterialCardView(activity).apply {
@@ -920,12 +918,12 @@ class OnboardingPagerAdapter(
             val density = itemView.resources.displayMetrics.density
             fun dp(value: Float): Int = (value * density).toInt()
 
-            val surface = ContextCompat.getColor(activity, R.color.switchly_card_bg)
+            val surface = ContextCompat.getColor(activity, R.color.foqos_surface)
             val onSurface = MaterialColors.getColor(
                 itemView,
                 com.google.android.material.R.attr.colorOnSurface
             )
-            val outline = ContextCompat.getColor(activity, R.color.switchly_card_stroke)
+            val outline = ContextCompat.getColor(activity, R.color.foqos_outline_variant)
             val card = MaterialCardView(activity).apply {
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
@@ -1065,8 +1063,8 @@ class OnboardingPagerAdapter(
         ) {
             val density = itemView.resources.displayMetrics.density
             fun dp(value: Float): Int = (value * density).toInt()
-            val surface = ContextCompat.getColor(activity, R.color.switchly_card_bg)
-            val outline = ContextCompat.getColor(activity, R.color.switchly_card_stroke)
+            val surface = ContextCompat.getColor(activity, R.color.foqos_surface)
+            val outline = ContextCompat.getColor(activity, R.color.foqos_outline_variant)
             val onSurface = MaterialColors.getColor(itemView, com.google.android.material.R.attr.colorOnSurface)
 
             val card = MaterialCardView(activity).apply {
@@ -1349,9 +1347,9 @@ class OnboardingPagerAdapter(
             val density = itemView.resources.displayMetrics.density
             fun dp(value: Float): Int = (value * density).toInt()
 
-            val surface = ContextCompat.getColor(activity, R.color.switchly_card_bg)
+            val surface = ContextCompat.getColor(activity, R.color.foqos_surface)
             val onSurface = MaterialColors.getColor(itemView, com.google.android.material.R.attr.colorOnSurface)
-            val outline = ContextCompat.getColor(activity, R.color.switchly_card_stroke)
+            val outline = ContextCompat.getColor(activity, R.color.foqos_outline_variant)
             val softAccent = ColorUtils.setAlphaComponent(accent, 18)
 
             val hasInfo = !info.isNullOrBlank()
@@ -1546,12 +1544,3 @@ private fun readableOnColor(color: Int): Int {
     }
 }
 
-private fun onboardingHeroIconTint(context: Context): Int {
-    val isNight = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
-        Configuration.UI_MODE_NIGHT_YES
-    return if (isNight) {
-        Color.WHITE
-    } else {
-        Color.rgb(24, 32, 28)
-    }
-}

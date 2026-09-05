@@ -10,11 +10,11 @@
     android:foreground="?attr/selectableItemBackground"
     android:clickable="true"
     android:focusable="true"
-    app:cardBackgroundColor="@color/switchly_card_bg"
+    app:cardBackgroundColor="@color/foqos_surface"
     app:cardCornerRadius="24dp"
     app:cardElevation="2dp"
     app:cardUseCompatPadding="true"
-    app:strokeColor="@color/switchly_card_stroke"
+    app:strokeColor="@color/foqos_outline_variant"
     app:strokeWidth="1dp">
 
     <LinearLayout

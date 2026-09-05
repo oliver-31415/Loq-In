@@ -446,6 +446,8 @@ class SchedulesActivity : AppCompatActivity() {
         invalidateOptionsMenu()
         val canInteract = canEditSchedules()
         findViewById<View>(R.id.fabAdd)?.apply {
+            (this as? com.google.android.material.floatingactionbutton.FloatingActionButton)?.backgroundTintList =
+                ColorStateList.valueOf(AccentColor.getAccentColorInt(this@SchedulesActivity))
             visibility = if (isSelectionMode) View.GONE else View.VISIBLE
             isEnabled = canInteract
             isClickable = canInteract
@@ -2676,7 +2678,7 @@ class SchedulesActivity : AppCompatActivity() {
             }
 
             val picker = MaterialDatePicker.Builder.datePicker()
-                .setTheme(com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialCalendar)
+                .setTheme(at.saltyy.switchly.R.style.ThemeOverlay_Switchly_DatePicker)
                 .setSelection(cal.timeInMillis)
                 .build()
             picker.addOnPositiveButtonClickListener { millis ->
@@ -3485,8 +3487,8 @@ private class ScheduleViewHolder(
             cardRoot.setCardBackgroundColor(ColorUtils.setAlphaComponent(accent, 0x22))
         } else {
             cardRoot.strokeWidth = dp(1)
-            cardRoot.strokeColor = ContextCompat.getColor(ctx, R.color.switchly_card_stroke)
-            cardRoot.setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.switchly_card_bg))
+            cardRoot.strokeColor = ContextCompat.getColor(ctx, R.color.foqos_outline_variant)
+            cardRoot.setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.foqos_surface))
         }
 
         title.text = s.title.ifBlank { s.profile }

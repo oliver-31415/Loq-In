@@ -97,7 +97,7 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_next"
-                        style="@style/Widget.MaterialComponents.Button"
+                        style="@style/Switchly.Button"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:text="@string/onb_next"

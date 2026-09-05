@@ -55,8 +55,10 @@ object AppUsageRepo {
     }
 
     fun getThisMonthSummary(ctx: Context, topN: Int = 20): UsageSummary {
-        val now = java.util.Calendar.getInstance()
-        val local = UsageStore.getUsageMsMapForMonth(ctx, now.get(java.util.Calendar.YEAR), now.get(java.util.Calendar.MONTH) + 1)
+        // Trailing 30 days (today + previous 29), NOT the calendar month.
+        val now = System.currentTimeMillis()
+        val from = now - java.util.concurrent.TimeUnit.DAYS.toMillis(29)
+        val local = UsageStore.getUsageMsMapForDateRange(ctx, from, now)
         return if (local.isNotEmpty()) {
             buildSummary(ctx, local, topN, UsageSanity.RangeCap.MONTH)
         } else {

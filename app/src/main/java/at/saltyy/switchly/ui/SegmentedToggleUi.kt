@@ -37,7 +37,7 @@ object SegmentedToggleUi {
         val accent = AccentColor.getAccentColorInt(context)
         val activeText = if (MaterialColors.isColorLight(accent)) Color.BLACK else Color.WHITE
         val strokeWidth = dp(context, 1)
-        val cornerRadius = dp(context, 4)
+        val cornerRadius = dp(context, 14)
 
         buttons.forEach { button ->
             val selected = button.id == selectedId

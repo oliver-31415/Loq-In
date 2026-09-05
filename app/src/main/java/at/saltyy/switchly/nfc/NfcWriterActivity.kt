@@ -94,7 +94,7 @@ class NfcWriterActivity : AppCompatActivity() {
             statusRow.alpha = 1f
             statusProgress.isVisible = false
 
-            val okColor = ContextCompat.getColor(this, R.color.status_ok)
+            val okColor = at.saltyy.switchly.theme.AccentColor.getAccentColorInt(this)
             val errorColor = ContextCompat.getColor(this, R.color.status_error)
             val neutralColor = ContextCompat.getColor(this, R.color.status_neutral)
 

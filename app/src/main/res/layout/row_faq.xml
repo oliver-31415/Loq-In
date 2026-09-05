@@ -8,11 +8,11 @@
     android:layout_marginHorizontal="2dp"
     android:layout_marginVertical="5dp"
     android:foreground="?attr/selectableItemBackground"
-    app:cardBackgroundColor="@color/switchly_card_bg"
+    app:cardBackgroundColor="@color/foqos_surface"
     app:cardCornerRadius="18dp"
     app:cardElevation="1dp"
     app:cardUseCompatPadding="true"
-    app:strokeColor="@color/switchly_card_stroke"
+    app:strokeColor="@color/foqos_outline_variant"
     app:strokeWidth="1dp">
 
     <LinearLayout

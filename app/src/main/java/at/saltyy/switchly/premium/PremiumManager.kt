@@ -46,6 +46,13 @@ object PremiumManager {
     private const val KEY_PREMIUM_REDEEMED_AT = "premium_redeemed_at"
     private const val KEY_PREMIUM_CODE_LAST4 = "premium_code_last4"
 
+    /**
+     * Community fork unlock. When true, [isPremium] always returns true so
+     * every premium-gated feature works without a purchase. The purchase,
+     * restore and redeem plumbing underneath is untouched.
+     */
+    private const val COMMUNITY_UNLOCK = true
+
     const val SOURCE_NONE = "none"
     const val SOURCE_GOOGLE_PLAY_BILLING = "google_play_billing"
     const val SOURCE_STRIPE_DIRECT = "stripe_direct"
@@ -61,6 +68,13 @@ object PremiumManager {
             BuildConfig.SWITCHLY_REDEEM_CODES_ENABLED
 
     fun isPremium(ctx: Context): Boolean {
+        // Community fork: premium features (extra accents + custom picker,
+        // NFC custom durations, Wi-Fi/Bluetooth/location schedules, extended
+        // statistics) are unlocked for everyone — no purchase, no paywall.
+        // Purchase/restore flows below are left intact but inert.
+        if (COMMUNITY_UNLOCK) {
+            return true
+        }
         if (!isPremiumSupportedBuild()) {
             return false
         }

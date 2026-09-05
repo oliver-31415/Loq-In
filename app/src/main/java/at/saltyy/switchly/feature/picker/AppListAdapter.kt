@@ -271,8 +271,8 @@ class AppListAdapter(
 
         private fun applyNormalRowStyle() {
             val ctx = itemView.context
-            cardRoot.setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.switchly_card_bg))
-            cardRoot.strokeColor = ContextCompat.getColor(ctx, R.color.switchly_card_stroke)
+            cardRoot.setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.foqos_surface))
+            cardRoot.strokeColor = ContextCompat.getColor(ctx, R.color.foqos_outline_variant)
         }
 
         fun bind(item: AppEntry) {

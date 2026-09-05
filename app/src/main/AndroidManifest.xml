@@ -129,6 +129,7 @@
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
         android:theme="@style/Theme.Switchly"
+        android:screenOrientation="portrait"
         android:supportsRtl="true"
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
@@ -420,14 +421,14 @@
             android:name=".feature.usage.AppWebsiteUsageActivity"
             android:exported="false" />
 
-        <!-- Most-used app screen-time distribution -->
-        <activity
-            android:name=".feature.usage.MostUsedAppsActivity"
-            android:exported="false" />
-
         <!-- App usage detail screen -->
         <activity
             android:name=".feature.usage.AppUsageDetailActivity"
+            android:exported="false" />
+
+        <!-- Most-used app screen-time distribution -->
+        <activity
+            android:name=".feature.usage.MostUsedAppsActivity"
             android:exported="false" />
 
         <!-- App launch statistics and timeline screens -->
@@ -435,13 +436,14 @@
             android:name=".feature.usage.AppLaunchesActivity"
             android:exported="false" />
 
+        <!-- App launch timeline screen (Opens tab deep-link target) -->
+        <activity
+            android:name=".feature.usage.AppLaunchDetailActivity"
+            android:exported="false" />
+
         <!-- Apps excluded from usage statistics -->
         <activity
             android:name=".feature.usage.IgnoredUsageAppsActivity"
-            android:exported="false" />
-
-        <activity
-            android:name=".feature.usage.AppLaunchDetailActivity"
             android:exported="false" />
 
         <!-- Screen unlock statistics and detail timeline screens -->

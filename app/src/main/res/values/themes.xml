@@ -9,6 +9,15 @@
 
     <style name="Theme.Switchly" parent="Theme.Switchly.Base">
         <item name="android:windowLightStatusBar">true</item>
+        <!-- Default (green) accent tokens so ?attr/colorPrimaryContainer etc.
+             resolve per-accent; variants below override all of these. -->
+        <item name="colorPrimary">@color/accent_default_green</item>
+        <item name="colorPrimaryVariant">@color/accent_default_green</item>
+        <item name="colorSecondary">@color/accent_default_green</item>
+        <item name="colorPrimaryContainer">@color/accent_green_container</item>
+        <item name="colorOnPrimaryContainer">@color/accent_green_on_container</item>
+        <item name="colorSecondaryContainer">@color/accent_green_container</item>
+        <item name="colorOnSecondaryContainer">@color/accent_green_on_container</item>
     </style>
     <!-- Material 3 + Expressive: soft warm neutrals, generous corner radii, calm green accent -->
     <!-- Base application theme -->
@@ -333,12 +342,23 @@
         <item name="android:colorBackgroundFloating">@color/foqos_surface</item>
     </style>
 
+    <!-- Date picker: follow the live accent (the stock M3 calendar overlay
+         resolves its own baseline palette, which reads as all-green here). -->
+    <style name="ThemeOverlay.Switchly.DatePicker" parent="ThemeOverlay.Material3.MaterialCalendar">
+        <item name="colorPrimary">?attr/colorPrimary</item>
+        <item name="colorOnPrimary">?attr/colorOnPrimary</item>
+        <item name="colorSecondary">?attr/colorPrimary</item>
+        <item name="colorOnSecondary">?attr/colorOnPrimary</item>
+        <item name="colorSurface">@color/foqos_surface</item>
+        <item name="colorOnSurface">@color/foqos_on_surface</item>
+        <item name="colorOnSurfaceVariant">@color/foqos_on_surface_variant</item>
+        <item name="colorSurfaceContainerHigh">@color/foqos_surface_container_high</item>
+    </style>
+
     <!-- Dialog overlay that keeps controls in sync with the current accent theme.
          Colors are night-aware: plain (framework/appcompat) dialogs and Material
          dialogs both resolve foqos_* tokens, which flip via values-night. -->
     <style name="ThemeOverlay.Switchly.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
-        <item name="colorPrimary">@color/foqos_on_surface</item>
-        <item name="colorSecondary">@color/foqos_on_surface</item>
         <item name="colorSurface">@color/foqos_surface</item>
         <item name="colorOnSurface">@color/foqos_on_surface</item>
         <item name="colorOnSurfaceVariant">@color/foqos_on_surface_variant</item>
@@ -362,6 +382,17 @@
     <!-- =========================
          THEME: Accent variants
          ========================= -->
+    <!-- Green (explicit twin of the default green base) -->
+    <style name="Theme.Switchly.Accent.Green" parent="Theme.Switchly">
+        <item name="colorPrimary">@color/accent_green</item>
+        <item name="colorPrimaryVariant">@color/accent_green</item>
+        <item name="colorSecondary">@color/accent_green</item>
+        <item name="colorPrimaryContainer">@color/accent_green_container</item>
+        <item name="colorOnPrimaryContainer">@color/accent_green_on_container</item>
+        <item name="colorSecondaryContainer">@color/accent_green_container</item>
+        <item name="colorOnSecondaryContainer">@color/accent_green_on_container</item>
+    </style>
+
     <!-- Blue -->
     <style name="Theme.Switchly.Accent.Blue" parent="Theme.Switchly">
         <item name="colorPrimary">@color/accent_blue</item>

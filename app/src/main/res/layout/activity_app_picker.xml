@@ -137,7 +137,7 @@
                             android:maxLines="2"
                             android:text="@string/profile_rule_mode_block"
                             android:textSize="13sp"
-                            app:cornerRadius="4dp" />
+                            app:cornerRadius="16dp" />
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnAllowSelectedMode"
@@ -148,7 +148,7 @@
                             android:maxLines="2"
                             android:text="@string/profile_rule_mode_allow"
                             android:textSize="13sp"
-                            app:cornerRadius="4dp" />
+                            app:cornerRadius="16dp" />
                     </com.google.android.material.button.MaterialButtonToggleGroup>
 
                     <LinearLayout

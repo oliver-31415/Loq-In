@@ -153,7 +153,7 @@ class IgnoredUsageAppsAdapter(
             val unchecked = MaterialColors.getColor(
                 checkBox.context,
                 com.google.android.material.R.attr.colorOutline,
-                checkBox.resources.getColor(R.color.switchly_card_stroke, checkBox.context.theme),
+                checkBox.resources.getColor(R.color.foqos_outline_variant, checkBox.context.theme),
             )
             checkBox.buttonTintList = ColorStateList(
                 arrayOf(
@@ -171,7 +171,7 @@ class IgnoredUsageAppsAdapter(
             card.strokeColor = if (selected) {
                 AccentColor.getAccentColorInt(card.context)
             } else {
-                card.resources.getColor(R.color.switchly_card_stroke, card.context.theme)
+                card.resources.getColor(R.color.foqos_outline_variant, card.context.theme)
             }
         }
 

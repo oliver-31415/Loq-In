@@ -45,6 +45,8 @@ import at.saltyy.switchly.feature.settings.ManageBlockedWebsitesActivity
 import at.saltyy.switchly.feature.stats.StatsFormat
 import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.ui.EdgeToEdgeUtils
+import at.saltyy.switchly.ui.SegmentedToggleUi
+import at.saltyy.switchly.ui.widgets.UsageDetailChartView
 import at.saltyy.switchly.ui.ThemeUtils
 import at.saltyy.switchly.ui.dialog.showAccented
 import at.saltyy.switchly.ui.dialog.SwitchlyDialogOption
@@ -98,6 +100,7 @@ class WebsiteUsageDetailActivity : AppCompatActivity() {
 
     private var currentRange: Range = Range.TODAY
     private var currentSeries: List<Long> = emptyList()
+    private var currentXAxisLabels: List<String> = emptyList()
     private var customRangeStartMillis: Long? = null
     private var customRangeEndMillis: Long? = null
     private var customRangePickerShowing = false
@@ -147,11 +150,7 @@ class WebsiteUsageDetailActivity : AppCompatActivity() {
 
         // Today
         val today = WebUsageStore.getUsageMsToday(this, domain)
-        b.todayUsage.text = getString(
-            R.string.usage_kv_fmt,
-            getString(R.string.usage_today),
-            StatsFormat.prettyMsWithSeconds(today)
-        )
+        setHeroTotal(getString(R.string.usage_today), today)
 
         refreshDailyLimit(domain)
         b.btnEditLimits.setOnClickListener {
@@ -258,71 +257,47 @@ class WebsiteUsageDetailActivity : AppCompatActivity() {
     private fun applyRange(domain: String, range: Range) {
         currentRange = range
         updateCustomRangeSummary()
+        syncRangeToggleUi()
         when (range) {
             Range.TODAY -> {
                 WebUsageStore.flush(this)
                 currentSeries = listOf(WebUsageStore.getUsageMsToday(this, domain))
-                b.chart.visibility = View.GONE
-                b.weekdayRow.visibility = View.GONE
-                b.lineChart.visibility = View.GONE
+                currentXAxisLabels = listOf(getString(R.string.usage_today))
                 val total = currentSeries.sum()
-                b.rangeTotal.text = getString(
-                    R.string.usage_kv_fmt,
-                    getString(R.string.usage_today),
-                    StatsFormat.prettyMsWithSeconds(total)
-                )
+                setHeroTotal(getString(R.string.usage_today), total)
+                renderChart()
+                updateChartSummary(total)
             }
 
             Range.WEEK -> {
                 val perDay = WebUsageStore.getUsageMsForLastNDays(this, domain, 7)
                 currentSeries = perDay
-                b.chart.visibility = View.VISIBLE
-                b.weekdayRow.visibility = View.VISIBLE
-                b.lineChart.visibility = View.GONE
-                b.chart.setValues(perDay)
-                b.lineChart.setXAxisLabels(emptyList())
-
+                currentXAxisLabels = weekdayLabelsLast7()
                 val total = perDay.sum()
-                b.rangeTotal.text = getString(
-                    R.string.usage_kv_fmt,
-                    getString(R.string.usage_week_total),
-                    StatsFormat.prettyMsWithSeconds(total)
-                )
+                setHeroTotal(getString(R.string.usage_week_total), total)
+                renderChart()
+                updateChartSummary(total)
             }
 
             Range.MONTH -> {
                 val days = daysSinceStartOfMonth()
                 val perDay = WebUsageStore.getUsageMsForLastNDays(this, domain, days)
                 currentSeries = perDay
-                b.chart.visibility = View.GONE
-                b.weekdayRow.visibility = View.GONE
-                b.lineChart.visibility = View.VISIBLE
-                b.lineChart.setValues(perDay)
-                b.lineChart.setXAxisLabels(buildDayIndexLabels(perDay.size))
-
+                currentXAxisLabels = buildDayIndexLabels(perDay.size)
                 val total = perDay.sum()
-                b.rangeTotal.text = getString(
-                    R.string.usage_kv_fmt,
-                    getString(R.string.usage_month_total),
-                    StatsFormat.prettyMsWithSeconds(total)
-                )
+                setHeroTotal(getString(R.string.usage_month_total), total)
+                renderChart()
+                updateChartSummary(total)
             }
 
             Range.YEAR -> {
                 val perMonth = getThisYearMonthsTotals(domain)
                 currentSeries = perMonth
-                b.chart.visibility = View.GONE
-                b.weekdayRow.visibility = View.GONE
-                b.lineChart.visibility = View.VISIBLE
-                b.lineChart.setValues(perMonth)
-                b.lineChart.setXAxisLabels(buildThisYearMonthLabels(perMonth.size))
-
+                currentXAxisLabels = buildThisYearMonthLabels(perMonth.size)
                 val total = perMonth.sum()
-                b.rangeTotal.text = getString(
-                    R.string.usage_kv_fmt,
-                    getString(R.string.usage_year_total),
-                    StatsFormat.prettyMsWithSeconds(total)
-                )
+                setHeroTotal(getString(R.string.usage_year_total), total)
+                renderChart()
+                updateChartSummary(total)
             }
 
             Range.CUSTOM -> {
@@ -330,27 +305,67 @@ class WebsiteUsageDetailActivity : AppCompatActivity() {
                 val end = customRangeEndMillis ?: System.currentTimeMillis()
                 val perDay = WebUsageStore.getUsageMsForDateRange(this, domain, start, end)
                 currentSeries = perDay
-                b.chart.visibility = View.GONE
-                b.weekdayRow.visibility = View.GONE
-                b.lineChart.visibility = View.VISIBLE
-                b.lineChart.setValues(perDay)
-                b.lineChart.setXAxisLabels(buildCustomDateLabels(start, perDay.size))
-
-                b.rangeTotal.text = getString(
-                    R.string.usage_kv_fmt,
-                    getString(R.string.activity_history_range_custom),
-                    StatsFormat.prettyMsWithSeconds(perDay.sum())
-                )
+                currentXAxisLabels = buildCustomDateLabels(start, perDay.size)
+                setHeroTotal(getString(R.string.activity_history_range_custom), perDay.sum())
+                renderChart()
+                updateChartSummary(perDay.sum())
             }
         }
-        renderWebsiteTimeline(domain, range)
+    }
+
+    private fun setHeroTotal(caption: String, totalMs: Long) {
+        val accent = AccentColor.getAccentColorInt(this)
+        b.rangeTotal.text = StatsFormat.prettyMsWithSeconds(totalMs)
+        b.rangeTotal.setTextColor(accent)
+        b.rangeTotalCaption.text = caption
+    }
+
+    private fun renderChart() {
+        b.chart.setData(currentSeries, currentXAxisLabels)
+    }
+
+    private fun updateChartSummary(totalMs: Long) {
+        val peakIdx = currentSeries.indices.maxByOrNull { currentSeries[it] } ?: -1
+        val peakText = if (peakIdx >= 0 && currentSeries[peakIdx] > 0L) {
+            getString(
+                R.string.usage_chart_peak_fmt,
+                currentXAxisLabels.getOrNull(peakIdx) ?: "",
+                StatsFormat.prettyMsWithSeconds(currentSeries[peakIdx])
+            )
+        } else {
+            getString(R.string.usage_chart_no_data)
+        }
+        b.chartSummary.text = getString(
+            R.string.usage_chart_summary_fmt,
+            StatsFormat.prettyMsWithSeconds(totalMs),
+            peakText
+        )
+    }
+
+    private fun weekdayLabelsLast7(): List<String> {
+        val cal = Calendar.getInstance()
+        cal.add(Calendar.DAY_OF_YEAR, -6)
+        val fmt = java.text.SimpleDateFormat("EEE", Locale.getDefault())
+        return (0 until 7).map { fmt.format(cal.time).also { cal.add(Calendar.DAY_OF_YEAR, 1) } }
     }
 
     private fun configureRangeFilterButtons() {
+        syncRangeToggleUi()
+        b.toggleRange.addOnButtonCheckedListener { _, _, _ -> syncRangeToggleUi() }
         listOf(b.btnRangeToday, b.btnRangeWeek, b.btnRangeMonth, b.btnRangeYear).forEach { button ->
             configureRangeButton(button, custom = false)
         }
         configureRangeButton(b.btnRangeCustom, custom = true)
+    }
+
+    private fun syncRangeToggleUi() {
+        val checked = b.toggleRange.checkedButtonId
+        val buttons = listOf(b.btnRangeToday, b.btnRangeWeek, b.btnRangeMonth, b.btnRangeYear, b.btnRangeCustom)
+        SegmentedToggleUi.apply(
+            this,
+            buttons,
+            if (checked != View.NO_ID) checked else b.btnRangeToday.id,
+        )
     }
 
     private fun configureRangeButton(button: MaterialButton, custom: Boolean) {
@@ -360,7 +375,7 @@ class WebsiteUsageDetailActivity : AppCompatActivity() {
         button.minimumHeight = dp(40)
         button.insetTop = 0
         button.insetBottom = 0
-        button.cornerRadius = dp(4)
+        button.cornerRadius = dp(14)
         button.iconPadding = 0
         if (custom) {
             button.iconGravity = MaterialButton.ICON_GRAVITY_TEXT_START
@@ -428,7 +443,7 @@ class WebsiteUsageDetailActivity : AppCompatActivity() {
         val currentStart = customRangeStartMillis ?: startOfTodayMillis()
         val currentEnd = customRangeEndMillis ?: now
         val picker = MaterialDatePicker.Builder.dateRangePicker()
-            .setTheme(com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialCalendar)
+            .setTheme(at.saltyy.switchly.R.style.ThemeOverlay_Switchly_DatePicker)
             .setTitleText(R.string.activity_history_range_custom)
             .setSelection(androidx.core.util.Pair(localDayToDatePickerUtcMillis(currentStart), localDayToDatePickerUtcMillis(currentEnd)))
             .build()
@@ -446,69 +461,10 @@ class WebsiteUsageDetailActivity : AppCompatActivity() {
             .onFailure { customRangePickerShowing = false }
     }
 
-    private fun renderWebsiteTimeline(domain: String, range: Range) {
-        clearWebsiteTimelineRows()
-        val entries = when (range) {
-            Range.TODAY -> listOf(getString(R.string.usage_today) to WebUsageStore.getUsageMsToday(this, domain))
-            Range.WEEK -> dailyWebsiteTimeline(domain, 7)
-            Range.MONTH -> dailyWebsiteTimeline(domain, daysSinceStartOfMonth()).takeLast(14)
-            Range.YEAR -> monthlyWebsiteTimeline(domain).takeLast(12)
-            Range.CUSTOM -> customWebsiteTimeline(domain).takeLast(14)
-        }.filter { it.second > 0L }
 
-        b.websiteTimelineEmpty.visibility = if (entries.isEmpty()) View.VISIBLE else View.GONE
-        if (entries.isEmpty()) {
-            b.websiteTimelineEmpty.text = getString(R.string.website_timeline_empty)
-            return
-        }
 
-        entries.asReversed().forEach { (label, value) ->
-            b.websiteTimelineContainer.addView(TextView(this).apply {
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply { topMargin = dp(8) }
-                text = getString(R.string.website_timeline_row, label, StatsFormat.prettyMsWithSeconds(value))
-                setTextColor(MaterialColors.getColor(this@WebsiteUsageDetailActivity, com.google.android.material.R.attr.colorOnSurface, Color.WHITE))
-                textSize = 13f
-                alpha = 0.86f
-            })
-        }
-    }
 
-    private fun dailyWebsiteTimeline(domain: String, days: Int): List<Pair<String, Long>> {
-        val values = WebUsageStore.getUsageMsForLastNDays(this, domain, days.coerceAtLeast(1))
-        val fmt = SimpleDateFormat("EEE, d MMM", Locale.getDefault())
-        val cal = Calendar.getInstance().apply { add(Calendar.DAY_OF_YEAR, -(values.size - 1)) }
-        return values.map { value ->
-            val label = fmt.format(cal.time)
-            cal.add(Calendar.DAY_OF_YEAR, 1)
-            label to value
-        }
-    }
 
-    private fun monthlyWebsiteTimeline(domain: String): List<Pair<String, Long>> {
-        val values = getThisYearMonthsTotals(domain)
-        val months = DateFormatSymbols.getInstance().shortMonths
-        return values.mapIndexed { index, value ->
-            months.getOrNull(index).orEmpty().trim().ifBlank { (index + 1).toString() } to value
-        }
-    }
-
-    private fun customWebsiteTimeline(domain: String): List<Pair<String, Long>> {
-        val start = customRangeStartMillis ?: startOfTodayMillis()
-        val end = customRangeEndMillis ?: System.currentTimeMillis()
-        val values = WebUsageStore.getUsageMsForDateRange(this, domain, start, end)
-        val labels = buildCustomDateLabels(start, values.size)
-        return labels.zip(values)
-    }
-
-    private fun clearWebsiteTimelineRows() {
-        val childCount = b.websiteTimelineContainer.childCount
-        if (childCount > 2) {
-            b.websiteTimelineContainer.removeViews(2, childCount - 2)
-        }
-    }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
@@ -605,15 +561,11 @@ class WebsiteUsageDetailActivity : AppCompatActivity() {
     }
 
     private fun setupChartInteractions(label: String) {
-        b.chart.setOnBarSelectedListener { index, valueMs ->
-            if (currentRange != Range.WEEK) return@setOnBarSelectedListener
-            showPointDialog(label, currentRange, index, valueMs, currentSeries)
-        }
-
-        b.lineChart.setOnPointSelectedListener { index, valueMs ->
-            if (currentRange == Range.WEEK) return@setOnPointSelectedListener
-            showPointDialog(label, currentRange, index, valueMs, currentSeries)
-        }
+        b.chart.setOnBucketSelectedListener(object : UsageDetailChartView.OnBucketSelectedListener {
+            override fun onSelected(index: Int, valueMs: Long) {
+                showPointDialog(label, currentRange, index, valueMs, currentSeries)
+            }
+        })
     }
 
     private fun showPointDialog(label: String, range: Range, index: Int, valueMs: Long, series: List<Long>) {
@@ -822,16 +774,7 @@ class WebsiteUsageDetailActivity : AppCompatActivity() {
     }
 
     private fun setWeekdayLabels() {
-        val cal = Calendar.getInstance()
-        cal.timeInMillis = System.currentTimeMillis() - java.util.concurrent.TimeUnit.DAYS.toMillis(6)
-        val dfs = DateFormatSymbols.getInstance()
-        val views = listOf(b.day1, b.day2, b.day3, b.day4, b.day5, b.day6, b.day7)
-        for (i in 0 until 7) {
-            val dow = cal.get(Calendar.DAY_OF_WEEK)
-            val name = dfs.shortWeekdays.getOrNull(dow).orEmpty().trim()
-            views[i].text = name
-            cal.add(Calendar.DAY_OF_YEAR, 1)
-        }
+        // New layout draws weekday labels inside the chart view itself.
     }
 
     companion object {

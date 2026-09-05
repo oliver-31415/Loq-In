@@ -28,6 +28,7 @@ import android.os.Bundle
 import android.provider.Settings
 import android.view.Gravity
 import android.view.View
+import androidx.core.view.children
 import android.view.ViewGroup
 import android.widget.CheckBox
 import android.widget.FrameLayout
@@ -141,6 +142,7 @@ class ScreenUnlocksActivity : AppCompatActivity() {
         coordinator.addView(FloatingActionButton(this).apply {
             setImageResource(R.drawable.tune_24)
             val accent = AccentColor.getAccentColorInt(this@ScreenUnlocksActivity)
+            backgroundTintList = ColorStateList.valueOf(accent)
             imageTintList = ColorStateList.valueOf(if (MaterialColors.isColorLight(accent)) Color.BLACK else Color.WHITE)
             contentDescription = getString(R.string.screen_unlocks_sort_filter_title)
             setOnClickListener { showSortFilterDialog() }
@@ -391,7 +393,7 @@ class ScreenUnlocksActivity : AppCompatActivity() {
                 minHeight = dp(40)
                 insetTop = 0
                 insetBottom = 0
-                cornerRadius = dp(4)
+                cornerRadius = dp(14)
                 setAllCaps(false)
                 layoutParams = if (range == Range.CUSTOM) {
                     LinearLayout.LayoutParams(dp(44), dp(40))
@@ -405,7 +407,7 @@ class ScreenUnlocksActivity : AppCompatActivity() {
         }
         if (checkedId != View.NO_ID) group.check(checkedId)
         ids.forEach { (buttonId, range) ->
-            group.findViewById<MaterialButton>(buttonId)?.let { styleRangeButton(it, range == currentRange) }
+            group.findViewById<MaterialButton>(buttonId)?.let { it.isChecked = (range == currentRange); styleRangeButton(it, range == currentRange) }
         }
         group.addOnButtonCheckedListener { _, checkedButtonId, isChecked ->
             if (!isChecked) return@addOnButtonCheckedListener
@@ -476,18 +478,16 @@ class ScreenUnlocksActivity : AppCompatActivity() {
         })
     }
 
+
     private fun styleRangeButton(button: MaterialButton, active: Boolean) {
-        val activeBg = AccentColor.getAccentColorInt(this)
-        val activeText = if (MaterialColors.isColorLight(activeBg)) Color.BLACK else Color.WHITE
-        val inactiveBg = MaterialColors.getColor(this, com.google.android.material.R.attr.colorSurfaceVariant, 0)
-        val inactiveText = MaterialColors.getColor(this, com.google.android.material.R.attr.colorOnSurface, 0)
-        val outline = MaterialColors.getColor(this, com.google.android.material.R.attr.colorOutline, inactiveText)
-        button.backgroundTintList = ColorStateList.valueOf(if (active) activeBg else inactiveBg)
-        button.setTextColor(if (active) activeText else inactiveText)
-        button.iconTint = ColorStateList.valueOf(if (active) activeText else inactiveText)
-        button.strokeColor = ColorStateList.valueOf(if (active) activeBg else outline)
-        button.strokeWidth = resources.displayMetrics.density.toInt().coerceAtLeast(1)
-        button.rippleColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(activeBg, 0x35))
+        // Shared segmented look: one pill control, filled-accent selection.
+        // (Same language as SegmentedToggleUi on the detail pages.)
+        val buttons = (button.parent as? android.view.ViewGroup)
+            ?.children
+            ?.filterIsInstance<com.google.android.material.button.MaterialButton>()
+            ?.toList() ?: listOf(button)
+        val selectedId = buttons.firstOrNull { it.isChecked }?.id ?: button.id
+        at.saltyy.switchly.ui.SegmentedToggleUi.apply(this, buttons, selectedId)
     }
 
     private fun windowForRange(range: Range): Pair<Long, Long> {
@@ -511,7 +511,7 @@ class ScreenUnlocksActivity : AppCompatActivity() {
         val currentStart = customRangeStartMillis ?: startOfTodayMillis()
         val currentEnd = customRangeEndMillis ?: now
         val picker = MaterialDatePicker.Builder.dateRangePicker()
-            .setTheme(com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialCalendar)
+            .setTheme(at.saltyy.switchly.R.style.ThemeOverlay_Switchly_DatePicker)
             .setTitleText(R.string.activity_history_range_custom)
             .setSelection(androidx.core.util.Pair(localDayToDatePickerUtcMillis(currentStart), localDayToDatePickerUtcMillis(currentEnd)))
             .build()
@@ -568,8 +568,8 @@ class ScreenUnlocksActivity : AppCompatActivity() {
             ).apply { topMargin = dp(10) }
             radius = dp(22).toFloat()
             strokeWidth = dp(1)
-            strokeColor = ContextCompat.getColor(this@ScreenUnlocksActivity, R.color.switchly_card_stroke)
-            setCardBackgroundColor(ContextCompat.getColor(this@ScreenUnlocksActivity, R.color.switchly_card_bg))
+            strokeColor = ContextCompat.getColor(this@ScreenUnlocksActivity, R.color.foqos_outline_variant)
+            setCardBackgroundColor(ContextCompat.getColor(this@ScreenUnlocksActivity, R.color.foqos_surface))
         }
     }
 

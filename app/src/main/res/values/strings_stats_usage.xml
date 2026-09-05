@@ -159,7 +159,10 @@
     <string name="usage_launch_stats_loading">Loading opens…</string>
     <string name="usage_timeline_title">Usage timeline</string>
     <string name="usage_timeline_loading">Loading timeline…</string>
-    <string name="usage_timeline_empty">No app opens found for this range.</string>
+    <string name="usage_timeline_empty">No usage in this range yet.</string>
+    <string name="usage_chart_summary_fmt">%1$s total · Peak: %2$s</string>
+    <string name="usage_chart_peak_fmt">%1$s (%2$s)</string>
+    <string name="usage_chart_no_data">No data yet</string>
     <string name="usage_timeline_permission_needed">Usage Access is needed for the opens timeline.</string>
     <string name="usage_timeline_row">%1$s · %2$s–%3$s · %4$s</string>
     <string name="app_launches_info_title">App opens</string>

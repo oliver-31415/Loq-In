@@ -545,8 +545,8 @@ class OnboardingActivity : ComponentActivity() {
         val accent = AccentColor.getAccentColorInt(this)
         val onAccent = readableOnColor(accent)
         val isCustom = AccentColor.getOption(this) == AccentColor.Option.CUSTOM
-        val surface = ContextCompat.getColor(this, R.color.switchly_card_bg)
-        val outline = ContextCompat.getColor(this, R.color.switchly_card_stroke)
+        val surface = ContextCompat.getColor(this, R.color.foqos_surface)
+        val outline = ContextCompat.getColor(this, R.color.foqos_outline_variant)
         val onSurface = MaterialColors.getColor(btnSkip, com.google.android.material.R.attr.colorOnSurface)
         val disabledBackground = ColorUtils.blendARGB(surface, onSurface, 0.10f)
         val disabledForeground = ColorUtils.setAlphaComponent(onSurface, 105)
@@ -1181,8 +1181,8 @@ class OnboardingActivity : ComponentActivity() {
         val accent = AccentColor.getAccentColorInt(this)
         val root = findViewById<View>(android.R.id.content)
         val onSurface = MaterialColors.getColor(root, com.google.android.material.R.attr.colorOnSurface)
-        val surface = ContextCompat.getColor(this, R.color.switchly_card_bg)
-        val outline = ContextCompat.getColor(this, R.color.switchly_card_stroke)
+        val surface = ContextCompat.getColor(this, R.color.foqos_surface)
+        val outline = ContextCompat.getColor(this, R.color.foqos_outline_variant)
         val pendingSelection = apps.mapTo(linkedSetOf()) { it.packageName }
 
         val scroll = ScrollView(this).apply {

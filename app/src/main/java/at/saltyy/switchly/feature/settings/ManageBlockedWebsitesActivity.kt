@@ -80,6 +80,7 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         val locked = EditingLockGuard.isLocked(this)
         val canAdd = canAddBlockedWebsite()
         findViewById<FloatingActionButton>(R.id.fabAdd)?.apply {
+            backgroundTintList = ColorStateList.valueOf(AccentColor.getAccentColorInt(this@ManageBlockedWebsitesActivity))
             isEnabled = canAdd && !isSelectionMode
             isClickable = canAdd && !isSelectionMode
             alpha = if (isEnabled) 1f else 0.45f
