@@ -152,6 +152,11 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
         b.btnStatsInfo.setOnClickListener { showStatisticsInfo() }
         val accent = AccentColor.getAccentColorInt(this)
         b.fabSortFilter.imageTintList = ColorStateList.valueOf(readableOnColor(accent))
+        // Explicit FAB background + empty-state icon tint: framework/Material
+        // theme indirection can resolve these to the base green at night
+        // instead of the live accent.
+        b.fabSortFilter.backgroundTintList = ColorStateList.valueOf(accent)
+        b.webPlaceholder.compoundDrawableTintList = ColorStateList.valueOf(accent)
 
         // Keep system bars dark for readability (matches Stats/Schedules).
         WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false

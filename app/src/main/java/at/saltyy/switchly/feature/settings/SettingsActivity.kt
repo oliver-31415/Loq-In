@@ -72,6 +72,12 @@ import com.google.android.material.textfield.MaterialAutoCompleteTextView
 
 class SettingsActivity : AppCompatActivity() {
 
+    // Owns activity-result launchers: property init runs before onCreate, so
+    // registration happens before STARTED. Fragments must use this instance —
+    // constructing BackupFlowActions in a later onAttach (nested screens)
+    // crashes with "register before they are STARTED".
+    val backupFlows = BackupFlowActions(this)
+
     private lateinit var toolbar: MaterialToolbar
     private lateinit var bottomNav: BottomNavigationView
     private lateinit var rootScroll: View

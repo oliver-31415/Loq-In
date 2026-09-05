@@ -61,6 +61,7 @@
                         android:padding="16dp">
 
                         <FrameLayout
+                            android:id="@+id/iconBackdrop"
                             android:layout_width="56dp"
                             android:layout_height="56dp"
                             android:background="@drawable/bg_roundel_accent">

@@ -161,20 +161,14 @@ class SettingsFragment : PreferenceFragmentCompat() {
         findPreference<Preference>("pref_blocked_inbox")?.isVisible = true
     }
 
-    private fun refreshHomeModeAppearancePrefs() {
-        val ctx = context ?: return
-        val currentMode = HomeModeDialogHelper.currentHomeLayoutMode(ctx)
-        val modeLabel = HomeModeDialogHelper.homeLayoutModeLabel(ctx, currentMode)
-        findPreference<Preference>("pref_home_mode_appearance")?.summary = modeLabel
-        findPreference<Preference>("pref_customize_home_appearance")?.isVisible = currentMode == ToggleOptionsActivity.HOME_MODE_CUSTOM
-    }
-
     private var focusApplied: Boolean = false
     private var authListener: FirebaseAuth.AuthStateListener? = null
     private var nextChangedReceiver: BroadcastReceiver? = null
     private var lastNestedNavKey: String? = null
     private var lastNestedNavAtMs: Long = 0L
-    private lateinit var backupFlows: BackupFlowActions
+    // Shared with the host activity (registered before STARTED there).
+    private val backupFlows: BackupFlowActions
+        get() = (requireActivity() as SettingsActivity).backupFlows
 
     private fun isRestrictedSettingsAccess(): Boolean {
         return (activity as? SettingsActivity)?.isRestrictedAccessActive() == true
@@ -198,7 +192,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
-        backupFlows = BackupFlowActions(context as AppCompatActivity)
         backupFlows.onLibraryChanged = { updateGooglePrefSummary(); updateCloudPrefVisibility() }
     }
 
@@ -410,21 +403,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
             openToggleOptions()
             true
         }
-
-        findPreference<Preference>("pref_home_mode_appearance")?.setOnPreferenceClickListener {
-            HomeModeDialogHelper.showHomeLayoutModeDialog(requireContext()) {
-                refreshHomeModeAppearancePrefs()
-            }
-            true
-        }
-
-        findPreference<Preference>("pref_customize_home_appearance")?.setOnPreferenceClickListener {
-            HomeModeDialogHelper.showCustomizeHomeDialog(requireContext()) {
-                refreshHomeModeAppearancePrefs()
-            }
-            true
-        }
-        refreshHomeModeAppearancePrefs()
 
         // Blocked notifications inbox
         findPreference<Preference>("pref_blocked_inbox")?.setOnPreferenceClickListener {
@@ -788,7 +766,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
         updateCloudPrefVisibility()
         applyRestrictedAccountDataState()
         refreshBlockedInboxPreferenceState()
-        refreshHomeModeAppearancePrefs()
         CustomAccentApplier.applyIfNeeded(requireActivity())
         tintCategories()
         ensureDeveloperInfoIconAccent()

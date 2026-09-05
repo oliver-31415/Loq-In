@@ -140,6 +140,12 @@ class AppUsageDetailActivity : AppCompatActivity() {
         b.toolbar.setBackgroundColor(AccentColor.getToolbarColor(this))
         b.toolbar.navigationIcon?.mutate()?.setTint(toolbarIconColor())
         b.toolbar.setNavigationOnClickListener { finish() }
+        // Explicit container wash: ?attr/colorPrimaryContainer in the roundel
+        // drawable can resolve to the base green instead of the live accent.
+        b.iconBackdrop.background = android.graphics.drawable.GradientDrawable().apply {
+            shape = android.graphics.drawable.GradientDrawable.OVAL
+            setColor(AccentColor.getAccentContainerColorInt(this@AppUsageDetailActivity))
+        }
         EdgeToEdgeUtils.setupClassic(activity = this, toolbar = b.toolbar)
         setupInfoAction()
         b.tvLimitHint.visibility = View.GONE

@@ -1291,6 +1291,14 @@ class MainActivity : AppCompatActivity() {
         val btnClose = view.findViewById<MaterialButton>(R.id.btnClose)
 
         ivIcon.imageTintList = tint
+        // Explicit roundel wash: ?attr/colorPrimaryContainer in the sheet
+        // drawable resolves against the dialog theme, which can fall back to
+        // the base green instead of the live accent.
+        view.findViewById<View>(R.id.roundelBg)?.background =
+            GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(AccentColor.getAccentContainerColorInt(this@MainActivity))
+            }
         tvRemaining.setTextColor(accent)
         btnClose.setTextColor(accent)
 

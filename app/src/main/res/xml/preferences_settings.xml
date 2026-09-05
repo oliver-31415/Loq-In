@@ -54,22 +54,6 @@
             app:iconSpaceReserved="false" />
 
         <Preference
-            android:key="pref_home_mode_appearance"
-            android:layout="@layout/item_pref_card"
-            android:title="@string/pref_home_layout_mode_title"
-            android:summary="@string/pref_home_layout_mode_summary"
-            android:icon="@drawable/dashboard_24"
-            app:iconSpaceReserved="false" />
-
-        <Preference
-            android:key="pref_customize_home_appearance"
-            android:layout="@layout/item_pref_card"
-            android:title="@string/pref_home_layout_custom_title"
-            android:summary="@string/pref_home_layout_custom_summary"
-            android:icon="@drawable/tune_24"
-            app:iconSpaceReserved="false" />
-
-        <Preference
             android:key="pref_theme_color"
             android:layout="@layout/item_pref_card"
             android:title="@string/pref_theme_color_title"

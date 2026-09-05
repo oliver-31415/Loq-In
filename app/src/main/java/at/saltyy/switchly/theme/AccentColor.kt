@@ -91,6 +91,25 @@ object AccentColor {
     fun getActiveColor(context: Context): ColorStateList = ColorStateList.valueOf(getAccentColorInt(context))
 
     /**
+     * Concrete container wash for icon roundels/badges. Same reason as
+     * [getDatePickerTheme]: ?attr/colorPrimaryContainer inside drawables and
+     * dialog contexts can resolve to the base green instead of the live
+     * accent, so set it explicitly in code.
+     */
+    fun getAccentContainerColorInt(context: Context): Int = when (getOption(context)) {
+        Option.GREEN  -> ContextCompat.getColor(context, R.color.accent_green_container)
+        Option.BLUE   -> ContextCompat.getColor(context, R.color.accent_blue_container)
+        Option.ORANGE -> ContextCompat.getColor(context, R.color.accent_orange_container)
+        Option.PURPLE -> ContextCompat.getColor(context, R.color.accent_purple_container)
+        Option.PINK   -> ContextCompat.getColor(context, R.color.accent_pink_container)
+        Option.TEAL   -> ContextCompat.getColor(context, R.color.accent_teal_container)
+        Option.RED    -> ContextCompat.getColor(context, R.color.accent_red_container)
+        Option.AMBER  -> ContextCompat.getColor(context, R.color.accent_amber_container)
+        Option.GRAY   -> ContextCompat.getColor(context, R.color.accent_gray_container)
+        Option.CUSTOM -> androidx.core.graphics.ColorUtils.setAlphaComponent(getAccentColorInt(context), 0x2E)
+    }
+
+    /**
      * Concrete date-picker dialog theme for the current accent. The picker is
      * themed with setTheme(), which resolves against a dialog overlay — not
      * the activity theme — so ?attr references to the live accent cannot
