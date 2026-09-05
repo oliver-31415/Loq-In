@@ -185,6 +185,18 @@
             android:exported="false"
             android:label="@string/settings" />
 
+        <!-- Account hub screen -->
+        <activity
+            android:name=".feature.account.AccountActivity"
+            android:exported="false"
+            android:label="@string/account_title" />
+
+        <!-- Info hub screen -->
+        <activity
+            android:name=".feature.about.InfoActivity"
+            android:exported="false"
+            android:label="@string/settings_section_info" />
+
         <!-- Rules hub screen -->
         <activity
             android:name=".feature.tools.RulesHubActivity"

@@ -39,12 +39,10 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentManager
 import at.saltyy.switchly.R
 import at.saltyy.switchly.blocking.BlockingRuntime
-import at.saltyy.switchly.data.prefs.AdvancedModeStore
 import at.saltyy.switchly.data.prefs.AppLogStore
 import at.saltyy.switchly.data.prefs.EmergencyBypassStore
 import at.saltyy.switchly.data.prefs.EmergencyPinStore
 import at.saltyy.switchly.data.prefs.SwitchModeStore
-import at.saltyy.switchly.feature.about.AdvancedModeActivity
 import at.saltyy.switchly.feature.premium.PremiumInfoActivity
 import at.saltyy.switchly.feature.qr.QrGenerateActivity
 import at.saltyy.switchly.feature.schedule.SchedulesActivity
@@ -59,6 +57,8 @@ import at.saltyy.switchly.ui.LockedUi
 import at.saltyy.switchly.ui.MainActivity
 import at.saltyy.switchly.ui.ThemeUtils
 import at.saltyy.switchly.ui.dialog.SwitchlyDialogOption
+import at.saltyy.switchly.ui.dialog.SwitchlyInfoRow
+import at.saltyy.switchly.ui.dialog.showSwitchlyInfoDialog
 import at.saltyy.switchly.ui.dialog.showAccented
 import at.saltyy.switchly.ui.dialog.showSwitchlyOptionDialog
 import at.saltyy.switchly.ui.dialog.styleSwitchlyDialogButtons
@@ -201,25 +201,14 @@ class SettingsActivity : AppCompatActivity() {
         ).filter { it.isNotBlank() }.joinToString(" ")
 
         // Top-level destinations.
-        add(R.string.toggle_group_manage_blocking_modes, "control mode NFC QR barcode schedule mixed") {
-            openRootCard(R.id.cardSettingsBlockingModes)
-        }
         add(R.string.toggle_group_manage_other_blocking_features, "${getString(R.string.settings_search_terms_blocking)} temporary timer temporärer Timer safety Sicherheit status notification Benachrichtigung blocking features") {
             openRootCard(R.id.cardSettingsBlockingFeatures)
         }
-        add(R.string.settings_keys_codes_title, "${getString(R.string.settings_search_terms_keys)} NFC QR barcode Strichcode tags codes Schlüssel Codes") { openRootCard(R.id.cardSettingsKeysCodes) }
         add(R.string.settings_theme_title, "theme appearance color language time home") { openRootCard(R.id.cardSettingsAppearance) }
         add(R.string.ignored_usage_apps_title, "usage statistics ignored apps") { openRootCard(R.id.cardSettingsIgnoredApps) }
         add(R.string.settings_display_shortcuts_title, "${getString(R.string.settings_search_terms_display)} widgets Kacheln tiles quick settings shortcuts Verknüpfungen home Startseite") { openRootCard(R.id.cardSettingsDisplayShortcuts) }
         add(R.string.pref_permissions_title, "${getString(R.string.settings_search_terms_permissions)} battery Akku background Hintergrund accessibility Bedienungshilfe autostart Autostart notifications Benachrichtigungen NFC reliability Zuverlässigkeit") { openRootCard(R.id.cardSettingsPermissions) }
-        add(R.string.pref_app_lock_title, "app lock App-Sperre uninstall protection Deinstallationsschutz remove removal device admin Geräteadministrator force stop force-stop Stopp erzwingen app data Daten löschen bypass anti-bypass") { openRootCard(R.id.cardSettingsAppLock) }
-        add(R.string.settings_emergency_unlock_title, "emergency bypass unlock") { openRootCard(R.id.cardSettingsEmergencyUnlock) }
-        add(R.string.settings_account_title, "${getString(R.string.settings_search_terms_account)} account Konto cloud Cloud backup Sicherung restore Wiederherstellung sync Synchronisierung data Daten") { openRootCard(R.id.cardSettingsAccountData) }
-        add(R.string.premium_title, "premium billing purchase") { openRootCard(R.id.cardSettingsPremium) }
-        if (AdvancedModeStore.isEnabled(this)) {
-            add(R.string.developer_mode_title, "${getString(R.string.settings_search_terms_developer)} developer Entwickler ADB uninstall protection Deinstallationsschutz diagnostics Diagnose device owner profile owner managed device managed-device provisioning factory reset safe mode") { openRootCard(R.id.cardSettingsDeveloper) }
-        }
-        add(R.string.settings_help_about_title, "help FAQ support changelog info privacy") { openRootCard(R.id.cardSettingsHelpAbout) }
+        add(R.string.settings_section_info, "info about app device help FAQ support changelog whats new disclaimer") { openRootCard(R.id.cardSettingsInfo) }
 
         // Individual control-mode settings.
         add(R.string.pref_mode_nfc_title, "NFC control mode") { openProtectedActivity(Intent(this, BlockingModesActivity::class.java)) }
@@ -460,19 +449,9 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun setupRootCards() {
-        findViewById<View>(R.id.cardSettingsBlockingModes).setOnClickListener {
-            openControlSettingsSection {
-                startActivity(Intent(this, BlockingModesActivity::class.java))
-            }
-        }
         findViewById<View>(R.id.cardSettingsBlockingFeatures).setOnClickListener {
             openProtectedSettingsSection {
                 startActivity(Intent(this, BlockingFeaturesActivity::class.java))
-            }
-        }
-        findViewById<View>(R.id.cardSettingsKeysCodes).setOnClickListener {
-            openProtectedSettingsSection {
-                startActivity(Intent(this, ManageKeysActivity::class.java))
             }
         }
         findViewById<View>(R.id.cardSettingsAppearance).setOnClickListener {
@@ -493,27 +472,8 @@ class SettingsActivity : AppCompatActivity() {
                 startActivity(Intent(this, PermissionsActivity::class.java))
             }
         }
-        findViewById<View>(R.id.cardSettingsAppLock).setOnClickListener {
-            openProtectedSettingsSection {
-                startActivity(Intent(this, AppLockSettingsActivity::class.java))
-            }
-        }
-        findViewById<View>(R.id.cardSettingsEmergencyUnlock).setOnClickListener {
-            showEmergencyQuickSheet()
-        }
-        findViewById<View>(R.id.cardSettingsAccountData).setOnClickListener {
-            showNestedSettingsScreen("screen_account")
-        }
-        findViewById<View>(R.id.cardSettingsPremium).setOnClickListener {
-            startActivity(Intent(this, PremiumInfoActivity::class.java))
-        }
-        findViewById<View>(R.id.cardSettingsDeveloper).setOnClickListener {
-            openProtectedSettingsSection {
-                startActivity(Intent(this, AdvancedModeActivity::class.java))
-            }
-        }
-        findViewById<View>(R.id.cardSettingsHelpAbout).setOnClickListener {
-            showNestedSettingsScreen("screen_help_about")
+        findViewById<View>(R.id.cardSettingsInfo).setOnClickListener {
+            startActivity(Intent(this, at.saltyy.switchly.feature.about.InfoActivity::class.java))
         }
     }
 
@@ -528,27 +488,19 @@ class SettingsActivity : AppCompatActivity() {
 
         val restricted = isRestrictedAccessActive()
         val controlSettingsRestricted = SwitchlyAppAccessGuard.isControlSettingsLocked(this)
-        val developerVisible = AdvancedModeStore.isEnabled(this)
-        findViewById<View>(R.id.tvSettingsDeveloperSection).isVisible = developerVisible
-        findViewById<View>(R.id.cardSettingsDeveloper).isVisible = developerVisible
 
         toolbar.subtitle = null
         supportActionBar?.subtitle = null
 
-        val recoveryControlCards = listOf(
-            R.id.cardSettingsBlockingModes,
-        )
+        val recoveryControlCards = listOf<Int>()
         recoveryControlCards.forEach { cardId ->
             applyRestrictedCardState(findViewById(cardId), controlSettingsRestricted)
         }
 
         val restrictedCards = listOf(
             R.id.cardSettingsBlockingFeatures,
-            R.id.cardSettingsKeysCodes,
             R.id.cardSettingsDisplayShortcuts,
-            R.id.cardSettingsPermissions,
-            R.id.cardSettingsAppLock,
-            R.id.cardSettingsDeveloper
+            R.id.cardSettingsPermissions
         )
         restrictedCards.forEach { cardId ->
             applyRestrictedCardState(findViewById(cardId), restricted)
@@ -582,6 +534,17 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun restoreScreenState(savedInstanceState: Bundle?) {
         if (savedInstanceState == null) {
+            // Deep link (e.g. Account's Backup & data cards): open a nested
+            // settings screen straight away instead of the root list.
+            val nested = intent.getStringExtra(EXTRA_NESTED_SCREEN)
+            if (!nested.isNullOrBlank()) {
+                showNestedSettingsScreen(
+                    nested,
+                    intent.getStringExtra(EXTRA_NESTED_FOCUS)
+                )
+                updateTitleFromFragment()
+                return
+            }
             showRootSettings()
             return
         }
@@ -729,6 +692,9 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     companion object {
+        const val EXTRA_NESTED_SCREEN = "extra_nested_screen"
+        const val EXTRA_NESTED_FOCUS = "extra_nested_focus"
+
         fun openWithAccessCheck(
             source: AppCompatActivity,
             finishSourceAfterOpen: Boolean = false

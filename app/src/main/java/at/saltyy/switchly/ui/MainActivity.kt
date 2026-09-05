@@ -115,6 +115,7 @@ import at.saltyy.switchly.feature.settings.ManageBarcodesActivity
 import at.saltyy.switchly.feature.settings.ManageBlockedWebsitesActivity
 import at.saltyy.switchly.feature.settings.PermissionsActivity
 import at.saltyy.switchly.feature.settings.InAppRulesActivity
+import at.saltyy.switchly.feature.account.AccountActivity
 import at.saltyy.switchly.feature.settings.SettingsActivity
 import at.saltyy.switchly.feature.settings.ToggleOptionsActivity
 import at.saltyy.switchly.feature.settings.HomeModeDialogHelper
@@ -4709,7 +4710,7 @@ class MainActivity : AppCompatActivity() {
                 true
             }
             R.id.action_info -> {
-                showDevelopmentInfoDialog()
+                AccountActivity.openWithAccessCheck(this)
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -4717,6 +4718,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showDevelopmentInfoDialog() {
+        // Legacy info dialog, superseded by the Account screen (header info
+        // button now opens AccountActivity). Kept for now in case other
+        // callers still reference it.
         val downloadsUrl = getString(R.string.about_downloads_url)
         MaterialAlertDialogBuilder(this)
             .setTitle(getString(R.string.main_info_title))

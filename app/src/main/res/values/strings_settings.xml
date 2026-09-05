@@ -21,6 +21,7 @@
     <string name="settings_section_reliability">Permissions &amp; reliability</string>
     <string name="settings_section_data">Account &amp; data</string>
     <string name="settings_section_help">Help &amp; about</string>
+    <string name="settings_section_info">Info</string>
     <string name="settings_section_developer">Developer</string>
 
     <!-- ====================================================== -->
@@ -48,8 +49,19 @@
     <string name="settings_emergency_unlock_summary">Start, pause, resume, or end Emergency unlock</string>
 
     <!-- ====================================================== -->
-    <!-- Account and data -->
+    <!-- Account screen -->
     <!-- ====================================================== -->
+    <string name="account_title">Account</string>
+    <string name="account_section_account">Account</string>
+    <string name="account_section_data">Backup &amp; data</string>
+    <string name="account_section_info">Info</string>
+    <string name="account_overview_title">Switchly overview</string>
+    <string name="account_overview_summary">Counters, schedules and actions at a glance</string>
+    <string name="account_keys_codes_title">My keys and codes</string>
+    <string name="account_keys_codes_summary">NFC tags, QR and barcode keys</string>
+    <string name="account_disclaimer_title">Disclaimer</string>
+    <string name="account_disclaimer_summary">What Switchly can and cannot do</string>
+    <string name="account_disclaimer_body">Switchly helps you reduce distractions by blocking apps, websites and selected in-app content while protection is enabled. Blocking depends on system permissions (accessibility, usage access) and can be affected by battery optimization, device manufacturer behavior and app updates. Emergency unlock is intentionally limited. Switchly is provided as-is, without warranty; you remain responsible for complying with your device and service terms.</string>
     <string name="settings_account_title">Account</string>
     <string name="settings_account_summary">Backup, emergency PIN &amp; sync</string>
     <string name="settings_backup_title">Backup</string>
@@ -71,7 +83,7 @@
     <string name="settings_contact_support_title">Support</string>
     <string name="settings_contact_support_summary">Get help, send a report, and view diagnostics</string>
     <string name="settings_info_title">Info</string>
-    <string name="settings_info_summary">App, device and developer details</string>
+    <string name="settings_info_summary">App info, help, support and more</string>
 
     <!-- ====================================================== -->
     <!-- Reset app data -->

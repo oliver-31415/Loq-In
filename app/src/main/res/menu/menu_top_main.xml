@@ -22,8 +22,8 @@
 
     <item
         android:id="@+id/action_info"
-        android:title="@string/main_info_title"
-        android:icon="@drawable/info_24"
+        android:title="@string/account_title"
+        android:icon="@drawable/account_box_24"
         app:iconTint="?attr/colorOnSurface"
         app:showAsAction="always"
         tools:ignore="AlwaysShowAction" />
