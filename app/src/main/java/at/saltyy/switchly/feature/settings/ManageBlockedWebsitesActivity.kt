@@ -14,8 +14,7 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.
- */
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.\n */
 
 package at.saltyy.switchly.feature.settings
 
@@ -32,34 +31,41 @@ import android.widget.FrameLayout
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.activity.addCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.SwitchCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.card.MaterialCardView
 import at.saltyy.switchly.R
 import at.saltyy.switchly.blocking.BlockingRuntime
 import at.saltyy.switchly.data.prefs.DomainBlockStore
 import at.saltyy.switchly.data.prefs.DomainLimitStore
-import at.saltyy.switchly.data.prefs.WebsiteRuleModeStore
 import at.saltyy.switchly.data.prefs.ProfileStore
 import at.saltyy.switchly.data.prefs.SwitchModeStore
+import at.saltyy.switchly.data.prefs.WebsiteRuleModeStore
 import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.theme.CustomAccentApplier
 import at.saltyy.switchly.ui.SegmentedToggleUi
 import at.saltyy.switchly.ui.SwitchlyDropdownAdapter
 import at.saltyy.switchly.ui.ThemeUtils
 import at.saltyy.switchly.ui.attachEditDeleteSwipe
-import at.saltyy.switchly.ui.updateSelectionSubtitle
-import at.saltyy.switchly.ui.dialog.styleSwitchlyDialogButtons
-import at.saltyy.switchly.ui.dialog.styleSwitchlyDestructivePositiveButton
-import at.saltyy.switchly.ui.dialog.showDestructiveAccented
+import at.saltyy.switchly.ui.dialog.Dialogs
 import at.saltyy.switchly.ui.dialog.showAccented
+import at.saltyy.switchly.ui.dialog.showDestructiveAccented
+import at.saltyy.switchly.ui.dialog.styleSwitchlyDestructivePositiveButton
+import at.saltyy.switchly.ui.dialog.styleSwitchlyDialogButtons
+import at.saltyy.switchly.ui.updateSelectionSubtitle
 import at.saltyy.switchly.util.EditingLockGuard
 import at.saltyy.switchly.util.ProtectionEditPolicy
 import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -68,6 +74,10 @@ import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.launch
 
 class ManageBlockedWebsitesActivity : AppCompatActivity() {
+
+    companion object {
+        const val EXTRA_PROFILE_NAME = "extra_profile_name"
+    }
 
     private fun websiteEditingLocked(): Boolean {
         return EditingLockGuard.isLocked(this)
@@ -85,10 +95,16 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
             isClickable = canAdd && !isSelectionMode
             alpha = if (isEnabled) 1f else 0.45f
         }
+        val accent = AccentColor.getAccentColorInt(this)
         findViewById<View>(R.id.btnEmptyAddWebsite)?.apply {
             isEnabled = canAdd
             isClickable = canAdd
             alpha = if (canAdd) 1f else 0.45f
+            (this as? MaterialButton)?.apply {
+                strokeColor = ColorStateList.valueOf(accent)
+                setTextColor(accent)
+                iconTint = ColorStateList.valueOf(accent)
+            }
         }
         findViewById<MaterialButtonToggleGroup>(R.id.toggleWebsiteRuleMode)?.apply {
             isEnabled = !locked
@@ -112,8 +128,11 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
 
     private var isSelectionMode: Boolean = false
     private val selectedDomains = linkedSetOf<String>()
+    private var updatingModeUi = false
 
-    private fun currentProfile(): String = ProfileStore.getCurrent(this) ?: "default"
+    private fun currentProfile(): String =
+        intent.getStringExtra(EXTRA_PROFILE_NAME)?.trim()?.takeIf { it.isNotBlank() }
+            ?: ProfileStore.getCurrent(this) ?: "default"
 
     private fun isAllowMode(): Boolean =
         WebsiteRuleModeStore.isAllowMode(this, currentProfile())
@@ -128,9 +147,16 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         emptyBody.text = getString(
             if (allow) R.string.allowed_websites_empty_body else R.string.blocked_websites_empty_body
         )
-        findViewById<MaterialButtonToggleGroup>(R.id.toggleWebsiteRuleMode)?.check(
-            if (allow) R.id.btnWebsiteModeAllow else R.id.btnWebsiteModeBlock
-        )
+        val targetId = if (allow) R.id.btnWebsiteModeAllow else R.id.btnWebsiteModeBlock
+        val group = findViewById<MaterialButtonToggleGroup>(R.id.toggleWebsiteRuleMode)
+        if (group != null && group.checkedButtonId != targetId) {
+            updatingModeUi = true
+            try {
+                group.check(targetId)
+            } finally {
+                updatingModeUi = false
+            }
+        }
         findViewById<TextView>(R.id.tvWebsiteRuleModeSummary)?.text = getString(
             if (allow) R.string.website_rule_mode_allow_summary else R.string.website_rule_mode_block_summary
         )
@@ -143,11 +169,16 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
 
     private fun setupWebsiteRuleMode() {
         val group = findViewById<MaterialButtonToggleGroup>(R.id.toggleWebsiteRuleMode) ?: return
-        group.check(if (isAllowMode()) R.id.btnWebsiteModeAllow else R.id.btnWebsiteModeBlock)
+        updatingModeUi = true
+        try {
+            group.check(if (isAllowMode()) R.id.btnWebsiteModeAllow else R.id.btnWebsiteModeBlock)
+        } finally {
+            updatingModeUi = false
+        }
         group.addOnButtonCheckedListener { toggleGroup, checkedId, isChecked ->
-            if (!isChecked) return@addOnButtonCheckedListener
+            if (!isChecked || updatingModeUi) return@addOnButtonCheckedListener
             if (websiteEditingLocked()) {
-                toggleGroup.check(if (isAllowMode()) R.id.btnWebsiteModeAllow else R.id.btnWebsiteModeBlock)
+                syncRuleModeUi()
                 return@addOnButtonCheckedListener
             }
             val mode = if (checkedId == R.id.btnWebsiteModeAllow) {
@@ -162,7 +193,7 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
                 refreshList()
             }
             if (mode == WebsiteRuleModeStore.MODE_ALLOW_SELECTED) {
-                toggleGroup.check(R.id.btnWebsiteModeBlock)
+                syncRuleModeUi()
                 val allowedCount = DomainBlockStore.getAllowedDomainsForProfile(this, currentProfile()).size
                 AlertDialog.Builder(this)
                     .setTitle(R.string.website_allow_mode_preview_title)
@@ -184,8 +215,8 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
     }
 
     private fun applyWebsiteRuleModeButtonStyle() {
-        val blockButton = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnWebsiteModeBlock)
-        val allowButton = findViewById<com.google.android.material.button.MaterialButton>(R.id.btnWebsiteModeAllow)
+        val blockButton = findViewById<MaterialButton>(R.id.btnWebsiteModeBlock) ?: return
+        val allowButton = findViewById<MaterialButton>(R.id.btnWebsiteModeAllow) ?: return
         SegmentedToggleUi.apply(
             this,
             listOf(blockButton, allowButton),
@@ -201,12 +232,27 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         toolbar = findViewById(R.id.toolbar)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        toolbar.setNavigationOnClickListener { finish() }
+        toolbar.setNavigationOnClickListener {
+            if (isSelectionMode) {
+                exitSelectionMode()
+            } else {
+                finish()
+            }
+        }
+        onBackPressedDispatcher.addCallback(this) {
+            if (isSelectionMode) {
+                exitSelectionMode()
+            } else {
+                finish()
+            }
+        }
 
         rv = findViewById(R.id.list)
         emptyTitle = findViewById(R.id.tvEmptyTitle)
         emptyBody = findViewById(R.id.tvEmptyBody)
         emptyCard = findViewById(R.id.emptyCard)
+        val accent = AccentColor.getAccentColorInt(this)
+        findViewById<ImageView>(R.id.ivEmptyWebsitesIcon)?.imageTintList = ColorStateList.valueOf(accent)
 
         val ruleSettingsHeader = findViewById<View>(R.id.rowWebsiteRuleSettingsHeader)
         val ruleSettingsPanel = findViewById<View>(R.id.websiteRuleSettingsPanel)
@@ -274,8 +320,9 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
     }
 
     private fun refreshList() {
-        val blocked = DomainBlockStore.getDomains(this)
-        val limited = DomainLimitStore.getDomainsWithLimit(this)
+        val profile = currentProfile()
+        val blocked = DomainBlockStore.getDomainsForProfileAndMode(this, profile)
+        val limited = DomainLimitStore.getDomainsWithLimitForProfile(this, profile)
 
         val all = (blocked + limited)
             .map { it.trim() }
@@ -286,8 +333,8 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
             DomainRule(
                 domain = d,
                 isHardBlocked = blocked.contains(d),
-                limitMin = DomainLimitStore.getLimitMinutes(this, d),
-                enabled = DomainBlockStore.isDomainEnabled(this, d)
+                limitMin = DomainLimitStore.getLimitMinutesForProfile(this, profile, d),
+                enabled = DomainBlockStore.isDomainEnabledForProfile(this, profile, d)
             )
         }
 
@@ -296,7 +343,7 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
 
         // Keep selection consistent.
         selectedDomains.retainAll(rules.map { it.domain }.toSet())
-        if (isSelectionMode && selectedDomains.isEmpty()) {
+        if (isSelectionMode && rules.isEmpty()) {
             exitSelectionMode()
         } else {
             adapter.notifyItemRangeChanged(0, adapter.itemCount)
@@ -319,12 +366,20 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
 
         val deleteItem = menu.findItem(R.id.action_delete_selected)
         deleteItem?.isEnabled = selectedDomains.isNotEmpty()
-        deleteItem?.alphaCompat(if (selectedDomains.isNotEmpty()) 1f else 0.4f)
         return super.onPrepareOptionsMenu(menu)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
+            android.R.id.home -> {
+                if (isSelectionMode) {
+                    exitSelectionMode()
+                    true
+                } else {
+                    finish()
+                    true
+                }
+            }
             R.id.action_browser_support -> {
                 showSupportedBrowsersInfo()
                 true
@@ -417,8 +472,13 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         dlg.setOnShowListener {
             dlg.styleSwitchlyDestructivePositiveButton()
             dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                selectedDomains.toList().forEach { removeRule(it) }
+                val profile = currentProfile()
+                selectedDomains.toList().forEach { domain ->
+                    DomainBlockStore.removeDomainForProfile(this@ManageBlockedWebsitesActivity, profile, domain)
+                    DomainLimitStore.clearForProfile(this@ManageBlockedWebsitesActivity, profile, domain)
+                }
                 exitSelectionMode()
+                refreshList()
                 dlg.dismiss()
             }
         }
@@ -430,8 +490,9 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         if (websiteEditingLocked()) {
             return
         }
-        DomainBlockStore.removeDomain(this, domain)
-        DomainLimitStore.clear(this, domain)
+        val profile = currentProfile()
+        DomainBlockStore.removeDomainForProfile(this, profile, domain)
+        DomainLimitStore.clearForProfile(this, profile, domain)
         refreshList()
     }
 
@@ -439,7 +500,7 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         if (websiteEditingLocked()) {
             return
         }
-        DomainBlockStore.setDomainEnabled(this, domain, enabled)
+        DomainBlockStore.setDomainEnabledForProfile(this, currentProfile(), domain, enabled)
         refreshList()
     }
 
@@ -474,8 +535,9 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         if (websiteEditingLocked()) {
             return
         }
-        val hard = DomainBlockStore.getDomains(this).contains(domain)
-        val limit = DomainLimitStore.getLimitMinutes(this, domain)
+        val profile = currentProfile()
+        val hard = DomainBlockStore.getDomainsForProfileAndMode(this, profile).contains(domain)
+        val limit = DomainLimitStore.getLimitMinutesForProfile(this, profile, domain)
 
         showRuleDialog(
             title = domain,
@@ -495,7 +557,6 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
     ) {
         val v = LayoutInflater.from(this).inflate(R.layout.dialog_domain_rule, FrameLayout(this), false)
 
-        // In CUSTOM accent mode, ensure TextInput cursor/selection and dropdown indicators don't fall back to green.
         if (CustomAccentApplier.isCustomAccentEnabled(this)) {
             runCatching { CustomAccentApplier.applyToView(v, this) }
         }
@@ -533,7 +594,7 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
             applyMode()
         }
 
-        val dlg = at.saltyy.switchly.ui.dialog.Dialogs.builder(this)
+        val dlg = AlertDialog.Builder(this)
             .setTitle(title)
             .setView(v)
             .setPositiveButton(android.R.string.ok, null)
@@ -542,8 +603,6 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
 
         dlg.setOnShowListener {
             dlg.styleSwitchlyDialogButtons()
-
-            // Dialog list/inputs can be rebound after show; do a best-effort second pass.
             if (CustomAccentApplier.isCustomAccentEnabled(this)) {
                 runCatching { CustomAccentApplier.applyToDialog(dlg) }
             }
@@ -582,25 +641,26 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
                     tilLimit.error = null
                 }
 
+                val profile = currentProfile()
                 if (isAllowMode()) {
-                    DomainBlockStore.addDomain(this, normalized)
-                    DomainBlockStore.setDomainEnabled(this, normalized, true)
+                    DomainBlockStore.addDomainForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
+                    DomainBlockStore.setDomainEnabledForProfile(this@ManageBlockedWebsitesActivity, profile, normalized, true)
                     if (hardBlock) {
-                        DomainLimitStore.clear(this, normalized)
+                        DomainLimitStore.clearForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
                     } else {
-                        DomainLimitStore.setLimitMinutes(this, normalized, limitMin)
+                        DomainLimitStore.setLimitMinutesForProfile(this@ManageBlockedWebsitesActivity, profile, normalized, limitMin)
                     }
                 } else if (hardBlock) {
-                    DomainLimitStore.clear(this, normalized)
-                    DomainBlockStore.addDomain(this, normalized)
-                    DomainBlockStore.setDomainEnabled(this, normalized, true)
+                    DomainLimitStore.clearForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
+                    DomainBlockStore.addDomainForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
+                    DomainBlockStore.setDomainEnabledForProfile(this@ManageBlockedWebsitesActivity, profile, normalized, true)
                 } else {
-                    DomainBlockStore.removeDomain(this, normalized)
-                    DomainLimitStore.setLimitMinutes(this, normalized, limitMin)
-                    DomainBlockStore.setDomainEnabled(this, normalized, true)
+                    DomainBlockStore.removeDomainForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
+                    DomainLimitStore.setLimitMinutesForProfile(this@ManageBlockedWebsitesActivity, profile, normalized, limitMin)
+                    DomainBlockStore.setDomainEnabledForProfile(this@ManageBlockedWebsitesActivity, profile, normalized, true)
                 }
 
-                BlockingRuntime.ensureRunning(this)
+                BlockingRuntime.ensureRunning(this@ManageBlockedWebsitesActivity)
                 refreshList()
                 dlg.dismiss()
             }
@@ -657,12 +717,14 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         inner class VH(itemView: View) : RecyclerView.ViewHolder(itemView) {
             private val tvDomain: TextView = itemView.findViewById(R.id.tvDomain)
             private val tvMeta: TextView = itemView.findViewById(R.id.tvMeta)
-            private val cbRuleEnabled: MaterialCheckBox = itemView.findViewById(R.id.cbRuleEnabled)
             private val cbSelect: MaterialCheckBox = itemView.findViewById(R.id.cbSelect)
+            private val swRuleEnabled: SwitchCompat = itemView.findViewById(R.id.swRuleEnabled)
             private val btnLimit: ImageButton = itemView.findViewById(R.id.btnLimit)
+            private val ivDomainIcon: ImageView = itemView.findViewById(R.id.ivDomainIcon)
 
             fun bind(rule: DomainRule) {
                 val readOnly = websiteEditingLocked()
+                val accent = AccentColor.getAccentColorInt(this@ManageBlockedWebsitesActivity)
                 tvDomain.text = rule.domain
 
                 val baseMeta = when {
@@ -678,37 +740,45 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
                 val contentAlpha = if (rule.enabled) 1f else 0.52f
                 tvDomain.alpha = contentAlpha
                 tvMeta.alpha = if (rule.enabled) 0.70f else 0.56f
+                ivDomainIcon.alpha = contentAlpha
+                ivDomainIcon.imageTintList = ColorStateList.valueOf(accent)
 
                 val selecting = isSelectionMode()
-                cbRuleEnabled.visibility = if (selecting) View.GONE else View.VISIBLE
+                val selected = selecting && isSelected(rule.domain)
                 cbSelect.visibility = if (selecting) View.VISIBLE else View.GONE
+                swRuleEnabled.visibility = if (selecting) View.GONE else View.VISIBLE
                 btnLimit.visibility = if (selecting) View.GONE else View.VISIBLE
 
-                cbRuleEnabled.buttonTintList = AccentColor.getActiveColor(this@ManageBlockedWebsitesActivity)
-                cbRuleEnabled.setOnCheckedChangeListener(null)
-                cbRuleEnabled.isChecked = rule.enabled
-                cbRuleEnabled.isEnabled = !readOnly
-                cbRuleEnabled.alpha = if (readOnly) 0.45f else 1f
-                cbRuleEnabled.setOnClickListener {
-                    if (websiteEditingLocked()) {
-                        cbRuleEnabled.isChecked = rule.enabled
-                        cbRuleEnabled.isEnabled = false
-                        cbRuleEnabled.alpha = 0.45f
-                        return@setOnClickListener
-                    }
-                    onToggleEnabled(rule.domain, cbRuleEnabled.isChecked)
-                }
-
-                cbSelect.buttonTintList = AccentColor.getActiveColor(this@ManageBlockedWebsitesActivity)
-                cbSelect.isChecked = isSelected(rule.domain)
+                cbSelect.buttonTintList = CustomAccentApplier.buildCheckableTint(this@ManageBlockedWebsitesActivity, accent)
+                cbSelect.isChecked = selected
                 cbSelect.isEnabled = !readOnly
-                cbSelect.setOnClickListener {
-                    if (!websiteEditingLocked()) {
-                        onToggleSelection(rule.domain)
-                    }
+
+                (itemView as? MaterialCardView)?.let { card ->
+                    val defaultStroke = ContextCompat.getColor(this@ManageBlockedWebsitesActivity, R.color.foqos_outline_variant)
+                    val defaultBg = ContextCompat.getColor(this@ManageBlockedWebsitesActivity, R.color.foqos_surface)
+                    card.strokeColor = if (selected) accent else defaultStroke
+                    card.setCardBackgroundColor(
+                        if (selected) ColorUtils.setAlphaComponent(accent, 0x18)
+                        else defaultBg
+                    )
                 }
 
-                btnLimit.imageTintList = ColorStateList.valueOf(AccentColor.getAccentColorInt(this@ManageBlockedWebsitesActivity))
+                CustomAccentApplier.tintSwitch(swRuleEnabled)
+                swRuleEnabled.setOnCheckedChangeListener(null)
+                swRuleEnabled.isChecked = rule.enabled
+                swRuleEnabled.isEnabled = !readOnly
+                swRuleEnabled.alpha = if (readOnly) 0.45f else 1f
+                swRuleEnabled.setOnCheckedChangeListener { _, isChecked ->
+                    if (websiteEditingLocked()) {
+                        swRuleEnabled.isChecked = rule.enabled
+                        swRuleEnabled.isEnabled = false
+                        swRuleEnabled.alpha = 0.45f
+                        return@setOnCheckedChangeListener
+                    }
+                    onToggleEnabled(rule.domain, isChecked)
+                }
+
+                btnLimit.imageTintList = ColorStateList.valueOf(accent)
                 btnLimit.isEnabled = !readOnly
                 btnLimit.alpha = if (readOnly) 0.45f else 1f
                 btnLimit.setOnClickListener {
@@ -737,9 +807,4 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
             }
         }
     }
-}
-
-private fun MenuItem.alphaCompat(alpha: Float) {
-    // Some OEMs ignore alpha on menu icons; best-effort.
-    icon?.alpha = (alpha * 255).toInt().coerceIn(0, 255)
 }

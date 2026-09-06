@@ -61,6 +61,7 @@ abstract class TilesInfoActivity : AppCompatActivity() {
         @param:DrawableRes @field:DrawableRes val actionIconRes: Int? = null,
         val copiedToast: String? = null,
         @param:ColorRes @field:ColorRes val subtitleColorRes: Int? = null,
+        @param:androidx.annotation.ColorInt @field:androidx.annotation.ColorInt val subtitleColorInt: Int? = null,
         val subtitleAlpha: Float? = null,
         val tintIcon: Boolean = true
     )
@@ -183,8 +184,9 @@ abstract class TilesInfoActivity : AppCompatActivity() {
 
         titleView.text = tile.title
         subtitleView.text = tile.subtitle
-        tile.subtitleColorRes?.let { subtitleView.setTextColor(ContextCompat.getColor(this, it)) }
-        subtitleView.alpha = tile.subtitleAlpha ?: if (tile.subtitleColorRes != null) 1f else 0.72f
+        val resolvedSubtitleColor = tile.subtitleColorInt ?: tile.subtitleColorRes?.let { ContextCompat.getColor(this, it) }
+        resolvedSubtitleColor?.let { subtitleView.setTextColor(it) }
+        subtitleView.alpha = tile.subtitleAlpha ?: if (resolvedSubtitleColor != null) 1f else 0.72f
 
         root.isClickable = clickAction != null || tile.onLongClick != null
         root.setOnClickListener { clickAction?.invoke() }

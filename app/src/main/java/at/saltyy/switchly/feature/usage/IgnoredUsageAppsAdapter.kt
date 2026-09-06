@@ -30,6 +30,9 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import android.graphics.drawable.GradientDrawable
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
 import at.saltyy.switchly.R
 import at.saltyy.switchly.theme.AccentColor
 import com.google.android.material.card.MaterialCardView
@@ -127,7 +130,19 @@ class IgnoredUsageAppsAdapter(
             name.text = item.label
             packageName.text = item.packageName
             suggested.isVisible = item.suggested
-            suggested.setTextColor(AccentColor.getAccentColorInt(suggested.context))
+            if (item.suggested) {
+                val ctx = suggested.context
+                val accent = AccentColor.getAccentColorInt(ctx)
+                val chipBg = GradientDrawable().apply {
+                    shape = GradientDrawable.RECTANGLE
+                    cornerRadius = dp(999).toFloat()
+                    setColor(ColorUtils.setAlphaComponent(accent, 0x24))
+                }
+                suggested.background = chipBg
+                suggested.setTextColor(accent)
+            } else {
+                suggested.background = null
+            }
 
             bindSelection(item.packageName in selectedPackages)
 
@@ -167,11 +182,15 @@ class IgnoredUsageAppsAdapter(
         }
 
         private fun updateCardState(selected: Boolean) {
-            card.strokeWidth = if (selected) dp(2) else dp(1)
-            card.strokeColor = if (selected) {
-                AccentColor.getAccentColorInt(card.context)
+            val ctx = card.context
+            val accent = AccentColor.getAccentColorInt(ctx)
+            card.strokeWidth = dp(1)
+            if (selected) {
+                card.strokeColor = ColorUtils.setAlphaComponent(accent, 0x88)
+                card.setCardBackgroundColor(ColorUtils.setAlphaComponent(accent, 0x14))
             } else {
-                card.resources.getColor(R.color.foqos_outline_variant, card.context.theme)
+                card.strokeColor = ContextCompat.getColor(ctx, R.color.foqos_outline_variant)
+                card.setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.foqos_surface))
             }
         }
 

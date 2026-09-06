@@ -12,7 +12,9 @@
     <string name="onb_done">Fertig</string>
     <string name="onb_start_button">Switchly starten</string>
     <string name="onb_next">Weiter</string>
-    <string name="onb_skip">Später einrichten</string>
+    <string name="onb_continue">Weiter</string>
+    <string name="onb_back">Zurück</string>
+    <string name="onb_skip">Überspringen</string>
     <string name="onb_open">Öffnen</string>
     <string name="onb_permissions_action">Nächste Einstellung öffnen</string>
 

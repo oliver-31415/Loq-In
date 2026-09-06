@@ -92,6 +92,10 @@ object DomainBlockStore {
 
     fun getDomains(ctx: Context): Set<String> {
         val profile = ProfileStore.getCurrent(ctx) ?: "default"
+        return getDomainsForProfileAndMode(ctx, profile)
+    }
+
+    fun getDomainsForProfileAndMode(ctx: Context, profile: String): Set<String> {
         return if (WebsiteRuleModeStore.isAllowMode(ctx, profile)) {
             getAllowedDomainsForProfile(ctx, profile)
         } else {

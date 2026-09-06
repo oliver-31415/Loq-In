@@ -28,21 +28,13 @@
         android:paddingBottom="8dp">
 
         <com.google.android.material.checkbox.MaterialCheckBox
-            android:id="@+id/cbRuleEnabled"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="8dp"
-            android:contentDescription="@string/website_rule_toggle"
-            android:buttonTint="?attr/colorPrimary"
-            app:useMaterialThemeColors="false" />
-
-        <com.google.android.material.checkbox.MaterialCheckBox
             android:id="@+id/cbSelect"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="8dp"
             android:visibility="gone"
-            android:buttonTint="?attr/colorPrimary"
+            android:clickable="false"
+            android:focusable="false"
             app:useMaterialThemeColors="false" />
 
         <ImageView
@@ -52,7 +44,7 @@
             android:layout_marginEnd="10dp"
             android:padding="6dp"
             android:contentDescription="@string/website_rules_title"
-            android:src="@drawable/language_24"
+            app:srcCompat="@drawable/language_24"
             app:tint="?attr/colorPrimary" />
 
         <LinearLayout
@@ -92,5 +84,12 @@
             android:contentDescription="@string/set_daily_limit"
             app:srcCompat="@drawable/schedule_24"
             app:tint="?attr/colorPrimary" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/swRuleEnabled"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:contentDescription="@string/website_rule_toggle" />
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

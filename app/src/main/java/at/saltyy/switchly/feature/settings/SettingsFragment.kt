@@ -20,6 +20,7 @@
 package at.saltyy.switchly.feature.settings
 
 import android.app.ActivityManager
+import android.content.res.ColorStateList
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -1231,14 +1232,24 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
 
         val prefs = PreferenceManager.getDefaultSharedPreferences(ctx)
-        val initialHex = prefs.getString("pref_accent_custom", "#2E8B57") ?: "#2E8B57"
-        var color = try { initialHex.toColorInt() } catch (_: IllegalArgumentException) { "#2E8B57".toColorInt() }
+        val defaultAccent = AccentColor.getAccentColorInt(requireContext())
+        val defaultHex = String.format("#%06X", 0xFFFFFF and defaultAccent)
+        val initialHex = prefs.getString("pref_accent_custom", defaultHex) ?: defaultHex
+        var color = try { initialHex.toColorInt() } catch (_: IllegalArgumentException) { defaultAccent }
 
         val view = layoutInflater.inflate(R.layout.dialog_color_picker, FrameLayout(requireContext()), false)
         val preview = view.findViewById<View>(R.id.colorPreview)
         val sliderR = view.findViewById<SeekBar>(R.id.sliderR)
         val sliderG = view.findViewById<SeekBar>(R.id.sliderG)
         val sliderB = view.findViewById<SeekBar>(R.id.sliderB)
+
+        val accentList = ColorStateList.valueOf(defaultAccent)
+        sliderR.thumbTintList = accentList
+        sliderR.progressTintList = accentList
+        sliderG.thumbTintList = accentList
+        sliderG.progressTintList = accentList
+        sliderB.thumbTintList = accentList
+        sliderB.progressTintList = accentList
 
         fun updatePreviewFromColor() { preview.setBackgroundColor(color) }
         fun updateColorFromSliders() {
@@ -1276,7 +1287,10 @@ class SettingsFragment : PreferenceFragmentCompat() {
             }
             .create()
 
-        dialog.setOnShowListener { dialog.styleSwitchlyDialogButtons() }
+        dialog.setOnShowListener {
+            dialog.styleSwitchlyDialogButtons()
+            runCatching { CustomAccentApplier.applyToDialog(dialog) }
+        }
         dialog.show()
     }
 

@@ -77,12 +77,12 @@
                     android:padding="22dp">
 
                     <ImageView
+                        android:id="@+id/ivEmptyScheduleIcon"
                         android:layout_width="34dp"
                         android:layout_height="34dp"
                         android:contentDescription="@null"
                         android:importantForAccessibility="no"
-                        android:src="@drawable/schedule_24"
-                        app:tint="?attr/colorPrimary" />
+                        app:srcCompat="@drawable/schedule_24" />
 
                     <TextView
                         android:layout_width="match_parent"
@@ -112,7 +112,8 @@
                         android:text="@string/empty_action_add_first_schedule"
                         android:textAllCaps="false"
                         app:icon="@drawable/add_24"
-                        app:iconGravity="textStart" />
+                        app:iconGravity="textStart"
+                        app:iconTint="?attr/colorPrimary" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
         </FrameLayout>

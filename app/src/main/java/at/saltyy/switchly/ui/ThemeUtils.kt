@@ -1,7 +1,6 @@
 /*
  * Switchly
  * Copyright (C) 2025-2026 Saltyy
- * Copyright (C) 2026 Switchly Contributors
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,6 +22,7 @@ import android.app.Activity
 import android.content.res.ColorStateList
 import android.view.View
 import android.view.ViewGroup
+import android.widget.CompoundButton
 import android.widget.ImageView
 import androidx.core.graphics.ColorUtils
 import androidx.preference.PreferenceManager
@@ -33,11 +33,15 @@ import at.saltyy.switchly.util.FrameworkApi34Compat
 
 object ThemeUtils {
 
+    /**
+     * Apply the user-selected accent theme variant to the activity before super.onCreate().
+     */
     fun applyAccentTheme(activity: Activity) {
         val prefs = PreferenceManager.getDefaultSharedPreferences(activity)
         val accent = prefs.getString("pref_accent", "default") ?: "default"
 
         val themeRes = when (accent) {
+            "default" -> R.style.Theme_Switchly
             "green"  -> R.style.Theme_Switchly_Accent_Green
             "blue"   -> R.style.Theme_Switchly_Accent_Blue
             "orange" -> R.style.Theme_Switchly_Accent_Orange
@@ -58,9 +62,9 @@ object ThemeUtils {
         FrameworkApi34Compat.applyThemeWorkaround(activity)
 
         // Run one shared late UI pass after inflation.
-        // Custom accents first replace any remaining compile-time theme green; the consistency pass then normalizes late-bound widget states.
+        // Accent retinting replaces any remaining compile-time theme green; the consistency pass then normalizes late-bound widget states.
         activity.window?.decorView?.post {
-            if (accent == "custom") {
+            if (CustomAccentApplier.isCustomAccentEnabled(activity)) {
                 runCatching { CustomAccentApplier.applyIfNeeded(activity) }
             }
             runCatching { retintUnthemedPrimaryIcons(activity) }
@@ -74,7 +78,7 @@ object ThemeUtils {
      * anything still carrying the compile-time default green gets the live
      * accent at runtime. Neutral tints (chevrons, white icons) are left alone —
      * only the exact default green matches. Covers icons, buttons (text, icon,
-     * stroke, filled backgrounds) and FABs.
+     * stroke, filled backgrounds), FABs, and checkables.
      */
     private fun retintUnthemedPrimaryIcons(activity: Activity) {
         val accent = AccentColor.getAccentColorInt(activity)
@@ -93,6 +97,13 @@ object ThemeUtils {
                         v.imageTintList = ColorStateList.valueOf(accent)
                     }
                 }
+                is CompoundButton -> {
+                    v.buttonTintList?.let { list ->
+                        if (matchesGreen(list.defaultColor)) {
+                            v.buttonTintList = CustomAccentApplier.buildCheckableTint(activity, accent)
+                        }
+                    }
+                }
                 is com.google.android.material.button.MaterialButton -> {
                     v.strokeColor?.let { stroke ->
                         if (matchesGreen(stroke.defaultColor)) {
@@ -102,10 +113,11 @@ object ThemeUtils {
                     if (matchesGreen(v.currentTextColor)) {
                         v.setTextColor(accent)
                     }
-                    v.iconTint?.let { iconTint ->
-                        if (matchesGreen(iconTint.defaultColor)) {
-                            v.iconTint = ColorStateList.valueOf(accent)
-                        }
+                    val iconTint = v.iconTint
+                    if (iconTint != null && matchesGreen(iconTint.defaultColor)) {
+                        v.iconTint = ColorStateList.valueOf(accent)
+                    } else if (iconTint == null && (matchesGreen(v.currentTextColor) || matchesGreen(v.strokeColor?.defaultColor ?: 0))) {
+                        v.iconTint = ColorStateList.valueOf(accent)
                     }
                     v.backgroundTintList?.let { bg ->
                         if (matchesGreen(bg.defaultColor) && android.graphics.Color.alpha(bg.defaultColor) > 24) {

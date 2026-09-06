@@ -36,6 +36,7 @@ import android.view.View
 import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -129,6 +130,8 @@ class OnboardingActivity : ComponentActivity() {
     private var compatPageIndex: Int = 0
     private lateinit var btnNext: MaterialButton
     private lateinit var btnSkip: MaterialButton
+    private lateinit var btnHeaderBack: ImageButton
+    private lateinit var btnHeaderSkip: MaterialButton
     private lateinit var btnOptionalSetup: MaterialButton
     private lateinit var buttonSpacer: View
 
@@ -172,6 +175,8 @@ class OnboardingActivity : ComponentActivity() {
         useCompatPagerFallback = FrameworkApi34Compat.needsCrashShield()
         btnNext = findViewById(R.id.btn_next)
         btnSkip = findViewById(R.id.btn_skip)
+        btnHeaderBack = findViewById(R.id.btnHeaderBack)
+        btnHeaderSkip = findViewById(R.id.btnHeaderSkip)
         btnOptionalSetup = findViewById(R.id.btn_optional_setup)
         buttonSpacer = findViewById(R.id.onboardingButtonSpacer)
 
@@ -209,7 +214,7 @@ class OnboardingActivity : ComponentActivity() {
 
         updateButtons(currentPageIndex())
 
-        btnSkip.setOnClickListener {
+        val onSkipClicked = {
             val currentPage = pages.getOrNull(currentPageIndex())
             if (currentPage?.type == OnboardingPage.Type.OPTIONAL_SETUP) {
                 finishOnboarding()
@@ -220,6 +225,16 @@ class OnboardingActivity : ComponentActivity() {
                 // "Skip" should stay skipped for this onboarding version. Missing setup is still
                 // surfaced through Permissions/Setup Health without reopening onboarding on launch.
                 markSkipped()
+                leaveOnboarding()
+            }
+        }
+        btnSkip.setOnClickListener { onSkipClicked() }
+        btnHeaderSkip.setOnClickListener { onSkipClicked() }
+        btnHeaderBack.setOnClickListener {
+            val position = currentPageIndex()
+            if (position > 0) {
+                setPageIndex(position - 1, smooth = true)
+            } else {
                 leaveOnboarding()
             }
         }
@@ -486,17 +501,19 @@ class OnboardingActivity : ComponentActivity() {
         val isLastOptionalPage = isOptionalPage && pos == lastOptionalSetupPageIndex()
         val finishesOnboarding = isReviewPage || isLastOptionalPage || pos == pages.lastIndex
 
-        btnNext.text = when {
-            !finishesOnboarding -> getString(R.string.onb_next)
-            forced -> getString(R.string.onb_done)
-            else -> getString(R.string.onb_start_button)
-        }
-        btnSkip.text = getString(R.string.onb_skip)
-        btnSkip.visibility = when {
+        btnHeaderBack.visibility = if (pos > 0) View.VISIBLE else View.INVISIBLE
+        btnHeaderSkip.visibility = when {
             isReviewPage || isLastOptionalPage || pos == pages.lastIndex -> View.GONE
             else -> View.VISIBLE
         }
-        buttonSpacer.visibility = btnSkip.visibility
+
+        btnNext.text = when {
+            !finishesOnboarding -> getString(R.string.onb_continue)
+            forced -> getString(R.string.onb_done)
+            else -> getString(R.string.onb_start_button)
+        }
+        btnSkip.visibility = View.GONE
+        buttonSpacer.visibility = View.GONE
         btnOptionalSetup.visibility = if (isReviewPage) View.VISIBLE else View.GONE
 
         btnNext.isEnabled = when {
@@ -520,23 +537,25 @@ class OnboardingActivity : ComponentActivity() {
         fun dp(value: Float): Int = (value * density).toInt()
 
         val accent = AccentColor.getAccentColorInt(this)
+        val onSurface = MaterialColors.getColor(container, com.google.android.material.R.attr.colorOnSurface)
         val activeColor = accent
-        val inactiveColor = ColorUtils.setAlphaComponent(accent, 88)
+        val inactiveColor = ColorUtils.setAlphaComponent(onSurface, 64)
 
         pages.forEachIndexed { index, _ ->
             val dot = View(this)
-            val size = if (index == activePosition) dp(18f) else dp(7f)
-            val params = LinearLayout.LayoutParams(size, dp(7f)).apply {
-                marginStart = dp(3f)
-                marginEnd = dp(3f)
+            val isCurrent = index == activePosition
+            val dotWidth = if (isCurrent) dp(22f) else dp(6f)
+            val dotHeight = dp(6f)
+            val params = LinearLayout.LayoutParams(dotWidth, dotHeight).apply {
+                marginStart = dp(3.5f)
+                marginEnd = dp(3.5f)
             }
             dot.layoutParams = params
             dot.background = android.graphics.drawable.GradientDrawable().apply {
                 shape = android.graphics.drawable.GradientDrawable.RECTANGLE
-                cornerRadius = dp(4f).toFloat()
-                setColor(if (index == activePosition) activeColor else inactiveColor)
+                cornerRadius = dp(3f).toFloat()
+                setColor(if (isCurrent) activeColor else inactiveColor)
             }
-            dot.alpha = if (index == activePosition) 1f else 0.7f
             container.addView(dot)
         }
     }
@@ -595,6 +614,13 @@ class OnboardingActivity : ComponentActivity() {
                 if (btnNext.isEnabled) onAccent else disabledForeground
             )
             alpha = if (btnNext.isEnabled) 0.9f else 0.55f
+        }
+
+        if (::btnHeaderSkip.isInitialized) {
+            btnHeaderSkip.setTextColor(ColorUtils.setAlphaComponent(onSurface, 180))
+        }
+        if (::btnHeaderBack.isInitialized) {
+            btnHeaderBack.imageTintList = ColorStateList.valueOf(onSurface)
         }
     }
 
@@ -832,6 +858,20 @@ class OnboardingActivity : ComponentActivity() {
         val density = resources.displayMetrics.density
         fun dp(value: Float): Int = (value * density).toInt()
 
+        val header = findViewById<View>(R.id.onboardingHeader)
+        val initialHeaderTop = header?.paddingTop ?: 0
+        if (header != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(header) { view, insets ->
+                val bars = insets.getInsets(
+                    WindowInsetsCompat.Type.statusBars() or WindowInsetsCompat.Type.displayCutout()
+                )
+                view.updatePadding(
+                    top = initialHeaderTop + bars.top
+                )
+                insets
+            }
+        }
+
         val pageHost = activePageHost()
         val initialPagerLeft = pageHost.paddingLeft
         val initialPagerTop = pageHost.paddingTop
@@ -841,9 +881,10 @@ class OnboardingActivity : ComponentActivity() {
             val bars = insets.getInsets(
                 WindowInsetsCompat.Type.statusBars() or WindowInsetsCompat.Type.displayCutout()
             )
+            val headerH = if (header != null && header.height > 0) header.height else dp(56f)
             view.updatePadding(
                 left = initialPagerLeft + bars.left,
-                top = initialPagerTop + bars.top,
+                top = initialPagerTop + bars.top + headerH,
                 right = initialPagerRight + bars.right
             )
             insets
@@ -881,6 +922,7 @@ class OnboardingActivity : ComponentActivity() {
             updatePagerFooterSpace()
         }
 
+        header?.let { ViewCompat.requestApplyInsets(it) }
         ViewCompat.requestApplyInsets(pageHost)
         ViewCompat.requestApplyInsets(bottomBar)
     }

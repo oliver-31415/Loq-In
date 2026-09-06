@@ -9,7 +9,7 @@
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tilDomain"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        style="@style/Switchly.TextInputLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="@string/domain_rule_hint_example"
@@ -27,7 +27,7 @@
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tilMode"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+        style="@style/Switchly.DropdownLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
@@ -35,6 +35,7 @@
 
         <com.google.android.material.textfield.MaterialAutoCompleteTextView
             android:id="@+id/acMode"
+            style="@style/Switchly.AutoCompleteText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="none"
@@ -43,7 +44,7 @@
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tilDailyLimit"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+        style="@style/Switchly.TextInputLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
@@ -60,11 +61,4 @@
             android:singleLine="true" />
     </com.google.android.material.textfield.TextInputLayout>
 
-    <TextView
-        android:id="@+id/tvHelper"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:alpha="0.7"
-        android:text="@string/daily_limit_helper" />
 </LinearLayout>

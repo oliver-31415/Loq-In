@@ -57,6 +57,7 @@ import android.widget.ImageView
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.addCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
@@ -144,6 +145,7 @@ class SchedulesActivity : AppCompatActivity() {
     private enum class TimeMode { SINGLE, TIME_RANGE, DATE_RANGE }
 
     companion object {
+        const val EXTRA_PROFILE_NAME = "extra_profile_name"
         const val EXTRA_OPEN_ADD_TIME = "extra_open_add_time"
         private const val PREFS_SCHEDULE_HEALTH = "switchly_schedule_health"
         const val KEY_BATTERY_OPTIMIZATION_CONFIRMED_MAX_AVAILABLE = "battery_optimization_confirmed_max_available"
@@ -170,6 +172,20 @@ class SchedulesActivity : AppCompatActivity() {
     private lateinit var ivStatusIcon: ImageView
     private lateinit var tvStatusActionTitle: TextView
     private lateinit var dividerStatus: View
+
+    private val targetProfile: String?
+        get() = intent.getStringExtra(EXTRA_PROFILE_NAME)?.trim()?.takeIf { it.isNotBlank() }
+
+    private fun matchesTargetProfile(schedule: ScheduleStore.Schedule): Boolean {
+        val target = targetProfile ?: return true
+        val schedProf = schedule.profile.trim()
+        val effectiveProfile = if (schedProf.isBlank()) {
+            ProfileStore.getCurrent(this) ?: "Default"
+        } else {
+            schedProf
+        }
+        return effectiveProfile.equals(target, ignoreCase = true)
+    }
 
     private var isScheduleUiReadOnly = false
 
@@ -298,8 +314,21 @@ class SchedulesActivity : AppCompatActivity() {
         )
         WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
         setSupportActionBar(toolbar)
-        toolbar.subtitle = getString(R.string.schedules_profile_subtitle)
-        toolbar.setNavigationOnClickListener { finish() }
+        toolbar.subtitle = targetProfile ?: getString(R.string.schedules_profile_subtitle)
+        toolbar.setNavigationOnClickListener {
+            if (isSelectionMode) {
+                exitSelectionMode()
+            } else {
+                finish()
+            }
+        }
+        onBackPressedDispatcher.addCallback(this) {
+            if (isSelectionMode) {
+                exitSelectionMode()
+            } else {
+                finish()
+            }
+        }
         toolbar.setBackgroundColor(AccentColor.getToolbarColor(this))
 
         val recycler = findViewById<RecyclerView>(R.id.recyclerSchedules)
@@ -357,6 +386,7 @@ class SchedulesActivity : AppCompatActivity() {
                 }
             },
             onTest = { schedule -> showScheduleTest(schedule) },
+            getTargetProfile = { targetProfile },
         )
         recycler.adapter = adapter
         recycler.attachEditDeleteSwipe(
@@ -377,6 +407,15 @@ class SchedulesActivity : AppCompatActivity() {
             }
             showNewScheduleTypeDialog()
         }
+        val accent = AccentColor.getAccentColorInt(this)
+        findViewById<ImageView>(R.id.ivEmptyScheduleIcon)?.imageTintList = ColorStateList.valueOf(accent)
+        (findViewById<View>(R.id.btnEmptyAddSchedule) as? MaterialButton)?.apply {
+            strokeColor = ColorStateList.valueOf(accent)
+            setTextColor(accent)
+            iconTint = ColorStateList.valueOf(accent)
+            rippleColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 0x26))
+        }
+
         findViewById<View>(R.id.fabAdd).setOnClickListener(addScheduleClick)
         findViewById<View>(R.id.btnEmptyAddSchedule).setOnClickListener(addScheduleClick)
 
@@ -413,6 +452,15 @@ class SchedulesActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
+            android.R.id.home -> {
+                if (isSelectionMode) {
+                    exitSelectionMode()
+                    true
+                } else {
+                    finish()
+                    true
+                }
+            }
             R.id.action_select -> {
                 if (canEditSchedules()) {
                     enterSelectionMode(null)
@@ -457,12 +505,18 @@ class SchedulesActivity : AppCompatActivity() {
             isEnabled = canInteract
             isClickable = canInteract
             alpha = if (canInteract) 1f else 0.45f
+            (this as? MaterialButton)?.apply {
+                val accentColor = AccentColor.getAccentColorInt(this@SchedulesActivity)
+                strokeColor = ColorStateList.valueOf(accentColor)
+                setTextColor(accentColor)
+                iconTint = ColorStateList.valueOf(accentColor)
+            }
         }
         if (::toolbar.isInitialized) {
             toolbar.updateSelectionSubtitle(
                 isSelectionMode,
                 selectedScheduleIds.size,
-                getString(R.string.schedules_profile_subtitle)
+                targetProfile ?: getString(R.string.schedules_profile_subtitle)
             )
         }
     }
@@ -754,7 +808,7 @@ class SchedulesActivity : AppCompatActivity() {
     }
 
     private fun refreshList() {
-        val list = ScheduleStore.getAll(this)
+        val list = ScheduleStore.getAll(this).filter { matchesTargetProfile(it) }
         val sorted = list.sortedWith(scheduleDisplayComparator())
         val readOnlyNow = !canEditSchedules()
         val readOnlyChanged = isScheduleUiReadOnly != readOnlyNow
@@ -832,7 +886,7 @@ class SchedulesActivity : AppCompatActivity() {
     }
 
     private fun updateScheduleHealthBanner() {
-        val schedules = ScheduleStore.getAll(this)
+        val schedules = ScheduleStore.getAll(this).filter { matchesTargetProfile(it) }
         val enabledSchedules = schedules.filter { it.enabled }
 
         if (!isScheduleAutomationAllowed()) {
@@ -2532,7 +2586,12 @@ class SchedulesActivity : AppCompatActivity() {
         }
 
         if (existing != null) {
-            editTitle.setText(existing.title)
+            val exTitle = existing.title.trim()
+            if (!exTitle.equals(existing.profile.trim(), ignoreCase = true)) {
+                editTitle.setText(exTitle)
+            } else {
+                editTitle.setText("")
+            }
             editNote.setText(existing.note)
             selectProfile(existing.profile)
 
@@ -2568,7 +2627,7 @@ class SchedulesActivity : AppCompatActivity() {
                 updateLocationSummary()
             }
         } else {
-            selectProfile(ProfileStore.getCurrent(this))
+            selectProfile(targetProfile ?: ProfileStore.getCurrent(this))
             chipMon.isChecked = true
             chipTue.isChecked = true
             chipWed.isChecked = true
@@ -3330,6 +3389,7 @@ private class ScheduleAdapter(
     private val onEnterSelection: (Int) -> Unit,
     private val onEdit: (ScheduleStore.Schedule) -> Unit,
     private val onTest: (ScheduleStore.Schedule) -> Unit,
+    private val getTargetProfile: () -> String?,
 ) : androidx.recyclerview.widget.ListAdapter<ScheduleStore.Schedule, ScheduleViewHolder>(DIFF) {
 
     fun itemAt(position: Int): ScheduleStore.Schedule? = currentList.getOrNull(position)
@@ -3347,6 +3407,7 @@ private class ScheduleAdapter(
             onEnterSelection,
             onEdit,
             onTest,
+            getTargetProfile,
         )
     }
 
@@ -3380,6 +3441,7 @@ private class ScheduleViewHolder(
     private val onEnterSelection: (Int) -> Unit,
     private val onEdit: (ScheduleStore.Schedule) -> Unit,
     private val onTest: (ScheduleStore.Schedule) -> Unit,
+    private val getTargetProfile: () -> String?,
 ) : RecyclerView.ViewHolder(itemView) {
 
     private val kindIcon = itemView.findViewById<ImageView>(R.id.imgKind)
@@ -3491,8 +3553,6 @@ private class ScheduleViewHolder(
             cardRoot.setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.foqos_surface))
         }
 
-        title.text = s.title.ifBlank { s.profile }
-
         val hasWifi = !s.wifiSsid.isNullOrBlank()
         val hasBt = (!s.btDeviceName.isNullOrBlank() || !s.btDeviceAddress.isNullOrBlank())
         val hasLocation = s.isLocationSchedule()
@@ -3527,69 +3587,25 @@ private class ScheduleViewHolder(
         subtitle.alpha = a
         note.alpha = a
 
+        val customTitle = s.title.trim()
+        val hasExplicitTitle = customTitle.isNotBlank() &&
+            !customTitle.equals(s.profile.trim(), ignoreCase = true)
+
+        val hasWindow = !(s.startMinutes == 0 && s.endMinutes >= 24 * 60 - 1)
+        val timeWindowStr = if (hasWindow) {
+            ctx.getString(
+                R.string.schedules_time_range_fmt,
+                fmtMinutes(s.startMinutes),
+                fmtMinutes(s.endMinutes)
+            )
+        } else null
+
         val actionLabel = when (s.action) {
             ScheduleStore.Action.ENABLE -> ctx.getString(R.string.schedules_action_enable)
             ScheduleStore.Action.DISABLE -> ctx.getString(R.string.schedules_action_disable)
             ScheduleStore.Action.TOGGLE -> ctx.getString(R.string.schedules_action_toggle)
             ScheduleStore.Action.ENABLE_AND_DISABLE -> ctx.getString(R.string.schedules_action_enable_disable)
             ScheduleStore.Action.DISABLE_AND_ENABLE -> ctx.getString(R.string.schedules_action_disable_enable)
-        }
-
-        val timeOrConn: String = if (hasWifi || hasBt || hasLocation) {
-            val conn = when {
-                hasLocation -> {
-                    val label = s.locationLabel?.takeIf { it.isNotBlank() } ?: run {
-                        val lat = s.locationLat
-                        val lng = s.locationLng
-                        if (lat != null && lng != null) {
-                            String.format(Locale.getDefault(), "%.5f, %.5f", lat, lng)
-                        } else {
-                            "-"
-                        }
-                    }
-                    ctx.getString(
-                        R.string.schedules_conn_location_fmt,
-                        "$label · ${s.locationRadiusMeters}m"
-                    )
-                }
-                hasWifi && hasBt -> ctx.getString(
-                    R.string.schedules_conn_wifi_bt_fmt,
-                    s.wifiSsid,
-                    (s.btDeviceName ?: s.btDeviceAddress)
-                )
-                hasWifi -> ctx.getString(R.string.schedules_conn_wifi_fmt, s.wifiSsid)
-                else -> ctx.getString(R.string.schedules_conn_bt_fmt, s.btDeviceName ?: s.btDeviceAddress)
-            }
-            val base = ctx.getString(R.string.schedules_label_value_fmt, actionLabel, conn)
-            val hasWindow = !(s.startMinutes == 0 && s.endMinutes >= 24 * 60 - 1)
-            if (hasWindow) {
-                val window = ctx.getString(
-                    R.string.schedules_time_range_fmt,
-                    fmtMinutes(s.startMinutes),
-                    fmtMinutes(s.endMinutes)
-                )
-                "$base · $window"
-            } else {
-                base
-            }
-        } else {
-            when (s.action) {
-                ScheduleStore.Action.ENABLE_AND_DISABLE,
-                ScheduleStore.Action.DISABLE_AND_ENABLE -> {
-                    ctx.getString(
-                        R.string.schedules_time_range_fmt,
-                        fmtMinutes(s.startMinutes),
-                        fmtMinutes(s.endMinutes)
-                    )
-                }
-                else -> {
-                    ctx.getString(
-                        R.string.schedules_label_value_fmt,
-                        actionLabel,
-                        fmtMinutes(s.startMinutes)
-                    )
-                }
-            }
         }
 
         val daysLabel = when (s.type) {
@@ -3614,7 +3630,70 @@ private class ScheduleViewHolder(
             }
         }
 
-        subtitle.text = ctx.getString(R.string.schedules_subtitle_fmt, daysLabel, timeOrConn)
+        val (displayTitle, triggerSummary) = when {
+            hasLocation -> {
+                val label = s.locationLabel?.trim()?.takeIf { it.isNotBlank() } ?: run {
+                    val lat = s.locationLat
+                    val lng = s.locationLng
+                    if (lat != null && lng != null) {
+                        String.format(Locale.getDefault(), "%.5f, %.5f", lat, lng)
+                    } else {
+                        null
+                    }
+                }
+                val t = if (hasExplicitTitle) customTitle else (label ?: ctx.getString(R.string.schedules_type_location))
+                val trig = if (hasExplicitTitle) {
+                    ctx.getString(R.string.schedules_conn_location_fmt, "${label ?: "-"} · ${s.locationRadiusMeters}m")
+                } else {
+                    "${ctx.getString(R.string.schedules_type_location)} (${s.locationRadiusMeters}m)"
+                }
+                t to trig
+            }
+            hasWifi && hasBt -> {
+                val wifiName = s.wifiSsid.orEmpty()
+                val btName = (s.btDeviceName ?: s.btDeviceAddress).orEmpty()
+                val t = if (hasExplicitTitle) customTitle else "$wifiName + $btName"
+                val trig = ctx.getString(R.string.schedules_conn_wifi_bt_fmt, wifiName, btName)
+                t to trig
+            }
+            hasWifi -> {
+                val wifiName = s.wifiSsid?.trim().orEmpty()
+                val t = if (hasExplicitTitle) customTitle else wifiName.ifBlank { ctx.getString(R.string.schedules_type_wifi) }
+                val trig = if (hasExplicitTitle) ctx.getString(R.string.schedules_conn_wifi_fmt, wifiName) else ctx.getString(R.string.schedules_type_wifi)
+                t to trig
+            }
+            hasBt -> {
+                val btName = (s.btDeviceName ?: s.btDeviceAddress)?.trim().orEmpty()
+                val t = if (hasExplicitTitle) customTitle else btName.ifBlank { ctx.getString(R.string.schedules_type_bt) }
+                val trig = if (hasExplicitTitle) ctx.getString(R.string.schedules_conn_bt_fmt, btName) else ctx.getString(R.string.schedules_type_bt)
+                t to trig
+            }
+            else -> {
+                val timeStr = timeWindowStr ?: if (s.startMinutes > 0) fmtMinutes(s.startMinutes) else ctx.getString(R.string.schedules_conn_time_all_day)
+                val t = if (hasExplicitTitle) customTitle else timeStr
+                val trig = if (hasExplicitTitle) timeStr else null
+                t to trig
+            }
+        }
+
+        title.text = displayTitle
+
+        val subtitleParts = mutableListOf<String>()
+        if (daysLabel.isNotBlank()) {
+            subtitleParts += daysLabel
+        }
+        if (triggerSummary != null) {
+            subtitleParts += triggerSummary
+        }
+        if (timeWindowStr != null && (hasWifi || hasBt || hasLocation)) {
+            subtitleParts += timeWindowStr
+        }
+        subtitleParts += actionLabel
+        val activeTargetProfile = getTargetProfile()
+        if (activeTargetProfile == null && s.profile.isNotBlank()) {
+            subtitleParts += s.profile
+        }
+        subtitle.text = subtitleParts.joinToString(" · ")
 
         if (s.note.isNotBlank()) {
             note.visibility = View.VISIBLE

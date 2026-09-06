@@ -54,11 +54,13 @@ import androidx.core.graphics.drawable.toDrawable
 import androidx.core.view.ViewCompat
 import androidx.core.widget.TextViewCompat
 import at.saltyy.switchly.R
+import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.chip.Chip
+import com.google.android.material.color.MaterialColors
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.materialswitch.MaterialSwitch
 import com.google.android.material.progressindicator.BaseProgressIndicator
@@ -66,14 +68,9 @@ import com.google.android.material.textfield.TextInputLayout
 import java.util.WeakHashMap
 
 /**
- * Runtime fallback for CUSTOM accent mode.
- * Why this exists:
- * - XML theme attributes (?attr/colorPrimary) are compile-time styles and cannot be swapped to an arbitrary
- *   user-chosen color globally without a full theme-overlay system.
- * - Switchly already applies custom accent in many places, but some Material/AppCompat widgets still resolve to
- *   the default green theme color.
- * This pass replaces common occurrences of the default accent with the selected custom accent.
- * It only runs when "Custom" accent is selected.
+ * Runtime accent retinter for custom and preset accents.
+ * Ensures dialogs, form inputs, checkboxes, cursors, switches, and popups
+ * follow the user-selected accent color instead of falling back to compile-time green.
  */
 object CustomAccentApplier {
 
@@ -84,12 +81,20 @@ object CustomAccentApplier {
     private val cursorFocusHooks = WeakHashMap<EditText, ViewTreeObserver.OnGlobalFocusChangeListener>()
     private val cursorTextWatchers = WeakHashMap<EditText, TextWatcher>()
 
-    fun isCustomAccentEnabled(activity: Activity): Boolean {
-        return AccentColor.getOption(activity) == AccentColor.Option.CUSTOM
+    fun isAccentRecoloringNeeded(context: Context): Boolean {
+        val accent = AccentColor.getAccentColorInt(context) and 0x00FFFFFF
+        val defaultGreen = ContextCompat.getColor(context, R.color.accent_default_green) and 0x00FFFFFF
+        return accent != defaultGreen || AccentColor.getOption(context) == AccentColor.Option.CUSTOM
     }
 
+    fun isCustomAccentEnabled(activity: Activity): Boolean =
+        AccentColor.getOption(activity) == AccentColor.Option.CUSTOM
+
+    fun isCustomAccentEnabled(context: Context): Boolean =
+        AccentColor.getOption(context) == AccentColor.Option.CUSTOM
+
     fun applyIfNeeded(activity: Activity) {
-        if (!isCustomAccentEnabled(activity)) {
+        if (!isAccentRecoloringNeeded(activity)) {
             return
         }
 
@@ -110,13 +115,28 @@ object CustomAccentApplier {
         attachGlobalLayoutHook(activity, root, defaultAccent, accent)
     }
 
-    fun applyToView(root: View, activity: Activity) {
-        if (!isCustomAccentEnabled(activity)) {
-            return
-        }
-        val accent = AccentColor.getAccentColorInt(activity)
-        val defaultAccent = ContextCompat.getColor(activity, R.color.accent_default_green)
+    fun applyToView(root: View, context: Context) {
+        val accent = AccentColor.getAccentColorInt(context)
+        val defaultAccent = ContextCompat.getColor(context, R.color.accent_default_green)
         recolorRecursive(root, defaultAccent, accent)
+    }
+
+    fun applyToView(root: View, activity: Activity) {
+        applyToView(root, activity as Context)
+    }
+
+    fun buildCheckableTint(context: Context, accent: Int): ColorStateList {
+        val checked = intArrayOf(android.R.attr.state_checked)
+        val unchecked = intArrayOf(-android.R.attr.state_checked)
+        val uncheckedColor = MaterialColors.getColor(
+            context,
+            com.google.android.material.R.attr.colorOnSurfaceVariant,
+            0x8A000000.toInt()
+        )
+        return ColorStateList(
+            arrayOf(checked, unchecked),
+            intArrayOf(accent, uncheckedColor)
+        )
     }
 
     fun tintSwitch(switch: SwitchCompat) {
@@ -125,13 +145,19 @@ object CustomAccentApplier {
         switch.trackTintList = buildSwitchTrackTint(accent)
     }
 
+    fun tintSwitch(switch: MaterialSwitch) {
+        val accent = AccentColor.getAccentColorInt(switch.context)
+        switch.thumbTintList = buildSwitchThumbTint(accent)
+        switch.trackTintList = buildSwitchTrackTint(accent)
+    }
+
     fun applyToDialog(dialog: AlertDialog) {
-        val activity = unwrapActivity(dialog.context) ?: return
-        if (!isCustomAccentEnabled(activity)) {
+        val context = dialog.context
+        if (!isAccentRecoloringNeeded(context)) {
             return
         }
 
-        val accent = AccentColor.getAccentColorInt(activity)
+        val accent = AccentColor.getAccentColorInt(context)
         dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(accent)
         dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setTextColor(accent)
         dialog.getButton(AlertDialog.BUTTON_NEUTRAL)?.setTextColor(accent)
@@ -145,14 +171,13 @@ object CustomAccentApplier {
                 // Force it to a subtle accent-tinted drawable.
                 runCatching {
                     val sel = ColorUtils.setAlphaComponent(accent, 0x22)
-                    // KTX: convert a color int to a drawable.
                     lv.selector = sel.toDrawable()
                     lv.isDrawSelectorOnTop = true
                 }
 
                 val retint = {
                     for (i in 0 until lv.childCount) {
-                        applyToView(lv.getChildAt(i), activity)
+                        applyToView(lv.getChildAt(i), context)
                     }
                 }
 
@@ -170,7 +195,7 @@ object CustomAccentApplier {
                 runCatching {
                     lv.setOnHierarchyChangeListener(object : ViewGroup.OnHierarchyChangeListener {
                         override fun onChildViewAdded(parent: View?, child: View?) {
-                            if (child != null) runCatching { applyToView(child, activity) }
+                            if (child != null) runCatching { applyToView(child, context) }
                         }
 
                         override fun onChildViewRemoved(parent: View?, child: View?) = Unit
@@ -198,12 +223,12 @@ object CustomAccentApplier {
         }
 
         val decor = dialog.window?.decorView ?: return
-        applyToView(decor, activity)
+        applyToView(decor, context)
 
         // Some Material dialogs bind list indicators (radio/checkbox drawables) *after* onShow.
         // Run a few late passes over the whole decor so we catch those cases too.
         longArrayOf(40L, 120L, 260L, 520L).forEach { d ->
-            decor.postDelayed({ runCatching { applyToView(decor, activity) } }, d)
+            decor.postDelayed({ runCatching { applyToView(decor, context) } }, d)
         }
     }
 
@@ -266,8 +291,11 @@ object CustomAccentApplier {
     }
 
     private fun recolorView(view: View, defaultAccent: Int, accent: Int) {
+        if (view is MaterialToolbar || view is AppBarLayout) {
+            return
+        }
+
         // The onboarding footer intentionally keeps its secondary action tonal.
-        // In CUSTOM mode the generic recursive pass used to interpret the outlined button's theme tint as a primary fill, making both footer actions accent-colored.
         val preserveOnboardingSecondaryBackground = view.id == R.id.btn_skip
 
         // Generic background tint replacement
@@ -314,12 +342,7 @@ object CustomAccentApplier {
                 }
             }
 
-            is MaterialToolbar -> {
-                val c = (view.background as? ColorDrawable)?.color
-                if (c == null || matchesAccent(c, defaultAccent)) {
-                    view.setBackgroundColor(accent)
-                }
-            }
+
 
             is BottomNavigationView -> {
                 view.itemIconTintList = replaceCheckedColor(view.itemIconTintList, accent, defaultAccent)
@@ -353,18 +376,17 @@ object CustomAccentApplier {
                         view.setTextColor(onAccent)
                         view.iconTint = ColorStateList.valueOf(onAccent)
                     }
-
-                    textMatchedAccent || outlinedLike -> {
+                    outlinedLike || textMatchedAccent -> {
                         view.setTextColor(accent)
                         view.iconTint = ColorStateList.valueOf(accent)
                     }
+                }
 
-                    else -> {
-                        view.iconTint?.let {
-                            if (matchesAccent(it.defaultColor, defaultAccent)) {
-                                view.iconTint = ColorStateList.valueOf(accent)
-                            }
-                        }
+                // If icon tint is explicitly default accent, align with text
+                view.iconTint?.let {
+                    if (matchesAccent(it.defaultColor, defaultAccent)) {
+                        val target = if (filledAccentBg) readableOnColor(accent) else accent
+                        view.iconTint = ColorStateList.valueOf(target)
                     }
                 }
             }
@@ -373,24 +395,16 @@ object CustomAccentApplier {
                 view.backgroundTintList?.let {
                     if (matchesAccent(it.defaultColor, defaultAccent)) {
                         view.backgroundTintList = ColorStateList.valueOf(accent)
-                    }
-                }
-                view.imageTintList?.let {
-                    if (matchesAccent(it.defaultColor, defaultAccent)) {
-                        view.imageTintList = ColorStateList.valueOf(accent)
+                        val onAccent = readableOnColor(accent)
+                        view.imageTintList = ColorStateList.valueOf(onAccent)
                     }
                 }
             }
 
             is MaterialCardView -> {
-                view.cardBackgroundColor?.let {
-                    if (matchesAccent(it.defaultColor, defaultAccent)) {
-                        view.setCardBackgroundColor(accent)
-                    }
-                }
                 view.strokeColorStateList?.let {
                     if (matchesAccent(it.defaultColor, defaultAccent)) {
-                        view.setStrokeColor(ColorStateList.valueOf(accent))
+                        view.strokeColor = accent
                     }
                 }
             }
@@ -494,22 +508,16 @@ object CustomAccentApplier {
             }
 
             is MaterialSwitch -> {
-                // Force custom accent for track/thumb in custom mode.
                 view.thumbTintList = buildSwitchThumbTint(accent)
                 view.trackTintList = buildSwitchTrackTint(accent)
             }
 
             is SwitchCompat -> {
-                // Ensure switches never fall back to theme green in custom mode.
                 view.thumbTintList = buildSwitchThumbTint(accent)
                 view.trackTintList = buildSwitchTrackTint(accent)
             }
 
             is CompoundButton -> {
-                // In custom accent mode, always force the selected accent for checkables.
-                // (Dialogs/lists often resolve to system/dynamic colors that won't match our default accent.)
-                // Some Material widgets auto-apply theme colours; turn that off so our tint sticks.
-                // Use reflection so this works regardless of the Material Components version.
                 runCatching {
                     val m = view.javaClass.methods.firstOrNull {
                         it.name == "setUseMaterialThemeColors" &&
@@ -518,7 +526,7 @@ object CustomAccentApplier {
                     }
                     m?.invoke(view, false)
                 }
-                view.buttonTintList = ColorStateList.valueOf(accent)
+                view.buttonTintList = buildCheckableTint(view.context, accent)
             }
 
             is ImageView -> {
@@ -568,35 +576,30 @@ object CustomAccentApplier {
                 }
 
                 retintCompoundDrawables(view, accent, defaultAccent)
+            }
 
-                // Single-choice dialogs often use CheckedTextView with a checkmark drawable.
-                if (view is CheckedTextView) {
-                    runCatching {
-                        val d = view.checkMarkDrawable
-                        if (d != null) {
-                            val wrapped = DrawableCompat.wrap(d.mutate())
-                            DrawableCompat.setTint(wrapped, accent)
-                            view.setCheckMarkDrawable(wrapped)
-                        }
-
-                        // Some layouts use framework tinting instead of a drawable mutation.
-                        // Prefer checkMarkTintList when available.
-                        runCatching {
-                            view.checkMarkTintList = ColorStateList.valueOf(accent)
-                        }
+            is CheckedTextView -> {
+                view.checkMarkTintList?.let {
+                    if (matchesAccent(it.defaultColor, defaultAccent)) {
+                        view.checkMarkTintList = ColorStateList.valueOf(accent)
                     }
                 }
             }
         }
     }
 
+    /**
+     * EditText cursor and selection highlight recoloring.
+     * Note: This applies to TextInputEditText as well since it inherits from EditText.
+     */
     private fun tintEditTextCursorAndSelection(et: EditText, accent: Int) {
-        // Selection highlight (drag handles still depend on theme; highlight is the most visible part).
-        runCatching {
-            et.highlightColor = ColorUtils.setAlphaComponent(accent, 0x44)
-        }
+        // Selection highlight tint (text background when text is selected).
+        // Default color is often theme green with ~30% alpha.
+        val highlight = ColorUtils.setAlphaComponent(accent, 0x4D)
+        et.highlightColor = highlight
 
-        // Some OEM/Material combos show a briefly appearing green "focus dot" when the insertion handle
+        // Handles (selection dot / teardrop / insertion pointer)
+        // When a user taps into an empty field, a small teardrop/pointer ("textSelectHandle")
         // is displayed (common on multi-line fields). That dot is part of the text selection/insertion
         // handle drawables (not the cursor drawable). Force-tint those handles to the custom accent.
         runCatching { tintEditTextSelectionHandles(et, accent) }
@@ -920,8 +923,6 @@ object CustomAccentApplier {
     }
 
     private fun extractColorFromFilter(view: ImageView): Int? {
-        // API-safe extraction is limited. For most cases imageTintList path above is enough.
-        // Keep this helper for devices/widgets that still use colorFilter internally.
         return try {
             val f = view.colorFilter ?: return null
             val colorField = f.javaClass.declaredFields.firstOrNull {
@@ -1001,18 +1002,12 @@ object CustomAccentApplier {
             return true
         }
 
-        // Heuristic match for common Material blends (checked/pressed/disabled) derived from the default accent.
-        //
-        // IMPORTANT: Avoid false positives for dark/neutral surfaces.
-        // In dark mode some greys can be within a large RGB distance tolerance, which caused unrelated backgrounds (e.g. "unavailable app" rows) to be recolored in CUSTOM mode.
-
-        // Require hue proximity to the default accent.
+        // Hue proximity check
         val hsvC = FloatArray(3)
         val hsvD = FloatArray(3)
         Color.colorToHSV(c, hsvC)
         Color.colorToHSV(d, hsvD)
 
-        // If the color is close to grey (low saturation), it's almost certainly not accent-derived.
         if (hsvC[1] < 0.12f) {
             return false
         }
@@ -1031,7 +1026,6 @@ object CustomAccentApplier {
         val db = Color.blue(c) - Color.blue(d)
         val distance = (dr * dr + dg * dg + db * db)
 
-        // Keep tolerance for typical blends while preventing hue-mismatched recolors.
         return distance <= (120 * 120)
     }
 }

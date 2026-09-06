@@ -39,16 +39,6 @@
         app:singleSelection="true">
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnHiddenUsageInsights"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:minHeight="48dp"
-            android:text="@string/hidden_apps_tab_usage"
-            android:maxLines="1"
-            app:cornerRadius="14dp" />
-
-        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnHiddenAppPickers"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
@@ -57,7 +47,31 @@
             android:text="@string/hidden_apps_tab_pickers"
             android:maxLines="1"
             app:cornerRadius="14dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnHiddenUsageInsights"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:minHeight="48dp"
+            android:text="@string/hidden_apps_tab_usage"
+            android:maxLines="1"
+            app:cornerRadius="14dp" />
     </com.google.android.material.button.MaterialButtonToggleGroup>
+
+    <TextView
+        android:id="@+id/tvSectionDescription"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="16dp"
+        android:textColor="?android:attr/textColorSecondary"
+        android:textSize="12.5sp"
+        android:lineSpacingExtra="2dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/toggleHiddenAppsSection" />
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/searchBox"
@@ -65,12 +79,12 @@
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="10dp"
         android:layout_marginEnd="16dp"
         android:hint="@string/ignored_usage_apps_search_hint"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/toggleHiddenAppsSection"
+        app:layout_constraintTop_toBottomOf="@id/tvSectionDescription"
         app:endIconMode="clear_text"
         app:startIconDrawable="@drawable/apps_24">
 

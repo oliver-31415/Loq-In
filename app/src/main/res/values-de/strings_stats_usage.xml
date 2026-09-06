@@ -357,8 +357,10 @@
     <!-- ====================================================== -->
     <string name="ignored_usage_apps_title">Ausgeblendete Apps</string>
     <string name="ignored_usage_apps_summary">Apps aus Insights oder dem Switchly-Schutz ausblenden</string>
-    <string name="hidden_apps_tab_usage">Nutzung &amp; Insights</string>
-    <string name="hidden_apps_tab_pickers">App-Liste</string>
+    <string name="hidden_apps_tab_usage">Bildschirmzeit / Stats</string>
+    <string name="hidden_apps_tab_pickers">Blockierung / Schutz</string>
+    <string name="hidden_apps_tab_usage_subtitle">Aus Nutzungsstatistiken, Diagrammen und Zusammenfassungen ausgeblendet.</string>
+    <string name="hidden_apps_tab_pickers_subtitle">Aus Switchly-Blockierung, App-Auswahl und Bedienungshilfen ausgeschlossen.</string>
     <string name="hidden_apps_usage_description">Hier ausgewählte Apps erscheinen nicht in Top-Apps, Nutzungsübersichten, Timelines, Öffnungszahlen oder im Nutzungsbericht des Onboardings. Blockierungsregeln und Profile werden nicht verändert.</string>
     <string name="hidden_apps_picker_description">Hier ausgewählte Apps werden in Switchly-App-Auswahlen ausgeblendet und solange sie ausgeblendet sind vom Switchly-Schutz ausgenommen. Switchly liest für diese Apps keine Accessibility-Inhalte, führt keine In-App- oder Website-Erkennung aus, blockiert die App nicht, erzwingt keine vorhandenen App-Limits und blendet ihre Benachrichtigungen nicht aus. Vorhandene Konfiguration bleibt gespeichert und wird wieder aktiv, sobald die App wieder eingeblendet wird. Hinweis: Banking- oder Wallet-Apps können trotzdem erkennen, dass auf dem Gerät ein Accessibility-Dienst eines Drittanbieters aktiviert ist.</string>
     <string name="ignored_usage_apps_search_hint">Apps suchen</string>

@@ -34,6 +34,8 @@ import androidx.appcompat.widget.Toolbar
 import androidx.core.net.toUri
 import androidx.core.widget.TextViewCompat
 import at.saltyy.switchly.R
+import androidx.core.content.ContextCompat
+import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.data.prefs.AdvancedModeStore
 import at.saltyy.switchly.receiver.DPMReceiver
 import at.saltyy.switchly.util.AndroidSystemPackages
@@ -194,7 +196,7 @@ class AdvancedModeActivity : TilesInfoActivity() {
                 subtitle = statusSubtitle,
                 sectionTitle = getString(R.string.about_section_admin_status),
                 iconRes = R.drawable.security_24,
-                subtitleColorRes = if (managedActive) R.color.accent_default_green else android.R.color.holo_red_dark,
+                subtitleColorInt = if (managedActive) AccentColor.getAccentColorInt(this) else ContextCompat.getColor(this, android.R.color.holo_red_dark),
                 subtitleAlpha = 1f,
                 onClick = { openAdminScreen() },
                 enableLongPressCopy = false

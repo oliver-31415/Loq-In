@@ -100,10 +100,18 @@ class OnboardingPagerAdapter(
         private val btn = itemView.findViewById<MaterialButton>(R.id.btn_action)
 
         fun bind(activity: Activity, page: OnboardingPage) {
+            val surface = ContextCompat.getColor(activity, R.color.foqos_surface)
+            val onSurface = ContextCompat.getColor(activity, R.color.foqos_on_surface)
+            val onSurfaceVariant = ContextCompat.getColor(activity, R.color.foqos_on_surface_variant)
+            val accent = AccentColor.getAccentColorInt(activity)
+            val onAccent = readableOnColor(accent)
+
             title.text = page.title
+            title.setTextColor(onSurface)
 
             // Allow lightweight formatting (bold, line breaks, bullet points) in onboarding copy.
             desc.text = HtmlCompat.fromHtml(page.desc, HtmlCompat.FROM_HTML_MODE_COMPACT)
+            desc.setTextColor(onSurfaceVariant)
 
             // Keep onboarding copy centered and consistent across all steps.
             desc.gravity = android.view.Gravity.CENTER
@@ -122,6 +130,16 @@ class OnboardingPagerAdapter(
                 icon.isVisible = false
             }
 
+            // Sleek circular hero container with subtle accent wash matching user's theme
+            val heroContainerColor = ColorUtils.setAlphaComponent(accent, 0x1E)
+            iconCard.setCardBackgroundColor(heroContainerColor)
+            iconCard.radius = 32f * itemView.resources.displayMetrics.density
+            iconCard.strokeWidth = 0
+            iconCard.cardElevation = 0f
+
+            icon.setColorFilter(accent)
+            icon.imageTintList = ColorStateList.valueOf(accent)
+
             badge.text = when (page.level) {
                 OnboardingPage.Level.START -> activity.getString(R.string.onb_badge_start)
                 OnboardingPage.Level.REQUIRED -> activity.getString(R.string.onb_badge_required)
@@ -130,15 +148,23 @@ class OnboardingPagerAdapter(
                 OnboardingPage.Level.INFO -> ""
             }
             badge.isVisible = page.level != OnboardingPage.Level.INFO
+            if (badge.isVisible) {
+                val isRequired = page.level == OnboardingPage.Level.REQUIRED
+                badge.background = GradientDrawable().apply {
+                    shape = GradientDrawable.RECTANGLE
+                    cornerRadius = 12f * itemView.resources.displayMetrics.density
+                    setColor(
+                        if (isRequired) ColorUtils.setAlphaComponent(accent, 0x24)
+                        else ColorUtils.setAlphaComponent(onSurface, 0x16)
+                    )
+                }
+                badge.setTextColor(
+                    if (isRequired) accent
+                    else ColorUtils.setAlphaComponent(onSurface, 0xB0)
+                )
+            }
 
             val completed = page.completionCheck?.invoke(activity) == true
-            val accent = AccentColor.getAccentColorInt(activity)
-            val onAccent = readableOnColor(accent)
-
-            // Hero icon sits on a neutral foqos card with an accent icon —
-            // same language as the rest of the app (tiles, hub rows).
-            icon.setColorFilter(accent)
-            icon.imageTintList = ColorStateList.valueOf(accent)
 
             placeActionButton(page)
             renderDetails(activity, page, accent)
@@ -177,15 +203,19 @@ class OnboardingPagerAdapter(
                 btn.text = page.completedLabel ?: page.actionLabel
                 btn.isEnabled = true
                 btn.alpha = 1f
-                btn.backgroundTintList = ColorStateList.valueOf(accent)
-                btn.setTextColor(onAccent)
+                btn.backgroundTintList = ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 0x22))
+                btn.setTextColor(accent)
+                btn.strokeColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 0x55))
+                btn.strokeWidth = (1 * itemView.resources.displayMetrics.density).toInt()
                 btn.setOnClickListener { runPageAction(activity, page, accent) }
             } else if (completed) {
                 btn.text = page.completedLabel ?: activity.getString(R.string.onb_granted)
                 btn.isEnabled = false
-                btn.alpha = 0.85f
-                btn.backgroundTintList = ColorStateList.valueOf(accent)
-                btn.setTextColor(onAccent)
+                btn.alpha = 0.9f
+                btn.backgroundTintList = ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 0x1A))
+                btn.setTextColor(accent)
+                btn.strokeColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 0x44))
+                btn.strokeWidth = (1 * itemView.resources.displayMetrics.density).toInt()
                 btn.setOnClickListener(null)
             } else if (hasAction) {
                 btn.text = page.actionLabel
@@ -193,6 +223,7 @@ class OnboardingPagerAdapter(
                 btn.alpha = 1f
                 btn.backgroundTintList = ColorStateList.valueOf(accent)
                 btn.setTextColor(onAccent)
+                btn.strokeWidth = 0
                 btn.setOnClickListener { runPageAction(activity, page, accent) }
             } else {
                 btn.setOnClickListener(null)
@@ -236,23 +267,18 @@ class OnboardingPagerAdapter(
             val isHomeModes = page.optionalPreview == OnboardingPage.OptionalPreview.HOME_MODES
 
             fun applyCenteredScrollSpacing() {
-                val viewportHeight = itemView.height.takeIf { it > 0 }
-                    ?: itemView.resources.displayMetrics.heightPixels
-                val sharedHeroTop = (viewportHeight * 0.075f).toInt()
-                    .coerceIn(dp(40f), dp(68f))
-                val dynamicTop = if (isUsagePreview) dp(18f) else sharedHeroTop
-                val dynamicBottom = if (isPermissionOverview) dp(32f) else dp(24f)
-                pageContent.setPadding(dp(24f), dynamicTop, dp(24f), dynamicBottom)
+                val dynamicTop = if (isUsagePreview) dp(12f) else dp(16f)
+                val dynamicBottom = if (isPermissionOverview) dp(28f) else dp(20f)
+                pageContent.setPadding(dp(20f), dynamicTop, dp(20f), dynamicBottom)
                 pageContent.gravity = android.view.Gravity.CENTER_HORIZONTAL
 
-                // Every standard onboarding page uses the same hero and icon dimensions so the visual anchor does not jump vertically while swiping between steps.
                 iconCard.updateLayoutParams<ViewGroup.LayoutParams> {
-                    width = dp(112f)
-                    height = dp(112f)
+                    width = dp(64f)
+                    height = dp(64f)
                 }
                 icon.updateLayoutParams<ViewGroup.LayoutParams> {
-                    width = dp(52f)
-                    height = dp(52f)
+                    width = dp(30f)
+                    height = dp(30f)
                 }
             }
 
@@ -263,9 +289,9 @@ class OnboardingPagerAdapter(
             if (lp != null) {
                 lp.topMargin = when {
                     isUsagePreview -> dp(8f)
-                    isPermissionOverview -> dp(18f)
+                    isPermissionOverview -> dp(16f)
                     isHomeModes -> dp(10f)
-                    else -> dp(16f)
+                    else -> dp(14f)
                 }
                 detailsContainer.layoutParams = lp
             }
@@ -457,7 +483,7 @@ class OnboardingPagerAdapter(
 
             if (page.detailRows.isNotEmpty()) {
                 detailsContainer.isVisible = true
-                page.detailRows.forEachIndexed { index, row -> addDetailRow(activity, row, accent, iconForDetailRow(page, index)) }
+                renderGroupedDetailRows(activity, page, accent)
             }
         }
 
@@ -897,8 +923,8 @@ class OnboardingPagerAdapter(
         ) {
             detailsContainer.removeAllViews()
             detailsContainer.isVisible = page.detailRows.isNotEmpty()
-            page.detailRows.forEachIndexed { index, row ->
-                addDetailRow(activity, row, accent, iconForDetailRow(page, index))
+            if (page.detailRows.isNotEmpty()) {
+                renderGroupedDetailRows(activity, page, accent)
             }
         }
 
@@ -1292,6 +1318,104 @@ class OnboardingPagerAdapter(
             )
         }
 
+        private fun renderGroupedDetailRows(
+            activity: Activity,
+            page: OnboardingPage,
+            accent: Int
+        ) {
+            val density = itemView.resources.displayMetrics.density
+            fun dp(value: Float): Int = (value * density).toInt()
+
+            val surface = ContextCompat.getColor(activity, R.color.foqos_surface)
+            val onSurface = ContextCompat.getColor(activity, R.color.foqos_on_surface)
+            val outline = ContextCompat.getColor(activity, R.color.foqos_outline_variant)
+            val dividerColor = ColorUtils.setAlphaComponent(outline, 130)
+
+            val groupedCard = MaterialCardView(activity).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { topMargin = dp(12f) }
+                radius = dp(16f).toFloat()
+                cardElevation = 0f
+                strokeWidth = dp(1f)
+                strokeColor = outline
+                setCardBackgroundColor(surface)
+            }
+
+            val cardContent = LinearLayout(activity).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+                orientation = LinearLayout.VERTICAL
+            }
+
+            val rows = page.detailRows
+            rows.forEachIndexed { index, rowText ->
+                val iconRes = iconForDetailRow(page, index)
+                val rowView = LinearLayout(activity).apply {
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    )
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = android.view.Gravity.CENTER_VERTICAL
+                    setPadding(dp(16f), dp(13f), dp(16f), dp(13f))
+                }
+
+                if (iconRes != null) {
+                    val iconBg = GradientDrawable().apply {
+                        shape = GradientDrawable.RECTANGLE
+                        cornerRadius = dp(10f).toFloat()
+                        setColor(ColorUtils.setAlphaComponent(accent, 26))
+                    }
+                    val leadingIcon = ImageView(activity).apply {
+                        layoutParams = LinearLayout.LayoutParams(dp(36f), dp(36f)).apply {
+                            marginEnd = dp(14f)
+                        }
+                        background = iconBg
+                        setPadding(dp(7f), dp(7f), dp(7f), dp(7f))
+                        setImageResource(iconRes)
+                        imageTintList = ColorStateList.valueOf(accent)
+                        contentDescription = null
+                    }
+                    rowView.addView(leadingIcon)
+                }
+
+                val textView = TextView(activity).apply {
+                    layoutParams = LinearLayout.LayoutParams(
+                        0,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        1f
+                    )
+                    text = rowText
+                    textSize = 14.5f
+                    setTextColor(onSurface)
+                    setLineSpacing(0f, 1.15f)
+                }
+                rowView.addView(textView)
+                cardContent.addView(rowView)
+
+                if (index < rows.size - 1) {
+                    val divider = View(activity).apply {
+                        layoutParams = LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT,
+                            dp(1f)
+                        ).apply {
+                            marginStart = if (iconRes != null) dp(66f) else dp(16f)
+                            marginEnd = dp(16f)
+                        }
+                        setBackgroundColor(dividerColor)
+                    }
+                    cardContent.addView(divider)
+                }
+            }
+
+            groupedCard.addView(cardContent)
+            detailsContainer.addView(groupedCard)
+        }
+
         private fun addDetailRow(activity: Activity, text: String, accent: Int, iconRes: Int?) {
             addUnifiedOnboardingRow(
                 activity = activity,
@@ -1454,13 +1578,18 @@ class OnboardingPagerAdapter(
             row.addView(texts)
 
             if (clickable) {
-                val arrow = ImageView(activity).apply {
+                val trailingIcon = ImageView(activity).apply {
                     layoutParams = LinearLayout.LayoutParams(dp(22f), dp(22f)).apply { marginStart = dp(12f) }
-                    setImageResource(R.drawable.keyboard_arrow_right_24)
-                    imageTintList = ColorStateList.valueOf(ColorUtils.setAlphaComponent(if (highlighted) accent else onSurface, if (highlighted) 210 else 130))
+                    if (highlighted) {
+                        setImageResource(R.drawable.check_circle_24)
+                        imageTintList = ColorStateList.valueOf(accent)
+                    } else {
+                        setImageResource(R.drawable.keyboard_arrow_right_24)
+                        imageTintList = ColorStateList.valueOf(ColorUtils.setAlphaComponent(onSurface, 130))
+                    }
                     contentDescription = null
                 }
-                row.addView(arrow)
+                row.addView(trailingIcon)
             }
 
             card.addView(row)

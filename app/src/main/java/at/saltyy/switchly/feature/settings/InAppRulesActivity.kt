@@ -67,6 +67,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 class InAppRulesActivity : AppCompatActivity() {
     companion object {
         const val EXTRA_FOCUS_PACKAGE = "extra_focus_package"
+        const val EXTRA_PROFILE_NAME = "extra_profile_name"
     }
 
     private lateinit var container: LinearLayout
@@ -668,7 +669,9 @@ class InAppRulesActivity : AppCompatActivity() {
         }.getOrNull()
     }
 
-    private fun currentProfile(): String = ProfileStore.getCurrent(this) ?: "default"
+    private fun currentProfile(): String =
+        intent.getStringExtra(EXTRA_PROFILE_NAME)?.trim()?.takeIf { it.isNotBlank() }
+            ?: ProfileStore.getCurrent(this) ?: "default"
 
     private fun readProfileBool(baseKey: String): Boolean {
         return InAppRuleStore.isRuleSelected(this, currentProfile(), baseKey)

@@ -11,8 +11,10 @@
     <string name="onb_granted">Granted</string>
     <string name="onb_done">Done</string>
     <string name="onb_start_button">Start Switchly</string>
-    <string name="onb_next">Next</string>
-    <string name="onb_skip">Set up later</string>
+    <string name="onb_next">Continue</string>
+    <string name="onb_continue">Continue</string>
+    <string name="onb_back">Back</string>
+    <string name="onb_skip">Skip</string>
     <string name="onb_open">Open</string>
     <string name="onb_permissions_action">Open next setting</string>
 

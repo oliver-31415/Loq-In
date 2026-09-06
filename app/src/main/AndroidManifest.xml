@@ -226,7 +226,7 @@
         <!-- First-run onboarding flow -->
         <activity
             android:name=".feature.onboarding.OnboardingActivity"
-            android:exported="false" />
+            android:exported="true" />
 
         <!-- Profile management screen -->
         <activity

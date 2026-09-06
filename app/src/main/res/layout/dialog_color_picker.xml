@@ -20,7 +20,7 @@
         android:layout_width="match_parent"
         android:layout_height="48dp"
         android:layout_marginBottom="16dp"
-        android:background="@color/accent_default_green" />
+        android:background="@color/foqos_surface_variant" />
 
     <TextView
         android:layout_width="wrap_content"

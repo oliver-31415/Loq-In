@@ -1807,15 +1807,24 @@ class MainActivity : AppCompatActivity() {
         }
         view.findViewById<View>(R.id.rowSheetWebsites).setOnClickListener {
             sheet.dismiss()
-            openRulesDestination(Intent(this, ManageBlockedWebsitesActivity::class.java))
+            val intent = Intent(this, ManageBlockedWebsitesActivity::class.java).apply {
+                putExtra(ManageBlockedWebsitesActivity.EXTRA_PROFILE_NAME, profile)
+            }
+            openRulesDestination(intent)
         }
         view.findViewById<View>(R.id.rowSheetInApp).setOnClickListener {
             sheet.dismiss()
-            openRulesDestination(Intent(this, InAppRulesActivity::class.java))
+            val intent = Intent(this, InAppRulesActivity::class.java).apply {
+                putExtra(InAppRulesActivity.EXTRA_PROFILE_NAME, profile)
+            }
+            openRulesDestination(intent)
         }
         view.findViewById<View>(R.id.rowSheetSchedules).setOnClickListener {
             sheet.dismiss()
-            openRulesDestination(Intent(this, SchedulesActivity::class.java))
+            val intent = Intent(this, SchedulesActivity::class.java).apply {
+                putExtra(SchedulesActivity.EXTRA_PROFILE_NAME, profile)
+            }
+            openRulesDestination(intent)
         }
         view.findViewById<View>(R.id.rowSheetDelete).setOnClickListener {
             val profiles = ProfileStore.getProfiles(this)
