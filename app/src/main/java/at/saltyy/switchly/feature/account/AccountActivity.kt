@@ -26,7 +26,6 @@ import androidx.appcompat.app.AppCompatActivity
 import at.saltyy.switchly.R
 import at.saltyy.switchly.feature.about.PrivacyReportActivity
 import at.saltyy.switchly.feature.settings.AppLockSettingsActivity
-import at.saltyy.switchly.feature.settings.BackupFlowActions
 import at.saltyy.switchly.feature.tools.ManageKeysActivity
 import at.saltyy.switchly.feature.usage.SwitchlyOverviewActivity
 import at.saltyy.switchly.theme.AccentColor
@@ -44,7 +43,7 @@ class AccountActivity : AppCompatActivity() {
 
     // Owns activity-result launchers: property init runs before onCreate, so
     // registration happens before STARTED. Same flows as Settings backup screen.
-    private val backupFlows = BackupFlowActions(this)
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         ThemeUtils.applyAccentTheme(this)
@@ -76,12 +75,7 @@ class AccountActivity : AppCompatActivity() {
         findViewById<View>(R.id.cardAccountPrivacy).setOnClickListener {
             startActivity(Intent(this, PrivacyReportActivity::class.java))
         }
-        findViewById<View>(R.id.cardAccountBackup).setOnClickListener {
-            backupFlows.showBackupOptions()
-        }
-        findViewById<View>(R.id.cardAccountDeleteData).setOnClickListener {
-            backupFlows.confirmReset()
-        }
+
     }
 
     companion object {
