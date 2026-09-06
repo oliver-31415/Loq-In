@@ -2104,6 +2104,74 @@ class MainActivity : AppCompatActivity() {
                 setColor(ContextCompat.getColor(ctx, at.saltyy.switchly.R.color.foqos_surface))
             }
 
+        fun createEditButton(onClick: () -> Unit, sizeDp: Float = 34f, iconSizeDp: Float = 17f): View {
+            return FrameLayout(ctx).apply {
+                val base = roundelBg()
+                val mask = android.graphics.drawable.GradientDrawable().apply {
+                    shape = android.graphics.drawable.GradientDrawable.OVAL
+                    setColor(Color.WHITE)
+                }
+                val ripple = android.graphics.drawable.RippleDrawable(
+                    ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 0x33)),
+                    base,
+                    mask,
+                )
+                background = ripple
+                isClickable = true
+                isFocusable = true
+                contentDescription = getString(R.string.edit)
+                layoutParams = LinearLayout.LayoutParams(homeDp(sizeDp), homeDp(sizeDp)).apply {
+                    marginStart = homeDp(6f)
+                }
+                addView(ImageView(ctx).apply {
+                    setImageResource(R.drawable.edit_24)
+                    setColorFilter(accent)
+                    layoutParams = FrameLayout.LayoutParams(homeDp(iconSizeDp), homeDp(iconSizeDp)).apply {
+                        gravity = android.view.Gravity.CENTER
+                    }
+                })
+                setOnClickListener { onClick() }
+            }
+        }
+
+        fun editNfc() {
+            if (isNfcTagWritingLocked()) {
+                EditingLockGuard.showLockedDialog(this, R.string.edit_locked_write_nfc_tags)
+            } else {
+                sheet.dismiss()
+                startActivity(Intent(this, NfcWriterActivity::class.java))
+            }
+        }
+
+        fun editBarcode() {
+            if (EditingLockGuard.isLocked(this)) {
+                EditingLockGuard.showLockedDialog(this, R.string.edit_locked_manage_barcodes)
+            } else {
+                sheet.dismiss()
+                startActivity(
+                    Intent(this, ManageBarcodesActivity::class.java)
+                        .putExtra(ManageBarcodesActivity.EXTRA_FORCE_ALLOW, true)
+                )
+            }
+        }
+
+        fun editQr() {
+            if (EditingLockGuard.isLocked(this)) {
+                EditingLockGuard.showLockedDialog(this, R.string.edit_locked_manage_qr_codes)
+            } else {
+                sheet.dismiss()
+                startActivity(
+                    Intent(this, QrGenerateActivity::class.java)
+                        .putExtra(QrGenerateActivity.EXTRA_FORCE_ALLOW, true)
+                )
+            }
+        }
+
+        fun editSchedule() {
+            sheet.dismiss()
+            openRulesDestination(Intent(this, SchedulesActivity::class.java))
+        }
+
         val list = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
             val pad = homeDp(16f)
@@ -2166,6 +2234,7 @@ class MainActivity : AppCompatActivity() {
             descRes: Int,
             iconRes: Int,
             supported: Boolean,
+            onEdit: (() -> Unit)? = null,
         ): LinearLayout {
             val row = LinearLayout(ctx).apply {
                 orientation = LinearLayout.HORIZONTAL
@@ -2209,17 +2278,26 @@ class MainActivity : AppCompatActivity() {
                 setTextColor(onSurfaceSoft)
             })
             row.addView(texts)
+
+            if (onEdit != null && supported) {
+                row.addView(createEditButton(onEdit, sizeDp = 34f, iconSizeDp = 17f))
+            }
+
             row.addView(TextView(ctx).apply {
                 text = "\u2713"
                 textSize = 16f
                 setTypeface(typeface, android.graphics.Typeface.BOLD)
                 setTextColor(accent)
-                visibility = if (mode == current) View.VISIBLE else View.GONE
+                visibility = if (mode == current) View.VISIBLE else View.INVISIBLE
                 tag = "mode_check"
+                gravity = android.view.Gravity.CENTER
                 layoutParams = LinearLayout.LayoutParams(
+                    homeDp(26f),
                     LinearLayout.LayoutParams.WRAP_CONTENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                ).apply { marginStart = homeDp(12f) }
+                ).apply {
+                    marginStart = homeDp(6f)
+                    marginEnd = homeDp(2f)
+                }
             })
             return row
         }
@@ -2287,6 +2365,7 @@ class MainActivity : AppCompatActivity() {
             onChanged: ((Boolean) -> Unit)? = null,
             indent: Boolean = false,
             into: LinearLayout = mixedSubmenu,
+            onEdit: (() -> Unit)? = null,
         ) {
             val switch = com.google.android.material.materialswitch.MaterialSwitch(ctx).apply {
                 isChecked = getter()
@@ -2357,6 +2436,14 @@ class MainActivity : AppCompatActivity() {
                 setTextColor(onSurfaceSoft)
             })
             row.addView(texts)
+            if (onEdit != null && supported) {
+                row.addView(createEditButton(onEdit, sizeDp = 32f, iconSizeDp = 16f).apply {
+                    (layoutParams as LinearLayout.LayoutParams).apply {
+                        marginStart = homeDp(6f)
+                        marginEnd = homeDp(6f)
+                    }
+                })
+            }
             row.addView(switch)
             into.addView(row)
         }
@@ -2395,6 +2482,7 @@ class MainActivity : AppCompatActivity() {
             supported = true,
             getter = { AutomationModeStore.isMixedAllowSchedule(ctx) },
             setter = { AutomationModeStore.setMixedAllowSchedule(ctx, it) },
+            onEdit = ::editSchedule,
         )
         channelSwitchRow(
             R.drawable.nfc_24,
@@ -2403,6 +2491,7 @@ class MainActivity : AppCompatActivity() {
             supported = AutomationModeStore.isNfcSupported(ctx),
             getter = { AutomationModeStore.isMixedAllowNfc(ctx) },
             setter = { AutomationModeStore.setMixedAllowNfc(ctx, it) },
+            onEdit = ::editNfc,
         )
         channelSwitchRow(
             R.drawable.qr_code_24,
@@ -2411,6 +2500,7 @@ class MainActivity : AppCompatActivity() {
             supported = AutomationModeStore.isCameraSupported(ctx),
             getter = { AutomationModeStore.isMixedAllowQr(ctx) },
             setter = { AutomationModeStore.setMixedAllowQr(ctx, it) },
+            onEdit = ::editQr,
         )
         channelSwitchRow(
             R.drawable.barcode_24,
@@ -2419,6 +2509,7 @@ class MainActivity : AppCompatActivity() {
             supported = AutomationModeStore.isCameraSupported(ctx),
             getter = { AutomationModeStore.isMixedAllowBarcode(ctx) },
             setter = { AutomationModeStore.setMixedAllowBarcode(ctx, it) },
+            onEdit = ::editBarcode,
         )
 
         fun selectMode(mode: AutomationModeStore.Mode) {
@@ -2426,10 +2517,10 @@ class MainActivity : AppCompatActivity() {
             AutomationModeStore.setMode(ctx, mode)
             setHero(mode)
             for (i in 0 until list.childCount) {
-                list.getChildAt(i).findViewWithTag<TextView>("mode_check")?.visibility = View.GONE
+                list.getChildAt(i).findViewWithTag<View>("mode_check")?.visibility = View.INVISIBLE
             }
-            mixedRow.findViewWithTag<TextView>("mode_check")?.visibility =
-                if (mode == AutomationModeStore.Mode.MIXED) View.VISIBLE else View.GONE
+            mixedRow.findViewWithTag<View>("mode_check")?.visibility =
+                if (mode == AutomationModeStore.Mode.MIXED) View.VISIBLE else View.INVISIBLE
             applyMixedChannelsVisibility()
         }
 
@@ -2439,29 +2530,61 @@ class MainActivity : AppCompatActivity() {
         list.addView(mixedSubmenu)
 
         // ---- Single-channel modes: select and close ----
-        val singleModes = listOf(
-            Triple(AutomationModeStore.Mode.NFC, R.drawable.nfc_24 to R.string.blocking_mode_nfc, R.string.blocking_mode_nfc_desc),
-            Triple(AutomationModeStore.Mode.QR, R.drawable.qr_code_24 to R.string.blocking_mode_qr, R.string.blocking_mode_qr_desc),
-            Triple(AutomationModeStore.Mode.BARCODE, R.drawable.barcode_24 to R.string.blocking_mode_barcode, R.string.blocking_mode_barcode_desc),
-            Triple(AutomationModeStore.Mode.SCHEDULE, R.drawable.schedule_24 to R.string.blocking_mode_schedule, R.string.blocking_mode_schedule_desc),
+        data class SingleModeSpec(
+            val mode: AutomationModeStore.Mode,
+            val iconRes: Int,
+            val nameRes: Int,
+            val descRes: Int,
+            val onEdit: (() -> Unit)?,
         )
-        singleModes.forEach { (mode, nameIcon, descRes) ->
-            val (iconRes, nameRes) = nameIcon
+
+        val singleModes = listOf(
+            SingleModeSpec(
+                AutomationModeStore.Mode.NFC,
+                R.drawable.nfc_24,
+                R.string.blocking_mode_nfc,
+                R.string.blocking_mode_nfc_desc,
+                ::editNfc,
+            ),
+            SingleModeSpec(
+                AutomationModeStore.Mode.QR,
+                R.drawable.qr_code_24,
+                R.string.blocking_mode_qr,
+                R.string.blocking_mode_qr_desc,
+                ::editQr,
+            ),
+            SingleModeSpec(
+                AutomationModeStore.Mode.BARCODE,
+                R.drawable.barcode_24,
+                R.string.blocking_mode_barcode,
+                R.string.blocking_mode_barcode_desc,
+                ::editBarcode,
+            ),
+            SingleModeSpec(
+                AutomationModeStore.Mode.SCHEDULE,
+                R.drawable.schedule_24,
+                R.string.blocking_mode_schedule,
+                R.string.blocking_mode_schedule_desc,
+                ::editSchedule,
+            ),
+        )
+        singleModes.forEach { spec ->
             val row = modeRow(
-                mode,
-                nameRes,
-                descRes,
-                iconRes,
-                supported = AutomationModeStore.isModeSupported(ctx, mode),
+                spec.mode,
+                spec.nameRes,
+                spec.descRes,
+                spec.iconRes,
+                supported = AutomationModeStore.isModeSupported(ctx, spec.mode),
+                onEdit = spec.onEdit,
             )
             row.layoutParams = (row.layoutParams as LinearLayout.LayoutParams).apply {
                 topMargin = homeDp(8f)
             }
             row.setOnClickListener {
-                if (!AutomationModeStore.isModeSupported(ctx, mode)) {
+                if (!AutomationModeStore.isModeSupported(ctx, spec.mode)) {
                     return@setOnClickListener
                 }
-                selectMode(mode)
+                selectMode(spec.mode)
                 sheet.dismiss()
             }
             list.addView(row)

@@ -64,6 +64,10 @@ import java.util.Locale
 
 class QrGenerateActivity : AppCompatActivity() {
 
+    companion object {
+        const val EXTRA_FORCE_ALLOW = "extra_force_allow"
+    }
+
     private lateinit var b: ActivityQrGenerateBinding
     private var currentQrBitmap: Bitmap? = null
 
@@ -121,7 +125,8 @@ class QrGenerateActivity : AppCompatActivity() {
             return
         }
 
-        if (!AutomationModeStore.shouldShowQrTools(this)) {
+        val forceAllow = intent.getBooleanExtra(EXTRA_FORCE_ALLOW, false)
+        if (!forceAllow && !AutomationModeStore.shouldShowQrTools(this)) {
             Toast.makeText(this, R.string.mode_blocked_qr_action, Toast.LENGTH_SHORT).show()
             finish()
             return

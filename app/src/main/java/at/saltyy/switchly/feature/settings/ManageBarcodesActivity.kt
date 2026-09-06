@@ -72,8 +72,9 @@ import java.util.Locale
 
 class ManageBarcodesActivity : AppCompatActivity() {
 
-    private companion object {
+    companion object {
         private const val DEFAULT_MINUTES = 10
+        const val EXTRA_FORCE_ALLOW = "extra_force_allow"
     }
 
     private lateinit var recycler: RecyclerView
@@ -130,7 +131,8 @@ class ManageBarcodesActivity : AppCompatActivity() {
             return
         }
 
-        if (!AutomationModeStore.shouldShowBarcodeTools(this)) {
+        val forceAllow = intent.getBooleanExtra(EXTRA_FORCE_ALLOW, false)
+        if (!forceAllow && !AutomationModeStore.shouldShowBarcodeTools(this)) {
             Toast.makeText(this, R.string.toast_manage_barcodes_requires_enabled, Toast.LENGTH_LONG).show()
             finish()
             return
