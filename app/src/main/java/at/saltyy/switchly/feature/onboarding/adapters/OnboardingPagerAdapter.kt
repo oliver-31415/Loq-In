@@ -221,9 +221,10 @@ class OnboardingPagerAdapter(
                 btn.text = page.actionLabel
                 btn.isEnabled = true
                 btn.alpha = 1f
-                btn.backgroundTintList = ColorStateList.valueOf(accent)
-                btn.setTextColor(onAccent)
-                btn.strokeWidth = 0
+                btn.backgroundTintList = ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 0x22))
+                btn.setTextColor(accent)
+                btn.strokeColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 0x55))
+                btn.strokeWidth = (1 * itemView.resources.displayMetrics.density).toInt()
                 btn.setOnClickListener { runPageAction(activity, page, accent) }
             } else {
                 btn.setOnClickListener(null)
@@ -1247,6 +1248,11 @@ class OnboardingPagerAdapter(
 
         private fun iconForDetailRow(page: OnboardingPage, index: Int): Int {
             return when (page.iconRes) {
+                R.drawable.switch_account_24 -> when (index) {
+                    0 -> R.drawable.dashboard_24
+                    1 -> R.drawable.tune_24
+                    else -> R.drawable.folder_24
+                }
                 R.drawable.play_arrow_24 -> when (index) {
                     0 -> R.drawable.apps_24
                     1 -> R.drawable.toggle_on_24

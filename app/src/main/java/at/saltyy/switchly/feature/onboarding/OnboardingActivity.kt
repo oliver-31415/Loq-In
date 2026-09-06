@@ -91,6 +91,7 @@ import at.saltyy.switchly.util.NfcLaunchAccessCompat
 import at.saltyy.switchly.util.getIntCompat
 import at.saltyy.switchly.util.FrameworkApi34Compat
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.color.MaterialColors
@@ -289,6 +290,63 @@ class OnboardingActivity : ComponentActivity() {
                 finishOnboarding()
             }
         }
+    }
+
+    private fun refreshPages() {
+        if (!::pager.isInitialized || !::pages.isInitialized) {
+            return
+        }
+        val oldPos = currentPageIndex().coerceIn(0, pages.lastIndex)
+        val oldPage = pages.getOrNull(oldPos)
+
+        pages = buildPages()
+        pagerAdapter = OnboardingPagerAdapter(
+            activity = this,
+            pages = pages
+        )
+        if (!useCompatPagerFallback) {
+            pager.adapter = pagerAdapter
+        }
+
+        val matchingPage = oldPage?.let { old ->
+            pages.indexOfFirst { page -> page.type == old.type && page.title == old.title }
+        } ?: -1
+        val target = matchingPage.takeIf { it >= 0 } ?: oldPos.coerceIn(0, pages.lastIndex)
+
+        setPageIndex(target, smooth = false)
+        updateButtons(target)
+    }
+
+    fun showRenameProfileDialog() {
+        val current = ensureOnboardingProfile(this)
+        val density = resources.displayMetrics.density
+        fun dp(value: Float): Int = (value * density).toInt()
+
+        val input = TextInputEditText(this).apply {
+            setText(current)
+            setSelection(current.length)
+            setSingleLine()
+            setPadding(dp(16f), dp(12f), dp(16f), dp(12f))
+        }
+        val container = FrameLayout(this).apply {
+            setPadding(dp(24f), dp(8f), dp(24f), dp(4f))
+            addView(input)
+        }
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.onb_profiles_rename_dialog_title)
+            .setView(container)
+            .setPositiveButton(R.string.save) { _, _ ->
+                val newName = input.text?.toString()?.trim() ?: ""
+                if (newName.isNotEmpty() && newName != current) {
+                    if (ProfileStore.renameProfile(this, current, newName)) {
+                        ProfileStore.setCurrent(this, newName)
+                        refreshPages()
+                    }
+                }
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .showAccented()
     }
 
     override fun onResume() {
@@ -929,40 +987,25 @@ class OnboardingActivity : ComponentActivity() {
 
     private fun buildPages(): List<OnboardingPage> {
         val result = mutableListOf<OnboardingPage>()
+        val activeProfile = ensureOnboardingProfile(this)
         val selectedAppCount = selectedAppsForActiveProfile(this).size
 
+        // Step 1: Profiles
         result += OnboardingPage(
-            iconRes = R.drawable.play_arrow_24,
-            title = getString(R.string.onb_welcome_title),
-            desc = getString(R.string.onb_welcome_desc),
+            iconRes = R.drawable.switch_account_24,
+            title = getString(R.string.onb_profiles_title),
+            desc = getString(R.string.onb_profiles_desc),
             detailRows = listOf(
-                getString(R.string.onb_core_point_choose),
-                getString(R.string.onb_core_point_control),
-                getString(R.string.onb_core_point_enforce),
+                getString(R.string.onb_profiles_point_create),
+                getString(R.string.onb_profiles_point_rules),
+                getString(R.string.onb_profiles_point_default, activeProfile),
             ),
-            level = OnboardingPage.Level.START
+            level = OnboardingPage.Level.START,
+            actionLabel = getString(R.string.onb_profiles_action),
+            action = { act -> (act as? OnboardingActivity)?.showRenameProfileDialog() }
         )
 
-        result += OnboardingPage(
-            type = OnboardingPage.Type.USAGE_PERMISSION,
-            iconRes = R.drawable.bar_chart_24,
-            title = getString(R.string.onb_usage_report_title),
-            desc = getString(R.string.onb_usage_report_desc),
-            level = OnboardingPage.Level.OPTIONAL,
-            completionCheck = { ctx -> UsageStatsRepo.hasUsageAccess(ctx) }
-        )
-
-        // The early report remains optional. Core setup asks for Usage Access again later because Switchly needs it for normal operation.
-        if (UsageStatsRepo.hasUsageAccess(this)) {
-            result += OnboardingPage(
-                type = OnboardingPage.Type.USAGE_PREVIEW,
-                iconRes = R.drawable.bar_chart_24,
-                title = getString(R.string.onb_usage_preview_title),
-                desc = getString(R.string.onb_usage_preview_desc),
-                level = OnboardingPage.Level.INFO
-            )
-        }
-
+        // Step 2: What to block (App Selection)
         result += OnboardingPage(
             type = OnboardingPage.Type.APP_SELECTION,
             iconRes = R.drawable.apps_24,
@@ -987,6 +1030,7 @@ class OnboardingActivity : ComponentActivity() {
             requiredMessage = getString(R.string.onb_required_pick_apps)
         )
 
+        // Step 3: How to switch on and off (Controls)
         result += OnboardingPage(
             iconRes = R.drawable.tune_24,
             title = getString(R.string.onb_controls_title),
@@ -995,7 +1039,7 @@ class OnboardingActivity : ComponentActivity() {
                 getString(R.string.onb_controls_point_enable_disable),
                 getString(R.string.onb_controls_point_lock_edits)
             ),
-            level = OnboardingPage.Level.REQUIRED,
+            level = OnboardingPage.Level.RECOMMENDED,
             actionLabel = getString(R.string.onb_controls_action),
             action = { act ->
                 act.getSharedPreferences(PREFS, MODE_PRIVATE).edit {
@@ -1008,15 +1052,15 @@ class OnboardingActivity : ComponentActivity() {
             },
             completionCheck = { ctx -> hasVisitedControlSetup(ctx) },
             completedLabel = getString(R.string.onb_controls_selected),
-            keepActionEnabledWhenCompleted = true,
-            requiredMessage = getString(R.string.onb_required_controls)
+            keepActionEnabledWhenCompleted = true
         )
 
+        // Step 4: Permissions Overview & Finish
         result += OnboardingPage(
             type = OnboardingPage.Type.PERMISSION_OVERVIEW,
             iconRes = R.drawable.security_24,
             title = getString(R.string.onb_permissions_hub_title),
-            desc = permissionOverviewDescription(this),
+            desc = getString(R.string.onb_permissions_hub_desc_simple),
             level = OnboardingPage.Level.REQUIRED,
             actionLabel = getString(R.string.onb_permissions_action),
             action = { act -> (act as? OnboardingActivity)?.openFirstMissingPermissionSetting() },
@@ -1029,151 +1073,6 @@ class OnboardingActivity : ComponentActivity() {
                     R.string.onb_required_permissions_hub
                 }
             )
-        )
-
-        if (shouldOfferKeySetup(this)) {
-            val channels = selectedKeyChannelLabels(this)
-            result += OnboardingPage(
-                iconRes = R.drawable.qr_code_24,
-                title = getString(R.string.onb_keys_title_selected),
-                desc = getString(R.string.onb_keys_desc_selected, channels),
-                detailRows = listOf(
-                    getString(R.string.onb_keys_point_actions),
-                    getString(R.string.onb_keys_point_manage)
-                ),
-                level = OnboardingPage.Level.OPTIONAL,
-                actionLabel = getString(R.string.onb_keys_action),
-                action = { act ->
-                    act.startActivity(
-                        Intent(act, ManageKeysActivity::class.java)
-                            .putExtra(ManageKeysActivity.EXTRA_FILTER_FROM_ONBOARDING, true)
-                            .putExtra(ManageKeysActivity.EXTRA_SHOW_NFC, AutomationModeStore.isNfcAllowed(act))
-                            .putExtra(ManageKeysActivity.EXTRA_SHOW_QR, AutomationModeStore.isQrChannelAllowed(act))
-                            .putExtra(ManageKeysActivity.EXTRA_SHOW_BARCODE, AutomationModeStore.isBarcodeChannelAllowed(act))
-                    )
-                }
-            )
-        }
-
-        if (shouldOfferScheduleSetup(this)) {
-            result += OnboardingPage(
-                iconRes = R.drawable.schedule_24,
-                title = getString(R.string.onb_schedule_title_selected),
-                desc = getString(R.string.onb_schedule_desc_selected),
-                detailRows = listOf(
-                    getString(R.string.onb_schedule_point_actions),
-                    getString(R.string.onb_schedule_point_permissions)
-                ),
-                level = OnboardingPage.Level.RECOMMENDED,
-                actionLabel = getString(R.string.onb_schedule_action),
-                action = { act ->
-                    act.startActivity(Intent(act, SchedulesActivity::class.java))
-                },
-                completionCheck = { ctx -> hasAddedSchedule(ctx) },
-                completedLabel = getString(R.string.onb_schedule_added),
-                keepActionEnabledWhenCompleted = true
-            )
-        }
-
-        result += OnboardingPage(
-            type = OnboardingPage.Type.HOME_CUSTOMIZATION,
-            iconRes = R.drawable.dashboard_24,
-            title = getString(R.string.onb_home_customize_title),
-            desc = getString(R.string.onb_home_customize_desc),
-            level = OnboardingPage.Level.OPTIONAL
-        )
-
-        result += OnboardingPage(
-            type = OnboardingPage.Type.REVIEW,
-            iconRes = R.drawable.play_arrow_24,
-            title = getString(R.string.onb_start_title),
-            desc = getString(R.string.onb_start_desc_clean),
-            level = OnboardingPage.Level.INFO
-        )
-
-        result += OnboardingPage(
-            type = OnboardingPage.Type.OPTIONAL_SETUP,
-            iconRes = R.drawable.visibility_off_24,
-            title = getString(R.string.onb_optional_hidden_apps_title),
-            desc = getString(R.string.onb_optional_hidden_apps_desc),
-            level = OnboardingPage.Level.OPTIONAL,
-            optionalPreview = OnboardingPage.OptionalPreview.HIDDEN_APPS,
-            actionLabel = getString(R.string.onb_optional_manage_hidden_action),
-            action = { act -> act.startActivity(IgnoredUsageAppsActivity.intent(act)) }
-        )
-
-        result += OnboardingPage(
-            type = OnboardingPage.Type.OPTIONAL_SETUP,
-            iconRes = R.drawable.dashboard_24,
-            title = getString(R.string.onb_optional_home_modes_title),
-            desc = getString(R.string.onb_optional_home_modes_desc),
-            level = OnboardingPage.Level.OPTIONAL,
-            optionalPreview = OnboardingPage.OptionalPreview.HOME_MODES,
-            actionLabel = getString(R.string.onb_optional_home_settings_action),
-            action = { act -> HomeModeDialogHelper.showHomeLayoutModeDialog(act) }
-        )
-
-        result += OnboardingPage(
-            type = OnboardingPage.Type.OPTIONAL_SETUP,
-            iconRes = R.drawable.tune_24,
-            title = getString(R.string.onb_optional_display_title),
-            desc = getString(R.string.onb_optional_display_desc),
-            level = OnboardingPage.Level.OPTIONAL,
-            optionalPreview = OnboardingPage.OptionalPreview.DISPLAY,
-            actionLabel = getString(R.string.onb_optional_display_more_action),
-            action = { act ->
-                act.startActivity(
-                    Intent(act, ToggleOptionsActivity::class.java)
-                        .putExtra(
-                            ToggleOptionsActivity.EXTRA_VIEW_SECTION,
-                            ToggleOptionsActivity.SECTION_DISPLAY
-                        )
-                )
-            }
-        )
-
-        result += OnboardingPage(
-            type = OnboardingPage.Type.OPTIONAL_SETUP,
-            iconRes = R.drawable.lock_24,
-            title = getString(R.string.onb_optional_app_lock_title),
-            desc = getString(R.string.onb_optional_app_lock_desc),
-            level = OnboardingPage.Level.OPTIONAL,
-            optionalPreview = OnboardingPage.OptionalPreview.APP_LOCK,
-            actionLabel = getString(R.string.onb_optional_protection_settings_action),
-            action = { act -> act.startActivity(Intent(act, AppLockSettingsActivity::class.java)) }
-        )
-
-        result += OnboardingPage(
-            type = OnboardingPage.Type.OPTIONAL_SETUP,
-            iconRes = R.drawable.security_24,
-            title = getString(R.string.onb_optional_feature_access_title),
-            desc = getString(R.string.onb_optional_feature_access_desc),
-            level = OnboardingPage.Level.OPTIONAL,
-            optionalPreview = OnboardingPage.OptionalPreview.FEATURE_ACCESS,
-            actionLabel = getString(R.string.onb_optional_access_more_action),
-            action = { act -> act.startActivity(Intent(act, BlockingFeaturesActivity::class.java)) }
-        )
-
-        result += OnboardingPage(
-            type = OnboardingPage.Type.OPTIONAL_SETUP,
-            iconRes = R.drawable.help_24,
-            title = getString(R.string.onb_optional_faq_title),
-            desc = getString(R.string.onb_optional_faq_desc),
-            level = OnboardingPage.Level.OPTIONAL,
-            optionalPreview = OnboardingPage.OptionalPreview.FAQ,
-            actionLabel = getString(R.string.onb_optional_faq_open_action),
-            action = { act -> act.startActivity(Intent(act, FaqActivity::class.java)) }
-        )
-
-        result += OnboardingPage(
-            type = OnboardingPage.Type.OPTIONAL_SETUP,
-            iconRes = R.drawable.info_24,
-            title = getString(R.string.onb_optional_support_title),
-            desc = getString(R.string.onb_optional_support_desc),
-            level = OnboardingPage.Level.OPTIONAL,
-            optionalPreview = OnboardingPage.OptionalPreview.SUPPORT,
-            actionLabel = getString(R.string.onb_optional_support_open_action),
-            action = { act -> act.startActivity(Intent(act, SupportActivity::class.java)) }
         )
 
         return result
