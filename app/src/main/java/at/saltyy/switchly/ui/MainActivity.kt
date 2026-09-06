@@ -1310,27 +1310,13 @@ class MainActivity : AppCompatActivity() {
         val tvRemaining = view.findViewById<TextView>(R.id.tvRemaining)
         val btnCancelTimer = view.findViewById<MaterialButton>(R.id.btnCancelTimer)
 
-        val layoutDialSection = view.findViewById<View>(R.id.layoutDialSection)
-        val clockDialView = view.findViewById<ClockDurationDialView>(R.id.clockDialView)
-        val tvDialDuration = view.findViewById<TextView>(R.id.tvDialDuration)
-        val tvDialUnit = view.findViewById<TextView>(R.id.tvDialUnit)
-        val tvDialEndTime = view.findViewById<TextView>(R.id.tvDialEndTime)
-        val btnApplyDuration = view.findViewById<MaterialButton>(R.id.btnApplyDuration)
+        val layoutPresetsSection = view.findViewById<View>(R.id.layoutPresetsSection)
+        val layoutMoreOptionsSection = view.findViewById<View>(R.id.layoutMoreOptionsSection)
 
-        val pill15m = view.findViewById<TextView>(R.id.pill15m)
-        val pill30m = view.findViewById<TextView>(R.id.pill30m)
-        val pill45m = view.findViewById<TextView>(R.id.pill45m)
-        val pill60m = view.findViewById<TextView>(R.id.pill60m)
-        val pill90m = view.findViewById<TextView>(R.id.pill90m)
-        val pill120m = view.findViewById<TextView>(R.id.pill120m)
-        val presetPills = listOf(
-            pill15m to 15,
-            pill30m to 30,
-            pill45m to 45,
-            pill60m to 60,
-            pill90m to 90,
-            pill120m to 120
-        )
+        val preset5m = view.findViewById<View>(R.id.preset5m)
+        val preset15m = view.findViewById<View>(R.id.preset15m)
+        val preset30m = view.findViewById<View>(R.id.preset30m)
+        val preset60m = view.findViewById<View>(R.id.preset60m)
 
         val rowCustomDuration = view.findViewById<View>(R.id.rowCustomDuration)
         val roundelCustom = view.findViewById<View>(R.id.roundelCustom)
@@ -1487,84 +1473,19 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (!lockedByNfc && !lockActiveTimerChanges) {
-            layoutDialSection.visibility = View.VISIBLE
+            layoutPresetsSection.visibility = View.VISIBLE
+            layoutMoreOptionsSection.visibility = View.VISIBLE
 
-            clockDialView.accentColor = accent
-            val initialMinutes = 25
-            clockDialView.setDurationMinutes(initialMinutes, animate = false)
+            applyCardStyle(preset5m)
+            applyCardStyle(preset15m)
+            applyCardStyle(preset30m)
+            applyCardStyle(preset60m)
 
-            val timeFormat = java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT)
-            fun formatDurationString(minutes: Int): String {
-                return if (minutes < 60) {
-                    "$minutes min"
-                } else {
-                    val h = minutes / 60
-                    val m = minutes % 60
-                    if (m == 0) "${h}h" else "${h}h ${m}m"
-                }
-            }
+            preset5m.setOnClickListener { setDuration(5) }
+            preset15m.setOnClickListener { setDuration(15) }
+            preset30m.setOnClickListener { setDuration(30) }
+            preset60m.setOnClickListener { setDuration(60) }
 
-            fun updateDialDisplay(minutes: Int) {
-                if (minutes < 60) {
-                    tvDialDuration.text = "$minutes"
-                    tvDialUnit.text = getString(R.string.minutes).uppercase()
-                } else {
-                    val h = minutes / 60
-                    val m = minutes % 60
-                    tvDialDuration.text = if (m == 0) "${h}h" else "${h}h ${m}m"
-                    tvDialUnit.text = getString(R.string.tile_temp_title_plain).uppercase()
-                }
-
-                val endTimeMillis = System.currentTimeMillis() + minutes * 60_000L
-                val formattedEndTime = timeFormat.format(java.util.Date(endTimeMillis))
-                tvDialEndTime.text = getString(R.string.dashboard_temp_ends_at, formattedEndTime)
-
-                val durLabel = formatDurationString(minutes)
-                btnApplyDuration.text = if (mode == TempSheetMode.DISABLE) {
-                    getString(R.string.dashboard_action_lock_in_duration, durLabel)
-                } else {
-                    getString(R.string.dashboard_action_enable_duration, durLabel)
-                }
-
-                // Update preset pills styling
-                presetPills.forEach { (pill, presetMins) ->
-                    val isSelected = (presetMins == minutes)
-                    val r = 18 * resources.displayMetrics.density + 0.5f
-                    pill.background = GradientDrawable().apply {
-                        cornerRadius = r
-                        if (isSelected) {
-                            setColor(ColorUtils.compositeColors(ColorUtils.setAlphaComponent(accent, 0x2A), surfaceVariant))
-                            setStroke((1.5f * resources.displayMetrics.density + 0.5f).toInt(), accent)
-                        } else {
-                            setColor(surfaceVariant)
-                            setStroke(0, Color.TRANSPARENT)
-                        }
-                    }
-                    pill.setTextColor(if (isSelected) accent else onSurface)
-                }
-            }
-
-            // Initial UI sync
-            updateDialDisplay(initialMinutes)
-
-            clockDialView.onDurationChanged = { mins ->
-                updateDialDisplay(mins)
-            }
-
-            presetPills.forEach { (pill, presetMins) ->
-                pill.setOnClickListener {
-                    clockDialView.setDurationMinutes(presetMins, animate = true)
-                }
-            }
-
-            val onAccent = if (ColorUtils.calculateLuminance(accent) > 0.5) Color.BLACK else Color.WHITE
-            btnApplyDuration.backgroundTintList = ColorStateList.valueOf(accent)
-            btnApplyDuration.setTextColor(onAccent)
-            btnApplyDuration.setOnClickListener {
-                setDuration(clockDialView.durationMinutes)
-            }
-
-            // More options rows
             applyCardStyle(rowCustomDuration)
             roundelCustom.background = GradientDrawable().apply {
                 shape = GradientDrawable.OVAL
@@ -1573,7 +1494,7 @@ class MainActivity : AppCompatActivity() {
             ivCustomIcon.imageTintList = tint
             rowCustomDuration.setOnClickListener {
                 sheet.dismiss()
-                showCustomTempMinutesInput { minutes -> setDuration(minutes) }
+                showClockDialDurationPicker(mode) { minutes -> setDuration(minutes) }
             }
 
             if (mode == TempSheetMode.DISABLE) {
@@ -1602,7 +1523,8 @@ class MainActivity : AppCompatActivity() {
                 rowPauseUntil.visibility = View.GONE
             }
         } else {
-            layoutDialSection.visibility = View.GONE
+            layoutPresetsSection.visibility = View.GONE
+            layoutMoreOptionsSection.visibility = View.GONE
         }
         sheet.show()
         return true
@@ -1674,6 +1596,151 @@ class MainActivity : AppCompatActivity() {
             }
             .setNegativeButton(android.R.string.cancel, null)
             .showAccented()
+    }
+
+    private fun showClockDialDurationPicker(mode: TempSheetMode, onPicked: (Int) -> Unit) {
+        val accent = AccentColor.getAccentColorInt(this)
+        val surfaceVariant = ContextCompat.getColor(this, R.color.foqos_surface_variant)
+        val onSurface = ContextCompat.getColor(this, R.color.foqos_on_surface)
+        val tint = ColorStateList.valueOf(accent)
+
+        val dialSheet = BottomSheetDialog(this)
+        val parent = findViewById<ViewGroup>(android.R.id.content)
+        val view = layoutInflater.inflate(R.layout.bottom_sheet_temp_clock_dial, parent, false)
+        dialSheet.setContentView(view)
+
+        dialSheet.setOnShowListener {
+            val bottomSheet = dialSheet.findViewById<FrameLayout>(com.google.android.material.R.id.design_bottom_sheet)
+            bottomSheet?.let { bs ->
+                val topRadius = 24 * resources.displayMetrics.density + 0.5f
+                bs.background = GradientDrawable().apply {
+                    cornerRadii = floatArrayOf(
+                        topRadius, topRadius,
+                        topRadius, topRadius,
+                        0f, 0f,
+                        0f, 0f
+                    )
+                    setColor(ContextCompat.getColor(this@MainActivity, R.color.foqos_surface))
+                }
+                val behavior = BottomSheetBehavior.from(bs)
+                behavior.state = BottomSheetBehavior.STATE_EXPANDED
+                behavior.skipCollapsed = true
+            }
+        }
+
+        val clockDialView = view.findViewById<ClockDurationDialView>(R.id.clockDialView)
+        val tvDialDuration = view.findViewById<TextView>(R.id.tvDialDuration)
+        val tvDialUnit = view.findViewById<TextView>(R.id.tvDialUnit)
+        val tvDialEndTime = view.findViewById<TextView>(R.id.tvDialEndTime)
+        val btnApplyDuration = view.findViewById<MaterialButton>(R.id.btnApplyDuration)
+        val rowManualKeypad = view.findViewById<View>(R.id.rowManualKeypad)
+        val btnClose = view.findViewById<View>(R.id.btnClose)
+
+        view.findViewById<View>(R.id.roundelBg)?.background = GradientDrawable().apply {
+            shape = GradientDrawable.OVAL
+            setColor(AccentColor.getAccentContainerColorInt(this@MainActivity))
+        }
+        view.findViewById<ImageView>(R.id.ivIcon)?.imageTintList = tint
+
+        val pill15m = view.findViewById<TextView>(R.id.pill15m)
+        val pill30m = view.findViewById<TextView>(R.id.pill30m)
+        val pill45m = view.findViewById<TextView>(R.id.pill45m)
+        val pill60m = view.findViewById<TextView>(R.id.pill60m)
+        val pill90m = view.findViewById<TextView>(R.id.pill90m)
+        val pill120m = view.findViewById<TextView>(R.id.pill120m)
+        val presetPills = listOf(
+            pill15m to 15,
+            pill30m to 30,
+            pill45m to 45,
+            pill60m to 60,
+            pill90m to 90,
+            pill120m to 120
+        )
+
+        clockDialView.accentColor = accent
+        val initialMinutes = 25
+        clockDialView.setDurationMinutes(initialMinutes, animate = false)
+
+        val timeFormat = java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT)
+        fun formatDurationString(minutes: Int): String {
+            return if (minutes < 60) {
+                "$minutes min"
+            } else {
+                val h = minutes / 60
+                val m = minutes % 60
+                if (m == 0) "${h}h" else "${h}h ${m}m"
+            }
+        }
+
+        fun updateDialDisplay(minutes: Int) {
+            if (minutes < 60) {
+                tvDialDuration.text = "$minutes"
+                tvDialUnit.text = getString(R.string.minutes).uppercase()
+            } else {
+                val h = minutes / 60
+                val m = minutes % 60
+                tvDialDuration.text = if (m == 0) "${h}h" else "${h}h ${m}m"
+                tvDialUnit.text = getString(R.string.tile_temp_title_plain).uppercase()
+            }
+
+            val endTimeMillis = System.currentTimeMillis() + minutes * 60_000L
+            val formattedEndTime = timeFormat.format(java.util.Date(endTimeMillis))
+            tvDialEndTime.text = getString(R.string.dashboard_temp_ends_at, formattedEndTime)
+
+            val durLabel = formatDurationString(minutes)
+            btnApplyDuration.text = if (mode == TempSheetMode.DISABLE) {
+                getString(R.string.dashboard_action_lock_in_duration, durLabel)
+            } else {
+                getString(R.string.dashboard_action_enable_duration, durLabel)
+            }
+
+            presetPills.forEach { (pill, presetMins) ->
+                val isSelected = (presetMins == minutes)
+                val r = 18 * resources.displayMetrics.density + 0.5f
+                pill.background = GradientDrawable().apply {
+                    cornerRadius = r
+                    if (isSelected) {
+                        setColor(ColorUtils.compositeColors(ColorUtils.setAlphaComponent(accent, 0x2A), surfaceVariant))
+                        setStroke((1.5f * resources.displayMetrics.density + 0.5f).toInt(), accent)
+                    } else {
+                        setColor(surfaceVariant)
+                        setStroke(0, Color.TRANSPARENT)
+                    }
+                }
+                pill.setTextColor(if (isSelected) accent else onSurface)
+            }
+        }
+
+        updateDialDisplay(initialMinutes)
+
+        clockDialView.onDurationChanged = { mins ->
+            updateDialDisplay(mins)
+        }
+
+        presetPills.forEach { (pill, presetMins) ->
+            pill.setOnClickListener {
+                clockDialView.setDurationMinutes(presetMins, animate = true)
+            }
+        }
+
+        val onAccent = if (ColorUtils.calculateLuminance(accent) > 0.5) Color.BLACK else Color.WHITE
+        btnApplyDuration.backgroundTintList = ColorStateList.valueOf(accent)
+        btnApplyDuration.setTextColor(onAccent)
+        btnApplyDuration.setOnClickListener {
+            dialSheet.dismiss()
+            onPicked(clockDialView.durationMinutes)
+        }
+
+        rowManualKeypad.setOnClickListener {
+            dialSheet.dismiss()
+            showCustomTempMinutesInput { minutes -> onPicked(minutes) }
+        }
+
+        btnClose.setOnClickListener {
+            dialSheet.dismiss()
+        }
+
+        dialSheet.show()
     }
 
     private fun showCustomTempMinutesInput(onPicked: (Int) -> Unit) {

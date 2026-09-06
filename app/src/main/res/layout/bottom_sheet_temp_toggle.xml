@@ -89,18 +89,6 @@
         </FrameLayout>
     </LinearLayout>
 
-    <androidx.core.widget.NestedScrollView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:fillViewport="true"
-        android:overScrollMode="never"
-        android:scrollbars="none">
-
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
-
     <!-- Active Timer Card (shown only when a timer is currently active) -->
     <LinearLayout
         android:id="@+id/cardActiveTimer"
@@ -149,313 +137,302 @@
             android:id="@+id/btnCancelTimer"
             style="@style/Widget.Material3.Button"
             android:layout_width="match_parent"
-            android:layout_height="48dp"
+            android:layout_height="46dp"
             android:layout_marginTop="12dp"
             android:text="@string/dashboard_temp_sheet_cancel_timer"
             android:textSize="14sp"
             android:textStyle="bold" />
     </LinearLayout>
 
-    <!-- Clock Dial Section -->
+    <!-- Quick Presets Section -->
     <LinearLayout
-        android:id="@+id/layoutDialSection"
+        android:id="@+id/layoutPresetsSection"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:orientation="vertical"
-        android:gravity="center_horizontal">
+        android:layout_marginTop="14dp"
+        android:orientation="vertical">
 
-        <!-- Circular Clock Dial & Center Text -->
-        <FrameLayout
-            android:layout_width="250dp"
-            android:layout_height="250dp"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="4dp"
-            android:layout_marginBottom="4dp">
-
-            <at.saltyy.switchly.ui.widgets.ClockDurationDialView
-                android:id="@+id/clockDialView"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent" />
-
-            <!-- Center duration display -->
-            <LinearLayout
-                android:id="@+id/dialCenterContainer"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center"
-                android:gravity="center"
-                android:orientation="vertical"
-                android:clickable="false"
-                android:focusable="false">
-
-                <TextView
-                    android:id="@+id/tvDialDuration"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textSize="38sp"
-                    android:textStyle="bold"
-                    android:includeFontPadding="false"
-                    tools:text="25" />
-
-                <TextView
-                    android:id="@+id/tvDialUnit"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="MINUTES"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textSize="11sp"
-                    android:textStyle="bold"
-                    android:letterSpacing="0.08"
-                    android:alpha="0.6"
-                    android:layout_marginTop="2dp" />
-
-                <TextView
-                    android:id="@+id/tvDialEndTime"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textColor="?attr/colorPrimary"
-                    android:textSize="12.5sp"
-                    android:textStyle="bold"
-                    android:layout_marginTop="6dp"
-                    tools:text="Ends at 12:45 AM" />
-            </LinearLayout>
-        </FrameLayout>
-
-        <!-- Quick Preset Pills Row -->
-        <HorizontalScrollView
-            android:layout_width="match_parent"
+        <TextView
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:scrollbars="none"
-            android:overScrollMode="never"
-            android:layout_marginTop="10dp">
-
-            <LinearLayout
-                android:id="@+id/layoutPresetPills"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingStart="4dp"
-                android:paddingEnd="4dp">
-
-                <TextView
-                    android:id="@+id/pill15m"
-                    android:layout_width="wrap_content"
-                    android:layout_height="36dp"
-                    android:gravity="center"
-                    android:paddingStart="14dp"
-                    android:paddingEnd="14dp"
-                    android:text="15m"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textSize="13sp"
-                    android:textStyle="bold"
-                    android:clickable="true"
-                    android:focusable="true" />
-
-                <TextView
-                    android:id="@+id/pill30m"
-                    android:layout_width="wrap_content"
-                    android:layout_height="36dp"
-                    android:layout_marginStart="8dp"
-                    android:gravity="center"
-                    android:paddingStart="14dp"
-                    android:paddingEnd="14dp"
-                    android:text="30m"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textSize="13sp"
-                    android:textStyle="bold"
-                    android:clickable="true"
-                    android:focusable="true" />
-
-                <TextView
-                    android:id="@+id/pill45m"
-                    android:layout_width="wrap_content"
-                    android:layout_height="36dp"
-                    android:layout_marginStart="8dp"
-                    android:gravity="center"
-                    android:paddingStart="14dp"
-                    android:paddingEnd="14dp"
-                    android:text="45m"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textSize="13sp"
-                    android:textStyle="bold"
-                    android:clickable="true"
-                    android:focusable="true" />
-
-                <TextView
-                    android:id="@+id/pill60m"
-                    android:layout_width="wrap_content"
-                    android:layout_height="36dp"
-                    android:layout_marginStart="8dp"
-                    android:gravity="center"
-                    android:paddingStart="14dp"
-                    android:paddingEnd="14dp"
-                    android:text="1h"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textSize="13sp"
-                    android:textStyle="bold"
-                    android:clickable="true"
-                    android:focusable="true" />
-
-                <TextView
-                    android:id="@+id/pill90m"
-                    android:layout_width="wrap_content"
-                    android:layout_height="36dp"
-                    android:layout_marginStart="8dp"
-                    android:gravity="center"
-                    android:paddingStart="14dp"
-                    android:paddingEnd="14dp"
-                    android:text="1.5h"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textSize="13sp"
-                    android:textStyle="bold"
-                    android:clickable="true"
-                    android:focusable="true" />
-
-                <TextView
-                    android:id="@+id/pill120m"
-                    android:layout_width="wrap_content"
-                    android:layout_height="36dp"
-                    android:layout_marginStart="8dp"
-                    android:gravity="center"
-                    android:paddingStart="14dp"
-                    android:paddingEnd="14dp"
-                    android:text="2h"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textSize="13sp"
-                    android:textStyle="bold"
-                    android:clickable="true"
-                    android:focusable="true" />
-            </LinearLayout>
-        </HorizontalScrollView>
-
-        <!-- Main Action Button -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnApplyDuration"
-            style="@style/Widget.Material3.Button"
-            android:layout_width="match_parent"
-            android:layout_height="52dp"
-            android:layout_marginTop="16dp"
-            android:text="@string/dashboard_action_lock_in"
-            android:textSize="15sp"
+            android:text="QUICK PRESETS"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="11sp"
             android:textStyle="bold"
-            app:cornerRadius="16dp" />
+            android:letterSpacing="0.08"
+            android:alpha="0.55"
+            android:layout_marginBottom="8dp" />
 
-        <!-- More options: Custom duration & Pause until -->
+        <!-- Row 1: 5 min, 15 min -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:orientation="vertical">
+            android:orientation="horizontal">
 
-            <!-- Custom duration row -->
             <LinearLayout
-                android:id="@+id/rowCustomDuration"
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
+                android:id="@+id/preset5m"
+                android:layout_width="0dp"
+                android:layout_height="62dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="5dp"
+                android:gravity="center"
                 android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingStart="14dp"
-                android:paddingEnd="14dp"
                 android:clickable="true"
                 android:focusable="true">
-
-                <FrameLayout
-                    android:id="@+id/roundelCustom"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp">
-
-                    <ImageView
-                        android:id="@+id/ivCustomIcon"
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
-                        android:layout_gravity="center"
-                        android:contentDescription="@null"
-                        app:srcCompat="@drawable/edit_24" />
-                </FrameLayout>
 
                 <TextView
-                    android:layout_width="0dp"
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
-                    android:layout_weight="1"
-                    android:text="@string/custom_minutes"
+                    android:text="5"
                     android:textColor="?attr/colorOnSurface"
-                    android:textSize="14sp"
+                    android:textSize="21sp"
                     android:textStyle="bold" />
 
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:alpha="0.4"
-                    android:contentDescription="@null"
-                    app:srcCompat="@drawable/keyboard_arrow_right_24"
-                    app:tint="?attr/colorOnSurface" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:text="min"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="12sp"
+                    android:alpha="0.65" />
             </LinearLayout>
 
-            <!-- Pause Until Row (visible when mode == DISABLE) -->
             <LinearLayout
-                android:id="@+id/rowPauseUntil"
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:layout_marginTop="6dp"
+                android:id="@+id/preset15m"
+                android:layout_width="0dp"
+                android:layout_height="62dp"
+                android:layout_weight="1"
+                android:layout_marginStart="5dp"
+                android:gravity="center"
                 android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingStart="14dp"
-                android:paddingEnd="14dp"
                 android:clickable="true"
                 android:focusable="true">
 
-                <FrameLayout
-                    android:id="@+id/roundelPauseUntil"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp">
-
-                    <ImageView
-                        android:id="@+id/ivPauseUntilIcon"
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
-                        android:layout_gravity="center"
-                        android:contentDescription="@null"
-                        app:srcCompat="@drawable/schedule_24" />
-                </FrameLayout>
-
-                <LinearLayout
-                    android:layout_width="0dp"
+                <TextView
+                    android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="12dp"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
+                    android:text="15"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="21sp"
+                    android:textStyle="bold" />
 
-                    <TextView
-                        android:id="@+id/tvPauseUntilTitle"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/dashboard_pause_until_title"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textSize="14sp"
-                        android:textStyle="bold" />
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:text="min"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="12sp"
+                    android:alpha="0.65" />
+            </LinearLayout>
+        </LinearLayout>
 
-                    <TextView
-                        android:id="@+id/tvPauseUntilSubtitle"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:alpha="0.6"
-                        android:text="@string/dashboard_pause_until_tomorrow"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textSize="11.5sp" />
-                </LinearLayout>
+        <!-- Row 2: 30 min, 1 hr -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal">
+
+            <LinearLayout
+                android:id="@+id/preset30m"
+                android:layout_width="0dp"
+                android:layout_height="62dp"
+                android:layout_weight="1"
+                android:layout_marginEnd="5dp"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:clickable="true"
+                android:focusable="true">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="30"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="21sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:text="min"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="12sp"
+                    android:alpha="0.65" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:id="@+id/preset60m"
+                android:layout_width="0dp"
+                android:layout_height="62dp"
+                android:layout_weight="1"
+                android:layout_marginStart="5dp"
+                android:gravity="center"
+                android:orientation="horizontal"
+                android:clickable="true"
+                android:focusable="true">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="1"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="21sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="4dp"
+                    android:text="hour"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="12sp"
+                    android:alpha="0.65" />
+            </LinearLayout>
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- More Options Section -->
+    <LinearLayout
+        android:id="@+id/layoutMoreOptionsSection"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="16dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="MORE OPTIONS"
+            android:textColor="?attr/colorOnSurface"
+            android:textSize="11sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.08"
+            android:alpha="0.55"
+            android:layout_marginBottom="8dp" />
+
+        <!-- Custom Duration Row -->
+        <LinearLayout
+            android:id="@+id/rowCustomDuration"
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:clickable="true"
+            android:focusable="true">
+
+            <FrameLayout
+                android:id="@+id/roundelCustom"
+                android:layout_width="32dp"
+                android:layout_height="32dp">
 
                 <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:alpha="0.4"
+                    android:id="@+id/ivCustomIcon"
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_gravity="center"
                     android:contentDescription="@null"
-                    app:srcCompat="@drawable/keyboard_arrow_right_24"
-                    app:tint="?attr/colorOnSurface" />
+                    app:srcCompat="@drawable/edit_24" />
+            </FrameLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/custom_minutes"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="14.5sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:alpha="0.6"
+                    android:text="@string/minutes_hint"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="12sp" />
             </LinearLayout>
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:alpha="0.4"
+                android:contentDescription="@null"
+                app:srcCompat="@drawable/keyboard_arrow_right_24"
+                app:tint="?attr/colorOnSurface" />
+        </LinearLayout>
+
+        <!-- Pause Until Row (visible when mode == DISABLE) -->
+        <LinearLayout
+            android:id="@+id/rowPauseUntil"
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:layout_marginTop="8dp"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:paddingStart="14dp"
+            android:paddingEnd="14dp"
+            android:clickable="true"
+            android:focusable="true">
+
+            <FrameLayout
+                android:id="@+id/roundelPauseUntil"
+                android:layout_width="32dp"
+                android:layout_height="32dp">
+
+                <ImageView
+                    android:id="@+id/ivPauseUntilIcon"
+                    android:layout_width="18dp"
+                    android:layout_height="18dp"
+                    android:layout_gravity="center"
+                    android:contentDescription="@null"
+                    app:srcCompat="@drawable/schedule_24" />
+            </FrameLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:id="@+id/tvPauseUntilTitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/dashboard_pause_until_title"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="14.5sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvPauseUntilSubtitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:alpha="0.6"
+                    android:text="@string/dashboard_pause_until_tomorrow"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <ImageView
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:alpha="0.4"
+                android:contentDescription="@null"
+                app:srcCompat="@drawable/keyboard_arrow_right_24"
+                app:tint="?attr/colorOnSurface" />
         </LinearLayout>
     </LinearLayout>
 
@@ -495,14 +472,10 @@
         android:id="@+id/tvNote"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
+        android:layout_marginTop="16dp"
         android:gravity="center"
         android:alpha="0.5"
         android:text="@string/nfc_temp_hint_timer_behavior"
         android:textColor="?attr/colorOnSurface"
         android:textSize="11.5sp" />
-
-        </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
-
 </LinearLayout>
