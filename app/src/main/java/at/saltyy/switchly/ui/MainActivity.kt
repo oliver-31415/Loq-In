@@ -481,14 +481,6 @@ class MainActivity : AppCompatActivity() {
                 intent = Intent(this, ActivityHubActivity::class.java),
             )
         }
-        // Accent pill uses live code colors (never ?attr — the manifest theme
-        // can't resolve per-accent tokens, which is how green leaked in).
-        runCatching {
-            val pillAccent = AccentColor.getAccentColorInt(this)
-            findViewById<ImageView>(R.id.ivMoreInsightsIcon)?.imageTintList =
-                ColorStateList.valueOf(pillAccent)
-            findViewById<TextView>(R.id.tvMoreInsightsLabel)?.setTextColor(pillAccent)
-        }
         applyHeatmapLegend()
         activityHeatmap.onDaySelected = { index -> onHeatmapDaySelected(index) }
         refreshActivityHeatmap()
@@ -2148,7 +2140,6 @@ class MainActivity : AppCompatActivity() {
             if (isNfcTagWritingLocked()) {
                 EditingLockGuard.showLockedDialog(this, R.string.edit_locked_write_nfc_tags)
             } else {
-                sheet.dismiss()
                 startActivity(Intent(this, NfcWriterActivity::class.java))
             }
         }
@@ -2157,7 +2148,6 @@ class MainActivity : AppCompatActivity() {
             if (EditingLockGuard.isLocked(this)) {
                 EditingLockGuard.showLockedDialog(this, R.string.edit_locked_manage_barcodes)
             } else {
-                sheet.dismiss()
                 startActivity(
                     Intent(this, ManageBarcodesActivity::class.java)
                         .putExtra(ManageBarcodesActivity.EXTRA_FORCE_ALLOW, true)
@@ -2169,7 +2159,6 @@ class MainActivity : AppCompatActivity() {
             if (EditingLockGuard.isLocked(this)) {
                 EditingLockGuard.showLockedDialog(this, R.string.edit_locked_manage_qr_codes)
             } else {
-                sheet.dismiss()
                 startActivity(
                     Intent(this, QrGenerateActivity::class.java)
                         .putExtra(QrGenerateActivity.EXTRA_FORCE_ALLOW, true)
@@ -2178,7 +2167,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         fun editSchedule() {
-            sheet.dismiss()
             openRulesDestination(Intent(this, SchedulesActivity::class.java))
         }
 
@@ -2581,7 +2569,6 @@ class MainActivity : AppCompatActivity() {
                     return@setOnClickListener
                 }
                 selectMode(spec.mode)
-                sheet.dismiss()
             }
             list.addView(row)
         }

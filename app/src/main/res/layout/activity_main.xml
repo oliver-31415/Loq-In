@@ -188,7 +188,8 @@
                         android:layout_width="15dp"
                         android:layout_height="15dp"
                         android:contentDescription="@null"
-                        android:src="@drawable/bar_chart_24" />
+                        android:src="@drawable/bar_chart_24"
+                        app:tint="?attr/colorOnSurface" />
 
                     <TextView
                         android:id="@+id/tvMoreInsightsLabel"
@@ -197,7 +198,8 @@
                         android:layout_marginStart="7dp"
                         android:text="@string/activity_more_insights"
                         android:textSize="13sp"
-                        android:textStyle="bold" />
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface" />
                 </LinearLayout>
             </LinearLayout>
 
