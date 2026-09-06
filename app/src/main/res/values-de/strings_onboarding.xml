@@ -24,7 +24,7 @@
     <string name="onb_profiles_desc">Switchly fasst alle deine Regeln in Profilen zusammen. Jedes Profil hat eigene blockierte Apps, Websites und Aktivierungsmethoden.</string>
     <string name="onb_profiles_point_create">Tippe jederzeit oben auf dem Startbildschirm auf den Profilnamen, um Profile zu erstellen, umzubenennen oder zu wechseln.</string>
     <string name="onb_profiles_point_rules">Verschiedene Regeln für unterschiedliche Routinen: Richte Profile für Arbeit, Lernen oder Schlaf ein.</string>
-    <string name="onb_profiles_point_default">Wir starten mit deinem aktiven Profil: %1.</string>
+    <string name="onb_profiles_point_default">Wir starten mit deinem aktiven Profil: %1$s.</string>
     <string name="onb_profiles_action">Profil umbenennen</string>
     <string name="onb_profiles_rename_dialog_title">Profil umbenennen</string>
     <string name="onb_profiles_rename_hint">Profilname</string>

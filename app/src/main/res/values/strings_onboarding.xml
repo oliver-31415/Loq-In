@@ -24,7 +24,7 @@
     <string name="onb_profiles_desc">Switchly organizes all your rules into profiles. Each profile has its own blocked apps, websites, and switch methods.</string>
     <string name="onb_profiles_point_create">Tap the profile name at the top of the Home screen anytime to create, rename, or switch profiles.</string>
     <string name="onb_profiles_point_rules">Different rules for different routines: set up profiles for Work, Study, or Sleep.</string>
-    <string name="onb_profiles_point_default">Starting with your active profile: %1.</string>
+    <string name="onb_profiles_point_default">Starting with your active profile: %1$s.</string>
     <string name="onb_profiles_action">Rename profile</string>
     <string name="onb_profiles_rename_dialog_title">Rename profile</string>
     <string name="onb_profiles_rename_hint">Profile name</string>

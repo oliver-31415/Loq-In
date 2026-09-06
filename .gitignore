@@ -32,6 +32,9 @@ Thumbs.db
 
 # Private Firebase/Google config
 app/google-services.json
+*service-account*.json
+oauth-*.json
+*token*.json
 
 # Release artifacts
 *.apk
