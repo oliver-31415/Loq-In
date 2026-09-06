@@ -150,6 +150,7 @@ import at.saltyy.switchly.util.getIntCompat
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.checkbox.MaterialCheckBox
@@ -1291,6 +1292,9 @@ class MainActivity : AppCompatActivity() {
                     )
                     setColor(ContextCompat.getColor(this@MainActivity, R.color.foqos_surface))
                 }
+                val behavior = BottomSheetBehavior.from(bs)
+                behavior.state = BottomSheetBehavior.STATE_EXPANDED
+                behavior.skipCollapsed = true
             }
         }
 

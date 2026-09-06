@@ -89,6 +89,18 @@
         </FrameLayout>
     </LinearLayout>
 
+    <androidx.core.widget.NestedScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:fillViewport="true"
+        android:overScrollMode="never"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
     <!-- Active Timer Card (shown only when a timer is currently active) -->
     <LinearLayout
         android:id="@+id/cardActiveTimer"
@@ -173,7 +185,9 @@
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
                 android:gravity="center"
-                android:orientation="vertical">
+                android:orientation="vertical"
+                android:clickable="false"
+                android:focusable="false">
 
                 <TextView
                     android:id="@+id/tvDialDuration"
@@ -487,5 +501,8 @@
         android:text="@string/nfc_temp_hint_timer_behavior"
         android:textColor="?attr/colorOnSurface"
         android:textSize="11.5sp" />
+
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
 
 </LinearLayout>

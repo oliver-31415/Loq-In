@@ -146,6 +146,27 @@ class ClockDurationDialView @JvmOverloads constructor(
         thumbGlowPaint.color = ColorUtils.setAlphaComponent(accentColor, 0x38)
     }
 
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        val desiredSize = dp(250f).toInt()
+        val widthMode = MeasureSpec.getMode(widthMeasureSpec)
+        val widthSize = MeasureSpec.getSize(widthMeasureSpec)
+        val heightMode = MeasureSpec.getMode(heightMeasureSpec)
+        val heightSize = MeasureSpec.getSize(heightMeasureSpec)
+
+        val w = when (widthMode) {
+            MeasureSpec.EXACTLY -> widthSize
+            MeasureSpec.AT_MOST -> min(desiredSize, widthSize)
+            else -> desiredSize
+        }
+        val h = when (heightMode) {
+            MeasureSpec.EXACTLY -> heightSize
+            MeasureSpec.AT_MOST -> min(desiredSize, heightSize)
+            else -> desiredSize
+        }
+        val size = min(w, h)
+        setMeasuredDimension(size, size)
+    }
+
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
         centerX = w / 2f
@@ -220,7 +241,9 @@ class ClockDurationDialView @JvmOverloads constructor(
             canvas.drawCircle(centerX, centerY, dialRadius, baseCircleFullPaint)
         }
 
-        if (sweepAngle > 0f) {
+        if (sweepAngle >= 360f) {
+            canvas.drawCircle(centerX, centerY, dialRadius, activeArcPaint)
+        } else if (sweepAngle > 0f) {
             canvas.drawArc(arcBounds, -90f, sweepAngle, false, activeArcPaint)
         }
 
