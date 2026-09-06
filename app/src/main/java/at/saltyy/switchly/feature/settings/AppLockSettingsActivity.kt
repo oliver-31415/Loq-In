@@ -45,6 +45,7 @@ import at.saltyy.switchly.theme.CustomAccentApplier
 import at.saltyy.switchly.ui.EdgeToEdgeUtils
 import at.saltyy.switchly.ui.ThemeUtils
 import at.saltyy.switchly.ui.dialog.styleSwitchlyDialogButtons
+import at.saltyy.switchly.ui.dialog.EmergencyPinDialog
 import at.saltyy.switchly.util.LocaleHelper
 import at.saltyy.switchly.util.ManagedDevicePolicyHelper
 import com.google.android.material.appbar.MaterialToolbar
@@ -408,43 +409,7 @@ class AppLockSettingsActivity : AppCompatActivity() {
     }
 
     private fun showEmergencyPinDialog() {
-        val input = EditText(this).apply {
-            inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD
-            hint = getString(R.string.emergency_pin_choose_hint)
-            backgroundTintList = AccentColor.getActiveColor(this@AppLockSettingsActivity)
-        }
-
-        val container = FrameLayout(this).apply {
-            val margin = (24 * resources.displayMetrics.density).toInt()
-            setPadding(margin, 0, margin, 0)
-            addView(input, FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT
-            ))
-        }
-
-        val dialog = AlertDialog.Builder(this)
-            .setTitle(getString(R.string.emergency_pin_title))
-            .setMessage(getString(R.string.emergency_pin_message))
-            .setView(container)
-            .setPositiveButton(getString(R.string.save), null)
-            .setNegativeButton(getString(R.string.cancel), null)
-            .create()
-
-        dialog.setOnShowListener {
-            dialog.styleSwitchlyDialogButtons()
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                val pin = input.text?.toString()?.trim().orEmpty()
-                if (pin.length < 4) {
-                    Toast.makeText(this, R.string.emergency_pin_too_short, Toast.LENGTH_SHORT).show()
-                    return@setOnClickListener
-                }
-                EmergencyPinStore.setPin(this, pin)
-                Toast.makeText(this, R.string.emergency_pin_changed, Toast.LENGTH_SHORT).show()
-                dialog.dismiss()
-            }
-        }
-        dialog.show()
+        EmergencyPinDialog.showSetPin(this)
     }
 
     private fun isBiometricAvailable(): Boolean {

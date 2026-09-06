@@ -129,6 +129,9 @@ import at.saltyy.switchly.nfc.NfcWriterActivity
 import at.saltyy.switchly.premium.PremiumManager
 import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.ui.dialog.Dialogs
+import at.saltyy.switchly.ui.dialog.EmergencyPinDialog
+import at.saltyy.switchly.ui.dialog.styledDialogEditText
+import at.saltyy.switchly.ui.dialog.applySwitchlyDialogWidth
 import at.saltyy.switchly.ui.dialog.showAccented
 import at.saltyy.switchly.ui.dialog.showDestructiveAccented
 import at.saltyy.switchly.ui.dialog.showSwitchlyInputDialog
@@ -1274,25 +1277,64 @@ class MainActivity : AppCompatActivity() {
         val view = layoutInflater.inflate(R.layout.bottom_sheet_temp_toggle, parent, false)
         sheet.setContentView(view)
 
+        sheet.setOnShowListener {
+            val bottomSheet = sheet.findViewById<FrameLayout>(com.google.android.material.R.id.design_bottom_sheet)
+            bottomSheet?.let { bs ->
+                val topRadius = 24 * resources.displayMetrics.density + 0.5f
+                bs.background = GradientDrawable().apply {
+                    cornerRadii = floatArrayOf(
+                        topRadius, topRadius,
+                        topRadius, topRadius,
+                        0f, 0f,
+                        0f, 0f
+                    )
+                    setColor(ContextCompat.getColor(this@MainActivity, R.color.foqos_surface))
+                }
+            }
+        }
+
         val ivIcon = view.findViewById<ImageView>(R.id.ivIcon)
         val tvTitle = view.findViewById<TextView>(R.id.tvTitle)
         val tvSubtitle = view.findViewById<TextView>(R.id.tvSubtitle)
-        val tvRemaining = view.findViewById<TextView>(R.id.tvRemaining)
         val tvNote = view.findViewById<TextView>(R.id.tvNote)
-        val llOptions = view.findViewById<ViewGroup>(R.id.llOptions)
-        val btnClose = view.findViewById<MaterialButton>(R.id.btnClose)
+        val btnClose = view.findViewById<View>(R.id.btnClose)
+
+        val cardActiveTimer = view.findViewById<View>(R.id.cardActiveTimer)
+        val dotActiveTimer = view.findViewById<View>(R.id.dotActiveTimer)
+        val tvActiveTimerBadge = view.findViewById<TextView>(R.id.tvActiveTimerBadge)
+        val tvRemaining = view.findViewById<TextView>(R.id.tvRemaining)
+        val btnCancelTimer = view.findViewById<MaterialButton>(R.id.btnCancelTimer)
+
+        val layoutPresetsSection = view.findViewById<View>(R.id.layoutPresetsSection)
+        val preset5m = view.findViewById<View>(R.id.preset5m)
+        val preset15m = view.findViewById<View>(R.id.preset15m)
+        val preset30m = view.findViewById<View>(R.id.preset30m)
+        val preset60m = view.findViewById<View>(R.id.preset60m)
+
+        val layoutMoreOptionsSection = view.findViewById<View>(R.id.layoutMoreOptionsSection)
+        val rowCustomDuration = view.findViewById<View>(R.id.rowCustomDuration)
+        val roundelCustom = view.findViewById<View>(R.id.roundelCustom)
+        val ivCustomIcon = view.findViewById<ImageView>(R.id.ivCustomIcon)
+
+        val rowPauseUntil = view.findViewById<View>(R.id.rowPauseUntil)
+        val roundelPauseUntil = view.findViewById<View>(R.id.roundelPauseUntil)
+        val ivPauseUntilIcon = view.findViewById<ImageView>(R.id.ivPauseUntilIcon)
+        val tvPauseUntilTitle = view.findViewById<TextView>(R.id.tvPauseUntilTitle)
+        val tvPauseUntilSubtitle = view.findViewById<TextView>(R.id.tvPauseUntilSubtitle)
+
+        val cardLockedNotice = view.findViewById<View>(R.id.cardLockedNotice)
+        val tvLockedNotice = view.findViewById<TextView>(R.id.tvLockedNotice)
+
+        val surfaceVariant = ContextCompat.getColor(this, R.color.foqos_surface_variant)
 
         ivIcon.imageTintList = tint
-        // Explicit roundel wash: ?attr/colorPrimaryContainer in the sheet
-        // drawable resolves against the dialog theme, which can fall back to
-        // the base green instead of the live accent.
         view.findViewById<View>(R.id.roundelBg)?.background =
             GradientDrawable().apply {
                 shape = GradientDrawable.OVAL
                 setColor(AccentColor.getAccentContainerColorInt(this@MainActivity))
             }
-        tvRemaining.setTextColor(accent)
-        btnClose.setTextColor(accent)
+
+        btnClose.setOnClickListener { sheet.dismiss() }
 
         if (mode == TempSheetMode.DISABLE) {
             tvTitle.text = getString(R.string.nfc_action_temp_disable)
@@ -1316,16 +1358,45 @@ class MainActivity : AppCompatActivity() {
             PreferenceManager.getDefaultSharedPreferences(this)
                 .getBoolean(ToggleOptionsActivity.KEY_LOCK_ACTIVE_TEMPORARY_TIMER, true)
 
-        tvNote.text = if (lockedByNfc) {
-            getString(R.string.dashboard_temp_hint_locked_nfc)
+        tvNote.text = getString(R.string.nfc_temp_hint_timer_behavior)
+
+        if (lockedByNfc) {
+            cardLockedNotice.visibility = View.VISIBLE
+            cardLockedNotice.background = GradientDrawable().apply {
+                cornerRadius = 14 * resources.displayMetrics.density + 0.5f
+                setColor(surfaceVariant)
+            }
+            tvLockedNotice.text = getString(R.string.dashboard_temp_hint_locked_nfc)
         } else if (lockActiveTimerChanges) {
-            getString(R.string.dashboard_temp_active_changes_locked)
+            cardLockedNotice.visibility = View.VISIBLE
+            cardLockedNotice.background = GradientDrawable().apply {
+                cornerRadius = 14 * resources.displayMetrics.density + 0.5f
+                setColor(surfaceVariant)
+            }
+            tvLockedNotice.text = getString(R.string.dashboard_temp_active_changes_locked)
         } else {
-            getString(R.string.nfc_temp_hint_timer_behavior)
+            cardLockedNotice.visibility = View.GONE
         }
 
-        // Show remaining time if a timer is already running
+        // Active timer card setup
         if (hasActive) {
+            cardActiveTimer.visibility = View.VISIBLE
+            cardActiveTimer.background = GradientDrawable().apply {
+                cornerRadius = 16 * resources.displayMetrics.density + 0.5f
+                setColor(surfaceVariant)
+                setStroke((1.5f * resources.displayMetrics.density + 0.5f).toInt(), accent)
+            }
+            dotActiveTimer.background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(accent)
+            }
+            tvActiveTimerBadge.setTextColor(accent)
+            tvActiveTimerBadge.text = if (tempDisableRemaining > 0L) {
+                getString(R.string.tile_temp_title_active_paused).uppercase()
+            } else {
+                getString(R.string.tile_temp_title_active_enabled).uppercase()
+            }
+
             val handler = Handler(Looper.getMainLooper())
             val tick = object : Runnable {
                 override fun run() {
@@ -1336,100 +1407,119 @@ class MainActivity : AppCompatActivity() {
                     }
 
                     if (rem > 0L) {
-                        tvRemaining.visibility = View.VISIBLE
                         tvRemaining.text = getString(
                             R.string.dashboard_temp_remaining_fmt,
                             formatRemainingShort(rem)
                         )
                         handler.postDelayed(this, 1000L)
                     } else {
-                        tvRemaining.visibility = View.GONE
+                        cardActiveTimer.visibility = View.GONE
                     }
                 }
             }
-
-            sheet.setOnDismissListener {
-                handler.removeCallbacksAndMessages(null)
-            }
+            sheet.setOnDismissListener { handler.removeCallbacksAndMessages(null) }
             tick.run()
-        } else {
-            tvRemaining.visibility = View.GONE
-        }
 
-        fun addOption(label: String, onClick: () -> Unit) {
-            val b = MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-                text = label
-                isAllCaps = false
-                setTextColor(accent)
-                strokeColor = tint
-                strokeWidth = (1.25f * resources.displayMetrics.density + 0.5f).toInt()
-                cornerRadius = (14 * resources.displayMetrics.density + 0.5f).toInt()
-                minimumHeight = (52 * resources.displayMetrics.density + 0.5f).toInt()
-                iconTint = tint
-                rippleColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 0x22))
-                layoutParams = ViewGroup.MarginLayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
-                ).apply {
-                    val m = (8 * resources.displayMetrics.density).toInt()
-                    topMargin = m
-                }
-            }
-            b.setOnClickListener { onClick() }
-            llOptions.addView(b)
-        }
-
-        if (!lockedByNfc && !lockActiveTimerChanges) {
-            // Presets
-            val presets = listOf(5, 15, 30, 60)
-            for (m in presets) {
-                val label = resources.getQuantityString(R.plurals.minutes_format, m, m)
-                addOption(label) {
-                    val ms = m * 60_000L
-                    if (mode == TempSheetMode.DISABLE) {
-                        SwitchModeStore.setTemporarilyDisabled(this, ms)
-                    } else {
-                        SwitchModeStore.setTemporarilyEnabled(this, ms)
+            val canCancelActiveTimer = tempDisableRemaining > 0L || !lockActiveTimerChanges
+            if (canCancelActiveTimer && !(lockedByNfc && tempDisableRemaining > 0L)) {
+                btnCancelTimer.visibility = View.VISIBLE
+                val onAccent = if (ColorUtils.calculateLuminance(accent) > 0.5) Color.BLACK else Color.WHITE
+                btnCancelTimer.backgroundTintList = ColorStateList.valueOf(accent)
+                btnCancelTimer.setTextColor(onAccent)
+                btnCancelTimer.text = getString(R.string.dashboard_temp_sheet_cancel_timer)
+                btnCancelTimer.setOnClickListener {
+                    if (tempDisableRemaining > 0L) {
+                        SwitchModeStore.cancelTemporaryDisable(this)
+                    } else if (tempEnableRemaining > 0L) {
+                        SwitchModeStore.cancelTemporaryEnable(this)
                     }
                     sheet.dismiss()
                     updateSwitchState()
                 }
+            } else {
+                btnCancelTimer.visibility = View.GONE
+            }
+        } else {
+            cardActiveTimer.visibility = View.GONE
+        }
+
+        fun applyCardStyle(v: View) {
+            val r = 14 * resources.displayMetrics.density + 0.5f
+            v.background = GradientDrawable().apply {
+                cornerRadius = r
+                setColor(surfaceVariant)
+            }
+            val outValue = TypedValue()
+            theme.resolveAttribute(android.R.attr.selectableItemBackground, outValue, true)
+            v.foreground = ContextCompat.getDrawable(this@MainActivity, outValue.resourceId)
+        }
+
+        fun setDuration(minutes: Int) {
+            val ms = minutes * 60_000L
+            if (mode == TempSheetMode.DISABLE) {
+                SwitchModeStore.setTemporarilyDisabled(this, ms)
+            } else {
+                SwitchModeStore.setTemporarilyEnabled(this, ms)
+            }
+            sheet.dismiss()
+            updateSwitchState()
+        }
+
+        if (!lockedByNfc && !lockActiveTimerChanges) {
+            layoutPresetsSection.visibility = View.VISIBLE
+            layoutMoreOptionsSection.visibility = View.VISIBLE
+
+            applyCardStyle(preset5m)
+            applyCardStyle(preset15m)
+            applyCardStyle(preset30m)
+            applyCardStyle(preset60m)
+
+            preset5m.setOnClickListener { setDuration(5) }
+            preset15m.setOnClickListener { setDuration(15) }
+            preset30m.setOnClickListener { setDuration(30) }
+            preset60m.setOnClickListener { setDuration(60) }
+
+            applyCardStyle(rowCustomDuration)
+            roundelCustom.background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(ColorUtils.compositeColors(ColorUtils.setAlphaComponent(accent, 0x22), surfaceVariant))
+            }
+            ivCustomIcon.imageTintList = tint
+            rowCustomDuration.setOnClickListener {
+                sheet.dismiss()
+                showCustomTempMinutesInput { minutes -> setDuration(minutes) }
             }
 
             if (mode == TempSheetMode.DISABLE) {
-                addPauseUntilMenuOption(sheet, ::addOption)
-            }
-
-            // Custom
-            addOption(getString(R.string.custom_minutes)) {
-                sheet.dismiss()
-                showCustomTempMinutesInput { minutes ->
-                    val ms = minutes * 60_000L
-                    if (mode == TempSheetMode.DISABLE) {
-                        SwitchModeStore.setTemporarilyDisabled(this, ms)
-                    } else {
-                        SwitchModeStore.setTemporarilyEnabled(this, ms)
+                val options = buildPauseUntilOptions(sheet)
+                if (options.isNotEmpty()) {
+                    rowPauseUntil.visibility = View.VISIBLE
+                    applyCardStyle(rowPauseUntil)
+                    roundelPauseUntil.background = GradientDrawable().apply {
+                        shape = GradientDrawable.OVAL
+                        setColor(ColorUtils.compositeColors(ColorUtils.setAlphaComponent(accent, 0x22), surfaceVariant))
                     }
-                    updateSwitchState()
+                    ivPauseUntilIcon.imageTintList = tint
+
+                    if (options.size == 1) {
+                        tvPauseUntilTitle.text = options.first().label
+                        rowPauseUntil.setOnClickListener { options.first().runAction() }
+                    } else {
+                        tvPauseUntilTitle.text = getString(R.string.dashboard_pause_until_title)
+                        tvPauseUntilSubtitle.text = options.joinToString(" · ") { it.label }
+                        rowPauseUntil.setOnClickListener { showPauseUntilDialog(sheet) }
+                    }
+                } else {
+                    rowPauseUntil.visibility = View.GONE
                 }
+            } else {
+                rowPauseUntil.visibility = View.GONE
             }
+        } else {
+            layoutPresetsSection.visibility = View.GONE
+            layoutMoreOptionsSection.visibility = View.GONE
         }
 
-        // Cancel active timer
-        val canCancelActiveTimer = tempDisableRemaining > 0L || !lockActiveTimerChanges
-        if (hasActive && canCancelActiveTimer && !(lockedByNfc && tempDisableRemaining > 0L)) {
-            addOption(getString(R.string.dashboard_temp_sheet_cancel_timer)) {
-                if (tempDisableRemaining > 0L) {
-                    SwitchModeStore.cancelTemporaryDisable(this)
-                } else if (tempEnableRemaining > 0L) {
-                    SwitchModeStore.cancelTemporaryEnable(this)
-                }
-                sheet.dismiss()
-                updateSwitchState()
-            }
-        }
-
-        btnClose.setOnClickListener { sheet.dismiss() }
         sheet.show()
         return true
     }
@@ -1503,15 +1593,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showCustomTempMinutesInput(onPicked: (Int) -> Unit) {
-        val input = EditText(this).apply {
+        val input = styledDialogEditText().apply {
             inputType = InputType.TYPE_CLASS_NUMBER
             hint = getString(R.string.minutes_hint)
         }
 
         val container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            val pad = (16 * resources.displayMetrics.density).toInt()
-            setPadding(pad, pad/2, pad, 0)
+            val pad = (20 * resources.displayMetrics.density + 0.5f).toInt()
+            setPadding(pad, (8 * resources.displayMetrics.density + 0.5f).toInt(), pad, 0)
             addView(
                 input,
                 LinearLayout.LayoutParams(
@@ -1521,7 +1611,7 @@ class MainActivity : AppCompatActivity() {
             )
         }
 
-        AlertDialog.Builder(this)
+        val dialog = MaterialAlertDialogBuilder(this)
             .setTitle(R.string.custom_minutes_title)
             .setView(container)
             .setNegativeButton(R.string.cancel, null)
@@ -1533,7 +1623,17 @@ class MainActivity : AppCompatActivity() {
                 }
                 onPicked(m)
             }
-            .showAccented()
+            .create()
+
+        dialog.setOnShowListener {
+            dialog.styleSwitchlyDialogButtons()
+            dialog.applySwitchlyDialogWidth(0.90f)
+            dialog.window?.setSoftInputMode(
+                android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE
+            )
+            input.requestFocus()
+        }
+        dialog.show()
     }
 
     private fun openRulesDestination(intent: Intent) {
@@ -3857,81 +3957,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showSetEmergencyPinDialog(onSuccess: () -> Unit) {
-        val input = emergencyPinInput(getString(R.string.emergency_pin_choose_hint))
-        val dialog = AlertDialog.Builder(this)
-            .setTitle(getString(R.string.emergency_pin_title))
-            .setMessage(getString(R.string.emergency_pin_message))
-            .setView(emergencyPinContainer(input))
-            .setPositiveButton(getString(R.string.ok), null)
-            .setNegativeButton(getString(R.string.cancel), null)
-            .create()
-
-        dialog.setOnShowListener {
-            dialog.styleSwitchlyDialogButtons()
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                val pin = input.text?.toString()?.trim().orEmpty()
-                if (pin.length < 4) {
-                    Toast.makeText(this, R.string.emergency_pin_too_short, Toast.LENGTH_SHORT).show()
-                    return@setOnClickListener
-                }
-                EmergencyPinStore.setPin(this, pin)
-                Toast.makeText(this, R.string.emergency_pin_changed, Toast.LENGTH_SHORT).show()
-                dialog.dismiss()
-                onSuccess()
-            }
-        }
-        dialog.show()
+        EmergencyPinDialog.showSetPin(this, onSuccess)
     }
 
     private fun showEnterEmergencyPinDialog(onSuccess: () -> Unit) {
-        val input = emergencyPinInput(getString(R.string.emergency_pin_enter_current_hint))
-        val dialog = AlertDialog.Builder(this)
-            .setTitle(getString(R.string.emergency_pin_enter_current_title))
-            .setMessage(getString(R.string.emergency_pin_enter_current_message))
-            .setView(emergencyPinContainer(input))
-            .setPositiveButton(getString(R.string.ok), null)
-            .setNegativeButton(getString(R.string.cancel), null)
-            .create()
-
-        dialog.setOnShowListener {
-            dialog.styleSwitchlyDialogButtons()
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                val pin = input.text?.toString()?.trim().orEmpty()
-                if (!EmergencyPinStore.matchesPin(this, pin)) {
-                    Toast.makeText(this, R.string.emergency_pin_incorrect, Toast.LENGTH_SHORT).show()
-                    return@setOnClickListener
-                }
-                dialog.dismiss()
-                onSuccess()
-            }
-        }
-        dialog.show()
-    }
-
-    private fun emergencyPinInput(hintText: String): EditText {
-        return EditText(this).apply {
-            inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD
-            hint = hintText
-            backgroundTintList = AccentColor.getActiveColor(this@MainActivity)
-        }
-    }
-
-    private fun emergencyPinContainer(input: EditText): FrameLayout {
-        return FrameLayout(this).apply {
-            val margin = (24 * resources.displayMetrics.density).toInt()
-            setPadding(margin, 0, margin, 0)
-            addView(
-                input,
-                FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
-                )
-            )
-        }
+        EmergencyPinDialog.showEnterPin(this, onSuccess)
     }
 
     private fun showEmergencyUnlockStartDialog() {
-        AlertDialog.Builder(this)
+        MaterialAlertDialogBuilder(this)
             .setTitle(getString(R.string.pref_emergency_title))
             .setMessage(getString(R.string.emergency_action_start_15))
             .setNegativeButton(R.string.cancel, null)
@@ -3953,7 +3987,7 @@ class MainActivity : AppCompatActivity() {
     private fun showEmergencyQuickSheet() {
         val featureEnabled = EmergencyBypassStore.isFeatureEnabled(this)
         if (!featureEnabled) {
-            AlertDialog.Builder(this)
+            MaterialAlertDialogBuilder(this)
                 .setTitle(R.string.pref_emergency_title)
                 .setMessage(R.string.emergency_disabled_message_controls)
                 .setNegativeButton(R.string.cancel, null)

@@ -815,6 +815,19 @@ fun AlertDialog.styleSwitchlyDialogButtons() {
     }
 
     runCatching { CustomAccentApplier.applyToDialog(this) }
+    runCatching { applySwitchlyDialogCorners() }
+}
+
+fun AlertDialog.applySwitchlyDialogCorners(radiusDp: Float = 24f) {
+    val r = radiusDp * context.resources.displayMetrics.density + 0.5f
+    val surface = MaterialColors.getColor(context, com.google.android.material.R.attr.colorSurface, Color.BLACK)
+    val bg = android.graphics.drawable.GradientDrawable().apply {
+        cornerRadius = r
+        setColor(surface)
+    }
+    val insetH = (12 * context.resources.displayMetrics.density + 0.5f).toInt()
+    val insetV = (16 * context.resources.displayMetrics.density + 0.5f).toInt()
+    window?.setBackgroundDrawable(android.graphics.drawable.InsetDrawable(bg, insetH, insetV, insetH, insetV))
 }
 
 fun AlertDialog.applySwitchlyDialogWidth(widthFraction: Float = 0.94f) {

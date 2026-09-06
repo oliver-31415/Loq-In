@@ -62,6 +62,7 @@ import at.saltyy.switchly.ui.dialog.showSwitchlyInfoDialog
 import at.saltyy.switchly.ui.dialog.showAccented
 import at.saltyy.switchly.ui.dialog.showSwitchlyOptionDialog
 import at.saltyy.switchly.ui.dialog.styleSwitchlyDialogButtons
+import at.saltyy.switchly.ui.dialog.EmergencyPinDialog
 import at.saltyy.switchly.util.LocaleHelper
 import at.saltyy.switchly.util.ActivityTransitionCompat
 import at.saltyy.switchly.util.SwitchlyAppAccessGuard
@@ -740,81 +741,15 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun showSetEmergencyPinDialog(onSuccess: () -> Unit) {
-        val input = emergencyPinInput(getString(R.string.emergency_pin_choose_hint))
-        val dialog = AlertDialog.Builder(this)
-            .setTitle(getString(R.string.emergency_pin_title))
-            .setMessage(getString(R.string.emergency_pin_message))
-            .setView(emergencyPinContainer(input))
-            .setPositiveButton(getString(R.string.ok), null)
-            .setNegativeButton(getString(R.string.cancel), null)
-            .create()
-
-        dialog.setOnShowListener {
-            dialog.styleSwitchlyDialogButtons()
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                val pin = input.text?.toString()?.trim().orEmpty()
-                if (pin.length < 4) {
-                    Toast.makeText(this, R.string.emergency_pin_too_short, Toast.LENGTH_SHORT).show()
-                    return@setOnClickListener
-                }
-                EmergencyPinStore.setPin(this, pin)
-                Toast.makeText(this, R.string.emergency_pin_changed, Toast.LENGTH_SHORT).show()
-                dialog.dismiss()
-                onSuccess()
-            }
-        }
-        dialog.show()
+        EmergencyPinDialog.showSetPin(this, onSuccess)
     }
 
     private fun showEnterEmergencyPinDialog(onSuccess: () -> Unit) {
-        val input = emergencyPinInput(getString(R.string.emergency_pin_enter_current_hint))
-        val dialog = AlertDialog.Builder(this)
-            .setTitle(getString(R.string.emergency_pin_enter_current_title))
-            .setMessage(getString(R.string.emergency_pin_enter_current_message))
-            .setView(emergencyPinContainer(input))
-            .setPositiveButton(getString(R.string.ok), null)
-            .setNegativeButton(getString(R.string.cancel), null)
-            .create()
-
-        dialog.setOnShowListener {
-            dialog.styleSwitchlyDialogButtons()
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                val pin = input.text?.toString()?.trim().orEmpty()
-                if (!EmergencyPinStore.matchesPin(this, pin)) {
-                    Toast.makeText(this, R.string.emergency_pin_incorrect, Toast.LENGTH_SHORT).show()
-                    return@setOnClickListener
-                }
-                dialog.dismiss()
-                onSuccess()
-            }
-        }
-        dialog.show()
-    }
-
-    private fun emergencyPinInput(hintText: String): EditText {
-        return EditText(this).apply {
-            inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD
-            hint = hintText
-            backgroundTintList = AccentColor.getActiveColor(this@SettingsActivity)
-        }
-    }
-
-    private fun emergencyPinContainer(input: EditText): FrameLayout {
-        return FrameLayout(this).apply {
-            val margin = (24 * resources.displayMetrics.density).toInt()
-            setPadding(margin, 0, margin, 0)
-            addView(
-                input,
-                FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
-                )
-            )
-        }
+        EmergencyPinDialog.showEnterPin(this, onSuccess)
     }
 
     private fun showEmergencyUnlockStartDialog() {
-        AlertDialog.Builder(this)
+        MaterialAlertDialogBuilder(this)
             .setTitle(getString(R.string.pref_emergency_title))
             .setMessage(getString(R.string.emergency_action_start_15))
             .setNegativeButton(R.string.cancel, null)
