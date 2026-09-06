@@ -1633,7 +1633,6 @@ class MainActivity : AppCompatActivity() {
         val tvDialUnit = view.findViewById<TextView>(R.id.tvDialUnit)
         val tvDialEndTime = view.findViewById<TextView>(R.id.tvDialEndTime)
         val btnApplyDuration = view.findViewById<MaterialButton>(R.id.btnApplyDuration)
-        val rowManualKeypad = view.findViewById<View>(R.id.rowManualKeypad)
         val btnClose = view.findViewById<View>(R.id.btnClose)
 
         view.findViewById<View>(R.id.roundelBg)?.background = GradientDrawable().apply {
@@ -1642,22 +1641,9 @@ class MainActivity : AppCompatActivity() {
         }
         view.findViewById<ImageView>(R.id.ivIcon)?.imageTintList = tint
 
-        val pill15m = view.findViewById<TextView>(R.id.pill15m)
-        val pill30m = view.findViewById<TextView>(R.id.pill30m)
-        val pill45m = view.findViewById<TextView>(R.id.pill45m)
-        val pill60m = view.findViewById<TextView>(R.id.pill60m)
-        val pill90m = view.findViewById<TextView>(R.id.pill90m)
-        val pill120m = view.findViewById<TextView>(R.id.pill120m)
-        val presetPills = listOf(
-            pill15m to 15,
-            pill30m to 30,
-            pill45m to 45,
-            pill60m to 60,
-            pill90m to 90,
-            pill120m to 120
-        )
-
         clockDialView.accentColor = accent
+        clockDialView.minMinutes = 0
+        clockDialView.maxMinutes = 180
         val initialMinutes = 25
         clockDialView.setDurationMinutes(initialMinutes, animate = false)
 
@@ -1672,7 +1658,24 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        val onAccent = if (ColorUtils.calculateLuminance(accent) > 0.5) Color.BLACK else Color.WHITE
+        btnApplyDuration.backgroundTintList = ColorStateList.valueOf(accent)
+        btnApplyDuration.setTextColor(onAccent)
+
         fun updateDialDisplay(minutes: Int) {
+            if (minutes <= 0) {
+                tvDialDuration.text = "0"
+                tvDialUnit.text = getString(R.string.minutes).uppercase()
+                tvDialEndTime.text = getString(R.string.tile_temp_subtitle_choose)
+                btnApplyDuration.isEnabled = false
+                btnApplyDuration.alpha = 0.45f
+                btnApplyDuration.text = getString(R.string.tile_temp_subtitle_choose)
+                return
+            }
+
+            btnApplyDuration.isEnabled = true
+            btnApplyDuration.alpha = 1.0f
+
             if (minutes < 60) {
                 tvDialDuration.text = "$minutes"
                 tvDialUnit.text = getString(R.string.minutes).uppercase()
@@ -1693,22 +1696,6 @@ class MainActivity : AppCompatActivity() {
             } else {
                 getString(R.string.dashboard_action_enable_duration, durLabel)
             }
-
-            presetPills.forEach { (pill, presetMins) ->
-                val isSelected = (presetMins == minutes)
-                val r = 18 * resources.displayMetrics.density + 0.5f
-                pill.background = GradientDrawable().apply {
-                    cornerRadius = r
-                    if (isSelected) {
-                        setColor(ColorUtils.compositeColors(ColorUtils.setAlphaComponent(accent, 0x2A), surfaceVariant))
-                        setStroke((1.5f * resources.displayMetrics.density + 0.5f).toInt(), accent)
-                    } else {
-                        setColor(surfaceVariant)
-                        setStroke(0, Color.TRANSPARENT)
-                    }
-                }
-                pill.setTextColor(if (isSelected) accent else onSurface)
-            }
         }
 
         updateDialDisplay(initialMinutes)
@@ -1717,23 +1704,11 @@ class MainActivity : AppCompatActivity() {
             updateDialDisplay(mins)
         }
 
-        presetPills.forEach { (pill, presetMins) ->
-            pill.setOnClickListener {
-                clockDialView.setDurationMinutes(presetMins, animate = true)
-            }
-        }
-
-        val onAccent = if (ColorUtils.calculateLuminance(accent) > 0.5) Color.BLACK else Color.WHITE
-        btnApplyDuration.backgroundTintList = ColorStateList.valueOf(accent)
-        btnApplyDuration.setTextColor(onAccent)
         btnApplyDuration.setOnClickListener {
-            dialSheet.dismiss()
-            onPicked(clockDialView.durationMinutes)
-        }
-
-        rowManualKeypad.setOnClickListener {
-            dialSheet.dismiss()
-            showCustomTempMinutesInput { minutes -> onPicked(minutes) }
+            if (clockDialView.durationMinutes > 0) {
+                dialSheet.dismiss()
+                onPicked(clockDialView.durationMinutes)
+            }
         }
 
         btnClose.setOnClickListener {

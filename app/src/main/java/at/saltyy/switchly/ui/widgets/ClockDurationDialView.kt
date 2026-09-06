@@ -52,7 +52,7 @@ class ClockDurationDialView @JvmOverloads constructor(
     private val density = context.resources.displayMetrics.density
     private fun dp(v: Float): Float = v * density
 
-    var minMinutes: Int = 5
+    var minMinutes: Int = 0
     var maxMinutes: Int = 180
 
     var durationMinutes: Int = 15
@@ -72,6 +72,8 @@ class ClockDurationDialView @JvmOverloads constructor(
     private var baseHourMinutes: Int = 0
     private var previousAngle: Float = -1f
     private var isDragging: Boolean = false
+    private var isClampedAtZero: Boolean = false
+    private var isClampedAtMax: Boolean = false
     private var animator: ValueAnimator? = null
 
     // Geometry
@@ -280,6 +282,9 @@ class ClockDurationDialView @JvmOverloads constructor(
             MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
                 if (isDragging) {
                     isDragging = false
+                    isClampedAtZero = false
+                    isClampedAtMax = false
+                    previousAngle = -1f
                     parent?.requestDisallowInterceptTouchEvent(false)
                     onDurationChangeFinished?.invoke(durationMinutes)
                     return true
@@ -297,30 +302,109 @@ class ClockDurationDialView @JvmOverloads constructor(
         var touchAngle = Math.toDegrees(atan2(dy.toDouble(), dx.toDouble())).toFloat() + 90f
         if (touchAngle < 0f) touchAngle += 360f
 
-        if (!isInitial && previousAngle >= 0f) {
+        if (isInitial) {
+            isClampedAtZero = false
+            isClampedAtMax = false
+            if (durationMinutes == 0 && touchAngle > 300f) {
+                // Tapped slightly to the left of 12 o'clock while at 0: keep at 0
+                isClampedAtZero = true
+                previousAngle = 0f
+                return
+            }
+
+            val rawMinute = (touchAngle / 360f) * 60f
+            var snapped = (round(rawMinute / 5.0) * 5).toInt()
+            if (snapped == 60) {
+                snapped = 0
+                baseHourMinutes = (baseHourMinutes + 60).coerceAtMost(maxMinutes)
+            }
+            val total = (baseHourMinutes + snapped).coerceIn(minMinutes, maxMinutes)
+            if (total == 0) {
+                isClampedAtZero = true
+            }
+            if (total != durationMinutes) {
+                durationMinutes = total
+                performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                onDurationChanged?.invoke(durationMinutes)
+                invalidate()
+            }
+            previousAngle = touchAngle
+            return
+        }
+
+        // Active dragging state
+        if (isClampedAtZero) {
+            if (touchAngle > 180f) {
+                // Finger still in counter-clockwise half; cannot run backwards past 0
+                previousAngle = 0f
+                return
+            } else {
+                // Finger moved clockwise back into [0°, 180°]
+                isClampedAtZero = false
+                previousAngle = 0f
+            }
+        }
+
+        if (isClampedAtMax) {
+            if (touchAngle < 180f) {
+                // Finger still in clockwise half past max; cannot run forward past max
+                previousAngle = 360f
+                return
+            } else {
+                // Finger moved counter-clockwise back into (180°, 360°]
+                isClampedAtMax = false
+                previousAngle = 360f
+            }
+        }
+
+        if (previousAngle >= 0f) {
             val delta = touchAngle - previousAngle
-            // Check crossing 12 o'clock boundary (0° / 360°)
+            // Clockwise crossing: e.g. 350° -> 10°
             if (delta < -220f) {
-                // Clockwise crossing: e.g. 350° -> 10°
                 if (baseHourMinutes + 60 <= maxMinutes) {
                     baseHourMinutes += 60
+                } else {
+                    isClampedAtMax = true
+                    if (durationMinutes != maxMinutes) {
+                        durationMinutes = maxMinutes
+                        performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                        onDurationChanged?.invoke(durationMinutes)
+                        invalidate()
+                    }
+                    previousAngle = 360f
+                    return
                 }
             } else if (delta > 220f) {
                 // Counter-clockwise crossing: e.g. 10° -> 350°
                 if (baseHourMinutes >= 60) {
                     baseHourMinutes -= 60
+                } else {
+                    // Cannot run backwards past 0!
+                    isClampedAtZero = true
+                    baseHourMinutes = 0
+                    if (durationMinutes != 0) {
+                        durationMinutes = 0
+                        performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                        onDurationChanged?.invoke(durationMinutes)
+                        invalidate()
+                    }
+                    previousAngle = 0f
+                    return
                 }
             }
         }
 
-        // Convert touch angle to 5-minute increments (0..60)
         val rawMinuteInHour = (touchAngle / 360f) * 60f
-        var snappedMinute = (round(rawMinuteInHour / 5.0) * 5).toInt()
-        if (snappedMinute == 0 && baseHourMinutes == 0) {
-            snappedMinute = 5
+        val snappedMinute = (round(rawMinuteInHour / 5.0) * 5).toInt()
+        val total = if (snappedMinute == 60) {
+            (baseHourMinutes + 60).coerceAtMost(maxMinutes)
+        } else {
+            (baseHourMinutes + snappedMinute).coerceIn(minMinutes, maxMinutes)
         }
 
-        val total = (baseHourMinutes + snappedMinute).coerceIn(minMinutes, maxMinutes)
+        if (total == 0) {
+            isClampedAtZero = true
+        }
 
         if (total != durationMinutes) {
             durationMinutes = total
