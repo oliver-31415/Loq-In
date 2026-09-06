@@ -61,6 +61,8 @@ import at.saltyy.switchly.R
 import at.saltyy.switchly.blocking.SwitchlyAccessibilityService
 import at.saltyy.switchly.data.onboarding.OnboardingPage
 import at.saltyy.switchly.data.prefs.ProfileStore
+import at.saltyy.switchly.data.prefs.DomainBlockStore
+import at.saltyy.switchly.feature.settings.ManageBlockedWebsitesActivity
 import at.saltyy.switchly.data.prefs.ScheduleStore
 import at.saltyy.switchly.data.prefs.SwitchModeStore
 import at.saltyy.switchly.feature.onboarding.adapters.OnboardingPagerAdapter
@@ -100,6 +102,17 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 class OnboardingActivity : ComponentActivity() {
 
     companion object {
+        fun ensureOnboardingProfile(ctx: Context): String {
+            val current = ProfileStore.getCurrent(ctx)
+            if (!current.isNullOrBlank()) {
+                return current
+            }
+
+            val fallback = "Default"
+            ProfileStore.addProfile(ctx, fallback)
+            ProfileStore.setCurrent(ctx, fallback)
+            return fallback
+        }
         private const val PREFS = "switchly_prefs"
         private const val KEY_DONE = "onboarding_done"
         private const val KEY_VERSION = "onboarding_version"
@@ -253,7 +266,7 @@ class OnboardingActivity : ComponentActivity() {
 
             // The review list is editable.
             // Keep the core requirement intact if apps were removed there before the user starts Switchly.
-            if (page?.type == OnboardingPage.Type.REVIEW && !hasPickedApps(this)) {
+            if (page?.type == OnboardingPage.Type.REVIEW && !hasPickedBlockTargets(this)) {
                 MaterialAlertDialogBuilder(this)
                     .setTitle(R.string.onb_pick_title)
                     .setMessage(R.string.onb_required_pick_apps)
@@ -576,7 +589,7 @@ class OnboardingActivity : ComponentActivity() {
 
         btnNext.isEnabled = when {
             page == null -> false
-            page.type == OnboardingPage.Type.REVIEW -> hasPickedApps(this)
+            page.type == OnboardingPage.Type.REVIEW -> hasPickedBlockTargets(this)
             page.level == OnboardingPage.Level.REQUIRED && page.completionCheck != null -> {
                 page.completionCheck.invoke(this)
             }
@@ -710,19 +723,9 @@ class OnboardingActivity : ComponentActivity() {
         return usageAccessEnabled && (accessibilityEnabled || limitedAdvancedProtectionPath)
     }
 
-    private fun ensureOnboardingProfile(ctx: Context): String {
-        val current = ProfileStore.getCurrent(ctx)
-        if (!current.isNullOrBlank()) {
-            return current
-        }
 
-        val fallback = "Default"
-        ProfileStore.addProfile(ctx, fallback)
-        ProfileStore.setCurrent(ctx, fallback)
-        return fallback
-    }
 
-    private fun openOnboardingAppPicker() {
+    fun openOnboardingAppPicker() {
         val profile = ensureOnboardingProfile(this)
         startActivity(
             Intent(this, AppPickerActivity::class.java)
@@ -731,13 +734,26 @@ class OnboardingActivity : ComponentActivity() {
         )
     }
 
+    fun openOnboardingWebsiteManager() {
+        val profile = ensureOnboardingProfile(this)
+        startActivity(
+            Intent(this, ManageBlockedWebsitesActivity::class.java)
+                .putExtra(ManageBlockedWebsitesActivity.EXTRA_PROFILE_NAME, profile)
+        )
+    }
+
     private fun selectedAppsForActiveProfile(ctx: Context): Set<String> {
         val profile = ensureOnboardingProfile(ctx)
         return ProfileStore.getSelectedForProfileMode(ctx, profile)
     }
 
-    private fun hasPickedApps(ctx: Context): Boolean {
-        return selectedAppsForActiveProfile(ctx).isNotEmpty()
+    private fun selectedWebsitesForActiveProfile(ctx: Context): Set<String> {
+        val profile = ensureOnboardingProfile(ctx)
+        return DomainBlockStore.getDomainsForProfileAndMode(ctx, profile)
+    }
+
+    private fun hasPickedBlockTargets(ctx: Context): Boolean {
+        return selectedAppsForActiveProfile(ctx).isNotEmpty() || selectedWebsitesForActiveProfile(ctx).isNotEmpty()
     }
 
     private fun openFirstMissingPermissionSetting() {
@@ -1005,29 +1021,28 @@ class OnboardingActivity : ComponentActivity() {
             action = { act -> (act as? OnboardingActivity)?.showRenameProfileDialog() }
         )
 
-        // Step 2: What to block (App Selection)
+        // Step 2: What to block (Apps & Websites)
+        val selectedWebsitesCount = selectedWebsitesForActiveProfile(this).size
+        val blockTargetsCompletedLabel = when {
+            selectedAppCount > 0 && selectedWebsitesCount > 0 ->
+                getString(R.string.onb_block_targets_completed_both, selectedAppCount, selectedWebsitesCount)
+            selectedAppCount > 0 ->
+                resources.getQuantityString(R.plurals.onb_apps_count_plural, selectedAppCount, selectedAppCount)
+            selectedWebsitesCount > 0 ->
+                resources.getQuantityString(R.plurals.onb_websites_count_plural, selectedWebsitesCount, selectedWebsitesCount)
+            else -> null
+        }
+
         result += OnboardingPage(
             type = OnboardingPage.Type.APP_SELECTION,
-            iconRes = R.drawable.apps_24,
-            title = getString(R.string.onb_pick_title),
-            desc = getString(R.string.onb_pick_desc_required),
-            detailRows = listOf(
-                getString(R.string.onb_pick_point_goal),
-                getString(R.string.onb_pick_point_system_apps)
-            ),
+            iconRes = R.drawable.app_blocking_white_24,
+            title = getString(R.string.onb_block_targets_title),
+            desc = getString(R.string.onb_block_targets_desc),
             level = OnboardingPage.Level.REQUIRED,
-            actionLabel = getString(R.string.onb_pick_action),
-            action = { act ->
-                (act as? OnboardingActivity)?.openOnboardingAppPicker()
-            },
-            completionCheck = { ctx -> hasPickedApps(ctx) },
-            completedLabel = resources.getQuantityString(
-                R.plurals.onb_apps_picked_count,
-                selectedAppCount,
-                selectedAppCount
-            ),
+            completionCheck = { ctx -> hasPickedBlockTargets(ctx) },
+            completedLabel = blockTargetsCompletedLabel,
             keepActionEnabledWhenCompleted = true,
-            requiredMessage = getString(R.string.onb_required_pick_apps)
+            requiredMessage = getString(R.string.onb_block_targets_required)
         )
 
         // Step 3: How to switch on and off (Controls)

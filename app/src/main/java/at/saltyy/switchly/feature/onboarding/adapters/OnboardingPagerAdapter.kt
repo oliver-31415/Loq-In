@@ -52,6 +52,8 @@ import at.saltyy.switchly.data.prefs.ExactAlarmPermissionSync
 import at.saltyy.switchly.data.prefs.IgnoredUsageAppsStore
 import at.saltyy.switchly.data.prefs.NotificationBlockStore
 import at.saltyy.switchly.data.prefs.ProfileStore
+import at.saltyy.switchly.data.prefs.DomainBlockStore
+import at.saltyy.switchly.feature.onboarding.OnboardingActivity
 import at.saltyy.switchly.feature.onboarding.OnboardingUsagePreviewRenderer
 import at.saltyy.switchly.feature.faq.FaqActivity
 import at.saltyy.switchly.feature.settings.AccessibilityDisclosure
@@ -197,7 +199,7 @@ class OnboardingPagerAdapter(
                 btn.icon = null
             }
             val completedButStillEditable = completed && hasAction && page.keepActionEnabledWhenCompleted
-            btn.isVisible = hasAction || completed
+            btn.isVisible = hasAction || (completed && !page.actionLabel.isNullOrBlank())
 
             if (completedButStillEditable) {
                 btn.text = page.completedLabel ?: page.actionLabel
@@ -923,10 +925,49 @@ class OnboardingPagerAdapter(
             accent: Int
         ) {
             detailsContainer.removeAllViews()
-            detailsContainer.isVisible = page.detailRows.isNotEmpty()
-            if (page.detailRows.isNotEmpty()) {
-                renderGroupedDetailRows(activity, page, accent)
+            detailsContainer.isVisible = true
+
+            val onbActivity = activity as? OnboardingActivity
+            val profile = onbActivity?.let { OnboardingActivity.ensureOnboardingProfile(it) }
+                ?: ProfileStore.getCurrent(activity) ?: "default"
+            val appCount = ProfileStore.getSelectedForProfileMode(activity, profile).size
+            val websiteCount = DomainBlockStore.getDomainsForProfileAndMode(activity, profile).size
+
+            val appsStatus = if (appCount > 0) {
+                activity.resources.getQuantityString(R.plurals.onb_apps_count_plural, appCount, appCount)
+            } else {
+                activity.getString(R.string.onb_block_targets_apps_none)
             }
+
+            addUnifiedOnboardingRow(
+                activity = activity,
+                title = activity.getString(R.string.onb_block_targets_apps_title),
+                iconRes = R.drawable.apps_24,
+                info = activity.getString(R.string.onb_block_targets_apps_desc),
+                status = appsStatus,
+                highlighted = appCount > 0,
+                accent = accent,
+                clickable = true,
+                onClick = { onbActivity?.openOnboardingAppPicker() }
+            )
+
+            val websitesStatus = if (websiteCount > 0) {
+                activity.resources.getQuantityString(R.plurals.onb_websites_count_plural, websiteCount, websiteCount)
+            } else {
+                activity.getString(R.string.onb_block_targets_websites_none)
+            }
+
+            addUnifiedOnboardingRow(
+                activity = activity,
+                title = activity.getString(R.string.onb_block_targets_websites_title),
+                iconRes = R.drawable.language_24,
+                info = activity.getString(R.string.onb_block_targets_websites_desc),
+                status = websitesStatus,
+                highlighted = websiteCount > 0,
+                accent = accent,
+                clickable = true,
+                onClick = { onbActivity?.openOnboardingWebsiteManager() }
+            )
         }
 
         private fun renderHomeCustomizationDetails(activity: Activity, accent: Int) {

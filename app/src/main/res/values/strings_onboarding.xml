@@ -30,6 +30,26 @@
     <string name="onb_profiles_rename_hint">Profile name</string>
     <string name="onb_permissions_hub_desc_simple">Switchly runs entirely on your device. Enable Accessibility and Usage Access below to activate protection.</string>
 
+    <!-- Streamlined Step 2: Apps and Websites -->
+    <string name="onb_block_targets_title">Choose what to block</string>
+    <string name="onb_block_targets_desc">Select the apps and websites you want Switchly to block when this profile is active.</string>
+    <string name="onb_block_targets_apps_title">Blocked Apps</string>
+    <string name="onb_block_targets_apps_desc">Choose apps from your device to block</string>
+    <string name="onb_block_targets_apps_none">Tap to choose apps</string>
+    <string name="onb_block_targets_websites_title">Blocked Websites</string>
+    <string name="onb_block_targets_websites_desc">Add domains and websites to block in browser</string>
+    <string name="onb_block_targets_websites_none">Tap to add websites</string>
+    <string name="onb_block_targets_required">Please select at least one app or website to block before continuing.</string>
+    <string name="onb_block_targets_completed_both">%1$d apps · %2$d websites</string>
+    <plurals name="onb_apps_count_plural">
+        <item quantity="one">%1$d app selected</item>
+        <item quantity="other">%1$d apps selected</item>
+    </plurals>
+    <plurals name="onb_websites_count_plural">
+        <item quantity="one">%1$d website blocked</item>
+        <item quantity="other">%1$d websites blocked</item>
+    </plurals>
+
     <!-- Welcome and core concept -->
     <!-- ====================================================== -->
     <string name="onb_welcome_title">Welcome to Switchly</string>
