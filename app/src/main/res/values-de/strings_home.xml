@@ -85,6 +85,11 @@
     <string name="dashboard_temp_sheet_sub_disable">Pause Switchly for a short time</string>
     <string name="dashboard_temp_sheet_sub_disable_locked">Temporary disable is locked (NFC lock is active). Use Emergency Unlock if needed.</string>
     <string name="dashboard_temp_sheet_cancel_timer">Cancel timer</string>
+    <string name="dashboard_temp_ends_at">Endet um %1$s</string>
+            <string name="minutes">Minuten</string>
+    <string name="dashboard_action_lock_in">Fokussieren</string>
+    <string name="dashboard_action_lock_in_duration">Fokussieren für %1$s</string>
+    <string name="dashboard_action_enable_duration">Aktivieren für %1$s</string>
     <string name="dashboard_temp_hint">Temporary mode - choose action</string>
     <string name="dashboard_temp_hint_enable">Temporary enable - choose duration</string>
     <string name="dashboard_temp_hint_enable_profile">Temporarily enable %1$s</string>

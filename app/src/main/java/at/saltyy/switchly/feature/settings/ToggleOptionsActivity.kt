@@ -71,6 +71,7 @@ import at.saltyy.switchly.ui.applySwitchlyStyle
 import at.saltyy.switchly.ui.dialog.SwitchlyDialogOption
 import at.saltyy.switchly.ui.dialog.showSwitchlyOptionDialog
 import at.saltyy.switchly.ui.dialog.styleSwitchlyDialogButtons
+import at.saltyy.switchly.ui.dialog.EmergencyPinDialog
 import at.saltyy.switchly.util.LocaleHelper
 import at.saltyy.switchly.util.PersistentStatusNotifier
 import at.saltyy.switchly.util.SwitchlyAppAccessGuard
@@ -223,6 +224,8 @@ open class ToggleOptionsActivity : AppCompatActivity() {
 
         val rowEmergency = findViewById<View>(R.id.rowEmergency)
         val dividerBeforeEmergency = findViewById<View>(R.id.dividerAfterAutostart)
+        val rowChangeEmergencyPin = findViewById<View>(R.id.rowChangeEmergencyPin)
+        val dividerAfterEmergency = findViewById<View>(R.id.dividerAfterEmergency)
         val rowShowQuickActions = findViewById<View>(R.id.rowShowQuickActions)
         val rowShowTemporaryMode = findViewById<View>(R.id.rowShowTemporaryMode)
         val rowLockActiveTemporaryTimer = findViewById<View>(R.id.rowLockActiveTemporaryTimer)
@@ -268,6 +271,7 @@ open class ToggleOptionsActivity : AppCompatActivity() {
         tintLeadingIcon(rowBlockNotifs, accent)
         tintLeadingIcon(rowAutostart, accent)
         tintLeadingIcon(rowEmergency, accent)
+        tintLeadingIcon(rowChangeEmergencyPin, accent)
         tintLeadingIcon(rowShowQuickActions, accent)
         tintLeadingIcon(rowShowTemporaryMode, accent)
         tintLeadingIcon(rowLockActiveTemporaryTimer, accent)
@@ -595,6 +599,9 @@ open class ToggleOptionsActivity : AppCompatActivity() {
             // Home shortcut visibility toggle.
             rowEmergency.visibility = View.VISIBLE
             dividerBeforeEmergency.visibility = View.VISIBLE
+            val emergencyEnabled = switchEmergency.isChecked
+            rowChangeEmergencyPin.visibility = if (emergencyEnabled) View.VISIBLE else View.GONE
+            dividerAfterEmergency.visibility = if (emergencyEnabled) View.VISIBLE else View.GONE
         }
         refreshEmergencyFeatureVisibility()
 
@@ -905,6 +912,10 @@ open class ToggleOptionsActivity : AppCompatActivity() {
         rowEmergency.setOnClickListener {
             if (canEditActiveAccess()) switchEmergency.toggle()
         }
+        rowChangeEmergencyPin.setOnClickListener {
+            if (!canEditActiveAccess()) return@setOnClickListener
+            EmergencyPinDialog.showChangePinFlow(this)
+        }
         rowShowQuickActions.setOnClickListener { switchShowQuickActions.toggle() }
         rowShowTemporaryMode.setOnClickListener {
             if (canEditActiveAccess()) switchShowTemporaryMode.toggle()
@@ -1086,6 +1097,7 @@ open class ToggleOptionsActivity : AppCompatActivity() {
                 return@setOnCheckedChangeListener
             }
             EmergencyBypassStore.setFeatureEnabled(ctx, isChecked)
+            refreshEmergencyFeatureVisibility()
         }
 
         // Blocking master toggles

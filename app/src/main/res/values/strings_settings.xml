@@ -64,6 +64,8 @@
     <string name="account_disclaimer_body">Switchly helps you reduce distractions by blocking apps, websites and selected in-app content while protection is enabled. Blocking depends on system permissions (accessibility, usage access) and can be affected by battery optimization, device manufacturer behavior and app updates. Emergency unlock is intentionally limited. Switchly is provided as-is, without warranty; you remain responsible for complying with your device and service terms.</string>
     <string name="settings_account_title">Account</string>
     <string name="settings_account_summary">Backup, emergency PIN &amp; sync</string>
+    <string name="pref_change_emergency_pin_title">Change emergency PIN</string>
+    <string name="pref_change_emergency_pin_summary">Set or change the PIN required for Emergency Unlock</string>
     <string name="settings_backup_title">Backup</string>
     <string name="settings_backup_summary">Sync &amp; restore your config</string>
     <string name="settings_backup_create_title">Backup</string>

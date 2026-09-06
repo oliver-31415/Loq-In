@@ -1601,6 +1601,63 @@
                             android:textOn=""
                             app:showText="false" />
                     </LinearLayout>
+
+                    <View
+                        android:id="@+id/dividerAfterEmergency"
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="?attr/colorOnSurface"
+                        android:alpha="0.12" />
+
+                    <!-- Change emergency PIN -->
+                    <LinearLayout
+                        android:id="@+id/rowChangeEmergencyPin"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:padding="14dp"
+                        android:background="?attr/selectableItemBackground">
+
+                        <ImageView
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/lock_24"
+                            app:tint="?attr/colorOnSurface" />
+
+                        <Space
+                            android:layout_width="14dp"
+                            android:layout_height="1dp" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:textAppearance="?attr/textAppearanceBody1"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/pref_change_emergency_pin_title" />
+
+                            <TextView
+                                android:textAppearance="?attr/textAppearanceBody2"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/pref_change_emergency_pin_summary" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:alpha="0.4"
+                            android:contentDescription="@null"
+                            android:src="@drawable/keyboard_arrow_right_24"
+                            app:tint="?attr/colorOnSurface" />
+                    </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

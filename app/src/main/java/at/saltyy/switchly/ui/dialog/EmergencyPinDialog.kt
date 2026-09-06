@@ -51,6 +51,11 @@ import at.saltyy.switchly.theme.AccentColor
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
+/**
+ * Modern square per-digit PIN dialogs for Emergency Unlock.
+ * Features dynamic digit count, square boxes with rounded corners, masked bullet display,
+ * active box accent highlighting, horizontal shake animation on error, and automatic verification.
+ */
 object EmergencyPinDialog {
 
     fun showEnterPin(
@@ -94,13 +99,13 @@ object EmergencyPinDialog {
         // Title
         val tvTitle = TextView(activity).apply {
             text = activity.getString(R.string.emergency_pin_enter_current_title)
-            textSize = 19f
-            setTypeface(typeface, Typeface.BOLD)
+            textSize = 18f
+            typeface = Typeface.DEFAULT_BOLD
             setTextColor(onSurface)
             gravity = Gravity.CENTER
             setPadding(0, dp(12), 0, dp(4))
         }
-        container.addView(tvTitle, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        container.addView(tvTitle)
 
         // Subtitle
         val tvSubtitle = TextView(activity).apply {
@@ -109,11 +114,12 @@ object EmergencyPinDialog {
                 else R.string.emergency_pin_enter_current_message
             )
             textSize = 13f
-            setTextColor(ColorUtils.setAlphaComponent(onSurface, 0xB0))
+            setTextColor(onSurface)
+            alpha = 0.7f
             gravity = Gravity.CENTER
-            setPadding(dp(8), 0, dp(8), dp(16))
+            setPadding(dp(8), 0, dp(8), dp(18))
         }
-        container.addView(tvSubtitle, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        container.addView(tvSubtitle)
 
         // Square digit boxes container
         val boxesLayout = LinearLayout(activity).apply {
@@ -121,166 +127,166 @@ object EmergencyPinDialog {
             gravity = Gravity.CENTER
         }
 
-        val boxWidth = if (pinLength <= 4) dp(50) else dp(40)
-        val boxHeight = dp(56)
-        val boxMargin = if (pinLength <= 4) dp(6) else dp(3)
-        val boxRadius = dp(14).toFloat()
+        val boxWidth = if (pinLength <= 4) dp(50) else dp(42)
+        val boxHeight = if (pinLength <= 4) dp(56) else dp(48)
+        val boxMargin = if (pinLength <= 4) dp(8) else dp(5)
 
-        val boxes = mutableListOf<Pair<FrameLayout, TextView>>()
+        val digitViews = ArrayList<TextView>()
+        val boxFrames = ArrayList<FrameLayout>()
 
-        for (i in 0 until pinLength) {
-            val box = FrameLayout(activity).apply {
-                layoutParams = LinearLayout.LayoutParams(boxWidth, boxHeight).apply {
-                    setMargins(boxMargin, 0, boxMargin, 0)
+        fun styleBox(index: Int, textLength: Int, isError: Boolean = false) {
+            val frame = boxFrames[index]
+            val bg = GradientDrawable().apply {
+                cornerRadius = dp(14).toFloat()
+                if (isError) {
+                    setColor(ColorUtils.setAlphaComponent(errorColor, 0x1A))
+                    setStroke(dp(2), errorColor)
+                } else if (index == textLength) {
+                    // Active box
+                    setColor(ColorUtils.compositeColors(ColorUtils.setAlphaComponent(accent, 0x1A), surfaceVariant))
+                    setStroke(dp(2), accent)
+                } else if (index < textLength) {
+                    // Filled box
+                    setColor(surfaceVariant)
+                    setStroke(dp(1), ColorUtils.setAlphaComponent(accent, 0x66))
+                } else {
+                    // Empty box
+                    setColor(surfaceVariant)
+                    setStroke(dp(1), ColorUtils.setAlphaComponent(Color.WHITE, 0x1A))
                 }
             }
-            val tvDigit = TextView(activity).apply {
-                gravity = Gravity.CENTER
-                textSize = 20f
-                setTypeface(typeface, Typeface.BOLD)
-                setTextColor(accent)
-            }
-            box.addView(tvDigit, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
-            boxes += Pair(box, tvDigit)
-            boxesLayout.addView(box)
+            frame.background = bg
         }
 
-        // Invisible EditText for input
+        for (i in 0 until pinLength) {
+            val frame = FrameLayout(activity)
+            val lp = LinearLayout.LayoutParams(boxWidth, boxHeight).apply {
+                if (i > 0) marginStart = boxMargin
+            }
+            val digitTv = TextView(activity).apply {
+                textSize = 22f
+                typeface = Typeface.DEFAULT_BOLD
+                setTextColor(onSurface)
+                gravity = Gravity.CENTER
+            }
+            frame.addView(digitTv, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+            boxesLayout.addView(frame, lp)
+
+            boxFrames.add(frame)
+            digitViews.add(digitTv)
+        }
+
+        for (i in 0 until pinLength) {
+            styleBox(i, 0)
+        }
+
+        // Hidden EditText capturing keyboard input
         val hiddenInput = EditText(activity).apply {
             inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD
             filters = arrayOf(InputFilter.LengthFilter(pinLength))
-            setBackgroundColor(Color.TRANSPARENT)
-            setTextColor(Color.TRANSPARENT)
-            isCursorVisible = false
-            layoutParams = FrameLayout.LayoutParams(1, 1)
+            alpha = 0f
+            // Minimal height so it doesn't shift layout
+            layoutParams = ViewGroup.LayoutParams(1, 1)
         }
 
-        val boxesContainer = FrameLayout(activity).apply {
-            addView(boxesLayout, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
-                gravity = Gravity.CENTER
-            })
+        val inputOverlay = FrameLayout(activity).apply {
+            addView(boxesLayout, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
             addView(hiddenInput)
+            setOnClickListener {
+                hiddenInput.requestFocus()
+                val imm = activity.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+                imm?.showSoftInput(hiddenInput, InputMethodManager.SHOW_IMPLICIT)
+            }
         }
-        container.addView(boxesContainer, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        container.addView(inputOverlay)
 
-        // Error message
+        // Error message text view
         val tvError = TextView(activity).apply {
-            text = activity.getString(R.string.emergency_pin_incorrect)
             textSize = 12.5f
             setTextColor(errorColor)
             gravity = Gravity.CENTER
-            visibility = View.GONE
-            setPadding(0, dp(10), 0, 0)
+            visibility = View.INVISIBLE
+            setPadding(0, dp(12), 0, 0)
         }
-        container.addView(tvError, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        container.addView(tvError)
 
-        fun updateBoxes(text: String, isError: Boolean = false) {
-            boxes.forEachIndexed { i, (box, tv) ->
-                val isFilled = i < text.length
-                val isCurrent = i == text.length && !isError
+        var dialog: AlertDialog? = null
 
-                val strokeColor = when {
-                    isError -> errorColor
-                    isCurrent -> accent
-                    isFilled -> ColorUtils.setAlphaComponent(accent, 0x88)
-                    else -> Color.TRANSPARENT
-                }
-                val strokeWidth = if (isError || isCurrent) dp(2) else if (isFilled) dp(1) else 0
-
-                box.background = GradientDrawable().apply {
-                    cornerRadius = boxRadius
-                    setColor(
-                        if (isFilled && !isError) {
-                            ColorUtils.compositeColors(ColorUtils.setAlphaComponent(accent, 0x14), surfaceVariant)
-                        } else {
-                            surfaceVariant
+        fun shakeAndReset() {
+            // Shake animation
+            boxesLayout.animate()
+                .translationX(dp(12).toFloat())
+                .setDuration(50)
+                .withEndAction {
+                    boxesLayout.animate()
+                        .translationX(-dp(12).toFloat())
+                        .setDuration(50)
+                        .withEndAction {
+                            boxesLayout.animate()
+                                .translationX(dp(8).toFloat())
+                                .setDuration(40)
+                                .withEndAction {
+                                    boxesLayout.animate()
+                                        .translationX(0f)
+                                        .setDuration(40)
+                                        .start()
+                                }
+                                .start()
                         }
-                    )
-                    if (strokeWidth > 0) {
-                        setStroke(strokeWidth, strokeColor)
-                    }
+                        .start()
                 }
+                .start()
 
-                if (isFilled) {
-                    tv.text = "●"
-                    tv.setTextColor(if (isError) errorColor else accent)
-                } else {
-                    tv.text = ""
+            for (i in 0 until pinLength) {
+                styleBox(i, 0, isError = true)
+            }
+
+            tvError.text = activity.getString(R.string.emergency_pin_incorrect)
+            tvError.visibility = View.VISIBLE
+
+            Handler(Looper.getMainLooper()).postDelayed({
+                hiddenInput.text?.clear()
+                for (i in 0 until pinLength) {
+                    digitViews[i].text = ""
+                    styleBox(i, 0)
                 }
-            }
-        }
-
-        fun shakeView(v: View) {
-            val d = 45L
-            v.animate().translationX(-14f).setDuration(d).withEndAction {
-                v.animate().translationX(14f).setDuration(d).withEndAction {
-                    v.animate().translationX(-10f).setDuration(d).withEndAction {
-                        v.animate().translationX(10f).setDuration(d).withEndAction {
-                            v.animate().translationX(0f).setDuration(d).start()
-                        }
-                    }.start()
-                }.start()
-            }.start()
-        }
-
-        updateBoxes("", isError = false)
-
-        boxesContainer.setOnClickListener {
-            hiddenInput.requestFocus()
-            val imm = activity.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
-            imm?.showSoftInput(hiddenInput, InputMethodManager.SHOW_IMPLICIT)
-        }
-
-        lateinit var dialog: AlertDialog
-
-        fun verifyPin(pin: String) {
-            if (EmergencyPinStore.matchesPin(activity, pin)) {
-                updateBoxes(pin, isError = false)
-                Handler(Looper.getMainLooper()).postDelayed({
-                    dialog.dismiss()
-                    onSuccess()
-                }, 120L)
-            } else {
-                tvError.visibility = View.VISIBLE
-                updateBoxes(pin, isError = true)
-                shakeView(boxesLayout)
-                Handler(Looper.getMainLooper()).postDelayed({
-                    hiddenInput.text?.clear()
-                    updateBoxes("", isError = false)
-                }, 500L)
-            }
+                tvError.visibility = View.INVISIBLE
+            }, 650)
         }
 
         hiddenInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                val text = s?.toString().orEmpty()
-                tvError.visibility = View.GONE
-                updateBoxes(text, isError = false)
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                val entered = s?.toString() ?: ""
+                val len = entered.length
 
-                val positiveBtn = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
-                positiveBtn?.isEnabled = text.length == pinLength
+                for (i in 0 until pinLength) {
+                    digitViews[i].text = if (i < len) "●" else ""
+                    styleBox(i, len)
+                }
 
-                if (text.length == pinLength) {
-                    verifyPin(text)
+                if (len == pinLength) {
+                    if (EmergencyPinStore.matchesPin(activity, entered)) {
+                        val imm = activity.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+                        imm?.hideSoftInputFromWindow(hiddenInput.windowToken, 0)
+                        dialog?.dismiss()
+                        onSuccess()
+                    } else {
+                        shakeAndReset()
+                    }
                 }
             }
-            override fun afterTextChanged(s: Editable?) {}
         })
 
         dialog = MaterialAlertDialogBuilder(activity)
             .setView(container)
-            .setPositiveButton(activity.getString(R.string.ok)) { _, _ ->
-                val text = hiddenInput.text?.toString().orEmpty()
-                verifyPin(text)
-            }
             .setNegativeButton(activity.getString(R.string.cancel), null)
             .create()
 
         dialog.setOnShowListener {
             dialog.styleSwitchlyDialogButtons()
             dialog.applySwitchlyDialogWidth(0.90f)
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.isEnabled = false
 
             hiddenInput.requestFocus()
             val imm = activity.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
@@ -295,8 +301,8 @@ object EmergencyPinDialog {
         onSuccess: () -> Unit = {}
     ): AlertDialog {
         fun dp(v: Int): Int = (v * activity.resources.displayMetrics.density + 0.5f).toInt()
-
         val pinLength = 4
+
         val accent = AccentColor.getAccentColorInt(activity)
         val surfaceVariant = ContextCompat.getColor(activity, R.color.foqos_surface_variant)
         val onSurface = ContextCompat.getColor(activity, R.color.foqos_on_surface)
@@ -307,7 +313,7 @@ object EmergencyPinDialog {
             setPadding(dp(20), dp(20), dp(20), dp(4))
         }
 
-        // Roundel with lock icon
+        // Header roundel
         val roundel = FrameLayout(activity).apply {
             val bg = GradientDrawable().apply {
                 shape = GradientDrawable.OVAL
@@ -328,25 +334,26 @@ object EmergencyPinDialog {
         // Title
         val tvTitle = TextView(activity).apply {
             text = activity.getString(R.string.emergency_pin_title)
-            textSize = 19f
-            setTypeface(typeface, Typeface.BOLD)
+            textSize = 18f
+            typeface = Typeface.DEFAULT_BOLD
             setTextColor(onSurface)
             gravity = Gravity.CENTER
             setPadding(0, dp(12), 0, dp(4))
         }
-        container.addView(tvTitle, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        container.addView(tvTitle)
 
         // Subtitle
         val tvSubtitle = TextView(activity).apply {
             text = activity.getString(R.string.emergency_pin_message)
             textSize = 13f
-            setTextColor(ColorUtils.setAlphaComponent(onSurface, 0xB0))
+            setTextColor(onSurface)
+            alpha = 0.7f
             gravity = Gravity.CENTER
-            setPadding(dp(8), 0, dp(8), dp(16))
+            setPadding(dp(8), 0, dp(8), dp(18))
         }
-        container.addView(tvSubtitle, LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT))
+        container.addView(tvSubtitle)
 
-        // Square boxes
+        // Digit boxes
         val boxesLayout = LinearLayout(activity).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER
@@ -354,99 +361,82 @@ object EmergencyPinDialog {
 
         val boxWidth = dp(50)
         val boxHeight = dp(56)
-        val boxMargin = dp(6)
-        val boxRadius = dp(14).toFloat()
+        val boxMargin = dp(8)
 
-        val boxes = mutableListOf<Pair<FrameLayout, TextView>>()
+        val digitViews = ArrayList<TextView>()
+        val boxFrames = ArrayList<FrameLayout>()
 
-        for (i in 0 until pinLength) {
-            val box = FrameLayout(activity).apply {
-                layoutParams = LinearLayout.LayoutParams(boxWidth, boxHeight).apply {
-                    setMargins(boxMargin, 0, boxMargin, 0)
+        fun styleBox(index: Int, textLength: Int) {
+            val frame = boxFrames[index]
+            val bg = GradientDrawable().apply {
+                cornerRadius = dp(14).toFloat()
+                if (index == textLength) {
+                    setColor(ColorUtils.compositeColors(ColorUtils.setAlphaComponent(accent, 0x1A), surfaceVariant))
+                    setStroke(dp(2), accent)
+                } else if (index < textLength) {
+                    setColor(surfaceVariant)
+                    setStroke(dp(1), ColorUtils.setAlphaComponent(accent, 0x66))
+                } else {
+                    setColor(surfaceVariant)
+                    setStroke(dp(1), ColorUtils.setAlphaComponent(Color.WHITE, 0x1A))
                 }
             }
-            val tvDigit = TextView(activity).apply {
-                gravity = Gravity.CENTER
-                textSize = 20f
-                setTypeface(typeface, Typeface.BOLD)
-                setTextColor(accent)
+            frame.background = bg
+        }
+
+        for (i in 0 until pinLength) {
+            val frame = FrameLayout(activity)
+            val lp = LinearLayout.LayoutParams(boxWidth, boxHeight).apply {
+                if (i > 0) marginStart = boxMargin
             }
-            box.addView(tvDigit, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
-            boxes += Pair(box, tvDigit)
-            boxesLayout.addView(box)
+            val digitTv = TextView(activity).apply {
+                textSize = 22f
+                typeface = Typeface.DEFAULT_BOLD
+                setTextColor(onSurface)
+                gravity = Gravity.CENTER
+            }
+            frame.addView(digitTv, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT))
+            boxesLayout.addView(frame, lp)
+
+            boxFrames.add(frame)
+            digitViews.add(digitTv)
+            styleBox(i, 0)
         }
 
         val hiddenInput = EditText(activity).apply {
             inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD
             filters = arrayOf(InputFilter.LengthFilter(pinLength))
-            setBackgroundColor(Color.TRANSPARENT)
-            setTextColor(Color.TRANSPARENT)
-            isCursorVisible = false
-            layoutParams = FrameLayout.LayoutParams(1, 1)
+            alpha = 0f
+            layoutParams = ViewGroup.LayoutParams(1, 1)
         }
 
-        val boxesContainer = FrameLayout(activity).apply {
-            addView(boxesLayout, FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
-                gravity = Gravity.CENTER
-            })
+        val inputOverlay = FrameLayout(activity).apply {
+            addView(boxesLayout, FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
             addView(hiddenInput)
-        }
-        container.addView(boxesContainer, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
-
-        fun updateBoxes(text: String) {
-            boxes.forEachIndexed { i, (box, tv) ->
-                val isFilled = i < text.length
-                val isCurrent = i == text.length
-
-                val strokeColor = when {
-                    isCurrent -> accent
-                    isFilled -> ColorUtils.setAlphaComponent(accent, 0x88)
-                    else -> Color.TRANSPARENT
-                }
-                val strokeWidth = if (isCurrent) dp(2) else if (isFilled) dp(1) else 0
-
-                box.background = GradientDrawable().apply {
-                    cornerRadius = boxRadius
-                    setColor(
-                        if (isFilled) {
-                            ColorUtils.compositeColors(ColorUtils.setAlphaComponent(accent, 0x14), surfaceVariant)
-                        } else {
-                            surfaceVariant
-                        }
-                    )
-                    if (strokeWidth > 0) {
-                        setStroke(strokeWidth, strokeColor)
-                    }
-                }
-
-                if (isFilled) {
-                    tv.text = "●"
-                    tv.setTextColor(accent)
-                } else {
-                    tv.text = ""
-                }
+            setOnClickListener {
+                hiddenInput.requestFocus()
+                val imm = activity.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
+                imm?.showSoftInput(hiddenInput, InputMethodManager.SHOW_IMPLICIT)
             }
         }
+        container.addView(inputOverlay)
 
-        updateBoxes("")
-
-        boxesContainer.setOnClickListener {
-            hiddenInput.requestFocus()
-            val imm = activity.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
-            imm?.showSoftInput(hiddenInput, InputMethodManager.SHOW_IMPLICIT)
-        }
-
-        lateinit var dialog: AlertDialog
+        var dialog: AlertDialog? = null
 
         hiddenInput.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                val text = s?.toString().orEmpty()
-                updateBoxes(text)
-                val positiveBtn = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
-                positiveBtn?.isEnabled = text.length == pinLength
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+            override fun afterTextChanged(s: Editable?) {
+                val entered = s?.toString() ?: ""
+                val len = entered.length
+
+                for (i in 0 until pinLength) {
+                    digitViews[i].text = if (i < len) "●" else ""
+                    styleBox(i, len)
+                }
+
+                dialog?.getButton(AlertDialog.BUTTON_POSITIVE)?.isEnabled = (len == pinLength)
             }
-            override fun afterTextChanged(s: Editable?) {}
         })
 
         dialog = MaterialAlertDialogBuilder(activity)
@@ -475,5 +465,24 @@ object EmergencyPinDialog {
         }
         dialog.show()
         return dialog
+    }
+
+    /**
+     * Complete change emergency PIN flow:
+     * - If a PIN is currently stored, prompt to verify the current PIN first.
+     * - Then prompt to set the new PIN.
+     * - If no PIN exists yet, prompt directly to set a new PIN.
+     */
+    fun showChangePinFlow(
+        activity: Activity,
+        onComplete: () -> Unit = {}
+    ) {
+        if (EmergencyPinStore.hasPin(activity)) {
+            showEnterPin(activity) {
+                showSetPin(activity, onComplete)
+            }
+        } else {
+            showSetPin(activity, onComplete)
+        }
     }
 }

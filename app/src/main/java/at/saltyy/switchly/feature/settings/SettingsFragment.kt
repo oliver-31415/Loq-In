@@ -110,6 +110,7 @@ import at.saltyy.switchly.ui.dialog.SwitchlyDialogOption
 import at.saltyy.switchly.ui.dialog.showSwitchlyOptionDialog
 import at.saltyy.switchly.ui.dialog.showSwitchlyMultiChoiceDialog
 import at.saltyy.switchly.ui.dialog.styleSwitchlyDialogButtons
+import at.saltyy.switchly.ui.dialog.EmergencyPinDialog
 import at.saltyy.switchly.util.BatteryOptimizationRequest
 import at.saltyy.switchly.util.EditingLockGuard
 import at.saltyy.switchly.util.LocaleHelper
@@ -2010,22 +2011,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
      * - If PIN exists: verify current PIN first, then ask to set a new one.
      */
     private fun showChangeEmergencyPinFlow() {
-        val ctx = requireContext()
-        val storedPin = getStoredEmergencyPin(ctx)
-
-        if (storedPin.isNullOrEmpty()) {
-            showSetEmergencyPinDialog {
-                Toast.makeText(ctx, R.string.emergency_pin_changed, Toast.LENGTH_SHORT).show()
-            }
-            return
-        }
-
-        // Verify current PIN first.
-        showEnterEmergencyPinDialog(storedPin) {
-            showSetEmergencyPinDialog {
-                Toast.makeText(ctx, R.string.emergency_pin_changed, Toast.LENGTH_SHORT).show()
-            }
-        }
+        val act = activity ?: return
+        EmergencyPinDialog.showChangePinFlow(act)
     }
 
     fun openEmergencyUnlockDirect() {
@@ -2204,79 +2191,13 @@ class SettingsFragment : PreferenceFragmentCompat() {
     }
 
     private fun showSetEmergencyPinDialog(onSuccess: () -> Unit) {
-        val ctx = requireContext()
-        val input = EditText(ctx).apply {
-            inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD
-            hint = getString(R.string.emergency_pin_choose_hint)
-            backgroundTintList = AccentColor.getActiveColor(ctx)
-        }
-
-        val container = FrameLayout(ctx).apply {
-            val margin = (24 * resources.displayMetrics.density).toInt()
-            setPadding(margin, 0, margin, 0)
-            addView(
-                input,
-                FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
-                )
-            )
-        }
-
-        val dialog = AlertDialog.Builder(ctx)
-            .setTitle(getString(R.string.emergency_pin_title))
-            .setMessage(getString(R.string.emergency_pin_message))
-            .setView(container)
-            .setPositiveButton(getString(R.string.ok)) { _, _ ->
-                val pin = input.text.toString().trim()
-                if (pin.length < 4) {
-                    Toast.makeText(ctx, getString(R.string.emergency_pin_too_short), Toast.LENGTH_SHORT).show()
-                } else {
-                    ctx.getSharedPreferences(PREFS, 0).edit { putString(KEY_EMERGENCY_PIN, pin) }
-                    onSuccess()
-                }
-            }
-            .setNegativeButton(getString(R.string.cancel), null)
-            .create()
-
-        dialog.setOnShowListener { dialog.styleSwitchlyDialogButtons() }
-        dialog.show()
+        val act = activity ?: return
+        EmergencyPinDialog.showSetPin(act, onSuccess)
     }
 
     private fun showEnterEmergencyPinDialog(expectedPin: String, onSuccess: () -> Unit) {
-        val ctx = requireContext()
-        val input = EditText(ctx).apply {
-            inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD
-            hint = getString(R.string.emergency_pin_enter_current_hint)
-            backgroundTintList = AccentColor.getActiveColor(ctx)
-        }
-
-        val container = FrameLayout(ctx).apply {
-            val margin = (24 * resources.displayMetrics.density).toInt()
-            setPadding(margin, 0, margin, 0)
-            addView(
-                input,
-                FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
-                )
-            )
-        }
-
-        val dialog = AlertDialog.Builder(ctx)
-            .setTitle(getString(R.string.emergency_pin_enter_current_title))
-            .setMessage(getString(R.string.emergency_pin_enter_current_message))
-            .setView(container)
-            .setPositiveButton(getString(R.string.ok)) { _, _ ->
-                val pin = input.text.toString().trim()
-                if (pin == expectedPin) onSuccess()
-                else Toast.makeText(ctx, getString(R.string.emergency_pin_incorrect), Toast.LENGTH_SHORT).show()
-            }
-            .setNegativeButton(getString(R.string.cancel), null)
-            .create()
-
-        dialog.setOnShowListener { dialog.styleSwitchlyDialogButtons() }
-        dialog.show()
+        val act = activity ?: return
+        EmergencyPinDialog.showEnterPin(act, onSuccess)
     }
 
     private fun showDeleteBackupsDialog(vararg _ignored: Any?) {
