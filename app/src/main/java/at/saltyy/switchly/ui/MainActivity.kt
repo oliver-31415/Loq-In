@@ -1598,10 +1598,19 @@ class MainActivity : AppCompatActivity() {
         val onSurfaceSoft = ContextCompat.getColor(this@MainActivity, at.saltyy.switchly.R.color.foqos_on_surface_variant)
         val accent = AccentColor.getAccentColorInt(this)
 
-        fun tileBg(): android.graphics.drawable.GradientDrawable =
+        val surfaceVariant = ContextCompat.getColor(this@MainActivity, at.saltyy.switchly.R.color.foqos_surface_variant)
+
+        fun profileRowBg(selected: Boolean): android.graphics.drawable.GradientDrawable =
             android.graphics.drawable.GradientDrawable().apply {
                 cornerRadius = homeDp(16f).toFloat()
-                setColor(ContextCompat.getColor(this@MainActivity, at.saltyy.switchly.R.color.foqos_surface_variant))
+                setColor(
+                    if (selected) ColorUtils.compositeColors(ColorUtils.setAlphaComponent(accent, 0x18), surfaceVariant)
+                    else surfaceVariant
+                )
+                setStroke(
+                    homeDp(2f),
+                    if (selected) accent else Color.TRANSPARENT
+                )
             }
 
         fun roundelBg(): android.graphics.drawable.GradientDrawable =
@@ -1665,7 +1674,7 @@ class MainActivity : AppCompatActivity() {
             gravity = android.view.Gravity.CENTER_VERTICAL
             val padV = homeDp(11f)
             setPadding(homeDp(10f), padV, homeDp(10f), padV)
-            background = tileBg().apply { setStroke(homeDp(1f), ColorUtils.setAlphaComponent(accent, 0x66)) }
+            background = profileRowBg(false).apply { setStroke(homeDp(1f), ColorUtils.setAlphaComponent(accent, 0x66)) }
             isClickable = true
             isFocusable = true
             layoutParams = LinearLayout.LayoutParams(
@@ -1700,13 +1709,15 @@ class MainActivity : AppCompatActivity() {
         }
         list.addView(newRow)
 
+        val profileRows = mutableListOf<Pair<String, View>>()
         profiles.forEachIndexed { index, profile ->
+            val isSelected = profile == current
             val row = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = android.view.Gravity.CENTER_VERTICAL
                 val padV = homeDp(11f)
-                setPadding(homeDp(10f), padV, homeDp(10f), padV)
-                background = tileBg()
+                setPadding(homeDp(12f), padV, homeDp(12f), padV)
+                background = profileRowBg(isSelected)
                 isClickable = true
                 isFocusable = true
                 layoutParams = LinearLayout.LayoutParams(
@@ -1721,27 +1732,17 @@ class MainActivity : AppCompatActivity() {
                 setTextColor(onSurface)
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             }
-            val check = TextView(this).apply {
-                text = "\u2713"
-                textSize = 16f
-                setTypeface(typeface, android.graphics.Typeface.BOLD)
-                setTextColor(accent)
-                visibility = if (profile == current) View.VISIBLE else View.GONE
-                tag = "switch_check"
-            }
             row.addView(name)
-            row.addView(check)
+            profileRows += profile to row
             row.setOnClickListener {
                 // Read the live current profile: the `current` snapshot above
                 // goes stale after the first switch while the sheet is open.
                 if (profile != ProfileStore.getCurrent(this@MainActivity)) {
                     switchToProfile(profile)
                 }
-                // update checks in place
-                for (i in 0 until list.childCount) {
-                    list.getChildAt(i).findViewWithTag<TextView>("switch_check")?.visibility = View.GONE
+                profileRows.forEach { (p, r) ->
+                    r.background = profileRowBg(p == profile)
                 }
-                check.visibility = View.VISIBLE
             }
             list.addView(row)
         }
@@ -2092,10 +2093,19 @@ class MainActivity : AppCompatActivity() {
         val onSurfaceSoft = ContextCompat.getColor(ctx, at.saltyy.switchly.R.color.foqos_on_surface_variant)
         val accent = AccentColor.getAccentColorInt(this)
 
-        fun tileBg(): android.graphics.drawable.GradientDrawable =
+        val surfaceVariant = ContextCompat.getColor(ctx, at.saltyy.switchly.R.color.foqos_surface_variant)
+
+        fun rowBg(selected: Boolean): android.graphics.drawable.GradientDrawable =
             android.graphics.drawable.GradientDrawable().apply {
                 cornerRadius = homeDp(16f).toFloat()
-                setColor(ContextCompat.getColor(ctx, at.saltyy.switchly.R.color.foqos_surface_variant))
+                setColor(
+                    if (selected) ColorUtils.compositeColors(ColorUtils.setAlphaComponent(accent, 0x18), surfaceVariant)
+                    else surfaceVariant
+                )
+                setStroke(
+                    homeDp(2f),
+                    if (selected) accent else Color.TRANSPARENT
+                )
             }
 
         fun roundelBg(): android.graphics.drawable.GradientDrawable =
@@ -2228,6 +2238,8 @@ class MainActivity : AppCompatActivity() {
             findViewById<ImageView>(R.id.ivHeroStrategyIcon)?.setImageResource(blockingModeIcon(mode))
         }
 
+        val modeRowViews = mutableListOf<Pair<AutomationModeStore.Mode, View>>()
+
         fun modeRow(
             mode: AutomationModeStore.Mode,
             nameRes: Int,
@@ -2236,11 +2248,12 @@ class MainActivity : AppCompatActivity() {
             supported: Boolean,
             onEdit: (() -> Unit)? = null,
         ): LinearLayout {
+            val isSelected = mode == current
             val row = LinearLayout(ctx).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = android.view.Gravity.CENTER_VERTICAL
                 setPadding(homeDp(10f), homeDp(9f), homeDp(10f), homeDp(9f))
-                background = tileBg()
+                background = rowBg(isSelected)
                 isClickable = supported
                 isFocusable = supported
                 alpha = if (supported) 1f else 0.4f
@@ -2283,22 +2296,7 @@ class MainActivity : AppCompatActivity() {
                 row.addView(createEditButton(onEdit, sizeDp = 34f, iconSizeDp = 17f))
             }
 
-            row.addView(TextView(ctx).apply {
-                text = "\u2713"
-                textSize = 16f
-                setTypeface(typeface, android.graphics.Typeface.BOLD)
-                setTextColor(accent)
-                visibility = if (mode == current) View.VISIBLE else View.INVISIBLE
-                tag = "mode_check"
-                gravity = android.view.Gravity.CENTER
-                layoutParams = LinearLayout.LayoutParams(
-                    homeDp(26f),
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                ).apply {
-                    marginStart = homeDp(6f)
-                    marginEnd = homeDp(2f)
-                }
-            })
+            modeRowViews += mode to row
             return row
         }
 
@@ -2516,11 +2514,9 @@ class MainActivity : AppCompatActivity() {
             current = mode
             AutomationModeStore.setMode(ctx, mode)
             setHero(mode)
-            for (i in 0 until list.childCount) {
-                list.getChildAt(i).findViewWithTag<View>("mode_check")?.visibility = View.INVISIBLE
+            modeRowViews.forEach { (m, rowView) ->
+                rowView.background = rowBg(m == mode)
             }
-            mixedRow.findViewWithTag<View>("mode_check")?.visibility =
-                if (mode == AutomationModeStore.Mode.MIXED) View.VISIBLE else View.INVISIBLE
             applyMixedChannelsVisibility()
         }
 
