@@ -33,6 +33,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -275,6 +276,20 @@ class AppListAdapter(
             cardRoot.strokeColor = ContextCompat.getColor(ctx, R.color.foqos_outline_variant)
         }
 
+        private fun updateCardState(selected: Boolean, unavailable: Boolean) {
+            val ctx = itemView.context
+            cardRoot.strokeWidth = dp(1f)
+            if (selected) {
+                val accent = AccentColor.getAccentColorInt(ctx)
+                cardRoot.strokeColor = ColorUtils.setAlphaComponent(accent, 0x88)
+                cardRoot.setCardBackgroundColor(ColorUtils.setAlphaComponent(accent, 0x14))
+            } else if (unavailable) {
+                applyUnavailableRowStyle()
+            } else {
+                applyNormalRowStyle()
+            }
+        }
+
         fun bind(item: AppEntry) {
             val ctx = itemView.context
             val profile = currentProfileProvider.invoke()
@@ -324,8 +339,6 @@ class AppListAdapter(
             applyStateChipStyle()
 
             if (item.isAvailable) {
-                applyNormalRowStyle()
-
                 if (!item.blockSafety.hint.isNullOrBlank()) {
                     tvStateChip.visibility = View.VISIBLE
                     tvHint.visibility = View.VISIBLE
@@ -381,7 +394,6 @@ class AppListAdapter(
                     limitRow.visibility = View.GONE
                 }
             } else {
-                applyUnavailableRowStyle()
                 tvStateChip.visibility = View.VISIBLE
                 tvHint.visibility = View.VISIBLE
                 tvStateChip.text = ctx.getString(R.string.unavailable_app_state)
@@ -407,6 +419,7 @@ class AppListAdapter(
                 !item.isAvailable -> 0.85f
                 else -> 1f
             }
+            updateCardState(currentlySelected, !item.isAvailable)
 
             lateinit var listener: CompoundButton.OnCheckedChangeListener
             fun setCheckedSilently(value: Boolean) {
@@ -460,6 +473,7 @@ class AppListAdapter(
                     } else {
                         managed.add(item.packageName)
                         notifySelectionCountChanged()
+                        updateCardState(true, !item.isAvailable)
                     }
                 } else {
                     if (pinnedByInAppRules) {
@@ -468,6 +482,7 @@ class AppListAdapter(
                     } else {
                         managed.remove(item.packageName)
                         notifySelectionCountChanged()
+                        updateCardState(false, !item.isAvailable)
 
                         if (!item.isAvailable) {
                             if (!profile.isNullOrBlank()) {

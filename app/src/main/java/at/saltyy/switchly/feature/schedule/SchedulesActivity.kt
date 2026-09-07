@@ -1874,8 +1874,10 @@ class SchedulesActivity : AppCompatActivity() {
         }
 
         dayButtons.forEach { btn ->
+            // Checkable MaterialButtons auto-toggle isChecked before onClick runs,
+            // so just refresh the visuals from the already-toggled state.
             btn.setOnClickListener {
-                setDayButtonChecked(btn, !btn.isChecked)
+                setDayButtonChecked(btn, btn.isChecked)
             }
         }
 

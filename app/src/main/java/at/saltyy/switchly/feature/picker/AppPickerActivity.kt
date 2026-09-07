@@ -275,10 +275,6 @@ class AppPickerActivity : AppCompatActivity() {
 
         btnSave.backgroundTintList = AccentColor.getActiveColor(this)
         btnSave.setTextColor(ContextCompat.getColor(this, R.color.font_white))
-        btnSelectAll.strokeColor = AccentColor.getActiveColor(this)
-        btnClearAll.strokeColor = AccentColor.getActiveColor(this)
-        btnSelectAll.setTextColor(AccentColor.getAccentColorInt(this))
-        btnClearAll.setTextColor(AccentColor.getAccentColorInt(this))
         searchBox.boxStrokeColor = AccentColor.getAccentColorInt(this)
         searchBox.hintTextColor = AccentColor.getActiveColor(this)
         etSearch.backgroundTintList = AccentColor.getActiveColor(this)
@@ -692,11 +688,14 @@ class AppPickerActivity : AppCompatActivity() {
             selectedId,
         )
 
-        cbAutoBlockNewApps.isEnabled = !isAllow && !currentProfile.isNullOrBlank()
-        cbAutoBlockNewApps.isChecked = !isAllow && (currentProfile?.let { ProfileStore.isAutoBlockNewAppsEnabled(this, it) } ?: false)
-        val autoBlockAlpha = if (isAllow) 0.55f else 1f
-        cbAutoBlockNewApps.alpha = autoBlockAlpha
-        findViewById<TextView>(R.id.tvAutoBlockNewAppsSummary)?.alpha = autoBlockAlpha
+        // Auto-block only applies to Block selected mode (in Allow selected mode the
+        // profile set means "allowed", so there is nothing to auto-add). Hide it there.
+        val showAutoBlock = !isAllow
+        cbAutoBlockNewApps.visibility = if (showAutoBlock) View.VISIBLE else View.GONE
+        findViewById<TextView>(R.id.tvAutoBlockNewAppsSummary)?.visibility =
+            if (showAutoBlock) View.VISIBLE else View.GONE
+        cbAutoBlockNewApps.isEnabled = showAutoBlock && !currentProfile.isNullOrBlank()
+        cbAutoBlockNewApps.isChecked = showAutoBlock && (currentProfile?.let { ProfileStore.isAutoBlockNewAppsEnabled(this, it) } ?: false)
     }
 
     private fun normalizeDialogBreaks(text: String): String =
