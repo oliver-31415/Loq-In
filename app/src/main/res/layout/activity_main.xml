@@ -295,7 +295,7 @@
                                 android:layout_width="16dp"
                                 android:layout_height="16dp"
                                 android:contentDescription="@null"
-                                android:src="@drawable/account_box_24"
+                                android:src="@drawable/layers_24"
                                 app:tint="?attr/colorOnSurface" />
 
                             <TextView

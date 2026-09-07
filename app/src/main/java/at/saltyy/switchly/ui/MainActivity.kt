@@ -105,6 +105,8 @@ import at.saltyy.switchly.data.prefs.UsageLimitStore
 import at.saltyy.switchly.data.prefs.UsageLimitResetStore
 import at.saltyy.switchly.data.prefs.UsageLimitSessionRuntimeStore
 import at.saltyy.switchly.feature.inbox.BlockedInboxActivity
+import at.saltyy.switchly.data.prefs.SessionMissedNotificationsStore
+import at.saltyy.switchly.data.prefs.BlockedNotificationEvent
 import at.saltyy.switchly.feature.onboarding.OnboardingActivity
 import at.saltyy.switchly.feature.picker.AppPickerActivity
 import at.saltyy.switchly.feature.profiles.ManageProfilesActivity
@@ -123,6 +125,7 @@ import at.saltyy.switchly.feature.support.SupportActivity
 import at.saltyy.switchly.feature.tools.RulesHubActivity
 import at.saltyy.switchly.feature.tools.ActivityHubActivity
 import at.saltyy.switchly.feature.usage.ActiveTimeActivity
+import at.saltyy.switchly.feature.usage.AppWebsiteUsageActivity
 import at.saltyy.switchly.feature.usage.QuickLimitDialogs
 import at.saltyy.switchly.feature.stats.StatsFormat
 import at.saltyy.switchly.nfc.NfcWriterActivity
@@ -483,7 +486,7 @@ class MainActivity : AppCompatActivity() {
         findViewById<View>(R.id.btnMoreInsights)?.setOnClickListener {
             ActivityTransitionCompat.switchWithoutAnimation(
                 activity = this,
-                intent = Intent(this, ActivityHubActivity::class.java),
+                intent = Intent(this, AppWebsiteUsageActivity::class.java),
             )
         }
         applyHeatmapLegend()
@@ -686,6 +689,7 @@ class MainActivity : AppCompatActivity() {
         updateTempHintVisibility()
         updateEmergencyHintVisibility()
         refreshHomeLayout()
+        checkAndShowSessionMissedNotifications()
 
         setupBottomNav(bottomNav)
     }
@@ -707,6 +711,7 @@ class MainActivity : AppCompatActivity() {
         updateTempHintVisibility()
         updateEmergencyHintVisibility()
         refreshHomeLayout()
+        checkAndShowSessionMissedNotifications()
 
         // Refresh accents when theme changes (toolbar stays flat surface — Foqos restyle)
         applyAccentToButtons()
@@ -1049,8 +1054,9 @@ class MainActivity : AppCompatActivity() {
             Color.WHITE
         }
 
-        btnToggle.backgroundTintList = tint
-        btnToggle.setTextColor(onAccent)
+        if (::btnToggle.isInitialized) {
+            styleHeroToggle(SwitchModeStore.isEnabled(this))
+        }
         btnFinishSetup.backgroundTintList = tint
         btnFinishSetup.setTextColor(onAccent)
         // Make the icon match the button text (otherwise it may stay default/black).
@@ -2010,16 +2016,19 @@ class MainActivity : AppCompatActivity() {
         tintAccented(view)
 
         val nameView = view.findViewById<TextView>(R.id.tvSheetProfileName)
-
         nameView.text = profile
 
+        var currentProfileName = profile
         view.findViewById<View>(R.id.btnSheetClose).setOnClickListener { sheet.dismiss() }
-        view.findViewById<View>(R.id.rowSheetRename).setOnClickListener {
-            showRenameDialog(profile) { newName ->
+        val renameAction = {
+            showRenameDialog(currentProfileName) { newName ->
+                currentProfileName = newName
                 nameView.text = newName
                 refreshProfileRowsUi()
             }
         }
+        view.findViewById<View>(R.id.rowSheetRename)?.setOnClickListener { renameAction() }
+        nameView?.setOnClickListener { renameAction() }
         view.findViewById<View>(R.id.rowSheetApps).setOnClickListener {
             sheet.dismiss()
             openAppPickerIfUnlocked()
@@ -2267,10 +2276,7 @@ class MainActivity : AppCompatActivity() {
      * plain accent pill while idle (reads on the neutral card).
      */
     private fun styleHeroToggle(active: Boolean) {
-        if (lastHeroToggleActive == active) {
-            return
-        }
-        lastHeroToggleActive = active
+        if (!::btnToggle.isInitialized) return
         if (active) {
             btnToggle.backgroundTintList =
                 ColorStateList.valueOf(ColorUtils.setAlphaComponent(Color.WHITE, 0x2B))
@@ -2278,10 +2284,10 @@ class MainActivity : AppCompatActivity() {
             btnToggle.rippleColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(Color.WHITE, 0x40))
         } else {
             val accent = AccentColor.getAccentColorInt(this)
+            val onAccent = if (ColorUtils.calculateLuminance(accent) > 0.52) Color.BLACK else Color.WHITE
             btnToggle.backgroundTintList = ColorStateList.valueOf(accent)
-            btnToggle.setTextColor(
-                if (ColorUtils.calculateLuminance(accent) > 0.52) Color.BLACK else Color.WHITE
-            )
+            btnToggle.setTextColor(onAccent)
+            btnToggle.rippleColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(onAccent, 0x33))
         }
     }
 
@@ -3824,6 +3830,10 @@ class MainActivity : AppCompatActivity() {
                 .alpha(1f)
                 .setDuration(180)
                 .start()
+
+            if (prev && !enabled) {
+                checkAndShowSessionMissedNotifications()
+            }
         }
         lastEnabledUi = enabled
 
@@ -4998,6 +5008,192 @@ class MainActivity : AppCompatActivity() {
             }
             else -> super.onOptionsItemSelected(item)
         }
+    }
+
+    private var sessionMissedBottomSheet: BottomSheetDialog? = null
+
+    private fun checkAndShowSessionMissedNotifications() {
+        if (isFinishing || isDestroyed) return
+        if (sessionMissedBottomSheet?.isShowing == true) return
+        if (!SessionMissedNotificationsStore.isFeatureEnabled(this)) return
+
+        val events = SessionMissedNotificationsStore.consumePendingMissedNotifications(this)
+        if (events.isEmpty()) return
+
+        showSessionMissedNotificationsSheet(events)
+    }
+
+    private fun showSessionMissedNotificationsSheet(events: List<BlockedNotificationEvent>) {
+        if (isFinishing || isDestroyed) return
+
+        val sheet = BottomSheetDialog(this)
+        sessionMissedBottomSheet = sheet
+        val parent = findViewById<ViewGroup>(android.R.id.content)
+        val view = layoutInflater.inflate(R.layout.bottom_sheet_session_missed_notifications, parent, false)
+        sheet.setContentView(view)
+
+        sheet.setOnShowListener {
+            val bottomSheet = sheet.findViewById<FrameLayout>(com.google.android.material.R.id.design_bottom_sheet)
+            bottomSheet?.let { bs ->
+                val topRadius = 24 * resources.displayMetrics.density + 0.5f
+                bs.background = GradientDrawable().apply {
+                    cornerRadii = floatArrayOf(
+                        topRadius, topRadius,
+                        topRadius, topRadius,
+                        0f, 0f,
+                        0f, 0f
+                    )
+                    setColor(ContextCompat.getColor(this@MainActivity, R.color.foqos_surface))
+                }
+                val behavior = BottomSheetBehavior.from(bs)
+                behavior.state = BottomSheetBehavior.STATE_EXPANDED
+                behavior.skipCollapsed = true
+            }
+        }
+
+        val count = events.size
+        val subtitleText = if (count == 1) {
+            getString(R.string.session_missed_notifications_count_single)
+        } else {
+            getString(R.string.session_missed_notifications_count_fmt, count)
+        }
+        view.findViewById<TextView>(R.id.tvSessionMissedSubtitle)?.text = subtitleText
+
+        view.findViewById<View>(R.id.roundelBg)?.background = GradientDrawable().apply {
+            shape = GradientDrawable.OVAL
+            setColor(AccentColor.getAccentContainerColorInt(this@MainActivity))
+        }
+        view.findViewById<ImageView>(R.id.ivIcon)?.imageTintList =
+            ColorStateList.valueOf(AccentColor.getAccentColorInt(this@MainActivity))
+
+        view.findViewById<View>(R.id.btnClose)?.setOnClickListener {
+            sheet.dismiss()
+        }
+
+        val recycler = view.findViewById<RecyclerView>(R.id.rvSessionMissedNotifications)
+        recycler?.layoutManager = LinearLayoutManager(this)
+
+        val maxRecyclerHeight = (280 * resources.displayMetrics.density + 0.5f).toInt()
+        recycler?.viewTreeObserver?.addOnPreDrawListener(object : android.view.ViewTreeObserver.OnPreDrawListener {
+            override fun onPreDraw(): Boolean {
+                recycler.viewTreeObserver.removeOnPreDrawListener(this)
+                if (recycler.height > maxRecyclerHeight) {
+                    recycler.layoutParams.height = maxRecyclerHeight
+                    recycler.requestLayout()
+                }
+                return true
+            }
+        })
+
+        val timeFmt = java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT)
+        val pm = packageManager
+
+        class MissedNotificationAdapter : RecyclerView.Adapter<MissedNotificationAdapter.VH>() {
+            inner class VH(itemView: View) : RecyclerView.ViewHolder(itemView) {
+                val icon: ImageView = itemView.findViewById(R.id.ivNotificationIcon)
+                val title: TextView = itemView.findViewById(R.id.tvNotificationTitle)
+                val time: TextView = itemView.findViewById(R.id.tvNotificationTime)
+                val body: TextView = itemView.findViewById(R.id.tvNotificationBody)
+            }
+
+            override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
+                val v = layoutInflater.inflate(R.layout.item_session_missed_notification, parent, false)
+                return VH(v)
+            }
+
+            override fun onBindViewHolder(holder: VH, position: Int) {
+                val item = events[position]
+                val appLabel = runCatching {
+                    val ai = pm.getApplicationInfo(item.pkg, 0)
+                    pm.getApplicationLabel(ai)?.toString().orEmpty().ifBlank { item.pkg }
+                }.getOrDefault(item.pkg)
+
+                holder.title.text = appLabel
+                holder.time.text = timeFmt.format(java.util.Date(item.timeMillis))
+
+                val content = listOfNotNull(
+                    item.title.takeIf { it.isNotBlank() },
+                    item.text.takeIf { it.isNotBlank() }
+                ).joinToString(" — ").ifBlank {
+                    getString(R.string.blocked_inbox_content_unknown)
+                }
+                holder.body.text = content
+
+                val appIcon = runCatching {
+                    val ai = pm.getApplicationInfo(item.pkg, 0)
+                    pm.getApplicationIcon(ai)
+                }.getOrNull()
+                if (appIcon != null) {
+                    holder.icon.setImageDrawable(appIcon)
+                } else {
+                    holder.icon.setImageResource(R.drawable.notifications_24)
+                }
+
+                holder.itemView.setOnClickListener {
+                    sheet.dismiss()
+                    startActivity(Intent(this@MainActivity, BlockedInboxActivity::class.java))
+                }
+            }
+
+            override fun getItemCount(): Int = events.size
+        }
+
+        recycler?.adapter = MissedNotificationAdapter()
+
+        val accent = AccentColor.getAccentColorInt(this)
+        val onAccent = if (ColorUtils.calculateLuminance(accent) > 0.5) Color.BLACK else Color.WHITE
+
+        val cbNeverAgain = view.findViewById<MaterialCheckBox>(R.id.cbSessionMissedNeverAgain)
+        cbNeverAgain?.let { cb ->
+            val onSurface = MaterialColors.getColor(this, com.google.android.material.R.attr.colorOnSurface, Color.DKGRAY)
+            cb.buttonTintList = ColorStateList(
+                arrayOf(
+                    intArrayOf(android.R.attr.state_checked),
+                    intArrayOf(-android.R.attr.state_checked)
+                ),
+                intArrayOf(
+                    accent,
+                    ColorUtils.setAlphaComponent(onSurface, 0x8A)
+                )
+            )
+        }
+
+        val handleNeverAgainIfChecked: () -> Unit = {
+            if (cbNeverAgain?.isChecked == true && SessionMissedNotificationsStore.isFeatureEnabled(this)) {
+                SessionMissedNotificationsStore.setFeatureEnabled(this, false)
+                Toast.makeText(this, R.string.session_missed_notifications_disabled_hint, Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        sheet.setOnDismissListener {
+            sessionMissedBottomSheet = null
+            handleNeverAgainIfChecked()
+        }
+
+        view.findViewById<View>(R.id.btnClose)?.setOnClickListener {
+            handleNeverAgainIfChecked()
+            sheet.dismiss()
+        }
+
+        val btnDone = view.findViewById<MaterialButton>(R.id.btnSessionMissedDone)
+        btnDone?.backgroundTintList = ColorStateList.valueOf(accent)
+        btnDone?.setTextColor(onAccent)
+        btnDone?.setOnClickListener {
+            handleNeverAgainIfChecked()
+            sheet.dismiss()
+        }
+
+        val btnInbox = view.findViewById<MaterialButton>(R.id.btnSessionMissedInbox)
+        btnInbox?.strokeColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 0x66))
+        btnInbox?.setTextColor(accent)
+        btnInbox?.rippleColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 0x1A))
+        btnInbox?.setOnClickListener {
+            handleNeverAgainIfChecked()
+            sheet.dismiss()
+            startActivity(Intent(this, BlockedInboxActivity::class.java))
+        }
+
+        sheet.show()
     }
 
     private fun showDevelopmentInfoDialog() {

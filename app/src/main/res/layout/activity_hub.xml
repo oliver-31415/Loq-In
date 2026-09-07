@@ -105,8 +105,6 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-
-
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardScreenUnlocks"
                 style="@style/Switchly.Card"
@@ -166,73 +164,6 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-
-
-            <TextView
-                style="@style/Switchly.SectionHeader"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:text="@string/activity_hub_section_review" />
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardBlockedNotifications"
-                style="@style/Switchly.Card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:foreground="?attr/selectableItemBackground"
-                android:clickable="true"
-                android:focusable="true"
-                app:cardElevation="1dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:minHeight="72dp"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:padding="16dp">
-
-                    <ImageView
-                        android:id="@+id/ivBlockedNotificationsIcon"
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:contentDescription="@string/blocked_inbox_title"
-                        android:src="@drawable/notifications_24" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="14dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="@string/blocked_inbox_title"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="3dp"
-                            android:text="@string/activity_blocked_notifications_summary"
-                            android:textColor="?android:attr/textColorSecondary"
-                            android:textSize="13sp" />
-                    </LinearLayout>
-
-                    <ImageView
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
-                        android:alpha="0.7"
-                        android:contentDescription="@string/blocked_inbox_title"
-                        android:src="@drawable/keyboard_arrow_right_24"
-                        app:tint="?android:attr/textColorSecondary" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 

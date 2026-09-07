@@ -203,6 +203,16 @@ class SwitchlyAccessibilityService : AccessibilityService() {
     private val DEEP_PROBE_DEFAULT_MS = 280L
 
     private val PACKAGE_YOUTUBE = "com.google.android.youtube"
+    private val PACKAGE_YOUTUBE_REVANCED = "app.revanced.android.youtube"
+    private val PACKAGE_YOUTUBE_MORPHE = "app.morphe.android.youtube"
+    private val YOUTUBE_PACKAGES = setOf(
+        PACKAGE_YOUTUBE,
+        PACKAGE_YOUTUBE_REVANCED,
+        PACKAGE_YOUTUBE_MORPHE
+    )
+
+    private fun isYouTubePackage(pkg: String?): Boolean =
+        pkg != null && pkg.lowercase(Locale.getDefault()) in YOUTUBE_PACKAGES
     private val PACKAGE_INSTAGRAM = "com.instagram.android"
     private val PACKAGE_X = "com.twitter.android"
     private val PACKAGE_SNAPCHAT = "com.snapchat.android"
@@ -643,12 +653,10 @@ class SwitchlyAccessibilityService : AccessibilityService() {
 
     private fun packageHasInAppFeaturesEnabled(pkg: String): Boolean {
         return when {
-            pkg == PACKAGE_YOUTUBE ->
-                inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_SHORTS) ||
-                    inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_SUBSCRIPTIONS) ||
-                    inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_YOU) ||
-                    inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_MINI_PLAYER) ||
-                    inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_PIP)
+            isYouTubePackage(pkg) ->
+                inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_SHORTS)
+                // NOTE: Temporarily hidden YouTube settings (Subscriptions, You, Mini Player, PiP).
+                // Kept disabled for now; may be added back later.
 
             pkg == PACKAGE_INSTAGRAM ->
                 inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_IG_REELS) ||
@@ -675,7 +683,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
 
     private fun lowSignalNeedlesForPkg(pkg: String): List<String> {
         return when {
-            pkg == PACKAGE_YOUTUBE -> YT_LOW_SIGNAL_LABELS
+            isYouTubePackage(pkg) -> YT_LOW_SIGNAL_LABELS
             pkg == PACKAGE_INSTAGRAM -> IG_LOW_SIGNAL_LABELS
             pkg == PACKAGE_X -> X_LOW_SIGNAL_LABELS
             pkg == PACKAGE_SNAPCHAT -> SNAP_LOW_SIGNAL_LABELS
@@ -686,7 +694,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
     private fun shouldSkipLowSignalInApp(pkg: String, event: AccessibilityEvent, now: Long): Boolean {
         // Reliability-first: these apps often emit sparse/noisy class/text signals on surface changes.
         // Skipping probes here can miss legitimate blocks (YouTube Shorts).
-        if (pkg == PACKAGE_YOUTUBE ||
+        if (isYouTubePackage(pkg) ||
             pkg == PACKAGE_INSTAGRAM ||
             pkg == PACKAGE_X ||
             pkg == PACKAGE_SNAPCHAT) {
@@ -1008,12 +1016,12 @@ class SwitchlyAccessibilityService : AccessibilityService() {
             return
         }
 
-        if (pkg == PACKAGE_YOUTUBE && maybeBlockYouTubeHomeShortsBeforeDedupe(event)) {
+        if (isYouTubePackage(pkg) && maybeBlockYouTubeHomeShortsBeforeDedupe(event)) {
             return
         }
 
         val pendingYouTubeHomeRedirectFlags =
-            if (pkg == PACKAGE_YOUTUBE) BlockerActivity.consumePendingYouTubeHomeRedirectFlagsFor(pkg) else 0
+            if (isYouTubePackage(pkg)) BlockerActivity.consumePendingYouTubeHomeRedirectFlagsFor(pkg) else 0
         if (pendingYouTubeHomeRedirectFlags != 0) {
             val ackNow = System.currentTimeMillis()
             val cleanupShorts =
@@ -1084,8 +1092,8 @@ class SwitchlyAccessibilityService : AccessibilityService() {
                 val guardUntil = ackNow + maxOf(INSTA_REELS_REENTRY_GUARD_MS, INSTA_EXPLORE_REENTRY_GUARD_MS) + 900L
                 surfaceBlockGuardUntil["$pkg|ig:reels"] = guardUntil
                 surfaceBlockGuardUntil["$pkg|ig:explore"] = guardUntil
-            } else if (pkg == PACKAGE_YOUTUBE) {
-                val ytPkg = PACKAGE_YOUTUBE
+            } else if (isYouTubePackage(pkg)) {
+                val ytPkg = pkg
                 val rootNow = youtubeCurrentRoot(event)
                 val ytWindowReady = isRootFromPackage(rootNow, ytPkg)
                 val shortsNow = ytWindowReady && (rootNow?.let { isYouTubeShortsScreen(it, event) || isLikelyYouTubeShortsPlayer(it, event) } == true)
@@ -1212,12 +1220,12 @@ class SwitchlyAccessibilityService : AccessibilityService() {
             if (shouldRunDeepProbe(pkg, type, isTransition = true, now = now)) {
                 maybeBlockNow(pkg, event)
             }
-            if (pkg == PACKAGE_YOUTUBE ||
+            if (isYouTubePackage(pkg) ||
                 type == AccessibilityEvent.TYPE_WINDOWS_CHANGED ||
                 type == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
                 maybeBlockYouTubeFloatingPlayer(event, "transition")
-                if (pkg == PACKAGE_YOUTUBE) {
-                    scheduleYouTubeContentRetryProbe(type, now)
+                if (isYouTubePackage(pkg)) {
+                    scheduleYouTubeContentRetryProbe(type, now, pkg)
                 }
             }
             return
@@ -1226,7 +1234,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         // Special probe for browsers + social apps on content/text/scroll/click updates
         val specialPkg =
             supportsWebsiteRulesPackage(pkg) ||
-                pkg == PACKAGE_YOUTUBE ||
+                isYouTubePackage(pkg) ||
                 pkg == PACKAGE_INSTAGRAM ||
                 pkg == PACKAGE_X ||
                 pkg == PACKAGE_SNAPCHAT
@@ -1243,8 +1251,8 @@ class SwitchlyAccessibilityService : AccessibilityService() {
             if (shouldRunDeepProbe(pkg, type, isTransition = false, now = now)) {
                 maybeBlockNow(pkg, event)
             }
-            if (pkg == PACKAGE_YOUTUBE) {
-                scheduleYouTubeContentRetryProbe(type, now)
+            if (isYouTubePackage(pkg)) {
+                scheduleYouTubeContentRetryProbe(type, now, pkg)
             }
         } else if (type == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED) {
             // Fallback: shortly after transitions, reduce one-frame flash.
@@ -1256,7 +1264,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         }
     }
 
-    private fun scheduleYouTubeContentRetryProbe(eventType: Int, now: Long) {
+    private fun scheduleYouTubeContentRetryProbe(eventType: Int, now: Long, targetPkg: String = PACKAGE_YOUTUBE) {
         val relevant =
             eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED ||
                 eventType == AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED ||
@@ -1275,7 +1283,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         }
         lastYouTubeRetryProbeAt = now
 
-        val pkg = PACKAGE_YOUTUBE
+        val pkg = targetPkg
         handler.postDelayed({
             runCatching {
                 val retryNow = System.currentTimeMillis()
@@ -2111,7 +2119,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
             if (pkg == PACKAGE_INSTAGRAM && title.contains(getString(R.string.in_app_surface_explore_label), ignoreCase = true)) {
                 surfaceBlockGuardUntil["$pkg|ig:explore"] = now + INSTA_EXPLORE_REENTRY_GUARD_MS
             }
-            if (pkg == PACKAGE_YOUTUBE && title.contains(getString(R.string.in_app_surface_shorts_label), ignoreCase = true)) {
+            if (isYouTubePackage(pkg) && title.contains(getString(R.string.in_app_surface_shorts_label), ignoreCase = true)) {
                 surfaceBlockGuardUntil["$pkg|yt:shorts"] = now + YT_SHORTS_REENTRY_GUARD_MS
             }
         }
@@ -2124,7 +2132,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         if (!deferNavigationUntilAcknowledge) {
             // Go back out of the current screen/tab immediately.
             blockLaunchController.performBackSequence(backCount, initialDelayMs = 0L, stepMs = 120L)
-        } else if (pkg == PACKAGE_YOUTUBE && title.contains(getString(R.string.in_app_surface_shorts_label), ignoreCase = true)) {
+        } else if (isYouTubePackage(pkg) && title.contains(getString(R.string.in_app_surface_shorts_label), ignoreCase = true)) {
             // Keep Shorts on the popup path; any Home navigation is controlled separately so the popup can stay visible.
             surfaceBlockGuardUntil["$pkg|yt:shorts"] = now + YT_SHORTS_REENTRY_GUARD_MS
         }
@@ -2137,7 +2145,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         }
 
         val isYouTubeShortsPopup =
-            pkg == PACKAGE_YOUTUBE &&
+            isYouTubePackage(pkg) &&
                 title.contains(getString(R.string.in_app_surface_shorts_label), ignoreCase = true)
         val isYouTubeHomeFeedShortsPopup =
             prePopupYouTubeHome &&
@@ -2145,12 +2153,13 @@ class SwitchlyAccessibilityService : AccessibilityService() {
                 isYouTubeShortsPopup &&
                 youtubeCurrentRoot()?.let { isYouTubeHomeFeedShortsPlayer(it) } == true
 
-        if (prePopupYouTubeHome && pkg == PACKAGE_YOUTUBE) {
+        if (prePopupYouTubeHome && isYouTubePackage(pkg)) {
             prepareYouTubeHomeBeforeSurfacePopup(
                 reason = if (isYouTubeShortsPopup) "shorts_pre_popup_yt_home" else "pre_popup_yt_home",
                 allowLaunchFallback = !isYouTubeShortsPopup,
                 closeVisibleShorts = isYouTubeHomeFeedShortsPopup,
-                closeMiniPlayer = prePopupYouTubeCloseShorts
+                closeMiniPlayer = prePopupYouTubeCloseShorts,
+                targetPkg = pkg
             )
         }
 
@@ -2260,7 +2269,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         BlockCountStore.incrementToday(this, pkg)
         perf.blocksShown++
 
-        if (pkg == PACKAGE_YOUTUBE) {
+        if (isYouTubePackage(pkg)) {
             // Keep the user inside YouTube and move only the blocked surface back to YouTube Home.
             // Also close YouTube's own mini-player when it appears after leaving Shorts.
             runCatching { blockLaunchController.pauseActiveMediaPlayback() }
@@ -2295,7 +2304,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
             title == getString(R.string.blocking_website_blocked_title) ||
                 title == getString(R.string.blocking_website_limit_reached_title)
         val isInAppFeaturePkg =
-            pkg == PACKAGE_YOUTUBE ||
+            isYouTubePackage(pkg) ||
                 pkg == PACKAGE_INSTAGRAM ||
                 pkg == PACKAGE_X ||
                 pkg == PACKAGE_SNAPCHAT
@@ -4334,7 +4343,8 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         while (hops < maxHops) {
             val nodePkg = current.packageName?.toString()?.lowercase(Locale.getDefault()).orEmpty()
             val canClick = current.isClickable || (current.actionList?.any { it.id == AccessibilityNodeInfo.ACTION_CLICK } == true)
-            if (nodePkg == targetPkg && canClick) {
+            val matchPkg = if (targetPkg == PACKAGE_YOUTUBE) isYouTubePackage(nodePkg) else nodePkg == targetPkg
+            if (matchPkg && canClick) {
                 return current
             }
             val parent = runCatching { current.parent }.getOrNull()
@@ -4393,7 +4403,8 @@ class SwitchlyAccessibilityService : AccessibilityService() {
                 val canClick =
                     current.isClickable ||
                         (current.actionList?.any { it.id == AccessibilityNodeInfo.ACTION_CLICK } == true)
-                if (nodePkg == targetPkg && canClick) {
+            val matchPkg = if (targetPkg == PACKAGE_YOUTUBE) isYouTubePackage(nodePkg) else nodePkg == targetPkg
+            if (matchPkg && canClick) {
                     val bounds = Rect()
                     runCatching { current.getBoundsInScreen(bounds) }
                     if (!bounds.isEmpty) {
@@ -4584,7 +4595,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         return dismissed || clickNodeOrClickableParent(node)
     }
 
-    private fun launchYouTubeHomeFallback(reason: String = "fallback") {
+    private fun launchYouTubeHomeFallback(reason: String = "fallback", targetPkg: String = PACKAGE_YOUTUBE) {
         // Keep navigation inside YouTube.
         // Prefer explicit YouTube Home/web entry intents over the package launch intent because YouTube's default launch can restore the last Shorts task or leave the device on the phone launcher after closing the mini-player.
         val flags = Intent.FLAG_ACTIVITY_NEW_TASK or
@@ -4594,14 +4605,14 @@ class SwitchlyAccessibilityService : AccessibilityService() {
 
         val candidates = listOf(
             Intent(Intent.ACTION_VIEW, "https://www.youtube.com/".toUri()).apply {
-                setPackage(PACKAGE_YOUTUBE)
+                setPackage(targetPkg)
                 addFlags(flags)
             },
             Intent(Intent.ACTION_VIEW, "vnd.youtube://www.youtube.com/".toUri()).apply {
-                setPackage(PACKAGE_YOUTUBE)
+                setPackage(targetPkg)
                 addFlags(flags)
             },
-            PackageLaunchIntentCompat.getLaunchIntent(this, PACKAGE_YOUTUBE)?.apply {
+            PackageLaunchIntentCompat.getLaunchIntent(this, targetPkg)?.apply {
                 addFlags(flags)
             }
         ).filterNotNull()
@@ -4627,7 +4638,8 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         reason: String,
         allowLaunchFallback: Boolean = true,
         closeVisibleShorts: Boolean = false,
-        closeMiniPlayer: Boolean = true
+        closeMiniPlayer: Boolean = true,
+        targetPkg: String = PACKAGE_YOUTUBE
     ) {
         runCatching { blockLaunchController.pauseActiveMediaPlayback() }
 
@@ -4641,7 +4653,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
                     false
                 }
                 if (!moved && allowLaunchFallback && allowFallbackThisStep) {
-                    launchYouTubeHomeFallback("$reason:$step")
+                    launchYouTubeHomeFallback("$reason:$step", targetPkg)
                 }
                 if (closeMiniPlayer) {
                     dismissYouTubeMiniPlayer("$reason:$step")
@@ -4740,7 +4752,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
 
         val closeNode = findAnyNode(root) { node ->
             val nodePkg = node.packageName?.toString()?.lowercase(Locale.getDefault()).orEmpty()
-            if (nodePkg.isNotBlank() && nodePkg != PACKAGE_YOUTUBE) return@findAnyNode false
+            if (nodePkg.isNotBlank() && !isYouTubePackage(nodePkg)) return@findAnyNode false
 
             runCatching { node.getBoundsInScreen(bounds) }.getOrNull()
             if (bounds.isEmpty) return@findAnyNode false
@@ -4829,7 +4841,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
 
         val node = findAnyNode(root) { candidate ->
             val nodePkg = candidate.packageName?.toString()?.lowercase(Locale.getDefault()).orEmpty()
-            if (nodePkg.isNotBlank() && nodePkg != PACKAGE_YOUTUBE) return@findAnyNode false
+            if (nodePkg.isNotBlank() && !isYouTubePackage(nodePkg)) return@findAnyNode false
 
             runCatching { candidate.getBoundsInScreen(bounds) }.getOrNull()
             if (bounds.isEmpty) return@findAnyNode false
@@ -4880,7 +4892,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         val pauseCandidates = mutableListOf<AccessibilityNodeInfo>()
         findAnyNode(root) { node ->
             val nodePkg = node.packageName?.toString()?.lowercase(Locale.getDefault()).orEmpty()
-            if (nodePkg.isNotBlank() && nodePkg != PACKAGE_YOUTUBE) return@findAnyNode false
+            if (nodePkg.isNotBlank() && !isYouTubePackage(nodePkg)) return@findAnyNode false
 
             runCatching { node.getBoundsInScreen(bounds) }.getOrNull()
             if (bounds.isEmpty) return@findAnyNode false
@@ -5068,7 +5080,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
 
                 if (
                     !samePauseNode &&
-                    (nodePkg.isBlank() || nodePkg == PACKAGE_YOUTUBE) &&
+                    (nodePkg.isBlank() || isYouTubePackage(nodePkg)) &&
                     actionable &&
                     smallEnough &&
                     (closeSignal || sameAxisRightSide)
@@ -5111,7 +5123,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
 
         findAnyNode(root) { node ->
             val nodePkg = node.packageName?.toString()?.lowercase(Locale.getDefault()).orEmpty()
-            if (nodePkg.isNotBlank() && nodePkg != PACKAGE_YOUTUBE) return@findAnyNode false
+            if (nodePkg.isNotBlank() && !isYouTubePackage(nodePkg)) return@findAnyNode false
 
             runCatching { node.getBoundsInScreen(bounds) }.getOrNull()
             if (bounds.isEmpty) return@findAnyNode false
@@ -5207,12 +5219,14 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         rootOverride: AccessibilityNodeInfo? = null,
         force: Boolean = false
     ): Boolean {
-        val pkg = PACKAGE_YOUTUBE
+        val detectedPkg = event?.packageName?.toString() ?: rootOverride?.packageName?.toString() ?: youtubeCurrentRoot()?.packageName?.toString()
+        val pkg = if (isYouTubePackage(detectedPkg)) detectedPkg!! else PACKAGE_YOUTUBE
         if (!SwitchModeStore.isEnabled(this)) {
             return false
         }
-        val blockMiniPlayer = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_MINI_PLAYER)
-        val blockPictureInPicture = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_PIP)
+        // NOTE: Temporarily hidden YouTube settings (Mini Player, PiP). Only Shorts blocking is active for now.
+        val blockMiniPlayer = false // inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_MINI_PLAYER)
+        val blockPictureInPicture = false // inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_PIP)
         val blockShorts = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_SHORTS)
         if (!blockMiniPlayer && !blockPictureInPicture && !blockShorts) {
             return false
@@ -5308,7 +5322,8 @@ class SwitchlyAccessibilityService : AccessibilityService() {
             return false
         }
 
-        val pkg = PACKAGE_YOUTUBE
+        val detectedPkg = event?.packageName?.toString()
+        val pkg = if (isYouTubePackage(detectedPkg)) detectedPkg!! else PACKAGE_YOUTUBE
         val now = System.currentTimeMillis()
         if (surfaceGuardActive(pkg, "yt:shorts", now)) {
             return false
@@ -5343,8 +5358,8 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         return true
     }
 
-    private fun blockYouTubeMiniPlayer(reason: String) {
-        val pkg = PACKAGE_YOUTUBE
+    private fun blockYouTubeMiniPlayer(reason: String, targetPkg: String = PACKAGE_YOUTUBE) {
+        val pkg = targetPkg
         val now = System.currentTimeMillis()
         inAppGraceUntilByPkg[pkg] = now + YT_MINI_PLAYER_CLEANUP_GRACE_MS
         clearSurfaceEvidence("yt:shorts")
@@ -5431,7 +5446,8 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         runCatching { blockLaunchController.pauseActiveMediaPlayback() }
         dismissYouTubeMiniPlayer("shorts_close_$reason", allowFallbackTap = true)
         val backSent = runCatching { performGlobalAction(GLOBAL_ACTION_BACK) }.getOrDefault(false)
-        surfaceBlockGuardUntil["$PACKAGE_YOUTUBE|yt:shorts"] = now + YT_SHORTS_REENTRY_GUARD_MS
+        val targetPkg = r.packageName?.toString()?.takeIf { isYouTubePackage(it) } ?: PACKAGE_YOUTUBE
+        surfaceBlockGuardUntil["$targetPkg|yt:shorts"] = now + YT_SHORTS_REENTRY_GUARD_MS
         appendBlockingLog(
             category = "yt_shorts_close",
             key = "yt-shorts-close|$reason",
@@ -5476,8 +5492,9 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         }
 
         val homeBlocked = false
-        val subscriptionsBlocked = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_SUBSCRIPTIONS)
-        val youBlocked = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_YOU)
+        // NOTE: Temporarily hidden YouTube settings (Subscriptions, You).
+        val subscriptionsBlocked = false // inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_SUBSCRIPTIONS)
+        val youBlocked = false // inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_YOU)
 
         val moved = when {
             !homeBlocked && tryNavigateYouTubeToHome(r) -> true
@@ -5534,7 +5551,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         fallbackY: Float
     ): Boolean {
         val r = root ?: return false
-        val ytPkg = PACKAGE_YOUTUBE
+        val ytPkg = r.packageName?.toString()?.takeIf { isYouTubePackage(it) } ?: PACKAGE_YOUTUBE
 
         fun isTargetLabel(node: AccessibilityNodeInfo): Boolean {
             val nodePkg = node.packageName?.toString()?.lowercase(Locale.getDefault()).orEmpty()
@@ -5665,7 +5682,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         // Fast path: ignore apps that do not have in-app surface rules.
         // This avoids expensive root-tree scans and usage reads on every foreground app.
         val supportedInAppPkg =
-            pkg == PACKAGE_YOUTUBE ||
+            isYouTubePackage(pkg) ||
                 pkg == PACKAGE_INSTAGRAM ||
                 pkg == PACKAGE_X ||
                 pkg == PACKAGE_SNAPCHAT
@@ -5694,7 +5711,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
             return
         }
 
-        val root = if (pkg == PACKAGE_YOUTUBE) {
+        val root = if (isYouTubePackage(pkg)) {
             youtubeCurrentRoot(event)
         } else {
             currentRoot(event)
@@ -5712,13 +5729,15 @@ class SwitchlyAccessibilityService : AccessibilityService() {
             return getString(R.string.blocking_surface_blocked_title, surfaceLabel) to surfaceUsageLine(surfaceKey, 0)
         }
 
-        if (pkg == PACKAGE_YOUTUBE) {
+        if (isYouTubePackage(pkg)) {
             val blockYtHomeEnabled = false
             val blockYtShortsEnabled = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_SHORTS)
-            val blockYtSubscriptionsEnabled = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_SUBSCRIPTIONS)
-            val blockYtYouEnabled = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_YOU)
-            val blockYtMiniPlayerEnabled = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_MINI_PLAYER)
-            val blockYtPipEnabled = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_PIP)
+            // NOTE: Temporarily hidden YouTube settings (Subscriptions, You, Mini Player, PiP).
+            // Kept disabled for now; may be added back later.
+            val blockYtSubscriptionsEnabled = false // inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_SUBSCRIPTIONS)
+            val blockYtYouEnabled = false // inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_YOU)
+            val blockYtMiniPlayerEnabled = false // inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_MINI_PLAYER)
+            val blockYtPipEnabled = false // inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_PIP)
 
             val ytTappedSurface = resolveYouTubeSurfaceFromEvent(event, allowFocused = true)
             val ytEnteredAt = appEnteredAtByPkg[pkg] ?: 0L
@@ -6573,7 +6592,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         }
 
         when (pkg) {
-            PACKAGE_YOUTUBE -> {
+            PACKAGE_YOUTUBE, PACKAGE_YOUTUBE_REVANCED, PACKAGE_YOUTUBE_MORPHE -> {
                 when (resolveYouTubeSurfaceFromEvent(event, allowFocused = false)) {
                     "yt:home" -> clearSurfaceHintForPackage(pkg)
                     "yt:shorts" -> rememberSurfaceHint(pkg, "yt:shorts", now)
@@ -6846,7 +6865,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
 
         val source = runCatching { event.source }.getOrNull()
         val sourcePkg = source?.packageName?.toString().orEmpty()
-        if (sourcePkg.isNotBlank() && sourcePkg != PACKAGE_YOUTUBE) {
+        if (sourcePkg.isNotBlank() && !isYouTubePackage(sourcePkg)) {
             return null
         }
 
@@ -6906,7 +6925,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
             if (!active) return@findAnyNode false
 
             val nodePkg = node.packageName?.toString()?.lowercase(Locale.ROOT).orEmpty()
-            if (nodePkg.isNotBlank() && nodePkg != PACKAGE_YOUTUBE) return@findAnyNode false
+            if (nodePkg.isNotBlank() && !isYouTubePackage(nodePkg)) return@findAnyNode false
 
             val bounds = Rect()
             runCatching { node.getBoundsInScreen(bounds) }.getOrNull()
@@ -6968,7 +6987,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         val bounds = Rect()
         while (current != null && hops < 5) {
             val nodePkg = current.packageName?.toString()?.lowercase(Locale.getDefault()).orEmpty()
-            if (nodePkg.isBlank() || nodePkg == PACKAGE_YOUTUBE) {
+            if (nodePkg.isBlank() || isYouTubePackage(nodePkg)) {
                 runCatching { current.getBoundsInScreen(bounds) }.getOrNull()
                 if (!bounds.isEmpty) {
                     val centerY = bounds.exactCenterY() / height.toFloat()
@@ -6996,7 +7015,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
             val active = node.isSelected || node.isCheckedCompat()
             if (!active) return@findAnyNode false
             val nodePkg = node.packageName?.toString()?.lowercase(Locale.getDefault()).orEmpty()
-            if (nodePkg.isNotBlank() && nodePkg != PACKAGE_YOUTUBE) return@findAnyNode false
+            if (nodePkg.isNotBlank() && !isYouTubePackage(nodePkg)) return@findAnyNode false
 
             runCatching { node.getBoundsInScreen(bounds) }.getOrNull()
             if (bounds.isEmpty) return@findAnyNode false
@@ -7020,7 +7039,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         val bounds = Rect()
         val found = findAnyNode(root) { node ->
             val nodePkg = node.packageName?.toString().orEmpty()
-            if (nodePkg.isNotBlank() && nodePkg != PACKAGE_YOUTUBE) return@findAnyNode false
+            if (nodePkg.isNotBlank() && !isYouTubePackage(nodePkg)) return@findAnyNode false
             runCatching { node.getBoundsInScreen(bounds) }.getOrNull()
             if (bounds.top > maxY) return@findAnyNode false
             val t = node.text?.toString().orEmpty()
@@ -7051,7 +7070,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
 
         val source = runCatching { event.source }.getOrNull()
         val sourcePkg = source?.packageName?.toString()?.lowercase(Locale.getDefault()).orEmpty()
-        if (sourcePkg.isNotBlank() && sourcePkg != PACKAGE_YOUTUBE) {
+        if (sourcePkg.isNotBlank() && !isYouTubePackage(sourcePkg)) {
             return false
         }
 
@@ -7107,7 +7126,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         val bounds = Rect()
         val found = findAnyNode(root) { node ->
             val nodePkg = node.packageName?.toString()?.lowercase(Locale.getDefault()).orEmpty()
-            if (nodePkg.isNotBlank() && nodePkg != PACKAGE_YOUTUBE) return@findAnyNode false
+            if (nodePkg.isNotBlank() && !isYouTubePackage(nodePkg)) return@findAnyNode false
 
             runCatching { node.getBoundsInScreen(bounds) }.getOrNull()
             if (bounds.isEmpty) return@findAnyNode false
@@ -7151,7 +7170,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         val bounds = Rect()
         val found = findAnyNode(root) { node ->
             val nodePkg = node.packageName?.toString()?.lowercase(Locale.getDefault()).orEmpty()
-            if (nodePkg.isNotBlank() && nodePkg != PACKAGE_YOUTUBE) return@findAnyNode false
+            if (nodePkg.isNotBlank() && !isYouTubePackage(nodePkg)) return@findAnyNode false
 
             runCatching { node.getBoundsInScreen(bounds) }.getOrNull()
             if (bounds.isEmpty) return@findAnyNode false
@@ -7178,7 +7197,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         while (current != null && hops <= maxHops) {
             val node = current ?: break
             val nodePkg = node.packageName?.toString()?.lowercase(Locale.getDefault()).orEmpty()
-            if (nodePkg.isBlank() || nodePkg == PACKAGE_YOUTUBE) {
+            if (nodePkg.isBlank() || isYouTubePackage(nodePkg)) {
                 runCatching { node.getBoundsInScreen(bounds) }.getOrNull()
                 if (!bounds.isEmpty) {
                     return Rect(bounds)
@@ -7201,7 +7220,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
 
         val source = runCatching { event.source }.getOrNull()
         val sourcePkg = source?.packageName?.toString()?.lowercase(Locale.getDefault()).orEmpty()
-        if (sourcePkg.isNotBlank() && sourcePkg != PACKAGE_YOUTUBE) {
+        if (sourcePkg.isNotBlank() && !isYouTubePackage(sourcePkg)) {
             return false
         }
 
@@ -7223,7 +7242,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         while (current != null && hops <= maxHops) {
             val node = current ?: break
             val nodePkg = node.packageName?.toString()?.lowercase(Locale.getDefault()).orEmpty()
-            if (nodePkg.isBlank() || nodePkg == PACKAGE_YOUTUBE) {
+            if (nodePkg.isBlank() || isYouTubePackage(nodePkg)) {
                 node.text?.toString()?.takeIf { it.isNotBlank() }?.let { parts += it }
                 node.contentDescription?.toString()?.takeIf { it.isNotBlank() }?.let { parts += it }
                 node.viewIdResourceName?.takeIf { it.isNotBlank() }?.let { parts += it }
@@ -7313,7 +7332,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         findAnyNode(root) { node ->
             if (visited++ >= 180) return@findAnyNode true
             val nodePkg = node.packageName?.toString()?.lowercase(Locale.ROOT).orEmpty()
-            if (nodePkg.isBlank() || nodePkg == PACKAGE_YOUTUBE) {
+            if (nodePkg.isBlank() || isYouTubePackage(nodePkg)) {
                 node.text?.toString()?.takeIf { it.isNotBlank() }?.let(parts::add)
                 node.contentDescription?.toString()?.takeIf { it.isNotBlank() }?.let(parts::add)
             }
@@ -7368,7 +7387,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         val bounds = Rect()
         val found = findAnyNode(root) { node ->
             val nodePkg = node.packageName?.toString()?.lowercase(Locale.getDefault()).orEmpty()
-            if (nodePkg.isNotBlank() && nodePkg != PACKAGE_YOUTUBE) return@findAnyNode false
+            if (nodePkg.isNotBlank() && !isYouTubePackage(nodePkg)) return@findAnyNode false
 
             runCatching { node.getBoundsInScreen(bounds) }.getOrNull()
             if (bounds.isEmpty) return@findAnyNode false
@@ -7418,7 +7437,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         // Never classify Shorts from a reel/short ID alone.
         val weakInternalHint = findAnyNode(root) { node ->
             val nodePkg = node.packageName?.toString()?.lowercase(Locale.getDefault()).orEmpty()
-            if (nodePkg.isNotBlank() && nodePkg != PACKAGE_YOUTUBE) return@findAnyNode false
+            if (nodePkg.isNotBlank() && !isYouTubePackage(nodePkg)) return@findAnyNode false
             val viewId = node.viewIdResourceName?.lowercase(Locale.getDefault()).orEmpty()
             val className = node.className?.toString()?.lowercase(Locale.getDefault()).orEmpty()
             viewId.contains("reel") || viewId.contains("short") ||
@@ -7443,7 +7462,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
 
         findAnyNode(root) { node ->
             val nodePkg = node.packageName?.toString()?.lowercase(Locale.getDefault()).orEmpty()
-            if (nodePkg.isNotBlank() && nodePkg != PACKAGE_YOUTUBE) return@findAnyNode false
+            if (nodePkg.isNotBlank() && !isYouTubePackage(nodePkg)) return@findAnyNode false
 
             runCatching { node.getBoundsInScreen(bounds) }.getOrNull()
             if (bounds.isEmpty) return@findAnyNode false
@@ -7494,7 +7513,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         val bounds = Rect()
         val found = findAnyNode(r) { node ->
             val nodePkg = node.packageName?.toString()?.lowercase(Locale.getDefault()).orEmpty()
-            if (nodePkg.isNotBlank() && nodePkg != PACKAGE_YOUTUBE) return@findAnyNode false
+            if (nodePkg.isNotBlank() && !isYouTubePackage(nodePkg)) return@findAnyNode false
 
             runCatching { node.getBoundsInScreen(bounds) }.getOrNull()
             if (bounds.isEmpty) return@findAnyNode false
@@ -7536,7 +7555,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
 
         findAnyNode(root) { node ->
             val nodePkg = node.packageName?.toString()?.lowercase(Locale.getDefault()).orEmpty()
-            if (nodePkg.isNotBlank() && nodePkg != PACKAGE_YOUTUBE) return@findAnyNode false
+            if (nodePkg.isNotBlank() && !isYouTubePackage(nodePkg)) return@findAnyNode false
 
             runCatching { node.getBoundsInScreen(bounds) }.getOrNull()
             if (bounds.isEmpty) return@findAnyNode false

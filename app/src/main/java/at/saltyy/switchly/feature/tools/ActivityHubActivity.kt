@@ -27,7 +27,6 @@ import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowInsetsControllerCompat
 import at.saltyy.switchly.R
-import at.saltyy.switchly.feature.inbox.BlockedInboxActivity
 import at.saltyy.switchly.feature.usage.AppWebsiteUsageActivity
 import at.saltyy.switchly.feature.usage.ScreenUnlocksActivity
 import at.saltyy.switchly.theme.AccentColor
@@ -74,7 +73,6 @@ class ActivityHubActivity : AppCompatActivity() {
         listOf(
             R.id.ivAppWebsiteUsageIcon,
             R.id.ivScreenUnlocksIcon,
-            R.id.ivBlockedNotificationsIcon,
         ).forEach { iconId ->
             findViewById<ImageView>(iconId)?.let { icon ->
                 icon.imageTintList = iconTint
@@ -91,9 +89,6 @@ class ActivityHubActivity : AppCompatActivity() {
         }
         findViewById<View>(R.id.cardScreenUnlocks).setOnClickListener {
             startActivity(ScreenUnlocksActivity.intent(this))
-        }
-        findViewById<View>(R.id.cardBlockedNotifications).setOnClickListener {
-            startActivity(Intent(this, BlockedInboxActivity::class.java))
         }
     }
 

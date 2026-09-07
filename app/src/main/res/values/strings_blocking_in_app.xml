@@ -59,6 +59,9 @@
     <string name="in_app_status_supported">Available</string>
     <string name="in_app_status_experimental">Experimental</string>
     <string name="in_app_status_planned">Coming soon</string>
+    <string name="in_app_status_not_installed">Not installed</string>
+    <string name="in_app_status_disabled">Disabled</string>
+    <string name="in_app_status_installed">Installed</string>
     <string name="in_app_rules_facebook">Facebook</string>
     <string name="in_app_rules_tiktok">TikTok</string>
     <string name="in_app_rules_for_you">For You feed</string>
@@ -80,4 +83,8 @@
     <string name="blocking_comments_blocked_title">Comments are blocked!</string>
     <string name="blocking_surface_base_message">You can’t use this app’s feature while Switchly is active.</string>
 
+    <string name="in_app_rules_active_summary_block">%1$d of %2$d sections blocked</string>
+    <string name="in_app_rules_active_summary_allow">%1$d of %2$d sections allowed</string>
+    <string name="in_app_rules_none_active">No rules active · Tap to expand</string>
+    <string name="in_app_recognized_variants">Recognized: %1$s</string>
 </resources>

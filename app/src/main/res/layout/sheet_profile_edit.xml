@@ -19,7 +19,7 @@
         android:layout_marginTop="6dp"
         android:background="@drawable/bg_grab_handle" />
 
-    <!-- Title + close -->
+    <!-- Title + close: Prominent Profile Name without pen icon, tap to rename -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -27,19 +27,41 @@
         android:orientation="horizontal"
         android:gravity="center_vertical">
 
-        <TextView
+        <LinearLayout
+            android:id="@+id/rowSheetRename"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="@string/profile_sheet_edit_profile"
-            android:textSize="22sp"
-            android:textStyle="bold"
-            android:textColor="?attr/colorOnSurface" />
+            android:orientation="vertical"
+            android:background="?attr/selectableItemBackground"
+            android:clickable="true"
+            android:focusable="true"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp">
+
+            <TextView
+                android:id="@+id/tvSheetProfileName"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:textColor="?attr/colorOnSurface"
+                tools:text="Work Profile" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:text="@string/profile_sheet_tap_to_rename"
+                android:textSize="12sp"
+                android:textColor="?android:attr/textColorSecondary" />
+        </LinearLayout>
 
         <FrameLayout
             android:id="@+id/btnSheetClose"
-            android:layout_width="34dp"
-            android:layout_height="34dp"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginStart="12dp"
             android:background="@drawable/bg_roundel_neutral"
             android:clickable="true"
             android:focusable="true"
@@ -55,66 +77,13 @@
         </FrameLayout>
     </LinearLayout>
 
-    <!-- Name row -->
-    <LinearLayout
-        android:id="@+id/rowSheetRename"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:paddingStart="12dp"
-        android:paddingTop="10dp"
-        android:paddingEnd="12dp"
-        android:paddingBottom="10dp"
-        android:background="@drawable/bg_tile_neutral"
-        android:foreground="?attr/selectableItemBackground"
-        android:clickable="true"
-        android:focusable="true"
-        android:minHeight="58dp">
-
-        <FrameLayout
-            android:layout_width="38dp"
-            android:layout_height="38dp"
-            android:background="@drawable/bg_roundel_neutral">
-
-            <ImageView
-                android:layout_width="19dp"
-                android:layout_height="19dp"
-                android:layout_gravity="center"
-                android:contentDescription="@null"
-                android:src="@drawable/edit_24"
-                app:tint="?attr/colorPrimary" />
-        </FrameLayout>
-
-        <TextView
-            android:id="@+id/tvSheetProfileName"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_weight="1"
-            android:textSize="17sp"
-            android:textStyle="bold"
-            android:textColor="?attr/colorOnSurface"
-            tools:text="Work Profile" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/profile_sheet_rename"
-            android:textSize="13sp"
-            android:textStyle="bold"
-            android:textColor="?attr/colorPrimary" />
-    </LinearLayout>
-
-
     <!-- Destinations -->
     <LinearLayout
         android:id="@+id/rowSheetApps"
         style="@style/Switchly.SheetRow"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
+        android:layout_marginTop="18dp"
         android:paddingStart="10dp"
         android:paddingTop="9dp"
         android:paddingEnd="10dp"

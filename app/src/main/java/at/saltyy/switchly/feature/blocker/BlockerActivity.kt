@@ -310,7 +310,7 @@ class BlockerActivity : ComponentActivity() {
 
         // YouTube surfaces should keep the popup visible first, then return only the YouTube task to its Home tab.
         // Do not send the user to the phone launcher here; that feels like YouTube was closed instead of blocked.
-        if (pkg == "com.google.android.youtube" && (postAckYoutubeHome || postAckYoutubeClose || postAckYoutubeCleanupShorts)) {
+        if (isYouTubePackage(pkg) && (postAckYoutubeHome || postAckYoutubeClose || postAckYoutubeCleanupShorts)) {
             pauseActiveMediaPlayback()
             queuePendingYouTubeHomeRedirect(pkg, postAckYoutubeCleanupShorts, postAckYoutubeCleanupMini)
             if (postAckYoutubeHome) {
@@ -661,13 +661,22 @@ class BlockerActivity : ComponentActivity() {
             return pending.backCount.coerceAtLeast(0)
         }
 
+        val YOUTUBE_PACKAGES = setOf(
+            "com.google.android.youtube",
+            "app.revanced.android.youtube",
+            "app.morphe.android.youtube"
+        )
+
+        fun isYouTubePackage(pkg: String?): Boolean =
+            pkg != null && pkg.lowercase(java.util.Locale.getDefault()) in YOUTUBE_PACKAGES
+
         @Synchronized
         fun queuePendingYouTubeHomeRedirect(
             pkg: String,
             cleanupShorts: Boolean = false,
             cleanupMiniPlayer: Boolean = true
         ) {
-            if (pkg != "com.google.android.youtube") {
+            if (!isYouTubePackage(pkg)) {
                 return
             }
             pendingYouTubeHomeRedirect = PendingYouTubeHomeRedirect(

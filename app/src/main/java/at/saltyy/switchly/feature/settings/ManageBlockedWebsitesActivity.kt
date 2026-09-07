@@ -254,19 +254,7 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         val accent = AccentColor.getAccentColorInt(this)
         findViewById<ImageView>(R.id.ivEmptyWebsitesIcon)?.imageTintList = ColorStateList.valueOf(accent)
 
-        val ruleSettingsHeader = findViewById<View>(R.id.rowWebsiteRuleSettingsHeader)
-        val ruleSettingsPanel = findViewById<View>(R.id.websiteRuleSettingsPanel)
-        val ruleSettingsChevron = findViewById<ImageView>(R.id.ivWebsiteRuleSettingsChevron)
-        fun setRuleSettingsExpanded(expanded: Boolean) {
-            ruleSettingsPanel.visibility = if (expanded) View.VISIBLE else View.GONE
-            ruleSettingsChevron.setImageResource(
-                if (expanded) R.drawable.keyboard_arrow_up_24 else R.drawable.keyboard_arrow_down_24
-            )
-        }
-        setRuleSettingsExpanded(false)
-        ruleSettingsHeader.setOnClickListener {
-            setRuleSettingsExpanded(ruleSettingsPanel.visibility != View.VISIBLE)
-        }
+
 
         adapter = DomainRuleAdapter(
             onEdit = { showEditDialog(it) },

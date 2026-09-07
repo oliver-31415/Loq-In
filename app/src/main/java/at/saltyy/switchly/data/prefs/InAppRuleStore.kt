@@ -71,13 +71,29 @@ object InAppRuleStore {
         prefs(context).edit { putString(modeKey(profile), safe) }
     }
 
+    // NOTE: Temporarily hidden YouTube settings. Only KEY_BLOCK_YT_SHORTS is active for YouTube apps.
+    // Subscriptions, You, Mini Player, and PiP settings are hidden for now and may be re-enabled later.
     private val PACKAGE_TO_RULE_KEYS: Map<String, Set<String>> = mapOf(
         "com.google.android.youtube" to setOf(
-            BlockingToggleKeys.KEY_BLOCK_YT_SHORTS,
-            BlockingToggleKeys.KEY_BLOCK_YT_SUBSCRIPTIONS,
-            BlockingToggleKeys.KEY_BLOCK_YT_YOU,
-            BlockingToggleKeys.KEY_BLOCK_YT_MINI_PLAYER,
-            BlockingToggleKeys.KEY_BLOCK_YT_PIP
+            BlockingToggleKeys.KEY_BLOCK_YT_SHORTS
+            // BlockingToggleKeys.KEY_BLOCK_YT_SUBSCRIPTIONS,
+            // BlockingToggleKeys.KEY_BLOCK_YT_YOU,
+            // BlockingToggleKeys.KEY_BLOCK_YT_MINI_PLAYER,
+            // BlockingToggleKeys.KEY_BLOCK_YT_PIP
+        ),
+        "app.revanced.android.youtube" to setOf(
+            BlockingToggleKeys.KEY_BLOCK_YT_SHORTS
+            // BlockingToggleKeys.KEY_BLOCK_YT_SUBSCRIPTIONS,
+            // BlockingToggleKeys.KEY_BLOCK_YT_YOU,
+            // BlockingToggleKeys.KEY_BLOCK_YT_MINI_PLAYER,
+            // BlockingToggleKeys.KEY_BLOCK_YT_PIP
+        ),
+        "app.morphe.android.youtube" to setOf(
+            BlockingToggleKeys.KEY_BLOCK_YT_SHORTS
+            // BlockingToggleKeys.KEY_BLOCK_YT_SUBSCRIPTIONS,
+            // BlockingToggleKeys.KEY_BLOCK_YT_YOU,
+            // BlockingToggleKeys.KEY_BLOCK_YT_MINI_PLAYER,
+            // BlockingToggleKeys.KEY_BLOCK_YT_PIP
         ),
         "com.instagram.android" to setOf(
             BlockingToggleKeys.KEY_BLOCK_IG_REELS,

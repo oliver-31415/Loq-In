@@ -29,6 +29,8 @@
     <!-- ====================================================== -->
     <string name="settings_keys_codes_title">Schlüssel &amp; Codes</string>
     <string name="settings_keys_codes_summary">NFC-Tags, gekoppelte Tags, QR-Codes und Barcode-Aktionen verwalten</string>
+    <string name="pref_show_session_missed_notifications_title">Verpasste Benachrichtigungen anzeigen</string>
+    <string name="pref_show_session_missed_notifications_summary">Zusammenfassung stummgeschalteter Benachrichtigungen nach einer Sitzung anzeigen</string>
 
     <!-- ====================================================== -->
     <!-- Personalization -->

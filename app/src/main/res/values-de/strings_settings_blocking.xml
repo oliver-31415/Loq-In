@@ -13,7 +13,7 @@
     <string name="toggle_group_manage_blocking_modes">Kontrollmodi</string>
     <string name="settings_blocking_modes_summary">Wähle, wie Switchly aktiviert oder deaktiviert wird.</string>
     <string name="toggle_group_manage_other_blocking_features">Funktionszugriff</string>
-    <string name="settings_blocking_features_summary">Steuere den Zugriff bei aktivem Switchly und konfiguriere den Systemstatus.</string>
+    <string name="settings_blocking_features_summary">Zugriff bei aktivem Schutz, Benachrichtigungen &amp; Zusammenfassung sowie Status.</string>
 
     <!-- ====================================================== -->
     <!-- Sections and guidance -->
@@ -124,6 +124,9 @@
     <string name="switchly_settings_locked_title">Einstellungen öffnen?</string>
     <string name="settings_restricted_open_message">Switchly ist aktiv. Die Einstellungen können weiterhin angesehen werden, aber schutzrelevante Optionen lassen sich erst ändern, wenn Switchly vollständig deaktiviert ist.</string>
     <string name="settings_open_restricted">Einstellungen öffnen</string>
+    <string name="switchly_account_locked_title">Konto öffnen?</string>
+    <string name="account_restricted_open_message">Switchly ist aktiv. Das Konto kann weiterhin angesehen werden, aber schutzrelevante Optionen lassen sich erst ändern, wenn Switchly vollständig deaktiviert ist.</string>
+    <string name="account_open_restricted">Konto öffnen</string>
     <string name="settings_restricted_action_unavailable">Nicht verfügbar, solange Switchly aktiv ist.</string>
     <string name="blocking_settings_bypass_title">Switchly-Einstellungen geschützt</string>
     <string name="blocking_settings_bypass_message">Diese Systemeinstellungsseite könnte Switchly deaktivieren oder abschwächen, solange der Schutz aktiv ist. Deaktiviere Switchly zuerst über deine erlaubte Methode, wenn du diese Einstellungen ändern willst.</string>

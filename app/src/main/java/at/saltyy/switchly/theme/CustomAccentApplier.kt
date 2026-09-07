@@ -158,8 +158,15 @@ object CustomAccentApplier {
         }
 
         val accent = AccentColor.getAccentColorInt(context)
-        dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setTextColor(accent)
-        dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setTextColor(accent)
+        val pos = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+        if (pos != null && pos.backgroundTintList != null) {
+            val onAccent = if (ColorUtils.calculateLuminance(accent) > 0.5) Color.BLACK else Color.WHITE
+            pos.setTextColor(onAccent)
+        } else {
+            pos?.setTextColor(accent)
+        }
+        val onSurfaceVariant = MaterialColors.getColor(context, com.google.android.material.R.attr.colorOnSurfaceVariant, accent)
+        dialog.getButton(AlertDialog.BUTTON_NEGATIVE)?.setTextColor(onSurfaceVariant)
         dialog.getButton(AlertDialog.BUTTON_NEUTRAL)?.setTextColor(accent)
 
         // Single-choice dialogs: the check indicator is often bound late and can keep the default theme tint.
@@ -299,7 +306,7 @@ object CustomAccentApplier {
         val preserveOnboardingSecondaryBackground = view.id == R.id.btn_skip
 
         // Generic background tint replacement
-        if (!preserveOnboardingSecondaryBackground) {
+        if (!preserveOnboardingSecondaryBackground && view !is EditText) {
             ViewCompat.getBackgroundTintList(view)?.let { tint ->
                 val candidate = tint.defaultColor
                 if (matchesAccent(candidate, defaultAccent)) {
@@ -325,18 +332,10 @@ object CustomAccentApplier {
 
         when (view) {
             is EditText -> {
-                // Plain EditText underline/cursor often keeps theme green.
+                // Never tint the input field background with accent.
+                // Only tint cursor, selection handles, and selection highlight.
                 runCatching {
-                    view.backgroundTintList = ColorStateList.valueOf(accent)
-                    val bg = view.background
-                    if (bg != null) {
-                        val wrapped = DrawableCompat.wrap(bg.mutate())
-                        DrawableCompat.setTint(wrapped, accent)
-                        view.background = wrapped
-                    }
-
-                    // Cursor + selection highlight are not affected by background tint.
-                    // These commonly stay the default theme green, especially inside dialogs.
+                    view.highlightColor = ColorUtils.setAlphaComponent(accent, 0x40)
                     tintEditTextCursorAndSelection(view, accent)
                     ensureEditTextCursorHook(view, accent)
                 }
@@ -592,7 +591,7 @@ object CustomAccentApplier {
      * EditText cursor and selection highlight recoloring.
      * Note: This applies to TextInputEditText as well since it inherits from EditText.
      */
-    private fun tintEditTextCursorAndSelection(et: EditText, accent: Int) {
+    fun tintEditTextCursorAndSelection(et: EditText, accent: Int) {
         // Selection highlight tint (text background when text is selected).
         // Default color is often theme green with ~30% alpha.
         val highlight = ColorUtils.setAlphaComponent(accent, 0x4D)

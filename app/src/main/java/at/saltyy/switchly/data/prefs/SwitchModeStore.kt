@@ -227,10 +227,10 @@ object SwitchModeStore {
             AppLogStore.append(ctx, "Profiles", "Restored previous profile id=$profileBeforeTempEnable")
         }
 
+        syncActiveSinceForEffectiveState(ctx, effectiveAfter)
         _enabledFlow.value = effectiveAfter
         ActiveTimerWidgetProvider.updateAll(ctx)
         PersistentStatusNotifier.refresh(ctx)
-        syncActiveSinceForEffectiveState(ctx, effectiveAfter)
 
         val rangeScheduleActive = ScheduleRuntimeStore.hadEnableAndDisable(ctx) || ScheduleRuntimeStore.hadDisableAndEnable(ctx)
         val activeRangeScheduleId = ScheduleRuntimeStore.getActiveRangeScheduleId(ctx)
@@ -313,10 +313,10 @@ object SwitchModeStore {
             )
         }
 
+        syncActiveSinceForEffectiveState(ctx, effectiveAfter)
         _enabledFlow.value = effectiveAfter
         ActiveTimerWidgetProvider.updateAll(ctx)
         PersistentStatusNotifier.refresh(ctx)
-        syncActiveSinceForEffectiveState(ctx, effectiveAfter)
         ScheduleRuntimeStore.setEnabledBySchedule(ctx, enabled)
 
         if (effectiveAfter) {
@@ -359,10 +359,10 @@ object SwitchModeStore {
             recordEffectiveStateChange(ctx, effectivelyEnabledBefore, effectivelyEnabledAfter)
         }
 
+        syncActiveSinceForEffectiveState(ctx)
         _enabledFlow.value = effectivelyEnabledAfter
         ActiveTimerWidgetProvider.updateAll(ctx)
         PersistentStatusNotifier.refresh(ctx)
-        syncActiveSinceForEffectiveState(ctx)
         AppLogStore.append(ctx, "Profiles", "Temp disable started duration=${durationMs}ms")
 
         // Clear any currently visible blocker UI/state while the temporary disable window is active.
@@ -431,10 +431,10 @@ object SwitchModeStore {
             recordEffectiveStateChange(ctx, effectivelyEnabledNow, effectivelyEnabledAfter)
         }
 
+        syncActiveSinceForEffectiveState(ctx)
         _enabledFlow.value = effectivelyEnabledAfter
         ActiveTimerWidgetProvider.updateAll(ctx)
         PersistentStatusNotifier.refresh(ctx)
-        syncActiveSinceForEffectiveState(ctx)
         val loggedTargetProfile = targetProfileForLog ?: ProfileStore.getCurrent(ctx) ?: "-"
         AppLogStore.append(ctx, "Profiles", "Temp enable started profile=$loggedTargetProfile duration=${durationMs}ms restoreEnabled=$baseBefore")
         AppLogStore.append(ctx, "Profiles", "Stored previous profile id=${profileBefore ?: "-"}")
@@ -511,10 +511,10 @@ object SwitchModeStore {
         }
 
         AppLogStore.append(ctx, "Profiles", "Temp enable expired")
+        syncActiveSinceForEffectiveState(ctx, effectivelyEnabledAfter)
         _enabledFlow.value = effectivelyEnabledAfter
         ActiveTimerWidgetProvider.updateAll(ctx)
         PersistentStatusNotifier.refresh(ctx)
-        syncActiveSinceForEffectiveState(ctx, effectivelyEnabledAfter)
         if (effectivelyEnabledAfter) {
             BlockingRuntime.ensureRunning(ctx)
         } else {
@@ -551,10 +551,10 @@ object SwitchModeStore {
         }
 
         AppLogStore.append(ctx, "Profiles", "Temp disable expired")
+        syncActiveSinceForEffectiveState(ctx)
         _enabledFlow.value = effectivelyEnabledAfter
         ActiveTimerWidgetProvider.updateAll(ctx)
         PersistentStatusNotifier.refresh(ctx)
-        syncActiveSinceForEffectiveState(ctx)
         if (effectivelyEnabledAfter) {
             BlockingRuntime.ensureRunning(ctx)
         } else {
@@ -573,10 +573,10 @@ object SwitchModeStore {
             bumpLimitSessionGeneration(ctx)
             recordEffectiveStateChange(ctx, effectivelyEnabledBefore, effectivelyEnabledAfter)
         }
+        syncActiveSinceForEffectiveState(ctx, effectivelyEnabledAfter)
         _enabledFlow.value = effectivelyEnabledAfter
         ActiveTimerWidgetProvider.updateAll(ctx)
         PersistentStatusNotifier.refresh(ctx)
-        syncActiveSinceForEffectiveState(ctx, effectivelyEnabledAfter)
         if (effectivelyEnabledAfter) {
             BlockingRuntime.ensureRunning(ctx)
         }
@@ -597,10 +597,10 @@ object SwitchModeStore {
             bumpLimitSessionGeneration(ctx)
             recordEffectiveStateChange(ctx, effectivelyEnabledBefore, effectivelyEnabledAfter)
         }
+        syncActiveSinceForEffectiveState(ctx, effectivelyEnabledAfter)
         _enabledFlow.value = effectivelyEnabledAfter
         ActiveTimerWidgetProvider.updateAll(ctx)
         PersistentStatusNotifier.refresh(ctx)
-        syncActiveSinceForEffectiveState(ctx, effectivelyEnabledAfter)
 
         if (effectivelyEnabledAfter) {
             BlockingRuntime.ensureRunning(ctx)
@@ -627,10 +627,10 @@ object SwitchModeStore {
         }
 
         // TempReenableStore.clear(ctx)
+        syncActiveSinceForEffectiveState(ctx)
         _enabledFlow.value = effectivelyEnabledAfter
         ActiveTimerWidgetProvider.updateAll(ctx)
         PersistentStatusNotifier.refresh(ctx)
-        syncActiveSinceForEffectiveState(ctx)
         BlockingRuntime.ensureRunning(ctx)
         ManagedDevicePolicyHelper.syncSelfUninstallBlock(ctx)
     }
@@ -666,10 +666,10 @@ object SwitchModeStore {
             bumpLimitSessionGeneration(ctx)
             recordEffectiveStateChange(ctx, effectivelyEnabledBefore, effectivelyEnabledAfter)
         }
+        syncActiveSinceForEffectiveState(ctx, effectivelyEnabledAfter)
         _enabledFlow.value = effectivelyEnabledAfter
         ActiveTimerWidgetProvider.updateAll(ctx)
         PersistentStatusNotifier.refresh(ctx)
-        syncActiveSinceForEffectiveState(ctx, effectivelyEnabledAfter)
         if (effectivelyEnabledAfter) {
             BlockingRuntime.ensureRunning(ctx)
         }

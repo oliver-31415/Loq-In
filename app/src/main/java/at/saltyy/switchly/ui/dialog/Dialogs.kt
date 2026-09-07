@@ -64,18 +64,37 @@ object Dialogs {
  */
 fun Context.styledDialogEditText(): android.widget.EditText {
     fun dp(v: Int): Int = (v * resources.displayMetrics.density + 0.5f).toInt()
+    val accent = AccentColor.getAccentColorInt(this)
     val onSurface = MaterialColors.getColor(this, com.google.android.material.R.attr.colorOnSurface, Color.BLACK)
-    val bg = android.graphics.drawable.GradientDrawable().apply {
+    val surfaceVariant = androidx.core.content.ContextCompat.getColor(this, R.color.foqos_surface_variant)
+    val outlineColor = ColorUtils.setAlphaComponent(onSurface, 0x2E)
+
+    val unFocusedBg = android.graphics.drawable.GradientDrawable().apply {
         cornerRadius = dp(14).toFloat()
-        setColor(MaterialColors.getColor(this@styledDialogEditText, com.google.android.material.R.attr.colorSurfaceVariant, Color.TRANSPARENT))
+        setColor(surfaceVariant)
+        setStroke(dp(1), outlineColor)
     }
+    val focusedBg = android.graphics.drawable.GradientDrawable().apply {
+        cornerRadius = dp(14).toFloat()
+        setColor(surfaceVariant)
+        setStroke(dp(2), accent)
+    }
+    val bgStateList = android.graphics.drawable.StateListDrawable().apply {
+        addState(intArrayOf(android.R.attr.state_focused), focusedBg)
+        addState(intArrayOf(), unFocusedBg)
+    }
+
     return android.widget.EditText(this).apply {
         isSingleLine = true
         setTextColor(onSurface)
         setHintTextColor(ColorUtils.setAlphaComponent(onSurface, 0x66))
-        background = bg
-        setPadding(dp(14), dp(12), dp(14), dp(12))
-        textSize = 15f
+        highlightColor = ColorUtils.setAlphaComponent(accent, 0x40)
+        background = bgStateList
+        setPadding(dp(16), dp(13), dp(16), dp(13))
+        textSize = 16f
+        runCatching {
+            CustomAccentApplier.tintEditTextCursorAndSelection(this, accent)
+        }
     }
 }
 
@@ -98,8 +117,10 @@ fun Context.showSwitchlyInputDialog(
         hint?.let { this.hint = it }
     }
     val container = android.widget.FrameLayout(this).apply {
-        val pad = (20 * resources.displayMetrics.density + 0.5f).toInt()
-        setPadding(pad, (4 * resources.displayMetrics.density).toInt(), pad, 0)
+        val padH = (24 * resources.displayMetrics.density + 0.5f).toInt()
+        val padTop = (12 * resources.displayMetrics.density + 0.5f).toInt()
+        val padBottom = (4 * resources.displayMetrics.density + 0.5f).toInt()
+        setPadding(padH, padTop, padH, padBottom)
         addView(input)
     }
     val dialog = MaterialAlertDialogBuilder(this)
@@ -764,23 +785,29 @@ fun AlertDialog.styleSwitchlyDialogButtons() {
     }
 
     fun styleCommon(b: Button) {
-        b.isAllCaps = false
         b.isSingleLine = false
         b.maxLines = 2
-        b.minWidth = 0
+        b.minWidth = dp(64)
         b.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
-        val hp = dp(14)
+        val hp = dp(16)
         val vp = dp(8)
         b.setPaddingRelative(hp, vp, hp, vp)
         b.minHeight = dp(40)
         runCatching {
             TextViewCompat.setTextAppearance(b, com.google.android.material.R.style.TextAppearance_MaterialComponents_Button)
         }
+        b.isAllCaps = false
     }
 
     val neg = getButton(AlertDialog.BUTTON_NEGATIVE)
     val neu = getButton(AlertDialog.BUTTON_NEUTRAL)
     val pos = getButton(AlertDialog.BUTTON_POSITIVE)
+
+    val onSurfaceVariant = MaterialColors.getColor(
+        context,
+        com.google.android.material.R.attr.colorOnSurfaceVariant,
+        ColorUtils.setAlphaComponent(onSurface, 0x99)
+    )
 
     pos?.let { b ->
         styleCommon(b)
@@ -790,7 +817,7 @@ fun AlertDialog.styleSwitchlyDialogButtons() {
 
     listOfNotNull(neg, neu).forEach { b ->
         styleCommon(b)
-        b.setTextColor(accent)
+        b.setTextColor(onSurfaceVariant)
         b.backgroundTintList = null
         // Some OEMs keep an old tint; force transparent.
         runCatching { b.setBackgroundColor(Color.TRANSPARENT) }

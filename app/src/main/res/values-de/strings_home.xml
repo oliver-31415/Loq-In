@@ -231,8 +231,10 @@
     <string name="profile_sheet_last_profile">Dies ist das einzige Profil — erstelle ein neues, bevor du es löschst.</string>
     <string name="profile_sheet_rename_hint">Profile name</string>
 
+    <string name="profile_sheet_tap_to_rename">Tippen zum Umbenennen</string>
+
     <!-- Foqos-style profile rows on Home -->
-    <string name="profile_rows_title">Profiles</string>
+    <string name="profile_rows_title">Profil</string>
     <string name="profile_rows_manage">Manage</string>
     <string name="profile_row_active">Active</string>
     <string name="activity_hide">Hide</string>
@@ -265,5 +267,14 @@
     <string name="profile_rows_switch">Profil wechseln</string>
     <string name="profile_sheet_new_profile">Neues Profil</string>
     <string name="dashboard_accessibility_not_connected">Bedienungshilfe-Dienst · nicht verbunden</string>
+
+    <!-- Session complete missed notifications popup -->
+    <string name="session_missed_notifications_title">Sitzung beendet</string>
+    <string name="session_missed_notifications_count_single">Du hast 1 Benachrichtigung verpasst</string>
+    <string name="session_missed_notifications_count_fmt">Du hast %1$d Benachrichtigungen verpasst</string>
+    <string name="session_missed_notifications_done">Fertig</string>
+    <string name="session_missed_notifications_view_all">Alle im Postfach ansehen</string>
+    <string name="session_missed_notifications_dont_show_again">Nicht mehr anzeigen</string>
+    <string name="session_missed_notifications_disabled_hint">Du kannst dies jederzeit in den Einstellungen wieder aktivieren</string>
 
 </resources>

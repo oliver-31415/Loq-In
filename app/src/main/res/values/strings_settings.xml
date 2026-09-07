@@ -29,6 +29,8 @@
     <!-- ====================================================== -->
     <string name="settings_keys_codes_title">Keys &amp; codes</string>
     <string name="settings_keys_codes_summary">Manage NFC tags, paired tags, QR codes, and barcode actions</string>
+    <string name="pref_show_session_missed_notifications_title">Show missed notifications popup</string>
+    <string name="pref_show_session_missed_notifications_summary">Show silenced notifications in a summary popup when a focus session ends</string>
 
     <!-- ====================================================== -->
     <!-- Personalization -->

@@ -13,7 +13,7 @@
     <string name="toggle_group_manage_blocking_modes">Control modes</string>
     <string name="settings_blocking_modes_summary">Choose how Switchly is enabled or disabled.</string>
     <string name="toggle_group_manage_other_blocking_features">Feature access</string>
-    <string name="settings_blocking_features_summary">Control access while Switchly is active and configure system status.</string>
+    <string name="settings_blocking_features_summary">Control access while active, notification blocking &amp; recap, and status.</string>
 
     <!-- ====================================================== -->
     <!-- Sections and guidance -->
@@ -124,6 +124,9 @@
     <string name="switchly_settings_locked_title">Open Settings?</string>
     <string name="settings_restricted_open_message">Switchly is active. Settings can still be viewed, but protection-related options cannot be changed until Switchly is fully disabled.</string>
     <string name="settings_open_restricted">Open Settings</string>
+    <string name="switchly_account_locked_title">Open Account?</string>
+    <string name="account_restricted_open_message">Switchly is active. Account can still be viewed, but protection-related options cannot be changed until Switchly is fully disabled.</string>
+    <string name="account_open_restricted">Open Account</string>
     <string name="settings_restricted_action_unavailable">Unavailable while Switchly is active.</string>
     <string name="blocking_settings_bypass_title">Switchly settings protected</string>
     <string name="blocking_settings_bypass_message">This system settings page could disable or weaken Switchly while protection is active. Disable Switchly first via your allowed method if you want to change these settings.</string>

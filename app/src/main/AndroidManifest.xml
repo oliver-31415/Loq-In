@@ -121,6 +121,16 @@
         <intent>
             <action android:name="android.settings.SETTINGS" />
         </intent>
+        <package android:name="com.google.android.youtube" />
+        <package android:name="app.revanced.android.youtube" />
+        <package android:name="app.morphe.android.youtube" />
+        <package android:name="com.google.android.apps.youtube.music" />
+        <package android:name="app.revanced.android.apps.youtube.music" />
+        <package android:name="com.instagram.android" />
+        <package android:name="com.twitter.android" />
+        <package android:name="com.snapchat.android" />
+        <package android:name="com.facebook.katana" />
+        <package android:name="com.zhiliaoapp.musically" />
     </queries>
 
     <application

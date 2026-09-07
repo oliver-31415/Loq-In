@@ -60,6 +60,7 @@ import at.saltyy.switchly.data.prefs.AutostartStore
 import at.saltyy.switchly.data.prefs.BlockingToggleKeys
 import at.saltyy.switchly.data.prefs.EmergencyBypassStore
 import at.saltyy.switchly.data.prefs.NotificationBlockStore
+import at.saltyy.switchly.data.prefs.SessionMissedNotificationsStore
 import at.saltyy.switchly.data.prefs.SwitchModeStore
 import at.saltyy.switchly.feature.faq.FaqActivity
 import at.saltyy.switchly.feature.onboarding.QuickTileHelper
@@ -175,6 +176,7 @@ open class ToggleOptionsActivity : AppCompatActivity() {
 
         // Switches (Protection)
         val switchBlockNotifications = findViewById<SwitchMaterial>(R.id.switchBlockNotifications)
+        val switchSessionMissedNotifications = findViewById<SwitchMaterial>(R.id.switchSessionMissedNotifications)
         val switchAutostart = findViewById<SwitchMaterial>(R.id.switchAutostart)
 
         // Switches (UI & Info)
@@ -220,6 +222,7 @@ open class ToggleOptionsActivity : AppCompatActivity() {
         val rowBarcodeQuickTile = findViewById<View>(R.id.rowBarcodeQuickTile)
 
         val rowBlockNotifs = findViewById<View>(R.id.rowBlockNotifications)
+        val rowSessionMissedNotifications = findViewById<View>(R.id.rowSessionMissedNotifications)
         val rowAutostart = findViewById<View>(R.id.rowAutostart)
 
         val rowEmergency = findViewById<View>(R.id.rowEmergency)
@@ -265,6 +268,7 @@ open class ToggleOptionsActivity : AppCompatActivity() {
         tintLeadingIcon(rowMixedAllowScheduleEditing, accent)
         tintLeadingIcon(rowMixedAllowNfcTagWriting, accent)
         tintLeadingIcon(rowRequireNfcUnlock, accent)
+        tintLeadingIcon(rowSessionMissedNotifications, accent)
         tintLeadingIcon(rowQuickTile, accent)
         tintLeadingIcon(rowQrQuickTile, accent)
         tintLeadingIcon(rowBarcodeQuickTile, accent)
@@ -461,6 +465,7 @@ open class ToggleOptionsActivity : AppCompatActivity() {
             switchMixedAllowScheduleEditing,
             switchMixedAllowNfcTagWriting,
             switchBlockNotifications,
+            switchSessionMissedNotifications,
             switchAutostart,
             switchEmergency,
             switchShowQuickActions,
@@ -490,6 +495,14 @@ open class ToggleOptionsActivity : AppCompatActivity() {
         switchMixedAllowNfcTagWriting.isChecked = AutomationModeStore.isMixedAllowNfcTagWriting(ctx)
 
         switchBlockNotifications.isChecked = NotificationBlockStore.isEnabled(ctx)
+        switchSessionMissedNotifications.isChecked = SessionMissedNotificationsStore.isFeatureEnabled(ctx)
+
+        fun syncSessionMissedState(blockNotifsEnabled: Boolean) {
+            rowSessionMissedNotifications.alpha = if (blockNotifsEnabled) 1f else 0.5f
+            switchSessionMissedNotifications.isEnabled = blockNotifsEnabled
+            rowSessionMissedNotifications.isClickable = blockNotifsEnabled
+        }
+        syncSessionMissedState(switchBlockNotifications.isChecked)
         switchAutostart.isChecked = AutostartStore.isEnabled(ctx)
 
         switchEmergency.isChecked = EmergencyBypassStore.isFeatureEnabled(ctx)
@@ -906,6 +919,11 @@ open class ToggleOptionsActivity : AppCompatActivity() {
         rowWidgetBlockedNotifications.setOnClickListener { requestPinWidget(BlockedNotificationsWidgetProvider::class.java) }
 
         rowBlockNotifs.setOnClickListener { switchBlockNotifications.toggle() }
+        rowSessionMissedNotifications.setOnClickListener {
+            if (switchBlockNotifications.isChecked) {
+                switchSessionMissedNotifications.toggle()
+            }
+        }
         rowAutostart.setOnClickListener {
             if (canEditActiveAccess()) switchAutostart.toggle()
         }
@@ -1063,9 +1081,15 @@ open class ToggleOptionsActivity : AppCompatActivity() {
             AutostartStore.setEnabled(ctx, isChecked)
         }
 
+        // Session missed notifications
+        switchSessionMissedNotifications.setOnCheckedChangeListener { _, isChecked ->
+            SessionMissedNotificationsStore.setFeatureEnabled(ctx, isChecked)
+        }
+
         // Block notifications
         switchBlockNotifications.setOnCheckedChangeListener { _, isChecked ->
             NotificationBlockStore.setEnabled(ctx, isChecked)
+            syncSessionMissedState(isChecked)
 
             if (isChecked && !NotificationBlockStore.hasListenerAccess(ctx)) {
                 Snackbar.make(

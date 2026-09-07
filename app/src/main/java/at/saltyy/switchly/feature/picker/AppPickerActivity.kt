@@ -199,9 +199,6 @@ class AppPickerActivity : AppCompatActivity() {
         val btnBlockSelectedMode = findViewById<MaterialButton>(R.id.btnBlockSelectedMode)
         val btnAllowSelectedMode = findViewById<MaterialButton>(R.id.btnAllowSelectedMode)
         val tvProfileRuleModeSummary = findViewById<TextView>(R.id.tvProfileRuleModeSummary)
-        val rowRuleSettingsHeader = findViewById<View>(R.id.rowRuleSettingsHeader)
-        val ruleSettingsPanel = findViewById<View>(R.id.ruleSettingsPanel)
-        val ivRuleSettingsChevron = findViewById<ImageView>(R.id.ivRuleSettingsChevron)
         findViewById<ImageButton>(R.id.btnAppRulesInfo).apply {
             imageTintList = ColorStateList.valueOf(toolbarIconColor)
             setColorFilter(toolbarIconColor)
@@ -213,16 +210,7 @@ class AppPickerActivity : AppCompatActivity() {
         }
         autoBlockNewAppsCheckbox = cbAutoBlockNewApps
 
-        fun setRuleSettingsExpanded(expanded: Boolean) {
-            ruleSettingsPanel.visibility = if (expanded) View.VISIBLE else View.GONE
-            ivRuleSettingsChevron.setImageResource(
-                if (expanded) R.drawable.keyboard_arrow_up_24 else R.drawable.keyboard_arrow_down_24
-            )
-        }
-        setRuleSettingsExpanded(false)
-        rowRuleSettingsHeader.setOnClickListener {
-            setRuleSettingsExpanded(ruleSettingsPanel.visibility != View.VISIBLE)
-        }
+
 
         rvApps.layoutManager = LinearLayoutManager(this)
 

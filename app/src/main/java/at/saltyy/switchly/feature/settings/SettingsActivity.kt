@@ -241,6 +241,9 @@ class SettingsActivity : AppCompatActivity() {
         add(R.string.pref_persistent_status_notification_title, "persistent status notification") {
             openToggleSection(ToggleOptionsActivity.SECTION_FEATURES)
         }
+        add(R.string.pref_show_session_missed_notifications_title, "missed notifications recap popup session end blocked inbox Benachrichtigungen") {
+            openProtectedActivity(Intent(this, BlockingFeaturesActivity::class.java))
+        }
         // Permissions & reliability, down to the relevant section.
         add(R.string.permissions_accessibility_title, "accessibility Bedienungshilfe service Dienst blocking Blockierung permission Berechtigung") { openPermissionSection(PermissionsActivity.SECTION_CORE) }
         add(R.string.permissions_battery_title, "battery Akku optimization Optimierung unrestricted uneingeschränkt background Hintergrund") { openPermissionSection(PermissionsActivity.SECTION_BATTERY) }

@@ -25,8 +25,10 @@ import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import at.saltyy.switchly.R
 import at.saltyy.switchly.feature.about.PrivacyReportActivity
+import at.saltyy.switchly.feature.inbox.BlockedInboxActivity
 import at.saltyy.switchly.feature.settings.AppLockSettingsActivity
 import at.saltyy.switchly.feature.tools.ManageKeysActivity
+import at.saltyy.switchly.feature.usage.ScreenUnlocksActivity
 import at.saltyy.switchly.feature.usage.SwitchlyOverviewActivity
 import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.ui.EdgeToEdgeUtils
@@ -36,14 +38,10 @@ import com.google.android.material.appbar.MaterialToolbar
 
 /**
  * Account hub: account-level destinations (overview, keys, app lock,
- * onboarding, privacy) plus the Info section (app/device info, help,
- * support, changelog, disclaimer). Same card language as Settings.
+ * onboarding, privacy, blocked notifications) plus the Info section.
+ * Same card language as Settings.
  */
 class AccountActivity : AppCompatActivity() {
-
-    // Owns activity-result launchers: property init runs before onCreate, so
-    // registration happens before STARTED. Same flows as Settings backup screen.
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         ThemeUtils.applyAccentTheme(this)
@@ -60,6 +58,9 @@ class AccountActivity : AppCompatActivity() {
         findViewById<View>(R.id.cardAccountOverview).setOnClickListener {
             startActivity(SwitchlyOverviewActivity.intent(this))
         }
+        findViewById<View>(R.id.cardAccountScreenUnlocks).setOnClickListener {
+            startActivity(ScreenUnlocksActivity.intent(this))
+        }
         findViewById<View>(R.id.cardAccountKeysCodes).setOnClickListener {
             startActivity(Intent(this, ManageKeysActivity::class.java))
         }
@@ -75,7 +76,9 @@ class AccountActivity : AppCompatActivity() {
         findViewById<View>(R.id.cardAccountPrivacy).setOnClickListener {
             startActivity(Intent(this, PrivacyReportActivity::class.java))
         }
-
+        findViewById<View>(R.id.cardAccountBlockedNotifications).setOnClickListener {
+            startActivity(Intent(this, BlockedInboxActivity::class.java))
+        }
     }
 
     companion object {
@@ -96,9 +99,9 @@ class AccountActivity : AppCompatActivity() {
             }
 
             androidx.appcompat.app.AlertDialog.Builder(source)
-                .setTitle(at.saltyy.switchly.R.string.switchly_settings_locked_title)
-                .setMessage(at.saltyy.switchly.R.string.settings_restricted_open_message)
-                .setPositiveButton(at.saltyy.switchly.R.string.settings_open_restricted) { _, _ ->
+                .setTitle(at.saltyy.switchly.R.string.switchly_account_locked_title)
+                .setMessage(at.saltyy.switchly.R.string.account_restricted_open_message)
+                .setPositiveButton(at.saltyy.switchly.R.string.account_open_restricted) { _, _ ->
                     at.saltyy.switchly.util.ActivityTransitionCompat.switchWithoutAnimation(
                         activity = source,
                         intent = Intent(source, AccountActivity::class.java),

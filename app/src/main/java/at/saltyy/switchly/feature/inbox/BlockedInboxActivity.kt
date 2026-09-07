@@ -40,7 +40,9 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import at.saltyy.switchly.R
 import at.saltyy.switchly.util.EditingLockGuard
+import android.widget.Toast
 import at.saltyy.switchly.data.prefs.BlockedInboxStore
+import at.saltyy.switchly.data.prefs.SessionMissedNotificationsStore
 import at.saltyy.switchly.data.prefs.BlockedNotificationEvent
 import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.theme.CustomAccentApplier
@@ -341,6 +343,9 @@ class BlockedInboxActivity : AppCompatActivity() {
         menu.findItem(R.id.action_delete)?.title =
             if (selectionMode) getString(R.string.delete) else getString(R.string.select)
         menu.findItem(R.id.action_clear_all)?.isVisible = !readOnly && !selectionMode && allItems.isNotEmpty()
+        val recapItem = menu.findItem(R.id.action_session_missed_notifications)
+        recapItem?.isVisible = !selectionMode
+        recapItem?.isChecked = SessionMissedNotificationsStore.isFeatureEnabled(this)
         return super.onPrepareOptionsMenu(menu)
     }
 
@@ -367,6 +372,19 @@ class BlockedInboxActivity : AppCompatActivity() {
                 } else {
                     enterSelectionMode(); true
                 }
+            }
+
+            R.id.action_session_missed_notifications -> {
+                val next = !item.isChecked
+                item.isChecked = next
+                SessionMissedNotificationsStore.setFeatureEnabled(this, next)
+                val msg = if (next) {
+                    R.string.pref_show_session_missed_notifications_title
+                } else {
+                    R.string.session_missed_notifications_disabled_hint
+                }
+                Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+                true
             }
 
             R.id.action_clear_all -> {
