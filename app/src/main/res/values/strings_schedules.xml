@@ -113,14 +113,54 @@
     <!-- Schedule actions and info -->
     <!-- ====================================================== -->
     <string name="schedules_type_time">Time schedule</string>
+    <string name="schedules_type_time_desc">At fixed times and days</string>
     <string name="schedules_type_wifi">Wi-Fi schedule</string>
+    <string name="schedules_type_wifi_desc">When connected to a network</string>
     <string name="schedules_type_bt">Bluetooth schedule</string>
+    <string name="schedules_type_bt_desc">When a device connects</string>
     <string name="schedules_type_location">Location schedule</string>
-    <string name="schedules_action_enable">Enable</string>
-    <string name="schedules_action_disable">Disable</string>
+    <string name="schedules_type_location_desc">When entering or leaving a place</string>
+    <string name="schedules_action_enable">Enable profile</string>
+    <string name="schedules_action_disable">Disable profile</string>
     <string name="schedules_action_toggle">Toggle</string>
     <string name="schedules_action_enable_disable">Enable &amp; Disable</string>
     <string name="schedules_action_disable_enable">Disable &amp; Enable</string>
+    <string name="schedules_action_disconnect_enable">Enable on disconnect</string>
+    <string name="schedules_action_disconnect_disable">Disable on disconnect</string>
+    <string name="schedules_when_connected">When connected</string>
+    <string name="schedules_when_disconnected">When disconnected</string>
+    <string name="schedules_action_block">Enable profile</string>
+    <string name="schedules_action_unblock">Disable profile</string>
+    <string name="schedules_action_nothing">Do nothing</string>
+    <string name="schedules_conn_action_block">Enable profile</string>
+    <string name="schedules_conn_action_unblock">Disable profile</string>
+    <string name="schedules_conn_action_nothing">Do nothing</string>
+    <string name="schedules_group_all">Every day</string>
+    <string name="schedules_247_title">24/7</string>
+    <string name="schedules_247_subtitle_conn">Active anytime while connected</string>
+    <string name="schedules_247_subtitle_loc">Active anytime at this location</string>
+    <string name="schedules_247_subtitle_time">Active at all times, every day</string>
+    <string name="schedules_all_day_title">All day</string>
+    <string name="schedules_all_day_subtitle">Active 24 hours on selected days</string>
+    <string name="schedules_all_day_conn_subtitle">Active anytime while connected</string>
+    <string name="schedules_conn_summary_block_unblock">Enables profile while connected, and disables when disconnected.</string>
+    <string name="schedules_conn_summary_unblock_block">Disables profile while connected, and enables when disconnected.</string>
+    <string name="schedules_conn_summary_block_nothing">Enables profile when connected. Disconnecting does not change profile state.</string>
+    <string name="schedules_conn_summary_unblock_nothing">Disables profile when connected. Disconnecting does not change profile state.</string>
+    <string name="schedules_conn_summary_nothing_block">Enables profile when disconnected. Connecting does not change profile state.</string>
+    <string name="schedules_conn_summary_nothing_unblock">Disables profile when disconnected. Connecting does not change profile state.</string>
+    <string name="schedules_conn_summary_none">Please select at least one action for connect or disconnect.</string>
+    <string name="schedules_time_window_title">Active hours &amp; days</string>
+    <string name="schedules_time_window_all_day">Active 24/7 (all day, every day)</string>
+    <string name="schedules_time_window_custom">Custom time window &amp; days</string>
+    <string name="schedules_time_window_switch_label">Limit to specific hours / days</string>
+    <string name="schedules_action_when_connected_title">Trigger behavior</string>
+    <string name="schedules_conn_block_title">Block when connected</string>
+    <string name="schedules_conn_block_subtitle">Blocks apps while connected, and unblocks when disconnected (e.g. Work or School).</string>
+    <string name="schedules_conn_pause_title">Unblock when connected</string>
+    <string name="schedules_conn_pause_subtitle">Pauses blocking while connected, and restores blocking when disconnected (e.g. Home Wi-Fi or Car).</string>
+    <string name="schedules_attached_profile_caption">Attached profile</string>
+    <string name="schedules_attached_badge">Locked to profile</string>
     <string name="schedules_action_info_title">Schedule actions</string>
     <string name="schedules_action_info_enable_body">Enables Switchly with the selected profile when the schedule starts.</string>
     <string name="schedules_action_info_disable_body">Disables Switchly when the schedule starts. Use this only for planned breaks.</string>
@@ -149,7 +189,7 @@
     <!-- ====================================================== -->
     <!-- Location triggers -->
     <!-- ====================================================== -->
-    <string name="schedules_location_label_hint">Location name (optional)</string>
+    <string name="schedules_location_label_hint">Location</string>
     <string name="schedules_location_trigger_title">Location trigger</string>
     <string name="schedules_location_trigger_enter">When entering area</string>
     <string name="schedules_location_trigger_exit">When leaving area</string>
@@ -174,6 +214,7 @@
     <string name="schedules_location_picker_invalid">Enter an address or coordinates first.</string>
     <string name="schedules_location_picker_not_found">Could not find that location.</string>
     <string name="schedules_location_choose">Choose location</string>
+    <string name="schedules_location_open_map_picker">Open map picker</string>
     <string name="schedules_location_method_title">Choose location</string>
     <string name="schedules_location_method_picker">Location picker</string>
     <string name="schedules_location_method_search">Search or paste location</string>
@@ -186,7 +227,7 @@
     <string name="schedules_location_map_unavailable_message">Google Maps could not be reached from this device or network. This can happen with Private DNS, VPNs, ad blockers, or router DNS settings. You can still use search, current location, or manual coordinates.</string>
     <string name="schedules_location_use_search">Use search</string>
     <string name="schedules_location_use_current">Use current location</string>
-    <string name="schedules_location_map_picker_search_action">Search on map</string>
+    <string name="schedules_location_map_picker_search_action">Search</string>
     <string name="schedules_location_map_picker_no_selection">Tap on the map to choose a location.</string>
     <string name="schedules_location_map_picker_selected">Selected: %1$s</string>
     <string name="schedules_location_picker_premium_title">Location picker is Premium</string>
