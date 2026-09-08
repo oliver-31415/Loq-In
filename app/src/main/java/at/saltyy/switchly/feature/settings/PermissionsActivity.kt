@@ -61,6 +61,7 @@ import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.theme.CustomAccentApplier
 import at.saltyy.switchly.ui.EdgeToEdgeUtils
 import at.saltyy.switchly.ui.ThemeUtils
+import at.saltyy.switchly.ui.showWarnPillOnContent
 import at.saltyy.switchly.ui.dialog.showAccented
 import at.saltyy.switchly.ui.dialog.SwitchlyInfoRow
 import at.saltyy.switchly.ui.dialog.showSwitchlyInfoDialog
@@ -595,7 +596,7 @@ class PermissionsActivity : AppCompatActivity() {
                     )
                     else -> getString(R.string.permissions_health_rechecked_all_good)
                 }
-                Toast.makeText(this@PermissionsActivity, message, Toast.LENGTH_SHORT).show()
+                showWarnPillOnContent(message)
             }
         }
 

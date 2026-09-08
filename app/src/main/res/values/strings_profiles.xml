@@ -50,6 +50,27 @@
     <!-- Profile labels and duplicate names -->
     <!-- ====================================================== -->
     <string name="profile_label_default">Profile</string>
+    <!-- Needed by the in-progress widget refactor. -->
+    <string name="profile_default_name">Profile</string>
+    <string name="temp_pause_action">Temporary pauses</string>
+    <string name="temp_pause_title">Temporary pauses</string>
+    <string name="temp_pause_summary_unlimited">Unlimited</string>
+    <string name="temp_pause_part_count_fmt">%1$d/day</string>
+    <string name="temp_pause_part_max_fmt">max %1$d min</string>
+    <string name="temp_pause_part_total_fmt">%1$d min/day</string>
+    <string name="temp_pause_used_fmt">Used today: %1$d pauses · %2$d min</string>
+    <string name="temp_pause_field_count">Pauses per day (0 = unlimited)</string>
+    <string name="temp_pause_field_per_pause">Max minutes per pause (0 = unlimited)</string>
+    <string name="temp_pause_field_per_day">Max paused minutes per day (0 = unlimited)</string>
+    <string name="temp_pause_zero_hint">0 means unlimited.</string>
+    <string name="temp_pause_reset_today">Reset today</string>
+    <string name="temp_pause_error_range_fmt">Must be between 0 and %1$d</string>
+    <string name="temp_pause_exhausted">No pauses left today for this profile</string>
+    <string name="temp_pause_exhausted_pauses">Daily pause limit reached (%1$d pauses used today).</string>
+    <string name="temp_pause_exhausted_minutes">Daily break time exhausted (%1$d min used today).</string>
+    <string name="temp_pause_exceeds_limit">Exceeds pause limit (max %1$d min allowed).</string>
+    <string name="temp_pause_reset_blocked_active">Cannot reset pause usage while blocking is active.</string>
+    <string name="temp_pause_reset_success">Pause usage has been reset for today.</string>
     <string name="profile_duplicate_name_fmt">%1$s (copy)</string>
     <string name="profile_duplicate_name_numbered_fmt">%1$s (copy %2$d)</string>
 

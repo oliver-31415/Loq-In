@@ -26,6 +26,7 @@ import android.widget.Toast
 import androidx.core.net.toUri
 import at.saltyy.switchly.BuildConfig
 import at.saltyy.switchly.R
+import at.saltyy.switchly.ui.showWarnPillOnContent
 import at.saltyy.switchly.util.AndroidSystemPackages
 import at.saltyy.switchly.data.prefs.AdvancedModeStore
 import at.saltyy.switchly.util.PlayStoreUpdatePrompt
@@ -173,7 +174,7 @@ class AppInfoActivity : TilesInfoActivity() {
         val wasEnabled = AdvancedModeStore.isEnabled(this)
         if (!wasEnabled) {
             AdvancedModeStore.setEnabled(this, true)
-            Toast.makeText(this, getString(R.string.developer_mode_unlocked_toast), Toast.LENGTH_SHORT).show()
+            showWarnPillOnContent(getString(R.string.developer_mode_unlocked_toast))
         }
         openDeveloperMode()
     }

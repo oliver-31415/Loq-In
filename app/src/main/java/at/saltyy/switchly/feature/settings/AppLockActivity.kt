@@ -38,6 +38,7 @@ import at.saltyy.switchly.security.AppLockManager
 import at.saltyy.switchly.security.AppLockStore
 import at.saltyy.switchly.theme.CustomAccentApplier
 import at.saltyy.switchly.ui.ThemeUtils
+import at.saltyy.switchly.ui.showWarnPillOnContent
 import at.saltyy.switchly.util.ActivityTransitionCompat
 import at.saltyy.switchly.util.LocaleHelper
 
@@ -91,7 +92,7 @@ class AppLockActivity : AppCompatActivity() {
                 unlockSuccess()
             } else {
                 AppLogStore.append(this, "AppLock", "Unlock failed reason=pin_mismatch")
-                Toast.makeText(this, R.string.app_lock_pin_incorrect, Toast.LENGTH_SHORT).show()
+                showWarnPillOnContent(R.string.app_lock_pin_incorrect)
             }
         }
 
@@ -112,7 +113,7 @@ class AppLockActivity : AppCompatActivity() {
     private fun promptBiometric() {
         if (!isBiometricAvailable()) {
             AppLogStore.append(this, "AppLock", "Unlock failed reason=biometric_unavailable")
-            Toast.makeText(this, R.string.app_lock_biometric_not_available, Toast.LENGTH_SHORT).show()
+            showWarnPillOnContent(R.string.app_lock_biometric_not_available)
             return
         }
 

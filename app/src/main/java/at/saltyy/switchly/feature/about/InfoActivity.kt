@@ -25,7 +25,7 @@ import android.view.View
 import androidx.appcompat.app.AppCompatActivity
 import at.saltyy.switchly.R
 import at.saltyy.switchly.feature.faq.FaqActivity
-import at.saltyy.switchly.feature.support.SupportActivity
+import at.saltyy.switchly.feature.support.SupportLogActivity
 import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.ui.EdgeToEdgeUtils
 import at.saltyy.switchly.ui.ThemeUtils
@@ -60,7 +60,7 @@ class InfoActivity : AppCompatActivity() {
             startActivity(Intent(this, FaqActivity::class.java))
         }
         findViewById<View>(R.id.cardInfoSupport).setOnClickListener {
-            startActivity(Intent(this, SupportActivity::class.java))
+            startActivity(Intent(this, SupportLogActivity::class.java))
         }
         findViewById<View>(R.id.cardInfoWhatsNew).setOnClickListener {
             startActivity(Intent(this, WhatsNewActivity::class.java))

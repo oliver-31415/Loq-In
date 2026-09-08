@@ -89,6 +89,7 @@ import at.saltyy.switchly.security.PlayIntegrityRuntime
 import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.ui.EdgeToEdgeUtils
 import at.saltyy.switchly.ui.ThemeUtils
+import at.saltyy.switchly.ui.showWarnPill
 import at.saltyy.switchly.ui.dialog.SwitchlyDialogOption
 import at.saltyy.switchly.ui.dialog.showAccented
 import at.saltyy.switchly.ui.dialog.showSwitchlyMultiChoiceDialog
@@ -154,9 +155,9 @@ class SupportActivity : AppCompatActivity() {
         findViewById<View>(R.id.rowSupportEmail).setOnClickListener { openEmail(email) }
         findViewById<ImageButton>(R.id.btnCopyEmailInline).apply {
             ImageViewCompat.setImageTintList(this, AccentColor.getActiveColor(this@SupportActivity))
-            setOnClickListener {
+            setOnClickListener { tapped ->
                 copyToClipboard(label = getString(R.string.support_copy_email), text = email)
-                Toast.makeText(this@SupportActivity, getString(R.string.support_copied), Toast.LENGTH_SHORT).show()
+                tapped.showWarnPill(getString(R.string.support_copied))
             }
         }
 
@@ -165,9 +166,9 @@ class SupportActivity : AppCompatActivity() {
         findViewById<View>(R.id.rowSupportDiscord).setOnClickListener { openUrl(discord) }
         findViewById<ImageButton>(R.id.btnCopyDiscordInline).apply {
             ImageViewCompat.setImageTintList(this, AccentColor.getActiveColor(this@SupportActivity))
-            setOnClickListener {
+            setOnClickListener { tapped ->
                 copyToClipboard(label = getString(R.string.support_discord_label), text = discord)
-                Toast.makeText(this@SupportActivity, getString(R.string.support_discord_copied), Toast.LENGTH_SHORT).show()
+                tapped.showWarnPill(getString(R.string.support_discord_copied))
             }
         }
 
@@ -176,20 +177,14 @@ class SupportActivity : AppCompatActivity() {
         findViewById<View>(R.id.rowSupportGitLabIssues).setOnClickListener { openUrl(issues) }
         findViewById<ImageButton>(R.id.btnCopyGitLabIssuesInline).apply {
             ImageViewCompat.setImageTintList(this, AccentColor.getActiveColor(this@SupportActivity))
-            setOnClickListener {
+            setOnClickListener { tapped ->
                 copyToClipboard(label = getString(R.string.support_gitlab_issues_label), text = issues)
-                Toast.makeText(this@SupportActivity, getString(R.string.support_gitlab_issues_copied), Toast.LENGTH_SHORT).show()
+                tapped.showWarnPill(getString(R.string.support_gitlab_issues_copied))
             }
         }
 
         findViewById<View>(R.id.rowViewLogs).setOnClickListener {
             startActivity(Intent(this, SupportLogActivity::class.java))
-        }
-
-        findViewById<View>(R.id.rowCopyLogs).setOnClickListener {
-            val payload = AppLogStore.export(this@SupportActivity)
-            copyToClipboard(label = getString(R.string.support_copy_latest_logs), text = payload)
-            Toast.makeText(this@SupportActivity, getString(R.string.support_logs_copied), Toast.LENGTH_SHORT).show()
         }
 
         findViewById<MaterialButton>(R.id.btnOpenEmail).setOnClickListener {
@@ -230,7 +225,7 @@ class SupportActivity : AppCompatActivity() {
         val uri = "mailto:$email?subject=${android.net.Uri.encode(getString(R.string.support_email_subject))}".toUri()
         runCatching { startActivity(Intent(Intent.ACTION_SENDTO, uri)) }
             .onFailure {
-                Toast.makeText(this, getString(R.string.support_no_email_app), Toast.LENGTH_SHORT).show()
+                findViewById<View>(android.R.id.content).showWarnPill(getString(R.string.support_no_email_app))
             }
     }
 
@@ -366,11 +361,8 @@ class SupportActivity : AppCompatActivity() {
                 label = getString(R.string.support_report_clipboard_label),
                 text = fallback
             )
-            Toast.makeText(
-                this,
-                getString(R.string.support_email_fallback_copied),
-                Toast.LENGTH_LONG
-            ).show()
+            findViewById<View>(android.R.id.content)
+                .showWarnPill(getString(R.string.support_email_fallback_copied))
         }
     }
 

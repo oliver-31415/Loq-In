@@ -28,6 +28,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.widget.addTextChangedListener
 import at.saltyy.switchly.R
 import at.saltyy.switchly.blocking.BlockingRuntime
 import at.saltyy.switchly.data.prefs.AttemptLimitStore
@@ -43,8 +44,9 @@ import at.saltyy.switchly.data.prefs.UsageLimitResetStore
 import at.saltyy.switchly.data.prefs.UsageStore
 import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.theme.CustomAccentApplier
-import at.saltyy.switchly.ui.dialog.Dialogs
 import at.saltyy.switchly.ui.SwitchlyDropdownAdapter
+import at.saltyy.switchly.ui.showWarnPill
+import at.saltyy.switchly.ui.dialog.Dialogs
 import at.saltyy.switchly.ui.dialog.showAccented
 import at.saltyy.switchly.ui.dialog.applySwitchlyDialogWidth
 import at.saltyy.switchly.util.AppBlockSafety
@@ -61,9 +63,17 @@ import java.util.Locale
  */
 object QuickLimitDialogs {
 
+
     private const val MODE_TIME = 0
     private const val MODE_ATTEMPTS = 1
     private const val MODE_ALWAYS_BLOCK = 2
+    private const val MAX_TIME_MINUTES = 24 * 60
+    private const val MAX_ATTEMPTS = 200
+    private const val STEP_TIME_MINUTES = 15
+    private const val STEP_VISIT_MINUTES = 5
+    private const val DEFAULT_TIME_MINUTES = 60
+    private const val DEFAULT_OPENS = 5
+    private const val DEFAULT_VISIT_MINUTES = 15
 
     fun showForApp(
         activity: AppCompatActivity,
@@ -106,13 +116,14 @@ object QuickLimitDialogs {
         onChanged: (() -> Unit)? = null
     ) {
         if (EditingLockGuard.isLocked(activity)) {
-            EditingLockGuard.showLockedDialog(activity, R.string.toast_disable_switchly_to_edit_app_limits)
+            activity.findViewById<View>(android.R.id.content)
+                .showWarnPill(R.string.toast_disable_switchly_to_edit_app_limits)
             return
         }
 
         val profile = ProfileStore.getCurrent(activity)
         if (profile.isNullOrBlank()) {
-            Toast.makeText(activity, R.string.no_profile_selected, Toast.LENGTH_SHORT).show()
+            activity.findViewById<View>(android.R.id.content).showWarnPill(R.string.no_profile_selected)
             return
         }
 
@@ -139,15 +150,20 @@ object QuickLimitDialogs {
         onChanged: (() -> Unit)?,
     ) {
         val v = LayoutInflater.from(activity).inflate(R.layout.dialog_app_limits, FrameLayout(activity), false)
+        val ivIcon = v.findViewById<android.widget.ImageView>(R.id.ivAppLimitIcon)
+        val tvTitle = v.findViewById<TextView>(R.id.tvAppLimitTitle)
         val tvSubtitle = v.findViewById<TextView>(R.id.tvAppLimitSubtitle)
-        val tilResetMode = v.findViewById<TextInputLayout>(R.id.tilAppLimitResetMode)
-        val etResetMode = v.findViewById<MaterialAutoCompleteTextView>(R.id.etAppLimitResetMode)
+        val tvSentence = v.findViewById<TextView>(R.id.tvAppLimitSentence)
+        val swTime = v.findViewById<androidx.appcompat.widget.SwitchCompat>(R.id.swAppLimitTime)
+        val swOpens = v.findViewById<androidx.appcompat.widget.SwitchCompat>(R.id.swAppLimitOpens)
+        val swVisit = v.findViewById<androidx.appcompat.widget.SwitchCompat>(R.id.swAppLimitVisit)
         val tilTime = v.findViewById<TextInputLayout>(R.id.tilAppLimitTime)
         val etTime = v.findViewById<TextInputEditText>(R.id.etAppLimitTime)
         val tilAttempts = v.findViewById<TextInputLayout>(R.id.tilAppLimitAttempts)
         val etAttempts = v.findViewById<TextInputEditText>(R.id.etAppLimitAttempts)
         val tilPerVisit = v.findViewById<TextInputLayout>(R.id.tilAppLimitPerVisit)
         val etPerVisit = v.findViewById<TextInputEditText>(R.id.etAppLimitPerVisit)
+        val tvVisitWarning = v.findViewById<TextView>(R.id.tvVisitWarning)
         val btnClear = v.findViewById<MaterialButton>(R.id.btnAppLimitClear)
         val btnCancel = v.findViewById<MaterialButton>(R.id.btnAppLimitCancel)
         val btnSave = v.findViewById<MaterialButton>(R.id.btnAppLimitSave)
@@ -155,43 +171,32 @@ object QuickLimitDialogs {
         val currentTime = UsageLimitStore.getLimitMinutes(activity, profile, pkg)
         val currentAttempts = AttemptLimitStore.getLimitAttempts(activity, profile, pkg)
         val currentPerVisit = SessionLimitStore.getLimitMinutes(activity, profile, pkg)
-        val currentResetMode = UsageLimitResetStore.getMode(activity, profile, pkg)
 
-        tvSubtitle.text = activity.getString(
-            R.string.app_limit_editor_subtitle_fmt,
-            label,
-            activity.getString(R.string.profile_active_fmt, profile),
-        )
-        etTime.setText(currentTime.takeIf { it > 0 }?.let { String.format(Locale.getDefault(), "%d", it) }.orEmpty())
-        etAttempts.setText(currentAttempts.takeIf { it > 0 }?.let { String.format(Locale.getDefault(), "%d", it) }.orEmpty())
-        etPerVisit.setText(currentPerVisit.takeIf { it > 0 }?.let { String.format(Locale.getDefault(), "%d", it) }.orEmpty())
-
-        val resetModes = listOf(UsageLimitResetStore.MODE_DAY, UsageLimitResetStore.MODE_SESSION)
-        val resetLabels = listOf(
-            activity.getString(R.string.limit_reset_per_day),
-            activity.getString(R.string.limit_reset_per_session),
-        )
-        val activeResetMode = arrayOf(
-            if (currentResetMode == UsageLimitResetStore.MODE_SESSION) {
-                UsageLimitResetStore.MODE_SESSION
-            } else {
-                UsageLimitResetStore.MODE_DAY
-            }
-        )
-        etResetMode.setAdapter(SwitchlyDropdownAdapter(activity, resetLabels))
-        etResetMode.setText(resetLabels[resetModes.indexOf(activeResetMode[0]).coerceAtLeast(0)], false)
-        etResetMode.setOnItemClickListener { _, _, position, _ ->
-            activeResetMode[0] = resetModes.getOrNull(position) ?: UsageLimitResetStore.MODE_DAY
+        tvTitle.text = label
+        tvSubtitle.text = activity.getString(R.string.profile_active_fmt, profile)
+        runCatching {
+            ivIcon.setImageDrawable(activity.packageManager.getApplicationIcon(pkg))
+        }.onFailure {
+            ivIcon.setImageResource(android.R.drawable.sym_def_app_icon)
         }
+
+        fun fmtInt(value: Int): String =
+            if (value > 0) String.format(Locale.getDefault(), "%d", value) else ""
+
+        etTime.setText(fmtInt(currentTime))
+        etAttempts.setText(fmtInt(currentAttempts))
+        etPerVisit.setText(fmtInt(currentPerVisit))
+        swTime.isChecked = currentTime > 0
+        swOpens.isChecked = currentAttempts > 0
+        swVisit.isChecked = currentPerVisit > 0
 
         val accent = AccentColor.getAccentColorInt(activity)
         val accentList = ColorStateList.valueOf(accent)
-        listOf(tilResetMode, tilTime, tilAttempts, tilPerVisit).forEach { til ->
+        listOf(tilTime, tilAttempts, tilPerVisit).forEach { til ->
             til.boxStrokeColor = accent
             til.hintTextColor = accentList
             til.defaultHintTextColor = accentList
         }
-        tilResetMode.setEndIconTintList(accentList)
 
         btnCancel.setTextColor(accent)
         btnCancel.isAllCaps = false
@@ -203,6 +208,9 @@ object QuickLimitDialogs {
         btnClear.isAllCaps = false
         btnClear.backgroundTintList = null
         runCatching { btnClear.setBackgroundColor(android.graphics.Color.TRANSPARENT) }
+        btnClear.visibility =
+            if (currentTime > 0 || currentAttempts > 0 || currentPerVisit > 0) View.VISIBLE
+            else View.GONE
 
         val onAccent = if (androidx.core.graphics.ColorUtils.calculateLuminance(accent) > 0.5) {
             android.graphics.Color.BLACK
@@ -213,12 +221,230 @@ object QuickLimitDialogs {
         btnSave.isAllCaps = false
         btnSave.backgroundTintList = AccentColor.getActiveColor(activity)
 
-        fun parseNumber(field: TextInputEditText, max: Int): Int? {
-            val raw = field.text?.toString()?.trim().orEmpty()
-            if (raw.isBlank()) return 0
-            val value = raw.toIntOrNull() ?: return null
-            return value.takeIf { it in 0..max }
+        fun rawInt(field: TextInputEditText): Int =
+            field.text?.toString()?.trim()?.toIntOrNull() ?: 0
+
+        fun effectiveValues(): Triple<Int, Int, Int> {
+            val time = if (swTime.isChecked) rawInt(etTime) else 0
+            val opens = if (swOpens.isChecked) rawInt(etAttempts) else 0
+            val visit = if (swVisit.isChecked) rawInt(etPerVisit) else 0
+            return Triple(time, opens, visit)
         }
+
+        fun refreshSentence() {
+            val (time, opens, visit) = effectiveValues()
+            tvSentence.text = when {
+                time <= 0 && opens <= 0 && visit <= 0 ->
+                    activity.getString(R.string.app_limit_sentence_none)
+                time > 0 -> buildString {
+                    append(activity.getString(R.string.app_limit_sentence_time_fmt, time))
+                    if (opens > 0) append(activity.getString(R.string.app_limit_sentence_split_fmt, opens))
+                    if (visit > 0) append(activity.getString(R.string.app_limit_sentence_visit_fmt, visit))
+                }
+                opens > 0 -> buildString {
+                    append(activity.getString(R.string.app_limit_sentence_opens_only_fmt, opens))
+                    if (visit > 0) append(activity.getString(R.string.app_limit_sentence_visit_fmt, visit))
+                }
+                else -> activity.getString(R.string.app_limit_sentence_visit_only_fmt, visit)
+            }
+            if (time > 0 && visit > time) {
+                tvVisitWarning.text = activity.getString(
+                    R.string.app_limit_visit_exceeds_daily_fmt, visit, time
+                )
+                tvVisitWarning.visibility = View.VISIBLE
+            } else {
+                tvVisitWarning.visibility = View.GONE
+            }
+        }
+
+        fun parseField(
+            enabled: Boolean,
+            field: TextInputEditText,
+            layout: TextInputLayout,
+            max: Int,
+            rangeError: String
+        ): Int? {
+            if (!enabled) {
+                layout.error = null
+                return 0
+            }
+            val raw = field.text?.toString()?.trim().orEmpty()
+            if (raw.isBlank()) {
+                layout.error = activity.getString(R.string.app_limit_error_required)
+                return null
+            }
+            val value = raw.toIntOrNull()
+            if (value == null) {
+                layout.error = activity.getString(R.string.app_limit_error_not_number)
+                return null
+            }
+            if (value !in 1..max) {
+                layout.error = rangeError
+                return null
+            }
+            layout.error = null
+            return value
+        }
+
+        fun validateAll(focusInvalid: Boolean): Triple<Int, Int, Int>? {
+            val time = parseField(
+                swTime.isChecked, etTime, tilTime, MAX_TIME_MINUTES,
+                activity.getString(R.string.app_limit_error_range_minutes_fmt, MAX_TIME_MINUTES)
+            )
+            val visit = parseField(
+                swVisit.isChecked, etPerVisit, tilPerVisit, MAX_TIME_MINUTES,
+                activity.getString(R.string.app_limit_error_range_minutes_fmt, MAX_TIME_MINUTES)
+            )
+            val opens = parseField(
+                swOpens.isChecked, etAttempts, tilAttempts, MAX_ATTEMPTS,
+                activity.getString(R.string.app_limit_error_range_attempts_fmt, MAX_ATTEMPTS)
+            )
+            if (time == null || visit == null || opens == null) {
+                if (focusInvalid) {
+                    when {
+                        time == null -> etTime.requestFocus()
+                        visit == null -> etPerVisit.requestFocus()
+                        else -> etAttempts.requestFocus()
+                    }
+                }
+                return null
+            }
+            return Triple(time, visit, opens)
+        }
+
+        fun refreshSaveState() {
+            val valid = validateAll(focusInvalid = false) != null
+            btnSave.isEnabled = valid
+            btnSave.alpha = if (valid) 1f else 0.5f
+        }
+
+        fun refreshAll() {
+            refreshSentence()
+            refreshSaveState()
+        }
+
+        // Clearing a field switches its limit off instead of leaving a stale
+        // number behind an off toggle (or an error behind an on toggle).
+        etTime.addTextChangedListener {
+            if (swTime.isChecked && etTime.text?.toString()?.trim().isNullOrEmpty()) {
+                swTime.isChecked = false
+            } else {
+                refreshAll()
+            }
+        }
+        etAttempts.addTextChangedListener {
+            if (swOpens.isChecked && etAttempts.text?.toString()?.trim().isNullOrEmpty()) {
+                swOpens.isChecked = false
+            } else {
+                refreshAll()
+            }
+        }
+        etPerVisit.addTextChangedListener {
+            if (swVisit.isChecked && etPerVisit.text?.toString()?.trim().isNullOrEmpty()) {
+                swVisit.isChecked = false
+            } else {
+                refreshAll()
+            }
+        }
+
+        fun setTimeValue(value: Int) {
+            etTime.setText(fmtInt(value))
+            etTime.setSelection(etTime.text?.length ?: 0)
+        }
+
+        swTime.setOnCheckedChangeListener { _, checked ->
+            if (checked && etTime.text?.toString()?.trim().isNullOrEmpty()) {
+                setTimeValue(DEFAULT_TIME_MINUTES)
+            }
+            if (!checked) tilTime.error = null
+            refreshAll()
+        }
+        swOpens.setOnCheckedChangeListener { _, checked ->
+            if (checked && etAttempts.text?.toString()?.trim().isNullOrEmpty()) {
+                etAttempts.setText(fmtInt(DEFAULT_OPENS))
+                etAttempts.setSelection(etAttempts.text?.length ?: 0)
+            }
+            if (!checked) tilAttempts.error = null
+            refreshAll()
+        }
+        swVisit.setOnCheckedChangeListener { _, checked ->
+            if (checked && etPerVisit.text?.toString()?.trim().isNullOrEmpty()) {
+                etPerVisit.setText(fmtInt(DEFAULT_VISIT_MINUTES))
+                etPerVisit.setSelection(etPerVisit.text?.length ?: 0)
+            }
+            if (!checked) tilPerVisit.error = null
+            refreshAll()
+        }
+
+        fun stepTime(delta: Int) {
+            if (!swTime.isChecked && delta <= 0) return
+            if (!swTime.isChecked) {
+                setTimeValue(delta.coerceIn(1, MAX_TIME_MINUTES))
+                swTime.isChecked = true
+                return
+            }
+            val next = rawInt(etTime) + delta
+            if (next < 1) {
+                etTime.setText("")
+                swTime.isChecked = false
+                return
+            }
+            setTimeValue(next.coerceAtMost(MAX_TIME_MINUTES))
+        }
+
+        fun stepOpens(delta: Int) {
+            if (!swOpens.isChecked && delta <= 0) return
+            if (!swOpens.isChecked) {
+                etAttempts.setText(fmtInt(delta.coerceIn(1, MAX_ATTEMPTS)))
+                swOpens.isChecked = true
+                return
+            }
+            val next = rawInt(etAttempts) + delta
+            if (next < 1) {
+                etAttempts.setText("")
+                swOpens.isChecked = false
+                return
+            }
+            etAttempts.setText(fmtInt(next.coerceAtMost(MAX_ATTEMPTS)))
+        }
+
+        fun stepVisit(delta: Int) {
+            if (!swVisit.isChecked && delta <= 0) return
+            if (!swVisit.isChecked) {
+                etPerVisit.setText(fmtInt(delta.coerceIn(1, MAX_TIME_MINUTES)))
+                swVisit.isChecked = true
+                return
+            }
+            val next = rawInt(etPerVisit) + delta
+            if (next < 1) {
+                etPerVisit.setText("")
+                swVisit.isChecked = false
+                return
+            }
+            etPerVisit.setText(fmtInt(next.coerceAtMost(MAX_TIME_MINUTES)))
+        }
+
+        v.findViewById<MaterialButton>(R.id.btnTimeMinus).setOnClickListener { stepTime(-STEP_TIME_MINUTES) }
+        v.findViewById<MaterialButton>(R.id.btnTimePlus).setOnClickListener { stepTime(STEP_TIME_MINUTES) }
+        v.findViewById<MaterialButton>(R.id.btnOpensMinus).setOnClickListener { stepOpens(-1) }
+        v.findViewById<MaterialButton>(R.id.btnOpensPlus).setOnClickListener { stepOpens(1) }
+        v.findViewById<MaterialButton>(R.id.btnVisitMinus).setOnClickListener { stepVisit(-STEP_VISIT_MINUTES) }
+        v.findViewById<MaterialButton>(R.id.btnVisitPlus).setOnClickListener { stepVisit(STEP_VISIT_MINUTES) }
+
+        val pillValues = mapOf(
+            R.id.pillTime15 to 15,
+            R.id.pillTime30 to 30,
+            R.id.pillTime60 to 60,
+            R.id.pillTime120 to 120,
+        )
+        pillValues.forEach { (id, minutes) ->
+            v.findViewById<MaterialButton>(id).setOnClickListener {
+                setTimeValue(minutes)
+                if (!swTime.isChecked) swTime.isChecked = true
+            }
+        }
+
+        refreshAll()
 
         fun applyValues(timeMinutes: Int, attempts: Int, perVisitMinutes: Int) {
             UsageLimitStore.setLimitMinutes(activity, profile, pkg, timeMinutes)
@@ -226,9 +452,9 @@ object QuickLimitDialogs {
             AttemptLimitStore.setLimitAttempts(activity, profile, pkg, attempts)
 
             LimitReachedStore.clearToday(activity, pkg)
-            if (timeMinutes > 0) {
-                UsageLimitResetStore.setMode(activity, profile, pkg, activeResetMode[0])
-            } else {
+            // No reset-mode choice in the UI: keep whatever cadence is stored
+            // (per-day default), only cleaning up when the time limit is removed.
+            if (timeMinutes <= 0) {
                 UsageLimitResetStore.clearMode(activity, profile, pkg)
                 UsageStore.setUsageMsToday(activity, pkg, 0L)
             }
@@ -249,24 +475,26 @@ object QuickLimitDialogs {
             .create()
 
         btnClear.setOnClickListener {
-            applyValues(0, 0, 0)
-            dlg.dismiss()
+            AlertDialog.Builder(activity)
+                .setTitle(R.string.app_limit_remove_confirm_title)
+                .setMessage(activity.getString(R.string.app_limit_remove_confirm_message, label))
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(R.string.app_limit_remove) { _, _ ->
+                    applyValues(0, 0, 0)
+                    dlg.dismiss()
+                }
+                .showAccented()
         }
         btnCancel.setOnClickListener { dlg.dismiss() }
         btnSave.setOnClickListener {
-            val time = parseNumber(etTime, 24 * 60)
-            val attempts = parseNumber(etAttempts, 200)
-            val perVisit = parseNumber(etPerVisit, 24 * 60)
-            if (time == null || attempts == null || perVisit == null) {
-                Toast.makeText(activity, R.string.invalid_value, Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            applyValues(time, attempts, perVisit)
+            val validated = validateAll(focusInvalid = true) ?: return@setOnClickListener
+            val (time, visit, opens) = validated
+            applyValues(time, opens, visit)
             dlg.dismiss()
         }
 
+        dlg.applySwitchlyDialogWidth(0.94f)
         dlg.setOnShowListener {
-            dlg.applySwitchlyDialogWidth(0.94f)
             runCatching { CustomAccentApplier.applyToDialog(dlg) }
             val focus = if (focusAttempts) etAttempts else etTime
             focus.post {
@@ -279,7 +507,8 @@ object QuickLimitDialogs {
 
     fun showForWebsite(activity: AppCompatActivity, domain: String, label: String, onChanged: (() -> Unit)? = null) {
         if (EditingLockGuard.isLocked(activity)) {
-            EditingLockGuard.showLockedDialog(activity, R.string.toast_disable_switchly_to_edit_websites)
+            activity.findViewById<View>(android.R.id.content)
+                .showWarnPill(R.string.toast_disable_switchly_to_edit_websites)
             return
         }
 
@@ -328,7 +557,6 @@ object QuickLimitDialogs {
             onChanged?.invoke()
         }
     }
-
     private fun ensureManaged(activity: AppCompatActivity, profile: String, pkg: String) {
         if (AppBlockSafety.isAlwaysExcluded(activity, pkg)) {
             return
@@ -339,6 +567,7 @@ object QuickLimitDialogs {
             ProfileStore.setSelectedForProfileMode(activity, profile, selected)
         }
     }
+
 
     private fun showCompactLimitDialog(
         activity: AppCompatActivity,
@@ -503,15 +732,15 @@ object QuickLimitDialogs {
                 else -> 24 * 60
             }
             if (n < 0 || n > max) {
-                Toast.makeText(activity, R.string.invalid_value, Toast.LENGTH_SHORT).show()
+                etValue.showWarnPill(R.string.invalid_value)
                 return@setOnClickListener
             }
             onApply(activeMode[0], n, activeResetMode[0])
             dlg.dismiss()
         }
 
+        dlg.applySwitchlyDialogWidth(0.94f)
         dlg.setOnShowListener {
-            dlg.applySwitchlyDialogWidth(0.94f)
             // Retint in CUSTOM accent mode so the dialog matches the rest of the app.
             runCatching { CustomAccentApplier.applyToDialog(dlg) }
         }

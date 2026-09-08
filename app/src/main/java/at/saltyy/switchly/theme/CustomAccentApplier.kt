@@ -430,21 +430,19 @@ object CustomAccentApplier {
             }
 
             is TextInputLayout -> {
-                // TextInput fields are central in settings/screens and often still pick up default theme green.
-                // Material uses a state list internally (focused/hovered/disabled). Some OEM/Material combos
-                // keep the focused stroke at the theme default (green) unless we override the full state list.
+                // TextInput fields: un-focused border should be subtle neutral (foqos_outline_variant),
+                // and ONLY focused border should be accent color.
                 runCatching {
-                    val enabled = intArrayOf(android.R.attr.state_enabled)
+                    val outline = ContextCompat.getColor(view.context, R.color.foqos_outline_variant)
+                    val outlineDisabled = ColorUtils.setAlphaComponent(outline, 0x60)
+
                     val focused = intArrayOf(android.R.attr.state_enabled, android.R.attr.state_focused)
                     val hovered = intArrayOf(android.R.attr.state_enabled, android.R.attr.state_hovered)
+                    val enabled = intArrayOf(android.R.attr.state_enabled)
                     val disabled = intArrayOf(-android.R.attr.state_enabled)
 
-                    val normal = ColorUtils.setAlphaComponent(accent, 0xAA)
-                    val hover = ColorUtils.setAlphaComponent(accent, 0xCC)
-                    val dis = ColorUtils.setAlphaComponent(accent, 0x55)
-
                     val states = arrayOf(focused, hovered, enabled, disabled)
-                    val colors = intArrayOf(accent, hover, normal, dis)
+                    val colors = intArrayOf(accent, outline, outline, outlineDisabled)
                     view.setBoxStrokeColorStateList(ColorStateList(states, colors))
                 }
 
@@ -453,9 +451,13 @@ object CustomAccentApplier {
 
                 val tint = ColorStateList.valueOf(accent)
                 runCatching { view.hintTextColor = tint }
-                runCatching { view.defaultHintTextColor = tint }
-                view.setStartIconTintList(tint)
-                view.setEndIconTintList(tint)
+                val neutralIconTint = MaterialColors.getColor(
+                    view.context,
+                    com.google.android.material.R.attr.colorOnSurfaceVariant,
+                    ContextCompat.getColor(view.context, R.color.foqos_on_surface_variant)
+                )
+                view.setStartIconTintList(ColorStateList.valueOf(neutralIconTint))
+                view.setEndIconTintList(ColorStateList.valueOf(neutralIconTint))
 
                 // Dropdown arrow (end icon) pressed/activated highlight often stays the theme default.
                 // Material exposes an end-icon ripple color; set it to a subtle accent tint.

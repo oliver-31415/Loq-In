@@ -28,7 +28,6 @@ import android.widget.CheckBox
 import android.widget.CompoundButton
 import android.widget.ImageButton
 import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -48,6 +47,7 @@ import at.saltyy.switchly.data.prefs.UsageLimitStore
 import at.saltyy.switchly.data.prefs.UsageLimitResetStore
 import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.ui.dialog.showAccented
+import at.saltyy.switchly.ui.showWarnPill
 import at.saltyy.switchly.util.AppBlockSafety
 import com.google.android.material.card.MaterialCardView
 import java.util.Locale
@@ -242,12 +242,6 @@ class AppListAdapter(
         private val tvStateChip: TextView = v.findViewById(R.id.tvUnavailableChip)
         private val tvHint: TextView = v.findViewById(R.id.tvUnavailableHint)
 
-        private val limitRow: LinearLayout = v.findViewById(R.id.limitRow)
-        private val ivTimer: ImageView = v.findViewById(R.id.ivTimer)
-        private val tvState: TextView = v.findViewById(R.id.tvState)
-        private val tvLimit: TextView = v.findViewById(R.id.tvLimit)
-        private val tvMetaSeparator: TextView = v.findViewById(R.id.tvMetaSeparator)
-
         private val btnLimit: ImageButton = v.findViewById(R.id.btnLimit)
 
         private fun dp(value: Float): Int =
@@ -314,7 +308,6 @@ class AppListAdapter(
             }
 
             tvLabel.text = item.label
-            tvPkg.text = item.packageName
 
             val limitMin = if (!profile.isNullOrBlank()) {
                 UsageLimitStore.getLimitMinutes(ctx, profile, item.packageName)
@@ -358,20 +351,8 @@ class AppListAdapter(
                     tvHint.visibility = View.GONE
                 }
 
-                limitRow.orientation = LinearLayout.HORIZONTAL
-                limitRow.gravity = android.view.Gravity.CENTER_VERTICAL
-                ivTimer.visibility = View.VISIBLE
-                tvMetaSeparator.visibility = View.VISIBLE
-
-                val limitParams = tvLimit.layoutParams as ViewGroup.MarginLayoutParams
-                limitParams.marginStart = 0
-                tvLimit.layoutParams = limitParams
-
                 if (effectiveHasLimit) {
-                    limitRow.visibility = View.VISIBLE
-                    ivTimer.setColorFilter(accent)
-                    tvState.text = ctx.getString(R.string.limit_set)
-                    tvLimit.text = buildString {
+                    tvPkg.text = buildString {
                         if (hasDailyLimit) {
                             val resetMode = profile?.let { UsageLimitResetStore.getMode(ctx, it, item.packageName) }
                             append(ctx.getString(
@@ -388,17 +369,23 @@ class AppListAdapter(
                             append(ctx.getString(R.string.attempt_limit_label, attemptLimit))
                         }
                     }
-                    tvState.setTextColor(accent)
-                    tvLimit.setTextColor(accent)
+                    tvPkg.setTextColor(accent)
                 } else {
-                    limitRow.visibility = View.GONE
+                    tvPkg.text = item.packageName
+                    tvPkg.setTextColor(
+                        com.google.android.material.color.MaterialColors.getColor(
+                            ctx,
+                            android.R.attr.textColorSecondary,
+                            tvPkg.currentTextColor
+                        )
+                    )
                 }
             } else {
                 tvStateChip.visibility = View.VISIBLE
                 tvHint.visibility = View.VISIBLE
                 tvStateChip.text = ctx.getString(R.string.unavailable_app_state)
                 tvHint.text = ctx.getString(R.string.unavailable_app_remove_hint)
-                limitRow.visibility = View.GONE
+                tvPkg.text = item.packageName
             }
 
             cb.setOnCheckedChangeListener(null)
@@ -409,14 +396,16 @@ class AppListAdapter(
                 !currentlySelected,
             )
             cb.isChecked = currentlySelected
+            // Keep tappable while locked (dimmed): denied taps warn via popover in the listener.
             cb.isEnabled = if (item.isAvailable) {
-                !readOnly || canToggleSelection
+                true
             } else {
                 unavailableConfigured && (!readOnly || canToggleSelection)
             }
             cb.alpha = when {
                 !cb.isEnabled -> 0.45f
                 !item.isAvailable -> 0.85f
+                readOnly && !canToggleSelection -> 0.45f
                 else -> 1f
             }
             updateCardState(currentlySelected, !item.isAvailable)
@@ -431,13 +420,17 @@ class AppListAdapter(
             listener = CompoundButton.OnCheckedChangeListener { _, checked ->
                 val before = managed.contains(item.packageName) || pinnedByInAppRules || hasUnavailableConfiguration(ctx, profile, item)
                 if (!canChangeSelectionProvider(before, checked)) {
-                    setCheckedSilently(before)
-                    cb.isEnabled = if (item.isAvailable) {
-                        canChangeSelectionProvider(before, !before)
-                    } else {
-                        before && canChangeSelectionProvider(before, !before)
+                    if (isReadOnlyProvider.invoke()) {
+                        itemView.showWarnPill(R.string.toast_disable_switchly_to_edit_blocked_apps)
                     }
-                    cb.alpha = if (cb.isEnabled) 1f else 0.45f
+                    setCheckedSilently(before)
+                    // Stay tappable so repeated taps keep warning instead of going dead.
+                    if (!item.isAvailable) {
+                        cb.isEnabled = before && canChangeSelectionProvider(before, !before)
+                        cb.alpha = if (cb.isEnabled) 1f else 0.45f
+                    } else {
+                        cb.alpha = 0.45f
+                    }
                     return@OnCheckedChangeListener
                 }
                 if (checked) {
@@ -478,7 +471,7 @@ class AppListAdapter(
                 } else {
                     if (pinnedByInAppRules) {
                         setCheckedSilently(true)
-                        Toast.makeText(ctx, R.string.app_picker_in_app_rules_pinned_toast, Toast.LENGTH_LONG).show()
+                        itemView.showWarnPill(R.string.app_picker_in_app_rules_pinned_toast)
                     } else {
                         managed.remove(item.packageName)
                         notifySelectionCountChanged()
@@ -519,10 +512,11 @@ class AppListAdapter(
             if (item.isAvailable) {
                 btnLimit.visibility = View.VISIBLE
                 val readOnly = isReadOnlyProvider.invoke()
-                btnLimit.isEnabled = !readOnly
+                btnLimit.isEnabled = true
                 btnLimit.alpha = if (readOnly) 0.45f else 1f
                 btnLimit.setOnClickListener {
                     if (isReadOnlyProvider.invoke()) {
+                        itemView.showWarnPill(R.string.toast_disable_switchly_to_edit_app_limits)
                         return@setOnClickListener
                     }
                     if (hasSecondaryRules && onRowActionsClicked != null) {
@@ -543,10 +537,10 @@ class AppListAdapter(
                 btnLimit.isEnabled = false
                 btnLimit.alpha = 0.45f
                 btnLimit.setOnClickListener {
-                    Toast.makeText(ctx, R.string.cannot_set_limit_unavailable, Toast.LENGTH_SHORT).show()
+                    itemView.showWarnPill(R.string.cannot_set_limit_unavailable)
                 }
                 btnLimit.setOnLongClickListener {
-                    Toast.makeText(ctx, R.string.cannot_set_limit_unavailable, Toast.LENGTH_SHORT).show()
+                    itemView.showWarnPill(R.string.cannot_set_limit_unavailable)
                     true
                 }
             }

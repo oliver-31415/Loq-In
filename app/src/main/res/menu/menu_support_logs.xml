@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/action_search"
+        android:icon="@drawable/search_24"
+        android:title="@string/support_logs_search_hint"
+        app:showAsAction="always" />
+
+    <item
+        android:id="@+id/action_copy_all"
+        android:icon="@drawable/content_copy_24"
+        android:title="@string/support_logs_view_copy"
+        app:showAsAction="always" />
+
+    <item
+        android:id="@+id/action_share"
+        android:icon="@drawable/share_24"
+        android:title="@string/support_logs_share_title"
+        app:showAsAction="always" />
+
+    <item
+        android:id="@+id/action_clear_logs"
+        android:icon="@drawable/delete_24"
+        android:title="@string/support_logs_clear"
+        app:showAsAction="never" />
+
+</menu>

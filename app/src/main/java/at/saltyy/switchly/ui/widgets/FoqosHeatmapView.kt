@@ -109,7 +109,7 @@ class FoqosHeatmapView @JvmOverloads constructor(
     }
 
     fun setData(valuesMs: LongArray, todayIdx: Int = valuesMs.size - 1) {
-        dayValuesMs = if (valuesMs.size == DAYS) valuesMs else padOrTrim(valuesMs)
+        dayValuesMs = if (valuesMs.size == DAYS) valuesMs.clone() else padOrTrim(valuesMs)
         todayIndex = todayIdx.coerceIn(0, dayValuesMs.size - 1)
         selectedCell = -1
         invalidate()
@@ -248,20 +248,12 @@ class FoqosHeatmapView @JvmOverloads constructor(
                 canvas.drawRoundRect(cellRect, radius, radius, cellStrokePaint)
             }
 
-                        // Day number INSIDE cells that have data (or the selected one).
-            val hasValue = v > 0L
-            if (hasValue || (!isFuture && i == selectedCell)) {
-                numberPaint.color = if (hasValue) onBucketColor(v) else textColor
+            // Duration label INSIDE cells that have data.
+            if (v > 0L) {
+                numberPaint.color = onBucketColor(v)
                 val x = left + cellSize / 2f
                 val y = top + cellSize / 2f - (numberPaint.descent() + numberPaint.ascent()) / 2f
-                // Filled cells carry the blocked DURATION (e.g. "10m", "2h") — the
-                // day number already sits above every cell like a calendar.
-                canvas.drawText(
-                    if (hasValue) durationLabel(v) else dayLabel,
-                    x,
-                    y,
-                    numberPaint
-                )
+                canvas.drawText(durationLabel(v), x, y, numberPaint)
             }
         }
     }
@@ -293,7 +285,7 @@ class FoqosHeatmapView @JvmOverloads constructor(
                 val idx = row * COLS + col
                 if (idx !in 0 until DAYS) return performClick()
                 val v = valueFor(idx)
-                if (v < 0L || cellDates[idx] > todayMillis) return performClick()
+                if (v <= 0L || cellDates[idx] > todayMillis) return performClick()
                 // Translate grid cell -> index into the oldest->today data array.
                 val arrayIdx = dayValuesMs.size - 1 - daysAgo(cellDates[idx])
                 selectedCell = if (selectedCell == idx) -1 else idx

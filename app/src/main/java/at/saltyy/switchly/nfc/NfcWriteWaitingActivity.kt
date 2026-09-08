@@ -47,7 +47,9 @@ import at.saltyy.switchly.data.prefs.AppLogStore
 import at.saltyy.switchly.data.prefs.BlockingToggleKeys
 import at.saltyy.switchly.data.prefs.NfcDiagnosticsStore
 import at.saltyy.switchly.data.prefs.NfcUidPairingStore
+import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.ui.dialog.showAccented
+import at.saltyy.switchly.ui.showWarnPillOnContent
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import com.google.android.material.textfield.TextInputEditText
@@ -139,6 +141,8 @@ class NfcWriteWaitingActivity : AppCompatActivity() {
         setContentView(R.layout.activity_nfc_write_wait)
 
         progress = findViewById(R.id.waitProgress)
+        // Indicator would otherwise keep the compile-time default green.
+        progress.setIndicatorColor(AccentColor.getAccentColorInt(this))
         tvTitle = findViewById(R.id.waitTitle)
         tvHint = findViewById(R.id.waitHint)
         btnClose = findViewById(R.id.closeButton)
@@ -612,17 +616,15 @@ class NfcWriteWaitingActivity : AppCompatActivity() {
         tvHint.text = if (uidHex != null) getString(R.string.nfc_pair_ok_with_uid, uidHex) else ""
         progress.visibility = android.view.View.GONE
 
-        Toast.makeText(
-            this,
+        showWarnPillOnContent(
             getString(
                 when {
                     alreadyPaired -> R.string.nfc_pair_already_added
                     uidHex != null -> R.string.nfc_pair_ok
                     else -> R.string.nfc_write_ok
                 },
-            ),
-            Toast.LENGTH_SHORT,
-        ).show()
+            )
+        )
 
         handler.postDelayed({
             val data = Intent().apply {

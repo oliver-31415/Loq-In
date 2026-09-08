@@ -65,7 +65,7 @@ object BlockedTimeStore {
         val sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val persisted = sp.getLong(key, 0L)
         val buffered = synchronized(lock) { pending[key] ?: 0L }
-        return persisted + buffered
+        return (persisted + buffered).coerceAtMost(86_400_000L)
     }
 
     /**
@@ -282,8 +282,19 @@ object BlockedTimeStore {
             }
         }
 
+        val maxDayMs = 86_400_000L // 24 hours — hard ceiling per calendar day
         val result = LongArray(size)
-        for (i in 0 until size) result[i] = maxOf(prot[i], legacy[i])
+        val todayIdx = size - 1
+        for (i in 0 until size) {
+            val dayVal = if (i == todayIdx) {
+                getProtectionTodayMs(ctx)
+            } else if (prot[i] > 0L) {
+                prot[i]
+            } else {
+                legacy[i]
+            }
+            result[i] = dayVal.coerceAtMost(maxDayMs)
+        }
         return result
     }
 

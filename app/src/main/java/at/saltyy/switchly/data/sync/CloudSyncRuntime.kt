@@ -71,6 +71,7 @@ object CloudSyncRuntime {
     private const val FIELD_SWITCHLY_PREFS = "switchly_prefs"
     private const val FIELD_SCHEDULES_PREFS = "schedules_prefs"
     private const val FIELD_UI_HINTS_PREFS = "ui_hints_prefs"
+    private const val FIELD_TEMP_PAUSE_PREFS = "temp_pause_prefs"
     private const val FIELD_CREATED_AT = "created_at"
     private const val FIELD_STATS = "stats"
     private const val FIELD_STATS_DATABASE = "stats_database"
@@ -80,12 +81,13 @@ object CloudSyncRuntime {
     private const val FIELD_BACKUP_SCHEMA_VERSION = "backup_schema_version"
     private const val FIELD_CREATED_WITH_VERSION = "created_with_version"
     private const val FIELD_CREATED_WITH_VERSION_CODE = "created_with_version_code"
-    private const val BACKUP_SCHEMA_VERSION = 222
+    private const val BACKUP_SCHEMA_VERSION = 223
 
     // ScheduleStore prefs name in the project
     private const val SCHEDULES_PREFS_NAME = "switchly_prefs_schedules"
     private const val SCHEDULES_KEY_ITEMS = "items" // JSON list stored by ScheduleStore
     private const val UI_HINTS_PREFS_NAME = "switchly_ui_hints"
+    private const val TEMP_PAUSE_PREFS_NAME = "switchly_temp_pause"
 
     private val backupExcludedExactKeys = setOf(
         "switch_mode_active_since_ms",
@@ -172,6 +174,7 @@ object CloudSyncRuntime {
                 snapshot.contains(FIELD_SWITCHLY_PREFS) ||
                 snapshot.contains(FIELD_SCHEDULES_PREFS) ||
                 snapshot.contains(FIELD_UI_HINTS_PREFS) ||
+                snapshot.contains(FIELD_TEMP_PAUSE_PREFS) ||
                 snapshot.contains(FIELD_STATS) ||
                 snapshot.contains(FIELD_STATS_DATABASE)
             )
@@ -485,11 +488,13 @@ object CloudSyncRuntime {
         val internalPrefs = ctx.getSharedPreferences("switchly_prefs", Context.MODE_PRIVATE).all
         val schedulesPrefs = ctx.getSharedPreferences(SCHEDULES_PREFS_NAME, Context.MODE_PRIVATE).all
         val uiHintsPrefs = ctx.getSharedPreferences(UI_HINTS_PREFS_NAME, Context.MODE_PRIVATE).all
+        val tempPausePrefs = ctx.getSharedPreferences(TEMP_PAUSE_PREFS_NAME, Context.MODE_PRIVATE).all
 
         val all = BackupCategoryFilter.filterDefaultPrefs(normalizePrefsMap(defaultPrefs), selection)
         val internalAllRaw = BackupCategoryFilter.filterInternalPrefs(normalizePrefsMap(internalPrefs), selection)
         val schedulesAll = BackupCategoryFilter.filterSchedulesPrefs(normalizePrefsMap(schedulesPrefs), selection)
         val uiHintsAll = BackupCategoryFilter.filterUiHintsPrefs(normalizePrefsMap(uiHintsPrefs), selection)
+        val tempPauseAll = BackupCategoryFilter.filterTempPausePrefs(normalizePrefsMap(tempPausePrefs), selection)
 
         val (internalAll, statsMapRaw) = extractStatsFromInternalPrefs(internalAllRaw)
         val statsMapWithLogs = statsMapRaw.toMutableMap()
@@ -507,6 +512,7 @@ object CloudSyncRuntime {
             FIELD_STATS_DATABASE to statsDatabase,
             FIELD_SCHEDULES_PREFS to schedulesAll,
             FIELD_UI_HINTS_PREFS to uiHintsAll,
+            FIELD_TEMP_PAUSE_PREFS to tempPauseAll,
             BackupCategoryFilter.FIELD_INCLUDED_CATEGORIES to selection.categoryIds.toList().sorted(),
             BackupCategoryFilter.FIELD_IS_PARTIAL_BACKUP to !selection.isFull,
             FIELD_CREATED_AT to now
@@ -863,6 +869,7 @@ object CloudSyncRuntime {
         val internalMap = payload[FIELD_SWITCHLY_PREFS] as? Map<*, *> ?: emptyMap<Any, Any>()
         val schedulesMap = payload[FIELD_SCHEDULES_PREFS] as? Map<*, *> ?: emptyMap<Any, Any>()
         val uiHintsMap = payload[FIELD_UI_HINTS_PREFS] as? Map<*, *> ?: emptyMap<Any, Any>()
+        val tempPauseMap = payload[FIELD_TEMP_PAUSE_PREFS] as? Map<*, *> ?: emptyMap<Any, Any>()
         val stats = payload[FIELD_STATS]
         val statsDatabase = payload[FIELD_STATS_DATABASE] as? Map<*, *>
         val partialBackup = BackupCategoryFilter.isPartialBackup(payload)
@@ -876,6 +883,7 @@ object CloudSyncRuntime {
             applyPrefsMapToLocal(ctx, internalMap, isInternal = true, isSchedules = false, clearBeforeApply = !partialBackup)
             applyPrefsMapToLocal(ctx, schedulesMap, isInternal = false, isSchedules = true, clearBeforeApply = !partialBackup)
             applyPrefsMapToLocal(ctx, uiHintsMap, prefsName = UI_HINTS_PREFS_NAME, clearBeforeApply = !partialBackup)
+            applyPrefsMapToLocal(ctx, tempPauseMap, prefsName = TEMP_PAUSE_PREFS_NAME, clearBeforeApply = !partialBackup)
 
             // Expand compact statistics from 2.1.x/2.2.x backups before Room is restored.
             restoredCompactValues = applyStatsToInternalPrefs(ctx, stats)
@@ -959,6 +967,7 @@ object CloudSyncRuntime {
             payload.containsKey(FIELD_SWITCHLY_PREFS) ||
             payload.containsKey(FIELD_SCHEDULES_PREFS) ||
             payload.containsKey(FIELD_UI_HINTS_PREFS) ||
+            payload.containsKey(FIELD_TEMP_PAUSE_PREFS) ||
             payload.containsKey(FIELD_STATS) ||
             payload.containsKey(FIELD_STATS_DATABASE)
     }
@@ -972,6 +981,7 @@ object CloudSyncRuntime {
             FIELD_SWITCHLY_PREFS to snapshot.get(FIELD_SWITCHLY_PREFS),
             FIELD_SCHEDULES_PREFS to snapshot.get(FIELD_SCHEDULES_PREFS),
             FIELD_UI_HINTS_PREFS to snapshot.get(FIELD_UI_HINTS_PREFS),
+            FIELD_TEMP_PAUSE_PREFS to snapshot.get(FIELD_TEMP_PAUSE_PREFS),
             FIELD_STATS to snapshot.get(FIELD_STATS),
             FIELD_STATS_DATABASE to snapshot.get(FIELD_STATS_DATABASE),
             BackupCategoryFilter.FIELD_INCLUDED_CATEGORIES to snapshot.get(BackupCategoryFilter.FIELD_INCLUDED_CATEGORIES),
@@ -1034,6 +1044,7 @@ object CloudSyncRuntime {
             key.startsWith("nfc_td_cfg_daily_") ||
             key.startsWith("nfc_td_cfg_cooldown_") ||
             key.startsWith("nfc_tag_read_only_duration_") ||
+            key.startsWith("temp_pause_") ||
             key.startsWith("open_count_")
     }
 

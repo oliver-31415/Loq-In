@@ -57,6 +57,7 @@
 
             <!-- Action dropdown -->
             <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilAction"
                 style="@style/Switchly.DropdownLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

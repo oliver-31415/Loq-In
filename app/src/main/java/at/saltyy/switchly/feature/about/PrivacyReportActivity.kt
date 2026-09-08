@@ -38,6 +38,7 @@ import at.saltyy.switchly.data.sync.BackupCategory
 import at.saltyy.switchly.data.sync.BackupSelection
 import at.saltyy.switchly.data.sync.BackupSelectionStore
 import at.saltyy.switchly.data.sync.FileBackupRuntime
+import at.saltyy.switchly.ui.showWarnPillOnContent
 import at.saltyy.switchly.ui.dialog.SwitchlyDialogOption
 import at.saltyy.switchly.ui.dialog.showAccented
 import at.saltyy.switchly.ui.dialog.showSwitchlyMultiChoiceDialog
@@ -290,7 +291,7 @@ class PrivacyReportActivity : TilesInfoActivity() {
                 .map { it.id }
                 .toSet()
             if (selectedIds.isEmpty()) {
-                Toast.makeText(this, R.string.privacy_report_export_select_empty, Toast.LENGTH_SHORT).show()
+                showWarnPillOnContent(R.string.privacy_report_export_select_empty)
                 return@showSwitchlyMultiChoiceDialog
             }
             pendingExportSelection = BackupSelection.fromIds(selectedIds)
@@ -330,15 +331,14 @@ class PrivacyReportActivity : TilesInfoActivity() {
                 FileBackupRuntime.writeLocalBackupToUri(this@PrivacyReportActivity, uri, selection)
             }
             progress.dismiss()
-            Toast.makeText(
-                this@PrivacyReportActivity,
+            if (isFinishing || isDestroyed) return@launch
+            showWarnPillOnContent(
                 if (result.isSuccess) {
                     R.string.privacy_report_export_done
                 } else {
                     R.string.privacy_report_export_failed
-                },
-                Toast.LENGTH_LONG
-            ).show()
+                }
+            )
         }
     }
 

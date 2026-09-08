@@ -122,10 +122,10 @@
     <string name="blocking_uninstall_friction_title">Deinstallations-Reibung aktiv</string>
     <string name="blocking_uninstall_friction_message">Switchly erschwert gerade den Zugriff auf deinstallationsbezogene Screens, solange der Schutz aktiv ist. Das ist nur Reibung, keine echte Deinstallationssperre. Deaktiviere Switchly zuerst über deine erlaubte Methode, wenn du fortfahren willst.</string>
     <string name="switchly_settings_locked_title">Einstellungen öffnen?</string>
-    <string name="settings_restricted_open_message">Switchly ist aktiv. Die Einstellungen können weiterhin angesehen werden, aber schutzrelevante Optionen lassen sich erst ändern, wenn Switchly vollständig deaktiviert ist.</string>
+    <string name="settings_restricted_open_message">Switchly ist aktiv. Die Einstellungen können weiterhin angesehen werden, aber schutzrelevante Optionen lassen sich erst ändern, wenn Switchly deaktiviert ist.</string>
     <string name="settings_open_restricted">Einstellungen öffnen</string>
     <string name="switchly_account_locked_title">Konto öffnen?</string>
-    <string name="account_restricted_open_message">Switchly ist aktiv. Das Konto kann weiterhin angesehen werden, aber schutzrelevante Optionen lassen sich erst ändern, wenn Switchly vollständig deaktiviert ist.</string>
+    <string name="account_restricted_open_message">Switchly ist aktiv. Das Konto kann weiterhin angesehen werden, aber schutzrelevante Optionen lassen sich erst ändern, wenn Switchly deaktiviert ist.</string>
     <string name="account_open_restricted">Konto öffnen</string>
     <string name="settings_restricted_action_unavailable">Nicht verfügbar, solange Switchly aktiv ist.</string>
     <string name="blocking_settings_bypass_title">Switchly-Einstellungen geschützt</string>
@@ -247,6 +247,8 @@
     <string name="pref_barcode_qs_tile_title">Barcode-Scanner-Kachel</string>
     <string name="pref_barcode_qs_tile_summary">Fügt einen Schnelleinstellungen-Shortcut zum Öffnen des Barcode-Scanners hinzu.</string>
     <string name="pref_qs_tile_already_added">Bereits hinzugefügt</string>
+    <string name="pref_qs_tile_already_added_hint">Bereits hinzugefügt. Switchly kann die Kachel nicht selbst entfernen — öffne die Schnelleinstellungen, tippe auf Bearbeiten und entferne die Kachel dort.</string>
+    <string name="pref_qs_tile_add_again">Erneut hinzufügen</string>
     <string name="pref_widget_barcode_title">Barcode-Scanner-Widget</string>
     <string name="pref_widget_barcode_summary">Fügt ein Startseiten-Widget zum Öffnen des Barcode-Scanners hinzu.</string>
     <string name="pref_widget_qr_title">QR-Scanner-Widget</string>
@@ -271,7 +273,9 @@
     <string name="edit_locked_manage_profiles">Einige Profilaktionen bleiben gesperrt, solange Switchly aktiv ist. Du kannst Profile ansehen, erstellen, duplizieren und umbenennen sowie App-Auswahlen verschärfen. Deaktiviere Switchly zum Löschen oder Wechseln von Profilen.</string>
     <string name="edit_locked_write_nfc_tags">Deaktiviere Switchly, um NFC-Tags zu schreiben oder zu koppeln.</string>
     <string name="edit_locked_manage_blocked_notifications">Deaktiviere Switchly, um blockierte Benachrichtigungen zu öffnen.</string>
-    <string name="toast_disable_switchly_to_edit_blocked_apps">Deaktiviere Switchly vollständig, um App-Regeln zu bearbeiten.</string>
+    <string name="edit_locked_manage_schedules">Deaktiviere Switchly, um Zeitpläne zu verwalten.</string>
+    <string name="edit_locked_manage_temp_pauses">Deaktiviere Switchly, um temporäre Pausenlimits zu ändern.</string>
+    <string name="toast_disable_switchly_to_edit_blocked_apps">Deaktiviere Switchly, um App-Regeln zu bearbeiten.</string>
     <string name="toast_disable_switchly_to_switch_profiles">Deaktiviere Switchly, bevor du Profile wechselst.</string>
     <string name="toast_disable_switchly_to_edit_websites">Deaktiviere Switchly, bevor du Website-Regeln bearbeitest.</string>
     <string name="toast_disable_switchly_to_edit_app_limits">Deaktiviere Switchly, bevor du App-Limits bearbeitest.</string>

@@ -98,12 +98,13 @@ import at.saltyy.switchly.feature.inbox.BlockedInboxActivity
 import at.saltyy.switchly.feature.profiles.ManageProfilesActivity
 import at.saltyy.switchly.feature.schedule.SchedulesActivity
 import at.saltyy.switchly.feature.settings.ManagePairedTagsActivity
-import at.saltyy.switchly.feature.support.SupportActivity
+import at.saltyy.switchly.feature.support.SupportLogActivity
 import at.saltyy.switchly.nfc.NfcWriterActivity
 import at.saltyy.switchly.premium.PremiumManager
 import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.theme.CustomAccentApplier
 import at.saltyy.switchly.ui.MainActivity
+import at.saltyy.switchly.ui.showWarnPill
 import at.saltyy.switchly.ui.dialog.showDestructiveAccented
 import at.saltyy.switchly.ui.dialog.showAccented
 import at.saltyy.switchly.ui.dialog.SwitchlyDialogOption
@@ -176,17 +177,14 @@ class SettingsFragment : PreferenceFragmentCompat() {
         return (activity as? SettingsActivity)?.isRestrictedAccessActive() == true
     }
 
-    private fun applyRestrictedAccountDataState() {
-        val restricted = isRestrictedSettingsAccess()
-        val restrictedKeys = listOf(
-            "screen_backup_restore",
-            "pref_cloud_restore",
-            "pref_file_restore",
-            "pref_reset_app_data"
-        )
-        restrictedKeys.forEach { key ->
-            findPreference<Preference>(key)?.isEnabled = !restricted
+    // Backup/restore/reset stay tappable while locked: denied taps warn via
+    // pill in the click listeners instead of silently doing nothing.
+    private fun denyRestrictedAccountData(): Boolean {
+        if (isRestrictedSettingsAccess()) {
+            requireView().showWarnPill(R.string.settings_restricted_action_unavailable)
+            return true
         }
+        return false
     }
 
 
@@ -229,7 +227,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 val requireNfc = SwitchModeStore.isNfcRequiredForDisable(ctx)
                 val locked = enabled && requireNfc
                 if (locked) {
-                    Toast.makeText(ctx, getString(R.string.toast_disable_requires_nfc), Toast.LENGTH_SHORT).show()
+                    requireView().showWarnPill(R.string.toast_disable_requires_nfc)
                 }
                 false
             }
@@ -241,7 +239,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
                 val locked = currentlyEnabled && requireNfc && !target
                 if (locked) {
-                    Toast.makeText(ctx, getString(R.string.toast_disable_requires_nfc), Toast.LENGTH_SHORT).show()
+                    requireView().showWarnPill(R.string.toast_disable_requires_nfc)
                     false
                 } else {
                     SwitchModeStore.setEnabled(ctx, target)
@@ -265,7 +263,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 val requireNfc = SwitchModeStore.isNfcRequiredForDisable(ctx)
                 val locked = enabled && requireNfc
                 if (locked) {
-                    Toast.makeText(ctx, getString(R.string.toast_disable_requires_nfc), Toast.LENGTH_SHORT).show()
+                    requireView().showWarnPill(R.string.toast_disable_requires_nfc)
                 }
                 false
             }
@@ -277,7 +275,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
                 val locked = currentlyEnabled && requireNfc && !target
                 if (locked) {
-                    Toast.makeText(ctx, getString(R.string.toast_disable_requires_nfc), Toast.LENGTH_SHORT).show()
+                    requireView().showWarnPill(R.string.toast_disable_requires_nfc)
                     false
                 } else {
                     SwitchModeStore.setEnabled(ctx, target)
@@ -369,7 +367,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                         startActivity(Intent(ctx, ManagePairedTagsActivity::class.java))
                     }.onFailure { error ->
                         AppLogStore.append(ctx, "NFC", "Failed to open Manage Paired Tags from Settings", error)
-                        Toast.makeText(ctx, R.string.error_open_manage_paired_tags, Toast.LENGTH_LONG).show()
+                        requireView().showWarnPill(R.string.error_open_manage_paired_tags)
                     }
                 }
                 true
@@ -388,7 +386,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
             val requireNfc = SwitchModeStore.isNfcRequiredForDisable(requireContext())
             val locked = enabled && requireNfc
             if (locked) {
-                Toast.makeText(requireContext(), getString(R.string.toast_disable_requires_nfc), Toast.LENGTH_SHORT).show()
+                requireView().showWarnPill(R.string.toast_disable_requires_nfc)
                 return@setOnPreferenceClickListener true
             }
 
@@ -444,8 +442,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
 
         findPreference<Preference>("pref_other_help_contact")?.setOnPreferenceClickListener {
-            // Dedicated support screen with a single email action
-            startActivity(Intent(requireContext(), SupportActivity::class.java))
+            // Dedicated diagnostic logs screen
+            startActivity(Intent(requireContext(), SupportLogActivity::class.java))
             true
         }
 
@@ -500,8 +498,20 @@ class SettingsFragment : PreferenceFragmentCompat() {
             true
         }
 
+        // Backup & restore screen itself: warn instead of dead navigation while locked.
+        findPreference<Preference>("screen_backup_restore")?.setOnPreferenceClickListener {
+            if (denyRestrictedAccountData()) {
+                true
+            } else {
+                false
+            }
+        }
+
         // Restore as standalone prefs
         findPreference<Preference>("pref_cloud_restore")?.setOnPreferenceClickListener {
+            if (denyRestrictedAccountData()) {
+                return@setOnPreferenceClickListener true
+            }
             backupFlows.cloudRestore()
             true
         }
@@ -512,6 +522,9 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
 
         findPreference<Preference>("pref_file_restore")?.setOnPreferenceClickListener {
+            if (denyRestrictedAccountData()) {
+                return@setOnPreferenceClickListener true
+            }
             backupFlows.fileRestore()
             true
         }
@@ -531,6 +544,9 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
         // Local in-app reset (clear ALL app data)
         findPreference<Preference>("pref_reset_app_data")?.setOnPreferenceClickListener {
+            if (denyRestrictedAccountData()) {
+                return@setOnPreferenceClickListener true
+            }
             backupFlows.confirmReset()
             true
         }
@@ -550,7 +566,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
             runCatching {
                 startActivity(Intent(Intent.ACTION_VIEW, storeUrl.toUri()))
             }.onFailure {
-                Toast.makeText(requireContext(), R.string.store_open_failed, Toast.LENGTH_SHORT).show()
+                requireView().showWarnPill(R.string.store_open_failed)
             }
             true
         }
@@ -560,7 +576,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
         updateCloudPrefVisibility()
         refreshEmergencyPref()
         refreshLockUi()
-        applyRestrictedAccountDataState()
 
         // Live updates from SwitchModeStore
         SwitchModeStore.ensureInit(ctx)
@@ -766,7 +781,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
         updateNextScheduleIndicator()
         updateGooglePrefSummary()
         updateCloudPrefVisibility()
-        applyRestrictedAccountDataState()
         refreshBlockedInboxPreferenceState()
         CustomAccentApplier.applyIfNeeded(requireActivity())
         tintCategories()
@@ -1228,7 +1242,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
     private fun showCustomColorPicker() {
         val ctx = requireContext()
         if (!PremiumManager.isPremium(ctx)) {
-            Toast.makeText(ctx, R.string.premium_required_for_theme, Toast.LENGTH_SHORT).show()
+            requireView().showWarnPill(R.string.premium_required_for_theme)
             return
         }
 
@@ -1391,13 +1405,13 @@ class SettingsFragment : PreferenceFragmentCompat() {
                         }
                         updateGooglePrefSummary()
                         updateCloudPrefVisibility()
-                        Toast.makeText(ctx, getString(R.string.settings_signed_out), Toast.LENGTH_SHORT).show()
+                        view?.showWarnPill(getString(R.string.settings_signed_out))
                     }
                 }
 
                 1 -> {
                     if (isRestrictedSettingsAccess()) {
-                        Toast.makeText(ctx, R.string.settings_restricted_action_unavailable, Toast.LENGTH_SHORT).show()
+                        requireView().showWarnPill(R.string.settings_restricted_action_unavailable)
                     } else {
                         confirmAction(
                             title = getString(R.string.settings_account_delete_confirm_title),
@@ -1416,7 +1430,8 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val ctx = requireContext()
         val user = runCatching { FirebaseAuth.getInstance().currentUser }.getOrNull()
         if (user == null) {
-            Toast.makeText(ctx, R.string.settings_google_logged_out, Toast.LENGTH_SHORT).show()
+                view?.showWarnPill(R.string.settings_google_logged_out)
+
             return
         }
 
@@ -1459,11 +1474,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
             hasGoogle -> reauthenticateForAccountDeletionWithGoogle()
             hasPassword -> showAccountDeletionPasswordDialog()
             else -> {
-                Toast.makeText(
-                    ctx,
-                    R.string.account_delete_reauth_provider_unsupported,
-                    Toast.LENGTH_LONG,
-                ).show()
+                view?.showWarnPill(R.string.account_delete_reauth_provider_unsupported)
             }
         }
     }
@@ -1480,7 +1491,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                     error,
                     at.saltyy.switchly.auth.AuthRuntime.AuthAction.GOOGLE_SIGN_IN,
                 )
-                Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show()
+                view?.showWarnPill(message)
             }
         }
     }
@@ -1526,7 +1537,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setOnClickListener {
                 val password = passwordInput.text?.toString().orEmpty()
                 if (password.isBlank()) {
-                    Toast.makeText(ctx, R.string.settings_account_password_required, Toast.LENGTH_SHORT).show()
+                    passwordInput.showWarnPill(R.string.settings_account_password_required)
                     return@setOnClickListener
                 }
 
@@ -1544,7 +1555,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                             error,
                             at.saltyy.switchly.auth.AuthRuntime.AuthAction.EMAIL_SIGN_IN,
                         )
-                        Toast.makeText(ctx, errorText, Toast.LENGTH_LONG).show()
+                        passwordInput.showWarnPill(errorText)
                     }
                 }
             }
@@ -1567,7 +1578,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 if (result.success) {
                     updateGooglePrefSummary()
                     updateCloudPrefVisibility()
-                    Toast.makeText(ctx, R.string.account_deleted, Toast.LENGTH_LONG).show()
+                    view?.showWarnPill(R.string.account_deleted)
                     return@runOnUiThread
                 }
 
@@ -1741,15 +1752,15 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 val password = passwordInput.text?.toString().orEmpty()
 
                 if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-                    Toast.makeText(ctx, getString(R.string.settings_account_invalid_email), Toast.LENGTH_SHORT).show()
+                    emailInput.showWarnPill(getString(R.string.settings_account_invalid_email))
                     return@setOnClickListener
                 }
                 if (password.isBlank()) {
-                    Toast.makeText(ctx, getString(R.string.settings_account_password_required), Toast.LENGTH_SHORT).show()
+                    passwordInput.showWarnPill(R.string.settings_account_password_required)
                     return@setOnClickListener
                 }
                 if (createAccount && password.length < 8) {
-                    Toast.makeText(ctx, resources.getQuantityString(R.plurals.settings_account_password_min_length, 8, 8), Toast.LENGTH_SHORT).show()
+                    passwordInput.showWarnPill(resources.getQuantityString(R.plurals.settings_account_password_min_length, 8, 8))
                     return@setOnClickListener
                 }
 
@@ -1808,7 +1819,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setOnClickListener {
                 val email = input.text?.toString()?.trim().orEmpty()
                 if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-                    Toast.makeText(ctx, getString(R.string.settings_account_invalid_email), Toast.LENGTH_SHORT).show()
+                    input.showWarnPill(getString(R.string.settings_account_invalid_email))
                     return@setOnClickListener
                 }
                 val positive = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
@@ -2046,7 +2057,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
 
         if (EmergencyBypassStore.hasUsedToday(ctx)) {
-            Toast.makeText(ctx, R.string.emergency_used_today, Toast.LENGTH_SHORT).show()
+            requireView().showWarnPill(R.string.emergency_used_today)
             return
         }
 
@@ -2102,14 +2113,14 @@ class SettingsFragment : PreferenceFragmentCompat() {
                         if (ok) {
                             SwitchModeStore.clearTemporary(ctx)
                             AppLogStore.append(ctx, "Emergency", "Emergency mode paused from Settings")
-                            Toast.makeText(ctx, getString(R.string.emergency_paused_toast), Toast.LENGTH_SHORT).show()
+                            requireView().showWarnPill(getString(R.string.emergency_paused_toast))
                         }
                     }
                     1 -> {
                         AppLogStore.append(ctx, "Emergency", "Emergency mode ended from Settings")
                         EmergencyBypassStore.cancel(ctx)
                         SwitchModeStore.clearTemporary(ctx)
-                        Toast.makeText(ctx, getString(R.string.emergency_ended_toast), Toast.LENGTH_SHORT).show()
+                        requireView().showWarnPill(getString(R.string.emergency_ended_toast))
                     }
                 }
             } else {
@@ -2118,16 +2129,16 @@ class SettingsFragment : PreferenceFragmentCompat() {
                         val ok = EmergencyBypassStore.resume(ctx)
                         if (ok) {
                             val remaining = EmergencyBypassStore.minutesRemaining(ctx).coerceAtLeast(1)
-                            SwitchModeStore.setTemporarilyDisabled(ctx, remaining * 60_000L)
+                            SwitchModeStore.setTemporarilyDisabled(ctx, remaining * 60_000L, isEmergency = true)
                             AppLogStore.append(ctx, "Emergency", "Emergency mode resumed from Settings with ${remaining}m remaining")
-                            Toast.makeText(ctx, getString(R.string.emergency_resumed_toast), Toast.LENGTH_SHORT).show()
+                            requireView().showWarnPill(getString(R.string.emergency_resumed_toast))
                         }
                     }
                     1 -> {
                         AppLogStore.append(ctx, "Emergency", "Emergency mode ended from Settings")
                         EmergencyBypassStore.cancel(ctx)
                         SwitchModeStore.clearTemporary(ctx)
-                        Toast.makeText(ctx, getString(R.string.emergency_ended_toast), Toast.LENGTH_SHORT).show()
+                        requireView().showWarnPill(getString(R.string.emergency_ended_toast))
                     }
                 }
             }
@@ -2143,8 +2154,9 @@ class SettingsFragment : PreferenceFragmentCompat() {
             .setTitle(getString(R.string.pref_emergency_title))
             .setMessage(getString(R.string.emergency_action_start_15))
             .setNegativeButton(getString(R.string.cancel), null)
-            .setPositiveButton(getString(R.string.ok)) { _, _ ->
-                triggerEmergencyUnlock()
+            .setPositiveButton(getString(R.string.ok)) { _, dialog ->
+                // Anchor to the dialog window so the pill is visible above it.
+                triggerEmergencyUnlock((dialog as? AlertDialog)?.window?.decorView)
             }
             .create()
 
@@ -2152,18 +2164,19 @@ class SettingsFragment : PreferenceFragmentCompat() {
         dialog.show()
     }
 
-    private fun triggerEmergencyUnlock() {
+    private fun triggerEmergencyUnlock(anchor: View? = null) {
 
         val ctx = requireContext()
         val minutes = 15
         val ok = EmergencyBypassStore.enableIfAllowed(ctx, minutes)
+        val pillAnchor = anchor ?: view ?: return
         if (ok) {
             AppLogStore.append(ctx, "Emergency", "Emergency mode started from Settings for ${minutes}m")
-            SwitchModeStore.setTemporarilyDisabled(ctx, minutes * 60_000L)
-            Toast.makeText(ctx, getString(R.string.emergency_enabled_toast, minutes), Toast.LENGTH_SHORT).show()
+            SwitchModeStore.setTemporarilyDisabled(ctx, minutes * 60_000L, isEmergency = true)
+            pillAnchor.showWarnPill(getString(R.string.emergency_enabled_toast, minutes))
             BlockingRuntime.ensureRunning(ctx)
         } else {
-            Toast.makeText(ctx, getString(R.string.emergency_used_today), Toast.LENGTH_SHORT).show()
+            pillAnchor.showWarnPill(getString(R.string.emergency_used_today))
         }
         refreshEmergencyPref()
     }
@@ -2217,13 +2230,13 @@ class SettingsFragment : PreferenceFragmentCompat() {
             if (!isAdded) return@listBackups
             if (loadingDialog.isShowing) loadingDialog.dismiss()
             if (!ok) {
-                Toast.makeText(activeCtx, getString(R.string.cloud_error_fmt, err ?: getString(R.string.error_unknown)), Toast.LENGTH_SHORT).show()
+                view?.showWarnPill(getString(R.string.cloud_error_fmt, err ?: getString(R.string.error_unknown)))
                 return@listBackups
             }
 
             val list = backups.orEmpty()
             if (list.isEmpty()) {
-                Toast.makeText(activeCtx, getString(R.string.cloud_no_backups), Toast.LENGTH_SHORT).show()
+                view?.showWarnPill(getString(R.string.cloud_no_backups))
                 return@listBackups
             }
 
@@ -2269,7 +2282,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
                     } else {
                         getString(R.string.cloud_error_fmt, lastError ?: getString(R.string.error_unknown))
                     }
-                    Toast.makeText(ctx, message, Toast.LENGTH_SHORT).show()
+                    view?.showWarnPill(message)
                 }
 
                 ids.forEach { id ->

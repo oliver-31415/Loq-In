@@ -55,6 +55,8 @@ import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.ui.EdgeToEdgeUtils
 import at.saltyy.switchly.ui.SegmentedToggleUi
 import at.saltyy.switchly.ui.ThemeUtils
+import at.saltyy.switchly.ui.showWarnPill
+import at.saltyy.switchly.ui.showWarnPillOnContent
 import at.saltyy.switchly.ui.dialog.showAccented
 import at.saltyy.switchly.ui.dialog.SwitchlyDialogOption
 import at.saltyy.switchly.ui.dialog.showSwitchlyOptionDialog
@@ -917,7 +919,7 @@ class AppUsageDetailActivity : AppCompatActivity() {
             .setPositiveButton(R.string.ok) { _, _ ->
                 val m = input.text?.toString()?.trim()?.toIntOrNull()
                 if (m == null || m < 0) {
-                    Toast.makeText(this, R.string.invalid_value, Toast.LENGTH_SHORT).show()
+                    input.showWarnPill(R.string.invalid_value)
                     return@setPositiveButton
                 }
                 applyDailyLimit(profile, pkg, m)
@@ -928,7 +930,7 @@ class AppUsageDetailActivity : AppCompatActivity() {
 
     private fun applyDailyLimit(profile: String, pkg: String, minutes: Int) {
         if (SwitchModeStore.isEnabled(this)) {
-            Toast.makeText(this, R.string.toast_disable_switchly_to_edit_app_limits, Toast.LENGTH_SHORT).show()
+            showWarnPillOnContent(R.string.toast_disable_switchly_to_edit_app_limits)
             return
         }
 

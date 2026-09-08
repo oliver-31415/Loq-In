@@ -52,6 +52,7 @@ import at.saltyy.switchly.theme.CustomAccentApplier
 import at.saltyy.switchly.ui.EdgeToEdgeUtils
 import at.saltyy.switchly.ui.SegmentedToggleUi
 import at.saltyy.switchly.ui.ThemeUtils
+import at.saltyy.switchly.ui.showWarnPill
 import at.saltyy.switchly.ui.dialog.SwitchlyInfoRow
 import at.saltyy.switchly.ui.dialog.showSwitchlyInfoDialog
 import at.saltyy.switchly.ui.dialog.styleSwitchlyDialogButtons
@@ -208,6 +209,8 @@ class InAppRulesActivity : AppCompatActivity() {
             if (!isChecked || updatingModeUi) return@addOnButtonCheckedListener
             if (EditingLockGuard.isLocked(this)) {
                 updateModeUi()
+                findViewById<View>(android.R.id.content)
+                    .showWarnPill(R.string.rules_tighten_only_active_message)
                 return@addOnButtonCheckedListener
             }
 
@@ -286,9 +289,10 @@ class InAppRulesActivity : AppCompatActivity() {
             if (modeToggle.checkedButtonId != selectedId) {
                 modeToggle.check(selectedId)
             }
-            modeToggle.isEnabled = !readOnly
-            modeBlockButton.isEnabled = !readOnly
-            modeAllowButton.isEnabled = !readOnly
+            // Stay tappable (dimmed): denied taps warn via pill instead of doing nothing.
+            modeToggle.isEnabled = true
+            modeBlockButton.isEnabled = true
+            modeAllowButton.isEnabled = true
             modeToggle.alpha = if (readOnly) 0.62f else 1f
             modeSummary.setText(
                 if (allowMode) R.string.in_app_rule_mode_allow_summary
@@ -777,7 +781,8 @@ class InAppRulesActivity : AppCompatActivity() {
             requestedSelected = !currentChecked,
         )
         val sw = SwitchCompat(this).apply {
-            isEnabled = prefKey != null && (!readOnly || canToggleWhileLocked)
+            // Stay tappable (dimmed): denied taps warn via pill instead of doing nothing.
+            isEnabled = prefKey != null
             alpha = when {
                 prefKey == null -> 0.52f
                 readOnly && !canToggleWhileLocked -> 0.45f
@@ -798,6 +803,10 @@ class InAppRulesActivity : AppCompatActivity() {
                             requestedSelected = checked,
                         )
                     ) {
+                        if (EditingLockGuard.isLocked(this@InAppRulesActivity)) {
+                            this@InAppRulesActivity.findViewById<View>(android.R.id.content)
+                                .showWarnPill(R.string.rules_tighten_only_active_message)
+                        }
                         button.setOnCheckedChangeListener(null)
                         button.isChecked = before
                         button.post { render() }

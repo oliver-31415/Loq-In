@@ -228,10 +228,22 @@ class ScheduleReceiver : BroadcastReceiver() {
 
                     val active = appliesToday && timeOk && wifiConnected && ssidMatches(ssid, s.wifiSsid)
                     if (active) {
+                        trackConnActivePeriod(ctx, s.id, nowMs)
+                    }
+                    if (s.action == ScheduleStore.Action.DISCONNECT_ENABLE || s.action == ScheduleStore.Action.DISCONNECT_DISABLE) {
+                        if (active) {
+                            ScheduleRuntimeStore.setConnArmed(ctx, s.id, true)
+                        }
+                        false
+                    } else if (active) {
                         if (isRangeAction(s.action)) true
                         else shouldFireOneShotConn(ctx, s, token = "WIFI:${s.wifiSsid}:${s.action.name}")
                     } else {
-                        ScheduleRuntimeStore.clearLastFiredToken(ctx, s.id)
+                        val briefBlip = connScheduleTimeValid(s, nowMinutes, todayBit, todayYmd) &&
+                            nowMs - ScheduleRuntimeStore.getLastConnActiveMs(ctx, s.id) < CONN_EXIT_GRACE_MS
+                        if (!briefBlip) {
+                            ScheduleRuntimeStore.clearLastFiredToken(ctx, s.id)
+                        }
                         false
                     }
                 }
@@ -253,10 +265,22 @@ class ScheduleReceiver : BroadcastReceiver() {
                         currentAddress = btAddr
                     )
                     if (active) {
+                        trackConnActivePeriod(ctx, s.id, nowMs)
+                    }
+                    if (s.action == ScheduleStore.Action.DISCONNECT_ENABLE || s.action == ScheduleStore.Action.DISCONNECT_DISABLE) {
+                        if (active) {
+                            ScheduleRuntimeStore.setConnArmed(ctx, s.id, true)
+                        }
+                        false
+                    } else if (active) {
                         if (isRangeAction(s.action)) true
                         else shouldFireOneShotConn(ctx, s, token = "BT:${s.btDeviceAddress ?: s.btDeviceName}:${s.action.name}")
                     } else {
-                        ScheduleRuntimeStore.clearLastFiredToken(ctx, s.id)
+                        val briefBlip = connScheduleTimeValid(s, nowMinutes, todayBit, todayYmd) &&
+                            nowMs - ScheduleRuntimeStore.getLastConnActiveMs(ctx, s.id) < CONN_EXIT_GRACE_MS
+                        if (!briefBlip) {
+                            ScheduleRuntimeStore.clearLastFiredToken(ctx, s.id)
+                        }
                         false
                     }
                 }
@@ -299,11 +323,24 @@ class ScheduleReceiver : BroadcastReceiver() {
 
         // No matches: handle exit actions for range types
         if (matches.isEmpty()) {
+            val previousActiveRangeId = ScheduleRuntimeStore.getActiveRangeScheduleId(ctx)
+            val previousActiveRange = schedules.firstOrNull { it.id == previousActiveRangeId }
+            // A connection schedule that was active moments ago but evaluates inactive on
+            // this tick is almost always a connectivity blip (roam, DHCP, redacted SSID),
+            // not a real exit. Keep override/ownership/tokens until the inactivity is
+            // sustained; genuine day/time-window ends still exit immediately.
+            val prevConnBlip = previousActiveRange != null &&
+                isConnSchedule(previousActiveRange) &&
+                connScheduleTimeValid(previousActiveRange, nowMinutes, todayBit, todayYmd) &&
+                nowMs - ScheduleRuntimeStore.getLastConnActiveMs(ctx, previousActiveRange.id) < CONN_EXIT_GRACE_MS
+            if (prevConnBlip) {
+                dbg("Previous conn schedule briefly inactive -> keep override/ownership (id=${previousActiveRange?.id})")
+                updateNextAlarmAndNotifyIfChanged(ctx)
+                return
+            }
             // Leaving any active schedule zone -> manual override no longer applies.
             // Keep the previous value for exit handling below.
             val manualOverrideWasActive = ScheduleRuntimeStore.isManualOverrideActive(ctx)
-            val previousActiveRangeId = ScheduleRuntimeStore.getActiveRangeScheduleId(ctx)
-            val previousActiveRange = schedules.firstOrNull { it.id == previousActiveRangeId }
             if (manualOverrideWasActive) {
                 ScheduleRuntimeStore.setManualOverrideActive(ctx, false)
                 ScheduleRuntimeStore.clearManualOverrideScheduleId(ctx)
@@ -329,6 +366,22 @@ class ScheduleReceiver : BroadcastReceiver() {
                     SOURCE_TIME -> true
                     else -> false
                 }
+
+            for (s in schedules) {
+                if (!s.enabled) continue
+                if (s.action == ScheduleStore.Action.DISCONNECT_ENABLE || s.action == ScheduleStore.Action.DISCONNECT_DISABLE) {
+                    val appliesDisconnect = when {
+                        !s.wifiSsid.isNullOrBlank() -> hardWifiDisconnect && ScheduleRuntimeStore.isConnArmed(ctx, s.id)
+                        (!s.btDeviceName.isNullOrBlank() || !s.btDeviceAddress.isNullOrBlank()) -> (hasBtStateEvent && !eventBtConnected) && ScheduleRuntimeStore.isConnArmed(ctx, s.id)
+                        else -> false
+                    }
+                    if (appliesDisconnect) {
+                        ScheduleRuntimeStore.setConnArmed(ctx, s.id, false)
+                        val fireAction = if (s.action == ScheduleStore.Action.DISCONNECT_ENABLE) ScheduleStore.Action.ENABLE else ScheduleStore.Action.DISABLE
+                        applySchedule(ctx, s.copy(action = fireAction), if (!s.wifiSsid.isNullOrBlank()) SOURCE_WIFI else SOURCE_BT)
+                    }
+                }
+            }
 
             if (shouldExitOnce) {
                 // ENABLE_AND_DISABLE => disable on exit if we owned enable
@@ -423,6 +476,25 @@ class ScheduleReceiver : BroadcastReceiver() {
             ScheduleRuntimeStore.clearManualOverrideScheduleId(ctx)
             if (ScheduleRuntimeStore.getManualSchedulePauseScheduleId(ctx) == manualOverrideScheduleId) {
                 ScheduleRuntimeStore.setManualSchedulePauseActive(ctx, false)
+            }
+        }
+
+        // A manual turn-off vetoes connection schedules for the rest of the current
+        // active period: only a fresh connect edge (new period) may re-assert them.
+        // This covers cases the flag-based override misses (e.g. toggling off before
+        // the schedule ever matched in this process lifetime).
+        if (isConnSchedule(target)) {
+            val vetoed = ScheduleRuntimeStore.getManualDisableMs(ctx) >
+                ScheduleRuntimeStore.getConnActiveSinceMs(ctx, target.id)
+            if (vetoed) {
+                dbg("Manual disable during current conn active period -> skip (id=${target.id}, source=$source)")
+                AppLogStore.append(
+                    ctx,
+                    "Schedule",
+                    "schedule_skipped id=${target.id} name=${ScheduleInsights.scheduleDisplayName(target)} action=${target.action.name} source=$source reason=manual_disabled_period"
+                )
+                updateNextAlarmAndNotifyIfChanged(ctx)
+                return
             }
         }
 
@@ -693,6 +765,14 @@ class ScheduleReceiver : BroadcastReceiver() {
                 if (baseEnabledBefore) true to false else false to baseEnabledBefore
             }
 
+            ScheduleStore.Action.DISCONNECT_ENABLE -> {
+                if (!baseEnabledBefore) true to true else false to baseEnabledBefore
+            }
+
+            ScheduleStore.Action.DISCONNECT_DISABLE -> {
+                if (baseEnabledBefore) true to false else false to baseEnabledBefore
+            }
+
             ScheduleStore.Action.TOGGLE -> {
                 true to !baseEnabledBefore
             }
@@ -740,14 +820,14 @@ class ScheduleReceiver : BroadcastReceiver() {
             // One-shot schedules: only set ownership when we actually changed state.
             if (stateActuallyChanged) {
                 when (s.action) {
-                    ScheduleStore.Action.ENABLE -> {
+                    ScheduleStore.Action.ENABLE, ScheduleStore.Action.DISCONNECT_ENABLE -> {
                         if (baseEnabledAfter) {
                             ScheduleRuntimeStore.setEnabledBySchedule(ctx, true)
                             ScheduleRuntimeStore.setDisabledBySchedule(ctx, false)
                         }
                     }
 
-                    ScheduleStore.Action.DISABLE -> {
+                    ScheduleStore.Action.DISABLE, ScheduleStore.Action.DISCONNECT_DISABLE -> {
                         if (!baseEnabledAfter) {
                             ScheduleRuntimeStore.setDisabledBySchedule(ctx, true)
                             ScheduleRuntimeStore.setEnabledBySchedule(ctx, false)
@@ -819,9 +899,9 @@ class ScheduleReceiver : BroadcastReceiver() {
 
         if (!stateActuallyChanged && !profileChanged) {
             val noopReason = when (s.action) {
-                ScheduleStore.Action.ENABLE, ScheduleStore.Action.ENABLE_AND_DISABLE ->
+                ScheduleStore.Action.ENABLE, ScheduleStore.Action.ENABLE_AND_DISABLE, ScheduleStore.Action.DISCONNECT_ENABLE ->
                     if (baseEnabledAfter) "already_enabled" else "unchanged"
-                ScheduleStore.Action.DISABLE, ScheduleStore.Action.DISABLE_AND_ENABLE ->
+                ScheduleStore.Action.DISABLE, ScheduleStore.Action.DISABLE_AND_ENABLE, ScheduleStore.Action.DISCONNECT_DISABLE ->
                     if (!baseEnabledAfter) "already_disabled" else "unchanged"
                 ScheduleStore.Action.TOGGLE -> "unchanged"
             }
@@ -896,7 +976,9 @@ class ScheduleReceiver : BroadcastReceiver() {
     private fun actionPriority(action: ScheduleStore.Action): Int = when (action) {
         ScheduleStore.Action.ENABLE,
         ScheduleStore.Action.DISABLE,
-        ScheduleStore.Action.TOGGLE -> 1
+        ScheduleStore.Action.TOGGLE,
+        ScheduleStore.Action.DISCONNECT_ENABLE,
+        ScheduleStore.Action.DISCONNECT_DISABLE -> 1
         ScheduleStore.Action.ENABLE_AND_DISABLE,
         ScheduleStore.Action.DISABLE_AND_ENABLE -> 0
     }
@@ -927,6 +1009,39 @@ class ScheduleReceiver : BroadcastReceiver() {
             ?.takeIf { it.matches(Regex("""(?i)([0-9a-f]{2}:){5}[0-9a-f]{2}""")) }
             ?.uppercase()
             .orEmpty()
+
+    private fun isConnSchedule(s: ScheduleStore.Schedule): Boolean {
+        return !s.wifiSsid.isNullOrBlank() ||
+            !s.btDeviceName.isNullOrBlank() ||
+            !s.btDeviceAddress.isNullOrBlank()
+    }
+
+    private fun trackConnActivePeriod(ctx: Context, scheduleId: Int, nowMs: Long) {
+        val lastActive = ScheduleRuntimeStore.getLastConnActiveMs(ctx, scheduleId)
+        if (lastActive <= 0L || nowMs - lastActive > CONN_EXIT_GRACE_MS) {
+            // Fresh connect edge (or first sighting): a new continuous active period begins.
+            ScheduleRuntimeStore.setConnActiveSinceMs(ctx, scheduleId, nowMs)
+        }
+        ScheduleRuntimeStore.setLastConnActiveMs(ctx, scheduleId, nowMs)
+    }
+
+    private fun connScheduleTimeValid(
+        s: ScheduleStore.Schedule,
+        nowMinutes: Int,
+        todayBit: Int,
+        todayYmd: Int
+    ): Boolean {
+        val appliesToday = when (s.type) {
+            ScheduleStore.Type.WEEKLY -> (s.daysMask and todayBit) != 0
+            ScheduleStore.Type.ONE_TIME ->
+                (s.startDate > 0 && s.endDate > 0 && todayYmd in s.startDate..s.endDate)
+        }
+        if (!appliesToday) {
+            return false
+        }
+        return (s.startMinutes == 0 && s.endMinutes >= 1439) ||
+            inTimeRange(nowMinutes, s.startMinutes, s.endMinutes)
+    }
 
     private fun inTimeRange(nowMin: Int, startMin: Int, endMin: Int): Boolean {
         if (endMin == startMin) {
@@ -1149,5 +1264,11 @@ class ScheduleReceiver : BroadcastReceiver() {
         private const val SOURCE_LOCATION = "location"
         private const val LOCATION_DUPLICATE_TRANSITION_WINDOW_MS = 60_000L
         private const val SINGLE_FIRE_WINDOW_MS = 90_000L
+        // Connection schedules (Wi-Fi/BT) re-evaluate on every tick. Brief connectivity
+        // blips (roaming, DHCP renew, momentarily redacted SSID) must not wipe steady-state
+        // memory (fired tokens, manual override, ownership) or the next tick re-applies
+        // the schedule as if it were a fresh connect. Exits only count after sustained
+        // inactivity; real day/time-window ends still exit immediately.
+        private const val CONN_EXIT_GRACE_MS = 60_000L
     }
 }

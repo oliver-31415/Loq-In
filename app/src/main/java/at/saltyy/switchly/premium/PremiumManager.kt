@@ -22,10 +22,11 @@ package at.saltyy.switchly.premium
 import android.app.Activity
 import android.content.Context
 import android.util.Log
-import android.widget.Toast
 import androidx.core.content.edit
 import at.saltyy.switchly.BuildConfig
 import at.saltyy.switchly.R
+import at.saltyy.switchly.ui.showWarnPillAnywhere
+import at.saltyy.switchly.ui.showWarnPillOnContent
 
 /**
  * Central place for Premium status and purchase routing.
@@ -250,7 +251,7 @@ object PremiumManager {
 
             else -> {
                 val message = activity.getString(R.string.premium_unavailable_offline_build)
-                Toast.makeText(activity, message, Toast.LENGTH_LONG).show()
+                activity.showWarnPillOnContent(message)
                 onResult?.invoke(false, message)
             }
         }
@@ -267,7 +268,7 @@ object PremiumManager {
         when {
             BuildConfig.SWITCHLY_PLAY_BILLING_ENABLED -> {
                 PremiumRuntime.refreshFromPlay(context, force = true)
-                Toast.makeText(context, R.string.premium_checking_purchases, Toast.LENGTH_SHORT).show()
+                context.showWarnPillAnywhere(R.string.premium_checking_purchases)
             }
 
             BuildConfig.SWITCHLY_EXTERNAL_PAYMENTS_ENABLED -> {
@@ -277,12 +278,12 @@ object PremiumManager {
                         error != null -> R.string.premium_external_sign_in_to_restore
                         else -> R.string.premium_external_entitlement_missing
                     }
-                    Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                    context.showWarnPillAnywhere(message)
                 }
             }
 
             else -> {
-                Toast.makeText(context, R.string.premium_unavailable_offline_build, Toast.LENGTH_LONG).show()
+                context.showWarnPillAnywhere(R.string.premium_unavailable_offline_build)
             }
         }
     }

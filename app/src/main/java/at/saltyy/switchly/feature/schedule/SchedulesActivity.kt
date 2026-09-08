@@ -105,6 +105,7 @@ import at.saltyy.switchly.ui.EdgeToEdgeUtils
 import at.saltyy.switchly.ui.SwitchlyDropdownAdapter
 import at.saltyy.switchly.ui.ThemeUtils
 import at.saltyy.switchly.ui.applySwitchlyStyle
+import at.saltyy.switchly.ui.showWarnPill
 import at.saltyy.switchly.ui.attachEditDeleteSwipe
 import at.saltyy.switchly.ui.updateSelectionSubtitle
 import at.saltyy.switchly.ui.dialog.showAccented
@@ -286,6 +287,19 @@ class SchedulesActivity : AppCompatActivity() {
         return isScheduleAutomationAllowed() && !isScheduleEditingLocked()
     }
 
+    /**
+     * True when the edit must not proceed. Warns via pill when the reason is
+     * active protection (stays silent when schedule automation itself is off).
+     */
+    private fun denyScheduleEditWithPopover(): Boolean {
+        if (isScheduleEditingLocked()) {
+            findViewById<View>(android.R.id.content)
+                .showWarnPill(R.string.edit_locked_manage_schedules)
+            return true
+        }
+        return !isScheduleAutomationAllowed()
+    }
+
     private fun currentAutomationModeLabel(): String {
         return when (AutomationModeStore.getMode(this)) {
             AutomationModeStore.Mode.SCHEDULE -> getString(R.string.pref_mode_schedule_title)
@@ -367,7 +381,7 @@ class SchedulesActivity : AppCompatActivity() {
 
         adapter = ScheduleAdapter(
             onToggleEnabled = { schedule, enabled ->
-                if (canEditSchedules()) {
+                if (!denyScheduleEditWithPopover()) {
                     val list = ScheduleStore.getAll(this).map {
                         if (it.id == schedule.id) it.copy(enabled = enabled) else it
                     }
@@ -387,7 +401,7 @@ class SchedulesActivity : AppCompatActivity() {
             onToggleSelection = { id -> toggleSelection(id) },
             onEnterSelection = { preselectId -> enterSelectionMode(preselectId) },
             onEdit = { schedule ->
-                if (canEditSchedules()) {
+                if (!denyScheduleEditWithPopover()) {
                     showScheduleDialog(existing = schedule, preselectedMode = null)
                 }
             },
@@ -408,7 +422,7 @@ class SchedulesActivity : AppCompatActivity() {
         )
 
         val addScheduleClick = View.OnClickListener {
-            if (!canEditSchedules()) {
+            if (denyScheduleEditWithPopover()) {
                 return@OnClickListener
             }
             showNewScheduleTypeDialog()
@@ -503,13 +517,14 @@ class SchedulesActivity : AppCompatActivity() {
             (this as? com.google.android.material.floatingactionbutton.FloatingActionButton)?.backgroundTintList =
                 ColorStateList.valueOf(AccentColor.getAccentColorInt(this@SchedulesActivity))
             visibility = if (isSelectionMode) View.GONE else View.VISIBLE
-            isEnabled = canInteract
-            isClickable = canInteract
+            // Stay tappable (dimmed) so locked taps warn via popover instead of doing nothing.
+            isEnabled = true
+            isClickable = true
             alpha = if (canInteract) 1f else 0.45f
         }
         findViewById<View>(R.id.btnEmptyAddSchedule)?.apply {
-            isEnabled = canInteract
-            isClickable = canInteract
+            isEnabled = true
+            isClickable = true
             alpha = if (canInteract) 1f else 0.45f
             (this as? MaterialButton)?.apply {
                 val accentColor = AccentColor.getAccentColorInt(this@SchedulesActivity)
@@ -1748,6 +1763,8 @@ class SchedulesActivity : AppCompatActivity() {
         val btnUseCurrentLocation = view.findViewById<MaterialButton>(R.id.btnUseCurrentLocation)
         val btnOpenMapPicker = view.findViewById<MaterialButton>(R.id.btnOpenMapPicker)
         val progressLocationSearchInline = view.findViewById<ProgressBar>(R.id.progressLocationSearchInline)
+        progressLocationSearchInline.indeterminateTintList =
+            android.content.res.ColorStateList.valueOf(AccentColor.getAccentColorInt(this))
         val tvLocationSearchStatusInline = view.findViewById<TextView>(R.id.tvLocationSearchStatusInline)
         val rvLocationResultsInline = view.findViewById<RecyclerView>(R.id.rvLocationResultsInline)
         val chipRadius100 = view.findViewById<Chip>(R.id.chipRadius100)
@@ -1858,9 +1875,24 @@ class SchedulesActivity : AppCompatActivity() {
         listOf(chipRadius100, chipRadius250, chipRadius500).forEach(::applyRadiusChipColors)
 
         val dayButtons = listOf(chipMon, chipTue, chipWed, chipThu, chipFri, chipSat, chipSun)
-        val surfaceColor = MaterialColors.getColor(view, com.google.android.material.R.attr.colorSurface, Color.LTGRAY)
-        val onSurfaceColor = MaterialColors.getColor(view, com.google.android.material.R.attr.colorOnSurface, Color.DKGRAY)
+        val surfaceColor = ContextCompat.getColor(this, R.color.foqos_surface)
+        val onSurfaceColor = ContextCompat.getColor(this, R.color.foqos_on_surface)
         val onAccent = if (ColorUtils.calculateLuminance(accent) > 0.5) Color.BLACK else Color.WHITE
+
+        // Time tiles + preset pills must stay neutral surface: set in code so no
+        // theme tonal default (green secondary container) can bleed through.
+        // Ripple is set explicitly too: the default ripple was leaving a green wash.
+        val neutralSurface = ColorStateList.valueOf(surfaceColor)
+        val pressRipple = ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 0x3D))
+        cardStartTime.setCardBackgroundColor(surfaceColor)
+        cardEndTime.setCardBackgroundColor(surfaceColor)
+        cardStartDate.setCardBackgroundColor(surfaceColor)
+        cardEndDate.setCardBackgroundColor(surfaceColor)
+        listOf(chipWeekdays, chipWeekend, chipToday).forEach { preset ->
+            preset.backgroundTintList = neutralSurface
+            preset.setTextColor(onSurfaceColor)
+            preset.rippleColor = pressRipple
+        }
 
         fun setDayButtonChecked(btn: MaterialButton, checked: Boolean) {
             btn.isChecked = checked
@@ -3265,9 +3297,9 @@ class SchedulesActivity : AppCompatActivity() {
             .setNegativeButton(R.string.cancel, null)
             .create()
 
+        dialog.applySwitchlyDialogWidth(0.94f)
         dialog.setOnShowListener {
             dialog.styleSwitchlyDialogButtons()
-            dialog.applySwitchlyDialogWidth(0.94f)
             val btnPos = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
             val btnNeg = dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
             btnPos.setText(if (existing == null) R.string.create else R.string.save)
@@ -3873,7 +3905,16 @@ private class ScheduleViewHolder(
 
     init {
         switchEnabled.setOnCheckedChangeListener { _, isChecked ->
-            if (!binding && !isSelectionMode() && canInteract()) current?.let { onToggleEnabled(it, isChecked) }
+            if (!binding && !isSelectionMode()) {
+                val s = current
+                if (s != null && !canInteract()) {
+                    // Revert the visual toggle; onToggleEnabled warns via popover.
+                    binding = true
+                    switchEnabled.isChecked = s.enabled
+                    binding = false
+                }
+                s?.let { onToggleEnabled(it, isChecked) }
+            }
         }
 
         cardRoot.setOnClickListener {
@@ -3916,7 +3957,9 @@ private class ScheduleViewHolder(
 
         binding = true
         switchEnabled.isChecked = s.enabled
-        switchEnabled.isEnabled = canInteractNow && !isSelectionMode()
+        // Stay tappable while locked (dimmed via alpha below): denied taps warn
+        // via popover in onToggleEnabled instead of silently doing nothing.
+        switchEnabled.isEnabled = !isSelectionMode()
         tintEnabledSwitch()
         binding = false
 
@@ -3925,8 +3968,9 @@ private class ScheduleViewHolder(
         checkSelect.visibility = if (selecting) View.VISIBLE else View.GONE
         checkSelect.isChecked = selected
         btnTest.visibility = if (selecting) View.GONE else View.VISIBLE
-        cardRoot.isClickable = canInteractNow || selecting
-        cardRoot.isLongClickable = canInteractNow
+        // Stay tappable while locked: taps route to onEdit, which warns via popover.
+        cardRoot.isClickable = true
+        cardRoot.isLongClickable = true
         val ctx = itemView.context
         val accent = AccentColor.getAccentColorInt(ctx)
         if (selected) {

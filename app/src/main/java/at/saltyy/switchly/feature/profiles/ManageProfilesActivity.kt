@@ -43,6 +43,7 @@ import at.saltyy.switchly.data.prefs.InAppLimitStore
 import at.saltyy.switchly.data.prefs.InAppRuleStore
 import at.saltyy.switchly.data.prefs.SurfaceLimitStore
 import at.saltyy.switchly.data.prefs.ProfileRuleModeStore
+import at.saltyy.switchly.data.prefs.TempPauseStore
 import at.saltyy.switchly.data.prefs.WebsiteRuleModeStore
 import at.saltyy.switchly.data.prefs.ProfileStore
 import at.saltyy.switchly.data.prefs.SwitchModeStore
@@ -408,6 +409,7 @@ class ManageProfilesActivity : AppCompatActivity() {
             InAppLimitStore.copyProfile(this, name, newName)
             SurfaceLimitStore.copyProfile(this, name, newName)
             InAppRuleStore.copyProfile(this, name, newName)
+            TempPauseStore.copyProfile(this, name, newName)
             snackRoot().showSwitchlyStatus(getString(R.string.profile_duplicated, newName))
             refresh()
         } else {

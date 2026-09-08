@@ -56,6 +56,27 @@
     <string name="app_limit_per_visit_hint">Minutes per visit</string>
     <string name="app_limit_blank_hint">Leave a field blank to disable that limit.</string>
     <string name="app_limit_clear_all">Clear limits</string>
+    <string name="app_limit_section_time">Screen time</string>
+    <string name="app_limit_section_opens">App opens</string>
+    <string name="app_limit_section_visit">Single session cap</string>
+    <string name="app_limit_time_subtitle">Total minutes per day</string>
+    <string name="app_limit_opens_subtitle">How often the app can be opened per day</string>
+    <string name="app_limit_visit_subtitle">Longest single session</string>
+    <string name="app_limit_save">Save limits</string>
+    <string name="app_limit_remove">Remove limits</string>
+    <string name="app_limit_remove_confirm_title">Remove limits?</string>
+    <string name="app_limit_remove_confirm_message">This clears all limits for %1$s and resets today’s counters.</string>
+    <string name="app_limit_sentence_none">No limits set. This app can be opened without restrictions.</string>
+    <string name="app_limit_sentence_time_fmt">Allow up to %1$d min/day</string>
+    <string name="app_limit_sentence_split_fmt">, split across at most %1$d opens</string>
+    <string name="app_limit_sentence_visit_fmt"> (max %1$d min per visit)</string>
+    <string name="app_limit_sentence_opens_only_fmt">Up to %1$d opens per day</string>
+    <string name="app_limit_sentence_visit_only_fmt">Up to %1$d min per visit</string>
+    <string name="app_limit_error_required">Enter a value</string>
+    <string name="app_limit_error_not_number">Enter a whole number</string>
+    <string name="app_limit_error_range_minutes_fmt">Must be between 1 and %1$d minutes</string>
+    <string name="app_limit_error_range_attempts_fmt">Must be between 1 and %1$d opens</string>
+    <string name="app_limit_visit_exceeds_daily_fmt">Visit limit (%1$d min) is higher than daily limit (%2$d min).</string>
 
     <!-- ====================================================== -->
     <!-- Session limits -->
@@ -129,7 +150,7 @@
     <!-- ====================================================== -->
     <string name="statistics_usage_title">App &amp; website usage</string>
     <string name="statistics_usage_info_title">App &amp; website usage</string>
-    <string name="statistics_usage_info_body">Each app row can show:\n• Usage time\n• App opens\n• Blocks\n\nUse the limits action to edit daily or session limits. Switchly focuses on protection-related activity and is not a complete Digital Wellbeing replacement.</string>
+    <string name="statistics_usage_info_body">Each row can show:\n• Usage time\n• App opens\n• Blocks\n\nNote: Website usage is only tracked while Switchly blocking is active.\n\nUse the limits action to edit daily or session limits. Switchly focuses on protection-related activity and is not a complete Digital Wellbeing replacement.</string>
     <string name="stats_range_today">Today</string>
     <string name="stats_range_week">Week</string>
     <string name="stats_range_month">Month</string>
@@ -147,12 +168,13 @@
     <string name="usage_access_needed_desc">Please enable "App usage data" access for Switchly to show your screen time stats.</string>
     <string name="usage_open_settings">Open settings</string>
     <string name="usage_row_tap_hint_app">Tap an app row to open details.</string>
-    <string name="usage_row_tap_hint_website">Tap a website row to open details.</string>
+    <string name="usage_row_tap_hint_website">Tracked while blocking is active · Tap a row for details</string>
     <string name="usage_open_details">Details ›</string>
     <string name="usage_row_tap_hint">Tap an app row to open details.</string>
     <string name="usage_row_open_details_a11y">%1$s, %2$s, %3$s. Double tap for details.</string>
     <string name="usage_row_basic_a11y">%1$s, %2$s, %3$s.</string>
     <string name="usage_total_screen_time">Total Screen Time</string>
+    <string name="usage_total_screen_time_web">Total website time (while blocking active)</string>
     <string name="usage_app_placeholder">App</string>
     <string name="statistics_usage_subtitle_web">Websites</string>
     <string name="usage_launch_stats_title">Opens</string>
@@ -323,7 +345,7 @@
     <string name="usage_apps_no_data">No tracked app usage yet. Switchly records app usage while Accessibility is enabled.</string>
     <string name="usage_apps_no_blocked">No apps are configured in the active profile yet.</string>
     <string name="usage_websites_no_accessibility">Website tracking needs Switchly Accessibility enabled.</string>
-    <string name="usage_websites_no_data">No website data yet. Open a website in a supported browser (Chrome, Brave, Edge, Firefox, Ecosia…) while Switchly Accessibility is enabled.</string>
+    <string name="usage_websites_no_data">No website data yet. Website usage is tracked while Switchly blocking is active in supported browsers (Chrome, Brave, Edge, Firefox, Ecosia…).</string>
     <string name="usage_websites_no_blocked">No website rules are configured in the active profile yet.</string>
 
     <!-- ====================================================== -->

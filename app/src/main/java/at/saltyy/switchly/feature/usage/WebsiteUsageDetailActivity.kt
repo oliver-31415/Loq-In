@@ -46,6 +46,8 @@ import at.saltyy.switchly.feature.stats.StatsFormat
 import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.ui.EdgeToEdgeUtils
 import at.saltyy.switchly.ui.SegmentedToggleUi
+import at.saltyy.switchly.ui.showWarnPill
+import at.saltyy.switchly.ui.showWarnPillOnContent
 import at.saltyy.switchly.ui.widgets.UsageDetailChartView
 import at.saltyy.switchly.ui.ThemeUtils
 import at.saltyy.switchly.ui.dialog.showAccented
@@ -720,7 +722,7 @@ class WebsiteUsageDetailActivity : AppCompatActivity() {
             .setPositiveButton(R.string.ok) { _, _ ->
                 val m = input.text?.toString()?.trim()?.toIntOrNull()
                 if (m == null || m < 0) {
-                    Toast.makeText(this, R.string.invalid_value, Toast.LENGTH_SHORT).show()
+                    input.showWarnPill(R.string.invalid_value)
                     return@setPositiveButton
                 }
                 applyDailyLimit(domain, m)
@@ -774,7 +776,7 @@ class WebsiteUsageDetailActivity : AppCompatActivity() {
             if (removeLimit[0]) DomainLimitStore.clear(this, domain)
             if (removeBlock[0]) DomainBlockStore.removeDomain(this, domain)
 
-            Toast.makeText(this, R.string.website_deleted_toast, Toast.LENGTH_SHORT).show()
+            showWarnPillOnContent(R.string.website_deleted_toast)
             finish()
         }
     }

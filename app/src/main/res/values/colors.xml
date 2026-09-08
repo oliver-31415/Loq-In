@@ -33,6 +33,7 @@
          SEMANTIC STATES
          ========================= -->
     <color name="status_ok">#FF2E8B57</color>
+    <color name="status_warning">#FFB26A00</color>
     <color name="status_error">#FFD32F2F</color>
     <color name="status_neutral">#FF90A4AE</color>
     <color name="status_border">#3390A4AE</color>
@@ -56,11 +57,11 @@
     <color name="unavailable_chip_text">#FF39424D</color>
 
     <!-- =========================
-         WIDGET SCANNER
+         WIDGET SCANNER / FOQOS RESTYLE
          ========================= -->
-    <color name="widget_scanner_surface">#4D111827</color>
-    <color name="widget_scanner_button_surface">#66111827</color>
-    <color name="widget_scanner_title">#FFFFFFFF</color>
-    <color name="widget_scanner_text">#E6FFFFFF</color>
+    <color name="widget_scanner_surface">@color/foqos_surface</color>
+    <color name="widget_scanner_button_surface">@color/foqos_surface_variant</color>
+    <color name="widget_scanner_title">@color/foqos_on_surface</color>
+    <color name="widget_scanner_text">@color/foqos_on_surface_variant</color>
 
 </resources>

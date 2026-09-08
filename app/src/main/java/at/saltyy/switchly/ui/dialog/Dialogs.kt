@@ -129,12 +129,14 @@ fun Context.showSwitchlyInputDialog(
         .setPositiveButton(confirmText) { _, _ -> onConfirm(input.text.toString().trim()) }
         .setNegativeButton(R.string.cancel, null)
         .create()
+    // Width (and soft-input mode) must be set before show: changing the window
+    // size in OnShow lays out twice and makes the dialog visibly jump.
+    dialog.applySwitchlyDialogWidth(0.90f)
+    dialog.window?.setSoftInputMode(
+        android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE
+    )
     dialog.setOnShowListener {
         dialog.styleSwitchlyDialogButtons()
-        dialog.applySwitchlyDialogWidth(0.90f)
-        dialog.window?.setSoftInputMode(
-            android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE
-        )
         input.requestFocus()
     }
     dialog.show()
@@ -180,9 +182,9 @@ fun Context.showSwitchlyInfoDialog(
             .setMessage(simpleRow?.value ?: emptyMessage ?: "")
             .setPositiveButton(positiveText, null)
             .create()
+        dialog.applySwitchlyDialogWidth(0.90f)
         dialog.setOnShowListener {
             dialog.styleSwitchlyDialogButtons()
-            dialog.applySwitchlyDialogWidth(0.90f)
         }
         dialog.show()
         return dialog
@@ -241,9 +243,9 @@ fun Context.showSwitchlyInfoDialog(
         .setView(scroll)
         .setPositiveButton(positiveText, null)
         .create()
+    dialog.applySwitchlyDialogWidth(0.90f)
     dialog.setOnShowListener {
         dialog.styleSwitchlyDialogButtons()
-        dialog.applySwitchlyDialogWidth(0.90f)
     }
     dialog.show()
     return dialog
@@ -467,13 +469,13 @@ private fun Context.showSwitchlyOptionDialogInternal(
         builder.setNegativeButton(R.string.cancel) { _, _ -> onCancelled?.invoke() }
     }
     dialog = builder.create()
+    dialog.window?.setLayout((resources.displayMetrics.widthPixels * widthFraction).toInt(), ViewGroup.LayoutParams.WRAP_CONTENT)
 
     dialog.setOnShowListener {
         dialog.styleSwitchlyDialogButtons()
         if (confirmSelection) {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.isEnabled = selectedIndex in options.indices
         }
-        dialog.window?.setLayout((resources.displayMetrics.widthPixels * widthFraction).toInt(), ViewGroup.LayoutParams.WRAP_CONTENT)
     }
     dialog.show()
     return dialog
@@ -727,11 +729,11 @@ fun Context.showSwitchlyMultiChoiceDialog(
         onConfirmed(rowStates)
         dialog.dismiss()
     }
+    dialog.window?.setLayout((resources.displayMetrics.widthPixels * widthFraction).toInt(), ViewGroup.LayoutParams.WRAP_CONTENT)
     dialog.setOnShowListener {
         if (!forceHorizontalButtons) {
             if (options.any { it.destructive }) dialog.styleSwitchlyDestructivePositiveButton() else dialog.styleSwitchlyDialogButtons()
         }
-        dialog.window?.setLayout((resources.displayMetrics.widthPixels * widthFraction).toInt(), ViewGroup.LayoutParams.WRAP_CONTENT)
     }
     dialog.show()
     return dialog
@@ -926,8 +928,8 @@ fun Context.showSwitchlyFormDialog(
         .setTitle(title)
         .setView(content)
         .create()
+    dialog.applySwitchlyDialogWidth(widthFraction)
     dialog.setOnShowListener {
-        dialog.applySwitchlyDialogWidth(widthFraction)
         runCatching { CustomAccentApplier.applyToDialog(dialog) }
         styleSwitchlyFormButtons(
             deleteButton = null,

@@ -40,13 +40,14 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <!-- Activity & history -->
             <TextView
                 style="@style/Switchly.SectionHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:layout_marginBottom="6dp"
-                android:text="@string/account_section_account" />
+                android:text="@string/account_section_activity_history" />
 
             <com.google.android.material.card.MaterialCardView
                 style="@style/Switchly.Card"
@@ -58,7 +59,7 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
 
-                    <!-- Overview -->
+                    <!-- Switchly overview -->
                     <LinearLayout
                         android:id="@+id/cardAccountOverview"
                         android:layout_width="match_parent"
@@ -180,9 +181,9 @@
                         android:layout_height="wrap_content"
                         app:dividerInsetStart="54dp" />
 
-                    <!-- Keys & codes -->
+                    <!-- Blocked notifications -->
                     <LinearLayout
-                        android:id="@+id/cardAccountKeysCodes"
+                        android:id="@+id/cardAccountBlockedNotifications"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:minHeight="52dp"
@@ -197,10 +198,11 @@
                         android:focusable="true">
 
                         <ImageView
+                            android:id="@+id/ivAccountBlockedNotificationsIcon"
                             android:layout_width="24dp"
                             android:layout_height="24dp"
-                            android:contentDescription="@string/account_keys_codes_title"
-                            android:src="@drawable/nfc_24"
+                            android:contentDescription="@string/blocked_inbox_title"
+                            android:src="@drawable/notifications_24"
                             app:tint="?attr/colorPrimary" />
 
                         <LinearLayout
@@ -213,7 +215,7 @@
                             <TextView
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:text="@string/account_keys_codes_title"
+                                android:text="@string/blocked_inbox_title"
                                 android:textSize="15sp"
                                 android:textStyle="bold" />
 
@@ -221,7 +223,7 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
-                                android:text="@string/account_keys_codes_summary"
+                                android:text="@string/activity_blocked_notifications_summary"
                                 android:textColor="?android:attr/textColorSecondary"
                                 android:textSize="13sp" />
                         </LinearLayout>
@@ -235,11 +237,27 @@
                             app:tint="?android:attr/textColorSecondary" />
                     </LinearLayout>
 
-                    <com.google.android.material.divider.MaterialDivider
-                        style="@style/Switchly.Divider"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        app:dividerInsetStart="54dp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Security & access -->
+            <TextView
+                style="@style/Switchly.SectionHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="6dp"
+                android:text="@string/account_section_security_access" />
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Switchly.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
 
                     <!-- App lock -->
                     <LinearLayout
@@ -302,6 +320,83 @@
                         android:layout_height="wrap_content"
                         app:dividerInsetStart="54dp" />
 
+                    <!-- My keys and codes -->
+                    <LinearLayout
+                        android:id="@+id/cardAccountKeysCodes"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:minHeight="52dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:paddingStart="16dp"
+                        android:paddingTop="12dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="12dp"
+                        android:background="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:contentDescription="@string/account_keys_codes_title"
+                            android:src="@drawable/nfc_24"
+                            app:tint="?attr/colorPrimary" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="14dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="@string/account_keys_codes_title"
+                                android:textSize="15sp"
+                                android:textStyle="bold" />
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/account_keys_codes_summary"
+                                android:textColor="?android:attr/textColorSecondary"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="18dp"
+                            android:layout_height="18dp"
+                            android:alpha="0.7"
+                            android:contentDescription="@string/open"
+                            android:src="@drawable/keyboard_arrow_right_24"
+                            app:tint="?android:attr/textColorSecondary" />
+                    </LinearLayout>
+
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Setup & data -->
+            <TextView
+                style="@style/Switchly.SectionHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:layout_marginBottom="6dp"
+                android:text="@string/account_section_setup_data" />
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/Switchly.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
                     <!-- Onboarding -->
                     <LinearLayout
                         android:id="@+id/cardAccountOnboarding"
@@ -363,7 +458,7 @@
                         android:layout_height="wrap_content"
                         app:dividerInsetStart="54dp" />
 
-                    <!-- Privacy -->
+                    <!-- Privacy & data -->
                     <LinearLayout
                         android:id="@+id/cardAccountPrivacy"
                         android:layout_width="match_parent"
@@ -405,68 +500,6 @@
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
                                 android:text="@string/privacy_report_settings_summary"
-                                android:textColor="?android:attr/textColorSecondary"
-                                android:textSize="13sp" />
-                        </LinearLayout>
-
-                        <ImageView
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:alpha="0.7"
-                            android:contentDescription="@string/open"
-                            android:src="@drawable/keyboard_arrow_right_24"
-                            app:tint="?android:attr/textColorSecondary" />
-                    </LinearLayout>
-
-                    <com.google.android.material.divider.MaterialDivider
-                        style="@style/Switchly.Divider"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        app:dividerInsetStart="54dp" />
-
-                    <!-- Blocked notifications -->
-                    <LinearLayout
-                        android:id="@+id/cardAccountBlockedNotifications"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:minHeight="52dp"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:paddingStart="16dp"
-                        android:paddingTop="12dp"
-                        android:paddingEnd="16dp"
-                        android:paddingBottom="12dp"
-                        android:background="?attr/selectableItemBackground"
-                        android:clickable="true"
-                        android:focusable="true">
-
-                        <ImageView
-                            android:id="@+id/ivAccountBlockedNotificationsIcon"
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:contentDescription="@string/blocked_inbox_title"
-                            android:src="@drawable/notifications_24"
-                            app:tint="?attr/colorPrimary" />
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="14dp"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:text="@string/blocked_inbox_title"
-                                android:textSize="15sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:text="@string/activity_blocked_notifications_summary"
                                 android:textColor="?android:attr/textColorSecondary"
                                 android:textSize="13sp" />
                         </LinearLayout>

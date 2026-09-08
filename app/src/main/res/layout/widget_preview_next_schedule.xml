@@ -6,8 +6,8 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:gravity="center_vertical"
-    android:padding="12dp"
-    android:background="@color/widget_scanner_surface"
+    android:padding="16dp"
+    android:background="@drawable/widget_card_bg"
     tools:ignore="UseCompoundDrawables">
 
     <LinearLayout
@@ -17,8 +17,8 @@
         android:gravity="center_vertical">
 
         <ImageView
-            android:layout_width="24dp"
-            android:layout_height="24dp"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
             android:contentDescription="@null"
             android:src="@drawable/widget_schedule_24" />
 
@@ -28,21 +28,35 @@
             android:layout_marginStart="8dp"
             android:layout_weight="1"
             android:text="@string/widget_next_schedule_name"
-            android:textColor="@color/widget_scanner_title"
-            android:textSize="13sp"
+            android:textColor="@color/foqos_on_surface"
+            android:textSize="14sp"
             android:textStyle="bold"
             android:maxLines="1"
             android:ellipsize="end" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:paddingTop="2dp"
+            android:paddingBottom="2dp"
+            android:background="@drawable/widget_status_pill_idle_bg"
+            android:text="@string/blocking_mode_schedule"
+            android:textColor="@color/foqos_on_surface_variant"
+            android:textSize="10sp"
+            android:textStyle="bold" />
     </LinearLayout>
 
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="12dp"
         android:gravity="center"
         android:text="@string/widget_next_schedule_preview_time"
-        android:textColor="@color/widget_scanner_title"
-        android:textSize="20sp"
+        android:textColor="@color/foqos_on_surface"
+        android:textSize="22sp"
         android:textStyle="bold"
         android:maxLines="1"
         android:ellipsize="end" />
@@ -50,11 +64,11 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
+        android:layout_marginTop="4dp"
         android:gravity="center"
         android:text="@string/widget_next_schedule_open"
-        android:textColor="@color/widget_scanner_text"
-        android:textSize="11sp"
+        android:textColor="@color/foqos_on_surface_variant"
+        android:textSize="12sp"
         android:maxLines="1"
         android:ellipsize="end" />
 </LinearLayout>

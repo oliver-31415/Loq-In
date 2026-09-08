@@ -55,6 +55,7 @@ import at.saltyy.switchly.theme.CustomAccentApplier
 import at.saltyy.switchly.ui.SegmentedToggleUi
 import at.saltyy.switchly.ui.SwitchlyDropdownAdapter
 import at.saltyy.switchly.ui.ThemeUtils
+import at.saltyy.switchly.ui.showWarnPill
 import at.saltyy.switchly.ui.attachEditDeleteSwipe
 import at.saltyy.switchly.ui.dialog.Dialogs
 import at.saltyy.switchly.ui.dialog.showAccented
@@ -86,19 +87,29 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
     private fun canAddBlockedWebsite(): Boolean =
         ProtectionEditPolicy.canAddBlockedWebsite(this, currentProfile(), isAllowMode())
 
+    private fun denyWebsiteEditWithPopover(): Boolean {
+        if (EditingLockGuard.isLocked(this)) {
+            findViewById<View>(android.R.id.content)
+                .showWarnPill(R.string.edit_locked_manage_websites)
+            return true
+        }
+        return false
+    }
+
     private fun syncEditingLockUi() {
         val locked = EditingLockGuard.isLocked(this)
         val canAdd = canAddBlockedWebsite()
         findViewById<FloatingActionButton>(R.id.fabAdd)?.apply {
             backgroundTintList = ColorStateList.valueOf(AccentColor.getAccentColorInt(this@ManageBlockedWebsitesActivity))
-            isEnabled = canAdd && !isSelectionMode
-            isClickable = canAdd && !isSelectionMode
-            alpha = if (isEnabled) 1f else 0.45f
+            // Stay tappable (dimmed) so locked taps warn via popover instead of doing nothing.
+            isEnabled = true
+            isClickable = true
+            alpha = if (canAdd && !isSelectionMode) 1f else 0.45f
         }
         val accent = AccentColor.getAccentColorInt(this)
         findViewById<View>(R.id.btnEmptyAddWebsite)?.apply {
-            isEnabled = canAdd
-            isClickable = canAdd
+            isEnabled = true
+            isClickable = true
             alpha = if (canAdd) 1f else 0.45f
             (this as? MaterialButton)?.apply {
                 strokeColor = ColorStateList.valueOf(accent)
@@ -107,11 +118,17 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
             }
         }
         findViewById<MaterialButtonToggleGroup>(R.id.toggleWebsiteRuleMode)?.apply {
-            isEnabled = !locked
+            isEnabled = true
             alpha = if (locked) 0.62f else 1f
         }
-        findViewById<View>(R.id.btnWebsiteModeBlock)?.isEnabled = !locked
-        findViewById<View>(R.id.btnWebsiteModeAllow)?.isEnabled = !locked
+        findViewById<View>(R.id.btnWebsiteModeBlock)?.apply {
+            isEnabled = true
+            alpha = if (locked) 0.62f else 1f
+        }
+        findViewById<View>(R.id.btnWebsiteModeAllow)?.apply {
+            isEnabled = true
+            alpha = if (locked) 0.62f else 1f
+        }
 
         if (::adapter.isInitialized && adapter.itemCount > 0) {
             adapter.notifyItemRangeChanged(0, adapter.itemCount)
@@ -179,6 +196,7 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
             if (!isChecked || updatingModeUi) return@addOnButtonCheckedListener
             if (websiteEditingLocked()) {
                 syncRuleModeUi()
+                denyWebsiteEditWithPopover()
                 return@addOnButtonCheckedListener
             }
             val mode = if (checkedId == R.id.btnWebsiteModeAllow) {
@@ -281,11 +299,17 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         syncRuleModeUi()
 
         findViewById<FloatingActionButton>(R.id.fabAdd).setOnClickListener {
-            if (!canAddBlockedWebsite()) return@setOnClickListener
+            if (!canAddBlockedWebsite()) {
+                denyWebsiteEditWithPopover()
+                return@setOnClickListener
+            }
             showAddDialog()
         }
         findViewById<View>(R.id.btnEmptyAddWebsite).setOnClickListener {
-            if (!canAddBlockedWebsite()) return@setOnClickListener
+            if (!canAddBlockedWebsite()) {
+                denyWebsiteEditWithPopover()
+                return@setOnClickListener
+            }
             showAddDialog()
         }
 
@@ -754,23 +778,25 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
                 CustomAccentApplier.tintSwitch(swRuleEnabled)
                 swRuleEnabled.setOnCheckedChangeListener(null)
                 swRuleEnabled.isChecked = rule.enabled
-                swRuleEnabled.isEnabled = !readOnly
+                // Stay tappable (dimmed) so locked taps warn via popover instead of doing nothing.
+                swRuleEnabled.isEnabled = true
                 swRuleEnabled.alpha = if (readOnly) 0.45f else 1f
                 swRuleEnabled.setOnCheckedChangeListener { _, isChecked ->
                     if (websiteEditingLocked()) {
                         swRuleEnabled.isChecked = rule.enabled
-                        swRuleEnabled.isEnabled = false
                         swRuleEnabled.alpha = 0.45f
+                        denyWebsiteEditWithPopover()
                         return@setOnCheckedChangeListener
                     }
                     onToggleEnabled(rule.domain, isChecked)
                 }
 
                 btnLimit.imageTintList = ColorStateList.valueOf(accent)
-                btnLimit.isEnabled = !readOnly
+                btnLimit.isEnabled = true
                 btnLimit.alpha = if (readOnly) 0.45f else 1f
                 btnLimit.setOnClickListener {
                     if (websiteEditingLocked()) {
+                        denyWebsiteEditWithPopover()
                         return@setOnClickListener
                     }
                     onEdit(rule.domain)
@@ -778,6 +804,7 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
 
                 itemView.setOnLongClickListener {
                     if (websiteEditingLocked()) {
+                        denyWebsiteEditWithPopover()
                         return@setOnLongClickListener true
                     }
                     if (!isSelectionMode()) {

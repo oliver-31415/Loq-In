@@ -136,7 +136,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="14dp"
-                            android:text="@string/support_view_logs_title"
+                            android:text="@string/support_logs_unified_title"
                             android:textSize="15sp"
                             android:textStyle="bold"
                             app:layout_constraintEnd_toStartOf="@id/ivViewLogsChevron"
@@ -148,7 +148,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginStart="14dp"
                             android:layout_marginTop="3dp"
-                            android:text="@string/support_view_logs_desc"
+                            android:text="@string/support_logs_unified_desc"
                             android:textColor="@color/switchly_text_secondary"
                             android:textSize="12sp"
                             android:maxLines="2"
@@ -167,75 +167,6 @@
                             app:layout_constraintEnd_toEndOf="parent"
                             app:layout_constraintTop_toTopOf="parent"
                             app:tint="@color/switchly_text_secondary" />
-                    </androidx.constraintlayout.widget.ConstraintLayout>
-
-                    <com.google.android.material.divider.MaterialDivider
-                        style="@style/Switchly.Divider"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="54dp"
-                        android:layout_marginEnd="12dp" />
-
-                    <androidx.constraintlayout.widget.ConstraintLayout
-                        android:id="@+id/rowCopyLogs"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:minHeight="82dp"
-                        android:paddingStart="16dp"
-                        android:paddingTop="12dp"
-                        android:paddingEnd="14dp"
-                        android:paddingBottom="12dp"
-                        android:background="?attr/selectableItemBackground"
-                        android:clickable="true"
-                        android:focusable="true">
-
-                        <ImageView
-                            android:id="@+id/ivCopyLogs"
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:contentDescription="@null"
-                            android:src="@drawable/content_copy_24"
-                            app:layout_constraintBottom_toBottomOf="parent"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toTopOf="parent"
-                            app:tint="?attr/colorPrimary" />
-
-                        <TextView
-                            android:id="@+id/tvCopyLogsTitle"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="14dp"
-                            android:text="@string/support_logs_card_title"
-                            android:textSize="15sp"
-                            android:textStyle="bold"
-                            app:layout_constraintEnd_toStartOf="@id/ivCopyLogsAction"
-                            app:layout_constraintStart_toEndOf="@id/ivCopyLogs"
-                            app:layout_constraintTop_toTopOf="parent" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="14dp"
-                            android:layout_marginTop="3dp"
-                            android:text="@string/support_logs_card_desc"
-                            android:textColor="@color/switchly_text_secondary"
-                            android:textSize="12sp"
-                            android:maxLines="2"
-                            app:layout_constraintEnd_toStartOf="@id/ivCopyLogsAction"
-                            app:layout_constraintStart_toEndOf="@id/ivCopyLogs"
-                            app:layout_constraintTop_toBottomOf="@id/tvCopyLogsTitle" />
-
-                        <ImageView
-                            android:id="@+id/ivCopyLogsAction"
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:alpha="0.8"
-                            android:contentDescription="@string/support_copy_latest_logs"
-                            android:src="@drawable/content_copy_24"
-                            app:layout_constraintBottom_toBottomOf="parent"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintTop_toTopOf="parent"
-                            app:tint="?attr/colorPrimary" />
                     </androidx.constraintlayout.widget.ConstraintLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>

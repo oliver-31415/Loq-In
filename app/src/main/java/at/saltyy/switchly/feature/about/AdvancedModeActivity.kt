@@ -37,6 +37,7 @@ import at.saltyy.switchly.R
 import androidx.core.content.ContextCompat
 import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.data.prefs.AdvancedModeStore
+import at.saltyy.switchly.ui.showWarnPillOnContent
 import at.saltyy.switchly.receiver.DPMReceiver
 import at.saltyy.switchly.util.AndroidSystemPackages
 import at.saltyy.switchly.util.ReleaseDiagnostics
@@ -60,7 +61,7 @@ class AdvancedModeActivity : TilesInfoActivity() {
         refreshTiles()
         val previousStateKey = lastManagedStateKey
         if (previousStateKey != null && previousStateKey != currentStateKey) {
-            Toast.makeText(this, getString(R.string.advanced_mode_status_updated_toast), Toast.LENGTH_SHORT).show()
+            showWarnPillOnContent(getString(R.string.advanced_mode_status_updated_toast))
         }
         lastManagedStateKey = currentStateKey
     }
@@ -116,14 +117,12 @@ class AdvancedModeActivity : TilesInfoActivity() {
             val enabled = !AdvancedModeStore.isEnabled(this)
             AdvancedModeStore.setEnabled(this, enabled)
             renderEnabledState()
-            Toast.makeText(
-                this,
+            showWarnPillOnContent(
                 getString(
                     if (enabled) R.string.developer_mode_unlocked_toast
                     else R.string.developer_mode_disabled_toast
-                ),
-                Toast.LENGTH_SHORT
-            ).show()
+                )
+            )
         }
         renderEnabledState()
 
@@ -313,18 +312,14 @@ class AdvancedModeActivity : TilesInfoActivity() {
         val opened = runCatching { startActivity(primary) }.isSuccess
         if (!opened) {
             runCatching { startActivity(fallback) }.onFailure {
-                Toast.makeText(
-                    this,
-                    getString(R.string.advanced_mode_open_admin_failed),
-                    Toast.LENGTH_SHORT
-                ).show()
+                showWarnPillOnContent(getString(R.string.advanced_mode_open_admin_failed))
             }
         }
     }
 
     private fun openUrl(url: String) {
         runCatching { startActivity(Intent(Intent.ACTION_VIEW, url.toUri())) }.onFailure {
-            Toast.makeText(this, getString(R.string.about_no_browser), Toast.LENGTH_SHORT).show()
+            showWarnPillOnContent(getString(R.string.about_no_browser))
         }
     }
 }

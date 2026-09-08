@@ -41,6 +41,8 @@ import androidx.core.widget.ImageViewCompat
 import at.saltyy.switchly.R
 import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.ui.ThemeUtils
+import at.saltyy.switchly.ui.showWarnPill
+import at.saltyy.switchly.ui.showWarnPillOnContent
 import at.saltyy.switchly.util.LocaleHelper
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.card.MaterialCardView
@@ -128,16 +130,23 @@ abstract class TilesInfoActivity : AppCompatActivity() {
                 section?.let { rowsContainer.addView(createSectionTitle(it, groupIndex > 0)) }
 
                 val card = MaterialCardView(this).apply {
-                    radius = dp(14).toFloat()
-                    cardElevation = dp(1).toFloat()
-                    useCompatPadding = true
+                    radius = dp(16).toFloat()
+                    cardElevation = 0f
+                    useCompatPadding = false
                     strokeWidth = dp(1)
                     strokeColor = ContextCompat.getColor(this@TilesInfoActivity, R.color.foqos_outline_variant)
                     setCardBackgroundColor(ContextCompat.getColor(this@TilesInfoActivity, R.color.foqos_surface))
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    ).apply {
+                        topMargin = dp(6)
+                        bottomMargin = dp(6)
+                    }
                 }
                 val groupContainer = LinearLayout(this).apply {
                     orientation = LinearLayout.VERTICAL
-                    setPadding(0, dp(4), 0, dp(4))
+                    setPadding(0, 0, 0, 0)
                 }
 
                 groupTiles.forEachIndexed { index, tile ->
@@ -195,7 +204,7 @@ abstract class TilesInfoActivity : AppCompatActivity() {
                 tile.onLongClick != null -> tile.onLongClick.invoke()
                 tile.enableLongPressCopy -> {
                     copyToClipboard(tile.copyValue)
-                    Toast.makeText(this, getString(R.string.copied), Toast.LENGTH_SHORT).show()
+                    root.showWarnPill(getString(R.string.copied))
                     true
                 }
                 else -> false
@@ -209,13 +218,9 @@ abstract class TilesInfoActivity : AppCompatActivity() {
                 copyButton.contentDescription = getString(R.string.action_copy)
                 copyButton.alpha = 0.72f
                 ImageViewCompat.setImageTintList(copyButton, accentTint)
-                copyButton.setOnClickListener {
+                copyButton.setOnClickListener { tapped ->
                     copyToClipboard(tile.copyValue)
-                    Toast.makeText(
-                        this,
-                        tile.copiedToast ?: getString(R.string.copied),
-                        Toast.LENGTH_SHORT
-                    ).show()
+                    tapped.showWarnPill(tile.copiedToast ?: getString(R.string.copied))
                 }
             }
             tile.showOpenButton && clickAction != null -> {

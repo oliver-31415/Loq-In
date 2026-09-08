@@ -127,4 +127,34 @@ object AccentColor {
         Option.GRAY   -> R.style.ThemeOverlay_Switchly_DatePicker_Gray
         else          -> R.style.ThemeOverlay_Switchly_DatePicker
     }
+
+    /**
+     * Concrete time-picker dialog theme for the current accent.
+     */
+    fun getTimePickerTheme(context: Context): Int = when (getOption(context)) {
+        Option.BLUE   -> R.style.ThemeOverlay_Switchly_TimePicker_Blue
+        Option.ORANGE -> R.style.ThemeOverlay_Switchly_TimePicker_Orange
+        Option.PURPLE -> R.style.ThemeOverlay_Switchly_TimePicker_Purple
+        Option.PINK   -> R.style.ThemeOverlay_Switchly_TimePicker_Pink
+        Option.TEAL   -> R.style.ThemeOverlay_Switchly_TimePicker_Teal
+        Option.RED    -> R.style.ThemeOverlay_Switchly_TimePicker_Red
+        Option.AMBER  -> R.style.ThemeOverlay_Switchly_TimePicker_Amber
+        Option.GRAY   -> R.style.ThemeOverlay_Switchly_TimePicker_Gray
+        else          -> R.style.ThemeOverlay_Switchly_TimePicker
+    }
+
+    /**
+     * Concrete Material alert dialog theme for the current accent.
+     */
+    fun getDialogTheme(context: Context): Int = when (getOption(context)) {
+        Option.BLUE   -> R.style.ThemeOverlay_Switchly_Dialog_Blue
+        Option.ORANGE -> R.style.ThemeOverlay_Switchly_Dialog_Orange
+        Option.PURPLE -> R.style.ThemeOverlay_Switchly_Dialog_Purple
+        Option.PINK   -> R.style.ThemeOverlay_Switchly_Dialog_Pink
+        Option.TEAL   -> R.style.ThemeOverlay_Switchly_Dialog_Teal
+        Option.RED    -> R.style.ThemeOverlay_Switchly_Dialog_Red
+        Option.AMBER  -> R.style.ThemeOverlay_Switchly_Dialog_Amber
+        Option.GRAY   -> R.style.ThemeOverlay_Switchly_Dialog_Gray
+        else          -> R.style.ThemeOverlay_Switchly_Dialog
+    }
 }

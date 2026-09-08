@@ -69,6 +69,7 @@ import at.saltyy.switchly.theme.CustomAccentApplier
 import at.saltyy.switchly.ui.EdgeToEdgeUtils
 import at.saltyy.switchly.ui.ThemeUtils
 import at.saltyy.switchly.ui.applySwitchlyStyle
+import at.saltyy.switchly.ui.showWarnPill
 import at.saltyy.switchly.ui.dialog.SwitchlyDialogOption
 import at.saltyy.switchly.ui.dialog.showSwitchlyOptionDialog
 import at.saltyy.switchly.ui.dialog.styleSwitchlyDialogButtons
@@ -569,11 +570,8 @@ open class ToggleOptionsActivity : AppCompatActivity() {
                 PersistentStatusNotifier.setEnabled(this, false)
                 switchPersistentStatusNotification.isChecked = false
                 refreshStatusNotificationModeUi()
-                Toast.makeText(
-                    this,
-                    getString(R.string.status_notification_permission_denied),
-                    Toast.LENGTH_LONG
-                ).show()
+                findViewById<View>(android.R.id.content)
+                    .showWarnPill(getString(R.string.status_notification_permission_denied))
             }
         }
 
@@ -635,11 +633,8 @@ open class ToggleOptionsActivity : AppCompatActivity() {
         fun canChangeControlMode(showToast: Boolean = true): Boolean {
             val allowed = !SwitchlyAppAccessGuard.isControlSettingsLocked(ctx)
             if (!allowed && showToast) {
-                Toast.makeText(
-                    ctx,
-                    getString(R.string.mode_switch_requires_switchly_disabled),
-                    Toast.LENGTH_SHORT
-                ).show()
+                findViewById<View>(android.R.id.content)
+                    .showWarnPill(getString(R.string.mode_switch_requires_switchly_disabled))
             }
             return allowed
         }
@@ -707,21 +702,15 @@ open class ToggleOptionsActivity : AppCompatActivity() {
 
         fun onControlModeRowClicked(target: AutomationModeStore.Mode) {
             if (!AutomationModeStore.isModeSupported(ctx, target)) {
-                Toast.makeText(
-                    ctx,
-                    getString(R.string.mode_not_supported_on_device),
-                    Toast.LENGTH_SHORT
-                ).show()
+                findViewById<View>(android.R.id.content)
+                    .showWarnPill(getString(R.string.mode_not_supported_on_device))
                 return
             }
 
             val active = AutomationModeStore.getMode(ctx)
             if (target == active) {
-                Toast.makeText(
-                    ctx,
-                    getString(R.string.mode_already_active_fmt, modeLabel(target)),
-                    Toast.LENGTH_SHORT
-                ).show()
+                findViewById<View>(android.R.id.content)
+                    .showWarnPill(getString(R.string.mode_already_active_fmt, modeLabel(target)))
                 return
             }
 
@@ -729,11 +718,8 @@ open class ToggleOptionsActivity : AppCompatActivity() {
                 return
             }
 
-            Toast.makeText(
-                ctx,
-                getString(R.string.mode_switch_info_toast),
-                Toast.LENGTH_SHORT
-            ).show()
+            findViewById<View>(android.R.id.content)
+                .showWarnPill(getString(R.string.mode_switch_info_toast))
             applyControlModeSelection(target, userInitiated = true)
         }
 
@@ -752,7 +738,8 @@ open class ToggleOptionsActivity : AppCompatActivity() {
                     ignoreControlModeListener = true
                     sw.isChecked = true
                     ignoreControlModeListener = false
-                    Toast.makeText(ctx, getString(R.string.mode_one_must_stay_active), Toast.LENGTH_SHORT).show()
+                    findViewById<View>(android.R.id.content)
+                        .showWarnPill(getString(R.string.mode_one_must_stay_active))
                     return@setOnCheckedChangeListener
                 }
 
@@ -761,11 +748,8 @@ open class ToggleOptionsActivity : AppCompatActivity() {
                         ignoreControlModeListener = true
                         sw.isChecked = false
                         ignoreControlModeListener = false
-                        Toast.makeText(
-                            ctx,
-                            getString(R.string.mode_not_supported_on_device),
-                            Toast.LENGTH_SHORT
-                        ).show()
+                    findViewById<View>(android.R.id.content)
+                        .showWarnPill(getString(R.string.mode_not_supported_on_device))
                         return@setOnCheckedChangeListener
                     }
                     if (!canChangeControlMode()) {
@@ -901,14 +885,42 @@ open class ToggleOptionsActivity : AppCompatActivity() {
             ).applySwitchlyStyle().show()
         }
 
-        rowQuickTile.setOnClickListener {
-            if (!isQuickSettingsTileMarkedAdded(KEY_QS_TILE_REQUESTED)) addQuickTile()
+        // The system offers no API to query or remove tiles, so our "added" flag can
+        // go stale (e.g. tile removed from the panel). Tapping always explains removal
+        // and offers "Add again", which re-runs the system flow and refreshes the flag.
+        rowQuickTile.setOnClickListener { tapped ->
+            if (isQuickSettingsTileMarkedAdded(KEY_QS_TILE_REQUESTED)) {
+                tapped.showWarnPill(
+                    R.string.pref_qs_tile_already_added_hint,
+                    getString(R.string.pref_qs_tile_add_again),
+                ) { addQuickTile() }
+            } else {
+                addQuickTile()
+            }
         }
-        rowQrQuickTile.setOnClickListener {
-            if (!isQuickSettingsTileMarkedAdded(KEY_QR_QS_TILE_REQUESTED)) requestQrQuickTile()
+        rowQrQuickTile.setOnClickListener { tapped ->
+            when {
+                !AutomationModeStore.isCameraSupported(ctx) ->
+                    tapped.showWarnPill(getString(R.string.mode_not_supported_on_device))
+                isQuickSettingsTileMarkedAdded(KEY_QR_QS_TILE_REQUESTED) ->
+                    tapped.showWarnPill(
+                        R.string.pref_qs_tile_already_added_hint,
+                        getString(R.string.pref_qs_tile_add_again),
+                    ) { requestQrQuickTile() }
+                else -> requestQrQuickTile()
+            }
         }
-        rowBarcodeQuickTile.setOnClickListener {
-            if (!isQuickSettingsTileMarkedAdded(KEY_BARCODE_QS_TILE_REQUESTED)) requestBarcodeQuickTile()
+        rowBarcodeQuickTile.setOnClickListener { tapped ->
+            when {
+                !AutomationModeStore.isCameraSupported(ctx) ->
+                    tapped.showWarnPill(getString(R.string.mode_not_supported_on_device))
+                isQuickSettingsTileMarkedAdded(KEY_BARCODE_QS_TILE_REQUESTED) ->
+                    tapped.showWarnPill(
+                        R.string.pref_qs_tile_already_added_hint,
+                        getString(R.string.pref_qs_tile_add_again),
+                    ) { requestBarcodeQuickTile() }
+                else -> requestBarcodeQuickTile()
+            }
         }
         refreshQuickSettingsTileRows()
 
@@ -1192,11 +1204,8 @@ open class ToggleOptionsActivity : AppCompatActivity() {
             }
             if (isChecked && !NotificationManagerCompat.from(this).areNotificationsEnabled()) {
                 buttonView.isChecked = false
-                Toast.makeText(
-                    this,
-                    getString(R.string.status_notification_permission_denied),
-                    Toast.LENGTH_LONG
-                ).show()
+                findViewById<View>(android.R.id.content)
+                    .showWarnPill(getString(R.string.status_notification_permission_denied))
                 return@setOnCheckedChangeListener
             }
             PersistentStatusNotifier.setEnabled(this, isChecked)
@@ -1451,11 +1460,8 @@ open class ToggleOptionsActivity : AppCompatActivity() {
     private fun canEditMixedChannels(showToast: Boolean = true): Boolean {
         val allowed = !isMixedChannelEditingLocked()
         if (!allowed && showToast) {
-            Toast.makeText(
-                this,
-                getString(R.string.mixed_channels_locked_while_switchly_enabled),
-                Toast.LENGTH_SHORT
-            ).show()
+            findViewById<View>(android.R.id.content)
+                .showWarnPill(R.string.mixed_channels_locked_while_switchly_enabled)
         }
         return allowed
     }
@@ -1463,11 +1469,8 @@ open class ToggleOptionsActivity : AppCompatActivity() {
     private fun canEditActiveAccess(showToast: Boolean = true): Boolean {
         val allowed = !isActiveAccessEditingLocked()
         if (!allowed && showToast) {
-            Toast.makeText(
-                this,
-                getString(R.string.mixed_channels_locked_while_switchly_enabled),
-                Toast.LENGTH_SHORT
-            ).show()
+            findViewById<View>(android.R.id.content)
+                .showWarnPill(R.string.mixed_channels_locked_while_switchly_enabled)
         }
         return allowed
     }
@@ -1512,8 +1515,9 @@ open class ToggleOptionsActivity : AppCompatActivity() {
     ) {
         val added = isQuickSettingsTileMarkedAdded(addedKey)
         findViewById<View>(rowId)?.apply {
-            isEnabled = supported && !added
-            isClickable = supported && !added
+            // Stay tappable (dimmed): taps explain the state via pill instead of doing nothing.
+            isEnabled = true
+            isClickable = true
             alpha = if (!supported || added) 0.52f else 1f
         }
         findViewById<TextView>(summaryId)?.setText(

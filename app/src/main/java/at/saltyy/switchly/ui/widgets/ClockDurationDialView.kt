@@ -54,6 +54,12 @@ class ClockDurationDialView @JvmOverloads constructor(
 
     var minMinutes: Int = 0
     var maxMinutes: Int = 180
+        set(value) {
+            field = value.coerceAtLeast(0)
+            if (durationMinutes > field) {
+                setDurationMinutes(field, animate = false)
+            }
+        }
 
     var durationMinutes: Int = 15
         private set
@@ -295,12 +301,29 @@ class ClockDurationDialView @JvmOverloads constructor(
     }
 
     private fun updateAngleFromTouch(x: Float, y: Float, isInitial: Boolean) {
+        if (maxMinutes <= 0) {
+            if (durationMinutes != 0) {
+                durationMinutes = 0
+                performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                onDurationChanged?.invoke(0)
+                invalidate()
+            }
+            isClampedAtZero = true
+            isClampedAtMax = true
+            previousAngle = 0f
+            return
+        }
+
         val dx = x - centerX
         val dy = y - centerY
 
         // Angle from 12 o'clock clockwise: 0° .. 360°
         var touchAngle = Math.toDegrees(atan2(dy.toDouble(), dx.toDouble())).toFloat() + 90f
         if (touchAngle < 0f) touchAngle += 360f
+
+        val isFinalHour = (baseHourMinutes + 60 >= maxMinutes)
+        val remMinutesInHour = (maxMinutes - baseHourMinutes).coerceIn(0, 60)
+        val maxAngleThisHour = if (remMinutesInHour == 60) 360f else (remMinutesInHour / 60f) * 360f
 
         if (isInitial) {
             isClampedAtZero = false
@@ -322,17 +345,20 @@ class ClockDurationDialView @JvmOverloads constructor(
             if (total == 0) {
                 isClampedAtZero = true
             }
+            if (total >= maxMinutes) {
+                isClampedAtMax = true
+            }
             if (total != durationMinutes) {
                 durationMinutes = total
                 performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
                 onDurationChanged?.invoke(durationMinutes)
                 invalidate()
             }
-            previousAngle = touchAngle
+            previousAngle = if (total >= maxMinutes && isFinalHour) maxAngleThisHour else touchAngle
             return
         }
 
-        // Active dragging state
+        // Active dragging state: Zero clamping
         if (isClampedAtZero) {
             if (touchAngle > 180f) {
                 // Finger still in counter-clockwise half; cannot run backwards past 0
@@ -345,15 +371,26 @@ class ClockDurationDialView @JvmOverloads constructor(
             }
         }
 
+        // Active dragging state: Max clamping
         if (isClampedAtMax) {
-            if (touchAngle < 180f) {
-                // Finger still in clockwise half past max; cannot run forward past max
-                previousAngle = 360f
-                return
+            if (isFinalHour && remMinutesInHour < 60) {
+                // In final partial hour: clamp if still clockwise of maxAngleThisHour
+                val diff = touchAngle - maxAngleThisHour
+                if (diff in 0f..180f || diff < -180f) {
+                    previousAngle = maxAngleThisHour
+                    return
+                } else {
+                    isClampedAtMax = false
+                    previousAngle = maxAngleThisHour
+                }
             } else {
-                // Finger moved counter-clockwise back into (180°, 360°]
-                isClampedAtMax = false
-                previousAngle = 360f
+                if (touchAngle < 180f) {
+                    previousAngle = 360f
+                    return
+                } else {
+                    isClampedAtMax = false
+                    previousAngle = 360f
+                }
             }
         }
 
@@ -394,6 +431,19 @@ class ClockDurationDialView @JvmOverloads constructor(
             }
         }
 
+        // Check if moving clockwise past maxAngle in final hour
+        if (isFinalHour && remMinutesInHour < 60 && touchAngle >= maxAngleThisHour && previousAngle <= maxAngleThisHour) {
+            isClampedAtMax = true
+            if (durationMinutes != maxMinutes) {
+                durationMinutes = maxMinutes
+                performHapticFeedback(HapticFeedbackConstants.CLOCK_TICK)
+                onDurationChanged?.invoke(durationMinutes)
+                invalidate()
+            }
+            previousAngle = maxAngleThisHour
+            return
+        }
+
         val rawMinuteInHour = (touchAngle / 360f) * 60f
         val snappedMinute = (round(rawMinuteInHour / 5.0) * 5).toInt()
         val total = if (snappedMinute == 60) {
@@ -405,6 +455,9 @@ class ClockDurationDialView @JvmOverloads constructor(
         if (total == 0) {
             isClampedAtZero = true
         }
+        if (total >= maxMinutes) {
+            isClampedAtMax = true
+        }
 
         if (total != durationMinutes) {
             durationMinutes = total
@@ -413,7 +466,7 @@ class ClockDurationDialView @JvmOverloads constructor(
             invalidate()
         }
 
-        previousAngle = touchAngle
+        previousAngle = if (total >= maxMinutes && isFinalHour) maxAngleThisHour else touchAngle
     }
 
     /**

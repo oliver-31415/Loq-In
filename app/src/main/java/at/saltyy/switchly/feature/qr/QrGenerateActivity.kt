@@ -50,6 +50,7 @@ import at.saltyy.switchly.nfc.NfcSchema
 import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.ui.ThemeUtils
 import at.saltyy.switchly.ui.SwitchlyDropdownAdapter
+import at.saltyy.switchly.ui.showWarnPill
 import at.saltyy.switchly.ui.dialog.Dialogs
 import at.saltyy.switchly.ui.dialog.showAccented
 import at.saltyy.switchly.util.EditingLockGuard
@@ -127,7 +128,7 @@ class QrGenerateActivity : AppCompatActivity() {
 
         val forceAllow = intent.getBooleanExtra(EXTRA_FORCE_ALLOW, false)
         if (!forceAllow && !AutomationModeStore.shouldShowQrTools(this)) {
-            Toast.makeText(this, R.string.mode_blocked_qr_action, Toast.LENGTH_SHORT).show()
+            findViewById<View>(android.R.id.content).showWarnPill(R.string.mode_blocked_qr_action)
             finish()
             return
         }
@@ -181,7 +182,7 @@ class QrGenerateActivity : AppCompatActivity() {
             val uri = b.tvUri.text?.toString().orEmpty()
             if (uri.isBlank()) return@setOnClickListener
             copyToClipboard(uri)
-            Toast.makeText(this, R.string.copied, Toast.LENGTH_SHORT).show()
+            b.btnCopy.showWarnPill(R.string.copied)
         }
 
         b.btnShare.setOnClickListener {
@@ -207,6 +208,13 @@ class QrGenerateActivity : AppCompatActivity() {
         val tint = AccentColor.getActiveColor(this)
         b.btnCopy.backgroundTintList = tint
         b.btnShare.backgroundTintList = tint
+        // Dropdown outlines otherwise keep the compile-time default green.
+        val accentInt = AccentColor.getAccentColorInt(this)
+        listOf(b.tilAction, b.tilProfile, b.tilMinutes).forEach { til ->
+            til.boxStrokeColor = accentInt
+            til.hintTextColor = tint
+            til.setEndIconTintList(tint)
+        }
     }
 
     private fun setupToolbar() {
@@ -320,7 +328,7 @@ class QrGenerateActivity : AppCompatActivity() {
             .setPositiveButton(getString(R.string.ok)) { _, _ ->
                 val m = input.text?.toString()?.trim()?.toLongOrNull()
                 if (m == null || m <= 0) {
-                    Toast.makeText(this, R.string.invalid_value, Toast.LENGTH_SHORT).show()
+                    input.showWarnPill(R.string.invalid_value)
                     return@setPositiveButton
                 }
 
@@ -423,7 +431,7 @@ class QrGenerateActivity : AppCompatActivity() {
             generateQrBitmap(uriText, 900)
         }
         val streamUri = writeQrBitmapToCache(bitmap) ?: run {
-            Toast.makeText(this, R.string.qr_share_failed, Toast.LENGTH_SHORT).show()
+            findViewById<View>(android.R.id.content).showWarnPill(R.string.qr_share_failed)
             return
         }
 

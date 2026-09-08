@@ -109,6 +109,7 @@ object ProfileStore {
         InAppRuleStore.onProfileRemoved(context, name)
         WebsiteRuleModeStore.onProfileRemoved(context, name)
         ProfileRuleModeStore.onProfileRemoved(context, name)
+        TempPauseStore.onProfileRemoved(context, name)
         PersistentStatusNotifier.refresh(context)
     }
 
@@ -165,6 +166,7 @@ object ProfileStore {
         InAppRuleStore.onProfileRenamed(context, old, new)
         WebsiteRuleModeStore.onProfileRenamed(context, old, new)
         ProfileRuleModeStore.onProfileRenamed(context, old, new)
+        TempPauseStore.onProfileRenamed(context, old, new)
         PersistentStatusNotifier.refresh(context)
         return true
     }
@@ -295,6 +297,10 @@ object ProfileStore {
         sp.edit { putStringSet(keyAllowed(profile), sanitized) }
         PersistentStatusNotifier.refresh(context)
     }
+
+    // Needed by the in-progress widget refactor.
+    fun getProfileApps(context: Context, profile: String): Set<String> =
+        getSelectedForProfileMode(context, profile)
 
     fun getSelectedForProfileMode(context: Context, profile: String): Set<String> {
         return if (ProfileRuleModeStore.isAllowMode(context, profile)) {

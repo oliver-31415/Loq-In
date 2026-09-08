@@ -31,10 +31,12 @@ import android.text.Spanned
 import android.text.format.DateUtils
 import android.text.style.StyleSpan
 import android.widget.RemoteViews
+import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import at.saltyy.switchly.R
 import at.saltyy.switchly.feature.entry.QuickActionIconFactory
 import at.saltyy.switchly.feature.entry.ScanLauncherActivity
+import at.saltyy.switchly.feature.theme.AccentColor
 
 abstract class BaseLaunchWidgetProvider : AppWidgetProvider() {
 
@@ -49,10 +51,14 @@ abstract class BaseLaunchWidgetProvider : AppWidgetProvider() {
         appWidgetIds: IntArray,
     ) {
         super.onUpdate(context, appWidgetManager, appWidgetIds)
+        val onSurface = ContextCompat.getColor(context, R.color.foqos_on_surface)
         appWidgetIds.forEach { appWidgetId ->
             val views = RemoteViews(context.packageName, R.layout.widget_action_compact).apply {
                 setContentDescription(R.id.widgetActionRoot, context.getString(labelRes))
-                setImageViewBitmap(R.id.widgetActionIcon, QuickActionIconFactory.createWidgetBitmap(context, iconRes))
+                setImageViewBitmap(
+                    R.id.widgetActionIcon,
+                    QuickActionIconFactory.createWidgetBitmap(context, iconRes, onSurface, 32, 28)
+                )
                 setOnClickPendingIntent(
                     R.id.widgetActionRoot,
                     PendingIntent.getActivity(
@@ -111,9 +117,13 @@ class FocusNowWidgetProvider : AppWidgetProvider() {
         }
 
         private fun buildViews(context: Context, appWidgetId: Int): RemoteViews {
+            val accent = AccentColor.getAccentColorInt(context)
             return RemoteViews(context.packageName, R.layout.widget_action_compact).apply {
                 setContentDescription(R.id.widgetActionRoot, context.getString(R.string.shortcut_focus_now_short))
-                setImageViewBitmap(R.id.widgetActionIcon, QuickActionIconFactory.createWidgetBitmap(context, R.drawable.play_arrow_24))
+                setImageViewBitmap(
+                    R.id.widgetActionIcon,
+                    QuickActionIconFactory.createWidgetBitmap(context, R.drawable.play_arrow_24, accent, 32, 28)
+                )
                 setOnClickPendingIntent(
                     R.id.widgetActionRoot,
                     PendingIntent.getBroadcast(

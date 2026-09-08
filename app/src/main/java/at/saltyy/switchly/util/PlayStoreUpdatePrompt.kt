@@ -30,6 +30,7 @@ import at.saltyy.switchly.BuildConfig
 import at.saltyy.switchly.R
 import at.saltyy.switchly.data.prefs.AppPreferences
 import at.saltyy.switchly.ui.dialog.showAccented
+import at.saltyy.switchly.ui.showWarnPillOnContent
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.play.core.appupdate.AppUpdateInfo
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory
@@ -92,11 +93,9 @@ object PlayStoreUpdatePrompt {
             manager.appUpdateInfo
                 .addOnSuccessListener { info ->
                     if (!isUsableUpdate(info)) {
-                        Toast.makeText(
-                            activity,
-                            activity.getString(R.string.switchly_update_up_to_date),
-                            Toast.LENGTH_SHORT,
-                        ).show()
+                        activity.showWarnPillOnContent(
+                            activity.getString(R.string.switchly_update_up_to_date)
+                        )
                         return@addOnSuccessListener
                     }
 
@@ -116,18 +115,14 @@ object PlayStoreUpdatePrompt {
                     }
                 }
                 .addOnFailureListener {
-                    Toast.makeText(
-                        activity,
-                        activity.getString(R.string.switchly_update_check_failed),
-                        Toast.LENGTH_SHORT,
-                    ).show()
+                    activity.showWarnPillOnContent(
+                        activity.getString(R.string.switchly_update_check_failed)
+                    )
                 }
         }.onFailure {
-            Toast.makeText(
-                activity,
-                activity.getString(R.string.switchly_update_check_failed),
-                Toast.LENGTH_SHORT,
-            ).show()
+            activity.showWarnPillOnContent(
+                activity.getString(R.string.switchly_update_check_failed)
+            )
         }
     }
 

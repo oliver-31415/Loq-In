@@ -40,7 +40,6 @@ import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
@@ -48,6 +47,7 @@ import androidx.core.widget.ImageViewCompat
 import at.saltyy.switchly.R
 import at.saltyy.switchly.data.prefs.EmergencyPinStore
 import at.saltyy.switchly.theme.AccentColor
+import at.saltyy.switchly.ui.showWarnPill
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
@@ -270,8 +270,14 @@ object EmergencyPinDialog {
                     if (EmergencyPinStore.matchesPin(activity, entered)) {
                         val imm = activity.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
                         imm?.hideSoftInputFromWindow(hiddenInput.windowToken, 0)
-                        dialog?.dismiss()
-                        onSuccess()
+                        // Dismissing here would detach the input while this text
+                        // dispatch is still running: detach unregisters a watcher
+                        // mid-dispatch and crashes with IndexOutOfBoundsException.
+                        // Defer past the dispatch.
+                        hiddenInput.post {
+                            dialog?.dismiss()
+                            onSuccess()
+                        }
                     } else {
                         shakeAndReset()
                     }
@@ -284,9 +290,9 @@ object EmergencyPinDialog {
             .setNegativeButton(activity.getString(R.string.cancel), null)
             .create()
 
+        dialog.applySwitchlyDialogWidth(0.90f)
         dialog.setOnShowListener {
             dialog.styleSwitchlyDialogButtons()
-            dialog.applySwitchlyDialogWidth(0.90f)
 
             hiddenInput.requestFocus()
             val imm = activity.getSystemService(Context.INPUT_METHOD_SERVICE) as? InputMethodManager
@@ -444,19 +450,19 @@ object EmergencyPinDialog {
             .setPositiveButton(activity.getString(R.string.save)) { _, _ ->
                 val pin = hiddenInput.text?.toString()?.trim().orEmpty()
                 if (pin.length < 4) {
-                    Toast.makeText(activity, R.string.emergency_pin_too_short, Toast.LENGTH_SHORT).show()
+                    container.showWarnPill(R.string.emergency_pin_too_short)
                     return@setPositiveButton
                 }
                 EmergencyPinStore.setPin(activity, pin)
-                Toast.makeText(activity, R.string.emergency_pin_changed, Toast.LENGTH_SHORT).show()
+                container.showWarnPill(R.string.emergency_pin_changed)
                 onSuccess()
             }
             .setNegativeButton(activity.getString(R.string.cancel), null)
             .create()
 
+        dialog.applySwitchlyDialogWidth(0.90f)
         dialog.setOnShowListener {
             dialog.styleSwitchlyDialogButtons()
-            dialog.applySwitchlyDialogWidth(0.90f)
             dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.isEnabled = false
 
             hiddenInput.requestFocus()

@@ -53,6 +53,7 @@ import at.saltyy.switchly.ui.EdgeToEdgeUtils
 import at.saltyy.switchly.ui.SwitchlyDropdownAdapter
 import at.saltyy.switchly.ui.attachEditDeleteSwipe
 import at.saltyy.switchly.ui.ThemeUtils
+import at.saltyy.switchly.ui.showWarnPill
 import at.saltyy.switchly.ui.updateSelectionSubtitle
 import at.saltyy.switchly.ui.dialog.Dialogs
 import at.saltyy.switchly.ui.dialog.showAccented
@@ -115,21 +116,19 @@ class ManagePairedTagsActivity : AppCompatActivity() {
                 result.resultCode == RESULT_OK && resultStr == NfcWriteWaitingActivity.RESULT_OK_STR -> {
                     refresh()
                     if (alreadyPaired) {
-                        Toast.makeText(this, R.string.nfc_pair_already_added_open_writer, Toast.LENGTH_SHORT).show()
+                        findViewById<View>(android.R.id.content).showWarnPill(R.string.nfc_pair_already_added_open_writer)
                         startActivity(Intent(this, NfcWriterActivity::class.java))
                     } else {
-                        Toast.makeText(
-                            this,
-                            if (uid.isNullOrBlank()) getString(R.string.nfc_pair_ok) else getString(R.string.nfc_pair_ok_with_uid, uid),
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        findViewById<View>(android.R.id.content).showWarnPill(
+                            if (uid.isNullOrBlank()) getString(R.string.nfc_pair_ok) else getString(R.string.nfc_pair_ok_with_uid, uid)
+                        )
                     }
                 }
                 resultStr == NfcWriteWaitingActivity.RESULT_NOT_WRITABLE_STR -> {
-                    Toast.makeText(this, R.string.nfc_pair_writable_requires_writable_tag, Toast.LENGTH_SHORT).show()
+                    findViewById<View>(android.R.id.content).showWarnPill(R.string.nfc_pair_writable_requires_writable_tag)
                 }
                 resultStr != null -> {
-                    Toast.makeText(this, R.string.nfc_pair_error, Toast.LENGTH_SHORT).show()
+                    findViewById<View>(android.R.id.content).showWarnPill(R.string.nfc_pair_error)
                 }
             }
         }
@@ -144,18 +143,16 @@ class ManagePairedTagsActivity : AppCompatActivity() {
             when {
                 result.resultCode == RESULT_OK && resultStr == NfcWriteWaitingActivity.RESULT_OK_STR -> {
                     refresh()
-                    Toast.makeText(
-                        this,
+                    findViewById<View>(android.R.id.content).showWarnPill(
                         when {
                             alreadyPaired -> getString(R.string.nfc_pair_already_added)
                             uid.isNullOrBlank() -> getString(R.string.nfc_pair_ok)
                             else -> getString(R.string.nfc_pair_ok_with_uid, uid)
-                        },
-                        Toast.LENGTH_SHORT
-                    ).show()
+                        }
+                    )
                 }
                 resultStr != null -> {
-                    Toast.makeText(this, R.string.nfc_pair_error, Toast.LENGTH_SHORT).show()
+                    findViewById<View>(android.R.id.content).showWarnPill(R.string.nfc_pair_error)
                 }
             }
         }
@@ -500,11 +497,9 @@ class ManagePairedTagsActivity : AppCompatActivity() {
                 max = 50,
             )
             if (dailyResult == INVALID_NUMBER) {
-                Toast.makeText(
-                    this,
+                etDailyLimit.showWarnPill(
                     getString(R.string.paired_tag_daily_limit_invalid),
-                    Toast.LENGTH_SHORT,
-                ).show()
+                )
                 return@setOnClickListener
             }
 
@@ -514,11 +509,9 @@ class ManagePairedTagsActivity : AppCompatActivity() {
                 max = 24 * 60,
             )
             if (cooldownResult == INVALID_NUMBER) {
-                Toast.makeText(
-                    this,
+                etCooldown.showWarnPill(
                     getString(R.string.paired_tag_cooldown_invalid),
-                    Toast.LENGTH_SHORT,
-                ).show()
+                )
                 return@setOnClickListener
             }
 
@@ -538,11 +531,9 @@ class ManagePairedTagsActivity : AppCompatActivity() {
                 EMPTY_NUMBER
             }
             if (temporaryAction && !askWhenScanned && durationResult == INVALID_NUMBER) {
-                Toast.makeText(
-                    this,
+                acMinutes.showWarnPill(
                     getString(R.string.paired_tag_duration_invalid),
-                    Toast.LENGTH_SHORT,
-                ).show()
+                )
                 return@setOnClickListener
             }
 

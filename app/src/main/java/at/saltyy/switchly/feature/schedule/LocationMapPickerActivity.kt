@@ -373,22 +373,86 @@ class LocationMapPickerActivity : AppCompatActivity() {
             .orEmpty()
     }
 
-    private fun formatGeocoderLabel(address: Address): String? {
-        val line = address.getAddressLine(0)
-        if (!line.isNullOrBlank()) {
-            return line
+    private fun formatGeocoderLabelDetailed(address: Address): Pair<String?, String?> {
+        val thoroughfare = address.thoroughfare?.trim()?.takeIf { it.isNotBlank() }
+        val subThoroughfare = address.subThoroughfare?.trim()?.takeIf { it.isNotBlank() }
+        val feature = address.featureName?.trim()?.takeIf { it.isNotBlank() }
+        val line0 = address.getAddressLine(0)?.trim()?.takeIf { it.isNotBlank() }
+        val subLocality = address.subLocality?.trim()?.takeIf { it.isNotBlank() }
+        val locality = address.locality?.trim()?.takeIf { it.isNotBlank() }
+        val adminArea = address.adminArea?.trim()?.takeIf { it.isNotBlank() }
+        val countryName = address.countryName?.trim()?.takeIf { it.isNotBlank() }
+
+        fun isOnlyNumber(s: String?): Boolean {
+            return s != null && s.all { it.isDigit() || it.isWhitespace() || it == '-' || it == '/' }
         }
 
-        return listOfNotNull(
-            address.featureName,
-            address.locality,
-            address.adminArea,
-            address.countryName
-        )
-            .filter { it.isNotBlank() }
-            .distinct()
-            .joinToString(", ")
-            .takeIf { it.isNotBlank() }
+        val streetPart = when {
+            thoroughfare != null -> {
+                val num = subThoroughfare ?: feature?.takeIf { isOnlyNumber(it) || it.length <= 6 }
+                if (num != null && !thoroughfare.contains(num)) {
+                    "$num $thoroughfare"
+                } else {
+                    thoroughfare
+                }
+            }
+            line0 != null -> {
+                val parts = line0.split(",").map { it.trim() }.filter { it.isNotBlank() }
+                val firstPart = parts.firstOrNull()
+                if (firstPart != null && !isOnlyNumber(firstPart)) {
+                    firstPart
+                } else {
+                    null
+                }
+            }
+            else -> feature?.takeIf { !isOnlyNumber(it) }
+        }
+
+        val suburb = subLocality ?: locality ?: run {
+            if (line0 != null) {
+                val parts = line0.split(",").map { it.trim() }.filter { it.isNotBlank() }
+                if (parts.size > 1) {
+                    parts[1].replace(Regex("\\b[0-9]{4,6}\\b"), "").trim().takeIf { it.isNotBlank() } ?: parts[1]
+                } else null
+            } else null
+        }
+
+        val title = when {
+            streetPart != null && suburb != null -> {
+                if (streetPart.contains(suburb, ignoreCase = true)) {
+                    streetPart
+                } else {
+                    "$streetPart, $suburb"
+                }
+            }
+            streetPart != null -> streetPart
+            suburb != null -> suburb
+            else -> line0 ?: listOfNotNull(locality, adminArea).joinToString(", ").takeIf { it.isNotBlank() }
+        }
+
+        val subParts = mutableListOf<String>()
+        if (locality != null && locality != suburb && title?.contains(locality, ignoreCase = true) == false) {
+            subParts.add(locality)
+        }
+        if (adminArea != null && title?.contains(adminArea, ignoreCase = true) == false) {
+            subParts.add(adminArea)
+        }
+        if (countryName != null && title?.contains(countryName, ignoreCase = true) == false) {
+            subParts.add(countryName)
+        }
+        val subtitle = if (subParts.isNotEmpty()) {
+            subParts.joinToString(", ")
+        } else if (line0 != null && line0 != title) {
+            line0
+        } else {
+            null
+        }
+
+        return title to subtitle
+    }
+
+    private fun formatGeocoderLabel(address: Address): String? {
+        return formatGeocoderLabelDetailed(address).first
     }
 
     private data class ResolvedLocation(

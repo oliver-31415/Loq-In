@@ -716,6 +716,7 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
         updateStatisticsProfileSubtitle()
         b.statsPageSubtitle.isVisible = false
         b.totalTime.text = if (data.summary.totalTimeMs <= 0L) "—" else StatsFormat.prettyMsWithSeconds(data.summary.totalTimeMs)
+        b.totalLabel.text = if (isWeb) getString(R.string.usage_total_screen_time_web) else getString(R.string.usage_total_screen_time)
 
         if (isWeb) {
             b.rowTapHint.isVisible = true

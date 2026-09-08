@@ -228,38 +228,29 @@
                     android:singleLine="true" />
             </com.google.android.material.textfield.TextInputLayout>
 
-            <LinearLayout
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnUseConnectedBt"
+                style="@style/Widget.Material3.Button.TonalButton"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
+                android:layout_height="44dp"
                 android:layout_marginTop="6dp"
-                android:orientation="horizontal">
+                android:minHeight="44dp"
+                app:strokeWidth="0dp"
+                android:text="@string/schedules_bt_use_connected"
+                app:icon="@drawable/bluetooth_24"
+                app:iconGravity="textStart" />
 
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnUseConnectedBt"
-                    style="@style/Widget.Material3.Button.TonalButton"
-                    android:layout_width="0dp"
-                    android:layout_height="44dp"
-                    android:layout_weight="1"
-                    android:layout_marginEnd="4dp"
-                    android:minHeight="44dp"
-                    app:strokeWidth="0dp"
-                    android:text="@string/schedules_bt_use_connected"
-                    app:icon="@drawable/bluetooth_24"
-                    app:iconGravity="textStart" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnPickPairedBt"
-                    style="@style/Widget.Material3.Button.TonalButton"
-                    android:layout_width="0dp"
-                    android:layout_height="44dp"
-                    android:layout_weight="1"
-                    android:layout_marginStart="4dp"
-                    android:minHeight="44dp"
-                    app:strokeWidth="0dp"
-                    android:text="@string/schedules_bt_pick_paired"
-                    app:icon="@drawable/bluetooth_24"
-                    app:iconGravity="textStart" />
-            </LinearLayout>
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPickPairedBt"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="match_parent"
+                android:layout_height="44dp"
+                android:layout_marginTop="6dp"
+                android:minHeight="44dp"
+                app:strokeWidth="0dp"
+                android:text="@string/schedules_bt_pick_paired"
+                app:icon="@drawable/bluetooth_24"
+                app:iconGravity="textStart" />
         </LinearLayout>
 
         <!-- 6. LOCATION CONFIGURATION -->
@@ -1000,7 +991,7 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/chipWeekdays"
-                            style="@style/Widget.Material3.Button.TonalButton"
+                            style="@style/Widget.Material3.Button.UnelevatedButton"
                             android:layout_width="0dp"
                             android:layout_height="36dp"
                             android:layout_marginEnd="4dp"
@@ -1018,7 +1009,7 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/chipWeekend"
-                            style="@style/Widget.Material3.Button.TonalButton"
+                            style="@style/Widget.Material3.Button.UnelevatedButton"
                             android:layout_width="0dp"
                             android:layout_height="36dp"
                             android:layout_marginHorizontal="2dp"
@@ -1036,7 +1027,7 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/chipToday"
-                            style="@style/Widget.Material3.Button.TonalButton"
+                            style="@style/Widget.Material3.Button.UnelevatedButton"
                             android:layout_width="0dp"
                             android:layout_height="36dp"
                             android:layout_marginStart="4dp"

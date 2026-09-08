@@ -166,6 +166,8 @@ object ScheduleInsights {
         ScheduleStore.Action.TOGGLE -> context.getString(R.string.schedules_action_toggle)
         ScheduleStore.Action.ENABLE_AND_DISABLE -> context.getString(R.string.schedules_action_enable_disable)
         ScheduleStore.Action.DISABLE_AND_ENABLE -> context.getString(R.string.schedules_action_disable_enable)
+        ScheduleStore.Action.DISCONNECT_ENABLE -> context.getString(R.string.schedules_action_disconnect_enable)
+        ScheduleStore.Action.DISCONNECT_DISABLE -> context.getString(R.string.schedules_action_disconnect_disable)
     }
 
     private fun isRangeLike(schedule: ScheduleStore.Schedule): Boolean {

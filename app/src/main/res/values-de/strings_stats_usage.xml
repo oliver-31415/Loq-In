@@ -56,6 +56,27 @@
     <string name="app_limit_per_visit_hint">Minuten pro Besuch</string>
     <string name="app_limit_blank_hint">Feld leer lassen, um dieses Limit zu deaktivieren.</string>
     <string name="app_limit_clear_all">Limits löschen</string>
+    <string name="app_limit_section_time">Bildschirmzeit</string>
+    <string name="app_limit_section_opens">App-Öffnungen</string>
+    <string name="app_limit_section_visit">Einzelne Sitzung</string>
+    <string name="app_limit_time_subtitle">Minuten insgesamt pro Tag</string>
+    <string name="app_limit_opens_subtitle">Wie oft die App pro Tag geöffnet werden darf</string>
+    <string name="app_limit_visit_subtitle">Längste einzelne Sitzung</string>
+    <string name="app_limit_save">Limits speichern</string>
+    <string name="app_limit_remove">Limits entfernen</string>
+    <string name="app_limit_remove_confirm_title">Limits entfernen?</string>
+    <string name="app_limit_remove_confirm_message">Dadurch werden alle Limits für %1$s gelöscht und die heutigen Zähler zurückgesetzt.</string>
+    <string name="app_limit_sentence_none">Keine Limits festgelegt. Diese App kann ohne Einschränkungen geöffnet werden.</string>
+    <string name="app_limit_sentence_time_fmt">Bis zu %1$d Min./Tag erlaubt</string>
+    <string name="app_limit_sentence_split_fmt">, aufgeteilt auf höchstens %1$d Öffnungen</string>
+    <string name="app_limit_sentence_visit_fmt"> (max. %1$d Min. pro Besuch)</string>
+    <string name="app_limit_sentence_opens_only_fmt">Bis zu %1$d Öffnungen pro Tag</string>
+    <string name="app_limit_sentence_visit_only_fmt">Bis zu %1$d Min. pro Besuch</string>
+    <string name="app_limit_error_required">Gib einen Wert ein</string>
+    <string name="app_limit_error_not_number">Gib eine ganze Zahl ein</string>
+    <string name="app_limit_error_range_minutes_fmt">Muss zwischen 1 und %1$d Minuten liegen</string>
+    <string name="app_limit_error_range_attempts_fmt">Muss zwischen 1 und %1$d Öffnungen liegen</string>
+    <string name="app_limit_visit_exceeds_daily_fmt">Besuchslimit (%1$d Min.) ist höher als das Tageslimit (%2$d Min.).</string>
 
     <!-- ====================================================== -->
     <!-- Session limits -->
@@ -129,7 +150,7 @@
     <!-- ====================================================== -->
     <string name="statistics_usage_title">App- &amp; Website-Nutzung</string>
     <string name="statistics_usage_info_title">App- &amp; Website-Nutzung</string>
-    <string name="statistics_usage_info_body">Jede App-Zeile kann anzeigen:\n• Nutzungszeit\n• App-Öffnungen\n• Blockierungen\n\nNutze die Limit-Aktion, um Tages- oder Sitzungslimits zu bearbeiten. Switchly konzentriert sich auf schutzbezogene Aktivitäten und ersetzt keine vollständige Digital-Wellbeing-Auswertung.</string>
+    <string name="statistics_usage_info_body">Jede Zeile kann anzeigen:\n• Nutzungszeit\n• App-Öffnungen\n• Blockierungen\n\nHinweis: Die Website-Nutzung wird nur erfasst, während die Switchly-Blockierung aktiv ist.\n\nNutze die Limit-Aktion, um Tages- oder Sitzungslimits zu bearbeiten. Switchly konzentriert sich auf schutzbezogene Aktivitäten und ersetzt keine vollständige Digital-Wellbeing-Auswertung.</string>
     <string name="stats_range_today">Heute</string>
     <string name="stats_range_week">Woche</string>
     <string name="stats_range_month">Monat</string>
@@ -147,12 +168,13 @@
     <string name="usage_access_needed_desc">Bitte aktiviere für Switchly den Zugriff auf „App-Nutzungsdaten“, um deine Bildschirmzeit-Statistiken anzuzeigen.</string>
     <string name="usage_open_settings">Einstellungen öffnen</string>
     <string name="usage_row_tap_hint_app">Tippe auf eine App-Zeile, um Details zu öffnen.</string>
-    <string name="usage_row_tap_hint_website">Tippe auf eine Website-Zeile, um Details zu öffnen.</string>
+    <string name="usage_row_tap_hint_website">Wird erfasst, während Blockierung aktiv ist · Tippe auf eine Zeile für Details</string>
     <string name="usage_open_details">Details ›</string>
     <string name="usage_row_tap_hint">Tippe auf eine App-Zeile, um Details zu öffnen.</string>
     <string name="usage_row_open_details_a11y">%1$s, %2$s, %3$s. Doppeltippen für Details.</string>
     <string name="usage_row_basic_a11y">%1$s, %2$s, %3$s.</string>
     <string name="usage_total_screen_time">Gesamte Bildschirmzeit</string>
+    <string name="usage_total_screen_time_web">Gesamte Website-Zeit (während Blockierung aktiv)</string>
     <string name="usage_app_placeholder">App</string>
     <string name="statistics_usage_subtitle_web">Webseiten</string>
     <string name="usage_launch_stats_title">Öffnungen</string>
@@ -323,7 +345,7 @@
     <string name="usage_apps_no_data">Noch keine App-Nutzungsdaten vorhanden. Switchly erfasst die App-Nutzung, solange die Bedienungshilfe aktiviert ist.</string>
     <string name="usage_apps_no_blocked">Im aktiven Profil sind noch keine Apps konfiguriert.</string>
     <string name="usage_websites_no_accessibility">Website-Tracking benötigt aktivierte Switchly-Bedienungshilfe.</string>
-    <string name="usage_websites_no_data">Noch keine Website-Daten. Öffne eine Website in einem unterstützten Browser (Chrome, Brave, Edge, Firefox, Ecosia …), während die Switchly-Bedienungshilfe aktiviert ist.</string>
+    <string name="usage_websites_no_data">Noch keine Website-Daten. Website-Nutzung wird erfasst, während die Switchly-Blockierung in unterstützten Browsern (Chrome, Brave, Edge, Firefox, Ecosia …) aktiv ist.</string>
     <string name="usage_websites_no_blocked">Im aktiven Profil sind noch keine Website-Regeln konfiguriert.</string>
 
     <!-- ====================================================== -->

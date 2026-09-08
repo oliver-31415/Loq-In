@@ -22,9 +22,9 @@ package at.saltyy.switchly.util
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.widget.Toast
 import androidx.core.net.toUri
 import at.saltyy.switchly.R
+import at.saltyy.switchly.ui.showWarnPillAnywhere
 
 object SwitchlyStoreLinks {
     fun openStore(context: Context) {
@@ -37,7 +37,7 @@ object SwitchlyStoreLinks {
         runCatching {
             context.startActivity(intent)
         }.onFailure {
-            Toast.makeText(context, R.string.store_open_failed, Toast.LENGTH_LONG).show()
+            context.showWarnPillAnywhere(R.string.store_open_failed)
         }
     }
 }

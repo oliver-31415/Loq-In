@@ -48,6 +48,7 @@ import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.theme.CustomAccentApplier
 import at.saltyy.switchly.ui.EdgeToEdgeUtils
 import at.saltyy.switchly.ui.ThemeUtils
+import at.saltyy.switchly.ui.showWarnPillOnContent
 import at.saltyy.switchly.ui.SwitchlyDropdownAdapter
 import at.saltyy.switchly.ui.attachEditDeleteSwipe
 import at.saltyy.switchly.ui.updateSelectionSubtitle
@@ -383,7 +384,7 @@ class BlockedInboxActivity : AppCompatActivity() {
                 } else {
                     R.string.session_missed_notifications_disabled_hint
                 }
-                Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+                showWarnPillOnContent(msg)
                 true
             }
 

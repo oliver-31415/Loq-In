@@ -15,6 +15,10 @@
         <item name="colorOnPrimaryContainer">@color/accent_green_on_container</item>
         <item name="colorSecondaryContainer">@color/accent_green_container</item>
         <item name="colorOnSecondaryContainer">@color/accent_green_on_container</item>
+        <item name="colorOnBackground">@color/foqos_on_surface</item>
+        <item name="colorOnSurface">@color/foqos_on_surface</item>
+        <item name="android:textColorPrimary">@color/foqos_on_surface</item>
+        <item name="android:textColorSecondary">@color/foqos_on_surface_variant</item>
     </style>
 
     <style name="Theme.Switchly.Accent.Green" parent="Theme.Switchly">

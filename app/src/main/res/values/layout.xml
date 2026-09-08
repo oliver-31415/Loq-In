@@ -365,6 +365,18 @@
         <item name="ensureMinTouchTargetSize">false</item>
     </style>
 
+    <style name="Switchly.LogFilterChip" parent="Widget.Material3.Chip.Filter">
+        <item name="chipCornerRadius">999dp</item>
+        <item name="chipMinHeight">32dp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">12sp</item>
+        <item name="chipStartPadding">8dp</item>
+        <item name="chipEndPadding">8dp</item>
+        <item name="chipStrokeWidth">1dp</item>
+        <item name="checkedIconVisible">false</item>
+        <item name="ensureMinTouchTargetSize">false</item>
+    </style>
+
     <!-- =========================
          DROPDOWNS: TextInputLayout
          ========================= -->
@@ -377,6 +389,7 @@
         <item name="boxCornerRadiusTopEnd">16dp</item>
         <item name="boxCornerRadiusBottomStart">16dp</item>
         <item name="boxCornerRadiusBottomEnd">16dp</item>
+        <item name="boxStrokeColor">@color/switchly_box_stroke_color</item>
     </style>
 
     <!-- Default (non-dropdown) AutoCompleteTextView styling used globally via theme -->
@@ -398,6 +411,7 @@
         <item name="boxCornerRadiusBottomEnd">16dp</item>
         <item name="hintEnabled">true</item>
         <item name="hintTextAppearance">@style/Switchly.DropdownHint</item>
+        <item name="boxStrokeColor">@color/switchly_box_stroke_color</item>
     </style>
 
     <!-- Hint text styling inside dropdowns (lineHeight removed: triggers the

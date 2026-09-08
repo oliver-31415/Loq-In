@@ -83,6 +83,7 @@ import androidx.recyclerview.widget.RecyclerView
 import at.saltyy.switchly.R
 import at.saltyy.switchly.blocking.BlockingRuntime
 import at.saltyy.switchly.blocking.isBrowserPackage
+import at.saltyy.switchly.data.prefs.ActiveDurationStore
 import at.saltyy.switchly.data.prefs.AppLogStore
 import at.saltyy.switchly.data.prefs.AttemptLimitStore
 import at.saltyy.switchly.data.prefs.AutomationModeStore
@@ -97,6 +98,7 @@ import at.saltyy.switchly.data.prefs.SchedulePlanner
 import at.saltyy.switchly.data.prefs.ScheduleRuntimeStore
 import at.saltyy.switchly.data.prefs.ScheduleStore
 import at.saltyy.switchly.data.prefs.ProfileStore
+import at.saltyy.switchly.data.prefs.TempPauseStore
 import at.saltyy.switchly.data.prefs.ProfileRuleModeStore
 import at.saltyy.switchly.data.prefs.DomainBlockStore
 import at.saltyy.switchly.data.prefs.SessionLimitStore
@@ -109,6 +111,7 @@ import at.saltyy.switchly.data.prefs.SessionMissedNotificationsStore
 import at.saltyy.switchly.data.prefs.BlockedNotificationEvent
 import at.saltyy.switchly.feature.onboarding.OnboardingActivity
 import at.saltyy.switchly.feature.picker.AppPickerActivity
+import at.saltyy.switchly.feature.profiles.TempPauseDialogs
 import at.saltyy.switchly.feature.profiles.ManageProfilesActivity
 import at.saltyy.switchly.feature.qr.QrGenerateActivity
 import at.saltyy.switchly.feature.scan.UnifiedScanActivity
@@ -121,7 +124,7 @@ import at.saltyy.switchly.feature.account.AccountActivity
 import at.saltyy.switchly.feature.settings.SettingsActivity
 import at.saltyy.switchly.feature.settings.ToggleOptionsActivity
 import at.saltyy.switchly.feature.settings.HomeModeDialogHelper
-import at.saltyy.switchly.feature.support.SupportActivity
+import at.saltyy.switchly.feature.support.SupportLogActivity
 import at.saltyy.switchly.feature.tools.RulesHubActivity
 import at.saltyy.switchly.feature.tools.ActivityHubActivity
 import at.saltyy.switchly.feature.usage.ActiveTimeActivity
@@ -1171,26 +1174,26 @@ class MainActivity : AppCompatActivity() {
     private fun ensureCanRemoveBlockedApp(showFeedback: Boolean = true): Boolean {
         if (isNfcLocked() || EditingLockGuard.isLocked(this)) {
             if (showFeedback) {
-                EditingLockGuard.showLockedDialog(
-                    this,
-                    R.string.toast_disable_switchly_to_edit_app_limits,
-                )
+                snackRoot().showWarnPill(R.string.toast_disable_switchly_to_edit_app_limits)
             }
             return false
         }
         return true
     }
 
-    private fun ensureCanSwitchProfiles(showFeedback: Boolean = true): Boolean {
+    // Anchor defaults to the activity content, but callers inside a dialog/sheet
+    // window must pass a view from that window, otherwise the pill is hidden behind it.
+    private fun ensureCanSwitchProfiles(showFeedback: Boolean = true, anchor: View? = null): Boolean {
+        val pillAnchor = anchor ?: snackRoot()
         if (isNfcLocked()) {
             if (showFeedback) {
-                EditingLockGuard.showLockedDialog(this, R.string.toast_cannot_change_profile_while_locked)
+                pillAnchor.showWarnPill(R.string.toast_cannot_change_profile_while_locked)
             }
             return false
         }
         if (isProfileSwitchLockedWhileEnabled()) {
             if (showFeedback) {
-                EditingLockGuard.showLockedDialog(this, R.string.toast_disable_switchly_to_switch_profiles)
+                pillAnchor.showWarnPill(R.string.toast_disable_switchly_to_switch_profiles)
             }
             return false
         }
@@ -1213,7 +1216,7 @@ class MainActivity : AppCompatActivity() {
             } else {
                 R.string.mode_blocked_button_action
             }
-            Toast.makeText(this, getString(msg), Toast.LENGTH_SHORT).show()
+            snackRoot().showWarnPill(msg)
             return
         }
 
@@ -1222,11 +1225,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (enabled && isNfcLocked()) {
-            Toast.makeText(
-                this,
-                getString(R.string.toast_cannot_disable_while_locked),
-                Toast.LENGTH_SHORT
-            ).show()
+            snackRoot().showWarnPill(R.string.toast_cannot_disable_while_locked)
             return
         }
         val nextEnabled = !enabled
@@ -1246,6 +1245,30 @@ class MainActivity : AppCompatActivity() {
         val runAction: () -> Unit
     )
 
+    /**
+     * Styles a bottom sheet and opens it already expanded. Configuring the
+     * behavior before show avoids the appear-then-glide jump that moves taps
+     * onto a moving target.
+     */
+    private fun BottomSheetDialog.prepareExpandedSheet() {
+        findViewById<FrameLayout>(com.google.android.material.R.id.design_bottom_sheet)?.let { bs ->
+            val topRadius = 24 * resources.displayMetrics.density + 0.5f
+            bs.background = GradientDrawable().apply {
+                cornerRadii = floatArrayOf(
+                    topRadius, topRadius,
+                    topRadius, topRadius,
+                    0f, 0f,
+                    0f, 0f
+                )
+                setColor(ContextCompat.getColor(this@MainActivity, R.color.foqos_surface))
+            }
+            BottomSheetBehavior.from(bs).apply {
+                skipCollapsed = true
+                state = BottomSheetBehavior.STATE_EXPANDED
+            }
+        }
+    }
+
     private fun showTempToggleSheet(): Boolean {
         val enabledNow = SwitchModeStore.isEnabled(this)
         val tempDisableRemaining = SwitchModeStore.getTemporaryRemainingMillis(this)
@@ -1258,11 +1281,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (!canUseTemporaryAction) {
-            Toast.makeText(
-                this,
-                getString(R.string.mode_blocked_button_action),
-                Toast.LENGTH_SHORT
-            ).show()
+            snackRoot().showWarnPill(getString(R.string.mode_blocked_button_action))
             return false
         }
 
@@ -1271,6 +1290,24 @@ class MainActivity : AppCompatActivity() {
             tempEnableRemaining > 0L -> TempSheetMode.ENABLE
             enabledNow -> TempSheetMode.DISABLE
             else -> TempSheetMode.ENABLE
+        }
+
+        val hasActive = (tempDisableRemaining > 0L) || (tempEnableRemaining > 0L)
+        val currentProfile = ProfileStore.getCurrent(this).orEmpty().trim().ifEmpty { "Default" }
+        val hasCaps = (mode == TempSheetMode.DISABLE) && TempPauseStore.hasCaps(this, currentProfile)
+        val remainingPauses = if (hasCaps) TempPauseStore.remainingPauses(this, currentProfile) else Int.MAX_VALUE
+        val remainingMinutes = if (hasCaps) TempPauseStore.remainingMinutes(this, currentProfile) else Int.MAX_VALUE
+        val isPauseExhausted = hasCaps && (remainingPauses <= 0 || remainingMinutes <= 0)
+        val maxAllowed = if (hasCaps) TempPauseStore.maxAllowedDurationMinutes(this, currentProfile) else Int.MAX_VALUE
+
+        if (!hasActive && mode == TempSheetMode.DISABLE && isPauseExhausted) {
+            val msg = if (remainingPauses <= 0) {
+                getString(R.string.temp_pause_exhausted_pauses, TempPauseStore.usedCountToday(this, currentProfile))
+            } else {
+                getString(R.string.temp_pause_exhausted_minutes, TempPauseStore.usedMinutesToday(this, currentProfile))
+            }
+            snackRoot().showWarnPill(msg)
+            return false
         }
 
         // If NFC lock is active while enabled, temporary disable actions are locked.
@@ -1284,25 +1321,7 @@ class MainActivity : AppCompatActivity() {
         val parent = findViewById<ViewGroup>(android.R.id.content)
         val view = layoutInflater.inflate(R.layout.bottom_sheet_temp_toggle, parent, false)
         sheet.setContentView(view)
-
-        sheet.setOnShowListener {
-            val bottomSheet = sheet.findViewById<FrameLayout>(com.google.android.material.R.id.design_bottom_sheet)
-            bottomSheet?.let { bs ->
-                val topRadius = 24 * resources.displayMetrics.density + 0.5f
-                bs.background = GradientDrawable().apply {
-                    cornerRadii = floatArrayOf(
-                        topRadius, topRadius,
-                        topRadius, topRadius,
-                        0f, 0f,
-                        0f, 0f
-                    )
-                    setColor(ContextCompat.getColor(this@MainActivity, R.color.foqos_surface))
-                }
-                val behavior = BottomSheetBehavior.from(bs)
-                behavior.state = BottomSheetBehavior.STATE_EXPANDED
-                behavior.skipCollapsed = true
-            }
-        }
+        sheet.prepareExpandedSheet()
 
         val ivIcon = view.findViewById<ImageView>(R.id.ivIcon)
         val tvTitle = view.findViewById<TextView>(R.id.tvTitle)
@@ -1366,7 +1385,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        val hasActive = (tempDisableRemaining > 0L) || (tempEnableRemaining > 0L)
         val lockActiveTimerChanges = hasActive &&
             PreferenceManager.getDefaultSharedPreferences(this)
                 .getBoolean(ToggleOptionsActivity.KEY_LOCK_ACTIVE_TEMPORARY_TIMER, true)
@@ -1387,6 +1405,17 @@ class MainActivity : AppCompatActivity() {
                 setColor(surfaceVariant)
             }
             tvLockedNotice.text = getString(R.string.dashboard_temp_active_changes_locked)
+        } else if (isPauseExhausted) {
+            cardLockedNotice.visibility = View.VISIBLE
+            cardLockedNotice.background = GradientDrawable().apply {
+                cornerRadius = 14 * resources.displayMetrics.density + 0.5f
+                setColor(surfaceVariant)
+            }
+            tvLockedNotice.text = if (remainingPauses <= 0) {
+                getString(R.string.temp_pause_exhausted_pauses, TempPauseStore.usedCountToday(this, currentProfile))
+            } else {
+                getString(R.string.temp_pause_exhausted_minutes, TempPauseStore.usedMinutesToday(this, currentProfile))
+            }
         } else {
             cardLockedNotice.visibility = View.GONE
         }
@@ -1468,9 +1497,17 @@ class MainActivity : AppCompatActivity() {
         }
 
         fun setDuration(minutes: Int) {
+            if (mode == TempSheetMode.DISABLE && hasCaps) {
+                val max = TempPauseStore.maxAllowedDurationMinutes(this, currentProfile)
+                if (minutes > max) {
+                    view.showWarnPill(getString(R.string.temp_pause_exceeds_limit, max))
+                    return
+                }
+            }
             val ms = minutes * 60_000L
             if (mode == TempSheetMode.DISABLE) {
-                SwitchModeStore.setTemporarilyDisabled(this, ms)
+                val ok = SwitchModeStore.setTemporarilyDisabled(this, ms)
+                if (!ok) return
             } else {
                 SwitchModeStore.setTemporarilyEnabled(this, ms)
             }
@@ -1478,19 +1515,27 @@ class MainActivity : AppCompatActivity() {
             updateSwitchState()
         }
 
-        if (!lockedByNfc && !lockActiveTimerChanges) {
+        if (!lockedByNfc && !lockActiveTimerChanges && !isPauseExhausted) {
             layoutPresetsSection.visibility = View.VISIBLE
             layoutMoreOptionsSection.visibility = View.VISIBLE
 
-            applyCardStyle(preset5m)
-            applyCardStyle(preset15m)
-            applyCardStyle(preset30m)
-            applyCardStyle(preset60m)
+            fun setupPreset(v: View, minutes: Int) {
+                applyCardStyle(v)
+                if (minutes > maxAllowed) {
+                    v.alpha = 0.35f
+                    v.setOnClickListener { tapped ->
+                        tapped.showWarnPill(getString(R.string.temp_pause_exceeds_limit, maxAllowed))
+                    }
+                } else {
+                    v.alpha = 1.0f
+                    v.setOnClickListener { setDuration(minutes) }
+                }
+            }
 
-            preset5m.setOnClickListener { setDuration(5) }
-            preset15m.setOnClickListener { setDuration(15) }
-            preset30m.setOnClickListener { setDuration(30) }
-            preset60m.setOnClickListener { setDuration(60) }
+            setupPreset(preset5m, 5)
+            setupPreset(preset15m, 15)
+            setupPreset(preset30m, 30)
+            setupPreset(preset60m, 60)
 
             applyCardStyle(rowCustomDuration)
             roundelCustom.background = GradientDrawable().apply {
@@ -1498,9 +1543,17 @@ class MainActivity : AppCompatActivity() {
                 setColor(ColorUtils.compositeColors(ColorUtils.setAlphaComponent(accent, 0x22), surfaceVariant))
             }
             ivCustomIcon.imageTintList = tint
-            rowCustomDuration.setOnClickListener {
-                sheet.dismiss()
-                showClockDialDurationPicker(mode) { minutes -> setDuration(minutes) }
+            if (maxAllowed < 1) {
+                rowCustomDuration.alpha = 0.35f
+                rowCustomDuration.setOnClickListener { tapped ->
+                    tapped.showWarnPill(getString(R.string.temp_pause_exhausted))
+                }
+            } else {
+                rowCustomDuration.alpha = 1.0f
+                rowCustomDuration.setOnClickListener {
+                    sheet.dismiss()
+                    showClockDialDurationPicker(mode) { minutes -> setDuration(minutes) }
+                }
             }
 
             if (mode == TempSheetMode.DISABLE) {
@@ -1553,6 +1606,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun buildPauseUntilOptions(sheet: BottomSheetDialog): List<PauseUntilOption> {
         val now = System.currentTimeMillis()
+        val currentProfile = ProfileStore.getCurrent(this).orEmpty().trim().ifEmpty { "Default" }
+        val maxAllowedMin = TempPauseStore.maxAllowedDurationMinutes(this, currentProfile)
+        val maxAllowedMs = if (maxAllowedMin == Int.MAX_VALUE) Long.MAX_VALUE else maxAllowedMin * 60_000L
+
         fun pauseFor(ms: Long, log: String) {
             val clamped = ms.coerceIn(60_000L, 24L * 60L * 60L * 1000L)
             SwitchModeStore.setTemporarilyDisabled(this, clamped)
@@ -1563,7 +1620,7 @@ class MainActivity : AppCompatActivity() {
 
         val options = mutableListOf<PauseUntilOption>()
         val nextBoundary = runCatching { SchedulePlanner.getNextBoundaryMillis(this) }.getOrDefault(0L)
-        if (nextBoundary > now + 60_000L) {
+        if (nextBoundary > now + 60_000L && (nextBoundary - now) <= maxAllowedMs) {
             options += PauseUntilOption(getString(R.string.dashboard_pause_until_next_schedule)) {
                 pauseFor(nextBoundary - now, "next_schedule")
             }
@@ -1571,7 +1628,7 @@ class MainActivity : AppCompatActivity() {
 
         val activeRangeId = runCatching { ScheduleRuntimeStore.getActiveRangeScheduleId(this) }.getOrDefault(-1)
         val activeSchedule = runCatching { ScheduleStore.getAll(this).firstOrNull { it.id == activeRangeId } }.getOrNull()
-        if (activeSchedule?.isLocationSchedule() == true) {
+        if (activeSchedule?.isLocationSchedule() == true && (24L * 60L * 60L * 1000L) <= maxAllowedMs) {
             options += PauseUntilOption(getString(R.string.dashboard_pause_until_leave_location)) {
                 PauseUntilStore.markUntilLocationExit(this, activeSchedule.id)
                 ScheduleRuntimeStore.setManualSchedulePauseActive(this, true, activeSchedule.id)
@@ -1579,16 +1636,6 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        val tomorrow = Calendar.getInstance().apply {
-            add(Calendar.DAY_OF_YEAR, 1)
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }.timeInMillis
-        options += PauseUntilOption(getString(R.string.dashboard_pause_until_tomorrow)) {
-            pauseFor(tomorrow - now, "tomorrow")
-        }
         return options
     }
 
@@ -1614,25 +1661,7 @@ class MainActivity : AppCompatActivity() {
         val parent = findViewById<ViewGroup>(android.R.id.content)
         val view = layoutInflater.inflate(R.layout.bottom_sheet_temp_clock_dial, parent, false)
         dialSheet.setContentView(view)
-
-        dialSheet.setOnShowListener {
-            val bottomSheet = dialSheet.findViewById<FrameLayout>(com.google.android.material.R.id.design_bottom_sheet)
-            bottomSheet?.let { bs ->
-                val topRadius = 24 * resources.displayMetrics.density + 0.5f
-                bs.background = GradientDrawable().apply {
-                    cornerRadii = floatArrayOf(
-                        topRadius, topRadius,
-                        topRadius, topRadius,
-                        0f, 0f,
-                        0f, 0f
-                    )
-                    setColor(ContextCompat.getColor(this@MainActivity, R.color.foqos_surface))
-                }
-                val behavior = BottomSheetBehavior.from(bs)
-                behavior.state = BottomSheetBehavior.STATE_EXPANDED
-                behavior.skipCollapsed = true
-            }
-        }
+        dialSheet.prepareExpandedSheet()
 
         val clockDialView = view.findViewById<ClockDurationDialView>(R.id.clockDialView)
         val tvDialDuration = view.findViewById<TextView>(R.id.tvDialDuration)
@@ -1647,10 +1676,16 @@ class MainActivity : AppCompatActivity() {
         }
         view.findViewById<ImageView>(R.id.ivIcon)?.imageTintList = tint
 
+        val maxAllowed = if (mode == TempSheetMode.DISABLE) {
+            val profile = ProfileStore.getCurrent(this@MainActivity).orEmpty().trim().ifEmpty { "Default" }
+            TempPauseStore.maxAllowedDurationMinutes(this@MainActivity, profile)
+        } else {
+            180
+        }
         clockDialView.accentColor = accent
         clockDialView.minMinutes = 0
-        clockDialView.maxMinutes = 180
-        val initialMinutes = 25
+        clockDialView.maxMinutes = minOf(180, maxAllowed).coerceAtLeast(0)
+        val initialMinutes = if (clockDialView.maxMinutes == 0) 0 else minOf(25, clockDialView.maxMinutes).coerceAtLeast(1)
         clockDialView.setDurationMinutes(initialMinutes, animate = false)
 
         val timeFormat = java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT)
@@ -1711,9 +1746,14 @@ class MainActivity : AppCompatActivity() {
         }
 
         btnApplyDuration.setOnClickListener {
-            if (clockDialView.durationMinutes > 0) {
+            val mins = clockDialView.durationMinutes
+            if (mins > maxAllowed) {
+                btnApplyDuration.showWarnPill(getString(R.string.temp_pause_exceeds_limit, maxAllowed))
+                return@setOnClickListener
+            }
+            if (mins > 0) {
                 dialSheet.dismiss()
-                onPicked(clockDialView.durationMinutes)
+                onPicked(mins)
             }
         }
 
@@ -1750,19 +1790,19 @@ class MainActivity : AppCompatActivity() {
             .setPositiveButton(R.string.ok) { _, _ ->
                 val m = input.text?.toString()?.trim()?.toIntOrNull()
                 if (m == null || m < 1 || m > 1440) {
-                    Toast.makeText(this, R.string.nfc_time_custom_invalid, Toast.LENGTH_SHORT).show()
+                    input.showWarnPill(R.string.nfc_time_custom_invalid)
                     return@setPositiveButton
                 }
                 onPicked(m)
             }
             .create()
 
+        dialog.applySwitchlyDialogWidth(0.90f)
+        dialog.window?.setSoftInputMode(
+            android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE
+        )
         dialog.setOnShowListener {
             dialog.styleSwitchlyDialogButtons()
-            dialog.applySwitchlyDialogWidth(0.90f)
-            dialog.window?.setSoftInputMode(
-                android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE
-            )
             input.requestFocus()
         }
         dialog.show()
@@ -1786,7 +1826,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun openAppPickerIfUnlocked() {
         if (isAppPickingLockedWhileEnabled()) {
-            EditingLockGuard.showLockedDialog(this, R.string.toast_disable_switchly_to_edit_blocked_apps)
+            snackRoot().showWarnPill(R.string.toast_disable_switchly_to_edit_blocked_apps)
             return
         }
         // AppPickerActivity enforces one-way strictness while protection is active.
@@ -1928,6 +1968,11 @@ class MainActivity : AppCompatActivity() {
         newRow.addView(newIcon)
         newRow.addView(newLabel)
         newRow.setOnClickListener {
+            // Creating a profile also activates it: blocked while switching is locked.
+            // Anchor to the sheet window so the pill is visible above it.
+            if (!ensureCanSwitchProfiles(showFeedback = true, anchor = newRow)) {
+                return@setOnClickListener
+            }
             sheet.dismiss()
             showCreateProfileDialog()
         }
@@ -1962,7 +2007,12 @@ class MainActivity : AppCompatActivity() {
                 // Read the live current profile: the `current` snapshot above
                 // goes stale after the first switch while the sheet is open.
                 if (profile != ProfileStore.getCurrent(this@MainActivity)) {
-                    switchToProfile(profile)
+                    // Only move the highlight when the switch actually happened:
+                    // a blocked tap warns via pill and must not look selected.
+                    // Anchor to the sheet window so the pill is visible above it.
+                    if (!switchToProfile(profile, anchor = row)) {
+                        return@setOnClickListener
+                    }
                 }
                 profileRows.forEach { (p, r) ->
                     r.background = profileRowBg(p == profile)
@@ -2054,6 +2104,25 @@ class MainActivity : AppCompatActivity() {
             }
             openRulesDestination(intent)
         }
+        val tvTempPausesSummary = view.findViewById<TextView>(R.id.tvSheetTempPausesSummary)
+        fun refreshTempPausesSummary() {
+            tvTempPausesSummary?.text = TempPauseDialogs.summaryText(this, currentProfileName)
+        }
+        refreshTempPausesSummary()
+        // Temporary pause limits cannot change while protection is active:
+        // gray the row out and warn immediately instead of opening the editor.
+        view.findViewById<View>(R.id.rowSheetTempPauses)?.apply {
+            alpha = if (EditingLockGuard.isLocked(this@MainActivity)) 0.45f else 1f
+            setOnClickListener { tapped ->
+                if (EditingLockGuard.isLocked(this@MainActivity)) {
+                    tapped.showWarnPill(R.string.edit_locked_manage_temp_pauses)
+                    return@setOnClickListener
+                }
+                TempPauseDialogs.show(this@MainActivity, currentProfileName) {
+                    refreshTempPausesSummary()
+                }
+            }
+        }
         view.findViewById<View>(R.id.rowSheetDelete).setOnClickListener {
             val profiles = ProfileStore.getProfiles(this)
             if (profiles.size <= 1) {
@@ -2129,10 +2198,10 @@ class MainActivity : AppCompatActivity() {
             // "4 Week Activity" = time Switchly was actually up & blocking each day.
             val days = BlockedTimeStore.getFocusDayTotalsMs(this, FoqosHeatmapView.DAYS)
             if (SwitchModeStore.isEnabled(this)) {
-                val active = SwitchModeStore.getActiveDurationMillis(this)
+                val activeToday = ActiveDurationStore.todayMs(this)
                 val last = days.size - 1
-                if (active > days[last]) {
-                    days[last] = active
+                if (activeToday > days[last]) {
+                    days[last] = activeToday
                 }
             }
             runOnUiThread {
@@ -3925,13 +3994,14 @@ class MainActivity : AppCompatActivity() {
         // accumulate on top of it) and read the accumulated value back for display.
         if (::activityHeatmap.isInitialized && activityDaysMs.isNotEmpty()) {
             if (enabled) {
-                BlockedTimeStore.ensureProtectionTodayAtLeast(this, activeDurationMs)
+                val activeTodayMs = ActiveDurationStore.todayMs(this)
+                BlockedTimeStore.ensureProtectionTodayAtLeast(this, activeTodayMs)
             }
             val todayMs = BlockedTimeStore.getProtectionTodayMs(this)
+            activityHeatmap.updateTodayValue(todayMs)
             if (todayMs != activityDaysMs.last()) {
                 activityDaysMs[activityDaysMs.size - 1] = todayMs
             }
-            activityHeatmap.updateTodayValue(todayMs)
         }
 
         // Keep quick-entry text in sync with current state
@@ -4105,16 +4175,18 @@ class MainActivity : AppCompatActivity() {
             .setTitle(getString(R.string.pref_emergency_title))
             .setMessage(getString(R.string.emergency_action_start_15))
             .setNegativeButton(R.string.cancel, null)
-            .setPositiveButton(R.string.ok) { _, _ ->
+            .setPositiveButton(R.string.ok) { _, dialog ->
                 val ok = EmergencyBypassStore.enableIfAllowed(this, 15)
+                // Anchor to the dialog window so the pill is visible above it.
+                val pillAnchor = (dialog as? AlertDialog)?.window?.decorView ?: snackRoot()
                 if (ok) {
                     AppLogStore.append(this, "Emergency", "Emergency mode started from Home for 15m")
-                    SwitchModeStore.setTemporarilyDisabled(this, 15 * 60_000L)
-                    Toast.makeText(this, getString(R.string.emergency_enabled_toast, 15), Toast.LENGTH_SHORT).show()
+                    SwitchModeStore.setTemporarilyDisabled(this, 15 * 60_000L, isEmergency = true)
+                    pillAnchor.showWarnPill(getString(R.string.emergency_enabled_toast, 15))
                     BlockingRuntime.ensureRunning(this)
                     updateSwitchState()
                 } else {
-                    Toast.makeText(this, getString(R.string.emergency_used_today), Toast.LENGTH_SHORT).show()
+                    pillAnchor.showWarnPill(getString(R.string.emergency_used_today))
                 }
             }
             .showAccented()
@@ -4152,7 +4224,7 @@ class MainActivity : AppCompatActivity() {
                 if (EmergencyBypassStore.pause(this)) {
                     AppLogStore.append(this, "Emergency", "Emergency mode paused from Home")
                     SwitchModeStore.clearTemporary(this)
-                    Toast.makeText(this, getString(R.string.emergency_paused_toast), Toast.LENGTH_SHORT).show()
+                    snackRoot().showWarnPill(getString(R.string.emergency_paused_toast))
                     BlockingRuntime.ensureRunning(this)
                     updateSwitchState()
                 }
@@ -4161,7 +4233,7 @@ class MainActivity : AppCompatActivity() {
                 AppLogStore.append(this, "Emergency", "Emergency mode ended from Home")
                 EmergencyBypassStore.cancel(this)
                 SwitchModeStore.clearTemporary(this)
-                Toast.makeText(this, getString(R.string.emergency_ended_toast), Toast.LENGTH_SHORT).show()
+                snackRoot().showWarnPill(getString(R.string.emergency_ended_toast))
                 BlockingRuntime.ensureRunning(this)
                 updateSwitchState()
             }
@@ -4170,8 +4242,8 @@ class MainActivity : AppCompatActivity() {
                 if (EmergencyBypassStore.resume(this)) {
                     val remainingMinutes = EmergencyBypassStore.minutesRemaining(this).coerceAtLeast(1)
                     AppLogStore.append(this, "Emergency", "Emergency mode resumed from Home with ${remainingMinutes}m remaining")
-                    SwitchModeStore.setTemporarilyDisabled(this, remainingMinutes * 60_000L)
-                    Toast.makeText(this, getString(R.string.emergency_resumed_toast), Toast.LENGTH_SHORT).show()
+                    SwitchModeStore.setTemporarilyDisabled(this, remainingMinutes * 60_000L, isEmergency = true)
+                    snackRoot().showWarnPill(getString(R.string.emergency_resumed_toast))
                     BlockingRuntime.ensureRunning(this)
                     updateSwitchState()
                 }
@@ -4180,7 +4252,7 @@ class MainActivity : AppCompatActivity() {
                 AppLogStore.append(this, "Emergency", "Emergency mode ended from Home")
                 EmergencyBypassStore.cancel(this)
                 SwitchModeStore.clearTemporary(this)
-                Toast.makeText(this, getString(R.string.emergency_ended_toast), Toast.LENGTH_SHORT).show()
+                snackRoot().showWarnPill(getString(R.string.emergency_ended_toast))
                 BlockingRuntime.ensureRunning(this)
                 updateSwitchState()
             }
@@ -4396,11 +4468,11 @@ class MainActivity : AppCompatActivity() {
         startActivity(Intent(this, ManageProfilesActivity::class.java))
     }
 
-    private fun switchToProfile(selected: String) {
-        if (!ensureCanSwitchProfiles(showFeedback = true)) {
+    private fun switchToProfile(selected: String, anchor: View? = null): Boolean {
+        if (!ensureCanSwitchProfiles(showFeedback = true, anchor = anchor)) {
             val cur = ProfileStore.getCurrent(this)
             profileDropdown.setText(cur ?: "", false)
-            return
+            return false
         }
 
         ProfileStore.setCurrent(this, selected)
@@ -4417,6 +4489,7 @@ class MainActivity : AppCompatActivity() {
             ),
             Snackbar.LENGTH_SHORT
         ).applySwitchlyStyle().show()
+        return true
     }
 
     private fun snackRoot(): View {
@@ -4479,20 +4552,12 @@ class MainActivity : AppCompatActivity() {
         item.isAvailable && item.pkg in InAppRuleStore.supportedPackages()
 
     private fun openWebsiteRulesFromHomeList(item: AppDisplay) {
-        Toast.makeText(
-            this,
-            getString(R.string.app_picker_open_website_rules_for, item.label),
-            Toast.LENGTH_SHORT
-        ).show()
+        snackRoot().showWarnPill(getString(R.string.app_picker_open_website_rules_for, item.label))
         startActivity(Intent(this, ManageBlockedWebsitesActivity::class.java))
     }
 
     private fun openInAppRulesFromHomeList(item: AppDisplay) {
-        Toast.makeText(
-            this,
-            getString(R.string.app_picker_open_in_app_rules_for, item.label),
-            Toast.LENGTH_SHORT
-        ).show()
+        snackRoot().showWarnPill(getString(R.string.app_picker_open_in_app_rules_for, item.label))
         startActivity(
             Intent(this, InAppRulesActivity::class.java)
                 .putExtra(InAppRulesActivity.EXTRA_FOCUS_PACKAGE, item.pkg)
@@ -5031,25 +5096,7 @@ class MainActivity : AppCompatActivity() {
         val parent = findViewById<ViewGroup>(android.R.id.content)
         val view = layoutInflater.inflate(R.layout.bottom_sheet_session_missed_notifications, parent, false)
         sheet.setContentView(view)
-
-        sheet.setOnShowListener {
-            val bottomSheet = sheet.findViewById<FrameLayout>(com.google.android.material.R.id.design_bottom_sheet)
-            bottomSheet?.let { bs ->
-                val topRadius = 24 * resources.displayMetrics.density + 0.5f
-                bs.background = GradientDrawable().apply {
-                    cornerRadii = floatArrayOf(
-                        topRadius, topRadius,
-                        topRadius, topRadius,
-                        0f, 0f,
-                        0f, 0f
-                    )
-                    setColor(ContextCompat.getColor(this@MainActivity, R.color.foqos_surface))
-                }
-                val behavior = BottomSheetBehavior.from(bs)
-                behavior.state = BottomSheetBehavior.STATE_EXPANDED
-                behavior.skipCollapsed = true
-            }
-        }
+        sheet.prepareExpandedSheet()
 
         val count = events.size
         val subtitleText = if (count == 1) {
@@ -5161,7 +5208,7 @@ class MainActivity : AppCompatActivity() {
         val handleNeverAgainIfChecked: () -> Unit = {
             if (cbNeverAgain?.isChecked == true && SessionMissedNotificationsStore.isFeatureEnabled(this)) {
                 SessionMissedNotificationsStore.setFeatureEnabled(this, false)
-                Toast.makeText(this, R.string.session_missed_notifications_disabled_hint, Toast.LENGTH_SHORT).show()
+                snackRoot().showWarnPill(R.string.session_missed_notifications_disabled_hint)
             }
         }
 
@@ -5171,8 +5218,8 @@ class MainActivity : AppCompatActivity() {
         }
 
         view.findViewById<View>(R.id.btnClose)?.setOnClickListener {
-            handleNeverAgainIfChecked()
             sheet.dismiss()
+            handleNeverAgainIfChecked()
         }
 
         val btnDone = view.findViewById<MaterialButton>(R.id.btnSessionMissedDone)
@@ -5204,8 +5251,8 @@ class MainActivity : AppCompatActivity() {
         MaterialAlertDialogBuilder(this)
             .setTitle(getString(R.string.main_info_title))
             .setMessage(getString(R.string.main_development_info_message))
-            .setPositiveButton(getString(R.string.main_info_contact_action)) { _, _ ->
-                startActivity(Intent(this, SupportActivity::class.java))
+            .setPositiveButton(getString(R.string.support_logs_unified_title)) { _, _ ->
+                startActivity(Intent(this, SupportLogActivity::class.java))
             }
             .setNeutralButton(getString(R.string.main_info_older_versions_action)) { _, _ ->
                 runCatching { startActivity(Intent(Intent.ACTION_VIEW, downloadsUrl.toUri())) }
@@ -5263,7 +5310,7 @@ class MainActivity : AppCompatActivity() {
                 1 -> {
                     when {
                         !AutomationModeStore.shouldShowBarcodeTools(this) ->
-                            Toast.makeText(this, R.string.toast_manage_barcodes_requires_enabled, Toast.LENGTH_LONG).show()
+                            snackRoot().showWarnPill(R.string.toast_manage_barcodes_requires_enabled)
                         EditingLockGuard.isLocked(this) ->
                             EditingLockGuard.showLockedDialog(this, R.string.edit_locked_manage_barcodes)
                         else -> startActivity(Intent(this, ManageBarcodesActivity::class.java))
@@ -5294,7 +5341,7 @@ class MainActivity : AppCompatActivity() {
                 1 -> {
                     when {
                         !AutomationModeStore.shouldShowQrTools(this) ->
-                            Toast.makeText(this, R.string.toast_manage_qr_requires_enabled, Toast.LENGTH_LONG).show()
+                            snackRoot().showWarnPill(R.string.toast_manage_qr_requires_enabled)
                         EditingLockGuard.isLocked(this) ->
                             EditingLockGuard.showLockedDialog(this, R.string.edit_locked_manage_qr_codes)
                         else -> startActivity(Intent(this, QrGenerateActivity::class.java))
@@ -5305,247 +5352,8 @@ class MainActivity : AppCompatActivity() {
     }
 }
 
-/**
- * Foqos-style hero artwork v4: a living lava lamp.
- *
- * Three stacked tonal layers (back dark corner mass, mid mass, front light mass)
- * drawn over a diagonal base gradient — and within a layer, sibling BLOBS drift
- * toward and away from each other, connected by liquid "metaball" bridges that
- * stretch as they approach and snap apart as they separate. All colors derive
- * from the live accent; the loop is seamless (integer time frequencies).
- */
-private class HeroArtDrawable(private val accent: Int, private val radiusPx: Float) : android.graphics.drawable.Drawable() {
+// Foqos-style hero artwork rendering is now located in HeroArtRenderer.kt
 
-    private class Blob(
-        val fx: Float, val fy: Float,   // home center (fractions of card)
-        val fr: Float,                  // base radius (fraction of min dimension)
-        val seed: Float,                // per-blob wobble offsets
-        val driftX: Float = 0.025f,     // slow drift amplitude (fraction of min dim)
-        val driftY: Float = 0.02f,
-    )
-
-    /** Two blobs of one tonal layer that repeatedly merge and split. */
-    private class Pair(
-        val a: Blob,
-        val b: Blob,
-        val phase: Float,               // loop phase of the merge cycle
-        val converge: Float,            // max travel toward each other (fraction of min dim)
-    )
-
-    private class Layer(val shaderTop: Int, val shaderBottom: Int, val pair: Pair?, val single: Blob?)
-
-    private val basePaint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
-    private val paint = android.graphics.Paint(android.graphics.Paint.ANTI_ALIAS_FLAG)
-    private val clipPath = android.graphics.Path()
-    private val layerPath = android.graphics.Path()
-    private val tempPath = android.graphics.Path()
-    private val shaders = arrayOfNulls<android.graphics.Shader>(4)
-
-    private fun vary(lighten: Float, satMul: Float, alpha: Int, maxV: Float = 1f): Int {
-        val hsv = FloatArray(3)
-        android.graphics.Color.colorToHSV(accent, hsv)
-        hsv[1] = (hsv[1] * satMul).coerceIn(0.3f, 1f)
-        hsv[2] = (hsv[2] + lighten).coerceIn(0f, maxV)
-        val c = android.graphics.Color.HSVToColor(hsv)
-        return android.graphics.Color.argb(alpha, android.graphics.Color.red(c), android.graphics.Color.green(c), android.graphics.Color.blue(c))
-    }
-
-    // Back -> front. Pairs merge and split on offset phases so the surface is
-    // always breathing somewhere.
-    private val midPair = Pair(
-        Blob(0.98f, 0.92f, 0.52f, seed = 2.1f),
-        Blob(0.62f, 1.32f, 0.38f, seed = 4.3f),
-        phase = 0.0f, converge = 0.42f,
-    )
-    private val darkSingle = Blob(1.05f, 0.08f, 0.52f, seed = 2.1f)
-    private val lightPair = Pair(
-        Blob(-0.06f, 0.85f, 0.55f, seed = 0.6f),
-        Blob(0.28f, 1.38f, 0.46f, seed = 5.2f),
-        phase = Math.PI.toFloat(), converge = 0.46f,
-    )
-    private val layers = listOf(
-        Layer(vary(0.16f, 0.95f, 0xFF, 0.80f), vary(-0.12f, 1.10f, 0xFF), midPair, null),
-        Layer(vary(-0.02f, 1.05f, 0xFF), vary(-0.34f, 1.15f, 0xFF), null, darkSingle),
-        Layer(vary(-0.02f, 0.95f, 0xFF), vary(0.32f, 0.62f, 0xFF, 0.78f), lightPair, null),
-    )
-
-    private var phase = 0f
-    private var animator: android.animation.ValueAnimator? = null
-    private var builtBounds = false
-
-    override fun onBoundsChange(bounds: android.graphics.Rect) {
-        rebuildShaders(bounds)
-    }
-
-    private fun rebuildShaders(b: android.graphics.Rect) {
-        basePaint.shader = android.graphics.LinearGradient(
-            b.left.toFloat(), b.top.toFloat(), b.right.toFloat(), b.bottom.toFloat(),
-            vary(0.08f, 1.0f, 0xFF, 0.80f), vary(-0.24f, 1.10f, 0xFF),
-            android.graphics.Shader.TileMode.CLAMP,
-        )
-        val w = b.width().toFloat().coerceAtLeast(1f)
-        val h = b.height().toFloat().coerceAtLeast(1f)
-        layers.forEachIndexed { i, layer ->
-            val pair = layer.pair
-            val single = layer.single
-            val blob = pair?.a ?: single
-            if (blob != null) {
-                val cx = b.left + blob.fx * w
-                val cy = b.top + blob.fy * h
-                val r = blob.fr * kotlin.math.min(w, h)
-                shaders[i] = android.graphics.LinearGradient(
-                    0f, cy - r * 1.1f, 0f, cy + r * 0.7f,
-                    layer.shaderTop, layer.shaderBottom,
-                    android.graphics.Shader.TileMode.CLAMP,
-                )
-            }
-        }
-        builtBounds = true
-    }
-
-    /** Adds one wobbling organic blob (72-step closed path). */
-    private fun addBlob(path: android.graphics.Path, cx: Float, cy: Float, r: Float, seed: Float, t: Float) {
-        val steps = 72
-        var first = true
-        for (k in 0..steps) {
-            val theta = (k % steps) * (Math.PI * 2 / steps).toFloat()
-            val wobble = 1f +
-                0.06f * kotlin.math.sin(2f * theta + seed + t) +
-                0.04f * kotlin.math.sin(3f * theta - seed * 1.7f - t * 2f)
-            val x = cx + r * wobble * kotlin.math.cos(theta)
-            val y = cy + r * wobble * kotlin.math.sin(theta)
-            if (first) { path.moveTo(x, y); first = false } else { path.lineTo(x, y) }
-        }
-        path.close()
-    }
-
-    /** Liquid metaball bridge between two close circles: stretches as they near,
-     *  snaps apart as they drift beyond the merge distance. */
-    private fun addBridge(path: android.graphics.Path, ax: Float, ay: Float, ar: Float, bx: Float, by: Float, br: Float) {
-        val dx = bx - ax
-        val dy = by - ay
-        val d = kotlin.math.sqrt(dx * dx + dy * dy)
-        if (d < 1f) return
-        val maxD = (ar + br) * 1.15f
-        if (d >= maxD) return
-        val t = 1f - d / maxD
-        val s = t * t * (3f - 2f * t)              // smoothstep: soft snap
-        val ux = dx / d
-        val uy = dy / d
-        val px = -uy
-        val py = ux
-        val w1 = ar * 0.62f * s
-        val w2 = br * 0.62f * s
-        val m1x = ax + px * w1; val m1y = ay + py * w1
-        val m2x = bx + px * w2; val m2y = by + py * w2
-        val m3x = bx - px * w2; val m3y = by - py * w2
-        val m4x = ax - px * w1; val m4y = ay - py * w1
-        val cx = (ax + bx) / 2f
-        val cy = (ay + by) / 2f
-        val nx = px * (w1 + w2) * 0.5f * 0.9f
-        val ny = py * (w1 + w2) * 0.5f * 0.9f
-        path.moveTo(m1x, m1y)
-        path.quadTo(cx + nx, cy + ny, m2x, m2y)
-        path.lineTo(m3x, m3y)
-        path.quadTo(cx - nx, cy - ny, m4x, m4y)
-        path.close()
-    }
-
-    /** Animated center of a blob: home + slow drift + pair convergence. */
-    private fun centerOf(
-        b: android.graphics.Rect, w: Float, h: Float, minDim: Float, t: Float,
-        fx: Float, fy: Float, seed: Float, driftX: Float, driftY: Float,
-        dirX: Float, dirY: Float, converge: Float, phase: Float, roleSign: Float,
-    ): FloatArray {
-        val merge = converge * minDim * (0.5f - 0.5f * kotlin.math.cos(t + phase)) * roleSign
-        return floatArrayOf(
-            b.left + fx * w + kotlin.math.sin(t + seed) * minDim * driftX + dirX * merge,
-            b.top + fy * h + kotlin.math.cos(t * 2f + seed) * minDim * driftY + dirY * merge,
-        )
-    }
-
-    private fun drawPairLayer(canvas: android.graphics.Canvas, b: android.graphics.Rect, layer: Layer, shaderIdx: Int, t: Float) {
-        val pair = layer.pair ?: return
-        val w = b.width().toFloat().coerceAtLeast(1f)
-        val h = b.height().toFloat().coerceAtLeast(1f)
-        val minDim = kotlin.math.min(w, h)
-        val dxh = pair.b.fx * w - pair.a.fx * w
-        val dyh = pair.b.fy * h - pair.a.fy * h
-        val dh = kotlin.math.sqrt(dxh * dxh + dyh * dyh).coerceAtLeast(1f)
-        val dirX = dxh / dh
-        val dirY = dyh / dh
-        val ca = centerOf(b, w, h, minDim, t, pair.a.fx, pair.a.fy, pair.a.seed, pair.a.driftX, pair.a.driftY, dirX, dirY, pair.converge, pair.phase, +0.5f)
-        val cb = centerOf(b, w, h, minDim, t, pair.b.fx, pair.b.fy, pair.b.seed, pair.b.driftX, pair.b.driftY, dirX, dirY, pair.converge, pair.phase, -0.5f)
-        paint.shader = shaders[shaderIdx]
-        layerPath.reset()
-        addBlob(layerPath, ca[0], ca[1], pair.a.fr * minDim, pair.a.seed, t)
-        addBlob(layerPath, cb[0], cb[1], pair.b.fr * minDim, pair.b.seed, t)
-        tempPath.reset()
-        addBridge(tempPath, ca[0], ca[1], pair.a.fr * minDim, cb[0], cb[1], pair.b.fr * minDim)
-        layerPath.addPath(tempPath)
-        canvas.drawPath(layerPath, paint)
-    }
-
-    private fun drawSingleLayer(canvas: android.graphics.Canvas, b: android.graphics.Rect, layer: Layer, shaderIdx: Int, t: Float) {
-        val single = layer.single ?: return
-        val w = b.width().toFloat().coerceAtLeast(1f)
-        val h = b.height().toFloat().coerceAtLeast(1f)
-        val minDim = kotlin.math.min(w, h)
-        val c = centerOf(b, w, h, minDim, t, single.fx, single.fy, single.seed, single.driftX, single.driftY, 0f, 0f, 0f, 0f, 0f)
-        paint.shader = shaders[shaderIdx]
-        layerPath.reset()
-        addBlob(layerPath, c[0], c[1], single.fr * minDim, single.seed, t)
-        canvas.drawPath(layerPath, paint)
-    }
-
-    override fun draw(canvas: android.graphics.Canvas) {
-        val b = bounds
-        if (b.width() == 0 || b.height() == 0) return
-        if (!builtBounds) rebuildShaders(b)
-        // lazy start: setVisible(true) never fires for a background set while the view is already visible
-        if (animator == null) {
-            animator = android.animation.ValueAnimator.ofFloat(0f, (2 * Math.PI).toFloat()).apply {
-                duration = 26000
-                repeatCount = android.animation.ValueAnimator.INFINITE
-                interpolator = android.view.animation.LinearInterpolator()
-                addUpdateListener {
-                    phase = it.animatedValue as Float
-                    invalidateSelf()
-                }
-                start()
-            }
-        }
-        clipPath.reset()
-        clipPath.addRoundRect(
-            b.left.toFloat(), b.top.toFloat(), b.right.toFloat(), b.bottom.toFloat(),
-            radiusPx, radiusPx, android.graphics.Path.Direction.CW,
-        )
-        canvas.save()
-        canvas.clipPath(clipPath)
-        canvas.drawRoundRect(
-            b.left.toFloat(), b.top.toFloat(), b.right.toFloat(), b.bottom.toFloat(),
-            radiusPx, radiusPx, basePaint,
-        )
-        val t = phase // 0..2PI, seamless loop (all time terms are integer multiples)
-        layers.forEachIndexed { i, layer ->
-            if (layer.pair != null) drawPairLayer(canvas, b, layer, i, t)
-            else drawSingleLayer(canvas, b, layer, i, t)
-        }
-        canvas.restore()
-    }
-
-    override fun setVisible(visible: Boolean, restart: Boolean): Boolean {
-        if (visible) animator?.resume() else animator?.pause()
-        return super.setVisible(visible, restart)
-    }
-
-    override fun setAlpha(alpha: Int) {}
-    override fun setColorFilter(colorFilter: android.graphics.ColorFilter?) {}
-    @Deprecated("Deprecated in Java")
-    override fun getOpacity(): Int = android.graphics.PixelFormat.TRANSLUCENT
-    override fun getIntrinsicWidth(): Int = -1
-    override fun getIntrinsicHeight(): Int = -1
-}
 
 
 

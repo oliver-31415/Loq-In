@@ -44,6 +44,7 @@ import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.theme.CustomAccentApplier
 import at.saltyy.switchly.ui.EdgeToEdgeUtils
 import at.saltyy.switchly.ui.ThemeUtils
+import at.saltyy.switchly.ui.showWarnPill
 import at.saltyy.switchly.ui.dialog.styleSwitchlyDialogButtons
 import at.saltyy.switchly.ui.dialog.EmergencyPinDialog
 import at.saltyy.switchly.util.LocaleHelper
@@ -70,10 +71,10 @@ class AppLockSettingsActivity : AppCompatActivity() {
         val enabled = isDeviceAdminOrManagedOwnerActive()
         if (pendingStrictProtectionEnable && enabled) {
             AppLockStore.setStrictProtectionEnabled(this, true)
-            Toast.makeText(this, R.string.app_lock_strict_protection_enabled, Toast.LENGTH_SHORT).show()
+            findViewById<View>(android.R.id.content).showWarnPill(R.string.app_lock_strict_protection_enabled)
         } else if (pendingStrictProtectionEnable) {
             AppLockStore.setStrictProtectionEnabled(this, false)
-            Toast.makeText(this, R.string.app_lock_strict_protection_not_granted, Toast.LENGTH_SHORT).show()
+            findViewById<View>(android.R.id.content).showWarnPill(R.string.app_lock_strict_protection_not_granted)
         }
         pendingStrictProtectionEnable = false
         refreshUi()
@@ -127,14 +128,14 @@ class AppLockSettingsActivity : AppCompatActivity() {
                 ignoreChanges = true
                 switchBiometric.isChecked = false
                 ignoreChanges = false
-                Toast.makeText(this, R.string.app_lock_setup_pin_first, Toast.LENGTH_SHORT).show()
+                findViewById<View>(android.R.id.content).showWarnPill(R.string.app_lock_setup_pin_first)
                 return@setOnCheckedChangeListener
             }
             if (isChecked && !isBiometricAvailable()) {
                 ignoreChanges = true
                 switchBiometric.isChecked = false
                 ignoreChanges = false
-                Toast.makeText(this, R.string.app_lock_biometric_not_available, Toast.LENGTH_SHORT).show()
+                findViewById<View>(android.R.id.content).showWarnPill(R.string.app_lock_biometric_not_available)
                 return@setOnCheckedChangeListener
             }
             AppLockStore.setBiometricEnabled(this, isChecked)
@@ -324,7 +325,7 @@ class AppLockSettingsActivity : AppCompatActivity() {
             dialog.styleSwitchlyDialogButtons()
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                 if (!AppLockStore.matchesPin(this, input.text?.toString().orEmpty())) {
-                    Toast.makeText(this, R.string.app_lock_pin_incorrect, Toast.LENGTH_SHORT).show()
+                    input.showWarnPill(R.string.app_lock_pin_incorrect)
                     return@setOnClickListener
                 }
                 dialog.dismiss()
@@ -337,7 +338,7 @@ class AppLockSettingsActivity : AppCompatActivity() {
 
     private fun completeDisableStrictProtection() {
         disableStrictProtection(removeDeviceAdmin = true)
-        Toast.makeText(this, R.string.app_lock_strict_protection_disabled, Toast.LENGTH_SHORT).show()
+        findViewById<View>(android.R.id.content).showWarnPill(R.string.app_lock_strict_protection_disabled)
         refreshUi()
     }
 
@@ -390,14 +391,14 @@ class AppLockSettingsActivity : AppCompatActivity() {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                 val pin = input.text?.toString()?.trim().orEmpty()
                 if (pin.length < 4) {
-                    Toast.makeText(this, R.string.app_lock_pin_too_short, Toast.LENGTH_SHORT).show()
+                    input.showWarnPill(R.string.app_lock_pin_too_short)
                     return@setOnClickListener
                 }
                 AppLockStore.setPin(this, pin)
                 if (enableAfter) {
                     AppLockStore.setEnabled(this, true)
                 }
-                Toast.makeText(this, R.string.app_lock_pin_set, Toast.LENGTH_SHORT).show()
+                input.showWarnPill(R.string.app_lock_pin_set)
                 dialog.dismiss()
                 refreshUi()
                 if (enableUninstallProtectionAfter) {

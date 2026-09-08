@@ -42,6 +42,7 @@ import at.saltyy.switchly.theme.CustomAccentApplier
 import at.saltyy.switchly.ui.EdgeToEdgeUtils
 import at.saltyy.switchly.ui.SegmentedToggleUi
 import at.saltyy.switchly.ui.ThemeUtils
+import at.saltyy.switchly.ui.showWarnPillOnContent
 import at.saltyy.switchly.util.PackageLaunchIntentCompat
 import at.saltyy.switchly.util.PackageManagerApiCompat
 import at.saltyy.switchly.ui.dialog.showAccented
@@ -146,7 +147,7 @@ class IgnoredUsageAppsActivity : AppCompatActivity() {
         findViewById<MaterialButton>(R.id.btnSaveIgnoredApps).setOnClickListener {
             IgnoredUsageAppsStore.setIgnoredPackages(this, usageSelection)
             IgnoredUsageAppsStore.setAppPickerHiddenPackages(this, appPickerSelection)
-            Toast.makeText(this, R.string.ignored_usage_apps_saved, Toast.LENGTH_SHORT).show()
+            showWarnPillOnContent(R.string.ignored_usage_apps_saved)
             finish()
         }
 

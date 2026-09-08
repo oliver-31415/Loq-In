@@ -21,6 +21,7 @@ package at.saltyy.switchly.data.prefs
 
 import android.content.Context
 import androidx.core.content.edit
+import at.saltyy.switchly.R
 import at.saltyy.switchly.blocking.BlockingRuntime
 import at.saltyy.switchly.feature.widget.ActiveTimerWidgetProvider
 import at.saltyy.switchly.util.ManagedDevicePolicyHelper
@@ -220,6 +221,10 @@ object SwitchModeStore {
         if (currentlyEnabled != effectiveAfter) {
             bumpLimitSessionGeneration(ctx)
             recordEffectiveStateChange(ctx, currentlyEnabled, effectiveAfter)
+            // A manual turn-off vetoes connection-schedule re-asserts until the next
+            // connect edge; a manual turn-on clears the veto. Schedule-driven writes
+            // go through setEnabledBySchedule and never touch this.
+            ScheduleRuntimeStore.setManualDisableMs(ctx, if (!effectiveAfter) now else 0L)
         }
 
         if (!profileBeforeTempEnable.isNullOrBlank()) {
@@ -328,8 +333,9 @@ object SwitchModeStore {
     }
 
     // Temporarily disables Switchly for the given duration in milliseconds.
-    fun setTemporarilyDisabled(ctx: Context, durationMs: Long) {
-        val until = System.currentTimeMillis() + durationMs
+    // Per-profile pause caps (count / per-pause max / daily total) are enforced here
+    // so every entry point (sheet, NFC, widgets, settings) behaves the same.
+    fun setTemporarilyDisabled(ctx: Context, durationMs: Long, isEmergency: Boolean = false): Boolean {
         val sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val now = System.currentTimeMillis()
         val baseEnabled = sp.getBoolean(KEY_ENABLED, false)
@@ -338,8 +344,28 @@ object SwitchModeStore {
 
         if (!baseEnabled && !tempEnableActive) {
             AppLogStore.append(ctx, "Profiles", "Temp disable skipped reason=already_disabled")
-            return
+            return false
         }
+
+        val profile = ProfileStore.getCurrent(ctx).orEmpty().trim().ifEmpty { "Default" }
+        val grantedMs = if (isEmergency) {
+            durationMs
+        } else {
+            TempPauseStore.tryConsumePause(ctx, profile, durationMs)
+        }
+
+        if (grantedMs <= 0L) {
+            AppLogStore.append(ctx, "Profiles", "Temp disable denied reason=pause_caps_exhausted profile=$profile")
+            runCatching {
+                android.widget.Toast.makeText(
+                    ctx,
+                    ctx.getString(R.string.temp_pause_exhausted),
+                    android.widget.Toast.LENGTH_LONG
+                ).show()
+            }
+            return false
+        }
+        val until = now + grantedMs
 
         sp.edit {
             // IMPORTANT:
@@ -363,11 +389,12 @@ object SwitchModeStore {
         _enabledFlow.value = effectivelyEnabledAfter
         ActiveTimerWidgetProvider.updateAll(ctx)
         PersistentStatusNotifier.refresh(ctx)
-        AppLogStore.append(ctx, "Profiles", "Temp disable started duration=${durationMs}ms")
+        AppLogStore.append(ctx, "Profiles", "Temp disable started duration=${grantedMs}ms")
 
         // Clear any currently visible blocker UI/state while the temporary disable window is active.
         BlockingRuntime.stop(ctx)
         ManagedDevicePolicyHelper.syncSelfUninstallBlock(ctx)
+        return true
     }
 
     /**

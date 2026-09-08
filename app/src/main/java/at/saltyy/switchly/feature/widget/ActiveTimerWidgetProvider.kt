@@ -25,11 +25,19 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.os.SystemClock
 import android.view.View
 import android.widget.RemoteViews
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
 import at.saltyy.switchly.R
+import at.saltyy.switchly.data.prefs.AutomationModeStore
+import at.saltyy.switchly.data.prefs.ProfileStore
 import at.saltyy.switchly.data.prefs.SwitchModeStore
+import at.saltyy.switchly.feature.entry.QuickActionIconFactory
+import at.saltyy.switchly.feature.theme.AccentColor
+import at.saltyy.switchly.ui.HeroArtRenderer
 import at.saltyy.switchly.ui.MainActivity
 
 class ActiveTimerWidgetProvider : AppWidgetProvider() {
@@ -63,16 +71,93 @@ class ActiveTimerWidgetProvider : AppWidgetProvider() {
             )
             views.setOnClickPendingIntent(R.id.widgetRoot, pendingIntent)
 
+            val profile = ProfileStore.getCurrent(context)?.takeIf { it.isNotBlank() }
+                ?: context.getString(R.string.profile_default_name)
+            val appCount = ProfileStore.getProfileApps(context, profile).size
+
             if (enabled) {
+                val accent = AccentColor.getAccentColorInt(context)
+                val density = context.resources.displayMetrics.density
+                val mode = AutomationModeStore.getMode(context)
+                val iconRes = when (mode) {
+                    AutomationModeStore.Mode.MIXED -> R.drawable.security_24
+                    AutomationModeStore.Mode.NFC -> R.drawable.nfc_24
+                    AutomationModeStore.Mode.QR -> R.drawable.qr_code_24
+                    AutomationModeStore.Mode.BARCODE -> R.drawable.barcode_24
+                    AutomationModeStore.Mode.SCHEDULE -> R.drawable.schedule_24
+                }
+
+                // Render organic Foqos-style blob artwork matching the live accent
+                val bgBitmap = HeroArtRenderer.renderBitmap(
+                    widthPx = (240 * density).toInt(),
+                    heightPx = (160 * density).toInt(),
+                    accent = accent,
+                    radiusPx = 28f * density,
+                )
+                views.setImageViewBitmap(R.id.widgetActiveTimerBg, bgBitmap)
+
+                // Populate header & badge
+                views.setTextViewText(R.id.widgetTitle, profile)
+                views.setTextColor(R.id.widgetTitle, Color.WHITE)
+                views.setTextViewText(R.id.widgetStatusBadge, context.getString(R.string.state_profile_on_status).uppercase())
+                views.setTextColor(R.id.widgetStatusBadge, Color.WHITE)
+                views.setInt(R.id.widgetStatusBadge, "setBackgroundResource", R.drawable.widget_status_pill_bg)
+
+                val iconBmp = QuickActionIconFactory.createWidgetBitmap(
+                    context = context,
+                    drawableRes = iconRes,
+                    tint = Color.WHITE,
+                    canvasSizeDp = 20,
+                    iconSizeDp = 18,
+                )
+                views.setImageViewBitmap(R.id.widgetIcon, iconBmp)
+
+                // Live counting Chronometer
                 val base = SystemClock.elapsedRealtime() - durationMs.coerceAtLeast(0L)
-                views.setTextViewText(R.id.widgetTitle, context.getString(R.string.widget_active_timer_title))
                 views.setViewVisibility(R.id.widgetChronometer, View.VISIBLE)
+                views.setTextColor(R.id.widgetChronometer, Color.WHITE)
                 views.setChronometer(R.id.widgetChronometer, base, null, true)
+
+                // Subtitle
+                val subtitle = if (appCount > 0) {
+                    context.resources.getQuantityString(R.plurals.profile_app_count, appCount, appCount)
+                } else {
+                    context.getString(R.string.dashboard_status_enabled)
+                }
+                views.setTextViewText(R.id.widgetSubtitle, subtitle)
+                views.setTextColor(R.id.widgetSubtitle, ColorUtils.setAlphaComponent(Color.WHITE, 0xCC))
             } else {
-                views.setTextViewText(R.id.widgetTitle, context.getString(R.string.widget_active_timer_inactive))
+                val onSurface = ContextCompat.getColor(context, R.color.foqos_on_surface)
+                val onSurfaceVariant = ContextCompat.getColor(context, R.color.foqos_on_surface_variant)
+
+                // Calm neutral card
+                views.setImageViewResource(R.id.widgetActiveTimerBg, R.drawable.hero_profile_bg_idle)
+
+                // Header & badge
+                views.setTextViewText(R.id.widgetTitle, profile)
+                views.setTextColor(R.id.widgetTitle, onSurface)
+                views.setTextViewText(R.id.widgetStatusBadge, context.getString(R.string.widget_active_timer_inactive).uppercase())
+                views.setTextColor(R.id.widgetStatusBadge, onSurfaceVariant)
+                views.setInt(R.id.widgetStatusBadge, "setBackgroundResource", R.drawable.widget_status_pill_idle_bg)
+
+                val iconBmp = QuickActionIconFactory.createWidgetBitmap(
+                    context = context,
+                    drawableRes = R.drawable.security_24,
+                    tint = onSurface,
+                    canvasSizeDp = 20,
+                    iconSizeDp = 18,
+                )
+                views.setImageViewBitmap(R.id.widgetIcon, iconBmp)
+
+                // Chronometer idle placeholder
                 views.setChronometer(R.id.widgetChronometer, SystemClock.elapsedRealtime(), null, false)
                 views.setTextViewText(R.id.widgetChronometer, "—")
+                views.setTextColor(R.id.widgetChronometer, onSurface)
                 views.setViewVisibility(R.id.widgetChronometer, View.VISIBLE)
+
+                // Subtitle
+                views.setTextViewText(R.id.widgetSubtitle, context.getString(R.string.widget_active_timer_inactive))
+                views.setTextColor(R.id.widgetSubtitle, onSurfaceVariant)
             }
 
             manager.updateAppWidget(id, views)

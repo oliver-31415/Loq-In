@@ -32,8 +32,11 @@ import at.saltyy.switchly.feature.usage.ScreenUnlocksActivity
 import at.saltyy.switchly.feature.usage.SwitchlyOverviewActivity
 import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.ui.EdgeToEdgeUtils
+import at.saltyy.switchly.ui.LockedUi
 import at.saltyy.switchly.ui.ThemeUtils
 import at.saltyy.switchly.ui.dialog.showAccented
+import at.saltyy.switchly.ui.showWarnPill
+import at.saltyy.switchly.util.EditingLockGuard
 import com.google.android.material.appbar.MaterialToolbar
 
 /**
@@ -77,8 +80,26 @@ class AccountActivity : AppCompatActivity() {
             startActivity(Intent(this, PrivacyReportActivity::class.java))
         }
         findViewById<View>(R.id.cardAccountBlockedNotifications).setOnClickListener {
+            // Same lock as Settings: warn via pill instead of opening while active.
+            if (EditingLockGuard.isLocked(this)) {
+                findViewById<View>(android.R.id.content)
+                    .showWarnPill(R.string.edit_locked_manage_blocked_notifications)
+                return@setOnClickListener
+            }
             startActivity(Intent(this, BlockedInboxActivity::class.java))
         }
+        syncLockedCardState()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        syncLockedCardState()
+    }
+
+    private fun syncLockedCardState() {
+        // Gray out (but keep tappable for the warning pill) while protection is active.
+        findViewById<View>(R.id.cardAccountBlockedNotifications)?.alpha =
+            if (EditingLockGuard.isLocked(this)) LockedUi.cardAlpha(this) else 1f
     }
 
     companion object {

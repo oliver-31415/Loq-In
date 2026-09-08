@@ -56,6 +56,7 @@ import at.saltyy.switchly.ui.EdgeToEdgeUtils
 import at.saltyy.switchly.ui.LockedUi
 import at.saltyy.switchly.ui.MainActivity
 import at.saltyy.switchly.ui.ThemeUtils
+import at.saltyy.switchly.ui.showWarnPill
 import at.saltyy.switchly.ui.dialog.SwitchlyDialogOption
 import at.saltyy.switchly.ui.dialog.SwitchlyInfoRow
 import at.saltyy.switchly.ui.dialog.showSwitchlyInfoDialog
@@ -465,7 +466,7 @@ class SettingsActivity : AppCompatActivity() {
             }
         }
         findViewById<View>(R.id.cardSettingsAppearance).setOnClickListener {
-            showNestedSettingsScreen("screen_appearance")
+            startActivity(Intent(this, AppearanceActivity::class.java))
         }
         findViewById<View>(R.id.cardSettingsIgnoredApps).setOnClickListener {
             startActivity(IgnoredUsageAppsActivity.intent(this))
@@ -518,15 +519,18 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun applyRestrictedCardState(card: View, restricted: Boolean) {
-        card.isEnabled = !restricted
-        card.isClickable = !restricted
-        card.isFocusable = !restricted
+        // Stay tappable (dimmed): the section guards warn via pill instead of dead taps.
+        card.isEnabled = true
+        card.isClickable = true
+        card.isFocusable = true
         card.alpha = if (restricted) LockedUi.cardAlpha(this) else 1f
     }
 
     private fun openControlSettingsSection(open: () -> Unit) {
         if (SwitchlyAppAccessGuard.isControlSettingsLocked(this)) {
             applyRestrictedAccessState()
+            findViewById<View>(android.R.id.content)
+                .showWarnPill(R.string.settings_restricted_action_unavailable)
             return
         }
 
@@ -536,6 +540,8 @@ class SettingsActivity : AppCompatActivity() {
     private fun openProtectedSettingsSection(open: () -> Unit) {
         if (SwitchlyAppAccessGuard.isLocked(this)) {
             applyRestrictedAccessState()
+            findViewById<View>(android.R.id.content)
+                .showWarnPill(R.string.settings_restricted_action_unavailable)
             return
         }
 
@@ -566,6 +572,10 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun showNestedSettingsScreen(screenKey: String, focusKey: String? = null) {
+        if (screenKey == "screen_appearance") {
+            startActivity(Intent(this, AppearanceActivity::class.java))
+            return
+        }
         showNestedSettingsContainer()
         val fragment = SettingsFragment().apply {
             arguments = Bundle().apply {
@@ -637,7 +647,7 @@ class SettingsActivity : AppCompatActivity() {
                 if (EmergencyBypassStore.pause(this)) {
                     AppLogStore.append(this, "Emergency", "Emergency mode paused from Settings")
                     SwitchModeStore.clearTemporary(this)
-                    Toast.makeText(this, getString(R.string.emergency_paused_toast), Toast.LENGTH_SHORT).show()
+                    findViewById<View>(android.R.id.content).showWarnPill(getString(R.string.emergency_paused_toast))
                     BlockingRuntime.ensureRunning(this)
                     applyRestrictedAccessState()
                 }
@@ -646,7 +656,7 @@ class SettingsActivity : AppCompatActivity() {
                 AppLogStore.append(this, "Emergency", "Emergency mode ended from Settings")
                 EmergencyBypassStore.cancel(this)
                 SwitchModeStore.clearTemporary(this)
-                Toast.makeText(this, getString(R.string.emergency_ended_toast), Toast.LENGTH_SHORT).show()
+                findViewById<View>(android.R.id.content).showWarnPill(getString(R.string.emergency_ended_toast))
                 BlockingRuntime.ensureRunning(this)
                 applyRestrictedAccessState()
             }
@@ -655,8 +665,8 @@ class SettingsActivity : AppCompatActivity() {
                 if (EmergencyBypassStore.resume(this)) {
                     val remainingMinutes = EmergencyBypassStore.minutesRemaining(this).coerceAtLeast(1)
                     AppLogStore.append(this, "Emergency", "Emergency mode resumed from Settings with ${remainingMinutes}m remaining")
-                    SwitchModeStore.setTemporarilyDisabled(this, remainingMinutes * 60_000L)
-                    Toast.makeText(this, getString(R.string.emergency_resumed_toast), Toast.LENGTH_SHORT).show()
+                    SwitchModeStore.setTemporarilyDisabled(this, remainingMinutes * 60_000L, isEmergency = true)
+                    findViewById<View>(android.R.id.content).showWarnPill(getString(R.string.emergency_resumed_toast))
                     BlockingRuntime.ensureRunning(this)
                     applyRestrictedAccessState()
                 }
@@ -665,7 +675,7 @@ class SettingsActivity : AppCompatActivity() {
                 AppLogStore.append(this, "Emergency", "Emergency mode ended from Settings")
                 EmergencyBypassStore.cancel(this)
                 SwitchModeStore.clearTemporary(this)
-                Toast.makeText(this, getString(R.string.emergency_ended_toast), Toast.LENGTH_SHORT).show()
+                findViewById<View>(android.R.id.content).showWarnPill(getString(R.string.emergency_ended_toast))
                 BlockingRuntime.ensureRunning(this)
                 applyRestrictedAccessState()
             }
@@ -756,15 +766,18 @@ class SettingsActivity : AppCompatActivity() {
             .setTitle(getString(R.string.pref_emergency_title))
             .setMessage(getString(R.string.emergency_action_start_15))
             .setNegativeButton(R.string.cancel, null)
-            .setPositiveButton(R.string.ok) { _, _ ->
+            .setPositiveButton(R.string.ok) { _, dialog ->
+                // Anchor to the dialog window so the pill is visible above it.
+                val pillAnchor = (dialog as? AlertDialog)?.window?.decorView
+                    ?: findViewById<View>(android.R.id.content)
                 if (EmergencyBypassStore.enableIfAllowed(this, 15)) {
                     AppLogStore.append(this, "Emergency", "Emergency mode started from Settings for 15m")
-                    SwitchModeStore.setTemporarilyDisabled(this, 15 * 60_000L)
-                    Toast.makeText(this, getString(R.string.emergency_enabled_toast, 15), Toast.LENGTH_SHORT).show()
+                    SwitchModeStore.setTemporarilyDisabled(this, 15 * 60_000L, isEmergency = true)
+                    pillAnchor.showWarnPill(getString(R.string.emergency_enabled_toast, 15))
                     BlockingRuntime.ensureRunning(this)
                     applyRestrictedAccessState()
                 } else {
-                    Toast.makeText(this, getString(R.string.emergency_used_today), Toast.LENGTH_SHORT).show()
+                    pillAnchor.showWarnPill(getString(R.string.emergency_used_today))
                 }
             }
             .showAccented()

@@ -201,6 +201,12 @@
             android:exported="false"
             android:label="@string/account_title" />
 
+        <!-- Appearance screen -->
+        <activity
+            android:name=".feature.settings.AppearanceActivity"
+            android:exported="false"
+            android:label="@string/settings_theme_title" />
+
         <!-- Info hub screen -->
         <activity
             android:name=".feature.about.InfoActivity"

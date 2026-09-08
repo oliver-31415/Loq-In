@@ -6,11 +6,11 @@
     android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:minHeight="64dp"
-    android:paddingStart="12dp"
-    android:paddingTop="14dp"
-    android:paddingEnd="10dp"
-    android:paddingBottom="14dp"
+    android:minHeight="52dp"
+    android:paddingStart="16dp"
+    android:paddingTop="10dp"
+    android:paddingEnd="12dp"
+    android:paddingBottom="10dp"
     android:background="?attr/selectableItemBackground"
     tools:ignore="Overdraw">
 

@@ -237,9 +237,9 @@
         <Preference
             android:key="pref_other_help_contact"
             android:layout="@layout/item_pref_card"
-            android:title="@string/settings_contact_support_title"
-            android:summary="@string/settings_contact_support_summary"
-            android:icon="@drawable/help_24"
+            android:title="@string/support_logs_unified_title"
+            android:summary="@string/support_logs_unified_desc"
+            android:icon="@drawable/list_alt_24"
             app:iconSpaceReserved="false" />
 
         <Preference

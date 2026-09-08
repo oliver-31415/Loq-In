@@ -82,6 +82,8 @@ import at.saltyy.switchly.feature.usage.UsageStatsRepo
 import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.ui.MainActivity
 import at.saltyy.switchly.ui.ThemeUtils
+import at.saltyy.switchly.ui.showWarnPill
+import at.saltyy.switchly.ui.showWarnPillOnContent
 import at.saltyy.switchly.ui.dialog.showAccented
 import at.saltyy.switchly.ui.dialog.styleSwitchlyDialogButtons
 import at.saltyy.switchly.util.BatteryOptimizationRequest
@@ -421,7 +423,7 @@ class OnboardingActivity : ComponentActivity() {
     private fun finishOnboarding() {
         if (!forced) {
             SwitchModeStore.setEnabled(this, true)
-            Toast.makeText(this, R.string.onb_start_test_toast, Toast.LENGTH_LONG).show()
+            showWarnPillOnContent(R.string.onb_start_test_toast)
             markDone()
         }
         leaveOnboarding()
@@ -1243,7 +1245,7 @@ class OnboardingActivity : ComponentActivity() {
             card.setOnClickListener {
                 if (app.packageName in pendingSelection) {
                     if (pendingSelection.size <= 1) {
-                        Toast.makeText(this, R.string.onb_keep_one_app, Toast.LENGTH_SHORT).show()
+                        card.showWarnPill(R.string.onb_keep_one_app)
                         return@setOnClickListener
                     }
                     pendingSelection.remove(app.packageName)
@@ -1270,7 +1272,8 @@ class OnboardingActivity : ComponentActivity() {
         dialog.styleSwitchlyDialogButtons()
         dialog.getButton(android.content.DialogInterface.BUTTON_POSITIVE).setOnClickListener {
             if (pendingSelection.isEmpty()) {
-                Toast.makeText(this, R.string.onb_keep_one_app, Toast.LENGTH_SHORT).show()
+                (dialog.window?.decorView ?: findViewById<View>(android.R.id.content))
+                    .showWarnPill(R.string.onb_keep_one_app)
                 return@setOnClickListener
             }
             ProfileStore.setSelectedForProfileMode(this, profile, pendingSelection)

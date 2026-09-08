@@ -5,6 +5,8 @@
     <!-- Dashboard profile state -->
     <!-- ====================================================== -->
     <string name="dashboard_active_profile_fmt">Active profile: %1$s</string>
+    <!-- Needed by the in-progress widget refactor. -->
+    <string name="dashboard_status_enabled">Protection is on</string>
     <string name="dashboard_active_profile_unknown">Active profile: —</string>
     <string name="dashboard_unavailable_hint_pick_apps">Not installed on this device.\nOpen “App rules” to remove.</string>
 
@@ -222,6 +224,8 @@
     <string name="profile_sheet_inapp_summary">Shorts, Reels, feeds and more</string>
     <string name="profile_sheet_schedules">Schedules</string>
     <string name="profile_sheet_schedules_summary">Time, Wi-Fi, Bluetooth and location</string>
+    <string name="profile_sheet_pauses">Temporary pauses</string>
+    <string name="profile_sheet_pauses_summary">Caps for pausing protection</string>
     <string name="profile_sheet_insights">Insights &amp; history</string>
     <string name="profile_sheet_insights_summary">Statistics, events and sessions</string>
     <string name="profile_sheet_delete">Delete profile</string>

@@ -122,10 +122,10 @@
     <string name="blocking_uninstall_friction_title">Uninstall friction active</string>
     <string name="blocking_uninstall_friction_message">Switchly is making uninstall-related screens harder to access while protection is active. This is friction, not true uninstall blocking. Disable Switchly first via your allowed method if you want to continue.</string>
     <string name="switchly_settings_locked_title">Open Settings?</string>
-    <string name="settings_restricted_open_message">Switchly is active. Settings can still be viewed, but protection-related options cannot be changed until Switchly is fully disabled.</string>
+    <string name="settings_restricted_open_message">Switchly is active. Settings can still be viewed, but protection-related options cannot be changed until Switchly is turned off.</string>
     <string name="settings_open_restricted">Open Settings</string>
     <string name="switchly_account_locked_title">Open Account?</string>
-    <string name="account_restricted_open_message">Switchly is active. Account can still be viewed, but protection-related options cannot be changed until Switchly is fully disabled.</string>
+    <string name="account_restricted_open_message">Switchly is active. Account can still be viewed, but protection-related options cannot be changed until Switchly is turned off.</string>
     <string name="account_open_restricted">Open Account</string>
     <string name="settings_restricted_action_unavailable">Unavailable while Switchly is active.</string>
     <string name="blocking_settings_bypass_title">Switchly settings protected</string>
@@ -247,6 +247,8 @@
     <string name="pref_barcode_qs_tile_title">Barcode scanner tile</string>
     <string name="pref_barcode_qs_tile_summary">Add a Quick Settings shortcut for opening the barcode scanner.</string>
     <string name="pref_qs_tile_already_added">Already added</string>
+    <string name="pref_qs_tile_already_added_hint">Already added. Switchly cannot remove it for you — open Quick Settings, tap Edit, and remove the tile there.</string>
+    <string name="pref_qs_tile_add_again">Add again</string>
     <string name="pref_widget_barcode_title">Barcode scanner widget</string>
     <string name="pref_widget_barcode_summary">Add a Home screen widget that opens the barcode scanner.</string>
     <string name="pref_widget_qr_title">QR scanner widget</string>
@@ -271,7 +273,9 @@
     <string name="edit_locked_manage_profiles">Some profile actions stay locked while Switchly is active. You can review, create, duplicate, and rename profiles and tighten app selections. Disable Switchly to delete or switch profiles.</string>
     <string name="edit_locked_write_nfc_tags">Turn off Switchly to write or pair NFC tags.</string>
     <string name="edit_locked_manage_blocked_notifications">Turn off Switchly to open blocked notifications.</string>
-    <string name="toast_disable_switchly_to_edit_blocked_apps">Fully disable Switchly to edit app rules.</string>
+    <string name="edit_locked_manage_schedules">Turn off Switchly to manage schedules.</string>
+    <string name="edit_locked_manage_temp_pauses">Turn off Switchly to change temporary pause limits.</string>
+    <string name="toast_disable_switchly_to_edit_blocked_apps">Turn off Switchly to edit app rules.</string>
     <string name="toast_disable_switchly_to_switch_profiles">Turn off Switchly before switching profiles.</string>
     <string name="toast_disable_switchly_to_edit_websites">Turn off Switchly before editing website rules.</string>
     <string name="toast_disable_switchly_to_edit_app_limits">Turn off Switchly before editing app limits.</string>

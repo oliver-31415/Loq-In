@@ -63,6 +63,7 @@ import at.saltyy.switchly.theme.CustomAccentApplier
 import at.saltyy.switchly.ui.SegmentedToggleUi
 import at.saltyy.switchly.ui.ThemeUtils
 import at.saltyy.switchly.ui.applySwitchlyStyle
+import at.saltyy.switchly.ui.showWarnPill
 import at.saltyy.switchly.ui.dialog.showAccented
 import at.saltyy.switchly.ui.dialog.SwitchlyInfoRow
 import at.saltyy.switchly.ui.dialog.showSwitchlyInfoDialog
@@ -122,7 +123,12 @@ class AppPickerActivity : AppCompatActivity() {
     }
 
     private fun ensureSwitchlyDisabledForAppRules(): Boolean {
-        return !EditingLockGuard.isLocked(this)
+        if (EditingLockGuard.isLocked(this)) {
+            findViewById<View>(android.R.id.content)
+                .showWarnPill(R.string.toast_disable_switchly_to_edit_blocked_apps)
+            return false
+        }
+        return true
     }
 
     private fun canTightenCurrentProfile(): Boolean =
@@ -146,27 +152,29 @@ class AppPickerActivity : AppCompatActivity() {
         val readOnly = EditingLockGuard.isLocked(this)
         val canTighten = readOnly && canTightenCurrentProfile()
 
+        // Locked controls stay tappable (dimmed) so the tap can warn via popover
+        // instead of silently doing nothing. Guards in the listeners revert + warn.
         findViewById<MaterialButtonToggleGroup>(R.id.toggleProfileRuleMode)?.apply {
-            isEnabled = !readOnly
+            isEnabled = true
             alpha = if (readOnly) 0.62f else 1f
         }
-        findViewById<MaterialButton>(R.id.btnBlockSelectedMode)?.isEnabled = !readOnly
-        findViewById<MaterialButton>(R.id.btnAllowSelectedMode)?.isEnabled = !readOnly
+        findViewById<MaterialButton>(R.id.btnBlockSelectedMode)?.isEnabled = true
+        findViewById<MaterialButton>(R.id.btnAllowSelectedMode)?.isEnabled = true
         findViewById<CheckBox>(R.id.cbAutoBlockNewApps)?.apply {
-            isEnabled = !readOnly && currentRuleMode != ProfileRuleModeStore.MODE_ALLOW_SELECTED && !currentProfile.isNullOrBlank()
+            isEnabled = currentRuleMode != ProfileRuleModeStore.MODE_ALLOW_SELECTED && !currentProfile.isNullOrBlank()
             alpha = if (readOnly) 0.45f else if (isEnabled) 1f else 0.55f
         }
         listOf(R.id.btnSelectAll, R.id.btnClearAll).forEach { viewId ->
             findViewById<View>(viewId)?.apply {
-                isEnabled = !readOnly
-                isClickable = !readOnly
+                isEnabled = true
+                isClickable = true
                 alpha = if (readOnly) 0.45f else 1f
             }
         }
         findViewById<View>(R.id.btnSave)?.apply {
-            isEnabled = !readOnly || canTighten
-            isClickable = !readOnly || canTighten
-            alpha = if (isEnabled) 1f else 0.45f
+            isEnabled = true
+            isClickable = true
+            alpha = if (!readOnly || canTighten) 1f else 0.45f
         }
 
         if (::adapter.isInitialized && adapter.itemCount > 0) {
@@ -249,7 +257,7 @@ class AppPickerActivity : AppCompatActivity() {
                     pkg = app.packageName,
                     label = app.label
                 ) {
-                    adapter.notifyPkgChanged(app.packageName)
+                    refreshAdapterSelectionFromStore()
                 }
             },
             onSetSessionLimitClicked = { app ->
@@ -257,7 +265,7 @@ class AppPickerActivity : AppCompatActivity() {
                     activity = this,
                     pkg = app.packageName,
                     label = app.label
-                ) { adapter.notifyPkgChanged(app.packageName) }
+                ) { refreshAdapterSelectionFromStore() }
             },
             onWebsiteRulesClicked = { app -> openWebsiteRulesFromPicker(app) },
             onInAppRulesClicked = { app -> openInAppRulesFromPicker(app) },
@@ -302,7 +310,7 @@ class AppPickerActivity : AppCompatActivity() {
                             pkg = app.packageName,
                             label = app.label
                         ) {
-                            adapter.notifyPkgChanged(app.packageName)
+                            refreshAdapterSelectionFromStore()
                         }
                     },
                     onSetSessionLimitClicked = { app ->
@@ -522,7 +530,7 @@ class AppPickerActivity : AppCompatActivity() {
             val activeProfile = currentProfile
             if (activeProfile.isNullOrBlank()) {
                 group.check(if (currentRuleMode == ProfileRuleModeStore.MODE_ALLOW_SELECTED) R.id.btnAllowSelectedMode else R.id.btnBlockSelectedMode)
-                Toast.makeText(this, R.string.select_profile_first, Toast.LENGTH_SHORT).show()
+                findViewById<View>(android.R.id.content).showWarnPill(R.string.select_profile_first)
                 return@addOnButtonCheckedListener
             }
 
@@ -638,20 +646,14 @@ class AppPickerActivity : AppCompatActivity() {
     }
 
     private fun openWebsiteRulesFromPicker(app: AppEntry) {
-        Toast.makeText(
-            this,
-            getString(R.string.app_picker_open_website_rules_for, app.label),
-            Toast.LENGTH_SHORT
-        ).show()
+        findViewById<View>(android.R.id.content)
+            .showWarnPill(getString(R.string.app_picker_open_website_rules_for, app.label))
         startActivity(Intent(this, ManageBlockedWebsitesActivity::class.java))
     }
 
     private fun openInAppRulesFromPicker(app: AppEntry) {
-        Toast.makeText(
-            this,
-            getString(R.string.app_picker_open_in_app_rules_for, app.label),
-            Toast.LENGTH_SHORT
-        ).show()
+        findViewById<View>(android.R.id.content)
+            .showWarnPill(getString(R.string.app_picker_open_in_app_rules_for, app.label))
         startActivity(
             Intent(this, InAppRulesActivity::class.java)
                 .putExtra(InAppRulesActivity.EXTRA_FOCUS_PACKAGE, app.packageName)
@@ -741,7 +743,6 @@ class AppPickerActivity : AppCompatActivity() {
             if (!ensureSwitchlyDisabledForAppRules()) {
                 cbAutoBlockNewApps.setOnCheckedChangeListener(null)
                 cbAutoBlockNewApps.isChecked = !isAllow && (profile?.let { ProfileStore.isAutoBlockNewAppsEnabled(this, it) } ?: false)
-                cbAutoBlockNewApps.isEnabled = false
                 cbAutoBlockNewApps.alpha = 0.45f
                 return@setOnCheckedChangeListener
             }
@@ -766,11 +767,9 @@ class AppPickerActivity : AppCompatActivity() {
                 autoBlockNewAppsCheckbox?.isChecked = true
             }
             if (skipped > 0) {
-                Toast.makeText(
-                    this,
-                    resources.getQuantityString(R.plurals.app_picker_select_all_skipped_notice, skipped, skipped),
-                    Toast.LENGTH_LONG
-                ).show()
+                findViewById<View>(android.R.id.content).showWarnPill(
+                    resources.getQuantityString(R.plurals.app_picker_select_all_skipped_notice, skipped, skipped)
+                )
             }
         }
 
@@ -796,6 +795,14 @@ class AppPickerActivity : AppCompatActivity() {
         }
     }
 
+    private fun refreshAdapterSelectionFromStore() {
+        if (!::adapter.isInitialized) return
+        val profile = currentProfile ?: return
+        // Saving a limit auto-adds the app to the profile (see ensureManaged),
+        // so re-read the store or the row keeps showing the stale unchecked state.
+        adapter.replaceManagedPackages(ProfileStore.getSelectedForProfileMode(this, profile))
+    }
+
     private fun updateClearButtonLabel(btnClearAll: MaterialButton) {
         btnClearAll.setText(
             if (::adapter.isInitialized && adapter.unavailableManagedCount(this) > 0) {
@@ -819,7 +826,7 @@ class AppPickerActivity : AppCompatActivity() {
         btnSave.setOnClickListener {
             val profile = currentProfile
             if (profile.isNullOrEmpty()) {
-                Toast.makeText(this, R.string.select_profile_first, Toast.LENGTH_SHORT).show()
+                findViewById<View>(android.R.id.content).showWarnPill(R.string.select_profile_first)
                 return@setOnClickListener
             }
 
@@ -932,11 +939,13 @@ class AppPickerActivity : AppCompatActivity() {
         ensureAppCanBeManaged(app) {
             val profile = currentProfile
             if (profile.isNullOrBlank()) {
-                Toast.makeText(this, R.string.select_profile_first, Toast.LENGTH_SHORT).show()
+                findViewById<View>(android.R.id.content).showWarnPill(R.string.select_profile_first)
                 return@ensureAppCanBeManaged
             }
 
             if (EditingLockGuard.isLocked(this)) {
+                findViewById<View>(android.R.id.content)
+                    .showWarnPill(R.string.toast_disable_switchly_to_edit_app_limits)
                 return@ensureAppCanBeManaged
             }
 
@@ -1007,11 +1016,12 @@ class AppPickerActivity : AppCompatActivity() {
                 .setPositiveButton(android.R.string.ok) { _, _ ->
                     val m = input.text?.toString()?.trim()?.toIntOrNull()
                     if (m == null || m < 0) {
-                        Toast.makeText(this, R.string.invalid_value, Toast.LENGTH_SHORT).show()
+                        input.showWarnPill(R.string.invalid_value)
                         return@setPositiveButton
                     }
 
                     if (EditingLockGuard.isLocked(this)) {
+                        container.showWarnPill(R.string.toast_disable_switchly_to_edit_app_limits)
                         return@setPositiveButton
                     }
 

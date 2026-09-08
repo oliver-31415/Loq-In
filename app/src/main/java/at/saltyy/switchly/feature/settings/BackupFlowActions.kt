@@ -24,6 +24,7 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.view.LayoutInflater
+import android.view.View
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -45,6 +46,8 @@ import at.saltyy.switchly.data.sync.CloudSyncRuntime
 import at.saltyy.switchly.data.sync.FileBackupRuntime
 import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.ui.MainActivity
+import at.saltyy.switchly.ui.showWarnPill
+import at.saltyy.switchly.ui.showWarnPillOnContent
 import at.saltyy.switchly.ui.dialog.SwitchlyDialogOption
 import at.saltyy.switchly.ui.dialog.showDestructiveAccented
 import at.saltyy.switchly.ui.dialog.showSwitchlyMultiChoiceDialog
@@ -85,7 +88,7 @@ class BackupFlowActions(private val activity: AppCompatActivity) {
     /** Backup / restore option sheet for the Account hub (mirrors the Settings rows). */
     fun showBackupOptions() {
         if (isRestricted()) {
-            Toast.makeText(activity, R.string.settings_restricted_action_unavailable, Toast.LENGTH_SHORT).show()
+            activity.showWarnPillOnContent(R.string.settings_restricted_action_unavailable)
             return
         }
         val options = mutableListOf<SwitchlyDialogOption>()
@@ -159,7 +162,7 @@ class BackupFlowActions(private val activity: AppCompatActivity) {
                         } else {
                             activity.getString(R.string.cloud_error_fmt, err ?: activity.getString(R.string.error_unknown))
                         }
-                        Toast.makeText(backupCtx, msg, Toast.LENGTH_SHORT).show()
+                        activity.showWarnPillOnContent(msg)
                     }
                 }
                 if (activity.window?.decorView?.post { startBackup() } != true) startBackup()
@@ -169,7 +172,7 @@ class BackupFlowActions(private val activity: AppCompatActivity) {
 
     fun cloudRestore() {
         if (isRestricted()) {
-            Toast.makeText(activity, R.string.settings_restricted_action_unavailable, Toast.LENGTH_SHORT).show()
+            activity.showWarnPillOnContent(R.string.settings_restricted_action_unavailable)
             return
         }
         confirmAction(
@@ -200,7 +203,7 @@ class BackupFlowActions(private val activity: AppCompatActivity) {
 
     fun fileRestore() {
         if (isRestricted()) {
-            Toast.makeText(activity, R.string.settings_restricted_action_unavailable, Toast.LENGTH_SHORT).show()
+            activity.showWarnPillOnContent(R.string.settings_restricted_action_unavailable)
             return
         }
         confirmAction(
@@ -216,7 +219,7 @@ class BackupFlowActions(private val activity: AppCompatActivity) {
 
     fun confirmReset() {
         if (isRestricted()) {
-            Toast.makeText(activity, R.string.settings_restricted_action_unavailable, Toast.LENGTH_SHORT).show()
+            activity.showWarnPillOnContent(R.string.settings_restricted_action_unavailable)
             return
         }
         showResetAllDataDialog()
@@ -299,7 +302,8 @@ class BackupFlowActions(private val activity: AppCompatActivity) {
             )
         }
 
-        ctx.showSwitchlyMultiChoiceDialog(
+        var categoryDialog: AlertDialog? = null
+        categoryDialog = ctx.showSwitchlyMultiChoiceDialog(
             title = activity.getString(R.string.backup_select_categories_title),
             options = options,
             checked = checked,
@@ -313,7 +317,9 @@ class BackupFlowActions(private val activity: AppCompatActivity) {
                 .toSet()
             val selection = BackupSelection.fromIds(selected)
             if (selection.categoryIds.isEmpty()) {
-                Toast.makeText(ctx, activity.getString(R.string.backup_select_at_least_one), Toast.LENGTH_SHORT).show()
+                // Anchor to the dialog window so the pill is visible above it.
+                (categoryDialog?.window?.decorView ?: activity.findViewById<View>(android.R.id.content))
+                    .showWarnPill(activity.getString(R.string.backup_select_at_least_one))
                 return@showSwitchlyMultiChoiceDialog
             }
             BackupSelectionStore.save(ctx, selection)
@@ -371,7 +377,7 @@ class BackupFlowActions(private val activity: AppCompatActivity) {
                     activity.getString(R.string.file_backup_error_fmt, e.localizedMessage ?: activity.getString(R.string.error_unknown))
                 }
             )
-            Toast.makeText(activeCtx, msg, Toast.LENGTH_SHORT).show()
+            activity.showWarnPillOnContent(msg)
         }
     }
 
@@ -394,14 +400,12 @@ class BackupFlowActions(private val activity: AppCompatActivity) {
             }
             payloadResult
                 .onFailure { error ->
-                    Toast.makeText(
-                        activeCtx,
+                    activity.showWarnPillOnContent(
                         activity.getString(
                             R.string.file_restore_error_fmt,
                             error.localizedMessage ?: activity.getString(R.string.error_unknown),
-                        ),
-                        Toast.LENGTH_SHORT,
-                    ).show()
+                        )
+                    )
                 }
                 .onSuccess { payload ->
                     showRestoreSelectionDialog(activeCtx, payload) { selectedPayload ->
@@ -430,7 +434,7 @@ class BackupFlowActions(private val activity: AppCompatActivity) {
                                         )
                                     },
                                 )
-                                Toast.makeText(activeCtx, message, Toast.LENGTH_SHORT).show()
+                                activity.showWarnPillOnContent(message)
                                 if (result.isSuccess) {
                                     restartAppTask()
                                 }
@@ -454,11 +458,9 @@ class BackupFlowActions(private val activity: AppCompatActivity) {
             if (!alive()) return@listBackups
             if (loadingDialog.isShowing) loadingDialog.dismiss()
             if (!ok) {
-                Toast.makeText(
-                    activeCtx,
-                    activity.getString(R.string.cloud_error_fmt, err ?: activity.getString(R.string.error_unknown)),
-                    Toast.LENGTH_SHORT
-                ).show()
+                activity.showWarnPillOnContent(
+                    activity.getString(R.string.cloud_error_fmt, err ?: activity.getString(R.string.error_unknown))
+                )
                 return@listBackups
             }
 
@@ -476,14 +478,12 @@ class BackupFlowActions(private val activity: AppCompatActivity) {
                     val restoreCtx = activity
                     if (!alive()) return@pullRemoteState
                     if (ok2) {
-                        Toast.makeText(restoreCtx, activity.getString(R.string.cloud_restore_ok_restart), Toast.LENGTH_SHORT).show()
+                        activity.showWarnPillOnContent(activity.getString(R.string.cloud_restore_ok_restart))
                         restartAppTask()
                     } else {
-                        Toast.makeText(
-                            restoreCtx,
-                            activity.getString(R.string.cloud_error_fmt, err2 ?: activity.getString(R.string.error_unknown)),
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        activity.showWarnPillOnContent(
+                            activity.getString(R.string.cloud_error_fmt, err2 ?: activity.getString(R.string.error_unknown))
+                        )
                     }
                 }
                 return@listBackups
@@ -509,11 +509,9 @@ class BackupFlowActions(private val activity: AppCompatActivity) {
                     val restoreCtx = activity
                     if (!alive()) return@loadBackupPayload
                     if (!ok3 || payload == null) {
-                        Toast.makeText(
-                            restoreCtx,
-                            activity.getString(R.string.cloud_error_fmt, err3 ?: activity.getString(R.string.error_unknown)),
-                            Toast.LENGTH_SHORT
-                        ).show()
+                        activity.showWarnPillOnContent(
+                            activity.getString(R.string.cloud_error_fmt, err3 ?: activity.getString(R.string.error_unknown))
+                        )
                         return@loadBackupPayload
                     }
 
@@ -533,22 +531,18 @@ class BackupFlowActions(private val activity: AppCompatActivity) {
                                 }
                                 result.fold(
                                     onSuccess = {
-                                        Toast.makeText(
-                                            restoreCtx,
-                                            activity.getString(R.string.cloud_restore_ok_restart),
-                                            Toast.LENGTH_SHORT,
-                                        ).show()
+                                        activity.showWarnPillOnContent(
+                                            activity.getString(R.string.cloud_restore_ok_restart)
+                                        )
                                         restartAppTask()
                                     },
                                     onFailure = { error ->
-                                        Toast.makeText(
-                                            restoreCtx,
+                                        activity.showWarnPillOnContent(
                                             activity.getString(
                                                 R.string.cloud_error_fmt,
                                                 error.localizedMessage ?: activity.getString(R.string.error_unknown),
-                                            ),
-                                            Toast.LENGTH_SHORT,
-                                        ).show()
+                                            )
+                                        )
                                     },
                                 )
                             }
@@ -662,7 +656,8 @@ class BackupFlowActions(private val activity: AppCompatActivity) {
             )
         }
 
-        ctx.showSwitchlyMultiChoiceDialog(
+        var restoreSelectDialog: AlertDialog? = null
+        restoreSelectDialog = ctx.showSwitchlyMultiChoiceDialog(
             title = activity.getString(R.string.restore_select_categories_title),
             options = options,
             checked = checked,
@@ -676,7 +671,9 @@ class BackupFlowActions(private val activity: AppCompatActivity) {
                 .toSet()
             val selection = BackupSelection.fromIds(selected)
             if (selection.categoryIds.isEmpty()) {
-                Toast.makeText(ctx, activity.getString(R.string.restore_select_at_least_one), Toast.LENGTH_SHORT).show()
+                // Anchor to the dialog window so the pill is visible above it.
+                (restoreSelectDialog?.window?.decorView ?: activity.findViewById<View>(android.R.id.content))
+                    .showWarnPill(activity.getString(R.string.restore_select_at_least_one))
                 return@showSwitchlyMultiChoiceDialog
             }
             onConfirm(BackupCategoryFilter.filterPayloadForRestore(payload, selection))
@@ -757,7 +754,7 @@ class BackupFlowActions(private val activity: AppCompatActivity) {
                     StatsPersistence.resumeAfterFullDataDeletion(ctx)
                 }
             }
-            Toast.makeText(ctx, activity.getString(R.string.pref_reset_app_data_done), Toast.LENGTH_LONG).show()
+            activity.showWarnPillOnContent(activity.getString(R.string.pref_reset_app_data_done))
             restartAppTask()
         }
     }

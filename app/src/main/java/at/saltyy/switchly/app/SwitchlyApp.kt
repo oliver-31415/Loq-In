@@ -19,7 +19,10 @@
 
 package at.saltyy.switchly.app
 
+import android.app.Activity
 import android.app.Application
+import android.content.Context
+import android.os.Bundle
 import at.saltyy.switchly.BuildConfig
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.preference.PreferenceManager
@@ -63,6 +66,11 @@ class SwitchlyApp : Application() {
 
         // language
         LocaleHelper.setLanguage(this, LocaleHelper.getSavedLanguage(this))
+
+        // When the accent/theme/language changes (e.g. in Appearance), background
+        // activities keep their old theme. Recreate each activity once when it is
+        // shown again so the whole back stack picks up the new look in place.
+        registerActivityLifecycleCallbacks(ThemeRefreshCallbacks)
 
         // theme
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
@@ -119,5 +127,50 @@ class SwitchlyApp : Application() {
             }
             PersistentStatusNotifier.refresh(appContext)
         }
+    }
+
+    private object ThemeRefreshCallbacks : ActivityLifecycleCallbacks {
+        private val appliedSnapshot = mutableMapOf<Activity, String>()
+
+        private fun snapshotOf(ctx: Context): String {
+            val prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(ctx)
+            return listOf(
+                "pref_accent",
+                "pref_accent_custom",
+                "pref_theme_mode",
+                "pref_theme",
+                "pref_language"
+            ).joinToString("|") { prefs.getString(it, "") ?: "" }
+        }
+
+        override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {
+            appliedSnapshot[activity] = snapshotOf(activity)
+        }
+
+        override fun onActivityResumed(activity: Activity) {
+            val current = snapshotOf(activity)
+            val last = appliedSnapshot[activity]
+            if (last == null) {
+                appliedSnapshot[activity] = current
+                return
+            }
+            if (last != current && !activity.isFinishing && !activity.isDestroyed) {
+                appliedSnapshot[activity] = current
+                activity.window?.decorView?.post {
+                    if (!activity.isFinishing && !activity.isDestroyed) {
+                        activity.recreate()
+                    }
+                }
+            }
+        }
+
+        override fun onActivityDestroyed(activity: Activity) {
+            appliedSnapshot.remove(activity)
+        }
+
+        override fun onActivityStarted(activity: Activity) = Unit
+        override fun onActivityPaused(activity: Activity) = Unit
+        override fun onActivityStopped(activity: Activity) = Unit
+        override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) = Unit
     }
 }

@@ -55,6 +55,9 @@
     <!-- ====================================================== -->
     <string name="account_title">Konto</string>
     <string name="account_section_account">Konto</string>
+    <string name="account_section_activity_history">Aktivität &amp; Verlauf</string>
+    <string name="account_section_security_access">Sicherheit &amp; Zugriff</string>
+    <string name="account_section_setup_data">Einrichtung &amp; Daten</string>
     <string name="account_section_data">Backup &amp; Daten</string>
     <string name="account_section_info">Info</string>
     <string name="account_overview_title">Switchly-Übersicht</string>
