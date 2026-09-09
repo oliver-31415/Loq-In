@@ -2077,7 +2077,8 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         postAcknowledgeYouTubeCleanupMini: Boolean = true,
         prePopupPhoneHome: Boolean = false,
         prePopupYouTubeHome: Boolean = false,
-        prePopupYouTubeCloseShorts: Boolean = false
+        prePopupYouTubeCloseShorts: Boolean = false,
+        closeBeforePopup: Boolean = false
     ) {
         if (!SwitchModeStore.isEnabled(this)) {
             BlockerActivity.clearVisibilityState("surface_block_skipped_disabled")
@@ -2194,6 +2195,14 @@ class SwitchlyAccessibilityService : AccessibilityService() {
             deferNavigationUntilAcknowledge -> 0L
             pkg == PACKAGE_SNAPCHAT -> 320L
             else -> 30L
+        }.let { configuredDelay ->
+            // When a BACK is dispatched while the surface is still ANIMATING OPEN (embedded
+            // Reel tapped from the feed), the BACK lands on the activity underneath instead
+            // of the viewer - on Instagram that hits the feed's back handler, which calls
+            // moveTaskToBack and the whole app vanishes (reported as a "crash"). Give the
+            // viewer time to finish opening (and the BACK time to close it) before the
+            // popup launches and steals focus.
+            if (closeBeforePopup) maxOf(configuredDelay, 500L) else configuredDelay
         }
         val resolvedMessage = buildSurfaceBlockMessage(pkg = pkg, title = title, originalMessage = message)
 
@@ -6261,7 +6270,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
                 currentSurfacePkg = pkg
                 val msg = timedBlockMsg(enabled, surfaceKey, label) ?: return false
                 val appLabel = safeAppLabel(pkg)
-                softBlockSurface(pkg, appLabel, msg.first, msg.second, backCount = backCount, deferNavigationUntilAcknowledge = !closeBeforePopup, forceShow = true)
+                softBlockSurface(pkg, appLabel, msg.first, msg.second, backCount = backCount, deferNavigationUntilAcknowledge = !closeBeforePopup, closeBeforePopup = closeBeforePopup, forceShow = true)
                 return true
             }
 
