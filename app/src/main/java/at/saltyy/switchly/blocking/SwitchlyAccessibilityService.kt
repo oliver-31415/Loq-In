@@ -1096,8 +1096,16 @@ class SwitchlyAccessibilityService : AccessibilityService() {
                 val stateNow = rootNow?.let { instagramState(it, event) }
                 val searchNow = rootNow?.let { isInstagramSearchScreen(it, event) } == true
                 val homeSelected = rootNow?.let { hasSelectedLabel(it, IG_HOME_LABELS) } == true
+                // An inline-expanded Reel (clips view pager still visible) needs exactly one
+                // BACK to collapse back into the feed - by post-ack time the expansion
+                // animation has long finished, so the earlier block-time race (BACK hitting
+                // the plain feed's moveTaskToBack handler and vanishing the app) cannot
+                // recur. With the pager gone, no BACK is safe: the feed's back handler ends
+                // the app task, which reads as a crash.
+                val clipsViewerStillOpen = rootNow?.let { hasVisibleInstagramClipsViewer(it, pkg) } == true
 
                 effectiveBackCount = when {
+                    clipsViewerStillOpen -> 1
                     stateNow == "home" || homeSelected -> 0
                     stateNow == "reels" || stateNow == "explore" || searchNow -> pendingBackCount.coerceAtMost(2)
                     // Unknown Instagram state (frequent on rapid transitions): keep one conservative in-app back so users cannot stay in blocked viewers.
@@ -6268,6 +6276,10 @@ class SwitchlyAccessibilityService : AccessibilityService() {
                 logInAppSurfaceDetect(pkg, surfaceKey, enabled, event, "immediate_fast_path state=$stateById pos=$instagramPositionSurface")
                 currentSurfaceKey = surfaceKey
                 currentSurfacePkg = pkg
+                // forceShow bypasses the visible-popup and cooldown checks, so set the
+                // surface guard here or repeated detections can stack popups every few
+                // seconds while the first popup is still up.
+                surfaceBlockGuardUntil["$pkg|$surfaceKey"] = now + INSTA_REELS_REENTRY_GUARD_MS
                 val msg = timedBlockMsg(enabled, surfaceKey, label) ?: return false
                 val appLabel = safeAppLabel(pkg)
                 softBlockSurface(pkg, appLabel, msg.first, msg.second, backCount = backCount, deferNavigationUntilAcknowledge = !closeBeforePopup, closeBeforePopup = closeBeforePopup, forceShow = true)
@@ -6276,11 +6288,11 @@ class SwitchlyAccessibilityService : AccessibilityService() {
 
             // Explicit tab clicks/selected bottom-nav positions should block immediately.
             // The more conservative state machine below is still kept for scroll/content events, but it was too easy for the guards to suppress every Instagram block on some builds.
-            // The clips-viewer fast path must NOT send BACK: tapping an embedded Reel expands
-            // it inline in the feed (there is no separate viewer to close), so BACK hits the
-            // feed's own handler, which calls moveTaskToBack and the whole app vanishes
-            // (reported as a crash; confirmed via wm_task TO_BACK traces). Popup only;
-            // acknowledging it sends the user home.
+            // The clips-viewer fast path never sends a block-time BACK: tapping an embedded
+            // Reel expands it inline in the feed, and a racing BACK hits the feed's
+            // moveTaskToBack handler (the app vanishes). Instead: popup immediately, then on
+            // OK bring Instagram back and collapse the expansion with one verified back via
+            // the pending-back adaptive clamp.
             val explicitReelsHit = igClipsViewerNow ||
                 reelsTabSelectedNow || instagramPositionSurface == "ig:reels" || reelsHintNow || isInstagramBottomNavEvent(event, IG_REELS_LABELS)
             val explicitExploreHit = exploreTabSelectedNow || instagramPositionSurface == "ig:explore" || exploreHintNow || isInstagramBottomNavEvent(event, IG_EXPLORE_LABELS)
@@ -6290,7 +6302,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
                     blockIgReelsEnabled,
                     getString(R.string.in_app_surface_reels_label),
                     explicitReelsHit,
-                    backCount = 0
+                    backCount = if (igClipsViewerNow) 1 else 2
                 )
             ) {
                 return
