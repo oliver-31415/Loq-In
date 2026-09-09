@@ -6242,7 +6242,14 @@ class SwitchlyAccessibilityService : AccessibilityService() {
             val messagesContextNow = isInstagramMessagesScreen(root, event)
             val profileContextNow = isInstagramProfileScreen(root, event)
 
-            fun immediateInstagramSurfaceBlock(surfaceKey: String, enabled: Boolean, label: String, detected: Boolean, backCount: Int = 2): Boolean {
+            fun immediateInstagramSurfaceBlock(
+                surfaceKey: String,
+                enabled: Boolean,
+                label: String,
+                detected: Boolean,
+                backCount: Int = 2,
+                closeBeforePopup: Boolean = false
+            ): Boolean {
                 if (!detected || !enabled) {
                     return false
                 }
@@ -6254,17 +6261,30 @@ class SwitchlyAccessibilityService : AccessibilityService() {
                 currentSurfacePkg = pkg
                 val msg = timedBlockMsg(enabled, surfaceKey, label) ?: return false
                 val appLabel = safeAppLabel(pkg)
-                softBlockSurface(pkg, appLabel, msg.first, msg.second, backCount = backCount, deferNavigationUntilAcknowledge = true, forceShow = true)
+                softBlockSurface(pkg, appLabel, msg.first, msg.second, backCount = backCount, deferNavigationUntilAcknowledge = !closeBeforePopup, forceShow = true)
                 return true
             }
 
             // Explicit tab clicks/selected bottom-nav positions should block immediately.
             // The more conservative state machine below is still kept for scroll/content events, but it was too easy for the guards to suppress every Instagram block on some builds.
+            // When the clips view pager itself is visible, close the Reels viewer with ONE
+            // immediate back BEFORE the popup and skip the post-ack back/relaunch machinery:
+            // the pending-back flow (up to 2 backs + bringPackageToFront relaunch) races the
+            // clip viewer's teardown on embedded Reels and crashed Instagram after the user
+            // returned to the feed.
             val explicitReelsHit = igClipsViewerNow ||
                 reelsTabSelectedNow || instagramPositionSurface == "ig:reels" || reelsHintNow || isInstagramBottomNavEvent(event, IG_REELS_LABELS)
             val explicitExploreHit = exploreTabSelectedNow || instagramPositionSurface == "ig:explore" || exploreHintNow || isInstagramBottomNavEvent(event, IG_EXPLORE_LABELS)
             val explicitSearchHit = searchScreenNow || searchHintNow
-            if (immediateInstagramSurfaceBlock("ig:reels", blockIgReelsEnabled, getString(R.string.in_app_surface_reels_label), explicitReelsHit)) {
+            if (immediateInstagramSurfaceBlock(
+                    "ig:reels",
+                    blockIgReelsEnabled,
+                    getString(R.string.in_app_surface_reels_label),
+                    explicitReelsHit,
+                    backCount = if (igClipsViewerNow) 1 else 2,
+                    closeBeforePopup = igClipsViewerNow
+                )
+            ) {
                 return
             }
             if (immediateInstagramSurfaceBlock("ig:explore", blockIgExploreEnabled, getString(R.string.in_app_surface_explore_label), explicitExploreHit)) {
