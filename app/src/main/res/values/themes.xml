@@ -95,11 +95,9 @@
         <item name="colorOnError">@color/m3_sys_color_light_on_error</item>
         <item name="colorOnErrorContainer">@color/m3_sys_color_light_on_error_container</item>
         <item name="colorOnPrimary">@color/foqos_on_primary</item>
-        <item name="colorOnPrimaryContainer">@color/accent_default_blue_on_container</item>
         <item name="colorOnPrimaryFixed">@color/m3_sys_color_on_primary_fixed</item>
         <item name="colorOnPrimaryFixedVariant">@color/m3_sys_color_on_primary_fixed_variant</item>
         <item name="colorOnSecondary">@color/foqos_on_primary</item>
-        <item name="colorOnSecondaryContainer">@color/accent_default_blue_on_container</item>
         <item name="colorOnSecondaryFixed">@color/m3_sys_color_on_secondary_fixed</item>
         <item name="colorOnSecondaryFixedVariant">@color/m3_sys_color_on_secondary_fixed_variant</item>
         <item name="colorOnSurface">@color/foqos_on_surface</item>
@@ -111,15 +109,10 @@
         <item name="colorOnTertiaryFixedVariant">@color/m3_sys_color_on_tertiary_fixed_variant</item>
         <item name="colorOutline">@color/foqos_outline</item>
         <item name="colorOutlineVariant">@color/foqos_outline_variant</item>
-        <item name="colorPrimary">@color/accent_default_blue</item>
-        <item name="colorPrimaryContainer">@color/accent_default_blue_container</item>
         <item name="colorPrimaryDark">?attr/colorPrimary</item>
         <item name="colorPrimaryFixed">@color/m3_sys_color_primary_fixed</item>
         <item name="colorPrimaryFixedDim">@color/m3_sys_color_primary_fixed_dim</item>
         <item name="colorPrimaryInverse">@color/m3_sys_color_light_inverse_primary</item>
-        <item name="colorPrimaryVariant">?attr/colorPrimary</item>
-        <item name="colorSecondary">@color/accent_default_blue</item>
-        <item name="colorSecondaryContainer">@color/accent_default_blue_container</item>
         <item name="colorSecondaryFixed">@color/m3_sys_color_secondary_fixed</item>
         <item name="colorSecondaryFixedDim">@color/m3_sys_color_secondary_fixed_dim</item>
         <item name="colorSecondaryVariant">?attr/colorSecondary</item>
@@ -319,16 +312,9 @@
         <item name="toolbarSurfaceStyle">@style/Widget.Material3.Toolbar.Surface</item>
 
         <!-- Global Material component styles -->
-        <item name="materialButtonStyle">@style/LoqIn.Button</item>
-        <item name="materialButtonOutlinedStyle">@style/LoqIn.OutlinedButton</item>
-        <item name="floatingActionButtonStyle">@style/LoqIn.Fab</item>
-        <item name="materialCardViewStyle">@style/LoqIn.Card</item>
 
         <!-- Toolbar/ActionBar -->
-        <item name="toolbarStyle">@style/LoqIn.TopBar</item>
         <item name="actionBarTheme">@style/ThemeOverlay.Material3.ActionBar</item>
-        <item name="actionBarPopupTheme">@style/ThemeOverlay.Material3.Light</item>
-        <item name="android:textColorPrimaryInverse">@android:color/white</item>
 
         <!--
             IMPORTANT:
@@ -336,12 +322,9 @@
             It causes crashes when a normal EditText is placed inside a TextInputLayout (Material requires an AutoCompleteTextView for exposed dropdowns).
             Use LoqIn.DropdownLayout only on actual dropdown fields in XML.
         -->
-        <item name="textInputStyle">@style/LoqIn.TextInputLayout</item>
         <item name="autoCompleteTextViewStyle">@style/LoqIn.AutoCompleteText</item>
 
         <!-- Dialog overlay -->
-        <item name="materialAlertDialogTheme">@style/ThemeOverlay.LoqIn.Dialog</item>
-        <item name="alertDialogTheme">@style/ThemeOverlay.LoqIn.Dialog.Alert</item>
         <item name="colorBackgroundFloating">@color/foqos_surface</item>
         <item name="android:colorBackgroundFloating">@color/foqos_surface</item>
     </style>
