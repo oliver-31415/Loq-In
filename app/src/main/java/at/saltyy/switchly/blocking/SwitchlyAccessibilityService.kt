@@ -6229,6 +6229,13 @@ class SwitchlyAccessibilityService : AccessibilityService() {
             val blockIgStoriesEnabled = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_IG_STORIES)
             val blockIgCommentsEnabled = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_IG_COMMENTS)
 
+            // Deterministic Reels signal, Scrolless-style (GPL-3.0): the Reels view pager
+            // clips_viewer_view_pager resolves through Android's indexed view-ID lookup and
+            // is decisive — the Reels viewer is on screen regardless of tab state, labels,
+            // or position mapping. Size gate keeps small embedded feed clip players from
+            // matching.
+            val igClipsViewerNow = blockIgReelsEnabled && hasVisibleInstagramClipsViewer(root, pkg)
+
             val storiesViewerNow = isInstagramStoriesViewer(root, event)
             val commentsVisibleNow = isInstagramCommentsVisible(root)
             val feedCommentsContext = commentsVisibleNow && homeSelectedNow && !reelsTabSelectedNow && !exploreTabSelectedNow
@@ -6253,7 +6260,8 @@ class SwitchlyAccessibilityService : AccessibilityService() {
 
             // Explicit tab clicks/selected bottom-nav positions should block immediately.
             // The more conservative state machine below is still kept for scroll/content events, but it was too easy for the guards to suppress every Instagram block on some builds.
-            val explicitReelsHit = reelsTabSelectedNow || instagramPositionSurface == "ig:reels" || reelsHintNow || isInstagramBottomNavEvent(event, IG_REELS_LABELS)
+            val explicitReelsHit = igClipsViewerNow ||
+                reelsTabSelectedNow || instagramPositionSurface == "ig:reels" || reelsHintNow || isInstagramBottomNavEvent(event, IG_REELS_LABELS)
             val explicitExploreHit = exploreTabSelectedNow || instagramPositionSurface == "ig:explore" || exploreHintNow || isInstagramBottomNavEvent(event, IG_EXPLORE_LABELS)
             val explicitSearchHit = searchScreenNow || searchHintNow
             if (immediateInstagramSurfaceBlock("ig:reels", blockIgReelsEnabled, getString(R.string.in_app_surface_reels_label), explicitReelsHit)) {
@@ -6379,7 +6387,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
                     !storiesViewerNow &&
                     !commentsVisibleNow
             val allowReelsDetect = reelsDetectAllowed && !(homeOnlyContext && !reelsEventStrongCue)
-            val reelsDetected = allowReelsDetect && (reelsState == "reels" || reelsHintNow)
+            val reelsDetected = allowReelsDetect && (reelsState == "reels" || reelsHintNow || igClipsViewerNow)
             if (reelsDetected) {
                 logInAppSurfaceDetect(pkg, "ig:reels", blockIgReelsEnabled, event, "state=$reelsState hint=$reelsHintNow")
             }
@@ -7589,6 +7597,27 @@ class SwitchlyAccessibilityService : AccessibilityService() {
                 if (bounds.width() / width.toFloat() >= 0.55f && bounds.height() / height.toFloat() >= 0.55f) {
                     return true
                 }
+            }
+        }
+        return false
+    }
+
+    /**
+     * Deterministic Instagram Reels detection, ported from Scrolless: the Reels view pager
+     * clips_viewer_view_pager resolves through Android's indexed view-ID lookup. Size gate
+     * keeps small embedded feed clip players from matching.
+     */
+    private fun hasVisibleInstagramClipsViewer(root: AccessibilityNodeInfo, pkg: String): Boolean {
+        val nodes = runCatching { root.findAccessibilityNodeInfosByViewId("$pkg:id/clips_viewer_view_pager") }.getOrNull().orEmpty()
+        val width = resources.displayMetrics.widthPixels.coerceAtLeast(1)
+        val height = resources.displayMetrics.heightPixels.coerceAtLeast(1)
+        for (node in nodes) {
+            if (!node.isVisibleToUser) continue
+            val bounds = Rect()
+            runCatching { node.getBoundsInScreen(bounds) }.getOrNull() ?: continue
+            if (bounds.isEmpty) continue
+            if (bounds.width() / width.toFloat() >= 0.55f && bounds.height() / height.toFloat() >= 0.55f) {
+                return true
             }
         }
         return false
