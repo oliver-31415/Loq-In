@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
+    <!-- ====================================================== -->
+    <!-- Relative time -->
+    <!-- ====================================================== -->
     <string name="relative_time_just_now">gerade eben</string>
     <string name="relative_time_yesterday">gestern</string>
     <plurals name="relative_time_minutes_ago">
@@ -14,4 +18,5 @@
         <item quantity="one">vor %1$d Tag</item>
         <item quantity="other">vor %1$d Tagen</item>
     </plurals>
+
 </resources>

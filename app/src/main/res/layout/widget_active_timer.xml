@@ -1,53 +1,99 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+<FrameLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/widgetRoot"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:gravity="center_vertical"
-    android:padding="12dp"
-    android:background="@color/widget_scanner_surface"
-    tools:ignore="UseCompoundDrawables">
+    android:clickable="true"
+    android:focusable="true">
 
+    <!-- Hero Card Background: dynamically drawn blob artwork or idle neutral card -->
+    <ImageView
+        android:id="@+id/widgetActiveTimerBg"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:scaleType="fitXY"
+        android:contentDescription="@null"
+        android:src="@drawable/hero_profile_bg_idle" />
+
+    <!-- Content overlay -->
     <LinearLayout
-        android:id="@+id/widgetHeader"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
+        android:layout_height="match_parent"
+        android:orientation="vertical"
+        android:gravity="center_vertical"
+        android:padding="16dp">
 
-        <ImageView
-            android:id="@+id/widgetIcon"
-            android:layout_width="22dp"
-            android:layout_height="22dp"
-            android:contentDescription="@null"
-            android:src="@mipmap/ic_launcher" />
-
-        <TextView
-            android:id="@+id/widgetTitle"
-            android:layout_width="0dp"
+        <!-- Top Header row: strategy/shield icon, profile name, and status pill -->
+        <LinearLayout
+            android:id="@+id/widgetHeader"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_weight="1"
-            android:text="@string/widget_active_timer_title"
-            android:textColor="@color/widget_scanner_title"
-            android:textSize="13sp"
-            android:textStyle="bold"
-            android:ellipsize="end"
-            android:singleLine="true" />
-    </LinearLayout>
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
 
-    <Chronometer
-        android:id="@+id/widgetChronometer"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:gravity="center"
-        android:textColor="@color/widget_scanner_title"
-        android:textSize="32sp"
-        android:textStyle="bold"
-        android:format="%s"
-        android:includeFontPadding="false" />
-</LinearLayout>
+            <ImageView
+                android:id="@+id/widgetIcon"
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:contentDescription="@null"
+                android:src="@drawable/security_24" />
+
+            <TextView
+                android:id="@+id/widgetTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:text="@string/widget_active_timer_title"
+                android:textColor="@color/foqos_on_surface"
+                android:textSize="14sp"
+                android:textStyle="bold"
+                android:ellipsize="end"
+                android:singleLine="true" />
+
+            <TextView
+                android:id="@+id/widgetStatusBadge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp"
+                android:background="@drawable/widget_status_pill_idle_bg"
+                android:textColor="@color/foqos_on_surface"
+                android:textSize="10sp"
+                android:textStyle="bold"
+                tools:text="ACTIVE" />
+        </LinearLayout>
+
+        <!-- Chronometer: Live counting active duration or "—" when idle -->
+        <Chronometer
+            android:id="@+id/widgetChronometer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:gravity="center"
+            android:textColor="@color/foqos_on_surface"
+            android:textSize="32sp"
+            android:textStyle="bold"
+            android:format="%s"
+            android:includeFontPadding="false" />
+
+        <!-- Subtitle / Stats summary: e.g. "9 apps protected" or "Not active" -->
+        <TextView
+            android:id="@+id/widgetSubtitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:gravity="center"
+            android:textColor="@color/foqos_on_surface_variant"
+            android:textSize="12sp"
+            android:maxLines="1"
+            android:ellipsize="end"
+            tools:text="9 apps protected" />
+
+    </LinearLayout>
+</FrameLayout>

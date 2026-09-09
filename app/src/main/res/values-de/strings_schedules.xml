@@ -113,14 +113,54 @@
     <!-- Schedule actions and info -->
     <!-- ====================================================== -->
     <string name="schedules_type_time">Zeitplan nach Uhrzeit</string>
+    <string name="schedules_type_time_desc">Zu festen Zeiten und Tagen</string>
     <string name="schedules_type_wifi">WLAN-Zeitplan</string>
+    <string name="schedules_type_wifi_desc">Bei Verbindung mit einem Netzwerk</string>
     <string name="schedules_type_bt">Bluetooth-Zeitplan</string>
+    <string name="schedules_type_bt_desc">Wenn sich ein Gerät verbindet</string>
     <string name="schedules_type_location">Standort-Zeitplan</string>
-    <string name="schedules_action_enable">Aktivieren</string>
-    <string name="schedules_action_disable">Deaktivieren</string>
+    <string name="schedules_type_location_desc">Beim Betreten oder Verlassen eines Ortes</string>
+    <string name="schedules_action_enable">Profil aktivieren</string>
+    <string name="schedules_action_disable">Profil deaktivieren</string>
     <string name="schedules_action_toggle">Umschalten</string>
     <string name="schedules_action_enable_disable">Aktivieren &amp; Deaktivieren</string>
     <string name="schedules_action_disable_enable">Deaktivieren &amp; Aktivieren</string>
+    <string name="schedules_action_disconnect_enable">Bei Trennung aktivieren</string>
+    <string name="schedules_action_disconnect_disable">Bei Trennung deaktivieren</string>
+    <string name="schedules_when_connected">Bei Verbindung</string>
+    <string name="schedules_when_disconnected">Bei Trennung</string>
+    <string name="schedules_action_block">Profil aktivieren</string>
+    <string name="schedules_action_unblock">Profil deaktivieren</string>
+    <string name="schedules_action_nothing">Nichts tun</string>
+    <string name="schedules_conn_action_block">Profil aktivieren</string>
+    <string name="schedules_conn_action_unblock">Profil deaktivieren</string>
+    <string name="schedules_conn_action_nothing">Nichts tun</string>
+    <string name="schedules_group_all">Jeden Tag</string>
+    <string name="schedules_247_title">24/7</string>
+    <string name="schedules_247_subtitle_conn">Jederzeit bei Verbindung aktiv</string>
+    <string name="schedules_247_subtitle_loc">Jederzeit an diesem Standort aktiv</string>
+    <string name="schedules_247_subtitle_time">Jederzeit an jedem Tag aktiv</string>
+    <string name="schedules_all_day_title">Ganztägig</string>
+    <string name="schedules_all_day_subtitle">24 Stunden an ausgewählten Tagen aktiv</string>
+    <string name="schedules_all_day_conn_subtitle">Jederzeit bei Verbindung aktiv</string>
+    <string name="schedules_conn_summary_block_unblock">Aktiviert das Profil bei Verbindung und deaktiviert es bei Trennung.</string>
+    <string name="schedules_conn_summary_unblock_block">Deaktiviert das Profil bei Verbindung und aktiviert es bei Trennung.</string>
+    <string name="schedules_conn_summary_block_nothing">Aktiviert das Profil bei Verbindung. Trennung ändert den Profilstatus nicht.</string>
+    <string name="schedules_conn_summary_unblock_nothing">Deaktiviert das Profil bei Verbindung. Trennung ändert den Profilstatus nicht.</string>
+    <string name="schedules_conn_summary_nothing_block">Aktiviert das Profil bei Trennung. Verbindung ändert den Profilstatus nicht.</string>
+    <string name="schedules_conn_summary_nothing_unblock">Deaktiviert das Profil bei Trennung. Verbindung ändert den Profilstatus nicht.</string>
+    <string name="schedules_conn_summary_none">Bitte wähle mindestens eine Aktion bei Verbindung oder Trennung aus.</string>
+    <string name="schedules_time_window_title">Aktive Zeiten &amp; Tage</string>
+    <string name="schedules_time_window_all_day">24/7 aktiv (ganztägig, jeden Tag)</string>
+    <string name="schedules_time_window_custom">Festes Zeitfenster &amp; Tage</string>
+    <string name="schedules_time_window_switch_label">Auf bestimmte Zeiten / Tage beschränken</string>
+    <string name="schedules_action_when_connected_title">Auslöser-Verhalten</string>
+    <string name="schedules_conn_block_title">Blockieren bei Verbindung</string>
+    <string name="schedules_conn_block_subtitle">Blockiert Apps bei bestehender Verbindung und hebt die Blockierung bei Trennung auf (z. B. Arbeit oder Schule).</string>
+    <string name="schedules_conn_pause_title">Pause bei Verbindung</string>
+    <string name="schedules_conn_pause_subtitle">Pausiert das Blockieren bei bestehender Verbindung und aktiviert es bei Trennung wieder (z. B. Heim-WLAN oder Auto).</string>
+    <string name="schedules_attached_profile_caption">Zugeordnetes Profil</string>
+    <string name="schedules_attached_badge">Profil fixiert</string>
     <string name="schedules_action_info_title">Zeitplan-Aktionen</string>
     <string name="schedules_action_info_enable_body">Schaltet Switchly mit dem ausgewählten Profil ein, wenn dieser Zeitplan auslöst.</string>
     <string name="schedules_action_info_disable_body">Schaltet Switchly aus, wenn dieser Zeitplan auslöst.</string>
@@ -149,7 +189,7 @@
     <!-- ====================================================== -->
     <!-- Location triggers -->
     <!-- ====================================================== -->
-    <string name="schedules_location_label_hint">Ortsname (optional)</string>
+    <string name="schedules_location_label_hint">Standort</string>
     <string name="schedules_location_trigger_title">Standort-Auslöser</string>
     <string name="schedules_location_trigger_enter">Beim Betreten des Bereichs</string>
     <string name="schedules_location_trigger_exit">Beim Verlassen des Bereichs</string>
@@ -174,6 +214,7 @@
     <string name="schedules_location_picker_invalid">Gib zuerst eine Adresse oder Koordinaten ein.</string>
     <string name="schedules_location_picker_not_found">Dieser Ort konnte nicht gefunden werden.</string>
     <string name="schedules_location_choose">Standort auswählen</string>
+    <string name="schedules_location_open_map_picker">Karten-Picker öffnen</string>
     <string name="schedules_location_method_title">Standort auswählen</string>
     <string name="schedules_location_method_picker">Standort-Picker</string>
     <string name="schedules_location_method_search">Ort suchen oder einfügen</string>
@@ -186,7 +227,7 @@
     <string name="schedules_location_map_unavailable_message">Google Maps konnte von diesem Gerät oder Netzwerk aus nicht erreicht werden. Das kann durch Private DNS, VPNs, Adblocker oder Router-DNS-Einstellungen passieren. Du kannst weiterhin Suche, aktuellen Standort oder manuelle Koordinaten verwenden.</string>
     <string name="schedules_location_use_search">Suche verwenden</string>
     <string name="schedules_location_use_current">Aktuellen Standort verwenden</string>
-    <string name="schedules_location_map_picker_search_action">Auf Karte suchen</string>
+    <string name="schedules_location_map_picker_search_action">Suchen</string>
     <string name="schedules_location_map_picker_no_selection">Tippe auf die Karte, um einen Standort auszuwählen.</string>
     <string name="schedules_location_map_picker_selected">Ausgewählt: %1$s</string>
     <string name="schedules_location_picker_premium_title">Standortauswahl ist Premium</string>
@@ -208,13 +249,13 @@
     <string name="schedules_priority_info_body">Priorität bei Überschneidungen:\n1. Manuelle/NFC-Übersteuerung\n2. Notfall-Entsperrung\n3. Temporäre Aktionen\n4. Standort-Zeitpläne\n5. WLAN-/Bluetooth-Zeitpläne\n6. Zeit-Zeitpläne\n\nWenn mehrere Zeitpläne passen, protokolliert Switchly den Konflikt und wendet den Gewinner an, statt ihn still zu verstecken.</string>
 
     <!-- ====================================================== -->
-    <!-- Schedule test                                         -->
+    <!-- Entry point/dialog -->
     <!-- ====================================================== -->
-
-    <!-- Entry point / dialog -->
     <string name="schedules_test_title">Zeitplan prüfen</string>
 
+    <!-- ====================================================== -->
     <!-- Dialog fields -->
+    <!-- ====================================================== -->
     <string name="schedules_test_field_schedule">Zeitplan</string>
     <string name="schedules_test_field_condition">Bedingung</string>
     <string name="schedules_test_field_permissions">Berechtigungen</string>
@@ -222,7 +263,9 @@
     <string name="schedules_test_field_action">Aktion</string>
     <string name="schedules_test_field_result">Ergebnis</string>
 
+    <!-- ====================================================== -->
     <!-- Field values -->
+    <!-- ====================================================== -->
     <string name="schedules_test_value_enabled">Aktiviert</string>
     <string name="schedules_test_value_disabled">Deaktiviert</string>
     <string name="schedules_test_value_condition_met">Erfüllt</string>
@@ -230,23 +273,29 @@
     <string name="schedules_test_value_permissions_ready">Bereit</string>
     <string name="schedules_test_value_permission_missing_fmt">Fehlt: %1$s</string>
 
+    <!-- ====================================================== -->
     <!-- Detected state -->
+    <!-- ====================================================== -->
     <string name="schedules_test_status_time_fmt">Zeit %1$s</string>
     <string name="schedules_test_status_wifi_fmt">WLAN „%1$s“</string>
-    <string name="schedules_test_status_wifi_none">WLAN nicht verbunden / SSID nicht verfügbar</string>
+    <string name="schedules_test_status_wifi_none">WLAN nicht verbunden/SSID nicht verfügbar</string>
     <string name="schedules_test_status_bt_fmt">Bluetooth %1$s</string>
     <string name="schedules_test_status_bt_none">kein passendes Bluetooth-Gerät verbunden</string>
     <string name="schedules_test_status_location_inside_fmt">im Bereich · %1$d m vom Mittelpunkt</string>
     <string name="schedules_test_status_location_outside_fmt">außerhalb · %1$d m vom Mittelpunkt</string>
     <string name="schedules_test_status_location_unknown">aktueller Standort nicht verfügbar</string>
 
+    <!-- ====================================================== -->
     <!-- Permission names -->
-    <string name="schedules_test_permission_wifi">WLAN / Standort</string>
+    <!-- ====================================================== -->
+    <string name="schedules_test_permission_wifi">WLAN/Standort</string>
     <string name="schedules_test_permission_bluetooth">Bluetooth</string>
     <string name="schedules_test_permission_location">Standort</string>
     <string name="schedules_test_permission_accessibility">Bedienungshilfe</string>
 
+    <!-- ====================================================== -->
     <!-- Result messages -->
+    <!-- ====================================================== -->
     <string name="schedules_test_result_would_change">würde den Schutzstatus ändern</string>
     <string name="schedules_test_result_profile_change">würde das aktive Profil wechseln</string>
     <string name="schedules_test_result_already_enabled">keine Änderung — bereits aktiviert</string>

@@ -27,6 +27,7 @@ import android.os.Build
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import at.saltyy.switchly.R
+import at.saltyy.switchly.ui.showWarnPillOnContent
 
 // Helper for requesting Switchly Quick Settings tiles.
 object QuickTileHelper {
@@ -86,14 +87,14 @@ object QuickTileHelper {
             onResult?.invoke(result)
             when (result) {
                 StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ADDED ->
-                    Toast.makeText(activity, activity.getString(R.string.qs_added_ok), Toast.LENGTH_SHORT).show()
+                    activity.showWarnPillOnContent(activity.getString(R.string.qs_added_ok))
 
                 StatusBarManager.TILE_ADD_REQUEST_RESULT_TILE_ALREADY_ADDED ->
-                    Toast.makeText(activity, activity.getString(R.string.qs_added_already), Toast.LENGTH_SHORT).show()
+                    activity.showWarnPillOnContent(activity.getString(R.string.qs_added_already))
 
                 else ->
                     // Canceled or any other status
-                    Toast.makeText(activity, activity.getString(R.string.qs_added_cancel), Toast.LENGTH_SHORT).show()
+                    activity.showWarnPillOnContent(activity.getString(R.string.qs_added_cancel))
             }
         }
 

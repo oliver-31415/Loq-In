@@ -36,6 +36,7 @@ import android.view.View
 import android.view.ViewConfiguration
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -43,7 +44,6 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.addCallback
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
@@ -61,6 +61,8 @@ import at.saltyy.switchly.R
 import at.saltyy.switchly.blocking.SwitchlyAccessibilityService
 import at.saltyy.switchly.data.onboarding.OnboardingPage
 import at.saltyy.switchly.data.prefs.ProfileStore
+import at.saltyy.switchly.data.prefs.DomainBlockStore
+import at.saltyy.switchly.feature.settings.ManageBlockedWebsitesActivity
 import at.saltyy.switchly.data.prefs.ScheduleStore
 import at.saltyy.switchly.data.prefs.SwitchModeStore
 import at.saltyy.switchly.feature.onboarding.adapters.OnboardingPagerAdapter
@@ -80,15 +82,20 @@ import at.saltyy.switchly.feature.usage.UsageStatsRepo
 import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.ui.MainActivity
 import at.saltyy.switchly.ui.ThemeUtils
+import at.saltyy.switchly.ui.showWarnPill
+import at.saltyy.switchly.ui.showWarnPillOnContent
 import at.saltyy.switchly.ui.dialog.showAccented
 import at.saltyy.switchly.ui.dialog.styleSwitchlyDialogButtons
 import at.saltyy.switchly.util.BatteryOptimizationRequest
+import at.saltyy.switchly.util.AdvancedProtectionCompat
 import at.saltyy.switchly.util.PackageManagerApiCompat
 import at.saltyy.switchly.util.PermissionSetupChecks
 import at.saltyy.switchly.util.PermissionUtils
 import at.saltyy.switchly.util.NfcLaunchAccessCompat
 import at.saltyy.switchly.util.getIntCompat
+import at.saltyy.switchly.util.FrameworkApi34Compat
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.color.MaterialColors
@@ -97,6 +104,17 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 class OnboardingActivity : ComponentActivity() {
 
     companion object {
+        fun ensureOnboardingProfile(ctx: Context): String {
+            val current = ProfileStore.getCurrent(ctx)
+            if (!current.isNullOrBlank()) {
+                return current
+            }
+
+            val fallback = "Default"
+            ProfileStore.addProfile(ctx, fallback)
+            ProfileStore.setCurrent(ctx, fallback)
+            return fallback
+        }
         private const val PREFS = "switchly_prefs"
         private const val KEY_DONE = "onboarding_done"
         private const val KEY_VERSION = "onboarding_version"
@@ -121,10 +139,15 @@ class OnboardingActivity : ComponentActivity() {
 
     private var forced: Boolean = false
     private lateinit var pager: ViewPager2
+    private lateinit var compatPageContainer: FrameLayout
     private lateinit var pages: List<OnboardingPage>
     private lateinit var pagerAdapter: OnboardingPagerAdapter
+    private var useCompatPagerFallback: Boolean = false
+    private var compatPageIndex: Int = 0
     private lateinit var btnNext: MaterialButton
     private lateinit var btnSkip: MaterialButton
+    private lateinit var btnHeaderBack: ImageButton
+    private lateinit var btnHeaderSkip: MaterialButton
     private lateinit var btnOptionalSetup: MaterialButton
     private lateinit var buttonSpacer: View
 
@@ -132,7 +155,11 @@ class OnboardingActivity : ComponentActivity() {
         ActivityResultContracts.RequestMultiplePermissions()
     ) {
         if (::pager.isInitialized && ::pagerAdapter.isInitialized) {
-            pagerAdapter.notifyItemChanged(pager.currentItem)
+            if (useCompatPagerFallback) {
+                renderCompatPage()
+            } else {
+                pagerAdapter.notifyItemChanged(pager.currentItem)
+            }
         }
     }
 
@@ -155,12 +182,17 @@ class OnboardingActivity : ComponentActivity() {
             return
         }
 
-        enableEdgeToEdge()
-        WindowCompat.setDecorFitsSystemWindows(window, false)
+        if (!FrameworkApi34Compat.needsWindowInsetsCrashShield()) {
+            WindowCompat.enableEdgeToEdge(window)
+        }
 
         pager = findViewById(R.id.viewPager)
+        compatPageContainer = findViewById(R.id.compatPageContainer)
+        useCompatPagerFallback = FrameworkApi34Compat.needsCrashShield()
         btnNext = findViewById(R.id.btn_next)
         btnSkip = findViewById(R.id.btn_skip)
+        btnHeaderBack = findViewById(R.id.btnHeaderBack)
+        btnHeaderSkip = findViewById(R.id.btnHeaderSkip)
         btnOptionalSetup = findViewById(R.id.btn_optional_setup)
         buttonSpacer = findViewById(R.id.onboardingButtonSpacer)
 
@@ -172,32 +204,53 @@ class OnboardingActivity : ComponentActivity() {
             activity = this,
             pages = pages
         )
-        pager.adapter = pagerAdapter
-        installRequiredPageSwipeGuard()
+        if (useCompatPagerFallback) {
+            // ViewPager2 initializes AndroidX accessibility actions while setting its adapter.
+            // On the inconsistent API-34 image that direct link itself crashes, so render the exact same page view manually and keep Next/Back navigation in this activity.
+            pager.visibility = View.GONE
+            compatPageContainer.visibility = View.VISIBLE
+            renderCompatPage()
+        } else {
+            pager.adapter = pagerAdapter
+            installRequiredPageSwipeGuard()
+            pager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
+                override fun onPageSelected(position: Int) {
+                    updateButtons(position)
+                }
+            })
+        }
         onBackPressedDispatcher.addCallback(this) {
-            val position = pager.currentItem
+            val position = currentPageIndex()
             if (position > 0) {
-                pager.setCurrentItem(position - 1, true)
+                setPageIndex(position - 1, smooth = true)
             } else {
                 leaveOnboarding()
             }
         }
 
-        updateButtons(pager.currentItem)
+        updateButtons(currentPageIndex())
 
-        pager.registerOnPageChangeCallback(object : ViewPager2.OnPageChangeCallback() {
-            override fun onPageSelected(position: Int) {
-                updateButtons(position)
-            }
-        })
-
-        btnSkip.setOnClickListener {
-            val currentPage = pages.getOrNull(pager.currentItem)
+        val onSkipClicked = {
+            val currentPage = pages.getOrNull(currentPageIndex())
             if (currentPage?.type == OnboardingPage.Type.OPTIONAL_SETUP) {
                 finishOnboarding()
+            } else if (forced) {
+                // Forced tutorial views return to their caller without changing onboarding state.
+                leaveOnboarding()
             } else {
-                // Leaving required setup early intentionally does not mark onboarding as completed, so it can be continued on the next launch.
-                // Forced tutorial views return to their caller.
+                // "Skip" should stay skipped for this onboarding version. Missing setup is still
+                // surfaced through Permissions/Setup Health without reopening onboarding on launch.
+                markSkipped()
+                leaveOnboarding()
+            }
+        }
+        btnSkip.setOnClickListener { onSkipClicked() }
+        btnHeaderSkip.setOnClickListener { onSkipClicked() }
+        btnHeaderBack.setOnClickListener {
+            val position = currentPageIndex()
+            if (position > 0) {
+                setPageIndex(position - 1, smooth = true)
+            } else {
                 leaveOnboarding()
             }
         }
@@ -205,17 +258,17 @@ class OnboardingActivity : ComponentActivity() {
         btnOptionalSetup.setOnClickListener {
             val optionalPage = pages.indexOfFirst { it.type == OnboardingPage.Type.OPTIONAL_SETUP }
             if (optionalPage >= 0) {
-                pager.setCurrentItem(optionalPage, true)
+                setPageIndex(optionalPage, smooth = true)
             }
         }
 
         btnNext.setOnClickListener {
-            val pos = pager.currentItem
+            val pos = currentPageIndex()
             val page = pages.getOrNull(pos)
 
             // The review list is editable.
             // Keep the core requirement intact if apps were removed there before the user starts Switchly.
-            if (page?.type == OnboardingPage.Type.REVIEW && !hasPickedApps(this)) {
+            if (page?.type == OnboardingPage.Type.REVIEW && !hasPickedBlockTargets(this)) {
                 MaterialAlertDialogBuilder(this)
                     .setTitle(R.string.onb_pick_title)
                     .setMessage(R.string.onb_required_pick_apps)
@@ -247,11 +300,68 @@ class OnboardingActivity : ComponentActivity() {
                 pos == pages.lastIndex
 
             if (!finishesOnboarding) {
-                pager.currentItem = pos + 1
+                setPageIndex(pos + 1, smooth = true)
             } else {
                 finishOnboarding()
             }
         }
+    }
+
+    private fun refreshPages() {
+        if (!::pager.isInitialized || !::pages.isInitialized) {
+            return
+        }
+        val oldPos = currentPageIndex().coerceIn(0, pages.lastIndex)
+        val oldPage = pages.getOrNull(oldPos)
+
+        pages = buildPages()
+        pagerAdapter = OnboardingPagerAdapter(
+            activity = this,
+            pages = pages
+        )
+        if (!useCompatPagerFallback) {
+            pager.adapter = pagerAdapter
+        }
+
+        val matchingPage = oldPage?.let { old ->
+            pages.indexOfFirst { page -> page.type == old.type && page.title == old.title }
+        } ?: -1
+        val target = matchingPage.takeIf { it >= 0 } ?: oldPos.coerceIn(0, pages.lastIndex)
+
+        setPageIndex(target, smooth = false)
+        updateButtons(target)
+    }
+
+    fun showRenameProfileDialog() {
+        val current = ensureOnboardingProfile(this)
+        val density = resources.displayMetrics.density
+        fun dp(value: Float): Int = (value * density).toInt()
+
+        val input = TextInputEditText(this).apply {
+            setText(current)
+            setSelection(current.length)
+            setSingleLine()
+            setPadding(dp(16f), dp(12f), dp(16f), dp(12f))
+        }
+        val container = FrameLayout(this).apply {
+            setPadding(dp(24f), dp(8f), dp(24f), dp(4f))
+            addView(input)
+        }
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.onb_profiles_rename_dialog_title)
+            .setView(container)
+            .setPositiveButton(R.string.save) { _, _ ->
+                val newName = input.text?.toString()?.trim() ?: ""
+                if (newName.isNotEmpty() && newName != current) {
+                    if (ProfileStore.renameProfile(this, current, newName)) {
+                        ProfileStore.setCurrent(this, newName)
+                        refreshPages()
+                    }
+                }
+            }
+            .setNegativeButton(R.string.cancel, null)
+            .showAccented()
     }
 
     override fun onResume() {
@@ -270,19 +380,50 @@ class OnboardingActivity : ComponentActivity() {
             OnboardingUsagePreviewRenderer.prefetch(this)
         }
         rebuildPagesKeepingPosition()
-        val pos = pager.currentItem.coerceIn(0, pages.lastIndex)
+        val pos = currentPageIndex().coerceIn(0, pages.lastIndex)
         val page = pages.getOrNull(pos) ?: return
         if (page.level == OnboardingPage.Level.REQUIRED && page.completionCheck?.invoke(this) == true) {
             if (pos < pages.lastIndex && shouldAutoAdvanceAfterReturn(page)) {
-                pager.post { pager.currentItem = pos + 1 }
+                activePageHost().post { setPageIndex(pos + 1, smooth = true) }
             }
         }
+    }
+
+    private fun currentPageIndex(): Int =
+        if (useCompatPagerFallback) compatPageIndex else pager.currentItem
+
+    private fun activePageHost(): View =
+        if (useCompatPagerFallback) compatPageContainer else pager
+
+    private fun setPageIndex(index: Int, smooth: Boolean) {
+        if (!::pages.isInitialized || pages.isEmpty()) return
+        val safeIndex = index.coerceIn(0, pages.lastIndex)
+        if (useCompatPagerFallback) {
+            compatPageIndex = safeIndex
+            renderCompatPage()
+            updateButtons(safeIndex)
+        } else {
+            pager.setCurrentItem(safeIndex, smooth)
+        }
+    }
+
+    private fun renderCompatPage() {
+        if (!useCompatPagerFallback || !::compatPageContainer.isInitialized || pages.isEmpty()) return
+        compatPageIndex = compatPageIndex.coerceIn(0, pages.lastIndex)
+        compatPageContainer.removeAllViews()
+        val pageView = layoutInflater.inflate(
+            R.layout.item_onboarding_page,
+            compatPageContainer,
+            false,
+        )
+        OnboardingPagerAdapter.StandardVH(pageView).bind(this, pages[compatPageIndex])
+        compatPageContainer.addView(pageView)
     }
 
     private fun finishOnboarding() {
         if (!forced) {
             SwitchModeStore.setEnabled(this, true)
-            Toast.makeText(this, R.string.onb_start_test_toast, Toast.LENGTH_LONG).show()
+            showWarnPillOnContent(R.string.onb_start_test_toast)
             markDone()
         }
         leaveOnboarding()
@@ -346,7 +487,7 @@ class OnboardingActivity : ComponentActivity() {
 
         // App selection, permissions and optional setup can all change while another screen is open.
         // Rebuild the lightweight page model and keep the user on the same logical step.
-        val oldPos = pager.currentItem.coerceIn(0, pages.lastIndex)
+        val oldPos = currentPageIndex().coerceIn(0, pages.lastIndex)
         val oldPage = pages.getOrNull(oldPos)
 
         pages = buildPages()
@@ -354,14 +495,16 @@ class OnboardingActivity : ComponentActivity() {
             activity = this,
             pages = pages
         )
-        pager.adapter = pagerAdapter
+        if (!useCompatPagerFallback) {
+            pager.adapter = pagerAdapter
+        }
 
         val matchingPage = oldPage?.let { old ->
             pages.indexOfFirst { page -> page.type == old.type && page.title == old.title }
         } ?: -1
         val target = matchingPage.takeIf { it >= 0 } ?: oldPos.coerceIn(0, pages.lastIndex)
 
-        pager.setCurrentItem(target, false)
+        setPageIndex(target, smooth = false)
         updateButtons(target)
     }
 
@@ -431,22 +574,24 @@ class OnboardingActivity : ComponentActivity() {
         val isLastOptionalPage = isOptionalPage && pos == lastOptionalSetupPageIndex()
         val finishesOnboarding = isReviewPage || isLastOptionalPage || pos == pages.lastIndex
 
-        btnNext.text = when {
-            !finishesOnboarding -> getString(R.string.onb_next)
-            forced -> getString(R.string.onb_done)
-            else -> getString(R.string.onb_start_button)
-        }
-        btnSkip.text = getString(R.string.onb_skip)
-        btnSkip.visibility = when {
+        btnHeaderBack.visibility = if (pos > 0) View.VISIBLE else View.INVISIBLE
+        btnHeaderSkip.visibility = when {
             isReviewPage || isLastOptionalPage || pos == pages.lastIndex -> View.GONE
             else -> View.VISIBLE
         }
-        buttonSpacer.visibility = btnSkip.visibility
+
+        btnNext.text = when {
+            !finishesOnboarding -> getString(R.string.onb_continue)
+            forced -> getString(R.string.onb_done)
+            else -> getString(R.string.onb_start_button)
+        }
+        btnSkip.visibility = View.GONE
+        buttonSpacer.visibility = View.GONE
         btnOptionalSetup.visibility = if (isReviewPage) View.VISIBLE else View.GONE
 
         btnNext.isEnabled = when {
             page == null -> false
-            page.type == OnboardingPage.Type.REVIEW -> hasPickedApps(this)
+            page.type == OnboardingPage.Type.REVIEW -> hasPickedBlockTargets(this)
             page.level == OnboardingPage.Level.REQUIRED && page.completionCheck != null -> {
                 page.completionCheck.invoke(this)
             }
@@ -465,23 +610,25 @@ class OnboardingActivity : ComponentActivity() {
         fun dp(value: Float): Int = (value * density).toInt()
 
         val accent = AccentColor.getAccentColorInt(this)
+        val onSurface = MaterialColors.getColor(container, com.google.android.material.R.attr.colorOnSurface)
         val activeColor = accent
-        val inactiveColor = ColorUtils.setAlphaComponent(accent, 88)
+        val inactiveColor = ColorUtils.setAlphaComponent(onSurface, 64)
 
         pages.forEachIndexed { index, _ ->
             val dot = View(this)
-            val size = if (index == activePosition) dp(18f) else dp(7f)
-            val params = LinearLayout.LayoutParams(size, dp(7f)).apply {
-                marginStart = dp(3f)
-                marginEnd = dp(3f)
+            val isCurrent = index == activePosition
+            val dotWidth = if (isCurrent) dp(22f) else dp(6f)
+            val dotHeight = dp(6f)
+            val params = LinearLayout.LayoutParams(dotWidth, dotHeight).apply {
+                marginStart = dp(3.5f)
+                marginEnd = dp(3.5f)
             }
             dot.layoutParams = params
             dot.background = android.graphics.drawable.GradientDrawable().apply {
                 shape = android.graphics.drawable.GradientDrawable.RECTANGLE
-                cornerRadius = dp(4f).toFloat()
-                setColor(if (index == activePosition) activeColor else inactiveColor)
+                cornerRadius = dp(3f).toFloat()
+                setColor(if (isCurrent) activeColor else inactiveColor)
             }
-            dot.alpha = if (index == activePosition) 1f else 0.7f
             container.addView(dot)
         }
     }
@@ -490,8 +637,8 @@ class OnboardingActivity : ComponentActivity() {
         val accent = AccentColor.getAccentColorInt(this)
         val onAccent = readableOnColor(accent)
         val isCustom = AccentColor.getOption(this) == AccentColor.Option.CUSTOM
-        val surface = ContextCompat.getColor(this, R.color.switchly_card_bg)
-        val outline = ContextCompat.getColor(this, R.color.switchly_card_stroke)
+        val surface = ContextCompat.getColor(this, R.color.foqos_surface)
+        val outline = ContextCompat.getColor(this, R.color.foqos_outline_variant)
         val onSurface = MaterialColors.getColor(btnSkip, com.google.android.material.R.attr.colorOnSurface)
         val disabledBackground = ColorUtils.blendARGB(surface, onSurface, 0.10f)
         val disabledForeground = ColorUtils.setAlphaComponent(onSurface, 105)
@@ -541,6 +688,13 @@ class OnboardingActivity : ComponentActivity() {
             )
             alpha = if (btnNext.isEnabled) 0.9f else 0.55f
         }
+
+        if (::btnHeaderSkip.isInitialized) {
+            btnHeaderSkip.setTextColor(ColorUtils.setAlphaComponent(onSurface, 180))
+        }
+        if (::btnHeaderBack.isInitialized) {
+            btnHeaderBack.imageTintList = ColorStateList.valueOf(onSurface)
+        }
     }
 
     private fun readableOnColor(color: Int): Int {
@@ -557,27 +711,23 @@ class OnboardingActivity : ComponentActivity() {
         return PermissionSetupChecks.notificationsReady(ctx, requireListenerAccess = true)
     }
 
-    // Checks the two permissions required for reliable blocking and usage-aware insights.
+    // Full protection needs Accessibility + Usage Access.
+    // Android 16 Advanced Protection can make Accessibility unavailable;
+    // in that specific case Usage Access is enough to continue with Switchly's clearly-labelled limited whole-app fallback.
     private fun isCorePermissionsReady(ctx: Context): Boolean {
-        return PermissionUtils.isAccessibilityServiceEnabled(
+        val accessibilityEnabled = PermissionUtils.isAccessibilityServiceEnabled(
             ctx,
             SwitchlyAccessibilityService::class.java
-        ) && UsageStatsRepo.hasUsageAccess(ctx)
+        )
+        val usageAccessEnabled = UsageStatsRepo.hasUsageAccess(ctx)
+        val limitedAdvancedProtectionPath =
+            AdvancedProtectionCompat.isEnabled(ctx) && usageAccessEnabled
+        return usageAccessEnabled && (accessibilityEnabled || limitedAdvancedProtectionPath)
     }
 
-    private fun ensureOnboardingProfile(ctx: Context): String {
-        val current = ProfileStore.getCurrent(ctx)
-        if (!current.isNullOrBlank()) {
-            return current
-        }
 
-        val fallback = "Default"
-        ProfileStore.addProfile(ctx, fallback)
-        ProfileStore.setCurrent(ctx, fallback)
-        return fallback
-    }
 
-    private fun openOnboardingAppPicker() {
+    fun openOnboardingAppPicker() {
         val profile = ensureOnboardingProfile(this)
         startActivity(
             Intent(this, AppPickerActivity::class.java)
@@ -586,22 +736,36 @@ class OnboardingActivity : ComponentActivity() {
         )
     }
 
+    fun openOnboardingWebsiteManager() {
+        val profile = ensureOnboardingProfile(this)
+        startActivity(
+            Intent(this, ManageBlockedWebsitesActivity::class.java)
+                .putExtra(ManageBlockedWebsitesActivity.EXTRA_PROFILE_NAME, profile)
+        )
+    }
+
     private fun selectedAppsForActiveProfile(ctx: Context): Set<String> {
         val profile = ensureOnboardingProfile(ctx)
         return ProfileStore.getSelectedForProfileMode(ctx, profile)
     }
 
-    private fun hasPickedApps(ctx: Context): Boolean {
-        return selectedAppsForActiveProfile(ctx).isNotEmpty()
+    private fun selectedWebsitesForActiveProfile(ctx: Context): Set<String> {
+        val profile = ensureOnboardingProfile(ctx)
+        return DomainBlockStore.getDomainsForProfileAndMode(ctx, profile)
+    }
+
+    private fun hasPickedBlockTargets(ctx: Context): Boolean {
+        return selectedAppsForActiveProfile(ctx).isNotEmpty() || selectedWebsitesForActiveProfile(ctx).isNotEmpty()
     }
 
     private fun openFirstMissingPermissionSetting() {
         when {
-            !PermissionUtils.isAccessibilityServiceEnabled(this, SwitchlyAccessibilityService::class.java) -> {
-                AccessibilityDisclosure.openSettingsWithDisclosure(this, forceShow = true)
-            }
             !UsageStatsRepo.hasUsageAccess(this) -> {
                 startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
+            }
+            !PermissionUtils.isAccessibilityServiceEnabled(this, SwitchlyAccessibilityService::class.java) &&
+                !AdvancedProtectionCompat.isEnabled(this) -> {
+                AccessibilityDisclosure.openSettingsWithDisclosure(this, forceShow = true)
             }
             NotificationBlockStore.isEnabled(this) && !isNotificationBlockingSetupReady(this) -> {
                 openNotificationSetupFromOnboarding()
@@ -751,24 +915,52 @@ class OnboardingActivity : ComponentActivity() {
         if (AutomationModeStore.isQrChannelAllowed(ctx)) parts += getString(R.string.pref_mode_qr_title)
         if (AutomationModeStore.isBarcodeChannelAllowed(ctx)) parts += getString(R.string.pref_mode_barcode_title)
         val channels = parts.takeIf { it.isNotEmpty() }?.joinToString(" / ") ?: selectedControlModeLabel(ctx)
-        return getString(R.string.onb_permissions_hub_mode_desc, channels)
+        return getString(
+            if (AdvancedProtectionCompat.isEnabled(ctx) &&
+                !PermissionUtils.isAccessibilityServiceEnabled(ctx, SwitchlyAccessibilityService::class.java)) {
+                R.string.onb_permissions_hub_mode_desc_advanced_protection
+            } else {
+                R.string.onb_permissions_hub_mode_desc
+            },
+            channels
+        )
     }
 
     private fun applySystemBarInsets() {
+        if (FrameworkApi34Compat.needsWindowInsetsCrashShield()) {
+            FrameworkApi34Compat.applyWindowInsetsWorkaround(this)
+            return
+        }
         val density = resources.displayMetrics.density
         fun dp(value: Float): Int = (value * density).toInt()
 
-        val initialPagerLeft = pager.paddingLeft
-        val initialPagerTop = pager.paddingTop
-        val initialPagerRight = pager.paddingRight
-        val initialPagerBottom = pager.paddingBottom
-        ViewCompat.setOnApplyWindowInsetsListener(pager) { view, insets ->
+        val header = findViewById<View>(R.id.onboardingHeader)
+        val initialHeaderTop = header?.paddingTop ?: 0
+        if (header != null) {
+            ViewCompat.setOnApplyWindowInsetsListener(header) { view, insets ->
+                val bars = insets.getInsets(
+                    WindowInsetsCompat.Type.statusBars() or WindowInsetsCompat.Type.displayCutout()
+                )
+                view.updatePadding(
+                    top = initialHeaderTop + bars.top
+                )
+                insets
+            }
+        }
+
+        val pageHost = activePageHost()
+        val initialPagerLeft = pageHost.paddingLeft
+        val initialPagerTop = pageHost.paddingTop
+        val initialPagerRight = pageHost.paddingRight
+        val initialPagerBottom = pageHost.paddingBottom
+        ViewCompat.setOnApplyWindowInsetsListener(pageHost) { view, insets ->
             val bars = insets.getInsets(
                 WindowInsetsCompat.Type.statusBars() or WindowInsetsCompat.Type.displayCutout()
             )
+            val headerH = if (header != null && header.height > 0) header.height else dp(56f)
             view.updatePadding(
                 left = initialPagerLeft + bars.left,
-                top = initialPagerTop + bars.top,
+                top = initialPagerTop + bars.top + headerH,
                 right = initialPagerRight + bars.right
             )
             insets
@@ -782,7 +974,7 @@ class OnboardingActivity : ComponentActivity() {
 
         fun updatePagerFooterSpace() {
             val params = bottomBar.layoutParams as? ViewGroup.MarginLayoutParams ?: return
-            pager.updatePadding(
+            pageHost.updatePadding(
                 bottom = initialPagerBottom + bottomBar.height + params.bottomMargin + dp(8f)
             )
         }
@@ -806,70 +998,56 @@ class OnboardingActivity : ComponentActivity() {
             updatePagerFooterSpace()
         }
 
-        ViewCompat.requestApplyInsets(pager)
+        header?.let { ViewCompat.requestApplyInsets(it) }
+        ViewCompat.requestApplyInsets(pageHost)
         ViewCompat.requestApplyInsets(bottomBar)
     }
 
     private fun buildPages(): List<OnboardingPage> {
         val result = mutableListOf<OnboardingPage>()
+        val activeProfile = ensureOnboardingProfile(this)
         val selectedAppCount = selectedAppsForActiveProfile(this).size
 
+        // Step 1: Profiles
         result += OnboardingPage(
-            iconRes = R.drawable.play_arrow_24,
-            title = getString(R.string.onb_welcome_title),
-            desc = getString(R.string.onb_welcome_desc),
+            iconRes = R.drawable.switch_account_24,
+            title = getString(R.string.onb_profiles_title),
+            desc = getString(R.string.onb_profiles_desc),
             detailRows = listOf(
-                getString(R.string.onb_core_point_choose),
-                getString(R.string.onb_core_point_control),
-                getString(R.string.onb_core_point_enforce),
+                getString(R.string.onb_profiles_point_create),
+                getString(R.string.onb_profiles_point_rules),
+                getString(R.string.onb_profiles_point_default, activeProfile),
             ),
-            level = OnboardingPage.Level.START
+            level = OnboardingPage.Level.START,
+            actionLabel = getString(R.string.onb_profiles_action),
+            action = { act -> (act as? OnboardingActivity)?.showRenameProfileDialog() }
         )
 
-        result += OnboardingPage(
-            type = OnboardingPage.Type.USAGE_PERMISSION,
-            iconRes = R.drawable.bar_chart_24,
-            title = getString(R.string.onb_usage_report_title),
-            desc = getString(R.string.onb_usage_report_desc),
-            level = OnboardingPage.Level.OPTIONAL,
-            completionCheck = { ctx -> UsageStatsRepo.hasUsageAccess(ctx) }
-        )
-
-        // The early report remains optional. Core setup asks for Usage Access again later because Switchly needs it for normal operation.
-        if (UsageStatsRepo.hasUsageAccess(this)) {
-            result += OnboardingPage(
-                type = OnboardingPage.Type.USAGE_PREVIEW,
-                iconRes = R.drawable.bar_chart_24,
-                title = getString(R.string.onb_usage_preview_title),
-                desc = getString(R.string.onb_usage_preview_desc),
-                level = OnboardingPage.Level.INFO
-            )
+        // Step 2: What to block (Apps & Websites)
+        val selectedWebsitesCount = selectedWebsitesForActiveProfile(this).size
+        val blockTargetsCompletedLabel = when {
+            selectedAppCount > 0 && selectedWebsitesCount > 0 ->
+                getString(R.string.onb_block_targets_completed_both, selectedAppCount, selectedWebsitesCount)
+            selectedAppCount > 0 ->
+                resources.getQuantityString(R.plurals.onb_apps_count_plural, selectedAppCount, selectedAppCount)
+            selectedWebsitesCount > 0 ->
+                resources.getQuantityString(R.plurals.onb_websites_count_plural, selectedWebsitesCount, selectedWebsitesCount)
+            else -> null
         }
 
         result += OnboardingPage(
             type = OnboardingPage.Type.APP_SELECTION,
-            iconRes = R.drawable.apps_24,
-            title = getString(R.string.onb_pick_title),
-            desc = getString(R.string.onb_pick_desc_required),
-            detailRows = listOf(
-                getString(R.string.onb_pick_point_goal),
-                getString(R.string.onb_pick_point_system_apps)
-            ),
+            iconRes = R.drawable.app_blocking_white_24,
+            title = getString(R.string.onb_block_targets_title),
+            desc = getString(R.string.onb_block_targets_desc),
             level = OnboardingPage.Level.REQUIRED,
-            actionLabel = getString(R.string.onb_pick_action),
-            action = { act ->
-                (act as? OnboardingActivity)?.openOnboardingAppPicker()
-            },
-            completionCheck = { ctx -> hasPickedApps(ctx) },
-            completedLabel = resources.getQuantityString(
-                R.plurals.onb_apps_picked_count,
-                selectedAppCount,
-                selectedAppCount
-            ),
+            completionCheck = { ctx -> hasPickedBlockTargets(ctx) },
+            completedLabel = blockTargetsCompletedLabel,
             keepActionEnabledWhenCompleted = true,
-            requiredMessage = getString(R.string.onb_required_pick_apps)
+            requiredMessage = getString(R.string.onb_block_targets_required)
         )
 
+        // Step 3: How to switch on and off (Controls)
         result += OnboardingPage(
             iconRes = R.drawable.tune_24,
             title = getString(R.string.onb_controls_title),
@@ -878,7 +1056,7 @@ class OnboardingActivity : ComponentActivity() {
                 getString(R.string.onb_controls_point_enable_disable),
                 getString(R.string.onb_controls_point_lock_edits)
             ),
-            level = OnboardingPage.Level.REQUIRED,
+            level = OnboardingPage.Level.RECOMMENDED,
             actionLabel = getString(R.string.onb_controls_action),
             action = { act ->
                 act.getSharedPreferences(PREFS, MODE_PRIVATE).edit {
@@ -891,165 +1069,27 @@ class OnboardingActivity : ComponentActivity() {
             },
             completionCheck = { ctx -> hasVisitedControlSetup(ctx) },
             completedLabel = getString(R.string.onb_controls_selected),
-            keepActionEnabledWhenCompleted = true,
-            requiredMessage = getString(R.string.onb_required_controls)
+            keepActionEnabledWhenCompleted = true
         )
 
+        // Step 4: Permissions Overview & Finish
         result += OnboardingPage(
             type = OnboardingPage.Type.PERMISSION_OVERVIEW,
             iconRes = R.drawable.security_24,
             title = getString(R.string.onb_permissions_hub_title),
-            desc = permissionOverviewDescription(this),
+            desc = getString(R.string.onb_permissions_hub_desc_simple),
             level = OnboardingPage.Level.REQUIRED,
             actionLabel = getString(R.string.onb_permissions_action),
             action = { act -> (act as? OnboardingActivity)?.openFirstMissingPermissionSetting() },
             completionCheck = { ctx -> isCorePermissionsReady(ctx) },
-            requiredMessage = getString(R.string.onb_required_permissions_hub)
-        )
-
-        if (shouldOfferKeySetup(this)) {
-            val channels = selectedKeyChannelLabels(this)
-            result += OnboardingPage(
-                iconRes = R.drawable.qr_code_24,
-                title = getString(R.string.onb_keys_title_selected),
-                desc = getString(R.string.onb_keys_desc_selected, channels),
-                detailRows = listOf(
-                    getString(R.string.onb_keys_point_actions),
-                    getString(R.string.onb_keys_point_manage)
-                ),
-                level = OnboardingPage.Level.OPTIONAL,
-                actionLabel = getString(R.string.onb_keys_action),
-                action = { act ->
-                    act.startActivity(
-                        Intent(act, ManageKeysActivity::class.java)
-                            .putExtra(ManageKeysActivity.EXTRA_FILTER_FROM_ONBOARDING, true)
-                            .putExtra(ManageKeysActivity.EXTRA_SHOW_NFC, AutomationModeStore.isNfcAllowed(act))
-                            .putExtra(ManageKeysActivity.EXTRA_SHOW_QR, AutomationModeStore.isQrChannelAllowed(act))
-                            .putExtra(ManageKeysActivity.EXTRA_SHOW_BARCODE, AutomationModeStore.isBarcodeChannelAllowed(act))
-                    )
+            requiredMessage = getString(
+                if (AdvancedProtectionCompat.isEnabled(this) &&
+                    !PermissionUtils.isAccessibilityServiceEnabled(this, SwitchlyAccessibilityService::class.java)) {
+                    R.string.onb_required_permissions_hub_advanced_protection
+                } else {
+                    R.string.onb_required_permissions_hub
                 }
             )
-        }
-
-        if (shouldOfferScheduleSetup(this)) {
-            result += OnboardingPage(
-                iconRes = R.drawable.schedule_24,
-                title = getString(R.string.onb_schedule_title_selected),
-                desc = getString(R.string.onb_schedule_desc_selected),
-                detailRows = listOf(
-                    getString(R.string.onb_schedule_point_actions),
-                    getString(R.string.onb_schedule_point_permissions)
-                ),
-                level = OnboardingPage.Level.RECOMMENDED,
-                actionLabel = getString(R.string.onb_schedule_action),
-                action = { act ->
-                    act.startActivity(Intent(act, SchedulesActivity::class.java))
-                },
-                completionCheck = { ctx -> hasAddedSchedule(ctx) },
-                completedLabel = getString(R.string.onb_schedule_added),
-                keepActionEnabledWhenCompleted = true
-            )
-        }
-
-        result += OnboardingPage(
-            type = OnboardingPage.Type.HOME_CUSTOMIZATION,
-            iconRes = R.drawable.dashboard_24,
-            title = getString(R.string.onb_home_customize_title),
-            desc = getString(R.string.onb_home_customize_desc),
-            level = OnboardingPage.Level.OPTIONAL
-        )
-
-        result += OnboardingPage(
-            type = OnboardingPage.Type.REVIEW,
-            iconRes = R.drawable.play_arrow_24,
-            title = getString(R.string.onb_start_title),
-            desc = getString(R.string.onb_start_desc_clean),
-            level = OnboardingPage.Level.INFO
-        )
-
-        result += OnboardingPage(
-            type = OnboardingPage.Type.OPTIONAL_SETUP,
-            iconRes = R.drawable.visibility_off_24,
-            title = getString(R.string.onb_optional_hidden_apps_title),
-            desc = getString(R.string.onb_optional_hidden_apps_desc),
-            level = OnboardingPage.Level.OPTIONAL,
-            optionalPreview = OnboardingPage.OptionalPreview.HIDDEN_APPS,
-            actionLabel = getString(R.string.onb_optional_manage_hidden_action),
-            action = { act -> act.startActivity(IgnoredUsageAppsActivity.intent(act)) }
-        )
-
-        result += OnboardingPage(
-            type = OnboardingPage.Type.OPTIONAL_SETUP,
-            iconRes = R.drawable.dashboard_24,
-            title = getString(R.string.onb_optional_home_modes_title),
-            desc = getString(R.string.onb_optional_home_modes_desc),
-            level = OnboardingPage.Level.OPTIONAL,
-            optionalPreview = OnboardingPage.OptionalPreview.HOME_MODES,
-            actionLabel = getString(R.string.onb_optional_home_settings_action),
-            action = { act -> HomeModeDialogHelper.showHomeLayoutModeDialog(act) }
-        )
-
-        result += OnboardingPage(
-            type = OnboardingPage.Type.OPTIONAL_SETUP,
-            iconRes = R.drawable.tune_24,
-            title = getString(R.string.onb_optional_display_title),
-            desc = getString(R.string.onb_optional_display_desc),
-            level = OnboardingPage.Level.OPTIONAL,
-            optionalPreview = OnboardingPage.OptionalPreview.DISPLAY,
-            actionLabel = getString(R.string.onb_optional_display_more_action),
-            action = { act ->
-                act.startActivity(
-                    Intent(act, ToggleOptionsActivity::class.java)
-                        .putExtra(
-                            ToggleOptionsActivity.EXTRA_VIEW_SECTION,
-                            ToggleOptionsActivity.SECTION_DISPLAY
-                        )
-                )
-            }
-        )
-
-        result += OnboardingPage(
-            type = OnboardingPage.Type.OPTIONAL_SETUP,
-            iconRes = R.drawable.lock_24,
-            title = getString(R.string.onb_optional_app_lock_title),
-            desc = getString(R.string.onb_optional_app_lock_desc),
-            level = OnboardingPage.Level.OPTIONAL,
-            optionalPreview = OnboardingPage.OptionalPreview.APP_LOCK,
-            actionLabel = getString(R.string.onb_optional_protection_settings_action),
-            action = { act -> act.startActivity(Intent(act, AppLockSettingsActivity::class.java)) }
-        )
-
-        result += OnboardingPage(
-            type = OnboardingPage.Type.OPTIONAL_SETUP,
-            iconRes = R.drawable.security_24,
-            title = getString(R.string.onb_optional_feature_access_title),
-            desc = getString(R.string.onb_optional_feature_access_desc),
-            level = OnboardingPage.Level.OPTIONAL,
-            optionalPreview = OnboardingPage.OptionalPreview.FEATURE_ACCESS,
-            actionLabel = getString(R.string.onb_optional_access_more_action),
-            action = { act -> act.startActivity(Intent(act, BlockingFeaturesActivity::class.java)) }
-        )
-
-        result += OnboardingPage(
-            type = OnboardingPage.Type.OPTIONAL_SETUP,
-            iconRes = R.drawable.help_24,
-            title = getString(R.string.onb_optional_faq_title),
-            desc = getString(R.string.onb_optional_faq_desc),
-            level = OnboardingPage.Level.OPTIONAL,
-            optionalPreview = OnboardingPage.OptionalPreview.FAQ,
-            actionLabel = getString(R.string.onb_optional_faq_open_action),
-            action = { act -> act.startActivity(Intent(act, FaqActivity::class.java)) }
-        )
-
-        result += OnboardingPage(
-            type = OnboardingPage.Type.OPTIONAL_SETUP,
-            iconRes = R.drawable.info_24,
-            title = getString(R.string.onb_optional_support_title),
-            desc = getString(R.string.onb_optional_support_desc),
-            level = OnboardingPage.Level.OPTIONAL,
-            optionalPreview = OnboardingPage.OptionalPreview.SUPPORT,
-            actionLabel = getString(R.string.onb_optional_support_open_action),
-            action = { act -> act.startActivity(Intent(act, SupportActivity::class.java)) }
         )
 
         return result
@@ -1099,8 +1139,8 @@ class OnboardingActivity : ComponentActivity() {
         val accent = AccentColor.getAccentColorInt(this)
         val root = findViewById<View>(android.R.id.content)
         val onSurface = MaterialColors.getColor(root, com.google.android.material.R.attr.colorOnSurface)
-        val surface = ContextCompat.getColor(this, R.color.switchly_card_bg)
-        val outline = ContextCompat.getColor(this, R.color.switchly_card_stroke)
+        val surface = ContextCompat.getColor(this, R.color.foqos_surface)
+        val outline = ContextCompat.getColor(this, R.color.foqos_outline_variant)
         val pendingSelection = apps.mapTo(linkedSetOf()) { it.packageName }
 
         val scroll = ScrollView(this).apply {
@@ -1205,7 +1245,7 @@ class OnboardingActivity : ComponentActivity() {
             card.setOnClickListener {
                 if (app.packageName in pendingSelection) {
                     if (pendingSelection.size <= 1) {
-                        Toast.makeText(this, R.string.onb_keep_one_app, Toast.LENGTH_SHORT).show()
+                        card.showWarnPill(R.string.onb_keep_one_app)
                         return@setOnClickListener
                     }
                     pendingSelection.remove(app.packageName)
@@ -1232,7 +1272,8 @@ class OnboardingActivity : ComponentActivity() {
         dialog.styleSwitchlyDialogButtons()
         dialog.getButton(android.content.DialogInterface.BUTTON_POSITIVE).setOnClickListener {
             if (pendingSelection.isEmpty()) {
-                Toast.makeText(this, R.string.onb_keep_one_app, Toast.LENGTH_SHORT).show()
+                (dialog.window?.decorView ?: findViewById<View>(android.R.id.content))
+                    .showWarnPill(R.string.onb_keep_one_app)
                 return@setOnClickListener
             }
             ProfileStore.setSelectedForProfileMode(this, profile, pendingSelection)
@@ -1246,6 +1287,13 @@ class OnboardingActivity : ComponentActivity() {
             putInt(KEY_VERSION, ONBOARDING_VERSION)
         }
         MainActivity.queueBottomNavTour(this)
+    }
+
+    private fun markSkipped() {
+        getSharedPreferences(PREFS, MODE_PRIVATE).edit(commit = true) {
+            putBoolean(KEY_DONE, true)
+            putInt(KEY_VERSION, ONBOARDING_VERSION)
+        }
     }
 
     private fun leaveOnboarding() {

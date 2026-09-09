@@ -1,13 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  App usage detail — ground-up rebuild in the Foqos language.
+  One scroll: hero card (app + big total) → stat chips → limits cards →
+  chart card (segmented range + canvas chart, no XML button group) →
+  sessions timeline card. Everything rounded, everything accented live.
+-->
 <androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:ignore="UseCompoundDrawables">
+    android:layout_height="match_parent">
 
-    <!-- Topbar -->
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -20,22 +23,26 @@
             android:layout_height="wrap_content"
             android:minHeight="?attr/actionBarSize"
             app:navigationIcon="@drawable/keyboard_arrow_left_24"
-            app:title="" />
+            app:title="@string/app_usage_detail_title" />
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:padding="16dp"
+        android:paddingStart="16dp"
+        android:paddingTop="12dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="28dp"
+        android:clipToPadding="false"
         android:fillViewport="true"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            tools:ignore="UseCompoundDrawables">
+            android:orientation="vertical">
 
+            <!-- Hero: app identity + big total for the selected range -->
             <com.google.android.material.card.MaterialCardView
                 style="@style/Switchly.Card"
                 android:layout_width="match_parent"
@@ -45,16 +52,29 @@
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:orientation="vertical">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
                     android:padding="16dp">
 
-                    <ImageView
-                        android:id="@+id/icon"
-                        android:layout_width="52dp"
-                        android:layout_height="52dp"
-                        android:contentDescription="@null"
-                        android:scaleType="centerInside" />
+                    <FrameLayout
+                        android:id="@+id/iconBackdrop"
+                        android:layout_width="56dp"
+                        android:layout_height="56dp"
+                        android:background="@drawable/bg_roundel_accent">
+
+                        <ImageView
+                            android:id="@+id/icon"
+                            android:layout_width="34dp"
+                            android:layout_height="34dp"
+                            android:layout_gravity="center"
+                            android:contentDescription="@null"
+                            android:scaleType="centerInside" />
+                    </FrameLayout>
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -71,8 +91,7 @@
                             android:textSize="20sp"
                             android:textStyle="bold"
                             android:maxLines="2"
-                            android:ellipsize="end"
-                            tools:text="YouTube" />
+                            android:ellipsize="end" />
 
                         <TextView
                             android:id="@+id/detailSubtitle"
@@ -81,8 +100,7 @@
                             android:layout_marginTop="3dp"
                             android:alpha="0.72"
                             android:textColor="?attr/colorOnSurface"
-                            android:textSize="13sp"
-                            tools:text="Usage, limits, and activity" />
+                            android:textSize="13sp" />
                     </LinearLayout>
 
                     <ImageButton
@@ -94,73 +112,89 @@
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:contentDescription="@string/edit_limits"
                         app:srcCompat="@drawable/tune_24"
-                        app:tint="?attr/colorOnSurface" />
+                        app:tint="?attr/colorPrimary" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="16dp">
+
+                    <TextView
+                        android:id="@+id/todayUsage"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textColor="?attr/colorPrimary"
+                        android:textSize="30sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:alpha="0.7"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="12sp"
+                        android:id="@+id/todayUsageCaption" />
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.card.MaterialCardView
+                            style="@style/Switchly.StatChip"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1">
+
+                            <TextView
+                                android:id="@+id/detailOpensChip"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="center"
+                                android:paddingTop="10dp"
+                                android:paddingBottom="10dp"
+                                android:textSize="14sp"
+                                android:textStyle="bold" />
+                        </com.google.android.material.card.MaterialCardView>
+
+                        <Space
+                            android:layout_width="10dp"
+                            android:layout_height="1dp" />
+
+                        <com.google.android.material.card.MaterialCardView
+                            style="@style/Switchly.StatChip"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1">
+
+                            <TextView
+                                android:id="@+id/detailAttemptsChip"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:gravity="center"
+                                android:paddingTop="10dp"
+                                android:paddingBottom="10dp"
+                                android:textSize="14sp"
+                                android:textStyle="bold" />
+                        </com.google.android.material.card.MaterialCardView>
+                    </LinearLayout>
+                    </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <HorizontalScrollView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:clipToPadding="false"
-                android:fillViewport="false"
-                android:scrollbars="none">
-
-                <com.google.android.material.chip.ChipGroup
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    app:chipSpacingHorizontal="8dp"
-                    app:singleLine="true">
-
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/todayUsage"
-                        style="@style/Switchly.Chip"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:clickable="false"
-                        android:focusable="false"
-                        android:text="@string/usage_today"
-                        android:checkable="false" />
-
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/detailOpensChip"
-                        style="@style/Switchly.Chip"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:clickable="false"
-                        android:focusable="false"
-                        android:text="@string/usage_opens_zero"
-                        android:checkable="false" />
-
-                    <com.google.android.material.chip.Chip
-                        android:id="@+id/detailAttemptsChip"
-                        style="@style/Switchly.Chip"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:clickable="false"
-                        android:focusable="false"
-                        android:text="@string/usage_attempts_zero"
-                        android:checkable="false" />
-                </com.google.android.material.chip.ChipGroup>
-            </HorizontalScrollView>
-
+            <!-- Limits -->
             <TextView
                 style="@style/Switchly.SectionHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
+                android:layout_marginTop="16dp"
                 android:text="@string/usage_details_limits_section" />
-
-            <!-- Limits (time + attempts) -->
-            <TextView
-                android:id="@+id/tvProfileIndicator"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:alpha="0.7"
-                android:text=""
-                android:textColor="?attr/colorOnSurface"
-                android:textSize="12sp" />
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -201,7 +235,7 @@
                             android:layout_marginTop="4dp"
                             android:text="@string/no_limit"
                             android:textColor="?attr/colorOnSurface"
-                            android:textSize="14sp"
+                            android:textSize="15sp"
                             android:textStyle="bold" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
@@ -242,7 +276,7 @@
                             android:layout_marginTop="4dp"
                             android:text="@string/no_limit"
                             android:textColor="?attr/colorOnSurface"
-                            android:textSize="14sp"
+                            android:textSize="15sp"
                             android:textStyle="bold" />
                     </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
@@ -254,6 +288,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
                 android:alpha="0.7"
+                android:visibility="gone"
                 android:text="@string/limits_quick_edit_hint"
                 android:textColor="?attr/colorOnSurface" />
 
@@ -297,193 +332,20 @@
                     android:progress="0" />
             </LinearLayout>
 
+            <!-- Usage over time: segmented range + one chart card -->
             <TextView
                 style="@style/Switchly.SectionHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
+                android:layout_marginTop="16dp"
                 android:text="@string/usage_details_activity_section" />
 
-            <!-- Range selector -->
-            <com.google.android.material.button.MaterialButtonToggleGroup
-                android:id="@+id/toggleRange"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                app:selectionRequired="true"
-                app:singleSelection="true">
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnRangeToday"
-                    style="@style/Switchly.OutlinedButton.CompactSegment"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/usage_range_today" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnRangeWeek"
-                    style="@style/Switchly.OutlinedButton.CompactSegment"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/usage_range_week" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnRangeMonth"
-                    style="@style/Switchly.OutlinedButton.CompactSegment"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/usage_range_month" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnRangeYear"
-                    style="@style/Switchly.OutlinedButton.CompactSegment"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/usage_range_year" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnRangeCustom"
-                    style="@style/Switchly.OutlinedButton.CompactSegment"
-                    android:layout_width="44dp"
-                    android:layout_height="40dp"
-                    android:minWidth="0dp"
-                    android:gravity="center"
-                    android:contentDescription="@string/activity_history_range_custom"
-                    android:text=""
-                    app:icon="@drawable/calendar_month_24"
-                    app:iconGravity="textStart"
-                    app:iconPadding="0dp" />
-            </com.google.android.material.button.MaterialButtonToggleGroup>
-
-            <LinearLayout
-                android:id="@+id/customRangeSummary"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:visibility="gone">
-
-                <TextView
-                    android:id="@+id/customRangeValue"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textSize="13sp"
-                    android:textStyle="bold" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnClearCustomRange"
-                    style="@style/Switchly.OutlinedButton.CompactSegment"
-                    android:layout_width="wrap_content"
-                    android:layout_height="36dp"
-                    android:minWidth="0dp"
-                    android:text="@string/stats_range_clear" />
-            </LinearLayout>
-
-            <at.saltyy.switchly.ui.widgets.WeeklyBarChartView
-                android:id="@+id/chart"
-                android:layout_width="match_parent"
-                android:layout_height="140dp"
-                android:layout_marginTop="16dp" />
-
-            <at.saltyy.switchly.ui.widgets.TimeSeriesLineChartView
-                android:id="@+id/lineChart"
-                android:layout_width="match_parent"
-                android:layout_height="160dp"
-                android:layout_marginTop="16dp"
-                android:visibility="gone" />
-
-            <LinearLayout
-                android:id="@+id/weekdayRow"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:orientation="horizontal">
-
-                <TextView
-                    android:id="@+id/day1"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:alpha="0.7"
-                    android:text="@string/day_short_mon"
-                    android:textColor="?attr/colorOnSurface" />
-
-                <TextView
-                    android:id="@+id/day2"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:alpha="0.7"
-                    android:text="@string/day_short_tue"
-                    android:textColor="?attr/colorOnSurface" />
-
-                <TextView
-                    android:id="@+id/day3"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:alpha="0.7"
-                    android:text="@string/day_short_wed"
-                    android:textColor="?attr/colorOnSurface" />
-
-                <TextView
-                    android:id="@+id/day4"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:alpha="0.7"
-                    android:text="@string/day_short_thu"
-                    android:textColor="?attr/colorOnSurface" />
-
-                <TextView
-                    android:id="@+id/day5"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:alpha="0.7"
-                    android:text="@string/day_short_fri"
-                    android:textColor="?attr/colorOnSurface" />
-
-                <TextView
-                    android:id="@+id/day6"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:alpha="0.7"
-                    android:text="@string/day_short_sat"
-                    android:textColor="?attr/colorOnSurface" />
-
-                <TextView
-                    android:id="@+id/day7"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:gravity="center"
-                    android:alpha="0.7"
-                    android:text="@string/day_short_sun"
-                    android:textColor="?attr/colorOnSurface" />
-            </LinearLayout>
-
             <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardLaunchStats"
                 style="@style/Switchly.Card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                app:cardUseCompatPadding="true">
+                android:layout_marginTop="10dp"
+                app:cardUseCompatPadding="false">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -491,62 +353,109 @@
                     android:orientation="vertical"
                     android:padding="16dp">
 
-                    <TextView
-                        android:id="@+id/launchStatsTitle"
+                    <com.google.android.material.button.MaterialButtonToggleGroup
+                        android:id="@+id/toggleRange"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/usage_launch_stats_title"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
+                        app:selectionRequired="true"
+                        app:singleSelection="true">
 
-                    <TextView
-                        android:id="@+id/launchStatsSummary"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:alpha="0.82"
-                        android:text="@string/usage_launch_stats_loading"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textSize="13sp" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnRangeToday"
+                            style="@style/Switchly.Segment"
+                            android:layout_width="0dp"
+                            android:layout_height="44dp"
+                            android:layout_weight="1"
+                            android:text="@string/usage_range_today" />
 
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardUsageTimeline"
-                style="@style/Switchly.Card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                app:cardUseCompatPadding="true">
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnRangeWeek"
+                            style="@style/Switchly.Segment"
+                            android:layout_width="0dp"
+                            android:layout_height="44dp"
+                            android:layout_weight="1"
+                            android:text="@string/usage_range_week" />
 
-                <LinearLayout
-                    android:id="@+id/usageTimelineContainer"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="16dp">
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnRangeMonth"
+                            style="@style/Switchly.Segment"
+                            android:layout_width="0dp"
+                            android:layout_height="44dp"
+                            android:layout_weight="1"
+                            android:text="@string/usage_range_month" />
 
-                    <TextView
-                        android:id="@+id/usageTimelineTitle"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/usage_timeline_title"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnRangeYear"
+                            style="@style/Switchly.Segment"
+                            android:layout_width="0dp"
+                            android:layout_height="44dp"
+                            android:layout_weight="1"
+                            android:text="@string/usage_range_year" />
 
-                    <TextView
-                        android:id="@+id/usageTimelineEmpty"
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnRangeCustom"
+                            style="@style/Switchly.Segment"
+                            android:layout_width="52dp"
+                            android:layout_height="44dp"
+                            android:minWidth="0dp"
+                            android:gravity="center"
+                            android:contentDescription="@string/activity_history_range_custom"
+                            android:text=""
+                            app:icon="@drawable/calendar_month_24"
+                            app:iconGravity="textStart"
+                            app:iconPadding="0dp" />
+                    </com.google.android.material.button.MaterialButtonToggleGroup>
+
+                    <LinearLayout
+                        android:id="@+id/customRangeSummary"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:visibility="gone">
+
+                        <TextView
+                            android:id="@+id/customRangeValue"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textSize="13sp"
+                            android:textStyle="bold" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnClearCustomRange"
+                            style="@style/Switchly.OutlinedButton.CompactSegment"
+                            android:layout_width="wrap_content"
+                            android:layout_height="36dp"
+                            android:minWidth="0dp"
+                            android:text="@string/stats_range_clear" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/chartSummary"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="14dp"
                         android:alpha="0.75"
-                        android:text="@string/usage_timeline_loading"
                         android:textColor="?attr/colorOnSurface"
                         android:textSize="13sp" />
+
+                    <at.saltyy.switchly.ui.widgets.UsageDetailChartView
+                        android:id="@+id/chart"
+                        android:layout_width="match_parent"
+                        android:layout_height="170dp"
+                        android:layout_marginTop="8dp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
+
+            <!-- Profile indicator (kept for logic compat, hidden) -->
+            <TextView
+                android:id="@+id/tvProfileIndicator"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:visibility="gone" />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

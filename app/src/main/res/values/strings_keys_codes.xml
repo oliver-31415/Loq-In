@@ -28,7 +28,7 @@
     <!-- Info dialogs -->
     <!-- ====================================================== -->
     <string name="qr_info_title">QR code actions</string>
-    <string name="qr_info_body">QR codes can run these Switchly actions when scanned:\n• Enable or disable protection\n• Toggle the current state\n• Start a temporary action\n• Switch profiles\n\nFor a stricter setup, keep only the control channels you want to use enabled.</string>
+    <string name="qr_info_body">QR codes can run these Switchly actions when scanned:\n• Enable or disable protection\n• Toggle the current state\n• Start a temporary action\n• Switch profiles\n\nFor the most reliable result, scan Switchly QR codes with Switchly’s built-in QR scanner. Some external scanners, including Google Lens on some devices, may treat the Switchly action link as a search instead of opening it.\n\nFor a stricter setup, keep only the control channels you want to use enabled.</string>
     <string name="manage_barcodes_info_title">Barcode actions</string>
     <string name="manage_barcodes_info_body">Saved barcodes link a physical code to a Switchly action:\n• Enable, disable, or toggle protection\n• Start a temporary action\n• Switch profiles\n\nFor more friction, keep the barcode away from your phone. “Ask when scanned” lets you choose the duration during the scan.</string>
     <string name="paired_tags_info_title">Paired NFC tags</string>

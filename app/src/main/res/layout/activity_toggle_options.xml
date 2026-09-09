@@ -23,6 +23,7 @@
             app:title="@string/toggle_options_title" />
     </com.google.android.material.appbar.AppBarLayout>
 
+    <!-- Content -->
     <ScrollView
         android:id="@+id/scrollToggleOptions"
         android:layout_width="match_parent"
@@ -69,7 +70,7 @@
 
                     <TextView
                         android:id="@+id/tvNfcLockedHint"
-                        style="@style/TextAppearance.MaterialComponents.Body2"
+                        android:textAppearance="?attr/textAppearanceBody2"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
@@ -108,13 +109,13 @@
                     android:paddingBottom="6dp">
 
                     <TextView
-                        style="@style/TextAppearance.MaterialComponents.Subtitle1"
+                        android:textAppearance="?attr/textAppearanceSubtitle1"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/toggle_guided_card_title" />
 
                     <TextView
-                        style="@style/TextAppearance.MaterialComponents.Body2"
+                        android:textAppearance="?attr/textAppearanceBody2"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
@@ -133,7 +134,7 @@
 
             <TextView
                 android:id="@+id/tvManageBlockingModesTitle"
-                style="@style/TextAppearance.MaterialComponents.Subtitle1"
+                android:textAppearance="?attr/textAppearanceSubtitle1"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
@@ -144,7 +145,7 @@
             <!-- Control modes: choose the primary automation/control mode -->
             <TextView
                 android:id="@+id/tvControlModeSection"
-                style="@style/TextAppearance.MaterialComponents.Subtitle1"
+                android:textAppearance="?attr/textAppearanceSubtitle1"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="4dp"
@@ -156,7 +157,7 @@
 
             <TextView
                 android:id="@+id/tvControlModeSectionSummary"
-                style="@style/TextAppearance.MaterialComponents.Body2"
+                android:textAppearance="?attr/textAppearanceBody2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
@@ -204,13 +205,13 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body1"
+                                android:textAppearance="?attr/textAppearanceBody1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/pref_mode_schedule_title" />
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body2"
+                                android:textAppearance="?attr/textAppearanceBody2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -259,13 +260,13 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body1"
+                                android:textAppearance="?attr/textAppearanceBody1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/pref_mode_nfc_title" />
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body2"
+                                android:textAppearance="?attr/textAppearanceBody2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -314,13 +315,13 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body1"
+                                android:textAppearance="?attr/textAppearanceBody1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/pref_mode_qr_title" />
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body2"
+                                android:textAppearance="?attr/textAppearanceBody2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -369,13 +370,13 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body1"
+                                android:textAppearance="?attr/textAppearanceBody1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/pref_mode_barcode_title" />
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body2"
+                                android:textAppearance="?attr/textAppearanceBody2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -424,13 +425,13 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body1"
+                                android:textAppearance="?attr/textAppearanceBody1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/pref_mode_mixed_title" />
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body2"
+                                android:textAppearance="?attr/textAppearanceBody2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -451,7 +452,7 @@
             <!-- Mixed mode channels: allowed control methods and active-state exceptions -->
             <TextView
                 android:id="@+id/tvMixedChannelsSection"
-                style="@style/TextAppearance.MaterialComponents.Subtitle1"
+                android:textAppearance="?attr/textAppearanceSubtitle1"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="14dp"
@@ -464,7 +465,7 @@
 
             <TextView
                 android:id="@+id/tvMixedChannelsSectionSummary"
-                style="@style/TextAppearance.MaterialComponents.Body2"
+                android:textAppearance="?attr/textAppearanceBody2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
@@ -513,13 +514,13 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body1"
+                                android:textAppearance="?attr/textAppearanceBody1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/pref_mixed_allow_schedule_title" />
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body2"
+                                android:textAppearance="?attr/textAppearanceBody2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -569,13 +570,13 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body1"
+                                android:textAppearance="?attr/textAppearanceBody1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/pref_mixed_allow_nfc_title" />
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body2"
+                                android:textAppearance="?attr/textAppearanceBody2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -625,13 +626,13 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body1"
+                                android:textAppearance="?attr/textAppearanceBody1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/pref_mixed_allow_qr_title" />
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body2"
+                                android:textAppearance="?attr/textAppearanceBody2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -681,13 +682,13 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body1"
+                                android:textAppearance="?attr/textAppearanceBody1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/pref_mixed_allow_barcode_title" />
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body2"
+                                android:textAppearance="?attr/textAppearanceBody2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -737,13 +738,13 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body1"
+                                android:textAppearance="?attr/textAppearanceBody1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/pref_mixed_allow_button_title" />
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body2"
+                                android:textAppearance="?attr/textAppearanceBody2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -793,13 +794,13 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body1"
+                                android:textAppearance="?attr/textAppearanceBody1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/pref_mixed_allow_app_picking_title" />
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body2"
+                                android:textAppearance="?attr/textAppearanceBody2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -849,13 +850,13 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body1"
+                                android:textAppearance="?attr/textAppearanceBody1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/pref_mixed_allow_profile_switching_title" />
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body2"
+                                android:textAppearance="?attr/textAppearanceBody2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -906,13 +907,13 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body1"
+                                android:textAppearance="?attr/textAppearanceBody1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/pref_mixed_allow_schedule_editing_title" />
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body2"
+                                android:textAppearance="?attr/textAppearanceBody2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -962,13 +963,13 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body1"
+                                android:textAppearance="?attr/textAppearanceBody1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/pref_allow_button_enable_title" />
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body2"
+                                android:textAppearance="?attr/textAppearanceBody2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -1018,13 +1019,13 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body1"
+                                android:textAppearance="?attr/textAppearanceBody1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/pref_mixed_allow_nfc_tag_writing_title" />
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body2"
+                                android:textAppearance="?attr/textAppearanceBody2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -1044,7 +1045,7 @@
 
             <TextView
                 android:id="@+id/tvManageOtherBlockingFeaturesTitle"
-                style="@style/TextAppearance.MaterialComponents.Subtitle1"
+                android:textAppearance="?attr/textAppearanceSubtitle1"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="22dp"
@@ -1055,7 +1056,7 @@
             <!-- Feature access while blocking -->
             <TextView
                 android:id="@+id/tvAdditionalFeaturesSection"
-                style="@style/TextAppearance.MaterialComponents.Subtitle1"
+                android:textAppearance="?attr/textAppearanceSubtitle1"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="22dp"
@@ -1068,7 +1069,7 @@
 
             <TextView
                 android:id="@+id/tvAdditionalFeaturesSectionSummary"
-                style="@style/TextAppearance.MaterialComponents.Body2"
+                android:textAppearance="?attr/textAppearanceBody2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
@@ -1117,13 +1118,13 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body1"
+                                android:textAppearance="?attr/textAppearanceBody1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/pref_require_nfc_unlock_title" />
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body2"
+                                android:textAppearance="?attr/textAppearanceBody2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -1174,13 +1175,13 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body1"
+                                android:textAppearance="?attr/textAppearanceBody1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/pref_enable_paired_uids_title" />
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body2"
+                                android:textAppearance="?attr/textAppearanceBody2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -1231,13 +1232,13 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body1"
+                                android:textAppearance="?attr/textAppearanceBody1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/pref_auto_pair_on_write_title" />
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body2"
+                                android:textAppearance="?attr/textAppearanceBody2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -1258,7 +1259,7 @@
             <!-- System status: ongoing notification -->
             <TextView
                 android:id="@+id/tvDisplayStatusSection"
-                style="@style/TextAppearance.MaterialComponents.Subtitle1"
+                android:textAppearance="?attr/textAppearanceSubtitle1"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="18dp"
@@ -1271,7 +1272,7 @@
 
             <TextView
                 android:id="@+id/tvDisplayStatusSectionSummary"
-                style="@style/TextAppearance.MaterialComponents.Body2"
+                android:textAppearance="?attr/textAppearanceBody2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
@@ -1319,13 +1320,13 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body1"
+                                android:textAppearance="?attr/textAppearanceBody1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/pref_persistent_status_notification_title" />
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body2"
+                                android:textAppearance="?attr/textAppearanceBody2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -1376,14 +1377,14 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body1"
+                                android:textAppearance="?attr/textAppearanceBody1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/pref_persistent_status_notification_mode_title" />
 
                             <TextView
                                 android:id="@+id/tvPersistentStatusNotificationModeValue"
-                                style="@style/TextAppearance.MaterialComponents.Body2"
+                                android:textAppearance="?attr/textAppearanceBody2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -1404,7 +1405,7 @@
             <!-- Safety & restrictions -->
             <TextView
                 android:id="@+id/tvSafetyControlsSection"
-                style="@style/TextAppearance.MaterialComponents.Subtitle1"
+                android:textAppearance="?attr/textAppearanceSubtitle1"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="22dp"
@@ -1417,7 +1418,7 @@
 
             <TextView
                 android:id="@+id/tvProtectionSectionSummary"
-                style="@style/TextAppearance.MaterialComponents.Body2"
+                android:textAppearance="?attr/textAppearanceBody2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
@@ -1466,13 +1467,13 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body1"
+                                android:textAppearance="?attr/textAppearanceBody1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/pref_block_notifications_title" />
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body2"
+                                android:textAppearance="?attr/textAppearanceBody2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -1481,6 +1482,63 @@
 
                         <com.google.android.material.switchmaterial.SwitchMaterial
                             android:id="@+id/switchBlockNotifications"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textOff=""
+                            android:textOn=""
+                            app:showText="false" />
+                    </LinearLayout>
+
+                    <View
+                        android:id="@+id/dividerAfterBlockNotifications"
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="?attr/colorOnSurface"
+                        android:alpha="0.12" />
+
+                    <!-- Missed notifications recap popup at session end -->
+                    <LinearLayout
+                        android:id="@+id/rowSessionMissedNotifications"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:padding="14dp"
+                        android:background="?attr/selectableItemBackground">
+
+                        <ImageView
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/notifications_24"
+                            app:tint="?attr/colorOnSurface" />
+
+                        <Space
+                            android:layout_width="14dp"
+                            android:layout_height="1dp" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:textAppearance="?attr/textAppearanceBody1"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/pref_show_session_missed_notifications_title" />
+
+                            <TextView
+                                android:textAppearance="?attr/textAppearanceBody2"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/pref_show_session_missed_notifications_summary" />
+                        </LinearLayout>
+
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/switchSessionMissedNotifications"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:textOff=""
@@ -1522,13 +1580,13 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body1"
+                                android:textAppearance="?attr/textAppearanceBody1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/pref_autostart_title" />
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body2"
+                                android:textAppearance="?attr/textAppearanceBody2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -1579,13 +1637,13 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body1"
+                                android:textAppearance="?attr/textAppearanceBody1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/pref_emergency_title" />
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body2"
+                                android:textAppearance="?attr/textAppearanceBody2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -1600,13 +1658,70 @@
                             android:textOn=""
                             app:showText="false" />
                     </LinearLayout>
+
+                    <View
+                        android:id="@+id/dividerAfterEmergency"
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="?attr/colorOnSurface"
+                        android:alpha="0.12" />
+
+                    <!-- Change emergency PIN -->
+                    <LinearLayout
+                        android:id="@+id/rowChangeEmergencyPin"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical"
+                        android:padding="14dp"
+                        android:background="?attr/selectableItemBackground">
+
+                        <ImageView
+                            android:layout_width="22dp"
+                            android:layout_height="22dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/lock_24"
+                            app:tint="?attr/colorOnSurface" />
+
+                        <Space
+                            android:layout_width="14dp"
+                            android:layout_height="1dp" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:textAppearance="?attr/textAppearanceBody1"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/pref_change_emergency_pin_title" />
+
+                            <TextView
+                                android:textAppearance="?attr/textAppearanceBody2"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:text="@string/pref_change_emergency_pin_summary" />
+                        </LinearLayout>
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:alpha="0.4"
+                            android:contentDescription="@null"
+                            android:src="@drawable/keyboard_arrow_right_24"
+                            app:tint="?attr/colorOnSurface" />
+                    </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
             <!-- Display & shortcuts overview -->
             <TextView
                 android:id="@+id/tvDisplayControlsSection"
-                style="@style/TextAppearance.MaterialComponents.Subtitle1"
+                android:textAppearance="?attr/textAppearanceSubtitle1"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="22dp"
@@ -1619,7 +1734,7 @@
 
             <TextView
                 android:id="@+id/tvUiSectionSummary"
-                style="@style/TextAppearance.MaterialComponents.Body2"
+                android:textAppearance="?attr/textAppearanceBody2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
@@ -1629,7 +1744,7 @@
             <!-- In-app Home: Switchly Home cards and shortcuts -->
             <TextView
                 android:id="@+id/tvDisplayHomeSection"
-                style="@style/TextAppearance.MaterialComponents.Subtitle1"
+                android:textAppearance="?attr/textAppearanceSubtitle1"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
@@ -1642,7 +1757,7 @@
 
             <TextView
                 android:id="@+id/tvDisplayHomeSectionSummary"
-                style="@style/TextAppearance.MaterialComponents.Body2"
+                android:textAppearance="?attr/textAppearanceBody2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
@@ -1690,14 +1805,14 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body1"
+                                android:textAppearance="?attr/textAppearanceBody1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/pref_home_layout_mode_title" />
 
                             <TextView
                                 android:id="@+id/tvHomeLayoutModeSummary"
-                                style="@style/TextAppearance.MaterialComponents.Body2"
+                                android:textAppearance="?attr/textAppearanceBody2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -1706,7 +1821,7 @@
 
                         <TextView
                             android:id="@+id/tvHomeLayoutModeValue"
-                            style="@style/TextAppearance.MaterialComponents.Body2"
+                            android:textAppearance="?attr/textAppearanceBody2"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginStart="10dp"
@@ -1757,13 +1872,13 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body1"
+                                android:textAppearance="?attr/textAppearanceBody1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/pref_home_layout_custom_title" />
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body2"
+                                android:textAppearance="?attr/textAppearanceBody2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -1814,13 +1929,13 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body1"
+                                android:textAppearance="?attr/textAppearanceBody1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/pref_show_quick_actions_title" />
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body2"
+                                android:textAppearance="?attr/textAppearanceBody2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -1870,13 +1985,13 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body1"
+                                android:textAppearance="?attr/textAppearanceBody1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/pref_show_temporary_mode_title" />
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body2"
+                                android:textAppearance="?attr/textAppearanceBody2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -1926,13 +2041,13 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body1"
+                                android:textAppearance="?attr/textAppearanceBody1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/pref_lock_active_temporary_timer_title" />
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body2"
+                                android:textAppearance="?attr/textAppearanceBody2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -1982,13 +2097,13 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body1"
+                                android:textAppearance="?attr/textAppearanceBody1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/pref_show_active_duration_title" />
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body2"
+                                android:textAppearance="?attr/textAppearanceBody2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -2038,13 +2153,13 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body1"
+                                android:textAppearance="?attr/textAppearanceBody1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/pref_show_emergency_unlock_title" />
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body2"
+                                android:textAppearance="?attr/textAppearanceBody2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -2065,7 +2180,7 @@
             <!-- Tiles: Android Quick Settings tiles -->
             <TextView
                 android:id="@+id/tvDisplayTilesSection"
-                style="@style/TextAppearance.MaterialComponents.Subtitle1"
+                android:textAppearance="?attr/textAppearanceSubtitle1"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="18dp"
@@ -2078,7 +2193,7 @@
 
             <TextView
                 android:id="@+id/tvDisplayTilesSectionSummary"
-                style="@style/TextAppearance.MaterialComponents.Body2"
+                android:textAppearance="?attr/textAppearanceBody2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
@@ -2126,14 +2241,14 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body1"
+                                android:textAppearance="?attr/textAppearanceBody1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/pref_qs_tile_title" />
 
                             <TextView
                                 android:id="@+id/tvQuickTileSummary"
-                                style="@style/TextAppearance.MaterialComponents.Body2"
+                                android:textAppearance="?attr/textAppearanceBody2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -2184,14 +2299,14 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body1"
+                                android:textAppearance="?attr/textAppearanceBody1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/pref_qr_qs_tile_title" />
 
                             <TextView
                                 android:id="@+id/tvQrQuickTileSummary"
-                                style="@style/TextAppearance.MaterialComponents.Body2"
+                                android:textAppearance="?attr/textAppearanceBody2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -2242,14 +2357,14 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body1"
+                                android:textAppearance="?attr/textAppearanceBody1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/pref_barcode_qs_tile_title" />
 
                             <TextView
                                 android:id="@+id/tvBarcodeQuickTileSummary"
-                                style="@style/TextAppearance.MaterialComponents.Body2"
+                                android:textAppearance="?attr/textAppearanceBody2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -2278,7 +2393,7 @@
             <!-- Widgets: Android home-screen widgets -->
             <TextView
                 android:id="@+id/tvDisplayWidgetsSection"
-                style="@style/TextAppearance.MaterialComponents.Subtitle1"
+                android:textAppearance="?attr/textAppearanceSubtitle1"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="18dp"
@@ -2291,7 +2406,7 @@
 
             <TextView
                 android:id="@+id/tvDisplayWidgetsSectionSummary"
-                style="@style/TextAppearance.MaterialComponents.Body2"
+                android:textAppearance="?attr/textAppearanceBody2"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginBottom="8dp"
@@ -2339,13 +2454,13 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body1"
+                                android:textAppearance="?attr/textAppearanceBody1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/pref_widget_barcode_title" />
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body2"
+                                android:textAppearance="?attr/textAppearanceBody2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -2396,13 +2511,13 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body1"
+                                android:textAppearance="?attr/textAppearanceBody1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/pref_widget_qr_title" />
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body2"
+                                android:textAppearance="?attr/textAppearanceBody2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -2453,13 +2568,13 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body1"
+                                android:textAppearance="?attr/textAppearanceBody1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/pref_widget_next_schedule_title" />
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body2"
+                                android:textAppearance="?attr/textAppearanceBody2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -2510,13 +2625,13 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body1"
+                                android:textAppearance="?attr/textAppearanceBody1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/pref_widget_active_timer_title" />
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body2"
+                                android:textAppearance="?attr/textAppearanceBody2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
@@ -2567,13 +2682,13 @@
                             android:orientation="vertical">
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body1"
+                                android:textAppearance="?attr/textAppearanceBody1"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:text="@string/pref_widget_blocked_notifications_title" />
 
                             <TextView
-                                style="@style/TextAppearance.MaterialComponents.Body2"
+                                android:textAppearance="?attr/textAppearanceBody2"
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"

@@ -21,12 +21,16 @@ package at.saltyy.switchly.feature.usage
 
 import android.content.res.ColorStateList
 import android.graphics.Color
+import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.text.InputType
+import android.view.Gravity
 import android.view.View
 import android.view.MenuItem
 import android.widget.EditText
 import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -38,7 +42,7 @@ import at.saltyy.switchly.blocking.BlockingRuntime
 import at.saltyy.switchly.data.prefs.AttemptLimitStore
 import at.saltyy.switchly.data.prefs.BlockAttemptStore
 import at.saltyy.switchly.data.prefs.LimitReachedStore
-import at.saltyy.switchly.data.prefs.OpenCountStore
+import at.saltyy.switchly.data.prefs.AppLaunchCountStore
 import at.saltyy.switchly.data.prefs.ProfileStore
 import at.saltyy.switchly.data.prefs.SwitchModeStore
 import at.saltyy.switchly.data.prefs.UsageLimitStore
@@ -49,11 +53,15 @@ import at.saltyy.switchly.databinding.ActivityStatisticsAppUsageDetailBinding
 import at.saltyy.switchly.feature.stats.StatsFormat
 import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.ui.EdgeToEdgeUtils
+import at.saltyy.switchly.ui.SegmentedToggleUi
 import at.saltyy.switchly.ui.ThemeUtils
+import at.saltyy.switchly.ui.showWarnPill
+import at.saltyy.switchly.ui.showWarnPillOnContent
 import at.saltyy.switchly.ui.dialog.showAccented
 import at.saltyy.switchly.ui.dialog.SwitchlyDialogOption
 import at.saltyy.switchly.ui.dialog.showSwitchlyOptionDialog
 import at.saltyy.switchly.ui.dialog.styleSwitchlyDialogButtons
+import at.saltyy.switchly.ui.widgets.UsageDetailChartView
 import at.saltyy.switchly.util.AppBlockSafety
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.color.MaterialColors
@@ -134,6 +142,12 @@ class AppUsageDetailActivity : AppCompatActivity() {
         b.toolbar.setBackgroundColor(AccentColor.getToolbarColor(this))
         b.toolbar.navigationIcon?.mutate()?.setTint(toolbarIconColor())
         b.toolbar.setNavigationOnClickListener { finish() }
+        // Explicit container wash: ?attr/colorPrimaryContainer in the roundel
+        // drawable can resolve to the base green instead of the live accent.
+        b.iconBackdrop.background = android.graphics.drawable.GradientDrawable().apply {
+            shape = android.graphics.drawable.GradientDrawable.OVAL
+            setColor(AccentColor.getAccentContainerColorInt(this@AppUsageDetailActivity))
+        }
         EdgeToEdgeUtils.setupClassic(activity = this, toolbar = b.toolbar)
         setupInfoAction()
         b.tvLimitHint.visibility = View.GONE
@@ -146,22 +160,13 @@ class AppUsageDetailActivity : AppCompatActivity() {
         b.detailSubtitle.text = getString(R.string.app_usage_detail_subtitle)
         updateProfileSubtitle()
 
-        b.btnRangeYear.visibility = View.VISIBLE
-        b.btnRangeCustom.visibility = View.VISIBLE
-        b.cardLaunchStats.visibility = View.GONE
-        b.cardUsageTimeline.visibility = View.GONE
-
         val today = UsageStore.getUsageMsToday(this, pkg)
 
         // icon/name
         val icon = runCatching { packageManager.getApplicationIcon(pkg) }.getOrNull()
         b.icon.setImageDrawable(icon)
 
-        b.todayUsage.text = getString(
-            R.string.usage_kv_fmt,
-            getString(R.string.usage_today),
-            StatsFormat.prettyMsWithSeconds(today)
-        )
+        setHeroTotal(getString(R.string.usage_today), today)
 
         // Limits (edited via the single "tune" icon)
         refreshDailyLimit(pkg)
@@ -301,12 +306,17 @@ class AppUsageDetailActivity : AppCompatActivity() {
         syncLimitEditingUi()
     }
 
+    private fun setHeroTotal(caption: String, totalMs: Long) {
+        val accent = AccentColor.getAccentColorInt(this)
+        b.todayUsage.text = StatsFormat.prettyMsWithSeconds(totalMs)
+        b.todayUsage.setTextColor(accent)
+        b.todayUsageCaption.text = caption
+        b.detailOpensChip.setTextColor(accent)
+        b.detailAttemptsChip.setTextColor(accent)
+    }
+
     private fun setHeaderUsageTotal(labelRes: Int, totalMs: Long) {
-        b.todayUsage.text = getString(
-            R.string.usage_kv_fmt,
-            getString(labelRes),
-            StatsFormat.prettyMsWithSeconds(totalMs)
-        )
+        setHeroTotal(getString(labelRes), totalMs)
     }
 
     private fun applyRange(pkg: String, range: Range) {
@@ -314,103 +324,130 @@ class AppUsageDetailActivity : AppCompatActivity() {
         currentRange = range
         updateCustomRangeSummary()
         updateMetricChips(pkg, range)
+        syncRangeToggleUi()
         when (range) {
             Range.TODAY -> {
-                currentSeries = UsageSanity.capSeriesToRange(this, UsageStatsRepo.getTodayPerHour(this, pkg), UsageSanity.RangeCap.TODAY)
-                currentXAxisLabels = buildTodayHourLabels(currentSeries.size)
-                b.chart.visibility = View.GONE
-                b.weekdayRow.visibility = View.GONE
-                b.lineChart.visibility = View.VISIBLE
-                b.lineChart.setValues(currentSeries)
-                b.lineChart.setXAxisLabels(currentXAxisLabels)
-                val total = UsageSanity.capTotalToRange(this, currentSeries.sum(), UsageSanity.RangeCap.TODAY)
-                setHeaderUsageTotal(R.string.usage_today, total)
+                rangeJob = lifecycleScope.launch {
+                    val series = withContext(Dispatchers.IO) {
+                        UsageSanity.capSeriesToRange(
+                            this@AppUsageDetailActivity,
+                            UsageStatsRepo.getTodayPerHour(this@AppUsageDetailActivity, pkg),
+                            UsageSanity.RangeCap.TODAY
+                        )
+                    }
+                    if (currentRange != Range.TODAY) return@launch
+                    currentSeries = series
+                    currentXAxisLabels = buildTodayHourLabels(series.size)
+                    renderChart(currentXAxisLabels)
+                    val total = UsageSanity.capTotalToRange(
+                        this@AppUsageDetailActivity,
+                        series.sum(),
+                        UsageSanity.RangeCap.TODAY
+                    )
+                    setHeaderUsageTotal(R.string.usage_today, total)
+                    updateChartSummary(total, currentXAxisLabels)
+                }
             }
 
             Range.WEEK -> {
-                currentXAxisLabels = emptyList()
+                currentXAxisLabels = weekdayLabelsLast7()
                 val perDay = UsageSanity.capSeriesToRange(this, UsageStore.getUsageMsSeriesForLastNDays(this, pkg, 7), UsageSanity.RangeCap.WEEK)
                 currentSeries = perDay
-                b.chart.visibility = View.VISIBLE
-                b.weekdayRow.visibility = View.VISIBLE
-                b.lineChart.visibility = View.GONE
-                b.chart.setValues(perDay)
-                b.lineChart.setXAxisLabels(emptyList())
+                renderChart(currentXAxisLabels)
 
                 val total = UsageSanity.capTotalToRange(this, perDay.sum(), UsageSanity.RangeCap.WEEK)
                 setHeaderUsageTotal(R.string.usage_week_total, total)
+                updateChartSummary(total, currentXAxisLabels)
             }
 
             Range.MONTH -> {
                 currentXAxisLabels = buildDayIndexLabels(daysSinceStartOfMonth())
                 val perDay = UsageSanity.capSeriesToRange(this, UsageStore.getUsageMsSeriesForCurrentMonth(this, pkg), UsageSanity.RangeCap.MONTH)
                 currentSeries = perDay
-                b.chart.visibility = View.GONE
-                b.weekdayRow.visibility = View.GONE
-                b.lineChart.visibility = View.VISIBLE
-                b.lineChart.setValues(perDay)
-                b.lineChart.setXAxisLabels(buildDayIndexLabels(perDay.size))
+                renderChart(buildDayIndexLabels(perDay.size))
 
                 val total = UsageSanity.capTotalToRange(this, perDay.sum(), UsageSanity.RangeCap.MONTH)
                 setHeaderUsageTotal(R.string.usage_month_total, total)
+                updateChartSummary(total, currentXAxisLabels)
             }
 
             Range.YEAR -> {
-                b.chart.visibility = View.GONE
-                b.weekdayRow.visibility = View.GONE
-                b.lineChart.visibility = View.VISIBLE
                 rangeJob = lifecycleScope.launch {
                     val buckets = withContext(Dispatchers.IO) { UsageStore.getUsageMsMonthBucketsForCurrentYear(this@AppUsageDetailActivity, pkg) }
                     if (currentRange != Range.YEAR) return@launch
                     currentSeries = UsageSanity.capSeriesToRange(this@AppUsageDetailActivity, buckets.map { it.totalMs }, UsageSanity.RangeCap.YEAR)
                     currentXAxisLabels = buckets.map { monthLabel(it.month1Based, it.year) }
-                    b.lineChart.setValues(currentSeries)
-                    b.lineChart.setXAxisLabels(currentXAxisLabels)
+                    renderChart(currentXAxisLabels)
                     setHeaderUsageTotal(R.string.usage_year_total, UsageSanity.capTotalToRange(this@AppUsageDetailActivity, currentSeries.sum(), UsageSanity.RangeCap.YEAR))
+                    updateChartSummary(currentSeries.sum(), currentXAxisLabels)
                 }
             }
 
             Range.CUSTOM -> {
-                b.chart.visibility = View.GONE
-                b.weekdayRow.visibility = View.GONE
-                b.lineChart.visibility = View.VISIBLE
                 val start = customRangeStartMillis ?: startOfTodayMillis()
                 val end = customRangeEndMillis ?: System.currentTimeMillis()
                 currentSeries = UsageStore.getUsageMsSeriesForDateRange(this, pkg, start, end)
                 currentXAxisLabels = buildCustomDateLabels(start, currentSeries.size)
-                b.lineChart.setValues(currentSeries)
-                b.lineChart.setXAxisLabels(currentXAxisLabels)
+                renderChart(currentXAxisLabels)
                 setHeaderUsageTotal(R.string.activity_history_range_custom, currentSeries.sum())
+                updateChartSummary(currentSeries.sum(), currentXAxisLabels)
             }
         }
+    }
+
+    private fun renderChart(labels: List<String>) {
+        b.chart.setData(currentSeries, labels)
+    }
+
+    private fun updateChartSummary(totalMs: Long, labels: List<String>) {
+        val peakIdx = currentSeries.indices.maxByOrNull { currentSeries[it] } ?: -1
+        val peakText = if (peakIdx >= 0 && currentSeries[peakIdx] > 0L) {
+            getString(
+                R.string.usage_chart_peak_fmt,
+                labels.getOrNull(peakIdx) ?: "",
+                StatsFormat.prettyMsWithSeconds(currentSeries[peakIdx])
+            )
+        } else {
+            getString(R.string.usage_chart_no_data)
+        }
+        b.chartSummary.text = getString(
+            R.string.usage_chart_summary_fmt,
+            StatsFormat.prettyMsWithSeconds(totalMs),
+            peakText
+        )
+    }
+
+    private fun weekdayLabelsLast7(): List<String> {
+        val cal = Calendar.getInstance()
+        cal.add(Calendar.DAY_OF_YEAR, -6)
+        val fmt = java.text.SimpleDateFormat("EEE", Locale.getDefault())
+        return (0 until 7).map { fmt.format(cal.time).also { cal.add(Calendar.DAY_OF_YEAR, 1) } }
     }
 
     private fun updateMetricChips(pkg: String, range: Range) {
         metricJob?.cancel()
         metricJob = lifecycleScope.launch {
             val (opens, attempts) = withContext(Dispatchers.IO) {
-                val selectedOpens = when (range) {
-                    Range.TODAY -> OpenCountStore.getTodayAllProfiles(this@AppUsageDetailActivity, pkg)
-                    Range.WEEK -> OpenCountStore.getForCurrentWeekAllProfiles(this@AppUsageDetailActivity, pkg)
-                    Range.MONTH -> OpenCountStore.getForCurrentMonthAllProfiles(this@AppUsageDetailActivity, pkg)
-                    Range.YEAR -> OpenCountStore.getForCurrentYearAllProfiles(this@AppUsageDetailActivity, pkg)
-                    Range.CUSTOM -> {
-                        val start = customRangeStartMillis ?: startOfTodayMillis()
-                        val end = customRangeEndMillis ?: System.currentTimeMillis()
-                        OpenCountStore.getForDateRangeAllProfiles(this@AppUsageDetailActivity, pkg, start, end)
-                    }
+                val (start, end) = when (range) {
+                    Range.TODAY -> UsageTimelineRepo.windowForRange("today")
+                    Range.WEEK -> UsageTimelineRepo.windowForRange("week")
+                    Range.MONTH -> UsageTimelineRepo.windowForRange("month")
+                    Range.YEAR -> UsageTimelineRepo.windowForRange("year")
+                    Range.CUSTOM -> (customRangeStartMillis ?: startOfTodayMillis()) to
+                        (customRangeEndMillis ?: System.currentTimeMillis())
                 }
-                val selectedAttempts = when (range) {
-                    Range.TODAY -> BlockAttemptStore.getToday(this@AppUsageDetailActivity, pkg)
-                    Range.WEEK -> BlockAttemptStore.getForCurrentWeek(this@AppUsageDetailActivity, pkg)
-                    Range.MONTH -> BlockAttemptStore.getForCurrentMonth(this@AppUsageDetailActivity, pkg)
-                    Range.YEAR -> BlockAttemptStore.getForCurrentYear(this@AppUsageDetailActivity, pkg)
-                    Range.CUSTOM -> {
-                        val start = customRangeStartMillis ?: startOfTodayMillis()
-                        val end = customRangeEndMillis ?: System.currentTimeMillis()
-                        BlockAttemptStore.getForDateRange(this@AppUsageDetailActivity, pkg, start, end)
-                    }
-                }
+                val selectedOpens = AppLaunchCountStore.getForDateRange(
+                    this@AppUsageDetailActivity,
+                    pkg,
+                    start,
+                    end
+                )
+                val selectedAttempts = BlockAttemptStore.getForDateRange(
+                    this@AppUsageDetailActivity,
+                    pkg,
+                    start,
+                    end
+                )
                 selectedOpens to selectedAttempts
             }
             if (currentRange != range) {
@@ -430,10 +467,22 @@ class AppUsageDetailActivity : AppCompatActivity() {
     }
 
     private fun configureRangeFilterButtons() {
+        syncRangeToggleUi()
+        b.toggleRange.addOnButtonCheckedListener { _, _, _ -> syncRangeToggleUi() }
         listOf(b.btnRangeToday, b.btnRangeWeek, b.btnRangeMonth, b.btnRangeYear).forEach { button ->
             configureRangeButton(button, custom = false)
         }
         configureRangeButton(b.btnRangeCustom, custom = true)
+    }
+
+    private fun syncRangeToggleUi() {
+        val checked = b.toggleRange.checkedButtonId
+        val buttons = listOf(b.btnRangeToday, b.btnRangeWeek, b.btnRangeMonth, b.btnRangeYear, b.btnRangeCustom)
+        SegmentedToggleUi.apply(
+            this,
+            buttons,
+            if (checked != View.NO_ID) checked else b.btnRangeToday.id,
+        )
     }
 
     private fun configureRangeButton(button: MaterialButton, custom: Boolean) {
@@ -443,7 +492,7 @@ class AppUsageDetailActivity : AppCompatActivity() {
         button.minimumHeight = dp(40)
         button.insetTop = 0
         button.insetBottom = 0
-        button.cornerRadius = dp(4)
+        button.cornerRadius = dp(14)
         button.iconPadding = 0
         if (custom) {
             button.iconGravity = MaterialButton.ICON_GRAVITY_TEXT_START
@@ -511,7 +560,7 @@ class AppUsageDetailActivity : AppCompatActivity() {
         val currentStart = customRangeStartMillis ?: startOfTodayMillis()
         val currentEnd = customRangeEndMillis ?: now
         val picker = MaterialDatePicker.Builder.dateRangePicker()
-            .setTheme(com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialCalendar)
+            .setTheme(at.saltyy.switchly.theme.AccentColor.getDatePickerTheme(this))
             .setTitleText(R.string.activity_history_range_custom)
             .setSelection(androidx.core.util.Pair(localDayToDatePickerUtcMillis(currentStart), localDayToDatePickerUtcMillis(currentEnd)))
             .build()
@@ -626,17 +675,14 @@ class AppUsageDetailActivity : AppCompatActivity() {
     }
 
     private fun setupChartInteractions(label: String) {
-        // Tap bars/points to see exact numbers.
-        b.chart.setOnBarSelectedListener { index, valueMs ->
-            if (currentRange != Range.WEEK) return@setOnBarSelectedListener
-            showPointDialog(label, currentRange, index, valueMs, currentSeries)
-        }
-
-        b.lineChart.setOnPointSelectedListener { index, valueMs ->
-            if (currentRange == Range.WEEK) return@setOnPointSelectedListener
-            showPointDialog(label, currentRange, index, valueMs, currentSeries)
-        }
+        // Tap a bucket to see exact numbers.
+        b.chart.setOnBucketSelectedListener(object : UsageDetailChartView.OnBucketSelectedListener {
+            override fun onSelected(index: Int, valueMs: Long) {
+                showPointDialog(label, currentRange, index, valueMs, currentSeries)
+            }
+        })
     }
+
 
     private fun showPointDialog(label: String, range: Range, index: Int, valueMs: Long, series: List<Long>) {
         val total = series.sum().coerceAtLeast(0L)
@@ -873,7 +919,7 @@ class AppUsageDetailActivity : AppCompatActivity() {
             .setPositiveButton(R.string.ok) { _, _ ->
                 val m = input.text?.toString()?.trim()?.toIntOrNull()
                 if (m == null || m < 0) {
-                    Toast.makeText(this, R.string.invalid_value, Toast.LENGTH_SHORT).show()
+                    input.showWarnPill(R.string.invalid_value)
                     return@setPositiveButton
                 }
                 applyDailyLimit(profile, pkg, m)
@@ -884,7 +930,7 @@ class AppUsageDetailActivity : AppCompatActivity() {
 
     private fun applyDailyLimit(profile: String, pkg: String, minutes: Int) {
         if (SwitchModeStore.isEnabled(this)) {
-            Toast.makeText(this, R.string.toast_disable_switchly_to_edit_app_limits, Toast.LENGTH_SHORT).show()
+            showWarnPillOnContent(R.string.toast_disable_switchly_to_edit_app_limits)
             return
         }
 
@@ -913,16 +959,7 @@ class AppUsageDetailActivity : AppCompatActivity() {
     }
 
     private fun setWeekdayLabels() {
-        val cal = Calendar.getInstance()
-        cal.timeInMillis = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(6)
-        val dfs = DateFormatSymbols.getInstance()
-        val views = listOf(b.day1, b.day2, b.day3, b.day4, b.day5, b.day6, b.day7)
-        for (i in 0 until 7) {
-            val dow = cal.get(Calendar.DAY_OF_WEEK)
-            val name = dfs.shortWeekdays.getOrNull(dow).orEmpty().trim()
-            views[i].text = name
-            cal.add(Calendar.DAY_OF_YEAR, 1)
-        }
+        // New layout draws weekday labels inside the chart view itself.
     }
 
     companion object {

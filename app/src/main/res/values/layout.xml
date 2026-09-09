@@ -1,18 +1,101 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
 
+    <!-- Runtime-applied only on inconsistent API-34+ framework images. -->
+    <style name="SwitchlyApi34FrameworkCompatOverlay">
+        <!--
+            Some Android 14 system images report API 34 while missing TextView.setLineHeight(int, float).
+            AppCompat 1.7+ preserves the original text dimension unit and therefore reaches that framework overload while inflating.
+
+            Route common Material typography through line-height-free AppCompat appearances only on the detected broken framework.
+            Normal Android builds keep the regular Material typography because this overlay is never applied there.
+        -->
+        <item name="textAppearanceLineHeightEnabled">false</item>
+        <item name="textAppearanceBody1">@style/Switchly.Api34SafeText.Body1</item>
+        <item name="textAppearanceBody2">@style/Switchly.Api34SafeText.Body2</item>
+        <item name="textAppearanceCaption">@style/Switchly.Api34SafeText.Caption</item>
+        <item name="textAppearanceButton">@style/Switchly.Api34SafeText.Button</item>
+        <item name="textAppearanceHeadline6">@style/Switchly.Api34SafeText.Title</item>
+        <item name="textAppearanceSubtitle1">@style/Switchly.Api34SafeText.Subhead</item>
+        <item name="textAppearanceSubtitle2">@style/Switchly.Api34SafeText.Body2</item>
+
+        <item name="textAppearanceBodyLarge">@style/Switchly.Api34SafeText.BodyLarge</item>
+        <item name="textAppearanceBodyMedium">@style/Switchly.Api34SafeText.BodyMedium</item>
+        <item name="textAppearanceBodySmall">@style/Switchly.Api34SafeText.BodySmall</item>
+        <item name="textAppearanceLabelMedium">@style/Switchly.Api34SafeText.LabelMedium</item>
+        <item name="textAppearanceTitleLarge">@style/Switchly.Api34SafeText.TitleLarge</item>
+        <item name="textAppearanceTitleMedium">@style/Switchly.Api34SafeText.TitleMedium</item>
+        <item name="textAppearanceHeadlineLarge">@style/Switchly.Api34SafeText.HeadlineLarge</item>
+    </style>
+
+    <!--
+        Explicitly avoid the platform android:lineHeight attribute. The compat
+        lineHeight attribute is cleared instead, which keeps minSdk 27 lint-clean
+        and prevents AppCompat from selecting the API-34 unit-aware framework path.
+    -->
+    <style name="Switchly.Api34SafeText.Body1" parent="TextAppearance.AppCompat.Body1">
+        <item name="lineHeight">@null</item>
+    </style>
+
+    <style name="Switchly.Api34SafeText.Body2" parent="TextAppearance.AppCompat.Body2">
+        <item name="lineHeight">@null</item>
+    </style>
+
+    <style name="Switchly.Api34SafeText.Caption" parent="TextAppearance.AppCompat.Caption">
+        <item name="lineHeight">@null</item>
+    </style>
+
+    <style name="Switchly.Api34SafeText.Button" parent="TextAppearance.AppCompat.Button">
+        <item name="lineHeight">@null</item>
+    </style>
+
+    <style name="Switchly.Api34SafeText.Title" parent="TextAppearance.AppCompat.Title">
+        <item name="lineHeight">@null</item>
+    </style>
+
+    <style name="Switchly.Api34SafeText.Subhead" parent="TextAppearance.AppCompat.Subhead">
+        <item name="lineHeight">@null</item>
+    </style>
+
+    <style name="Switchly.Api34SafeText.BodyLarge" parent="Switchly.Api34SafeText.Body1">
+        <item name="android:textSize">16sp</item>
+    </style>
+
+    <style name="Switchly.Api34SafeText.BodyMedium" parent="Switchly.Api34SafeText.Body2">
+        <item name="android:textSize">14sp</item>
+    </style>
+
+    <style name="Switchly.Api34SafeText.BodySmall" parent="Switchly.Api34SafeText.Caption">
+        <item name="android:textSize">12sp</item>
+    </style>
+
+    <style name="Switchly.Api34SafeText.LabelMedium" parent="Switchly.Api34SafeText.Caption">
+        <item name="android:textSize">12sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="Switchly.Api34SafeText.TitleLarge" parent="Switchly.Api34SafeText.Title">
+        <item name="android:textSize">22sp</item>
+    </style>
+
+    <style name="Switchly.Api34SafeText.TitleMedium" parent="Switchly.Api34SafeText.Subhead">
+        <item name="android:textSize">16sp</item>
+    </style>
+
+    <style name="Switchly.Api34SafeText.HeadlineLarge" parent="Switchly.Api34SafeText.Title">
+        <item name="android:textSize">32sp</item>
+    </style>
+
     <!-- =========================
          THEME: Blocker variant
          ========================= -->
     <!-- Variant without ActionBar (overlay/blocker screens) -->
     <!-- Fully opaque, no edge-to-edge; used e.g. for BlockerActivity -->
-    <style name="Theme.Switchly.Blocker" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <style name="Theme.Switchly.Blocker" parent="Theme.Switchly">
         <item name="android:windowIsTranslucent">false</item>
         <item name="android:windowTranslucentStatus">false</item>
         <item name="android:windowTranslucentNavigation">false</item>
         <item name="android:windowDrawsSystemBarBackgrounds">true</item>
-        <item name="android:statusBarColor">?android:attr/colorBackground</item>
-        <item name="android:navigationBarColor">?android:attr/colorBackground</item>
         <item name="android:windowBackground">?android:attr/colorBackground</item>
         <item name="android:windowNoTitle">true</item>
         <item name="windowNoTitle">true</item>
@@ -22,8 +105,26 @@
         <item name="android:windowAnimationStyle">@style/Animation.Switchly.None</item>
     </style>
 
-    <style name="Animation.Switchly.None" parent="@android:style/Animation.Activity">
-        <item name="android:activityOpenEnterAnimation">@anim/switchly_no_animation</item>
+    <!-- =========================
+         SHAPE RAMP: Material 3 Expressive
+         Soft, rounded, generous radii applied theme-wide
+         ========================= -->
+    <style name="ShapeAppearance.Switchly.Small" parent="ShapeAppearance.Material3.Corner.Small">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">12dp</item>
+    </style>
+
+    <style name="ShapeAppearance.Switchly.Medium" parent="ShapeAppearance.Material3.Corner.Medium">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">20dp</item>
+    </style>
+
+    <style name="ShapeAppearance.Switchly.Large" parent="ShapeAppearance.Material3.Corner.Large">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">28dp</item>
+    </style>
+
+    <style name="Animation.Switchly.None" parent="@android:style/Animation.Activity">        <item name="android:activityOpenEnterAnimation">@anim/switchly_no_animation</item>
         <item name="android:activityOpenExitAnimation">@anim/switchly_no_animation</item>
         <item name="android:activityCloseEnterAnimation">@anim/switchly_no_animation</item>
         <item name="android:activityCloseExitAnimation">@anim/switchly_no_animation</item>
@@ -40,24 +141,34 @@
     <!-- =========================
          COMPONENT STYLES: Toolbar/buttons/cards/chips
          ========================= -->
-    <!-- Unified top bar, uses current accent color -->
-    <style name="Switchly.TopBar" parent="Widget.MaterialComponents.Toolbar">
-        <!-- Background = current accent color -->
-        <item name="android:background">?attr/colorPrimary</item>
-        <item name="backgroundTint">?attr/colorPrimary</item>
+    <!-- Unified top bar: Foqos-flat (surface background, on-surface text) -->
+    <style name="Switchly.TopBar" parent="Widget.Material3.Toolbar">
+        <!-- Background = page color (seamless, no floating band) -->
+        <item name="android:background">@color/foqos_bg</item>
+        <item name="backgroundTint">@color/foqos_bg</item>
 
         <!-- Title color -->
-        <item name="titleTextColor">@android:color/white</item>
+        <item name="titleTextColor">?attr/colorOnSurface</item>
+        <item name="subtitleTextColor">?attr/colorOnSurfaceVariant</item>
 
-        <!-- Back arrow in light/dark appearance -->
-        <item name="navigationIconTint">@android:color/white</item>
+        <!-- Back arrow / icons follow surface text color -->
+        <item name="navigationIconTint">?attr/colorOnSurface</item>
+    </style>
+
+    <!-- Large title for the Home header (Foqos AppTitle style) -->
+    <style name="TextAppearance.Switchly.LargeTitle" parent="TextAppearance.Material3.HeadlineLarge">
+        <item name="android:textSize">32sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">-0.01</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
     </style>
 
     <!-- Standard buttons -->
-    <style name="Switchly.Button" parent="Widget.MaterialComponents.Button">
+    <!-- Expressive pill shape via full corner radius -->
+    <style name="Switchly.Button" parent="Widget.Material3.Button">
         <item name="backgroundTint">?attr/colorPrimary</item>
-        <item name="android:textColor">@android:color/white</item>
-        <item name="cornerRadius">16dp</item>
+        <item name="android:textColor">?attr/colorOnPrimary</item>
+        <item name="cornerRadius">100dp</item>
         <item name="android:textAllCaps">false</item>
         <item name="android:insetTop">0dp</item>
         <item name="android:insetBottom">0dp</item>
@@ -67,10 +178,11 @@
     <!-- Primary button alias -->
     <style name="Switchly.PrimaryButton" parent="Switchly.Button" />
 
-    <style name="Switchly.OutlinedButton" parent="Widget.MaterialComponents.Button.OutlinedButton">
+    <style name="Switchly.OutlinedButton" parent="Widget.Material3.Button.OutlinedButton">
         <item name="strokeColor">?attr/colorPrimary</item>
         <item name="android:textColor">?attr/colorPrimary</item>
-        <item name="cornerRadius">16dp</item>
+        <item name="iconTint">?attr/colorPrimary</item>
+        <item name="cornerRadius">100dp</item>
         <item name="android:textAllCaps">false</item>
         <item name="android:insetTop">0dp</item>
         <item name="android:insetBottom">0dp</item>
@@ -88,8 +200,35 @@
         <item name="android:singleLine">true</item>
     </style>
 
+    <!-- Segmented range buttons: square-ish cells inside a toggle group so
+         they read as ONE pill control. Tints are applied at runtime by
+         SegmentedToggleUi (selected = filled accent, else transparent). -->
+    <style name="Switchly.Segment" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="android:textSize">13sp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:singleLine">true</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:insetLeft">0dp</item>
+        <item name="android:insetRight">0dp</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="minWidth">0dp</item>
+        <item name="cornerRadius">0dp</item>
+    </style>
+
+    <!-- Stat chips on detail pages: soft surface cards, accent text set live. -->
+    <style name="Switchly.StatChip" parent="Widget.Material3.CardView.Elevated">
+        <item name="shapeAppearance">@style/ShapeAppearance.Switchly.Tile</item>
+        <item name="android:stateListAnimator">@null</item>
+        <item name="cardBackgroundColor">@color/foqos_surface</item>
+        <item name="strokeColor">@color/foqos_outline_variant</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="cardElevation">0dp</item>
+        <item name="cardUseCompatPadding">false</item>
+    </style>
+
     <!-- Lightweight dialog/action buttons (no filled background) -->
-    <style name="Switchly.TextButton" parent="Widget.MaterialComponents.Button.TextButton">
+    <style name="Switchly.TextButton" parent="Widget.Material3.Button.TextButton">
         <item name="android:textColor">?attr/colorPrimary</item>
         <item name="android:textAllCaps">false</item>
         <item name="android:insetTop">0dp</item>
@@ -99,29 +238,35 @@
     </style>
 
     <!-- Floating Action Button -->
-    <style name="Switchly.Fab" parent="Widget.MaterialComponents.FloatingActionButton">
+    <style name="Switchly.Fab" parent="Widget.Material3.FloatingActionButton.Primary">
         <item name="backgroundTint">?attr/colorPrimary</item>
-        <item name="tint">@android:color/white</item>
+        <item name="tint">?attr/colorOnPrimary</item>
     </style>
 
     <!-- Card shape appearance -->
-    <style name="ShapeAppearance.Switchly.Card" parent="ShapeAppearance.MaterialComponents.LargeComponent">
+    <style name="ShapeAppearance.Switchly.Card" parent="ShapeAppearance.Material3.Corner.Large">
         <item name="cornerFamily">rounded</item>
-        <item name="cornerSize">26dp</item>
+        <item name="cornerSize">28dp</item>
     </style>
 
     <!-- Even rounder tiles (quick actions) -->
-    <style name="ShapeAppearance.Switchly.Tile" parent="ShapeAppearance.MaterialComponents.LargeComponent">
+    <style name="ShapeAppearance.Switchly.Tile" parent="ShapeAppearance.Material3.Corner.Large">
         <item name="cornerFamily">rounded</item>
-        <item name="cornerSize">30dp</item>
+        <item name="cornerSize">32dp</item>
     </style>
 
-    <style name="Switchly.Card" parent="Widget.MaterialComponents.CardView">
+    <style name="Switchly.Card" parent="Widget.Material3.CardView.Elevated">
         <item name="shapeAppearance">@style/ShapeAppearance.Switchly.Card</item>
-        <item name="cardBackgroundColor">@color/switchly_card_bg</item>
-        <item name="strokeColor">@color/switchly_card_stroke</item>
+        <!--
+            M3 elevated-card state list animator uses ?attr/ motion references, which the
+            framework's themeless state-list-animator path cannot resolve (crash in dark mode).
+            Flat Foqos cards don't need press-elevation anyway. See docs/FOQOS_RESTYLE.md Pitfall #2.
+        -->
+        <item name="android:stateListAnimator">@null</item>
+        <item name="cardBackgroundColor">@color/foqos_surface</item>
+        <item name="strokeColor">@color/foqos_outline_variant</item>
         <item name="strokeWidth">1dp</item>
-        <item name="cardElevation">2dp</item>
+        <item name="cardElevation">1dp</item>
         <item name="cardUseCompatPadding">true</item>
     </style>
 
@@ -129,6 +274,18 @@
     <style name="Switchly.TileCard" parent="Switchly.Card">
         <item name="shapeAppearance">@style/ShapeAppearance.Switchly.Tile</item>
         <item name="cardElevation">1dp</item>
+    </style>
+
+    <!-- Accent-tinted icon roundel (onboarding hero, etc.): soft accent wash,
+         no stroke, icon itself carries the accent via XML tint. Uses
+         colorPrimaryContainer so it follows every accent theme. -->
+    <style name="Switchly.IconRoundel" parent="Widget.Material3.CardView.Elevated">
+        <item name="shapeAppearance">@style/ShapeAppearance.Switchly.Tile</item>
+        <item name="android:stateListAnimator">@null</item>
+        <item name="cardBackgroundColor">?attr/colorPrimaryContainer</item>
+        <item name="strokeWidth">0dp</item>
+        <item name="cardElevation">0dp</item>
+        <item name="cardUseCompatPadding">true</item>
     </style>
 
     <style name="Switchly.SectionHeader">
@@ -139,13 +296,37 @@
     </style>
 
     <!-- Small divider inside cards -->
-    <style name="Switchly.Divider" parent="Widget.MaterialComponents.MaterialDivider">
+    <style name="Switchly.Divider" parent="Widget.Material3.MaterialDivider">
         <item name="dividerColor">@color/switchly_divider</item>
         <item name="dividerThickness">1dp</item>
     </style>
+    <!-- Foqos-style section header pill (Hide / Switch profile) -->
+    <style name="Switchly.HeaderPill" parent="">
+        <item name="android:orientation">horizontal</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:paddingStart">14dp</item>
+        <item name="android:paddingEnd">16dp</item>
+        <item name="android:background">@drawable/bg_header_pill</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+    </style>
+
+    <!-- Profile edit sheet row -->
+    <style name="Switchly.SheetRow">
+        <item name="android:orientation">horizontal</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:minHeight">56dp</item>
+        <item name="android:paddingTop">10dp</item>
+        <item name="android:paddingBottom">10dp</item>
+        <item name="android:background">?attr/selectableItemBackground</item>
+        <item name="android:clickable">true</item>
+        <item name="android:focusable">true</item>
+        <item name="android:layout_marginTop">4dp</item>
+    </style>
+
     <!-- Small badges -->
-    <style name="Switchly.Chip" parent="Widget.MaterialComponents.Chip.Action">
-        <item name="chipBackgroundColor">@color/switchly_divider</item>
+    <style name="Switchly.Chip" parent="Widget.Material3.Chip.Assist">
+        <item name="chipBackgroundColor">@color/foqos_surface_variant</item>
         <item name="android:textColor">?attr/colorPrimary</item>
         <item name="chipCornerRadius">14dp</item>
         <item name="chipMinHeight">28dp</item>
@@ -167,7 +348,7 @@
     </style>
 
     <!-- Day picker chips -->
-    <style name="Switchly.DayChip" parent="Widget.MaterialComponents.Chip.Filter">
+    <style name="Switchly.DayChip" parent="Widget.Material3.Chip.Filter">
         <item name="chipCornerRadius">999dp</item>
         <item name="chipMinHeight">36dp</item>
         <item name="android:textStyle">bold</item>
@@ -184,50 +365,66 @@
         <item name="ensureMinTouchTargetSize">false</item>
     </style>
 
+    <style name="Switchly.LogFilterChip" parent="Widget.Material3.Chip.Filter">
+        <item name="chipCornerRadius">999dp</item>
+        <item name="chipMinHeight">32dp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">12sp</item>
+        <item name="chipStartPadding">8dp</item>
+        <item name="chipEndPadding">8dp</item>
+        <item name="chipStrokeWidth">1dp</item>
+        <item name="checkedIconVisible">false</item>
+        <item name="ensureMinTouchTargetSize">false</item>
+    </style>
+
     <!-- =========================
          DROPDOWNS: TextInputLayout
          ========================= -->
     <!-- Default (non-dropdown) TextInputLayout styling used globally via theme -->
-    <style name="Switchly.TextInputLayout" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox">
+    <style name="Switchly.TextInputLayout" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="enforceTextAppearance" tools:ignore="MissingId">false</item>
         <item name="boxStrokeWidth">1dp</item>
         <item name="boxStrokeWidthFocused">2dp</item>
-        <item name="boxCornerRadiusTopStart">12dp</item>
-        <item name="boxCornerRadiusTopEnd">12dp</item>
-        <item name="boxCornerRadiusBottomStart">12dp</item>
-        <item name="boxCornerRadiusBottomEnd">12dp</item>
+        <item name="boxCornerRadiusTopStart">16dp</item>
+        <item name="boxCornerRadiusTopEnd">16dp</item>
+        <item name="boxCornerRadiusBottomStart">16dp</item>
+        <item name="boxCornerRadiusBottomEnd">16dp</item>
+        <item name="boxStrokeColor">@color/switchly_box_stroke_color</item>
     </style>
 
     <!-- Default (non-dropdown) AutoCompleteTextView styling used globally via theme -->
-    <style name="Switchly.AutoCompleteText" parent="Widget.MaterialComponents.AutoCompleteTextView.OutlinedBox">
+    <style name="Switchly.AutoCompleteText" parent="Widget.Material3.AutoCompleteTextView.OutlinedBox">
         <item name="android:minHeight">56dp</item>
         <item name="android:paddingTop">12dp</item>
         <item name="android:paddingBottom">12dp</item>
-        <item name="android:textAppearance">@style/TextAppearance.MaterialComponents.Body1</item>
+        <item name="android:textAppearance">?attr/textAppearanceBody1</item>
     </style>
 
     <!-- Layout container for exposed dropdown menus -->
-    <style name="Switchly.DropdownLayout" parent="Widget.MaterialComponents.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
+    <style name="Switchly.DropdownLayout" parent="Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
+        <item name="enforceTextAppearance" tools:ignore="MissingId">false</item>
         <item name="boxStrokeWidth">1dp</item>
         <item name="boxStrokeWidthFocused">2dp</item>
-        <item name="boxCornerRadiusTopStart">12dp</item>
-        <item name="boxCornerRadiusTopEnd">12dp</item>
-        <item name="boxCornerRadiusBottomStart">12dp</item>
-        <item name="boxCornerRadiusBottomEnd">12dp</item>
+        <item name="boxCornerRadiusTopStart">16dp</item>
+        <item name="boxCornerRadiusTopEnd">16dp</item>
+        <item name="boxCornerRadiusBottomStart">16dp</item>
+        <item name="boxCornerRadiusBottomEnd">16dp</item>
         <item name="hintEnabled">true</item>
         <item name="hintTextAppearance">@style/Switchly.DropdownHint</item>
+        <item name="boxStrokeColor">@color/switchly_box_stroke_color</item>
     </style>
 
-    <!-- Hint text styling inside dropdowns -->
-    <style name="Switchly.DropdownHint" parent="TextAppearance.MaterialComponents.Body2">
-        <item name="android:lineHeight" tools:targetApi="28">14sp</item>
+    <!-- Hint text styling inside dropdowns (lineHeight removed: triggers the
+         broken API-34 TextView.setLineHeight(int,float) path on some images) -->
+    <style name="Switchly.DropdownHint" parent="TextAppearance.Material3.BodySmall">
     </style>
 
     <!-- Text appearance for dropdown input field -->
-    <style name="Switchly.DropdownText" parent="Widget.MaterialComponents.AutoCompleteTextView.OutlinedBox">
+    <style name="Switchly.DropdownText" parent="Widget.Material3.AutoCompleteTextView.OutlinedBox">
         <item name="android:minHeight">56dp</item>
         <item name="android:paddingTop">12dp</item>
         <item name="android:paddingBottom">12dp</item>
-        <item name="android:textAppearance">@style/TextAppearance.MaterialComponents.Body1</item>
+        <item name="android:textAppearance">?attr/textAppearanceBody1</item>
     </style>
 
 </resources>

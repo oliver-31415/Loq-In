@@ -51,12 +51,19 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
+import android.widget.ProgressBar
 import android.widget.FrameLayout
+import android.widget.GridLayout
 import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
+import android.graphics.drawable.GradientDrawable
+import com.google.android.material.button.MaterialButtonToggleGroup
+import com.google.android.material.card.MaterialCardView
+import androidx.activity.addCallback
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
@@ -87,7 +94,6 @@ import at.saltyy.switchly.data.prefs.ScheduleRuntimeStore
 import at.saltyy.switchly.data.prefs.ScheduleStore
 import at.saltyy.switchly.data.prefs.ScheduleStore.Days
 import at.saltyy.switchly.data.prefs.SwitchModeStore
-import at.saltyy.switchly.feature.premium.PremiumInfoActivity
 import at.saltyy.switchly.feature.settings.PermissionsActivity
 import at.saltyy.switchly.feature.settings.ToggleOptionsActivity
 import at.saltyy.switchly.platform.receiver.location.LocationTriggerMonitor
@@ -99,6 +105,7 @@ import at.saltyy.switchly.ui.EdgeToEdgeUtils
 import at.saltyy.switchly.ui.SwitchlyDropdownAdapter
 import at.saltyy.switchly.ui.ThemeUtils
 import at.saltyy.switchly.ui.applySwitchlyStyle
+import at.saltyy.switchly.ui.showWarnPill
 import at.saltyy.switchly.ui.attachEditDeleteSwipe
 import at.saltyy.switchly.ui.updateSelectionSubtitle
 import at.saltyy.switchly.ui.dialog.showAccented
@@ -144,6 +151,7 @@ class SchedulesActivity : AppCompatActivity() {
     private enum class TimeMode { SINGLE, TIME_RANGE, DATE_RANGE }
 
     companion object {
+        const val EXTRA_PROFILE_NAME = "extra_profile_name"
         const val EXTRA_OPEN_ADD_TIME = "extra_open_add_time"
         private const val PREFS_SCHEDULE_HEALTH = "switchly_schedule_health"
         const val KEY_BATTERY_OPTIMIZATION_CONFIRMED_MAX_AVAILABLE = "battery_optimization_confirmed_max_available"
@@ -154,7 +162,8 @@ class SchedulesActivity : AppCompatActivity() {
     private data class ResolvedLocation(
         val latitude: Double,
         val longitude: Double,
-        val label: String?
+        val label: String?,
+        val subtitle: String? = null
     )
 
     private lateinit var adapter: ScheduleAdapter
@@ -170,6 +179,20 @@ class SchedulesActivity : AppCompatActivity() {
     private lateinit var ivStatusIcon: ImageView
     private lateinit var tvStatusActionTitle: TextView
     private lateinit var dividerStatus: View
+
+    private val targetProfile: String?
+        get() = intent.getStringExtra(EXTRA_PROFILE_NAME)?.trim()?.takeIf { it.isNotBlank() }
+
+    private fun matchesTargetProfile(schedule: ScheduleStore.Schedule): Boolean {
+        val target = targetProfile ?: return true
+        val schedProf = schedule.profile.trim()
+        val effectiveProfile = if (schedProf.isBlank()) {
+            ProfileStore.getCurrent(this) ?: "Default"
+        } else {
+            schedProf
+        }
+        return effectiveProfile.equals(target, ignoreCase = true)
+    }
 
     private var isScheduleUiReadOnly = false
 
@@ -264,6 +287,19 @@ class SchedulesActivity : AppCompatActivity() {
         return isScheduleAutomationAllowed() && !isScheduleEditingLocked()
     }
 
+    /**
+     * True when the edit must not proceed. Warns via pill when the reason is
+     * active protection (stays silent when schedule automation itself is off).
+     */
+    private fun denyScheduleEditWithPopover(): Boolean {
+        if (isScheduleEditingLocked()) {
+            findViewById<View>(android.R.id.content)
+                .showWarnPill(R.string.edit_locked_manage_schedules)
+            return true
+        }
+        return !isScheduleAutomationAllowed()
+    }
+
     private fun currentAutomationModeLabel(): String {
         return when (AutomationModeStore.getMode(this)) {
             AutomationModeStore.Mode.SCHEDULE -> getString(R.string.pref_mode_schedule_title)
@@ -298,8 +334,21 @@ class SchedulesActivity : AppCompatActivity() {
         )
         WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
         setSupportActionBar(toolbar)
-        toolbar.subtitle = getString(R.string.schedules_profile_subtitle)
-        toolbar.setNavigationOnClickListener { finish() }
+        toolbar.subtitle = targetProfile ?: getString(R.string.schedules_profile_subtitle)
+        toolbar.setNavigationOnClickListener {
+            if (isSelectionMode) {
+                exitSelectionMode()
+            } else {
+                finish()
+            }
+        }
+        onBackPressedDispatcher.addCallback(this) {
+            if (isSelectionMode) {
+                exitSelectionMode()
+            } else {
+                finish()
+            }
+        }
         toolbar.setBackgroundColor(AccentColor.getToolbarColor(this))
 
         val recycler = findViewById<RecyclerView>(R.id.recyclerSchedules)
@@ -332,7 +381,7 @@ class SchedulesActivity : AppCompatActivity() {
 
         adapter = ScheduleAdapter(
             onToggleEnabled = { schedule, enabled ->
-                if (canEditSchedules()) {
+                if (!denyScheduleEditWithPopover()) {
                     val list = ScheduleStore.getAll(this).map {
                         if (it.id == schedule.id) it.copy(enabled = enabled) else it
                     }
@@ -352,11 +401,12 @@ class SchedulesActivity : AppCompatActivity() {
             onToggleSelection = { id -> toggleSelection(id) },
             onEnterSelection = { preselectId -> enterSelectionMode(preselectId) },
             onEdit = { schedule ->
-                if (canEditSchedules()) {
+                if (!denyScheduleEditWithPopover()) {
                     showScheduleDialog(existing = schedule, preselectedMode = null)
                 }
             },
             onTest = { schedule -> showScheduleTest(schedule) },
+            getTargetProfile = { targetProfile },
         )
         recycler.adapter = adapter
         recycler.attachEditDeleteSwipe(
@@ -372,11 +422,20 @@ class SchedulesActivity : AppCompatActivity() {
         )
 
         val addScheduleClick = View.OnClickListener {
-            if (!canEditSchedules()) {
+            if (denyScheduleEditWithPopover()) {
                 return@OnClickListener
             }
             showNewScheduleTypeDialog()
         }
+        val accent = AccentColor.getAccentColorInt(this)
+        findViewById<ImageView>(R.id.ivEmptyScheduleIcon)?.imageTintList = ColorStateList.valueOf(accent)
+        (findViewById<View>(R.id.btnEmptyAddSchedule) as? MaterialButton)?.apply {
+            strokeColor = ColorStateList.valueOf(accent)
+            setTextColor(accent)
+            iconTint = ColorStateList.valueOf(accent)
+            rippleColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 0x26))
+        }
+
         findViewById<View>(R.id.fabAdd).setOnClickListener(addScheduleClick)
         findViewById<View>(R.id.btnEmptyAddSchedule).setOnClickListener(addScheduleClick)
 
@@ -413,6 +472,15 @@ class SchedulesActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
+            android.R.id.home -> {
+                if (isSelectionMode) {
+                    exitSelectionMode()
+                    true
+                } else {
+                    finish()
+                    true
+                }
+            }
             R.id.action_select -> {
                 if (canEditSchedules()) {
                     enterSelectionMode(null)
@@ -446,21 +514,30 @@ class SchedulesActivity : AppCompatActivity() {
         invalidateOptionsMenu()
         val canInteract = canEditSchedules()
         findViewById<View>(R.id.fabAdd)?.apply {
+            (this as? com.google.android.material.floatingactionbutton.FloatingActionButton)?.backgroundTintList =
+                ColorStateList.valueOf(AccentColor.getAccentColorInt(this@SchedulesActivity))
             visibility = if (isSelectionMode) View.GONE else View.VISIBLE
-            isEnabled = canInteract
-            isClickable = canInteract
+            // Stay tappable (dimmed) so locked taps warn via popover instead of doing nothing.
+            isEnabled = true
+            isClickable = true
             alpha = if (canInteract) 1f else 0.45f
         }
         findViewById<View>(R.id.btnEmptyAddSchedule)?.apply {
-            isEnabled = canInteract
-            isClickable = canInteract
+            isEnabled = true
+            isClickable = true
             alpha = if (canInteract) 1f else 0.45f
+            (this as? MaterialButton)?.apply {
+                val accentColor = AccentColor.getAccentColorInt(this@SchedulesActivity)
+                strokeColor = ColorStateList.valueOf(accentColor)
+                setTextColor(accentColor)
+                iconTint = ColorStateList.valueOf(accentColor)
+            }
         }
         if (::toolbar.isInitialized) {
             toolbar.updateSelectionSubtitle(
                 isSelectionMode,
                 selectedScheduleIds.size,
-                getString(R.string.schedules_profile_subtitle)
+                targetProfile ?: getString(R.string.schedules_profile_subtitle)
             )
         }
     }
@@ -597,37 +674,197 @@ class SchedulesActivity : AppCompatActivity() {
         val isPremium = PremiumManager.isPremium(this)
         val nfcLockOn = isNfcLockActiveForSchedules()
 
-        data class TypeItem(val label: String, val iconRes: Int, val mode: NewScheduleMode)
+        data class TypeItem(
+            val label: String,
+            val description: String,
+            val iconRes: Int,
+            val mode: NewScheduleMode
+        )
 
         val items = buildList {
-            add(TypeItem(getString(R.string.schedules_type_time), R.drawable.alarm_24, NewScheduleMode.TIME))
+            add(
+                TypeItem(
+                    getString(R.string.schedules_type_time),
+                    getString(R.string.schedules_type_time_desc),
+                    R.drawable.alarm_24,
+                    NewScheduleMode.TIME
+                )
+            )
             if (isPremium && !nfcLockOn) {
-                add(TypeItem(getString(R.string.schedules_type_wifi), R.drawable.wifi_24, NewScheduleMode.WIFI))
-                add(TypeItem(getString(R.string.schedules_type_bt), R.drawable.bluetooth_24, NewScheduleMode.BT))
-                add(TypeItem(getString(R.string.schedules_type_location), R.drawable.location_on_24, NewScheduleMode.LOCATION))
+                add(
+                    TypeItem(
+                        getString(R.string.schedules_type_wifi),
+                        getString(R.string.schedules_type_wifi_desc),
+                        R.drawable.wifi_24,
+                        NewScheduleMode.WIFI
+                    )
+                )
+                add(
+                    TypeItem(
+                        getString(R.string.schedules_type_bt),
+                        getString(R.string.schedules_type_bt_desc),
+                        R.drawable.bluetooth_24,
+                        NewScheduleMode.BT
+                    )
+                )
+                add(
+                    TypeItem(
+                        getString(R.string.schedules_type_location),
+                        getString(R.string.schedules_type_location_desc),
+                        R.drawable.location_on_24,
+                        NewScheduleMode.LOCATION
+                    )
+                )
             }
-        }.toTypedArray()
+        }
 
-        val optionList = items.map { item ->
-            SwitchlyDialogOption(
-                title = item.label,
-                iconRes = item.iconRes
+        val density = resources.displayMetrics.density
+        fun dp(value: Int): Int = (value * density + 0.5f).toInt()
+        val accent = AccentColor.getAccentColorInt(this)
+
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(8), dp(20), dp(4))
+        }
+        if (nfcLockOn) {
+            container.addView(
+                TextView(this).apply {
+                    text = getString(R.string.schedules_nfc_lock_add_dialog_hint)
+                    textSize = 13f
+                    setTextColor(
+                        MaterialColors.getColor(
+                            this@apply,
+                            android.R.attr.textColorSecondary
+                        )
+                    )
+                    setPadding(0, 0, 0, dp(12))
+                }
             )
         }
-        val hint = if (nfcLockOn) getString(R.string.schedules_nfc_lock_add_dialog_hint) else null
-        showSwitchlyOptionDialog(
-            title = getString(R.string.schedules_choose_type),
-            options = if (hint == null) optionList else listOf(SwitchlyDialogOption(title = hint, enabled = false)) + optionList
-        ) { which ->
-            val itemIndex = if (hint == null) which else which - 1
-            val selected = items.getOrNull(itemIndex) ?: return@showSwitchlyOptionDialog
-            when (selected.mode) {
+
+        val grid = GridLayout(this).apply {
+            columnCount = 2
+            useDefaultMargins = false
+        }
+        container.addView(
+            grid,
+            LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+        )
+
+        var typeDialog: AlertDialog? = null
+        fun openMode(mode: NewScheduleMode) {
+            typeDialog?.dismiss()
+            when (mode) {
                 NewScheduleMode.TIME -> showScheduleDialog(null, NewScheduleMode.TIME)
                 NewScheduleMode.WIFI -> showScheduleDialog(null, NewScheduleMode.WIFI)
                 NewScheduleMode.BT -> showScheduleDialog(null, NewScheduleMode.BT)
                 NewScheduleMode.LOCATION -> showScheduleDialog(null, NewScheduleMode.LOCATION)
             }
         }
+
+        val typeCards = mutableListOf<MaterialCardView>()
+        items.forEachIndexed { index, item ->
+            val row = index / 2
+            val col = index % 2
+            // A lone trailing card spans both columns.
+            val lastRowLone = index == items.lastIndex && items.size % 2 == 1
+            val colSpec = if (lastRowLone) GridLayout.spec(col, 2, 1f) else GridLayout.spec(col, 1f)
+            val card = MaterialCardView(this).apply {
+                cardElevation = 0f
+                radius = dp(16).toFloat()
+                strokeWidth = 0
+                setCardBackgroundColor(
+                    ContextCompat.getColor(this@SchedulesActivity, R.color.foqos_surface_variant)
+                )
+                isClickable = true
+                isFocusable = true
+                // Resolve selectableItemBackground against the activity theme.
+                val ripple = android.util.TypedValue()
+                theme.resolveAttribute(android.R.attr.selectableItemBackground, ripple, true)
+                foreground = ContextCompat.getDrawable(this@SchedulesActivity, ripple.resourceId)
+                setOnClickListener { openMode(item.mode) }
+            }
+            val cardInner = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = android.view.Gravity.CENTER_HORIZONTAL
+                setPadding(dp(12), dp(16), dp(12), dp(16))
+            }
+            cardInner.addView(
+                ImageView(this).apply {
+                    setImageResource(item.iconRes)
+                    imageTintList = ColorStateList.valueOf(accent)
+                    layoutParams = LinearLayout.LayoutParams(dp(32), dp(32)).apply {
+                        gravity = android.view.Gravity.CENTER_HORIZONTAL
+                    }
+                }
+            )
+            cardInner.addView(
+                TextView(this).apply {
+                    text = item.label
+                    textSize = 14f
+                    setTypeface(typeface, Typeface.BOLD)
+                    gravity = android.view.Gravity.CENTER
+                    setTextColor(MaterialColors.getColor(this@apply, com.google.android.material.R.attr.colorOnSurface))
+                    setPadding(0, dp(10), 0, 0)
+                }
+            )
+            cardInner.addView(
+                TextView(this).apply {
+                    text = item.description
+                    textSize = 12f
+                    gravity = android.view.Gravity.CENTER
+                    setTextColor(
+                        MaterialColors.getColor(
+                            this@apply,
+                            android.R.attr.textColorSecondary
+                        )
+                    )
+                    setPadding(0, dp(2), 0, 0)
+                }
+            )
+            card.addView(
+                cardInner,
+                ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+            )
+            val margin = dp(3)
+            val params = GridLayout.LayoutParams(
+                GridLayout.spec(row),
+                colSpec
+            ).apply {
+                width = 0
+                height = GridLayout.LayoutParams.WRAP_CONTENT
+                setMargins(margin, margin, margin, margin)
+            }
+            grid.addView(card, params)
+            typeCards.add(card)
+        }
+        // Equalize all card heights so every box is the same size.
+        grid.post {
+            if (typeCards.isEmpty()) return@post
+            val maxH = typeCards.maxOf { it.measuredHeight }
+            if (maxH <= 0) return@post
+            typeCards.forEach { c ->
+                val lp = c.layoutParams as GridLayout.LayoutParams
+                if (lp.height != maxH) {
+                    lp.height = maxH
+                    c.layoutParams = lp
+                }
+            }
+        }
+
+        typeDialog = MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.schedules_choose_type)
+            .setView(container)
+            .setNegativeButton(R.string.cancel, null)
+            .create()
+            .also { it.show() }
+        typeDialog?.styleSwitchlyDialogButtons()
     }
 
     private fun showScheduleActionInfoDialog() {
@@ -752,7 +989,7 @@ class SchedulesActivity : AppCompatActivity() {
     }
 
     private fun refreshList() {
-        val list = ScheduleStore.getAll(this)
+        val list = ScheduleStore.getAll(this).filter { matchesTargetProfile(it) }
         val sorted = list.sortedWith(scheduleDisplayComparator())
         val readOnlyNow = !canEditSchedules()
         val readOnlyChanged = isScheduleUiReadOnly != readOnlyNow
@@ -830,7 +1067,7 @@ class SchedulesActivity : AppCompatActivity() {
     }
 
     private fun updateScheduleHealthBanner() {
-        val schedules = ScheduleStore.getAll(this)
+        val schedules = ScheduleStore.getAll(this).filter { matchesTargetProfile(it) }
         val enabledSchedules = schedules.filter { it.enabled }
 
         if (!isScheduleAutomationAllowed()) {
@@ -1202,8 +1439,8 @@ class SchedulesActivity : AppCompatActivity() {
         val profileLabel = schedule.profile.ifBlank { ProfileStore.getCurrent(this).orEmpty() }
         val currentBaseEnabled = SwitchModeStore.isBaseEnabled(this)
         val targetEnabled = when (schedule.action) {
-            ScheduleStore.Action.ENABLE, ScheduleStore.Action.ENABLE_AND_DISABLE -> true
-            ScheduleStore.Action.DISABLE, ScheduleStore.Action.DISABLE_AND_ENABLE -> false
+            ScheduleStore.Action.ENABLE, ScheduleStore.Action.ENABLE_AND_DISABLE, ScheduleStore.Action.DISCONNECT_ENABLE -> true
+            ScheduleStore.Action.DISABLE, ScheduleStore.Action.DISABLE_AND_ENABLE, ScheduleStore.Action.DISCONNECT_DISABLE -> false
             ScheduleStore.Action.TOGGLE -> !currentBaseEnabled
         }
         val currentEffectiveEnabled = SwitchModeStore.isEnabled(this)
@@ -1269,6 +1506,8 @@ class SchedulesActivity : AppCompatActivity() {
         ScheduleStore.Action.TOGGLE -> getString(R.string.schedules_action_toggle)
         ScheduleStore.Action.ENABLE_AND_DISABLE -> getString(R.string.schedules_action_enable_disable)
         ScheduleStore.Action.DISABLE_AND_ENABLE -> getString(R.string.schedules_action_disable_enable)
+        ScheduleStore.Action.DISCONNECT_ENABLE -> getString(R.string.schedules_action_disconnect_enable)
+        ScheduleStore.Action.DISCONNECT_DISABLE -> getString(R.string.schedules_action_disconnect_disable)
     }
 
     private fun inScheduleTimeRange(nowMinutes: Int, startMinutes: Int, endMinutes: Int): Boolean {
@@ -1483,11 +1722,7 @@ class SchedulesActivity : AppCompatActivity() {
         if (!canEditSchedules()) {
             return
         }
-        val themedCtx = androidx.appcompat.view.ContextThemeWrapper(
-            this,
-            R.style.ThemeOverlay_Switchly_Dialog
-        )
-        val view = LayoutInflater.from(themedCtx)
+        val view = LayoutInflater.from(this)
             .inflate(R.layout.dialog_schedule_add, FrameLayout(this), false)
 
         val isCustomAccent = CustomAccentApplier.isCustomAccentEnabled(this)
@@ -1495,94 +1730,140 @@ class SchedulesActivity : AppCompatActivity() {
             CustomAccentApplier.applyToView(view, this)
         }
 
+        val accent = AccentColor.getAccentColorInt(this)
+        val dp1 = (1 * resources.displayMetrics.density).toInt()
+
+        // Title & Note
+        val layoutTitle = view.findViewById<TextInputLayout>(R.id.layoutTitle)
         val editTitle = view.findViewById<EditText>(R.id.editTitle)
-        val editNote = view.findViewById<EditText>(R.id.editNote)
+        val layoutProfile = view.findViewById<TextInputLayout>(R.id.layoutProfile)
         val spinnerProfile = view.findViewById<android.widget.AutoCompleteTextView>(R.id.spinnerProfile)
-        val spinnerAction = view.findViewById<android.widget.AutoCompleteTextView>(R.id.spinnerAction)
-        val textActionNfcHint = view.findViewById<TextView>(R.id.textActionNfcHint)
-        val spinnerTimeMode = view.findViewById<android.widget.AutoCompleteTextView>(R.id.spinnerTimeMode)
+        val layoutNote = view.findViewById<TextInputLayout>(R.id.layoutNote)
+        val editNote = view.findViewById<EditText>(R.id.editNote)
 
-        val groupTimeMode = view.findViewById<View>(R.id.groupTimeMode)
-        val groupTime = view.findViewById<View>(R.id.groupTime)
-        val groupTimeRow = view.findViewById<View>(R.id.groupTimeRow)
-        val textStartTime = view.findViewById<TextView>(R.id.textStartTime)
-        val textEndTime = view.findViewById<TextView>(R.id.textEndTime)
-
-        val switchConnTimeWindow = view.findViewById<SwitchCompat>(R.id.switchConnTimeWindow)
-        val textConnAllDayHint = view.findViewById<TextView>(R.id.textConnAllDayHint)
-
-        val inputWifiSsid = view.findViewById<EditText>(R.id.inputWifiSsid)
+        // Wi-Fi
+        val groupWifi = view.findViewById<View>(R.id.groupWifi)
         val layoutWifiSsid = view.findViewById<TextInputLayout>(R.id.layoutWifiSsid)
-        val groupWifiActions = view.findViewById<View>(R.id.groupWifiActions)
+        val inputWifiSsid = view.findViewById<EditText>(R.id.inputWifiSsid)
         val btnScanWifi = view.findViewById<MaterialButton>(R.id.btnScanWifi)
 
-        val inputBtName = view.findViewById<EditText>(R.id.inputBtName)
+        // Bluetooth
+        val groupBt = view.findViewById<View>(R.id.groupBt)
         val layoutBtName = view.findViewById<TextInputLayout>(R.id.layoutBtName)
-        val groupBtActions = view.findViewById<View>(R.id.groupBtActions)
+        val inputBtName = view.findViewById<EditText>(R.id.inputBtName)
         val btnUseConnectedBt = view.findViewById<MaterialButton>(R.id.btnUseConnectedBt)
         val btnPickPairedBt = view.findViewById<MaterialButton>(R.id.btnPickPairedBt)
 
-        val inputLocationLabel = view.findViewById<EditText>(R.id.inputLocationLabel)
-        val layoutLocationLabel = view.findViewById<TextInputLayout>(R.id.layoutLocationLabel)
-        val groupLocationActions = view.findViewById<View>(R.id.groupLocationActions)
-        val spinnerLocationTrigger = view.findViewById<android.widget.AutoCompleteTextView>(R.id.spinnerLocationTrigger)
+        // Location (single box: type/search/pick/current, no extra popup)
+        val groupLocation = view.findViewById<View>(R.id.groupLocation)
         val textLocationSummary = view.findViewById<TextView>(R.id.textLocationSummary)
+        val layoutLocationQuery = view.findViewById<TextInputLayout>(R.id.layoutLocationQuery)
+        val inputLocationQuery = view.findViewById<EditText>(R.id.inputLocationQuery)
+        val btnLocationSearchInline = view.findViewById<MaterialButton>(R.id.btnLocationSearchInline)
         val btnUseCurrentLocation = view.findViewById<MaterialButton>(R.id.btnUseCurrentLocation)
-        val spinnerLocationCooldown = view.findViewById<android.widget.AutoCompleteTextView>(R.id.spinnerLocationCooldown)
+        val btnOpenMapPicker = view.findViewById<MaterialButton>(R.id.btnOpenMapPicker)
+        val progressLocationSearchInline = view.findViewById<ProgressBar>(R.id.progressLocationSearchInline)
+        progressLocationSearchInline.indeterminateTintList =
+            android.content.res.ColorStateList.valueOf(AccentColor.getAccentColorInt(this))
+        val tvLocationSearchStatusInline = view.findViewById<TextView>(R.id.tvLocationSearchStatusInline)
+        val rvLocationResultsInline = view.findViewById<RecyclerView>(R.id.rvLocationResultsInline)
         val chipRadius100 = view.findViewById<Chip>(R.id.chipRadius100)
         val chipRadius250 = view.findViewById<Chip>(R.id.chipRadius250)
         val chipRadius500 = view.findViewById<Chip>(R.id.chipRadius500)
+        val layoutLocationTrigger = view.findViewById<TextInputLayout>(R.id.layoutLocationTrigger)
+        val spinnerLocationTrigger = view.findViewById<android.widget.AutoCompleteTextView>(R.id.spinnerLocationTrigger)
+        val layoutLocationCooldown = view.findViewById<TextInputLayout>(R.id.layoutLocationCooldown)
+        val spinnerLocationCooldown = view.findViewById<android.widget.AutoCompleteTextView>(R.id.spinnerLocationCooldown)
 
-        if (isCustomAccent) {
-            tintPickButton(btnScanWifi)
-            tintPickButton(btnUseConnectedBt)
-            tintPickButton(btnPickPairedBt)
-            tintPickButton(btnUseCurrentLocation)
-            tintSwitchCompat(switchConnTimeWindow)
-            val accent = AccentColor.getAccentColorInt(this)
-            layoutWifiSsid.boxStrokeColor = accent
-            layoutBtName.boxStrokeColor = accent
-            layoutLocationLabel.boxStrokeColor = accent
-        }
+        // Time Mode
+        val groupTimeMode = view.findViewById<View>(R.id.groupTimeMode)
+        val layoutTimeMode = view.findViewById<TextInputLayout>(R.id.layoutTimeMode)
+        val spinnerTimeMode = view.findViewById<android.widget.AutoCompleteTextView>(R.id.spinnerTimeMode)
+
+        // Standard Action (Time & Location)
+        val groupStandardAction = view.findViewById<View>(R.id.groupStandardAction)
+        val layoutAction = view.findViewById<TextInputLayout>(R.id.layoutAction)
+        val spinnerAction = view.findViewById<android.widget.AutoCompleteTextView>(R.id.spinnerAction)
+        val textActionNfcHint = view.findViewById<TextView>(R.id.textActionNfcHint)
+
+        // Attached Profile Card (when locked to profile)
+        val cardAttachedProfile = view.findViewById<MaterialCardView>(R.id.cardAttachedProfile)
+        val ivAttachedProfile = view.findViewById<ImageView>(R.id.ivAttachedProfile)
+        val tvAttachedProfileName = view.findViewById<TextView>(R.id.tvAttachedProfileName)
+
+        // Wi-Fi & BT Connection Behavior
+        val groupConnActions = view.findViewById<View>(R.id.groupConnActions)
+        val layoutConnActionConnect = view.findViewById<TextInputLayout>(R.id.layoutConnActionConnect)
+        val spinnerConnActionConnect = view.findViewById<android.widget.AutoCompleteTextView>(R.id.spinnerConnActionConnect)
+        val layoutConnActionDisconnect = view.findViewById<TextInputLayout>(R.id.layoutConnActionDisconnect)
+        val spinnerConnActionDisconnect = view.findViewById<android.widget.AutoCompleteTextView>(R.id.spinnerConnActionDisconnect)
+        val tvConnSummary = view.findViewById<TextView>(R.id.tvConnSummary)
+
+        // Unified Timing controls
+        val cardTimingContainer = view.findViewById<MaterialCardView>(R.id.cardTimingContainer)
+        val row247 = view.findViewById<View>(R.id.row247)
+        val iv247Icon = view.findViewById<ImageView>(R.id.iv247Icon)
+        val tv247Title = view.findViewById<TextView>(R.id.tv247Title)
+        val tv247Subtitle = view.findViewById<TextView>(R.id.tv247Subtitle)
+        val switch247 = view.findViewById<SwitchCompat>(R.id.switch247)
+        val divider247 = view.findViewById<View>(R.id.divider247)
+        val rowAllDay = view.findViewById<View>(R.id.rowAllDay)
+        val ivAllDayIcon = view.findViewById<ImageView>(R.id.ivAllDayIcon)
+        val tvAllDayTitle = view.findViewById<TextView>(R.id.tvAllDayTitle)
+        val tvAllDaySubtitle = view.findViewById<TextView>(R.id.tvAllDaySubtitle)
+        val switchAllDay = view.findViewById<SwitchCompat>(R.id.switchAllDay)
+        val dividerTime = view.findViewById<View>(R.id.dividerTime)
+        val groupTimeRow = view.findViewById<View>(R.id.groupTimeRow)
+        val cardStartTime = view.findViewById<MaterialCardView>(R.id.cardStartTime)
+        val textStartTime = view.findViewById<TextView>(R.id.textStartTime)
+        val ivStartTimeIcon = view.findViewById<ImageView>(R.id.ivStartTimeIcon)
+        val ivTimeArrow = view.findViewById<ImageView>(R.id.ivTimeArrow)
+        val cardEndTime = view.findViewById<MaterialCardView>(R.id.cardEndTime)
+        val textEndTime = view.findViewById<TextView>(R.id.textEndTime)
+        val ivEndTimeIcon = view.findViewById<ImageView>(R.id.ivEndTimeIcon)
 
         val groupWeekly = view.findViewById<View>(R.id.groupWeekly)
+        val chipMon = view.findViewById<MaterialButton>(R.id.chipMon)
+        val chipTue = view.findViewById<MaterialButton>(R.id.chipTue)
+        val chipWed = view.findViewById<MaterialButton>(R.id.chipWed)
+        val chipThu = view.findViewById<MaterialButton>(R.id.chipThu)
+        val chipFri = view.findViewById<MaterialButton>(R.id.chipFri)
+        val chipSat = view.findViewById<MaterialButton>(R.id.chipSat)
+        val chipSun = view.findViewById<MaterialButton>(R.id.chipSun)
+        val chipWeekdays = view.findViewById<MaterialButton>(R.id.chipWeekdays)
+        val chipWeekend = view.findViewById<MaterialButton>(R.id.chipWeekend)
+        val chipToday = view.findViewById<MaterialButton>(R.id.chipToday)
+
         val groupOnce = view.findViewById<View>(R.id.groupOnce)
+        val cardStartDate = view.findViewById<MaterialCardView>(R.id.cardStartDate)
         val textStartDate = view.findViewById<TextView>(R.id.textStartDate)
+        val ivStartDateIcon = view.findViewById<ImageView>(R.id.ivStartDateIcon)
+        val cardEndDate = view.findViewById<MaterialCardView>(R.id.cardEndDate)
         val textEndDate = view.findViewById<TextView>(R.id.textEndDate)
+        val ivEndDateIcon = view.findViewById<ImageView>(R.id.ivEndDateIcon)
 
-        val chipMon = view.findViewById<Chip>(R.id.chipMon)
-        val chipTue = view.findViewById<Chip>(R.id.chipTue)
-        val chipWed = view.findViewById<Chip>(R.id.chipWed)
-        val chipThu = view.findViewById<Chip>(R.id.chipThu)
-        val chipFri = view.findViewById<Chip>(R.id.chipFri)
-        val chipSat = view.findViewById<Chip>(R.id.chipSat)
-        val chipSun = view.findViewById<Chip>(R.id.chipSun)
+        // Tint all icons and switches with accent
+        ivAttachedProfile.imageTintList = ColorStateList.valueOf(accent)
+        iv247Icon.imageTintList = ColorStateList.valueOf(accent)
+        ivAllDayIcon.imageTintList = ColorStateList.valueOf(accent)
+        ivStartTimeIcon.imageTintList = ColorStateList.valueOf(accent)
+        ivEndTimeIcon.imageTintList = ColorStateList.valueOf(accent)
+        ivStartDateIcon.imageTintList = ColorStateList.valueOf(accent)
+        ivEndDateIcon.imageTintList = ColorStateList.valueOf(accent)
+        tintSwitchCompat(switch247)
+        tintSwitchCompat(switchAllDay)
 
-        val chipWeekdays = view.findViewById<Chip>(R.id.chipWeekdays)
-        val chipWeekend = view.findViewById<Chip>(R.id.chipWeekend)
-        val chipToday = view.findViewById<Chip>(R.id.chipToday)
-
-        fun applyDayChipColors(chip: Chip) {
-            // Always resolve through Switchly's selected accent.
-            // This also covers arbitrary custom colors and prevents a recycled chip from flashing the theme's default green.
-            val primary = AccentColor.getAccentColorInt(this@SchedulesActivity)
-            val black = ColorUtils.calculateContrast(Color.BLACK, primary)
-            val white = ColorUtils.calculateContrast(Color.WHITE, primary)
-            val onPrimary = if (black >= white) Color.BLACK else Color.WHITE
-
-            val onSurface =
-                MaterialColors.getColor(chip, com.google.android.material.R.attr.colorOnSurface)
-
+        fun applyRadiusChipColors(chip: Chip) {
+            val primary = accent
+            val onPrimary = if (ColorUtils.calculateLuminance(accent) > 0.5) Color.BLACK else Color.WHITE
+            val onSurface = MaterialColors.getColor(chip, com.google.android.material.R.attr.colorOnSurface)
             val bgUnchecked = MaterialColors.compositeARGBWithAlpha(onSurface, 0x14)
-            val strokeUnchecked = MaterialColors.compositeARGBWithAlpha(onSurface, 0x3D)
 
+            chip.chipStrokeWidth = 0f
+            chip.chipStrokeColor = ColorStateList.valueOf(Color.TRANSPARENT)
             chip.chipBackgroundColor = ColorStateList(
                 arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
                 intArrayOf(primary, bgUnchecked)
-            )
-            chip.chipStrokeColor = ColorStateList(
-                arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
-                intArrayOf(primary, strokeUnchecked)
             )
             chip.setTextColor(
                 ColorStateList(
@@ -1591,11 +1872,203 @@ class SchedulesActivity : AppCompatActivity() {
                 )
             )
         }
+        listOf(chipRadius100, chipRadius250, chipRadius500).forEach(::applyRadiusChipColors)
 
-        listOf(
-            chipMon, chipTue, chipWed, chipThu, chipFri, chipSat, chipSun,
-            chipWeekdays, chipWeekend, chipToday
-        ).forEach(::applyDayChipColors)
+        val dayButtons = listOf(chipMon, chipTue, chipWed, chipThu, chipFri, chipSat, chipSun)
+        val surfaceColor = ContextCompat.getColor(this, R.color.foqos_surface)
+        val onSurfaceColor = ContextCompat.getColor(this, R.color.foqos_on_surface)
+        val onAccent = if (ColorUtils.calculateLuminance(accent) > 0.5) Color.BLACK else Color.WHITE
+
+        // Time tiles + preset pills must stay neutral surface: set in code so no
+        // theme tonal default (green secondary container) can bleed through.
+        // Ripple is set explicitly too: the default ripple was leaving a green wash.
+        val neutralSurface = ColorStateList.valueOf(surfaceColor)
+        val pressRipple = ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 0x3D))
+        cardStartTime.setCardBackgroundColor(surfaceColor)
+        cardEndTime.setCardBackgroundColor(surfaceColor)
+        cardStartDate.setCardBackgroundColor(surfaceColor)
+        cardEndDate.setCardBackgroundColor(surfaceColor)
+        listOf(chipWeekdays, chipWeekend, chipToday).forEach { preset ->
+            preset.backgroundTintList = neutralSurface
+            preset.setTextColor(onSurfaceColor)
+            preset.rippleColor = pressRipple
+        }
+
+        fun setDayButtonChecked(btn: MaterialButton, checked: Boolean) {
+            btn.isChecked = checked
+            if (checked) {
+                btn.backgroundTintList = ColorStateList.valueOf(accent)
+                btn.setTextColor(onAccent)
+            } else {
+                btn.backgroundTintList = ColorStateList.valueOf(surfaceColor)
+                btn.setTextColor(onSurfaceColor)
+            }
+        }
+
+        dayButtons.forEach { btn ->
+            // Checkable MaterialButtons auto-toggle isChecked before onClick runs,
+            // so just refresh the visuals from the already-toggled state.
+            btn.setOnClickListener {
+                setDayButtonChecked(btn, btn.isChecked)
+            }
+        }
+
+        chipWeekdays.setOnClickListener {
+            setDayButtonChecked(chipMon, true)
+            setDayButtonChecked(chipTue, true)
+            setDayButtonChecked(chipWed, true)
+            setDayButtonChecked(chipThu, true)
+            setDayButtonChecked(chipFri, true)
+            setDayButtonChecked(chipSat, false)
+            setDayButtonChecked(chipSun, false)
+        }
+
+        chipWeekend.setOnClickListener {
+            setDayButtonChecked(chipMon, false)
+            setDayButtonChecked(chipTue, false)
+            setDayButtonChecked(chipWed, false)
+            setDayButtonChecked(chipThu, false)
+            setDayButtonChecked(chipFri, false)
+            setDayButtonChecked(chipSat, true)
+            setDayButtonChecked(chipSun, true)
+        }
+
+        chipToday.setOnClickListener {
+            val allChecked = dayButtons.all { it.isChecked }
+            dayButtons.forEach { setDayButtonChecked(it, !allChecked) }
+        }
+
+        var selectedConnConnectAction: ScheduleStore.Action? = ScheduleStore.Action.ENABLE
+        var selectedConnDisconnectAction: ScheduleStore.Action? = ScheduleStore.Action.DISABLE
+
+        val connectChoices = listOf(
+            ScheduleStore.Action.ENABLE to getString(R.string.schedules_conn_action_block),
+            ScheduleStore.Action.DISABLE to getString(R.string.schedules_conn_action_unblock),
+            null to getString(R.string.schedules_conn_action_nothing)
+        )
+        val disconnectChoices = listOf(
+            ScheduleStore.Action.DISABLE to getString(R.string.schedules_conn_action_unblock),
+            ScheduleStore.Action.ENABLE to getString(R.string.schedules_conn_action_block),
+            null to getString(R.string.schedules_conn_action_nothing)
+        )
+
+        fun updateConnSummary() {
+            val summaryRes = when {
+                selectedConnConnectAction == ScheduleStore.Action.ENABLE && selectedConnDisconnectAction == ScheduleStore.Action.DISABLE ->
+                    R.string.schedules_conn_summary_block_unblock
+                selectedConnConnectAction == ScheduleStore.Action.DISABLE && selectedConnDisconnectAction == ScheduleStore.Action.ENABLE ->
+                    R.string.schedules_conn_summary_unblock_block
+                selectedConnConnectAction == ScheduleStore.Action.ENABLE && selectedConnDisconnectAction == null ->
+                    R.string.schedules_conn_summary_block_nothing
+                selectedConnConnectAction == ScheduleStore.Action.DISABLE && selectedConnDisconnectAction == null ->
+                    R.string.schedules_conn_summary_unblock_nothing
+                selectedConnConnectAction == null && selectedConnDisconnectAction == ScheduleStore.Action.ENABLE ->
+                    R.string.schedules_conn_summary_nothing_block
+                selectedConnConnectAction == null && selectedConnDisconnectAction == ScheduleStore.Action.DISABLE ->
+                    R.string.schedules_conn_summary_nothing_unblock
+                selectedConnConnectAction == ScheduleStore.Action.ENABLE && selectedConnDisconnectAction == ScheduleStore.Action.ENABLE ->
+                    R.string.schedules_conn_summary_block_nothing
+                selectedConnConnectAction == ScheduleStore.Action.DISABLE && selectedConnDisconnectAction == ScheduleStore.Action.DISABLE ->
+                    R.string.schedules_conn_summary_unblock_nothing
+                else -> R.string.schedules_conn_summary_none
+            }
+            tvConnSummary.setText(summaryRes)
+        }
+
+        fun setupConnDropdowns() {
+            val nfcLocked = isNfcLockActiveForSchedules()
+            val filteredConnect = if (nfcLocked) {
+                connectChoices.filter { it.first != ScheduleStore.Action.DISABLE }
+            } else connectChoices
+
+            val filteredDisconnect = if (nfcLocked) {
+                disconnectChoices.filter { it.first != ScheduleStore.Action.DISABLE }
+            } else disconnectChoices
+
+            val connAdapter = SwitchlyDropdownAdapter(this@SchedulesActivity, filteredConnect.map { it.second })
+            spinnerConnActionConnect.setAdapter(connAdapter)
+            val currentConn = filteredConnect.firstOrNull { it.first == selectedConnConnectAction }
+                ?: filteredConnect.first()
+            selectedConnConnectAction = currentConn.first
+            spinnerConnActionConnect.setText(currentConn.second, false)
+
+            spinnerConnActionConnect.setOnItemClickListener { _, _, pos, _ ->
+                selectedConnConnectAction = filteredConnect[pos].first
+                updateConnSummary()
+            }
+
+            val disconnAdapter = SwitchlyDropdownAdapter(this@SchedulesActivity, filteredDisconnect.map { it.second })
+            spinnerConnActionDisconnect.setAdapter(disconnAdapter)
+            val currentDisconn = filteredDisconnect.firstOrNull { it.first == selectedConnDisconnectAction }
+                ?: filteredDisconnect.first()
+            selectedConnDisconnectAction = currentDisconn.first
+            spinnerConnActionDisconnect.setText(currentDisconn.second, false)
+
+            spinnerConnActionDisconnect.setOnItemClickListener { _, _, pos, _ ->
+                selectedConnDisconnectAction = filteredDisconnect[pos].first
+                updateConnSummary()
+            }
+
+            updateConnSummary()
+        }
+
+        val initialAction = existing?.action ?: ScheduleStore.Action.ENABLE_AND_DISABLE
+        when (initialAction) {
+            ScheduleStore.Action.ENABLE_AND_DISABLE -> {
+                selectedConnConnectAction = ScheduleStore.Action.ENABLE
+                selectedConnDisconnectAction = ScheduleStore.Action.DISABLE
+            }
+            ScheduleStore.Action.DISABLE_AND_ENABLE -> {
+                selectedConnConnectAction = ScheduleStore.Action.DISABLE
+                selectedConnDisconnectAction = ScheduleStore.Action.ENABLE
+            }
+            ScheduleStore.Action.ENABLE -> {
+                selectedConnConnectAction = ScheduleStore.Action.ENABLE
+                selectedConnDisconnectAction = null
+            }
+            ScheduleStore.Action.DISABLE -> {
+                selectedConnConnectAction = ScheduleStore.Action.DISABLE
+                selectedConnDisconnectAction = null
+            }
+            ScheduleStore.Action.DISCONNECT_ENABLE -> {
+                selectedConnConnectAction = null
+                selectedConnDisconnectAction = ScheduleStore.Action.ENABLE
+            }
+            ScheduleStore.Action.DISCONNECT_DISABLE -> {
+                selectedConnConnectAction = null
+                selectedConnDisconnectAction = ScheduleStore.Action.DISABLE
+            }
+            else -> {
+                selectedConnConnectAction = ScheduleStore.Action.ENABLE
+                selectedConnDisconnectAction = ScheduleStore.Action.DISABLE
+            }
+        }
+        setupConnDropdowns()
+
+        fun getConnAction(): ScheduleStore.Action? {
+            val onConnect = selectedConnConnectAction
+            val onDisconnect = selectedConnDisconnectAction
+
+            return when {
+                onConnect == ScheduleStore.Action.ENABLE && onDisconnect == ScheduleStore.Action.DISABLE ->
+                    ScheduleStore.Action.ENABLE_AND_DISABLE
+                onConnect == ScheduleStore.Action.DISABLE && onDisconnect == ScheduleStore.Action.ENABLE ->
+                    ScheduleStore.Action.DISABLE_AND_ENABLE
+                onConnect == ScheduleStore.Action.ENABLE && onDisconnect == null ->
+                    ScheduleStore.Action.ENABLE
+                onConnect == ScheduleStore.Action.DISABLE && onDisconnect == null ->
+                    ScheduleStore.Action.DISABLE
+                onConnect == null && onDisconnect == ScheduleStore.Action.ENABLE ->
+                    ScheduleStore.Action.DISCONNECT_ENABLE
+                onConnect == null && onDisconnect == ScheduleStore.Action.DISABLE ->
+                    ScheduleStore.Action.DISCONNECT_DISABLE
+                onConnect == ScheduleStore.Action.ENABLE && onDisconnect == ScheduleStore.Action.ENABLE ->
+                    ScheduleStore.Action.ENABLE
+                onConnect == ScheduleStore.Action.DISABLE && onDisconnect == ScheduleStore.Action.DISABLE ->
+                    ScheduleStore.Action.DISABLE
+                else -> null
+            }
+        }
 
         val isPremium = PremiumManager.isPremium(this)
 
@@ -1610,30 +2083,24 @@ class SchedulesActivity : AppCompatActivity() {
             else -> Kind.TIME
         }
 
-        if (!isPremium) {
-            layoutWifiSsid.visibility = View.GONE
-            layoutBtName.visibility = View.GONE
-            layoutLocationLabel.visibility = View.GONE
-        }
+        val isConnKind = kind == Kind.WIFI || kind == Kind.BT
+        val isLocationKind = kind == Kind.LOCATION
 
         fun applyKindVisibility() {
             val isTime = kind == Kind.TIME
             groupTimeMode.isVisible = isTime
+            groupStandardAction.isVisible = isTime || isLocationKind
+            groupConnActions.isVisible = isConnKind
 
-            val showWifi = isPremium && kind == Kind.WIFI
-            val showBt = isPremium && kind == Kind.BT
-            val showLocation = isPremium && kind == Kind.LOCATION
+            val showWifi = isPremium && isConnKind && kind == Kind.WIFI
+            val showBt = isPremium && isConnKind && kind == Kind.BT
+            val showLocation = isPremium && isLocationKind
 
-            layoutWifiSsid.isVisible = showWifi
-            groupWifiActions.isVisible = showWifi
-            layoutBtName.isVisible = showBt
-            groupBtActions.isVisible = showBt
-            layoutLocationLabel.isVisible = showLocation
-            groupLocationActions.isVisible = showLocation
+            groupWifi.isVisible = showWifi
+            groupBt.isVisible = showBt
+            groupLocation.isVisible = showLocation
 
-            val isConn = kind == Kind.WIFI || kind == Kind.BT || kind == Kind.LOCATION
-            switchConnTimeWindow.isVisible = isConn
-            textConnAllDayHint.isVisible = false
+            // Timing container is always visible
         }
 
         fun requestWifiPermissionThenRetry(action: () -> Unit) {
@@ -1983,8 +2450,10 @@ class SchedulesActivity : AppCompatActivity() {
             }
         }
 
+        var suppressLocationQueryWatcher = false
+
         fun currentLocationLabelText(): String {
-            val manual = inputLocationLabel.text?.toString()?.trim().orEmpty()
+            val manual = inputLocationQuery.text?.toString()?.trim().orEmpty()
             if (manual.isNotBlank()) {
                 return manual
             }
@@ -2012,20 +2481,20 @@ class SchedulesActivity : AppCompatActivity() {
         }
 
         fun applyPickedLocation(latitude: Double, longitude: Double, suggestedLabel: String?) {
-            val previousLat = locationLat
-            val previousLng = locationLng
-            val previousCoordsLabel = if (previousLat != null && previousLng != null) {
-                getString(R.string.schedules_location_coords_fmt, previousLat, previousLng)
-            } else {
-                ""
-            }
-            val manualLabel = inputLocationLabel.text?.toString()?.trim().orEmpty()
             locationLat = latitude
             locationLng = longitude
             val replacementLabel = suggestedLabel?.trim().orEmpty()
-            if (replacementLabel.isNotBlank() && (manualLabel.isBlank() || manualLabel == previousCoordsLabel)) {
-                inputLocationLabel.setText(replacementLabel)
+            val targetLabel = if (replacementLabel.isNotBlank()) {
+                replacementLabel
+            } else {
+                getString(R.string.schedules_location_coords_fmt, latitude, longitude)
             }
+            suppressLocationQueryWatcher = true
+            inputLocationQuery.setText(targetLabel)
+            inputLocationQuery.setSelection(targetLabel.length)
+            suppressLocationQueryWatcher = false
+            inputLocationQuery.error = null
+            layoutLocationQuery.error = null
             updateLocationSummary()
         }
 
@@ -2107,101 +2576,138 @@ class SchedulesActivity : AppCompatActivity() {
             }
         }
 
-        fun openLocationSearchDialog() {
-            val seedQuery = inputLocationLabel.text?.toString()?.trim().orEmpty()
-            showLocationPickerDialog(
-                initialQuery = seedQuery,
-                onUseCurrentLocation = { useCurrentLocation() }
-            ) { picked ->
-                applyPickedLocation(picked.latitude, picked.longitude, picked.label)
-            }
-        }
-
         fun openVisualLocationPickerDialog() {
             if (!BuildConfig.SWITCHLY_HAS_MAPS_API_KEY) {
                 showScheduleMessage(R.string.schedules_location_map_picker_unavailable)
-                openLocationSearchDialog()
+                inputLocationQuery.requestFocus()
                 return
             }
 
             lifecycleScope.launch {
                 val mapsReachable = canResolveGoogleMapsHost()
                 if (!mapsReachable) {
-                    showGoogleMapsUnavailableDialog(
-                        onUseSearch = { openLocationSearchDialog() },
-                        onUseCurrentLocation = { useCurrentLocation() }
-                    )
+                    showScheduleMessage(R.string.schedules_location_map_picker_load_failed)
+                    inputLocationQuery.requestFocus()
                     return@launch
                 }
 
                 showLocationMapPickerDialog(
                     initialLatitude = locationLat,
                     initialLongitude = locationLng,
-                    initialLabel = inputLocationLabel.text?.toString()?.trim().orEmpty().takeIf { it.isNotBlank() }
+                    initialLabel = inputLocationQuery.text?.toString()?.trim().orEmpty().takeIf { it.isNotBlank() }
                 ) { picked ->
                     applyPickedLocation(picked.latitude, picked.longitude, picked.label)
                 }
             }
         }
 
-        fun showChooseLocationMethodDialog() {
-            if (!PremiumManager.isPremium(this)) {
-                MaterialAlertDialogBuilder(this)
-                    .setTitle(R.string.schedules_location_picker_premium_title)
-                    .setMessage(R.string.schedules_location_picker_premium_message)
-                    .setPositiveButton(R.string.usage_details_premium_action) { _, _ ->
-                        startActivity(Intent(this, PremiumInfoActivity::class.java))
-                    }
-                    .setNegativeButton(android.R.string.cancel, null)
-                    .showAccented()
+        val inlineLocationResults = mutableListOf<ResolvedLocation>()
+        val inlineLocationAdapter = object : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
+            override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+                val itemView = LayoutInflater.from(parent.context)
+                    .inflate(R.layout.item_location_search_result, parent, false)
+                return object : RecyclerView.ViewHolder(itemView) {}
+            }
+
+            override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+                val item = inlineLocationResults[position]
+                val v = holder.itemView
+                val tvTitle = v.findViewById<TextView>(R.id.tvResultTitle)
+                val tvSubtitle = v.findViewById<TextView>(R.id.tvResultSubtitle)
+                val ivIcon = v.findViewById<ImageView>(R.id.ivResultIcon)
+
+                tvTitle.text = item.label
+                if (!item.subtitle.isNullOrBlank()) {
+                    tvSubtitle.text = item.subtitle
+                    tvSubtitle.visibility = View.VISIBLE
+                } else {
+                    tvSubtitle.visibility = View.GONE
+                }
+                val accent = AccentColor.getAccentColorInt(this@SchedulesActivity)
+                ivIcon.imageTintList = ColorStateList.valueOf(accent)
+
+                v.setOnClickListener {
+                    applyPickedLocation(item.latitude, item.longitude, item.label)
+                    rvLocationResultsInline.visibility = View.GONE
+                    tvLocationSearchStatusInline.visibility = View.GONE
+                }
+            }
+
+            override fun getItemCount(): Int = inlineLocationResults.size
+        }
+        rvLocationResultsInline.layoutManager = LinearLayoutManager(this)
+        rvLocationResultsInline.adapter = inlineLocationAdapter
+
+        fun doInlineLocationSearch() {
+            val query = inputLocationQuery.text?.toString()?.trim().orEmpty()
+            if (query.isBlank()) {
+                layoutLocationQuery.error = getString(R.string.schedules_location_picker_invalid)
                 return
             }
+            layoutLocationQuery.error = null
+            tvLocationSearchStatusInline.visibility = View.GONE
+            rvLocationResultsInline.visibility = View.GONE
+            progressLocationSearchInline.visibility = View.VISIBLE
+            btnLocationSearchInline.isEnabled = false
 
-            val mapPickerAvailable = BuildConfig.SWITCHLY_HAS_MAPS_API_KEY
-            val options = if (mapPickerAvailable) {
-                arrayOf(
-                    getString(R.string.schedules_location_method_picker),
-                    getString(R.string.schedules_location_method_search),
-                    getString(R.string.schedules_location_method_current)
-                )
-            } else {
-                arrayOf(
-                    getString(R.string.schedules_location_method_search),
-                    getString(R.string.schedules_location_method_current)
-                )
-            }
-            showSwitchlyOptionDialog(
-                title = getString(R.string.schedules_location_method_title),
-                options = options.mapIndexed { index, label ->
-                    SwitchlyDialogOption(
-                        title = label,
-                        iconRes = when {
-                            label == getString(R.string.schedules_location_method_current) -> R.drawable.location_on_24
-                            label == getString(R.string.schedules_location_method_search) -> R.drawable.tune_24
-                            else -> R.drawable.location_on_24
-                        }
-                    )
-                }
-            ) { which ->
-                if (mapPickerAvailable) {
-                    when (which) {
-                        0 -> openVisualLocationPickerDialog()
-                        1 -> openLocationSearchDialog()
-                        else -> useCurrentLocation()
-                    }
+            searchLocations(query) { results ->
+                progressLocationSearchInline.visibility = View.GONE
+                btnLocationSearchInline.isEnabled = true
+                if (results.isEmpty()) {
+                    tvLocationSearchStatusInline.text = getString(R.string.schedules_location_picker_not_found)
+                    tvLocationSearchStatusInline.visibility = View.VISIBLE
+                    rvLocationResultsInline.visibility = View.GONE
                 } else {
-                    when (which) {
-                        0 -> openLocationSearchDialog()
-                        else -> useCurrentLocation()
-                    }
+                    tvLocationSearchStatusInline.visibility = View.GONE
+                    inlineLocationResults.clear()
+                    inlineLocationResults.addAll(results)
+                    inlineLocationAdapter.notifyDataSetChanged()
+                    rvLocationResultsInline.visibility = View.VISIBLE
                 }
             }
         }
 
-        inputLocationLabel.addTextChangedListener {
+        // Single box: manual edits invalidate the picked coordinates until a new
+        // result (or current location) is chosen.
+        inputLocationQuery.addTextChangedListener {
+            if (suppressLocationQueryWatcher) {
+                updateLocationSummary()
+                return@addTextChangedListener
+            }
+            locationLat = null
+            locationLng = null
+            layoutLocationQuery.error = null
+            rvLocationResultsInline.visibility = View.GONE
+            tvLocationSearchStatusInline.visibility = View.GONE
             updateLocationSummary()
         }
-        btnUseCurrentLocation.setOnClickListener { showChooseLocationMethodDialog() }
+        // Prefill the single box when editing an existing location schedule.
+        val existingLocationLabel = existing?.locationLabel?.trim().orEmpty()
+        if (isLocationKind && (locationLat != null && locationLng != null)) {
+            val seed = existingLocationLabel.ifBlank {
+                getString(
+                    R.string.schedules_location_coords_fmt,
+                    locationLat!!,
+                    locationLng!!
+                )
+            }
+            suppressLocationQueryWatcher = true
+            inputLocationQuery.setText(seed)
+            suppressLocationQueryWatcher = false
+        }
+        btnLocationSearchInline.setOnClickListener { doInlineLocationSearch() }
+        inputLocationQuery.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH ||
+                actionId == android.view.inputmethod.EditorInfo.IME_ACTION_DONE) {
+                doInlineLocationSearch()
+                true
+            } else {
+                false
+            }
+        }
+        btnUseCurrentLocation.setOnClickListener { useCurrentLocation() }
+        btnOpenMapPicker.isVisible = BuildConfig.SWITCHLY_HAS_MAPS_API_KEY
+        btnOpenMapPicker.setOnClickListener { openVisualLocationPickerDialog() }
         chipRadius100.setOnCheckedChangeListener { _, checked -> if (checked) { locationRadiusMeters = 100; updateLocationSummary() } }
         chipRadius250.setOnCheckedChangeListener { _, checked -> if (checked) { locationRadiusMeters = 250; updateLocationSummary() } }
         chipRadius500.setOnCheckedChangeListener { _, checked -> if (checked) { locationRadiusMeters = 500; updateLocationSummary() } }
@@ -2237,8 +2743,22 @@ class SchedulesActivity : AppCompatActivity() {
             }
         }
 
+        if (targetProfile != null) {
+            cardAttachedProfile.visibility = View.VISIBLE
+            layoutProfile.visibility = View.GONE
+            tvAttachedProfileName.text = targetProfile
+        } else {
+            cardAttachedProfile.visibility = View.GONE
+            layoutProfile.visibility = View.VISIBLE
+        }
+
+        val defaultProfile = targetProfile ?: existing?.profile ?: ProfileStore.getCurrent(this) ?: "Default"
+        selectProfile(defaultProfile)
+
         var startMinutes = if (kind == Kind.TIME) 8 * 60 else 0
-        var endMinutes = if (kind == Kind.TIME) 16 * 60 else 24 * 60 - 1
+        var endMinutes = if (kind == Kind.TIME) 17 * 60 else 24 * 60 - 1
+        var savedCustomStart = 8 * 60
+        var savedCustomEnd = 17 * 60
         var startDateYmd = 0
         var endDateYmd = 0
         var selectedTimeModeIndex = 0
@@ -2299,6 +2819,8 @@ class SchedulesActivity : AppCompatActivity() {
             ScheduleStore.Action.TOGGLE -> getString(R.string.schedules_action_toggle)
             ScheduleStore.Action.ENABLE_AND_DISABLE -> getString(R.string.schedules_action_enable_disable)
             ScheduleStore.Action.DISABLE_AND_ENABLE -> getString(R.string.schedules_action_disable_enable)
+            ScheduleStore.Action.DISCONNECT_ENABLE -> getString(R.string.schedules_action_disconnect_enable)
+            ScheduleStore.Action.DISCONNECT_DISABLE -> getString(R.string.schedules_action_disconnect_disable)
         }
 
         fun setActionOptions(options: List<ScheduleStore.Action>, prefer: ScheduleStore.Action?) {
@@ -2413,25 +2935,7 @@ class SchedulesActivity : AppCompatActivity() {
                 }
 
                 Kind.WIFI, Kind.BT -> {
-                    val preferred = when (existing?.action) {
-                        ScheduleStore.Action.DISABLE_AND_ENABLE -> ScheduleStore.Action.DISABLE_AND_ENABLE
-                        ScheduleStore.Action.DISABLE -> ScheduleStore.Action.DISABLE_AND_ENABLE
-                        else -> ScheduleStore.Action.ENABLE_AND_DISABLE
-                    }
-
-                    val connOptions = if (isNfcLockActiveForSchedules()) {
-                        listOf(ScheduleStore.Action.ENABLE)
-                    } else {
-                        listOf(
-                            ScheduleStore.Action.ENABLE_AND_DISABLE,
-                            ScheduleStore.Action.DISABLE_AND_ENABLE
-                        )
-                    }
-
-                    setActionOptions(
-                        filterActionsForNfc(connOptions),
-                        preferred
-                    )
+                    // Handled by connection dropdowns
                 }
 
                 Kind.LOCATION -> {
@@ -2458,27 +2962,45 @@ class SchedulesActivity : AppCompatActivity() {
         refreshActionUi = { updateActionUi() }
 
         fun updateVisibilityForMode() {
+            applyKindVisibility()
+
             when (kind) {
                 Kind.TIME -> {
                     when (currentTimeMode()) {
                         TimeMode.SINGLE -> {
-                            groupTime.isVisible = true
+                            row247.isVisible = false
+                            divider247.isVisible = false
+                            rowAllDay.isVisible = false
+                            dividerTime.isVisible = false
                             groupTimeRow.isVisible = true
-                            textEndTime.isVisible = false
+                            cardStartTime.isVisible = true
+                            cardEndTime.isVisible = false
+                            ivTimeArrow.isVisible = false
                             groupWeekly.isVisible = true
                             groupOnce.isVisible = false
                         }
 
                         TimeMode.TIME_RANGE -> {
-                            groupTime.isVisible = true
-                            groupTimeRow.isVisible = true
-                            textEndTime.isVisible = true
-                            groupWeekly.isVisible = true
+                            row247.isVisible = true
+                            tv247Subtitle.setText(R.string.schedules_247_subtitle_time)
+                            val is247 = switch247.isChecked
+                            divider247.isVisible = !is247
+                            rowAllDay.isVisible = !is247
+                            val isAllDay = !is247 && switchAllDay.isChecked
+                            dividerTime.isVisible = !is247 && !isAllDay
+                            groupTimeRow.isVisible = !is247 && !isAllDay
+                            cardStartTime.isVisible = !is247 && !isAllDay
+                            cardEndTime.isVisible = !is247 && !isAllDay
+                            ivTimeArrow.isVisible = !is247 && !isAllDay
+                            groupWeekly.isVisible = !is247
                             groupOnce.isVisible = false
                         }
 
                         TimeMode.DATE_RANGE -> {
-                            groupTime.isVisible = false
+                            row247.isVisible = false
+                            divider247.isVisible = false
+                            rowAllDay.isVisible = false
+                            dividerTime.isVisible = false
                             groupTimeRow.isVisible = false
                             groupWeekly.isVisible = false
                             groupOnce.isVisible = true
@@ -2487,55 +3009,56 @@ class SchedulesActivity : AppCompatActivity() {
                 }
 
                 Kind.WIFI, Kind.BT, Kind.LOCATION -> {
-                    groupTime.isVisible = true
-                    textEndTime.isVisible = true
-                    groupWeekly.isVisible = true
+                    row247.isVisible = true
+                    tv247Subtitle.setText(
+                        if (kind == Kind.LOCATION) R.string.schedules_247_subtitle_loc
+                        else R.string.schedules_247_subtitle_conn
+                    )
+                    val is247 = switch247.isChecked
+                    divider247.isVisible = !is247
+                    rowAllDay.isVisible = !is247
+                    val isAllDay = !is247 && switchAllDay.isChecked
+                    dividerTime.isVisible = !is247 && !isAllDay
+                    groupTimeRow.isVisible = !is247 && !isAllDay
+                    cardStartTime.isVisible = !is247 && !isAllDay
+                    cardEndTime.isVisible = !is247 && !isAllDay
+                    ivTimeArrow.isVisible = !is247 && !isAllDay
+                    groupWeekly.isVisible = !is247
                     groupOnce.isVisible = false
-
-                    val useWindow = switchConnTimeWindow.isChecked
-                    groupTimeRow.isVisible = useWindow
-                    textConnAllDayHint.isVisible = !useWindow
                 }
             }
         }
 
         fun updateLabels() {
-            if (groupTime.isVisible && groupTimeRow.isVisible) {
-                textStartTime.text = getString(
-                    R.string.schedules_label_value_fmt,
-                    getString(R.string.schedules_start_time),
-                    formatMinutes(startMinutes)
-                )
-                if (textEndTime.isVisible) {
-                    textEndTime.text = getString(
-                        R.string.schedules_label_value_fmt,
-                        getString(R.string.schedules_end_time),
-                        formatMinutes(endMinutes)
-                    )
+            if (groupTimeRow.isVisible) {
+                textStartTime.text = formatMinutes(startMinutes)
+                if (cardEndTime.isVisible) {
+                    textEndTime.text = formatMinutes(endMinutes)
                 }
             }
 
             if (groupOnce.isVisible) {
-                textStartDate.text = getString(
-                    R.string.schedules_label_value_multiline_fmt,
-                    getString(R.string.schedules_start_date),
-                    formatYmd(startDateYmd)
-                )
-                textEndDate.text = getString(
-                    R.string.schedules_label_value_fmt,
-                    getString(R.string.schedules_end_date),
-                    formatYmd(endDateYmd)
-                )
+                textStartDate.text = formatYmd(startDateYmd)
+                textEndDate.text = formatYmd(endDateYmd)
             }
         }
 
         if (existing != null) {
-            editTitle.setText(existing.title)
+            val exTitle = existing.title.trim()
+            if (!exTitle.equals(existing.profile.trim(), ignoreCase = true)) {
+                editTitle.setText(exTitle)
+            } else {
+                editTitle.setText("")
+            }
             editNote.setText(existing.note)
             selectProfile(existing.profile)
 
             startMinutes = existing.startMinutes
             endMinutes = existing.endMinutes
+            if (startMinutes != 0 || endMinutes < 24 * 60 - 1) {
+                savedCustomStart = startMinutes
+                savedCustomEnd = endMinutes
+            }
 
             if (existing.type == ScheduleStore.Type.ONE_TIME) {
                 startDateYmd = existing.startDate
@@ -2543,18 +3066,20 @@ class SchedulesActivity : AppCompatActivity() {
             }
 
             val dm = existing.daysMask
-            chipMon.isChecked = dm and Days.MON != 0
-            chipTue.isChecked = dm and Days.TUE != 0
-            chipWed.isChecked = dm and Days.WED != 0
-            chipThu.isChecked = dm and Days.THU != 0
-            chipFri.isChecked = dm and Days.FRI != 0
-            chipSat.isChecked = dm and Days.SAT != 0
-            chipSun.isChecked = dm and Days.SUN != 0
+            setDayButtonChecked(chipMon, (dm and Days.MON) != 0)
+            setDayButtonChecked(chipTue, (dm and Days.TUE) != 0)
+            setDayButtonChecked(chipWed, (dm and Days.WED) != 0)
+            setDayButtonChecked(chipThu, (dm and Days.THU) != 0)
+            setDayButtonChecked(chipFri, (dm and Days.FRI) != 0)
+            setDayButtonChecked(chipSat, (dm and Days.SAT) != 0)
+            setDayButtonChecked(chipSun, (dm and Days.SUN) != 0)
 
             if (kind == Kind.WIFI && isPremium) inputWifiSsid.setText(existing.wifiSsid.orEmpty())
             if (kind == Kind.BT && isPremium) inputBtName.setText(existing.btDeviceName ?: existing.btDeviceAddress.orEmpty())
             if (kind == Kind.LOCATION && isPremium) {
-                inputLocationLabel.setText(existing.locationLabel.orEmpty())
+                suppressLocationQueryWatcher = true
+                inputLocationQuery.setText(existing.locationLabel.orEmpty())
+                suppressLocationQueryWatcher = false
                 locationLat = existing.locationLat
                 locationLng = existing.locationLng
                 locationRadiusMeters = existing.locationRadiusMeters
@@ -2566,19 +3091,37 @@ class SchedulesActivity : AppCompatActivity() {
                 updateLocationSummary()
             }
         } else {
-            selectProfile(ProfileStore.getCurrent(this))
-            chipMon.isChecked = true
-            chipTue.isChecked = true
-            chipWed.isChecked = true
-            chipThu.isChecked = true
-            chipFri.isChecked = true
+            val initialProfile = targetProfile ?: ProfileStore.getCurrent(this)
+            selectProfile(initialProfile)
+            dayButtons.forEach { setDayButtonChecked(it, true) }
         }
 
-        val isConnKind = kind == Kind.WIFI || kind == Kind.BT || kind == Kind.LOCATION
-        if (isConnKind) {
-            val hasWindow = !(startMinutes == 0 && endMinutes >= 24 * 60 - 1)
-            switchConnTimeWindow.isChecked = hasWindow
+        val initialIs247: Boolean
+        val initialIsAllDay: Boolean
+        if (existing != null) {
+            val isFullDay = startMinutes == 0 && endMinutes >= 24 * 60 - 1
+            val isAllWeek = existing.daysMask == 0x7F || existing.daysMask == 0
+            if (isFullDay && isAllWeek) {
+                initialIs247 = true
+                initialIsAllDay = false
+            } else if (isFullDay) {
+                initialIs247 = false
+                initialIsAllDay = true
+            } else {
+                initialIs247 = false
+                initialIsAllDay = false
+            }
+        } else {
+            if (isConnKind || isLocationKind) {
+                initialIs247 = true
+                initialIsAllDay = false
+            } else {
+                initialIs247 = false
+                initialIsAllDay = false
+            }
         }
+        switch247.isChecked = initialIs247
+        switchAllDay.isChecked = initialIsAllDay
 
         applyKindVisibility()
         setupTimeModeSpinner()
@@ -2587,26 +3130,49 @@ class SchedulesActivity : AppCompatActivity() {
         updateLabels()
         updateActionNfcHint()
 
-        switchConnTimeWindow.setOnCheckedChangeListener { _, checked ->
-            if (kind != Kind.WIFI && kind != Kind.BT && kind != Kind.LOCATION) return@setOnCheckedChangeListener
-
-            if (!checked) {
+        switch247.setOnCheckedChangeListener { _, is247 ->
+            if (is247) {
+                if (startMinutes != 0 || endMinutes < 24 * 60 - 1) {
+                    savedCustomStart = startMinutes
+                    savedCustomEnd = endMinutes
+                }
                 startMinutes = 0
                 endMinutes = 24 * 60 - 1
             } else {
-                if (startMinutes == 0 && endMinutes >= 24 * 60 - 1) {
-                    val now = Calendar.getInstance()
-                    startMinutes =
-                        now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE)
-                    endMinutes = (startMinutes + 60) % (24 * 60)
-                    if (endMinutes == startMinutes) {
-                        endMinutes = (startMinutes + 30) % (24 * 60)
-                    }
+                if (switchAllDay.isChecked) {
+                    startMinutes = 0
+                    endMinutes = 24 * 60 - 1
+                } else {
+                    startMinutes = savedCustomStart
+                    endMinutes = savedCustomEnd
                 }
             }
-
             updateVisibilityForMode()
             updateLabels()
+        }
+
+        row247.setOnClickListener {
+            switch247.toggle()
+        }
+
+        switchAllDay.setOnCheckedChangeListener { _, isAllDay ->
+            if (isAllDay) {
+                if (startMinutes != 0 || endMinutes < 24 * 60 - 1) {
+                    savedCustomStart = startMinutes
+                    savedCustomEnd = endMinutes
+                }
+                startMinutes = 0
+                endMinutes = 24 * 60 - 1
+            } else {
+                startMinutes = savedCustomStart
+                endMinutes = savedCustomEnd
+            }
+            updateVisibilityForMode()
+            updateLabels()
+        }
+
+        rowAllDay.setOnClickListener {
+            switchAllDay.toggle()
         }
 
         spinnerAction.setOnItemClickListener { _, _, pos, _ ->
@@ -2623,10 +3189,11 @@ class SchedulesActivity : AppCompatActivity() {
         }
 
         fun pickTime(initial: Int, onPicked: (Int) -> Unit) {
-            val h = initial / 60
-            val m = initial % 60
+            val h = (initial / 60).coerceIn(0, 23)
+            val m = (initial % 60).coerceIn(0, 59)
 
             val picker = MaterialTimePicker.Builder()
+                .setTheme(AccentColor.getTimePickerTheme(this@SchedulesActivity))
                 .setTimeFormat(if (TimeFormatPrefs.is24Hour(this)) TimeFormat.CLOCK_24H else TimeFormat.CLOCK_12H)
                 .setHour(h)
                 .setMinute(m)
@@ -2639,22 +3206,6 @@ class SchedulesActivity : AppCompatActivity() {
 
             val tag = "switchly_timepicker_${SystemClock.uptimeMillis()}"
             picker.show(supportFragmentManager, tag)
-
-            if (CustomAccentApplier.isCustomAccentEnabled(this)) {
-                window.decorView.post {
-                    val d = picker.dialog
-                    val decor = d?.window?.decorView
-                    if (decor != null) {
-                        CustomAccentApplier.applyToView(decor, this)
-                        longArrayOf(60L, 180L, 360L).forEach { delay ->
-                            decor.postDelayed(
-                                { runCatching { CustomAccentApplier.applyToView(decor, this) } },
-                                delay
-                            )
-                        }
-                    }
-                }
-            }
         }
 
         fun pickDate(initialYmd: Int, onPicked: (Int) -> Unit) {
@@ -2676,7 +3227,7 @@ class SchedulesActivity : AppCompatActivity() {
             }
 
             val picker = MaterialDatePicker.Builder.datePicker()
-                .setTheme(com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialCalendar)
+                .setTheme(at.saltyy.switchly.theme.AccentColor.getDatePickerTheme(this@SchedulesActivity))
                 .setSelection(cal.timeInMillis)
                 .build()
             picker.addOnPositiveButtonClickListener { millis ->
@@ -2713,25 +3264,25 @@ class SchedulesActivity : AppCompatActivity() {
             }
         }
 
-        textStartTime.setOnClickListener {
-            if (groupTime.isVisible && groupTimeRow.isVisible) {
+        cardStartTime.setOnClickListener {
+            if (groupTimeRow.isVisible) {
                 pickTime(startMinutes) { startMinutes = it }
             }
         }
-        textEndTime.setOnClickListener {
-            if (groupTime.isVisible && groupTimeRow.isVisible && textEndTime.isVisible) {
+        cardEndTime.setOnClickListener {
+            if (groupTimeRow.isVisible && cardEndTime.isVisible) {
                 pickTime(endMinutes) { endMinutes = it }
             }
         }
 
-        textStartDate.setOnClickListener {
+        cardStartDate.setOnClickListener {
             if (groupOnce.isVisible) {
                 pickDate(
                     if (startDateYmd > 0) startDateYmd else ScheduleStore.todayYmd()
                 ) { startDateYmd = it }
             }
         }
-        textEndDate.setOnClickListener {
+        cardEndDate.setOnClickListener {
             if (groupOnce.isVisible) {
                 pickDate(
                     if (endDateYmd > 0) endDateYmd else ScheduleStore.todayYmd()
@@ -2739,111 +3290,25 @@ class SchedulesActivity : AppCompatActivity() {
             }
         }
 
-        var isUpdatingQuick = false
-
-        fun updateQuickChipsFromDays() {
-            if (isUpdatingQuick) {
-                return
-            }
-            isUpdatingQuick = true
-
-            val mon = chipMon.isChecked
-            val tue = chipTue.isChecked
-            val wed = chipWed.isChecked
-            val thu = chipThu.isChecked
-            val fri = chipFri.isChecked
-            val sat = chipSat.isChecked
-            val sun = chipSun.isChecked
-
-            chipWeekdays.isChecked = mon && tue && wed && thu && fri && !sat && !sun
-            chipWeekend.isChecked = !mon && !tue && !wed && !thu && !fri && sat && sun
-
-            val todayDow = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
-            chipToday.isChecked = when (todayDow) {
-                Calendar.MONDAY -> mon && !tue && !wed && !thu && !fri && !sat && !sun
-                Calendar.TUESDAY -> !mon && tue && !wed && !thu && !fri && !sat && !sun
-                Calendar.WEDNESDAY -> !mon && !tue && wed && !thu && !fri && !sat && !sun
-                Calendar.THURSDAY -> !mon && !tue && !wed && thu && !fri && !sat && !sun
-                Calendar.FRIDAY -> !mon && !tue && !wed && !thu && fri && !sat && !sun
-                Calendar.SATURDAY -> !mon && !tue && !wed && !thu && !fri && sat && !sun
-                Calendar.SUNDAY -> !mon && !tue && !wed && !thu && !fri && !sat && sun
-                else -> false
-            }
-
-            isUpdatingQuick = false
-        }
-
-        chipWeekdays.setOnCheckedChangeListener { _, checked ->
-            if (isUpdatingQuick) return@setOnCheckedChangeListener
-            val all = listOf(chipMon, chipTue, chipWed, chipThu, chipFri, chipSat, chipSun)
-            if (checked) {
-                chipMon.isChecked = true
-                chipTue.isChecked = true
-                chipWed.isChecked = true
-                chipThu.isChecked = true
-                chipFri.isChecked = true
-                chipSat.isChecked = false
-                chipSun.isChecked = false
-            } else {
-                all.forEach { it.isChecked = false }
-            }
-            updateQuickChipsFromDays()
-        }
-
-        chipWeekend.setOnCheckedChangeListener { _, checked ->
-            if (isUpdatingQuick) return@setOnCheckedChangeListener
-            val all = listOf(chipMon, chipTue, chipWed, chipThu, chipFri, chipSat, chipSun)
-            if (checked) {
-                chipMon.isChecked = false
-                chipTue.isChecked = false
-                chipWed.isChecked = false
-                chipThu.isChecked = false
-                chipFri.isChecked = false
-                chipSat.isChecked = true
-                chipSun.isChecked = true
-            } else {
-                all.forEach { it.isChecked = false }
-            }
-            updateQuickChipsFromDays()
-        }
-
-        chipToday.setOnCheckedChangeListener { _, checked ->
-            if (isUpdatingQuick) return@setOnCheckedChangeListener
-            val all = listOf(chipMon, chipTue, chipWed, chipThu, chipFri, chipSat, chipSun)
-            all.forEach { it.isChecked = false }
-            if (checked) {
-                when (Calendar.getInstance().get(Calendar.DAY_OF_WEEK)) {
-                    Calendar.MONDAY -> chipMon.isChecked = true
-                    Calendar.TUESDAY -> chipTue.isChecked = true
-                    Calendar.WEDNESDAY -> chipWed.isChecked = true
-                    Calendar.THURSDAY -> chipThu.isChecked = true
-                    Calendar.FRIDAY -> chipFri.isChecked = true
-                    Calendar.SATURDAY -> chipSat.isChecked = true
-                    Calendar.SUNDAY -> chipSun.isChecked = true
-                }
-            }
-            updateQuickChipsFromDays()
-        }
-
-        listOf(chipMon, chipTue, chipWed, chipThu, chipFri, chipSat, chipSun).forEach { chip ->
-            chip.setOnCheckedChangeListener { _, _ -> updateQuickChipsFromDays() }
-        }
-
-        val dialog = MaterialAlertDialogBuilder(this)
+        val dialog = MaterialAlertDialogBuilder(this, AccentColor.getDialogTheme(this))
             .setTitle(if (existing == null) R.string.schedules_add else R.string.schedules_edit)
             .setView(view)
             .setPositiveButton(R.string.ok, null)
             .setNegativeButton(R.string.cancel, null)
             .create()
 
+        dialog.applySwitchlyDialogWidth(0.94f)
         dialog.setOnShowListener {
             dialog.styleSwitchlyDialogButtons()
-            dialog.applySwitchlyDialogWidth(0.96f)
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setText(if (existing == null) R.string.create else R.string.save)
-            if (CustomAccentApplier.isCustomAccentEnabled(this)) {
-                tintSwitchCompat(switchConnTimeWindow)
-            }
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+            val btnPos = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+            val btnNeg = dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
+            btnPos.setText(if (existing == null) R.string.create else R.string.save)
+            btnPos.setTextColor(accent)
+            btnNeg.setTextColor(accent)
+            tintSwitchCompat(switch247)
+        tintSwitchCompat(switchAllDay)
+
+            btnPos.setOnClickListener {
                 if (!canEditSchedules()) {
                     dialog.dismiss()
                     refreshList()
@@ -2851,13 +3316,19 @@ class SchedulesActivity : AppCompatActivity() {
                 }
                 layoutWifiSsid.error = null
                 layoutBtName.error = null
-                layoutLocationLabel.error = null
+                layoutLocationQuery.error = null
                 inputWifiSsid.error = null
                 inputBtName.error = null
-                inputLocationLabel.error = null
+                inputLocationQuery.error = null
 
-                val profile = profileList.getOrNull(selectedProfileIndex)
-                    ?: spinnerProfile.text?.toString().orEmpty()
+                val profile = (if (targetProfile != null) {
+                    targetProfile
+                } else {
+                    profileList.getOrNull(selectedProfileIndex)
+                        ?: spinnerProfile.text?.toString().orEmpty().ifBlank {
+                            ProfileStore.getCurrent(this@SchedulesActivity) ?: "Default"
+                        }
+                }) ?: "Default"
                 if (profile.isBlank()) {
                     showSnack(R.string.schedules_error_no_profile)
                     return@setOnClickListener
@@ -2875,8 +3346,21 @@ class SchedulesActivity : AppCompatActivity() {
                     null
                 }
 
+                val locationQueryText: String = if (kind == Kind.LOCATION && isPremium) {
+                    inputLocationQuery.text.toString().trim()
+                } else {
+                    ""
+                }
+                // Accept pasted coordinates even without an explicit search+pick.
+                if (kind == Kind.LOCATION && isPremium && (locationLat == null || locationLng == null)) {
+                    parseLocationCoordinateQuery(locationQueryText)?.let { (lat, lng) ->
+                        locationLat = lat
+                        locationLng = lng
+                        updateLocationSummary()
+                    }
+                }
                 val locationLabel: String? = if (kind == Kind.LOCATION && isPremium) {
-                    inputLocationLabel.text.toString().trim().ifEmpty { null }
+                    locationQueryText.ifEmpty { null }
                 } else {
                     null
                 }
@@ -2898,9 +3382,9 @@ class SchedulesActivity : AppCompatActivity() {
                 }
 
                 if (kind == Kind.LOCATION && isPremium && (locationLat == null || locationLng == null)) {
-                    layoutLocationLabel.error = getString(R.string.schedules_error_location_required)
-                    inputLocationLabel.error = getString(R.string.schedules_error_location_required)
-                    inputLocationLabel.requestFocus()
+                    layoutLocationQuery.error = getString(R.string.schedules_error_location_required)
+                    inputLocationQuery.error = getString(R.string.schedules_error_location_required)
+                    inputLocationQuery.requestFocus()
                     showSnack(R.string.schedules_error_location_required)
                     return@setOnClickListener
                 }
@@ -2924,11 +3408,21 @@ class SchedulesActivity : AppCompatActivity() {
                     return@setOnClickListener
                 }
 
+                val connAction: ScheduleStore.Action? = if (isConnKind) {
+                    val resolved = getConnAction()
+                    if (resolved == null) {
+                        showSnack(R.string.schedules_conn_summary_none)
+                        return@setOnClickListener
+                    }
+                    resolved
+                } else null
+
                 var daysMask = 0
-                val isConn = kind == Kind.WIFI || kind == Kind.BT || kind == Kind.LOCATION
                 val isDateRange = kind == Kind.TIME && currentTimeMode() == TimeMode.DATE_RANGE
 
-                if (!isDateRange) {
+                if (switch247.isChecked) {
+                    daysMask = 0x7F
+                } else if (!isDateRange) {
                     if (chipMon.isChecked) daysMask = daysMask or Days.MON
                     if (chipTue.isChecked) daysMask = daysMask or Days.TUE
                     if (chipWed.isChecked) daysMask = daysMask or Days.WED
@@ -2955,7 +3449,8 @@ class SchedulesActivity : AppCompatActivity() {
                 }
 
                 val action: ScheduleStore.Action = when {
-                    isConn -> selectedAction()
+                    isConnKind -> connAction!!
+                    isLocationKind -> selectedAction()
                     currentTimeMode() == TimeMode.TIME_RANGE -> selectedAction()
                     currentTimeMode() == TimeMode.DATE_RANGE -> ScheduleStore.Action.ENABLE_AND_DISABLE
                     else -> selectedAction()
@@ -2964,10 +3459,7 @@ class SchedulesActivity : AppCompatActivity() {
                 val normalizedStart: Int
                 val normalizedEnd: Int
 
-                if (isConn) {
-                    normalizedStart = startMinutes
-                    normalizedEnd = endMinutes
-                } else if (isDateRange) {
+                if (switch247.isChecked || switchAllDay.isChecked || isDateRange) {
                     normalizedStart = 0
                     normalizedEnd = 24 * 60 - 1
                 } else {
@@ -2979,23 +3471,22 @@ class SchedulesActivity : AppCompatActivity() {
                     }
                 }
 
-                if ((isConn ||
-                        action == ScheduleStore.Action.ENABLE_AND_DISABLE ||
-                        action == ScheduleStore.Action.DISABLE_AND_ENABLE) &&
-                    normalizedEnd == normalizedStart
-                ) {
-                    showSnack(R.string.schedules_error_time_range_empty)
-                    return@setOnClickListener
+                val isFixedRange = !switch247.isChecked && !switchAllDay.isChecked && !isDateRange
+                if (isFixedRange && (isConnKind || isLocationKind || action == ScheduleStore.Action.ENABLE_AND_DISABLE || action == ScheduleStore.Action.DISABLE_AND_ENABLE)) {
+                    if (normalizedEnd == normalizedStart) {
+                        showSnack(R.string.schedules_error_time_range_empty)
+                        return@setOnClickListener
+                    }
                 }
 
                 val type: ScheduleStore.Type = when {
-                    isConn -> ScheduleStore.Type.WEEKLY
+                    isConnKind || isLocationKind -> ScheduleStore.Type.WEEKLY
                     isDateRange -> ScheduleStore.Type.ONE_TIME
                     else -> ScheduleStore.Type.WEEKLY
                 }
 
                 val newSchedule = ScheduleStore.Schedule(
-                    id = existing?.id ?: ScheduleStore.nextId(ScheduleStore.getAll(this)),
+                    id = existing?.id ?: ScheduleStore.nextId(ScheduleStore.getAll(this@SchedulesActivity)),
                     enabled = existing?.enabled ?: true,
                     profile = profile,
                     title = editTitle.text.toString().trim(),
@@ -3017,7 +3508,7 @@ class SchedulesActivity : AppCompatActivity() {
                     action = action
                 )
 
-                val oldList = ScheduleStore.getAll(this)
+                val oldList = ScheduleStore.getAll(this@SchedulesActivity)
                 val newList = if (existing == null) {
                     oldList + newSchedule
                 } else {
@@ -3025,11 +3516,11 @@ class SchedulesActivity : AppCompatActivity() {
                 }
 
                 fun persistSchedule() {
-                    ScheduleStore.saveAll(this, newList)
-                    LocationTriggerMonitor.syncAsync(this)
+                    ScheduleStore.saveAll(this@SchedulesActivity, newList)
+                    LocationTriggerMonitor.syncAsync(this@SchedulesActivity)
                     reapplySchedulesNow()
-                    SchedulePlanner.updateNextAlarm(this)
-                    SchedulePlanner.notifyNextChanged(this)
+                    SchedulePlanner.updateNextAlarm(this@SchedulesActivity)
+                    SchedulePlanner.notifyNextChanged(this@SchedulesActivity)
                     refreshList()
                     dialog.dismiss()
                 }
@@ -3039,7 +3530,7 @@ class SchedulesActivity : AppCompatActivity() {
                 }
                 if (overlap != null) {
                     val other = if (overlap.first.id == newSchedule.id) overlap.second else overlap.first
-                    AlertDialog.Builder(this)
+                    AlertDialog.Builder(this@SchedulesActivity)
                         .setTitle(R.string.schedules_overlap_warning_title)
                         .setMessage(
                             getString(
@@ -3085,28 +3576,88 @@ class SchedulesActivity : AppCompatActivity() {
         return null
     }
 
-    private fun formatGeocoderLabel(address: android.location.Address?): String? {
-        if (address == null) {
-            return null
+    private fun formatGeocoderLabelDetailed(address: android.location.Address?): Pair<String?, String?> {
+        if (address == null) return null to null
+
+        val thoroughfare = address.thoroughfare?.trim()?.takeIf { it.isNotBlank() }
+        val subThoroughfare = address.subThoroughfare?.trim()?.takeIf { it.isNotBlank() }
+        val feature = address.featureName?.trim()?.takeIf { it.isNotBlank() }
+        val line0 = address.getAddressLine(0)?.trim()?.takeIf { it.isNotBlank() }
+        val subLocality = address.subLocality?.trim()?.takeIf { it.isNotBlank() }
+        val locality = address.locality?.trim()?.takeIf { it.isNotBlank() }
+        val adminArea = address.adminArea?.trim()?.takeIf { it.isNotBlank() }
+        val countryName = address.countryName?.trim()?.takeIf { it.isNotBlank() }
+
+        fun isOnlyNumber(s: String?): Boolean {
+            return s != null && s.all { it.isDigit() || it.isWhitespace() || it == '-' || it == '/' }
         }
 
-        val candidates = listOf(
-            listOfNotNull(address.featureName, address.subLocality, address.locality)
-                .map { it.trim() }
-                .filter { it.isNotBlank() }
-                .distinct()
-                .joinToString(", ")
-                .takeIf { it.isNotBlank() },
-            listOfNotNull(address.locality, address.adminArea)
-                .map { it.trim() }
-                .filter { it.isNotBlank() }
-                .distinct()
-                .joinToString(", ")
-                .takeIf { it.isNotBlank() },
-            address.getAddressLine(0)?.trim()?.takeIf { it.isNotBlank() }
-        )
+        val streetPart = when {
+            thoroughfare != null -> {
+                val num = subThoroughfare ?: feature?.takeIf { isOnlyNumber(it) || it.length <= 6 }
+                if (num != null && !thoroughfare.contains(num)) {
+                    "$num $thoroughfare"
+                } else {
+                    thoroughfare
+                }
+            }
+            line0 != null -> {
+                val parts = line0.split(",").map { it.trim() }.filter { it.isNotBlank() }
+                val firstPart = parts.firstOrNull()
+                if (firstPart != null && !isOnlyNumber(firstPart)) {
+                    firstPart
+                } else {
+                    null
+                }
+            }
+            else -> feature?.takeIf { !isOnlyNumber(it) }
+        }
 
-        return candidates.firstOrNull { !it.isNullOrBlank() }
+        val suburb = subLocality ?: locality ?: run {
+            if (line0 != null) {
+                val parts = line0.split(",").map { it.trim() }.filter { it.isNotBlank() }
+                if (parts.size > 1) {
+                    parts[1].replace(Regex("\\b[0-9]{4,6}\\b"), "").trim().takeIf { it.isNotBlank() } ?: parts[1]
+                } else null
+            } else null
+        }
+
+        val title = when {
+            streetPart != null && suburb != null -> {
+                if (streetPart.contains(suburb, ignoreCase = true)) {
+                    streetPart
+                } else {
+                    "$streetPart, $suburb"
+                }
+            }
+            streetPart != null -> streetPart
+            suburb != null -> suburb
+            else -> line0 ?: listOfNotNull(locality, adminArea).joinToString(", ").takeIf { it.isNotBlank() }
+        }
+
+        val subParts = mutableListOf<String>()
+        if (locality != null && locality != suburb && title?.contains(locality, ignoreCase = true) == false) {
+            subParts.add(locality)
+        }
+        if (adminArea != null && title?.contains(adminArea, ignoreCase = true) == false) {
+            subParts.add(adminArea)
+        }
+        if (countryName != null && title?.contains(countryName, ignoreCase = true) == false) {
+            subParts.add(countryName)
+        }
+        val subtitle = if (subParts.isNotEmpty()) {
+            subParts.joinToString(", ")
+        } else if (line0 != null && line0 != title) {
+            line0
+        } else {
+            null
+        }
+
+        return title to subtitle
+    }
+
+    private fun formatGeocoderLabel(address: android.location.Address?): String? {
+        return formatGeocoderLabelDetailed(address).first
     }
 
     private fun reverseGeocodeLabel(
@@ -3122,8 +3673,8 @@ class SchedulesActivity : AppCompatActivity() {
 
         val geocoder = Geocoder(this, Locale.getDefault())
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            geocoder.getFromLocation(latitude, longitude, 1) { addresses ->
-                val label = formatGeocoderLabel(addresses.firstOrNull()) ?: fallback
+            geocoder.getFromLocation(latitude, longitude, 3) { addresses ->
+                val label = addresses.firstNotNullOfOrNull { formatGeocoderLabel(it) } ?: fallback
                 runOnUiThread { onResult(label) }
             }
         } else {
@@ -3131,8 +3682,7 @@ class SchedulesActivity : AppCompatActivity() {
                 val label = withContext(Dispatchers.IO) {
                     runCatching {
                         getFromLocationBlockingCompat(geocoder, latitude, longitude)
-                            .firstOrNull()
-                    }.getOrNull()?.let(::formatGeocoderLabel) ?: fallback
+                    }.getOrNull().orEmpty().firstNotNullOfOrNull { formatGeocoderLabel(it) } ?: fallback
                 }
                 onResult(label)
             }
@@ -3151,14 +3701,15 @@ class SchedulesActivity : AppCompatActivity() {
                 java.lang.Double.TYPE,
                 Integer.TYPE
             )
-            val result = method.invoke(geocoder, latitude, longitude, 1)
+            val result = method.invoke(geocoder, latitude, longitude, 3)
             (result as? List<*>)?.filterIsInstance<android.location.Address>().orEmpty()
         }.getOrDefault(emptyList())
     }
 
     private fun getFromLocationNameBlockingCompat(
         geocoder: Geocoder,
-        query: String
+        query: String,
+        maxResults: Int = 8
     ): List<android.location.Address> {
         return runCatching {
             val method = Geocoder::class.java.getMethod(
@@ -3166,57 +3717,56 @@ class SchedulesActivity : AppCompatActivity() {
                 String::class.java,
                 Integer.TYPE
             )
-            val result = method.invoke(geocoder, query, 1)
+            val result = method.invoke(geocoder, query, maxResults)
             (result as? List<*>)?.filterIsInstance<android.location.Address>().orEmpty()
         }.getOrDefault(emptyList())
     }
 
-    private fun resolveLocationQuery(query: String, onResult: (ResolvedLocation?) -> Unit) {
+    private fun searchLocations(query: String, onResults: (List<ResolvedLocation>) -> Unit) {
         val coordinateMatch = parseLocationCoordinateQuery(query)
         if (coordinateMatch != null) {
             val (latitude, longitude) = coordinateMatch
             val fallbackLabel = getString(R.string.schedules_location_coords_fmt, latitude, longitude)
             reverseGeocodeLabel(latitude, longitude, fallbackLabel) { label ->
-                onResult(ResolvedLocation(latitude, longitude, label ?: fallbackLabel))
+                onResults(listOf(ResolvedLocation(latitude, longitude, label ?: fallbackLabel)))
             }
             return
         }
 
         if (!Geocoder.isPresent()) {
-            onResult(null)
+            onResults(emptyList())
             return
         }
 
         val geocoder = Geocoder(this, Locale.getDefault())
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            geocoder.getFromLocationName(query, 1) { addresses ->
-                val first = addresses.firstOrNull()
-                val resolved = if (first != null) {
-                    ResolvedLocation(
-                        latitude = first.latitude,
-                        longitude = first.longitude,
-                        label = formatGeocoderLabel(first) ?: query.trim()
-                    )
-                } else {
-                    null
+            geocoder.getFromLocationName(query, 8) { addresses ->
+                val results = addresses.mapNotNull { addr ->
+                    val (title, subtitle) = formatGeocoderLabelDetailed(addr)
+                    val label = title ?: query.trim()
+                    ResolvedLocation(addr.latitude, addr.longitude, label, subtitle)
                 }
-                runOnUiThread { onResult(resolved) }
+                runOnUiThread { onResults(results) }
             }
         } else {
             lifecycleScope.launch {
-                val resolved = withContext(Dispatchers.IO) {
+                val results = withContext(Dispatchers.IO) {
                     runCatching {
-                        getFromLocationNameBlockingCompat(geocoder, query).firstOrNull()
-                    }.getOrNull()?.let { address ->
-                        ResolvedLocation(
-                            latitude = address.latitude,
-                            longitude = address.longitude,
-                            label = formatGeocoderLabel(address) ?: query.trim()
-                        )
+                        getFromLocationNameBlockingCompat(geocoder, query, 8)
+                    }.getOrNull().orEmpty().mapNotNull { addr ->
+                        val (title, subtitle) = formatGeocoderLabelDetailed(addr)
+                        val label = title ?: query.trim()
+                        ResolvedLocation(addr.latitude, addr.longitude, label, subtitle)
                     }
                 }
-                onResult(resolved)
+                onResults(results)
             }
+        }
+    }
+
+    private fun resolveLocationQuery(query: String, onResult: (ResolvedLocation?) -> Unit) {
+        searchLocations(query) { results ->
+            onResult(results.firstOrNull())
         }
     }
 
@@ -3227,19 +3777,6 @@ class SchedulesActivity : AppCompatActivity() {
             }
             true
         }.getOrDefault(false)
-    }
-
-    private fun showGoogleMapsUnavailableDialog(
-        onUseSearch: () -> Unit,
-        onUseCurrentLocation: () -> Unit
-    ) {
-        MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.schedules_location_map_unavailable_title)
-            .setMessage(R.string.schedules_location_map_unavailable_message)
-            .setPositiveButton(R.string.schedules_location_use_search) { _, _ -> onUseSearch() }
-            .setNegativeButton(R.string.schedules_location_use_current) { _, _ -> onUseCurrentLocation() }
-            .setNeutralButton(android.R.string.cancel, null)
-            .showAccented()
     }
 
     private fun showLocationMapPickerDialog(
@@ -3259,64 +3796,6 @@ class SchedulesActivity : AppCompatActivity() {
         )
     }
 
-    private fun showLocationPickerDialog(
-        initialQuery: String,
-        onUseCurrentLocation: () -> Unit,
-        onPicked: (ResolvedLocation) -> Unit
-    ) {
-        val dialogContext = androidx.appcompat.view.ContextThemeWrapper(
-            this,
-            R.style.ThemeOverlay_Switchly_Dialog
-        )
-        val dialogView = LayoutInflater.from(dialogContext)
-            .inflate(R.layout.dialog_location_picker_search, FrameLayout(this), false)
-        val layoutQuery = dialogView.findViewById<TextInputLayout>(R.id.layoutLocationQuery)
-        val inputQuery = dialogView.findViewById<EditText>(R.id.inputLocationQuery)
-        val btnCurrent = dialogView.findViewById<MaterialButton>(R.id.btnPickerUseCurrentLocation)
-        inputQuery.setText(initialQuery)
-
-        val dialog = MaterialAlertDialogBuilder(dialogContext)
-            .setTitle(R.string.schedules_location_search_title)
-            .setView(dialogView)
-            .setPositiveButton(R.string.ok, null)
-            .setNegativeButton(R.string.cancel, null)
-            .create()
-
-        dialog.setOnShowListener {
-            dialog.styleSwitchlyDialogButtons()
-            val btnApply = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
-
-            btnApply.setOnClickListener {
-                val query = inputQuery.text?.toString()?.trim().orEmpty()
-                if (query.isBlank()) {
-                    layoutQuery.error = getString(R.string.schedules_location_picker_invalid)
-                    return@setOnClickListener
-                }
-
-                layoutQuery.error = null
-                btnApply.isEnabled = false
-                btnCurrent.isEnabled = false
-
-                resolveLocationQuery(query) { resolved ->
-                    btnApply.isEnabled = true
-                    btnCurrent.isEnabled = true
-                    if (resolved == null) {
-                        layoutQuery.error = getString(R.string.schedules_location_picker_not_found)
-                    } else {
-                        onPicked(resolved)
-                        dialog.dismiss()
-                    }
-                }
-            }
-
-            btnCurrent.setOnClickListener {
-                dialog.dismiss()
-                onUseCurrentLocation()
-            }
-        }
-
-        dialog.show()
-    }
 }
 
 private class ScheduleAdapter(
@@ -3328,6 +3807,7 @@ private class ScheduleAdapter(
     private val onEnterSelection: (Int) -> Unit,
     private val onEdit: (ScheduleStore.Schedule) -> Unit,
     private val onTest: (ScheduleStore.Schedule) -> Unit,
+    private val getTargetProfile: () -> String?,
 ) : androidx.recyclerview.widget.ListAdapter<ScheduleStore.Schedule, ScheduleViewHolder>(DIFF) {
 
     fun itemAt(position: Int): ScheduleStore.Schedule? = currentList.getOrNull(position)
@@ -3345,6 +3825,7 @@ private class ScheduleAdapter(
             onEnterSelection,
             onEdit,
             onTest,
+            getTargetProfile,
         )
     }
 
@@ -3378,6 +3859,7 @@ private class ScheduleViewHolder(
     private val onEnterSelection: (Int) -> Unit,
     private val onEdit: (ScheduleStore.Schedule) -> Unit,
     private val onTest: (ScheduleStore.Schedule) -> Unit,
+    private val getTargetProfile: () -> String?,
 ) : RecyclerView.ViewHolder(itemView) {
 
     private val kindIcon = itemView.findViewById<ImageView>(R.id.imgKind)
@@ -3423,7 +3905,16 @@ private class ScheduleViewHolder(
 
     init {
         switchEnabled.setOnCheckedChangeListener { _, isChecked ->
-            if (!binding && !isSelectionMode() && canInteract()) current?.let { onToggleEnabled(it, isChecked) }
+            if (!binding && !isSelectionMode()) {
+                val s = current
+                if (s != null && !canInteract()) {
+                    // Revert the visual toggle; onToggleEnabled warns via popover.
+                    binding = true
+                    switchEnabled.isChecked = s.enabled
+                    binding = false
+                }
+                s?.let { onToggleEnabled(it, isChecked) }
+            }
         }
 
         cardRoot.setOnClickListener {
@@ -3466,7 +3957,9 @@ private class ScheduleViewHolder(
 
         binding = true
         switchEnabled.isChecked = s.enabled
-        switchEnabled.isEnabled = canInteractNow && !isSelectionMode()
+        // Stay tappable while locked (dimmed via alpha below): denied taps warn
+        // via popover in onToggleEnabled instead of silently doing nothing.
+        switchEnabled.isEnabled = !isSelectionMode()
         tintEnabledSwitch()
         binding = false
 
@@ -3475,8 +3968,9 @@ private class ScheduleViewHolder(
         checkSelect.visibility = if (selecting) View.VISIBLE else View.GONE
         checkSelect.isChecked = selected
         btnTest.visibility = if (selecting) View.GONE else View.VISIBLE
-        cardRoot.isClickable = canInteractNow || selecting
-        cardRoot.isLongClickable = canInteractNow
+        // Stay tappable while locked: taps route to onEdit, which warns via popover.
+        cardRoot.isClickable = true
+        cardRoot.isLongClickable = true
         val ctx = itemView.context
         val accent = AccentColor.getAccentColorInt(ctx)
         if (selected) {
@@ -3485,11 +3979,9 @@ private class ScheduleViewHolder(
             cardRoot.setCardBackgroundColor(ColorUtils.setAlphaComponent(accent, 0x22))
         } else {
             cardRoot.strokeWidth = dp(1)
-            cardRoot.strokeColor = ContextCompat.getColor(ctx, R.color.switchly_card_stroke)
-            cardRoot.setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.switchly_card_bg))
+            cardRoot.strokeColor = ContextCompat.getColor(ctx, R.color.foqos_outline_variant)
+            cardRoot.setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.foqos_surface))
         }
-
-        title.text = s.title.ifBlank { s.profile }
 
         val hasWifi = !s.wifiSsid.isNullOrBlank()
         val hasBt = (!s.btDeviceName.isNullOrBlank() || !s.btDeviceAddress.isNullOrBlank())
@@ -3525,69 +4017,27 @@ private class ScheduleViewHolder(
         subtitle.alpha = a
         note.alpha = a
 
+        val customTitle = s.title.trim()
+        val hasExplicitTitle = customTitle.isNotBlank() &&
+            !customTitle.equals(s.profile.trim(), ignoreCase = true)
+
+        val hasWindow = !(s.startMinutes == 0 && s.endMinutes >= 24 * 60 - 1)
+        val timeWindowStr = if (hasWindow) {
+            ctx.getString(
+                R.string.schedules_time_range_fmt,
+                fmtMinutes(s.startMinutes),
+                fmtMinutes(s.endMinutes)
+            )
+        } else null
+
         val actionLabel = when (s.action) {
             ScheduleStore.Action.ENABLE -> ctx.getString(R.string.schedules_action_enable)
             ScheduleStore.Action.DISABLE -> ctx.getString(R.string.schedules_action_disable)
             ScheduleStore.Action.TOGGLE -> ctx.getString(R.string.schedules_action_toggle)
             ScheduleStore.Action.ENABLE_AND_DISABLE -> ctx.getString(R.string.schedules_action_enable_disable)
             ScheduleStore.Action.DISABLE_AND_ENABLE -> ctx.getString(R.string.schedules_action_disable_enable)
-        }
-
-        val timeOrConn: String = if (hasWifi || hasBt || hasLocation) {
-            val conn = when {
-                hasLocation -> {
-                    val label = s.locationLabel?.takeIf { it.isNotBlank() } ?: run {
-                        val lat = s.locationLat
-                        val lng = s.locationLng
-                        if (lat != null && lng != null) {
-                            String.format(Locale.getDefault(), "%.5f, %.5f", lat, lng)
-                        } else {
-                            "-"
-                        }
-                    }
-                    ctx.getString(
-                        R.string.schedules_conn_location_fmt,
-                        "$label · ${s.locationRadiusMeters}m"
-                    )
-                }
-                hasWifi && hasBt -> ctx.getString(
-                    R.string.schedules_conn_wifi_bt_fmt,
-                    s.wifiSsid,
-                    (s.btDeviceName ?: s.btDeviceAddress)
-                )
-                hasWifi -> ctx.getString(R.string.schedules_conn_wifi_fmt, s.wifiSsid)
-                else -> ctx.getString(R.string.schedules_conn_bt_fmt, s.btDeviceName ?: s.btDeviceAddress)
-            }
-            val base = ctx.getString(R.string.schedules_label_value_fmt, actionLabel, conn)
-            val hasWindow = !(s.startMinutes == 0 && s.endMinutes >= 24 * 60 - 1)
-            if (hasWindow) {
-                val window = ctx.getString(
-                    R.string.schedules_time_range_fmt,
-                    fmtMinutes(s.startMinutes),
-                    fmtMinutes(s.endMinutes)
-                )
-                "$base · $window"
-            } else {
-                base
-            }
-        } else {
-            when (s.action) {
-                ScheduleStore.Action.ENABLE_AND_DISABLE,
-                ScheduleStore.Action.DISABLE_AND_ENABLE -> {
-                    ctx.getString(
-                        R.string.schedules_time_range_fmt,
-                        fmtMinutes(s.startMinutes),
-                        fmtMinutes(s.endMinutes)
-                    )
-                }
-                else -> {
-                    ctx.getString(
-                        R.string.schedules_label_value_fmt,
-                        actionLabel,
-                        fmtMinutes(s.startMinutes)
-                    )
-                }
-            }
+            ScheduleStore.Action.DISCONNECT_ENABLE -> ctx.getString(R.string.schedules_action_disconnect_enable)
+            ScheduleStore.Action.DISCONNECT_DISABLE -> ctx.getString(R.string.schedules_action_disconnect_disable)
         }
 
         val daysLabel = when (s.type) {
@@ -3612,7 +4062,70 @@ private class ScheduleViewHolder(
             }
         }
 
-        subtitle.text = ctx.getString(R.string.schedules_subtitle_fmt, daysLabel, timeOrConn)
+        val (displayTitle, triggerSummary) = when {
+            hasLocation -> {
+                val label = s.locationLabel?.trim()?.takeIf { it.isNotBlank() } ?: run {
+                    val lat = s.locationLat
+                    val lng = s.locationLng
+                    if (lat != null && lng != null) {
+                        String.format(Locale.getDefault(), "%.5f, %.5f", lat, lng)
+                    } else {
+                        null
+                    }
+                }
+                val t = if (hasExplicitTitle) customTitle else (label ?: ctx.getString(R.string.schedules_type_location))
+                val trig = if (hasExplicitTitle) {
+                    ctx.getString(R.string.schedules_conn_location_fmt, "${label ?: "-"} · ${s.locationRadiusMeters}m")
+                } else {
+                    "${ctx.getString(R.string.schedules_type_location)} (${s.locationRadiusMeters}m)"
+                }
+                t to trig
+            }
+            hasWifi && hasBt -> {
+                val wifiName = s.wifiSsid.orEmpty()
+                val btName = (s.btDeviceName ?: s.btDeviceAddress).orEmpty()
+                val t = if (hasExplicitTitle) customTitle else "$wifiName + $btName"
+                val trig = ctx.getString(R.string.schedules_conn_wifi_bt_fmt, wifiName, btName)
+                t to trig
+            }
+            hasWifi -> {
+                val wifiName = s.wifiSsid?.trim().orEmpty()
+                val t = if (hasExplicitTitle) customTitle else wifiName.ifBlank { ctx.getString(R.string.schedules_type_wifi) }
+                val trig = if (hasExplicitTitle) ctx.getString(R.string.schedules_conn_wifi_fmt, wifiName) else ctx.getString(R.string.schedules_type_wifi)
+                t to trig
+            }
+            hasBt -> {
+                val btName = (s.btDeviceName ?: s.btDeviceAddress)?.trim().orEmpty()
+                val t = if (hasExplicitTitle) customTitle else btName.ifBlank { ctx.getString(R.string.schedules_type_bt) }
+                val trig = if (hasExplicitTitle) ctx.getString(R.string.schedules_conn_bt_fmt, btName) else ctx.getString(R.string.schedules_type_bt)
+                t to trig
+            }
+            else -> {
+                val timeStr = timeWindowStr ?: if (s.startMinutes > 0) fmtMinutes(s.startMinutes) else ctx.getString(R.string.schedules_conn_time_all_day)
+                val t = if (hasExplicitTitle) customTitle else timeStr
+                val trig = if (hasExplicitTitle) timeStr else null
+                t to trig
+            }
+        }
+
+        title.text = displayTitle
+
+        val subtitleParts = mutableListOf<String>()
+        if (daysLabel.isNotBlank()) {
+            subtitleParts += daysLabel
+        }
+        if (triggerSummary != null) {
+            subtitleParts += triggerSummary
+        }
+        if (timeWindowStr != null && (hasWifi || hasBt || hasLocation)) {
+            subtitleParts += timeWindowStr
+        }
+        subtitleParts += actionLabel
+        val activeTargetProfile = getTargetProfile()
+        if (activeTargetProfile == null && s.profile.isNotBlank()) {
+            subtitleParts += s.profile
+        }
+        subtitle.text = subtitleParts.joinToString(" · ")
 
         if (s.note.isNotBlank()) {
             note.visibility = View.VISIBLE

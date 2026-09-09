@@ -30,6 +30,7 @@ import at.saltyy.switchly.util.getIntCompat
 
 /**
  * Stores user-selected app visibility filters for Usage & Insights and app pickers.
+ * Apps hidden from app pickers are also excluded from Switchly app protection so sensitive apps are not inspected through Accessibility or blocked by existing app/in-app rules while hidden.
  * Both sets live in switchly_prefs so they follow the existing local/cloud backup path.
  */
 object IgnoredUsageAppsStore {
@@ -71,6 +72,14 @@ object IgnoredUsageAppsStore {
         if (UsageInsightsAppCatalog.shouldAlwaysHide(requested)) return false
         return storedPackages(context, KEY_APP_PICKER_PACKAGES)
             .any { it.equals(requested, ignoreCase = true) }
+    }
+
+    /**
+     * App-list hiding doubles as a protection exclusion.
+     * This keeps the existing two-list UI simple: an app hidden from Switchly's app pickers is not inspected or blocked while it remains hidden.
+     */
+    fun isExcludedFromProtection(context: Context, packageName: String): Boolean {
+        return isHiddenFromAppPickers(context, packageName)
     }
 
     fun setAppPickerHiddenPackages(context: Context, packages: Collection<String>) {

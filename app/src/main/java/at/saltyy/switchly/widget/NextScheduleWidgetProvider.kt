@@ -78,6 +78,11 @@ class NextScheduleWidgetProvider : AppWidgetProvider() {
                 setTextViewText(R.id.widgetNextScheduleName, content.name)
                 setTextViewText(R.id.widgetNextScheduleTime, content.time)
                 setTextViewText(R.id.widgetNextScheduleStatus, content.status)
+                setTextViewText(
+                    R.id.widgetNextScheduleBadge,
+                    if (findNextBoundary(context) != null) context.getString(R.string.blocking_mode_schedule)
+                    else context.getString(R.string.widget_active_timer_inactive)
+                )
                 setOnClickPendingIntent(
                     R.id.widgetNextScheduleRoot,
                     PendingIntent.getActivity(

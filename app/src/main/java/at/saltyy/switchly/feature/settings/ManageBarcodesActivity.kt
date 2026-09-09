@@ -52,6 +52,8 @@ import at.saltyy.switchly.ui.EdgeToEdgeUtils
 import at.saltyy.switchly.ui.SwitchlyDropdownAdapter
 import at.saltyy.switchly.ui.attachEditDeleteSwipe
 import at.saltyy.switchly.ui.ThemeUtils
+import at.saltyy.switchly.ui.showWarnPill
+import at.saltyy.switchly.ui.showWarnPillOnContent
 import at.saltyy.switchly.ui.updateSelectionSubtitle
 import at.saltyy.switchly.ui.dialog.showAccented
 import at.saltyy.switchly.ui.dialog.showDestructiveAccented
@@ -72,8 +74,9 @@ import java.util.Locale
 
 class ManageBarcodesActivity : AppCompatActivity() {
 
-    private companion object {
+    companion object {
         private const val DEFAULT_MINUTES = 10
+        const val EXTRA_FORCE_ALLOW = "extra_force_allow"
     }
 
     private lateinit var recycler: RecyclerView
@@ -130,8 +133,9 @@ class ManageBarcodesActivity : AppCompatActivity() {
             return
         }
 
-        if (!AutomationModeStore.shouldShowBarcodeTools(this)) {
-            Toast.makeText(this, R.string.toast_manage_barcodes_requires_enabled, Toast.LENGTH_LONG).show()
+        val forceAllow = intent.getBooleanExtra(EXTRA_FORCE_ALLOW, false)
+        if (!forceAllow && !AutomationModeStore.shouldShowBarcodeTools(this)) {
+            showWarnPillOnContent(R.string.toast_manage_barcodes_requires_enabled)
             finish()
             return
         }
@@ -254,7 +258,6 @@ class ManageBarcodesActivity : AppCompatActivity() {
             .setPositiveButton(R.string.ok, null)
             .showAccented()
     }
-
 
     private fun refresh() {
         val entries = ScanCodeStore.getEntries(this).filter { it.kind == ScanCodeStore.Kind.BARCODE }
@@ -467,7 +470,7 @@ class ManageBarcodesActivity : AppCompatActivity() {
                 minutesText = acMinutes.text?.toString(),
             )
             if (form == null) {
-                Toast.makeText(this, R.string.invalid_value, Toast.LENGTH_SHORT).show()
+                view.showWarnPill(R.string.invalid_value)
                 return@setOnClickListener
             }
 

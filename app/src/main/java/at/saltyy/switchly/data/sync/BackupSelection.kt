@@ -216,6 +216,7 @@ object BackupCategoryFilter {
     private const val FIELD_STATS_DATABASE = "stats_database"
     private const val FIELD_SCHEDULES_PREFS = "schedules_prefs"
     private const val FIELD_UI_HINTS_PREFS = "ui_hints_prefs"
+    const val FIELD_TEMP_PAUSE_PREFS = "temp_pause_prefs"
 
     fun includedCategoryIdsFromPayload(payload: Map<*, *>): Set<String>? {
         val raw = payload[FIELD_INCLUDED_CATEGORIES] ?: return null
@@ -236,6 +237,7 @@ object BackupCategoryFilter {
         val internalMap = filterInternalPrefs(stringKeyMap(payload[FIELD_SWITCHLY_PREFS]), selection)
         val schedulesMap = filterSchedulesPrefs(stringKeyMap(payload[FIELD_SCHEDULES_PREFS]), selection)
         val uiHintsMap = filterUiHintsPrefs(stringKeyMap(payload[FIELD_UI_HINTS_PREFS]), selection)
+        val tempPauseMap = filterTempPausePrefs(stringKeyMap(payload[FIELD_TEMP_PAUSE_PREFS]), selection)
         val statsMap = filterStats(stringKeyMap(payload[FIELD_STATS]), selection)
         val statsDatabase = if (selection.includes(BackupCategory.STATISTICS)) {
             payload[FIELD_STATS_DATABASE]
@@ -254,6 +256,7 @@ object BackupCategoryFilter {
             FIELD_STATS_DATABASE to statsDatabase,
             FIELD_SCHEDULES_PREFS to schedulesMap,
             FIELD_UI_HINTS_PREFS to uiHintsMap,
+            FIELD_TEMP_PAUSE_PREFS to tempPauseMap,
             FIELD_INCLUDED_CATEGORIES to selection.categoryIds.toList().sorted(),
             FIELD_IS_PARTIAL_BACKUP to !selection.isFull,
         )
@@ -267,6 +270,9 @@ object BackupCategoryFilter {
 
     fun filterUiHintsPrefs(src: Map<String, Any?>, selection: BackupSelection): Map<String, Any?> =
         src.filterKeys { key -> selection.matchesAny(categoriesForUiHintsPrefsKey(key)) }
+
+    fun filterTempPausePrefs(src: Map<String, Any?>, selection: BackupSelection): Map<String, Any?> =
+        src.filterKeys { key -> selection.matchesAny(categoriesForTempPausePrefsKey(key)) }
 
     fun filterStats(src: Map<String, Any?>, selection: BackupSelection): Map<String, Any?> =
         if (selection.includes(BackupCategory.STATISTICS)) src else emptyMap()
@@ -548,6 +554,15 @@ object BackupCategoryFilter {
 
         key == "primary_toggle_tap_count" -> setOf(BackupCategory.STATISTICS)
 
+        else -> setOf(BackupCategory.APP_PREFERENCES)
+    }
+
+    // Temp-pause caps ("temp_pause_<profile>_...") are per-profile protection settings.
+    // They restore with either PROFILES or CONTROL_SETTINGS so both "profiles only"
+    // and control-settings backups carry them; usage counters travel with the caps
+    // so a same-day restore cannot bypass an exhausted daily budget.
+    private fun categoriesForTempPausePrefsKey(key: String): Set<BackupCategory> = when {
+        key.startsWith("temp_pause_") -> setOf(BackupCategory.PROFILES, BackupCategory.CONTROL_SETTINGS)
         else -> setOf(BackupCategory.APP_PREFERENCES)
     }
 

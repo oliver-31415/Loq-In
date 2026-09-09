@@ -24,7 +24,6 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.content.res.Configuration
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.Drawable
@@ -53,6 +52,8 @@ import at.saltyy.switchly.data.prefs.ExactAlarmPermissionSync
 import at.saltyy.switchly.data.prefs.IgnoredUsageAppsStore
 import at.saltyy.switchly.data.prefs.NotificationBlockStore
 import at.saltyy.switchly.data.prefs.ProfileStore
+import at.saltyy.switchly.data.prefs.DomainBlockStore
+import at.saltyy.switchly.feature.onboarding.OnboardingActivity
 import at.saltyy.switchly.feature.onboarding.OnboardingUsagePreviewRenderer
 import at.saltyy.switchly.feature.faq.FaqActivity
 import at.saltyy.switchly.feature.settings.AccessibilityDisclosure
@@ -101,10 +102,18 @@ class OnboardingPagerAdapter(
         private val btn = itemView.findViewById<MaterialButton>(R.id.btn_action)
 
         fun bind(activity: Activity, page: OnboardingPage) {
+            val surface = ContextCompat.getColor(activity, R.color.foqos_surface)
+            val onSurface = ContextCompat.getColor(activity, R.color.foqos_on_surface)
+            val onSurfaceVariant = ContextCompat.getColor(activity, R.color.foqos_on_surface_variant)
+            val accent = AccentColor.getAccentColorInt(activity)
+            val onAccent = readableOnColor(accent)
+
             title.text = page.title
+            title.setTextColor(onSurface)
 
             // Allow lightweight formatting (bold, line breaks, bullet points) in onboarding copy.
             desc.text = HtmlCompat.fromHtml(page.desc, HtmlCompat.FROM_HTML_MODE_COMPACT)
+            desc.setTextColor(onSurfaceVariant)
 
             // Keep onboarding copy centered and consistent across all steps.
             desc.gravity = android.view.Gravity.CENTER
@@ -123,6 +132,16 @@ class OnboardingPagerAdapter(
                 icon.isVisible = false
             }
 
+            // Sleek circular hero container with subtle accent wash matching user's theme
+            val heroContainerColor = ColorUtils.setAlphaComponent(accent, 0x1E)
+            iconCard.setCardBackgroundColor(heroContainerColor)
+            iconCard.radius = 32f * itemView.resources.displayMetrics.density
+            iconCard.strokeWidth = 0
+            iconCard.cardElevation = 0f
+
+            icon.setColorFilter(accent)
+            icon.imageTintList = ColorStateList.valueOf(accent)
+
             badge.text = when (page.level) {
                 OnboardingPage.Level.START -> activity.getString(R.string.onb_badge_start)
                 OnboardingPage.Level.REQUIRED -> activity.getString(R.string.onb_badge_required)
@@ -131,16 +150,23 @@ class OnboardingPagerAdapter(
                 OnboardingPage.Level.INFO -> ""
             }
             badge.isVisible = page.level != OnboardingPage.Level.INFO
+            if (badge.isVisible) {
+                val isRequired = page.level == OnboardingPage.Level.REQUIRED
+                badge.background = GradientDrawable().apply {
+                    shape = GradientDrawable.RECTANGLE
+                    cornerRadius = 12f * itemView.resources.displayMetrics.density
+                    setColor(
+                        if (isRequired) ColorUtils.setAlphaComponent(accent, 0x24)
+                        else ColorUtils.setAlphaComponent(onSurface, 0x16)
+                    )
+                }
+                badge.setTextColor(
+                    if (isRequired) accent
+                    else ColorUtils.setAlphaComponent(onSurface, 0xB0)
+                )
+            }
 
             val completed = page.completionCheck?.invoke(activity) == true
-            val accent = AccentColor.getAccentColorInt(activity)
-            val onAccent = readableOnColor(accent)
-            val heroIconTint = onboardingHeroIconTint(activity)
-
-            // Keep onboarding hero icon card in sync with selected accent (including custom color).
-            iconCard.setCardBackgroundColor(accent)
-            icon.imageTintList = ColorStateList.valueOf(heroIconTint)
-            icon.setColorFilter(heroIconTint)
 
             placeActionButton(page)
             renderDetails(activity, page, accent)
@@ -173,28 +199,34 @@ class OnboardingPagerAdapter(
                 btn.icon = null
             }
             val completedButStillEditable = completed && hasAction && page.keepActionEnabledWhenCompleted
-            btn.isVisible = hasAction || completed
+            btn.isVisible = hasAction || (completed && !page.actionLabel.isNullOrBlank())
 
             if (completedButStillEditable) {
                 btn.text = page.completedLabel ?: page.actionLabel
                 btn.isEnabled = true
                 btn.alpha = 1f
-                btn.backgroundTintList = ColorStateList.valueOf(accent)
-                btn.setTextColor(onAccent)
+                btn.backgroundTintList = ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 0x22))
+                btn.setTextColor(accent)
+                btn.strokeColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 0x55))
+                btn.strokeWidth = (1 * itemView.resources.displayMetrics.density).toInt()
                 btn.setOnClickListener { runPageAction(activity, page, accent) }
             } else if (completed) {
                 btn.text = page.completedLabel ?: activity.getString(R.string.onb_granted)
                 btn.isEnabled = false
-                btn.alpha = 0.85f
-                btn.backgroundTintList = ColorStateList.valueOf(accent)
-                btn.setTextColor(onAccent)
+                btn.alpha = 0.9f
+                btn.backgroundTintList = ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 0x1A))
+                btn.setTextColor(accent)
+                btn.strokeColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 0x44))
+                btn.strokeWidth = (1 * itemView.resources.displayMetrics.density).toInt()
                 btn.setOnClickListener(null)
             } else if (hasAction) {
                 btn.text = page.actionLabel
                 btn.isEnabled = true
                 btn.alpha = 1f
-                btn.backgroundTintList = ColorStateList.valueOf(accent)
-                btn.setTextColor(onAccent)
+                btn.backgroundTintList = ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 0x22))
+                btn.setTextColor(accent)
+                btn.strokeColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 0x55))
+                btn.strokeWidth = (1 * itemView.resources.displayMetrics.density).toInt()
                 btn.setOnClickListener { runPageAction(activity, page, accent) }
             } else {
                 btn.setOnClickListener(null)
@@ -238,23 +270,18 @@ class OnboardingPagerAdapter(
             val isHomeModes = page.optionalPreview == OnboardingPage.OptionalPreview.HOME_MODES
 
             fun applyCenteredScrollSpacing() {
-                val viewportHeight = itemView.height.takeIf { it > 0 }
-                    ?: itemView.resources.displayMetrics.heightPixels
-                val sharedHeroTop = (viewportHeight * 0.075f).toInt()
-                    .coerceIn(dp(40f), dp(68f))
-                val dynamicTop = if (isUsagePreview) dp(18f) else sharedHeroTop
-                val dynamicBottom = if (isPermissionOverview) dp(32f) else dp(24f)
-                pageContent.setPadding(dp(24f), dynamicTop, dp(24f), dynamicBottom)
+                val dynamicTop = if (isUsagePreview) dp(12f) else dp(16f)
+                val dynamicBottom = if (isPermissionOverview) dp(28f) else dp(20f)
+                pageContent.setPadding(dp(20f), dynamicTop, dp(20f), dynamicBottom)
                 pageContent.gravity = android.view.Gravity.CENTER_HORIZONTAL
 
-                // Every standard onboarding page uses the same hero and icon dimensions so the visual anchor does not jump vertically while swiping between steps.
                 iconCard.updateLayoutParams<ViewGroup.LayoutParams> {
-                    width = dp(144f)
-                    height = dp(144f)
+                    width = dp(64f)
+                    height = dp(64f)
                 }
                 icon.updateLayoutParams<ViewGroup.LayoutParams> {
-                    width = dp(84f)
-                    height = dp(84f)
+                    width = dp(30f)
+                    height = dp(30f)
                 }
             }
 
@@ -265,9 +292,9 @@ class OnboardingPagerAdapter(
             if (lp != null) {
                 lp.topMargin = when {
                     isUsagePreview -> dp(8f)
-                    isPermissionOverview -> dp(18f)
+                    isPermissionOverview -> dp(16f)
                     isHomeModes -> dp(10f)
-                    else -> dp(16f)
+                    else -> dp(14f)
                 }
                 detailsContainer.layoutParams = lp
             }
@@ -459,7 +486,7 @@ class OnboardingPagerAdapter(
 
             if (page.detailRows.isNotEmpty()) {
                 detailsContainer.isVisible = true
-                page.detailRows.forEachIndexed { index, row -> addDetailRow(activity, row, accent, iconForDetailRow(page, index)) }
+                renderGroupedDetailRows(activity, page, accent)
             }
         }
 
@@ -703,8 +730,8 @@ class OnboardingPagerAdapter(
             val density = itemView.resources.displayMetrics.density
             fun dp(value: Float): Int = (value * density).toInt()
 
-            val surface = ContextCompat.getColor(activity, R.color.switchly_card_bg)
-            val outline = ContextCompat.getColor(activity, R.color.switchly_card_stroke)
+            val surface = ContextCompat.getColor(activity, R.color.foqos_surface)
+            val outline = ContextCompat.getColor(activity, R.color.foqos_outline_variant)
             val onSurface = MaterialColors.getColor(itemView, com.google.android.material.R.attr.colorOnSurface)
             val choices = HomeModeDialogHelper.homeLayoutModeChoices(activity)
 
@@ -794,8 +821,8 @@ class OnboardingPagerAdapter(
             val density = itemView.resources.displayMetrics.density
             fun dp(value: Float): Int = (value * density).toInt()
 
-            val surface = ContextCompat.getColor(activity, R.color.switchly_card_bg)
-            val outline = ContextCompat.getColor(activity, R.color.switchly_card_stroke)
+            val surface = ContextCompat.getColor(activity, R.color.foqos_surface)
+            val outline = ContextCompat.getColor(activity, R.color.foqos_outline_variant)
             val onSurface = MaterialColors.getColor(itemView, com.google.android.material.R.attr.colorOnSurface)
 
             val card = MaterialCardView(activity).apply {
@@ -898,10 +925,49 @@ class OnboardingPagerAdapter(
             accent: Int
         ) {
             detailsContainer.removeAllViews()
-            detailsContainer.isVisible = page.detailRows.isNotEmpty()
-            page.detailRows.forEachIndexed { index, row ->
-                addDetailRow(activity, row, accent, iconForDetailRow(page, index))
+            detailsContainer.isVisible = true
+
+            val onbActivity = activity as? OnboardingActivity
+            val profile = onbActivity?.let { OnboardingActivity.ensureOnboardingProfile(it) }
+                ?: ProfileStore.getCurrent(activity) ?: "default"
+            val appCount = ProfileStore.getSelectedForProfileMode(activity, profile).size
+            val websiteCount = DomainBlockStore.getDomainsForProfileAndMode(activity, profile).size
+
+            val appsStatus = if (appCount > 0) {
+                activity.resources.getQuantityString(R.plurals.onb_apps_count_plural, appCount, appCount)
+            } else {
+                activity.getString(R.string.onb_block_targets_apps_none)
             }
+
+            addUnifiedOnboardingRow(
+                activity = activity,
+                title = activity.getString(R.string.onb_block_targets_apps_title),
+                iconRes = R.drawable.apps_24,
+                info = activity.getString(R.string.onb_block_targets_apps_desc),
+                status = appsStatus,
+                highlighted = appCount > 0,
+                accent = accent,
+                clickable = true,
+                onClick = { onbActivity?.openOnboardingAppPicker() }
+            )
+
+            val websitesStatus = if (websiteCount > 0) {
+                activity.resources.getQuantityString(R.plurals.onb_websites_count_plural, websiteCount, websiteCount)
+            } else {
+                activity.getString(R.string.onb_block_targets_websites_none)
+            }
+
+            addUnifiedOnboardingRow(
+                activity = activity,
+                title = activity.getString(R.string.onb_block_targets_websites_title),
+                iconRes = R.drawable.language_24,
+                info = activity.getString(R.string.onb_block_targets_websites_desc),
+                status = websitesStatus,
+                highlighted = websiteCount > 0,
+                accent = accent,
+                clickable = true,
+                onClick = { onbActivity?.openOnboardingWebsiteManager() }
+            )
         }
 
         private fun renderHomeCustomizationDetails(activity: Activity, accent: Int) {
@@ -920,12 +986,12 @@ class OnboardingPagerAdapter(
             val density = itemView.resources.displayMetrics.density
             fun dp(value: Float): Int = (value * density).toInt()
 
-            val surface = ContextCompat.getColor(activity, R.color.switchly_card_bg)
+            val surface = ContextCompat.getColor(activity, R.color.foqos_surface)
             val onSurface = MaterialColors.getColor(
                 itemView,
                 com.google.android.material.R.attr.colorOnSurface
             )
-            val outline = ContextCompat.getColor(activity, R.color.switchly_card_stroke)
+            val outline = ContextCompat.getColor(activity, R.color.foqos_outline_variant)
             val card = MaterialCardView(activity).apply {
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
@@ -1065,8 +1131,8 @@ class OnboardingPagerAdapter(
         ) {
             val density = itemView.resources.displayMetrics.density
             fun dp(value: Float): Int = (value * density).toInt()
-            val surface = ContextCompat.getColor(activity, R.color.switchly_card_bg)
-            val outline = ContextCompat.getColor(activity, R.color.switchly_card_stroke)
+            val surface = ContextCompat.getColor(activity, R.color.foqos_surface)
+            val outline = ContextCompat.getColor(activity, R.color.foqos_outline_variant)
             val onSurface = MaterialColors.getColor(itemView, com.google.android.material.R.attr.colorOnSurface)
 
             val card = MaterialCardView(activity).apply {
@@ -1223,6 +1289,11 @@ class OnboardingPagerAdapter(
 
         private fun iconForDetailRow(page: OnboardingPage, index: Int): Int {
             return when (page.iconRes) {
+                R.drawable.switch_account_24 -> when (index) {
+                    0 -> R.drawable.dashboard_24
+                    1 -> R.drawable.tune_24
+                    else -> R.drawable.folder_24
+                }
                 R.drawable.play_arrow_24 -> when (index) {
                     0 -> R.drawable.apps_24
                     1 -> R.drawable.toggle_on_24
@@ -1294,6 +1365,104 @@ class OnboardingPagerAdapter(
             )
         }
 
+        private fun renderGroupedDetailRows(
+            activity: Activity,
+            page: OnboardingPage,
+            accent: Int
+        ) {
+            val density = itemView.resources.displayMetrics.density
+            fun dp(value: Float): Int = (value * density).toInt()
+
+            val surface = ContextCompat.getColor(activity, R.color.foqos_surface)
+            val onSurface = ContextCompat.getColor(activity, R.color.foqos_on_surface)
+            val outline = ContextCompat.getColor(activity, R.color.foqos_outline_variant)
+            val dividerColor = ColorUtils.setAlphaComponent(outline, 130)
+
+            val groupedCard = MaterialCardView(activity).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { topMargin = dp(12f) }
+                radius = dp(16f).toFloat()
+                cardElevation = 0f
+                strokeWidth = dp(1f)
+                strokeColor = outline
+                setCardBackgroundColor(surface)
+            }
+
+            val cardContent = LinearLayout(activity).apply {
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+                orientation = LinearLayout.VERTICAL
+            }
+
+            val rows = page.detailRows
+            rows.forEachIndexed { index, rowText ->
+                val iconRes = iconForDetailRow(page, index)
+                val rowView = LinearLayout(activity).apply {
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT
+                    )
+                    orientation = LinearLayout.HORIZONTAL
+                    gravity = android.view.Gravity.CENTER_VERTICAL
+                    setPadding(dp(16f), dp(13f), dp(16f), dp(13f))
+                }
+
+                if (iconRes != null) {
+                    val iconBg = GradientDrawable().apply {
+                        shape = GradientDrawable.RECTANGLE
+                        cornerRadius = dp(10f).toFloat()
+                        setColor(ColorUtils.setAlphaComponent(accent, 26))
+                    }
+                    val leadingIcon = ImageView(activity).apply {
+                        layoutParams = LinearLayout.LayoutParams(dp(36f), dp(36f)).apply {
+                            marginEnd = dp(14f)
+                        }
+                        background = iconBg
+                        setPadding(dp(7f), dp(7f), dp(7f), dp(7f))
+                        setImageResource(iconRes)
+                        imageTintList = ColorStateList.valueOf(accent)
+                        contentDescription = null
+                    }
+                    rowView.addView(leadingIcon)
+                }
+
+                val textView = TextView(activity).apply {
+                    layoutParams = LinearLayout.LayoutParams(
+                        0,
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        1f
+                    )
+                    text = rowText
+                    textSize = 14.5f
+                    setTextColor(onSurface)
+                    setLineSpacing(0f, 1.15f)
+                }
+                rowView.addView(textView)
+                cardContent.addView(rowView)
+
+                if (index < rows.size - 1) {
+                    val divider = View(activity).apply {
+                        layoutParams = LinearLayout.LayoutParams(
+                            LinearLayout.LayoutParams.MATCH_PARENT,
+                            dp(1f)
+                        ).apply {
+                            marginStart = if (iconRes != null) dp(66f) else dp(16f)
+                            marginEnd = dp(16f)
+                        }
+                        setBackgroundColor(dividerColor)
+                    }
+                    cardContent.addView(divider)
+                }
+            }
+
+            groupedCard.addView(cardContent)
+            detailsContainer.addView(groupedCard)
+        }
+
         private fun addDetailRow(activity: Activity, text: String, accent: Int, iconRes: Int?) {
             addUnifiedOnboardingRow(
                 activity = activity,
@@ -1349,9 +1518,9 @@ class OnboardingPagerAdapter(
             val density = itemView.resources.displayMetrics.density
             fun dp(value: Float): Int = (value * density).toInt()
 
-            val surface = ContextCompat.getColor(activity, R.color.switchly_card_bg)
+            val surface = ContextCompat.getColor(activity, R.color.foqos_surface)
             val onSurface = MaterialColors.getColor(itemView, com.google.android.material.R.attr.colorOnSurface)
-            val outline = ContextCompat.getColor(activity, R.color.switchly_card_stroke)
+            val outline = ContextCompat.getColor(activity, R.color.foqos_outline_variant)
             val softAccent = ColorUtils.setAlphaComponent(accent, 18)
 
             val hasInfo = !info.isNullOrBlank()
@@ -1417,8 +1586,10 @@ class OnboardingPagerAdapter(
                 textSize = 14.8f
                 typeface = android.graphics.Typeface.DEFAULT_BOLD
                 setTextColor(onSurface)
-                maxLines = 2
-                ellipsize = android.text.TextUtils.TruncateAt.END
+                // Onboarding copy must remain fully readable on narrow screens and with larger font scaling.
+                // The row/card uses wrap_content and the page itself scrolls, so truncating here only hides guidance.
+                maxLines = Int.MAX_VALUE
+                ellipsize = null
                 includeFontPadding = false
             }
             texts.addView(titleView)
@@ -1430,8 +1601,8 @@ class OnboardingPagerAdapter(
                     alpha = 0.78f
                     setTextColor(onSurface)
                     setPadding(0, dp(5f), 0, 0)
-                    maxLines = 3
-                    ellipsize = android.text.TextUtils.TruncateAt.END
+                    maxLines = Int.MAX_VALUE
+                    ellipsize = null
                     includeFontPadding = false
                 }
                 texts.addView(infoView)
@@ -1444,8 +1615,8 @@ class OnboardingPagerAdapter(
                     typeface = android.graphics.Typeface.DEFAULT_BOLD
                     setTextColor(if (highlighted) accent else ColorUtils.setAlphaComponent(onSurface, 185))
                     setPadding(0, dp(7f), 0, 0)
-                    maxLines = 2
-                    ellipsize = android.text.TextUtils.TruncateAt.END
+                    maxLines = Int.MAX_VALUE
+                    ellipsize = null
                     includeFontPadding = false
                 }
                 texts.addView(statusView)
@@ -1454,13 +1625,18 @@ class OnboardingPagerAdapter(
             row.addView(texts)
 
             if (clickable) {
-                val arrow = ImageView(activity).apply {
+                val trailingIcon = ImageView(activity).apply {
                     layoutParams = LinearLayout.LayoutParams(dp(22f), dp(22f)).apply { marginStart = dp(12f) }
-                    setImageResource(R.drawable.keyboard_arrow_right_24)
-                    imageTintList = ColorStateList.valueOf(ColorUtils.setAlphaComponent(if (highlighted) accent else onSurface, if (highlighted) 210 else 130))
+                    if (highlighted) {
+                        setImageResource(R.drawable.check_circle_24)
+                        imageTintList = ColorStateList.valueOf(accent)
+                    } else {
+                        setImageResource(R.drawable.keyboard_arrow_right_24)
+                        imageTintList = ColorStateList.valueOf(ColorUtils.setAlphaComponent(onSurface, 130))
+                    }
                     contentDescription = null
                 }
-                row.addView(arrow)
+                row.addView(trailingIcon)
             }
 
             card.addView(row)
@@ -1544,12 +1720,3 @@ private fun readableOnColor(color: Int): Int {
     }
 }
 
-private fun onboardingHeroIconTint(context: Context): Int {
-    val isNight = (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
-        Configuration.UI_MODE_NIGHT_YES
-    return if (isNight) {
-        Color.WHITE
-    } else {
-        Color.rgb(24, 32, 28)
-    }
-}

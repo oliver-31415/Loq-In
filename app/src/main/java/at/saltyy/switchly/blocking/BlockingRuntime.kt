@@ -29,8 +29,9 @@ import at.saltyy.switchly.util.PermissionUtils
 
 /**
  * Blocking runtime selector.
- * Switchly is now Accessibility-only: we rely entirely on [SwitchlyAccessibilityService].
- * Accessibility is managed by the system, therefore there is no app-blocking foreground service that we need to start/stop.
+ * Full protection uses [SwitchlyAccessibilityService].
+ * On Android 16 devices enrolled in Advanced Protection, Accessibility can be unavailable; in that specific case Switchly may start a limited UsageEvents-based whole-app fallback.
+ * Website and in-app protection remain Accessibility-only.
  */
 object BlockingRuntime {
 
@@ -285,10 +286,10 @@ object BlockingRuntime {
         )
     }
 
-    // No-op in the Accessibility-only runtime.
     fun ensureRunning(ctx: Context) {
-        // Accessibility-only runtime: nothing to start here.
-        // But we do refresh the "protection inactive" notification state and reconcile auto-blocked new apps.
+        // Full enforcement is system-managed through Accessibility.
+        // Advanced Protection may make that runtime unavailable, so reconcile the limited UsageEvents fallback as well.
+        // We also refresh protection health and reconcile auto-blocked new apps.
         runCatching {
             val changed = ProfileStore.reconcileAutoBlockNewApps(ctx)
             if (changed > 0) {
@@ -296,16 +297,21 @@ object BlockingRuntime {
             }
         }
         runCatching { at.saltyy.switchly.util.ProtectionStatusNotifier.refresh(ctx) }
+        runCatching { OemAccessibilityKeepAlive.sync(ctx) }
+        runCatching { UsageAccessFallbackBlocking.sync(ctx) }
     }
 
     /**
-     * No-op in the Accessibility-only runtime.
-     * Callers may still call this when the user disables Switchly.
+     * Stops app-managed fallback runtime pieces when Switchly is disabled.
+     * Accessibility itself remains system-managed and is never toggled by Switchly.
      */
     fun stop(ctx: Context) {
         // When Switchly is turned off or temporarily disabled, clear stale blocker UI/state.
         runCatching { BlockerActivity.clearVisibilityState("runtime_stop") }
         runCatching { AppLogStore.append(ctx, "Blocking", "Runtime stopped and blocker state cleared") }
         runCatching { at.saltyy.switchly.util.ProtectionStatusNotifier.refresh(ctx) }
+        // sync() reads the real persisted Switchly state, so transient UI flows cannot accidentally tear down a runtime that should still be active.
+        runCatching { OemAccessibilityKeepAlive.sync(ctx) }
+        runCatching { UsageAccessFallbackBlocking.sync(ctx) }
     }
 }

@@ -53,6 +53,9 @@ object ScheduleRuntimeStore {
     private const val KEY_LAST_DISABLE_BLOCKED_NFC_MS = "last_disable_blocked_nfc_ms"
 
     private const val KEY_LAST_FIRED_PREFIX = "last_fired_" // + scheduleId -> token
+    private const val KEY_LAST_CONN_ACTIVE_PREFIX = "last_conn_active_" // + scheduleId -> ms of last active Wi-Fi/BT evaluation
+    private const val KEY_CONN_ACTIVE_SINCE_PREFIX = "conn_active_since_" // + scheduleId -> ms this continuous active period began
+    private const val KEY_MANUAL_DISABLE_MS = "manual_disable_ms" // last manual turn-off wall time
     private const val KEY_LAST_LOCATION_TRANSITION_PREFIX = "last_location_transition_" // + scheduleId + _enter/_exit -> ms
     private const val KEY_LOCATION_ARMED_PREFIX = "location_armed_" // + scheduleId -> bool
 
@@ -178,6 +181,36 @@ object ScheduleRuntimeStore {
         sp.edit { remove(KEY_LAST_FIRED_PREFIX + scheduleId) }
     }
 
+    fun getLastConnActiveMs(ctx: Context, scheduleId: Int): Long {
+        val sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        return sp.getLongCompat(KEY_LAST_CONN_ACTIVE_PREFIX + scheduleId, 0L)
+    }
+
+    fun setLastConnActiveMs(ctx: Context, scheduleId: Int, value: Long) {
+        val sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        sp.edit { putLong(KEY_LAST_CONN_ACTIVE_PREFIX + scheduleId, value) }
+    }
+
+    fun getConnActiveSinceMs(ctx: Context, scheduleId: Int): Long {
+        val sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        return sp.getLongCompat(KEY_CONN_ACTIVE_SINCE_PREFIX + scheduleId, 0L)
+    }
+
+    fun setConnActiveSinceMs(ctx: Context, scheduleId: Int, value: Long) {
+        val sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        sp.edit { putLong(KEY_CONN_ACTIVE_SINCE_PREFIX + scheduleId, value) }
+    }
+
+    fun getManualDisableMs(ctx: Context): Long {
+        val sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        return sp.getLongCompat(KEY_MANUAL_DISABLE_MS, 0L)
+    }
+
+    fun setManualDisableMs(ctx: Context, value: Long) {
+        val sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        sp.edit { putLong(KEY_MANUAL_DISABLE_MS, value) }
+    }
+
     fun markTickNow(ctx: Context) {
         val sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         sp.edit { putLong(KEY_LAST_TICK_MS, System.currentTimeMillis()) }
@@ -236,6 +269,21 @@ object ScheduleRuntimeStore {
         }
     }
 
+    private const val KEY_CONN_ARMED_PREFIX = "conn_armed_"
+
+    fun isConnArmed(ctx: Context, scheduleId: Int): Boolean {
+        val sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        return sp.getBoolean(KEY_CONN_ARMED_PREFIX + scheduleId, false)
+    }
+
+    fun setConnArmed(ctx: Context, scheduleId: Int, armed: Boolean) {
+        val sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        sp.edit {
+            if (armed) putBoolean(KEY_CONN_ARMED_PREFIX + scheduleId, true)
+            else remove(KEY_CONN_ARMED_PREFIX + scheduleId)
+        }
+    }
+
     fun resetActiveScheduleState(ctx: Context) {
         val sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         sp.edit {
@@ -248,8 +296,11 @@ object ScheduleRuntimeStore {
             remove(KEY_ACTIVE_RANGE_SCHEDULE_ID)
             remove(KEY_MANUAL_SCHEDULE_PAUSE_ACTIVE)
             remove(KEY_MANUAL_SCHEDULE_PAUSE_SCHEDULE_ID)
+            remove(KEY_MANUAL_DISABLE_MS)
             val keys = sp.all.keys.filter {
                 it.startsWith(KEY_LAST_FIRED_PREFIX) ||
+                    it.startsWith(KEY_LAST_CONN_ACTIVE_PREFIX) ||
+                    it.startsWith(KEY_CONN_ACTIVE_SINCE_PREFIX) ||
                     it.startsWith(KEY_LAST_LOCATION_TRANSITION_PREFIX) ||
                     it.startsWith(KEY_LOCATION_ARMED_PREFIX)
             }

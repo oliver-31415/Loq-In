@@ -22,10 +22,11 @@ package at.saltyy.switchly.premium
 import android.app.Activity
 import android.content.Context
 import android.util.Log
-import android.widget.Toast
 import androidx.core.content.edit
 import at.saltyy.switchly.BuildConfig
 import at.saltyy.switchly.R
+import at.saltyy.switchly.ui.showWarnPillAnywhere
+import at.saltyy.switchly.ui.showWarnPillOnContent
 
 /**
  * Central place for Premium status and purchase routing.
@@ -46,6 +47,13 @@ object PremiumManager {
     private const val KEY_PREMIUM_REDEEMED_AT = "premium_redeemed_at"
     private const val KEY_PREMIUM_CODE_LAST4 = "premium_code_last4"
 
+    /**
+     * Community fork unlock. When true, [isPremium] always returns true so
+     * every premium-gated feature works without a purchase. The purchase,
+     * restore and redeem plumbing underneath is untouched.
+     */
+    private const val COMMUNITY_UNLOCK = true
+
     const val SOURCE_NONE = "none"
     const val SOURCE_GOOGLE_PLAY_BILLING = "google_play_billing"
     const val SOURCE_STRIPE_DIRECT = "stripe_direct"
@@ -61,6 +69,13 @@ object PremiumManager {
             BuildConfig.SWITCHLY_REDEEM_CODES_ENABLED
 
     fun isPremium(ctx: Context): Boolean {
+        // Community fork: premium features (extra accents + custom picker,
+        // NFC custom durations, Wi-Fi/Bluetooth/location schedules, extended
+        // statistics) are unlocked for everyone — no purchase, no paywall.
+        // Purchase/restore flows below are left intact but inert.
+        if (COMMUNITY_UNLOCK) {
+            return true
+        }
         if (!isPremiumSupportedBuild()) {
             return false
         }
@@ -236,7 +251,7 @@ object PremiumManager {
 
             else -> {
                 val message = activity.getString(R.string.premium_unavailable_offline_build)
-                Toast.makeText(activity, message, Toast.LENGTH_LONG).show()
+                activity.showWarnPillOnContent(message)
                 onResult?.invoke(false, message)
             }
         }
@@ -253,7 +268,7 @@ object PremiumManager {
         when {
             BuildConfig.SWITCHLY_PLAY_BILLING_ENABLED -> {
                 PremiumRuntime.refreshFromPlay(context, force = true)
-                Toast.makeText(context, R.string.premium_checking_purchases, Toast.LENGTH_SHORT).show()
+                context.showWarnPillAnywhere(R.string.premium_checking_purchases)
             }
 
             BuildConfig.SWITCHLY_EXTERNAL_PAYMENTS_ENABLED -> {
@@ -263,12 +278,12 @@ object PremiumManager {
                         error != null -> R.string.premium_external_sign_in_to_restore
                         else -> R.string.premium_external_entitlement_missing
                     }
-                    Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+                    context.showWarnPillAnywhere(message)
                 }
             }
 
             else -> {
-                Toast.makeText(context, R.string.premium_unavailable_offline_build, Toast.LENGTH_LONG).show()
+                context.showWarnPillAnywhere(R.string.premium_unavailable_offline_build)
             }
         }
     }

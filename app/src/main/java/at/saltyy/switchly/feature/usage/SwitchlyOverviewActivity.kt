@@ -39,7 +39,7 @@ import at.saltyy.switchly.R
 import at.saltyy.switchly.data.prefs.ActiveDurationStore
 import at.saltyy.switchly.data.prefs.AppLaunchCountStore
 import at.saltyy.switchly.data.prefs.BarcodeScanCountStore
-import at.saltyy.switchly.data.prefs.BlockAttemptStore
+import at.saltyy.switchly.data.prefs.BlockCountStore
 import at.saltyy.switchly.data.prefs.EmergencyUnlockCountStore
 import at.saltyy.switchly.data.prefs.LimitHitCountStore
 import at.saltyy.switchly.data.prefs.NfcScanCountStore
@@ -81,6 +81,7 @@ class SwitchlyOverviewActivity : AppCompatActivity() {
 
     private val rangeButtons: MutableMap<Range, MaterialButton> = linkedMapOf()
     private var selectedRange: Range = Range.TODAY
+    @Volatile private var archiveSyncRunning = false
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(at.saltyy.switchly.util.LocaleHelper.wrapContext(newBase))
@@ -210,6 +211,24 @@ class SwitchlyOverviewActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         refresh()
+        syncStatsArchive()
+    }
+
+    private fun syncStatsArchive() {
+        if (archiveSyncRunning || !UsageStatsRepo.hasUsageAccess(this)) {
+            return
+        }
+        archiveSyncRunning = true
+        val ctx = applicationContext
+        Thread {
+            val changed = runCatching { StatsArchiveSync.sync(ctx) }.getOrDefault(false)
+            runOnUiThread {
+                archiveSyncRunning = false
+                if (changed && !isFinishing && !isDestroyed) {
+                    refresh()
+                }
+            }
+        }.start()
     }
 
     private fun addRangeButton(range: Range, labelRes: Int) {
@@ -228,7 +247,7 @@ class SwitchlyOverviewActivity : AppCompatActivity() {
             insetTop = 0
             insetBottom = 0
             setPadding(dp(3), 0, dp(3), 0)
-            cornerRadius = dp(4)
+            cornerRadius = dp(14)
             setAllCaps(false)
             textSize = 12f
             layoutParams = LinearLayout.LayoutParams(0, dp(40), 1f)
@@ -341,30 +360,25 @@ class SwitchlyOverviewActivity : AppCompatActivity() {
             parent = activityCardContent,
             iconRes = R.drawable.timer_24,
             labelRes = R.string.switchly_overview_active_time,
-            valueText = StatsFormat.prettyMsWithSeconds(activeTimeForRange())
+            valueText = StatsFormat.prettyMsWithSeconds(activeTimeForRange()),
+            onClick = { startActivity(ActiveTimeActivity.intent(this)) }
         )
         addStatRow(
             parent = activityCardContent,
             iconRes = R.drawable.apps_24,
             labelRes = R.string.switchly_overview_app_launches,
-            value = countForRange(
-                today = { AppLaunchCountStore.getTotalToday(this) },
-                week = { AppLaunchCountStore.getTotalForLastNDays(this, 7) },
-                month = { year, month -> AppLaunchCountStore.getTotalForMonth(this, year, month) },
-                year = { year -> AppLaunchCountStore.getTotalForYear(this, year) },
-                overall = { AppLaunchCountStore.getTotalOverall(this) }
-            )
+            value = visibleAppLaunchesForRange()
         )
         addStatRow(
             parent = activityCardContent,
             iconRes = R.drawable.security_24,
             labelRes = R.string.switchly_overview_blocks,
             value = countForRange(
-                today = { BlockAttemptStore.getTodayTotal(this) },
-                week = { BlockAttemptStore.getForLastNDaysTotal(this, 7) },
-                month = { year, month -> BlockAttemptStore.getForMonthTotal(this, year, month) },
-                year = { year -> BlockAttemptStore.getForYearTotal(this, year) },
-                overall = { BlockAttemptStore.getOverallTotal(this) }
+                today = { BlockCountStore.getTotalToday(this) },
+                week = { BlockCountStore.getTotalForLastNDays(this, 7) },
+                month = { year, month -> BlockCountStore.getTotalForMonth(this, year, month) },
+                year = { year -> BlockCountStore.getTotalForYear(this, year) },
+                overall = { BlockCountStore.getTotalOverall(this) }
             )
         )
         addStatRow(
@@ -448,6 +462,28 @@ class SwitchlyOverviewActivity : AppCompatActivity() {
         )
     }
 
+    private fun visibleAppLaunchesForRange(): Int {
+        val counts = if (selectedRange == Range.OVERALL) {
+            AppLaunchCountStore.getMapOverall(this)
+        } else {
+            val rangeName = when (selectedRange) {
+                Range.TODAY -> "today"
+                Range.WEEK -> "week"
+                Range.MONTH -> "month"
+                Range.YEAR -> "year"
+                Range.OVERALL -> error("Handled above")
+            }
+            val (from, to) = UsageTimelineRepo.windowForRange(rangeName)
+            AppLaunchCountStore.getMapForDateRange(this, from, to)
+        }
+        return counts
+            .filterKeys { packageName -> !UsageInsightsAppFilter.shouldHide(this, packageName) }
+            .values
+            .sumOf { it.toLong() }
+            .coerceAtMost(Int.MAX_VALUE.toLong())
+            .toInt()
+    }
+
     private fun activeTimeForRange(): Long {
         return when (selectedRange) {
             Range.TODAY -> ActiveDurationStore.todayMs(this)
@@ -519,11 +555,11 @@ class SwitchlyOverviewActivity : AppCompatActivity() {
             cardElevation = dp(1).toFloat()
             useCompatPadding = true
             setCardBackgroundColor(
-                ContextCompat.getColor(this@SwitchlyOverviewActivity, R.color.switchly_card_bg)
+                ContextCompat.getColor(this@SwitchlyOverviewActivity, R.color.foqos_surface)
             )
             strokeColor = ContextCompat.getColor(
                 this@SwitchlyOverviewActivity,
-                R.color.switchly_card_stroke
+                R.color.foqos_outline_variant
             )
             strokeWidth = dp(1)
             addView(content)
@@ -561,12 +597,26 @@ class SwitchlyOverviewActivity : AppCompatActivity() {
         labelRes: Int,
         valueText: String,
         last: Boolean = false,
+        onClick: (() -> Unit)? = null,
     ) {
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             minimumHeight = dp(58)
             setPadding(dp(16), dp(12), dp(16), dp(12))
+            if (onClick != null) {
+                isClickable = true
+                isFocusable = true
+                foreground = com.google.android.material.color.MaterialColors.getColor(
+                    this@SwitchlyOverviewActivity,
+                    com.google.android.material.R.attr.colorOnSurface,
+                    android.graphics.Color.TRANSPARENT
+                ).let { rippleColor ->
+                    android.content.res.ColorStateList.valueOf(rippleColor)
+                        .let { android.graphics.drawable.RippleDrawable(it, null, null) }
+                }
+                setOnClickListener { onClick() }
+            }
         }
         row.addView(ImageView(this).apply {
             setImageResource(iconRes)
@@ -597,7 +647,7 @@ class SwitchlyOverviewActivity : AppCompatActivity() {
         if (!last) {
             parent.addView(View(this).apply {
                 setBackgroundColor(
-                    ContextCompat.getColor(this@SwitchlyOverviewActivity, R.color.switchly_card_stroke)
+                    ContextCompat.getColor(this@SwitchlyOverviewActivity, R.color.foqos_outline_variant)
                 )
             }, LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,

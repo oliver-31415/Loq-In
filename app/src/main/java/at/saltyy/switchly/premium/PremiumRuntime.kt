@@ -349,8 +349,26 @@ object PremiumRuntime : PurchasesUpdatedListener {
                         return@queryProductDetailsAsync
                     }
 
-                    val details = result.productDetailsList.firstOrNull()
-                    val price = details?.localizedOneTimePrice()
+                    val details = result.productDetailsList.firstOrNull { it.productId == productId }
+                    if (details == null) {
+                        fail(
+                            "Google Play returned no product details for '$productId'. " +
+                                "unfetched=${result.unfetchedDiagnostics()}"
+                        )
+                        return@queryProductDetailsAsync
+                    }
+
+                    val offer = details.preferredPremiumBuyOffer()
+                    val price = offer?.details?.formattedPrice?.takeIf { it.isNotBlank() }
+                    if (offer == null) {
+                        fail(
+                            "Google Play returned '$productId' without an eligible permanent buy offer. " +
+                                "offers=${details.oneTimePurchaseOfferDetailsList.orEmpty().size} " +
+                                "unfetched=${result.unfetchedDiagnostics()}"
+                        )
+                        return@queryProductDetailsAsync
+                    }
+
                     if (!price.isNullOrBlank() && productId == PRODUCT_ID) {
                         cachedPremiumPrice = price
                     }
@@ -366,8 +384,33 @@ object PremiumRuntime : PurchasesUpdatedListener {
         )
     }
 
-    private fun ProductDetails.localizedOneTimePrice(): String? =
-        oneTimePurchaseOfferDetails?.formattedPrice?.takeIf { it.isNotBlank() }
+    private data class PremiumBuyOffer(
+        val details: ProductDetails.OneTimePurchaseOfferDetails,
+        val offerToken: String,
+    )
+
+    private fun ProductDetails.eligiblePremiumBuyOffers(): List<PremiumBuyOffer> =
+        oneTimePurchaseOfferDetailsList
+            .orEmpty()
+            .mapNotNull { offer ->
+                if (offer.rentalDetails != null || offer.preorderDetails != null) {
+                    return@mapNotNull null
+                }
+                val offerToken = offer.offerToken?.takeIf { it.isNotBlank() }
+                    ?: return@mapNotNull null
+                PremiumBuyOffer(offer, offerToken)
+            }
+
+    private fun ProductDetails.preferredPremiumBuyOffer(): PremiumBuyOffer? =
+        eligiblePremiumBuyOffers().minByOrNull { offer -> offer.details.priceAmountMicros }
+
+    private fun QueryProductDetailsResult.unfetchedDiagnostics(): String =
+        unfetchedProductList.joinToString(
+            prefix = "[",
+            postfix = "]",
+        ) { product ->
+            "${product.productId}:${product.productType}:status=${product.statusCode}"
+        }
 
     // Starts the purchase flow for the given product.
     fun launchPurchase(
@@ -541,20 +584,43 @@ object PremiumRuntime : PurchasesUpdatedListener {
                                 AppLogStore.append(
                                     activity.applicationContext,
                                     "Billing",
-                                    "Product query code=${billingResult.responseCode} products=${result.productDetailsList.size}"
+                                    "Product query code=${billingResult.responseCode} " +
+                                        "products=${result.productDetailsList.size} " +
+                                        "unfetched=${result.unfetchedDiagnostics()}"
                                 )
-                                val details = result.productDetailsList.firstOrNull()
+                                val details = result.productDetailsList.firstOrNull { it.productId == productId }
                                 if (details == null) {
                                     failGeneric(
                                         "Google Play returned no product details for '$productId'. " +
-                                            "Check the in-app product ID and Play Console activation."
+                                            "unfetched=${result.unfetchedDiagnostics()}"
                                     )
                                     return
                                 }
 
+                                val offer = details.preferredPremiumBuyOffer()
+                                if (offer == null) {
+                                    failGeneric(
+                                        "Google Play returned '$productId' without an eligible permanent buy offer. " +
+                                            "offers=${details.oneTimePurchaseOfferDetailsList.orEmpty().size} " +
+                                            "unfetched=${result.unfetchedDiagnostics()}"
+                                    )
+                                    return
+                                }
+
+                                val offerDetails = offer.details
+
+                                AppLogStore.append(
+                                    activity.applicationContext,
+                                    "Billing",
+                                    "Selected Premium offer purchaseOption=${offerDetails.purchaseOptionId} " +
+                                        "offerId=${offerDetails.offerId ?: "-"} " +
+                                        "price=${offerDetails.formattedPrice}"
+                                )
+
                                 val productDetailsParams = listOf(
                                     BillingFlowParams.ProductDetailsParams.newBuilder()
                                         .setProductDetails(details)
+                                        .setOfferToken(offer.offerToken)
                                         .build()
                                 )
 

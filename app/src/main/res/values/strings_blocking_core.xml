@@ -8,7 +8,7 @@
     <string name="rules_hub_profiles_section">Profiles</string>
     <string name="rules_hub_categories_section">Rules for this profile</string>
     <string name="switchly_rules_locked_title">Open Rules?</string>
-    <string name="rules_restricted_open_message">Switchly is active. Rules can still be viewed, but apps, websites, in-app rules, profiles, and schedules cannot be changed until Switchly is fully disabled.</string>
+    <string name="rules_restricted_open_message">Switchly is active. You can still add protection to the active profile. Changes that remove protection, widen allowed exceptions, switch rule modes, or edit protected settings remain locked.</string>
     <string name="rules_open_restricted">Open Rules</string>
     <string name="rules_apps_title">App rules</string>
     <string name="rules_apps_summary">Choose blocked or allowed apps, limits, and app rules</string>
@@ -22,5 +22,10 @@
     <!-- ====================================================== -->
     <string name="app_picker_auto_block_new_apps_title">Automatically block newly installed apps</string>
     <string name="app_picker_auto_block_new_apps_summary">Newly installed launchable apps are added to this profile automatically. Safety-sensitive apps are skipped.</string>
+
+    <!-- ====================================================== -->
+    <!-- Active protection editing -->
+    <!-- ====================================================== -->
+    <string name="rules_tighten_only_active_message">You can add more protection while Switchly is active. Removing existing protection or widening allowed exceptions still requires an allowed control action.</string>
 
 </resources>

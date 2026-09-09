@@ -1,5 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+
+    <!-- ====================================================== -->
+    <!-- Allow mode preview -->
+    <!-- ====================================================== -->
     <string name="website_allow_mode_preview_title">Use Allow selected?</string>
     <plurals name="website_allow_mode_preview_body">
         <item quantity="one">%d saved website will remain available. Other detected websites will be blocked while this profile is active.</item>
@@ -62,4 +66,5 @@
     <string name="blocked_websites_profile_subtitle">Rules for: %1$s</string>
     <string name="rule_allowed">Allowed</string>
     <string name="rule_allowed_always">Allowed always</string>
+
 </resources>

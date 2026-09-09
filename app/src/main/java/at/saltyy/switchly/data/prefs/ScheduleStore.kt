@@ -47,7 +47,9 @@ object ScheduleStore {
         DISABLE,
         ENABLE_AND_DISABLE,
         DISABLE_AND_ENABLE,
-        TOGGLE
+        TOGGLE,
+        DISCONNECT_ENABLE,
+        DISCONNECT_DISABLE
     }
 
     enum class LocationTrigger {

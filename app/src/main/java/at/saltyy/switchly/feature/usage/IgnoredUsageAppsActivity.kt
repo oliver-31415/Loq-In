@@ -42,6 +42,7 @@ import at.saltyy.switchly.theme.CustomAccentApplier
 import at.saltyy.switchly.ui.EdgeToEdgeUtils
 import at.saltyy.switchly.ui.SegmentedToggleUi
 import at.saltyy.switchly.ui.ThemeUtils
+import at.saltyy.switchly.ui.showWarnPillOnContent
 import at.saltyy.switchly.util.PackageLaunchIntentCompat
 import at.saltyy.switchly.util.PackageManagerApiCompat
 import at.saltyy.switchly.ui.dialog.showAccented
@@ -55,6 +56,7 @@ import java.util.Locale
 
 /**
  * Manages separate visibility filters for Usage & Insights and app-selection screens.
+ * Apps hidden from app-selection screens are also excluded from Switchly protection while hidden.
  * Changes in either tab remain staged until Save is pressed.
  */
 class IgnoredUsageAppsActivity : AppCompatActivity() {
@@ -112,13 +114,13 @@ class IgnoredUsageAppsActivity : AppCompatActivity() {
 
         usageSelection = IgnoredUsageAppsStore.getIgnoredPackages(this)
         appPickerSelection = IgnoredUsageAppsStore.getAppPickerHiddenPackages(this)
-        currentSection = if (intent.getBooleanExtra(EXTRA_SHOW_APP_PICKERS, false)) {
+        currentSection = if (intent.getBooleanExtra(EXTRA_SHOW_APP_PICKERS, true)) {
             Section.APP_PICKERS
         } else {
             Section.USAGE_INSIGHTS
         }
         countView = findViewById(R.id.tvIgnoredCount)
-        adapter = IgnoredUsageAppsAdapter(usageSelection) { selection ->
+        adapter = IgnoredUsageAppsAdapter(currentSelection()) { selection ->
             when (currentSection) {
                 Section.USAGE_INSIGHTS -> usageSelection = selection
                 Section.APP_PICKERS -> appPickerSelection = selection
@@ -145,7 +147,7 @@ class IgnoredUsageAppsActivity : AppCompatActivity() {
         findViewById<MaterialButton>(R.id.btnSaveIgnoredApps).setOnClickListener {
             IgnoredUsageAppsStore.setIgnoredPackages(this, usageSelection)
             IgnoredUsageAppsStore.setAppPickerHiddenPackages(this, appPickerSelection)
-            Toast.makeText(this, R.string.ignored_usage_apps_saved, Toast.LENGTH_SHORT).show()
+            showWarnPillOnContent(R.string.ignored_usage_apps_saved)
             finish()
         }
 
@@ -155,25 +157,36 @@ class IgnoredUsageAppsActivity : AppCompatActivity() {
 
     private fun setupSectionToggle() {
         val toggle = findViewById<MaterialButtonToggleGroup>(R.id.toggleHiddenAppsSection)
-        val usageButton = findViewById<MaterialButton>(R.id.btnHiddenUsageInsights)
         val pickerButton = findViewById<MaterialButton>(R.id.btnHiddenAppPickers)
+        val usageButton = findViewById<MaterialButton>(R.id.btnHiddenUsageInsights)
         val selectedId = if (currentSection == Section.APP_PICKERS) {
             R.id.btnHiddenAppPickers
         } else {
             R.id.btnHiddenUsageInsights
         }
         toggle.check(selectedId)
-        SegmentedToggleUi.apply(this, listOf(usageButton, pickerButton), selectedId)
+        SegmentedToggleUi.apply(this, listOf(pickerButton, usageButton), selectedId)
+        updateSectionDescription()
         toggle.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (!isChecked) return@addOnButtonCheckedListener
-            currentSection = if (checkedId == R.id.btnHiddenAppPickers) {
-                Section.APP_PICKERS
-            } else {
+            currentSection = if (checkedId == R.id.btnHiddenUsageInsights) {
                 Section.USAGE_INSIGHTS
+            } else {
+                Section.APP_PICKERS
             }
-            SegmentedToggleUi.apply(this, listOf(usageButton, pickerButton), checkedId)
+            SegmentedToggleUi.apply(this, listOf(pickerButton, usageButton), checkedId)
+            updateSectionDescription()
             refreshSection()
         }
+    }
+
+    private fun updateSectionDescription() {
+        val descView = findViewById<TextView>(R.id.tvSectionDescription) ?: return
+        val descRes = when (currentSection) {
+            Section.USAGE_INSIGHTS -> R.string.hidden_apps_tab_usage_subtitle
+            Section.APP_PICKERS -> R.string.hidden_apps_tab_pickers_subtitle
+        }
+        descView.setText(descRes)
     }
 
     private fun refreshSection() {
@@ -209,12 +222,16 @@ class IgnoredUsageAppsActivity : AppCompatActivity() {
     }
 
     private fun showInfoDialog() {
+        val titleRes = when (currentSection) {
+            Section.USAGE_INSIGHTS -> R.string.hidden_apps_tab_usage
+            Section.APP_PICKERS -> R.string.hidden_apps_tab_pickers
+        }
         val message = when (currentSection) {
             Section.USAGE_INSIGHTS -> R.string.hidden_apps_usage_description
             Section.APP_PICKERS -> R.string.hidden_apps_picker_description
         }
         MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.ignored_usage_apps_title)
+            .setTitle(titleRes)
             .setMessage(message)
             .setPositiveButton(R.string.ok, null)
             .showAccented()
@@ -291,7 +308,7 @@ class IgnoredUsageAppsActivity : AppCompatActivity() {
         private const val MENU_CLEAR = 2
         private const val EXTRA_SHOW_APP_PICKERS = "extra_show_app_pickers"
 
-        fun intent(context: Context, showAppPickers: Boolean = false): Intent =
+        fun intent(context: Context, showAppPickers: Boolean = true): Intent =
             Intent(context, IgnoredUsageAppsActivity::class.java)
                 .putExtra(EXTRA_SHOW_APP_PICKERS, showAppPickers)
     }

@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingStart="24dp"
+    android:paddingTop="8dp"
+    android:paddingEnd="24dp"
+    android:paddingBottom="4dp">
+
+    <TextView
+        android:id="@+id/tvTempPauseUsage"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:textColor="?android:attr/textColorSecondary"
+        android:textSize="13sp" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilTempPauseCount"
+        style="@style/Switchly.TextInputLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/temp_pause_field_count"
+        app:endIconMode="clear_text"
+        app:startIconDrawable="@drawable/timer_24">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etTempPauseCount"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:inputType="number"
+            android:maxLength="3"
+            android:minHeight="52dp"
+            android:singleLine="true" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilTempPausePerPause"
+        style="@style/Switchly.TextInputLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:hint="@string/temp_pause_field_per_pause"
+        app:endIconMode="clear_text"
+        app:startIconDrawable="@drawable/schedule_24">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etTempPausePerPause"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:inputType="number"
+            android:maxLength="4"
+            android:minHeight="52dp"
+            android:singleLine="true" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilTempPausePerDay"
+        style="@style/Switchly.TextInputLayout"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:hint="@string/temp_pause_field_per_day"
+        app:endIconMode="clear_text"
+        app:startIconDrawable="@drawable/calendar_month_24">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etTempPausePerDay"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:inputType="number"
+            android:maxLength="4"
+            android:minHeight="52dp"
+            android:singleLine="true" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:text="@string/temp_pause_zero_hint"
+        android:textColor="?android:attr/textColorSecondary"
+        android:textSize="12.5sp" />
+</LinearLayout>

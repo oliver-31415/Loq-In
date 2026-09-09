@@ -99,7 +99,7 @@ object WebUsageStore {
         }
         val k = prefKeyForDay(norm, dayKey(0))
         val prefs = PreferenceManager.getDefaultSharedPreferences(ctx)
-        val base = prefs.getLong(k, 0L)
+        val base = readLongCompat(prefs, k)
         val extra = pending[k] ?: 0L
         return (base + extra).coerceAtLeast(0L)
     }
@@ -133,7 +133,7 @@ object WebUsageStore {
         for (i in (-(n - 1))..0) {
             val day = dayKey(i)
             val k = prefKeyForDay(norm, day)
-            val base = prefs.getLong(k, 0L)
+            val base = readLongCompat(prefs, k)
             val extra = if (i == 0) (pending[k] ?: 0L) else 0L
             out.add((base + extra).coerceAtLeast(0L))
         }
@@ -149,7 +149,9 @@ object WebUsageStore {
         val wanted = HashSet<String>()
         val cal = Calendar.getInstance().apply {
             timeInMillis = startMs
-            set(Calendar.HOUR_OF_DAY, 12)
+            // Start-of-day anchor: noon lands in the future for same-day
+            // morning windows and empties the query.
+            set(Calendar.HOUR_OF_DAY, 0)
             set(Calendar.MINUTE, 0)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
@@ -167,7 +169,7 @@ object WebUsageStore {
             val day = rest.substring(0, 8)
             if (day !in wanted) continue
             val domain = rest.substring(9).trim()
-            val ms = (raw as? Long)?.coerceAtLeast(0L) ?: 0L
+            val ms = readLongCompat(prefs, key)
             if (domain.isNotBlank() && ms > 0L) totals[domain] = (totals[domain] ?: 0L) + ms
         }
         return totals
@@ -182,7 +184,9 @@ object WebUsageStore {
         val out = ArrayList<WebsiteSession>()
         val cal = Calendar.getInstance().apply {
             timeInMillis = startMs
-            set(Calendar.HOUR_OF_DAY, 12)
+            // Start-of-day anchor: noon lands in the future for same-day
+            // morning windows and empties the query.
+            set(Calendar.HOUR_OF_DAY, 0)
             set(Calendar.MINUTE, 0)
             set(Calendar.SECOND, 0)
             set(Calendar.MILLISECOND, 0)
@@ -221,7 +225,7 @@ object WebUsageStore {
             set(Calendar.MILLISECOND, 0)
         }
         while (cal.timeInMillis <= endMs) {
-            out += prefs.getLong(prefKeyForDay(norm, dayKeyForMillis(cal.timeInMillis)), 0L).coerceAtLeast(0L)
+            out += readLongCompat(prefs, prefKeyForDay(norm, dayKeyForMillis(cal.timeInMillis))).coerceAtLeast(0L)
             cal.add(Calendar.DAY_OF_YEAR, 1)
         }
         return out
@@ -319,7 +323,7 @@ object WebUsageStore {
         var total = 0L
         for ((k, v) in prefs.all) {
             if (!k.startsWith(PREFIX_DAY) || !k.endsWith(suffix)) continue
-            total += (v as? Long) ?: 0L
+            total += readLongCompat(prefs, k)
         }
         return total.coerceAtLeast(0L)
     }
@@ -345,7 +349,7 @@ object WebUsageStore {
             val rest = k.removePrefix(PREFIX_DAY)
             if (rest.length < 8) continue
             val yyyymm = rest.substring(0, 6).toIntOrNull() ?: continue
-            val ms = (v as? Long) ?: 0L
+            val ms = readLongCompat(prefs, k)
             if (ms <= 0L) continue
             sums[yyyymm] = (sums[yyyymm] ?: 0L) + ms
         }
@@ -378,7 +382,7 @@ object WebUsageStore {
             val prefs = PreferenceManager.getDefaultSharedPreferences(ctx)
             prefs.edit {
                 for ((k, add) in snapshot) {
-                    val cur = prefs.getLong(k, 0L)
+                    val cur = readLongCompat(prefs, k)
                     putLong(k, cur + add)
                 }
                 val byDay = sessionSnapshot
@@ -393,6 +397,32 @@ object WebUsageStore {
                 }
             }
         }
+    }
+
+    /**
+     * Older releases/backups could leave historical website counters as Int, Float, Double, or numeric String values.
+     * SharedPreferences#getLong throws ClassCastException for those keys, which made Week/Month/Year website statistics crash while Today still worked.
+     * Read defensively and heal the value back to Long when possible.
+     */
+    private fun readLongCompat(
+        prefs: android.content.SharedPreferences,
+        key: String,
+    ): Long {
+        val raw = prefs.all[key] ?: return 0L
+        val value = when (raw) {
+            is Long -> raw
+            is Int -> raw.toLong()
+            is Float -> raw.toLong()
+            is Double -> raw.toLong()
+            is Number -> raw.toLong()
+            is String -> raw.toLongOrNull() ?: raw.toDoubleOrNull()?.toLong()
+            else -> null
+        } ?: return 0L
+
+        if (raw !is Long) {
+            prefs.edit { putLong(key, value) }
+        }
+        return value.coerceAtLeast(0L)
     }
 
     private fun sessionKeyForDay(day: String): String = PREFIX_SESSION_DAY + day

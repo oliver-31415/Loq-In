@@ -6,8 +6,8 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:gravity="center_vertical"
-    android:padding="10dp"
-    android:background="@color/widget_scanner_surface">
+    android:padding="14dp"
+    android:background="@drawable/widget_card_bg">
 
     <TextView
         android:id="@+id/widgetPauseHeader"
@@ -15,26 +15,26 @@
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:text="@string/widget_pause_blocker_name"
-        android:textColor="@color/widget_scanner_title"
-        android:textSize="12sp"
+        android:textColor="@color/foqos_on_surface"
+        android:textSize="14sp"
         android:textStyle="bold"
         android:maxLines="1"
         android:ellipsize="end"
-        android:drawablePadding="6dp" />
+        android:drawablePadding="8dp" />
 
     <TextView
         android:id="@+id/widgetPause15"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="10dp"
         android:layout_weight="1"
         android:gravity="center"
-        android:background="@color/widget_scanner_button_surface"
+        android:background="@drawable/widget_tile_bg"
         android:clickable="true"
         android:focusable="true"
         android:text="@string/widget_pause_15"
-        android:textColor="@color/widget_scanner_text"
-        android:textSize="12sp"
+        android:textColor="@color/foqos_on_surface"
+        android:textSize="13sp"
         android:textStyle="bold"
         android:maxLines="1" />
 
@@ -42,15 +42,15 @@
         android:id="@+id/widgetPause30"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="6dp"
+        android:layout_marginTop="8dp"
         android:layout_weight="1"
         android:gravity="center"
-        android:background="@color/widget_scanner_button_surface"
+        android:background="@drawable/widget_tile_bg"
         android:clickable="true"
         android:focusable="true"
         android:text="@string/widget_pause_30"
-        android:textColor="@color/widget_scanner_text"
-        android:textSize="12sp"
+        android:textColor="@color/foqos_on_surface"
+        android:textSize="13sp"
         android:textStyle="bold"
         android:maxLines="1" />
 
@@ -58,15 +58,15 @@
         android:id="@+id/widgetPause60"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="6dp"
+        android:layout_marginTop="8dp"
         android:layout_weight="1"
         android:gravity="center"
-        android:background="@color/widget_scanner_button_surface"
+        android:background="@drawable/widget_tile_bg"
         android:clickable="true"
         android:focusable="true"
         android:text="@string/widget_pause_60"
-        android:textColor="@color/widget_scanner_text"
-        android:textSize="12sp"
+        android:textColor="@color/foqos_on_surface"
+        android:textSize="13sp"
         android:textStyle="bold"
         android:maxLines="1" />
 </LinearLayout>

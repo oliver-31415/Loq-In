@@ -39,12 +39,10 @@ import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentManager
 import at.saltyy.switchly.R
 import at.saltyy.switchly.blocking.BlockingRuntime
-import at.saltyy.switchly.data.prefs.AdvancedModeStore
 import at.saltyy.switchly.data.prefs.AppLogStore
 import at.saltyy.switchly.data.prefs.EmergencyBypassStore
 import at.saltyy.switchly.data.prefs.EmergencyPinStore
 import at.saltyy.switchly.data.prefs.SwitchModeStore
-import at.saltyy.switchly.feature.about.AdvancedModeActivity
 import at.saltyy.switchly.feature.premium.PremiumInfoActivity
 import at.saltyy.switchly.feature.qr.QrGenerateActivity
 import at.saltyy.switchly.feature.schedule.SchedulesActivity
@@ -58,10 +56,14 @@ import at.saltyy.switchly.ui.EdgeToEdgeUtils
 import at.saltyy.switchly.ui.LockedUi
 import at.saltyy.switchly.ui.MainActivity
 import at.saltyy.switchly.ui.ThemeUtils
+import at.saltyy.switchly.ui.showWarnPill
 import at.saltyy.switchly.ui.dialog.SwitchlyDialogOption
+import at.saltyy.switchly.ui.dialog.SwitchlyInfoRow
+import at.saltyy.switchly.ui.dialog.showSwitchlyInfoDialog
 import at.saltyy.switchly.ui.dialog.showAccented
 import at.saltyy.switchly.ui.dialog.showSwitchlyOptionDialog
 import at.saltyy.switchly.ui.dialog.styleSwitchlyDialogButtons
+import at.saltyy.switchly.ui.dialog.EmergencyPinDialog
 import at.saltyy.switchly.util.LocaleHelper
 import at.saltyy.switchly.util.ActivityTransitionCompat
 import at.saltyy.switchly.util.SwitchlyAppAccessGuard
@@ -71,6 +73,12 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 
 class SettingsActivity : AppCompatActivity() {
+
+    // Owns activity-result launchers: property init runs before onCreate, so
+    // registration happens before STARTED. Fragments must use this instance —
+    // constructing BackupFlowActions in a later onAttach (nested screens)
+    // crashes with "register before they are STARTED".
+    val backupFlows = BackupFlowActions(this)
 
     private lateinit var toolbar: MaterialToolbar
     private lateinit var bottomNav: BottomNavigationView
@@ -164,12 +172,19 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         fun openToggleSection(section: String, displayTarget: String? = null) {
-            openProtectedActivity(Intent(this, ToggleOptionsActivity::class.java).apply {
-                putExtra(ToggleOptionsActivity.EXTRA_VIEW_SECTION, section)
-                if (!displayTarget.isNullOrBlank()) {
-                    putExtra(ToggleOptionsActivity.EXTRA_DISPLAY_TARGET, displayTarget)
-                }
-            })
+            val open = {
+                startActivity(Intent(this, ToggleOptionsActivity::class.java).apply {
+                    putExtra(ToggleOptionsActivity.EXTRA_VIEW_SECTION, section)
+                    if (!displayTarget.isNullOrBlank()) {
+                        putExtra(ToggleOptionsActivity.EXTRA_DISPLAY_TARGET, displayTarget)
+                    }
+                })
+            }
+            if (section == ToggleOptionsActivity.SECTION_BLOCKING) {
+                openControlSettingsSection(open)
+            } else {
+                openProtectedSettingsSection(open)
+            }
         }
 
         fun openPermissionSection(section: String, target: String? = null) {
@@ -194,25 +209,14 @@ class SettingsActivity : AppCompatActivity() {
         ).filter { it.isNotBlank() }.joinToString(" ")
 
         // Top-level destinations.
-        add(R.string.toggle_group_manage_blocking_modes, "control mode NFC QR barcode schedule mixed") {
-            openRootCard(R.id.cardSettingsBlockingModes)
-        }
         add(R.string.toggle_group_manage_other_blocking_features, "${getString(R.string.settings_search_terms_blocking)} temporary timer temporärer Timer safety Sicherheit status notification Benachrichtigung blocking features") {
             openRootCard(R.id.cardSettingsBlockingFeatures)
         }
-        add(R.string.settings_keys_codes_title, "${getString(R.string.settings_search_terms_keys)} NFC QR barcode Strichcode tags codes Schlüssel Codes") { openRootCard(R.id.cardSettingsKeysCodes) }
         add(R.string.settings_theme_title, "theme appearance color language time home") { openRootCard(R.id.cardSettingsAppearance) }
         add(R.string.ignored_usage_apps_title, "usage statistics ignored apps") { openRootCard(R.id.cardSettingsIgnoredApps) }
         add(R.string.settings_display_shortcuts_title, "${getString(R.string.settings_search_terms_display)} widgets Kacheln tiles quick settings shortcuts Verknüpfungen home Startseite") { openRootCard(R.id.cardSettingsDisplayShortcuts) }
         add(R.string.pref_permissions_title, "${getString(R.string.settings_search_terms_permissions)} battery Akku background Hintergrund accessibility Bedienungshilfe autostart Autostart notifications Benachrichtigungen NFC reliability Zuverlässigkeit") { openRootCard(R.id.cardSettingsPermissions) }
-        add(R.string.pref_app_lock_title, "app lock App-Sperre uninstall protection Deinstallationsschutz remove removal device admin Geräteadministrator bypass anti-bypass") { openRootCard(R.id.cardSettingsAppLock) }
-        add(R.string.settings_emergency_unlock_title, "emergency bypass unlock") { openRootCard(R.id.cardSettingsEmergencyUnlock) }
-        add(R.string.settings_account_title, "${getString(R.string.settings_search_terms_account)} account Konto cloud Cloud backup Sicherung restore Wiederherstellung sync Synchronisierung data Daten") { openRootCard(R.id.cardSettingsAccountData) }
-        add(R.string.premium_title, "premium billing purchase") { openRootCard(R.id.cardSettingsPremium) }
-        if (AdvancedModeStore.isEnabled(this)) {
-            add(R.string.developer_mode_title, "${getString(R.string.settings_search_terms_developer)} developer Entwickler ADB uninstall protection Deinstallationsschutz diagnostics Diagnose device owner profile owner managed device managed-device provisioning factory reset safe mode") { openRootCard(R.id.cardSettingsDeveloper) }
-        }
-        add(R.string.settings_help_about_title, "help FAQ support changelog info privacy") { openRootCard(R.id.cardSettingsHelpAbout) }
+        add(R.string.settings_section_info, "info about app device help FAQ support changelog whats new disclaimer") { openRootCard(R.id.cardSettingsInfo) }
 
         // Individual control-mode settings.
         add(R.string.pref_mode_nfc_title, "NFC control mode") { openProtectedActivity(Intent(this, BlockingModesActivity::class.java)) }
@@ -222,13 +226,13 @@ class SettingsActivity : AppCompatActivity() {
         add(R.string.pref_require_nfc_unlock_title, "NFC required disable lock") { openToggleSection(ToggleOptionsActivity.SECTION_SAFETY) }
         add(R.string.schedules_title, "schedule Wi-Fi Bluetooth location time automation") { startActivity(Intent(this, SchedulesActivity::class.java)) }
 
-        // NFC / QR / barcode tools.
+        // NFC/QR/barcode tools.
         add(R.string.nfc_writer_title, "write NFC tag") { openProtectedActivity(Intent(this, NfcWriterActivity::class.java)) }
         add(R.string.keys_codes_paired_tags_title, "paired NFC UID tags") { openProtectedActivity(Intent(this, ManagePairedTagsActivity::class.java)) }
         add(R.string.qr_generate_title, "QR generate manage") { openProtectedActivity(Intent(this, QrGenerateActivity::class.java)) }
         add(R.string.manage_barcodes_title, "barcode manage scan") { openProtectedActivity(Intent(this, ManageBarcodesActivity::class.java)) }
 
-        // Display / Home / shortcuts.
+        // Display/Home/shortcuts.
         add(R.string.onb_optional_display_tiles_title, "Quick Settings tiles NFC QR barcode") {
             openToggleSection(ToggleOptionsActivity.SECTION_DISPLAY, ToggleOptionsActivity.DISPLAY_TARGET_TILES)
         }
@@ -237,6 +241,9 @@ class SettingsActivity : AppCompatActivity() {
         }
         add(R.string.pref_persistent_status_notification_title, "persistent status notification") {
             openToggleSection(ToggleOptionsActivity.SECTION_FEATURES)
+        }
+        add(R.string.pref_show_session_missed_notifications_title, "missed notifications recap popup session end blocked inbox Benachrichtigungen") {
+            openProtectedActivity(Intent(this, BlockingFeaturesActivity::class.java))
         }
         // Permissions & reliability, down to the relevant section.
         add(R.string.permissions_accessibility_title, "accessibility Bedienungshilfe service Dienst blocking Blockierung permission Berechtigung") { openPermissionSection(PermissionsActivity.SECTION_CORE) }
@@ -453,23 +460,13 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun setupRootCards() {
-        findViewById<View>(R.id.cardSettingsBlockingModes).setOnClickListener {
-            openProtectedSettingsSection {
-                startActivity(Intent(this, BlockingModesActivity::class.java))
-            }
-        }
         findViewById<View>(R.id.cardSettingsBlockingFeatures).setOnClickListener {
             openProtectedSettingsSection {
                 startActivity(Intent(this, BlockingFeaturesActivity::class.java))
             }
         }
-        findViewById<View>(R.id.cardSettingsKeysCodes).setOnClickListener {
-            openProtectedSettingsSection {
-                startActivity(Intent(this, ManageKeysActivity::class.java))
-            }
-        }
         findViewById<View>(R.id.cardSettingsAppearance).setOnClickListener {
-            showNestedSettingsScreen("screen_appearance")
+            startActivity(Intent(this, AppearanceActivity::class.java))
         }
         findViewById<View>(R.id.cardSettingsIgnoredApps).setOnClickListener {
             startActivity(IgnoredUsageAppsActivity.intent(this))
@@ -486,27 +483,8 @@ class SettingsActivity : AppCompatActivity() {
                 startActivity(Intent(this, PermissionsActivity::class.java))
             }
         }
-        findViewById<View>(R.id.cardSettingsAppLock).setOnClickListener {
-            openProtectedSettingsSection {
-                startActivity(Intent(this, AppLockSettingsActivity::class.java))
-            }
-        }
-        findViewById<View>(R.id.cardSettingsEmergencyUnlock).setOnClickListener {
-            showEmergencyQuickSheet()
-        }
-        findViewById<View>(R.id.cardSettingsAccountData).setOnClickListener {
-            showNestedSettingsScreen("screen_account")
-        }
-        findViewById<View>(R.id.cardSettingsPremium).setOnClickListener {
-            startActivity(Intent(this, PremiumInfoActivity::class.java))
-        }
-        findViewById<View>(R.id.cardSettingsDeveloper).setOnClickListener {
-            openProtectedSettingsSection {
-                startActivity(Intent(this, AdvancedModeActivity::class.java))
-            }
-        }
-        findViewById<View>(R.id.cardSettingsHelpAbout).setOnClickListener {
-            showNestedSettingsScreen("screen_help_about")
+        findViewById<View>(R.id.cardSettingsInfo).setOnClickListener {
+            startActivity(Intent(this, at.saltyy.switchly.feature.about.InfoActivity::class.java))
         }
     }
 
@@ -520,21 +498,20 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         val restricted = isRestrictedAccessActive()
-        val developerVisible = AdvancedModeStore.isEnabled(this)
-        findViewById<View>(R.id.tvSettingsDeveloperSection).isVisible = developerVisible
-        findViewById<View>(R.id.cardSettingsDeveloper).isVisible = developerVisible
+        val controlSettingsRestricted = SwitchlyAppAccessGuard.isControlSettingsLocked(this)
 
         toolbar.subtitle = null
         supportActionBar?.subtitle = null
 
+        val recoveryControlCards = listOf<Int>()
+        recoveryControlCards.forEach { cardId ->
+            applyRestrictedCardState(findViewById(cardId), controlSettingsRestricted)
+        }
+
         val restrictedCards = listOf(
-            R.id.cardSettingsBlockingModes,
             R.id.cardSettingsBlockingFeatures,
-            R.id.cardSettingsKeysCodes,
             R.id.cardSettingsDisplayShortcuts,
-            R.id.cardSettingsPermissions,
-            R.id.cardSettingsAppLock,
-            R.id.cardSettingsDeveloper
+            R.id.cardSettingsPermissions
         )
         restrictedCards.forEach { cardId ->
             applyRestrictedCardState(findViewById(cardId), restricted)
@@ -542,15 +519,29 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun applyRestrictedCardState(card: View, restricted: Boolean) {
-        card.isEnabled = !restricted
-        card.isClickable = !restricted
-        card.isFocusable = !restricted
+        // Stay tappable (dimmed): the section guards warn via pill instead of dead taps.
+        card.isEnabled = true
+        card.isClickable = true
+        card.isFocusable = true
         card.alpha = if (restricted) LockedUi.cardAlpha(this) else 1f
+    }
+
+    private fun openControlSettingsSection(open: () -> Unit) {
+        if (SwitchlyAppAccessGuard.isControlSettingsLocked(this)) {
+            applyRestrictedAccessState()
+            findViewById<View>(android.R.id.content)
+                .showWarnPill(R.string.settings_restricted_action_unavailable)
+            return
+        }
+
+        open()
     }
 
     private fun openProtectedSettingsSection(open: () -> Unit) {
         if (SwitchlyAppAccessGuard.isLocked(this)) {
             applyRestrictedAccessState()
+            findViewById<View>(android.R.id.content)
+                .showWarnPill(R.string.settings_restricted_action_unavailable)
             return
         }
 
@@ -559,6 +550,17 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun restoreScreenState(savedInstanceState: Bundle?) {
         if (savedInstanceState == null) {
+            // Deep link (e.g. Account's Backup & data cards): open a nested
+            // settings screen straight away instead of the root list.
+            val nested = intent.getStringExtra(EXTRA_NESTED_SCREEN)
+            if (!nested.isNullOrBlank()) {
+                showNestedSettingsScreen(
+                    nested,
+                    intent.getStringExtra(EXTRA_NESTED_FOCUS)
+                )
+                updateTitleFromFragment()
+                return
+            }
             showRootSettings()
             return
         }
@@ -570,6 +572,10 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun showNestedSettingsScreen(screenKey: String, focusKey: String? = null) {
+        if (screenKey == "screen_appearance") {
+            startActivity(Intent(this, AppearanceActivity::class.java))
+            return
+        }
         showNestedSettingsContainer()
         val fragment = SettingsFragment().apply {
             arguments = Bundle().apply {
@@ -641,7 +647,7 @@ class SettingsActivity : AppCompatActivity() {
                 if (EmergencyBypassStore.pause(this)) {
                     AppLogStore.append(this, "Emergency", "Emergency mode paused from Settings")
                     SwitchModeStore.clearTemporary(this)
-                    Toast.makeText(this, getString(R.string.emergency_paused_toast), Toast.LENGTH_SHORT).show()
+                    findViewById<View>(android.R.id.content).showWarnPill(getString(R.string.emergency_paused_toast))
                     BlockingRuntime.ensureRunning(this)
                     applyRestrictedAccessState()
                 }
@@ -650,7 +656,7 @@ class SettingsActivity : AppCompatActivity() {
                 AppLogStore.append(this, "Emergency", "Emergency mode ended from Settings")
                 EmergencyBypassStore.cancel(this)
                 SwitchModeStore.clearTemporary(this)
-                Toast.makeText(this, getString(R.string.emergency_ended_toast), Toast.LENGTH_SHORT).show()
+                findViewById<View>(android.R.id.content).showWarnPill(getString(R.string.emergency_ended_toast))
                 BlockingRuntime.ensureRunning(this)
                 applyRestrictedAccessState()
             }
@@ -659,8 +665,8 @@ class SettingsActivity : AppCompatActivity() {
                 if (EmergencyBypassStore.resume(this)) {
                     val remainingMinutes = EmergencyBypassStore.minutesRemaining(this).coerceAtLeast(1)
                     AppLogStore.append(this, "Emergency", "Emergency mode resumed from Settings with ${remainingMinutes}m remaining")
-                    SwitchModeStore.setTemporarilyDisabled(this, remainingMinutes * 60_000L)
-                    Toast.makeText(this, getString(R.string.emergency_resumed_toast), Toast.LENGTH_SHORT).show()
+                    SwitchModeStore.setTemporarilyDisabled(this, remainingMinutes * 60_000L, isEmergency = true)
+                    findViewById<View>(android.R.id.content).showWarnPill(getString(R.string.emergency_resumed_toast))
                     BlockingRuntime.ensureRunning(this)
                     applyRestrictedAccessState()
                 }
@@ -669,7 +675,7 @@ class SettingsActivity : AppCompatActivity() {
                 AppLogStore.append(this, "Emergency", "Emergency mode ended from Settings")
                 EmergencyBypassStore.cancel(this)
                 SwitchModeStore.clearTemporary(this)
-                Toast.makeText(this, getString(R.string.emergency_ended_toast), Toast.LENGTH_SHORT).show()
+                findViewById<View>(android.R.id.content).showWarnPill(getString(R.string.emergency_ended_toast))
                 BlockingRuntime.ensureRunning(this)
                 applyRestrictedAccessState()
             }
@@ -706,6 +712,9 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     companion object {
+        const val EXTRA_NESTED_SCREEN = "extra_nested_screen"
+        const val EXTRA_NESTED_FOCUS = "extra_nested_focus"
+
         fun openWithAccessCheck(
             source: AppCompatActivity,
             finishSourceAfterOpen: Boolean = false
@@ -745,93 +754,30 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun showSetEmergencyPinDialog(onSuccess: () -> Unit) {
-        val input = emergencyPinInput(getString(R.string.emergency_pin_choose_hint))
-        val dialog = AlertDialog.Builder(this)
-            .setTitle(getString(R.string.emergency_pin_title))
-            .setMessage(getString(R.string.emergency_pin_message))
-            .setView(emergencyPinContainer(input))
-            .setPositiveButton(getString(R.string.ok), null)
-            .setNegativeButton(getString(R.string.cancel), null)
-            .create()
-
-        dialog.setOnShowListener {
-            dialog.styleSwitchlyDialogButtons()
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                val pin = input.text?.toString()?.trim().orEmpty()
-                if (pin.length < 4) {
-                    Toast.makeText(this, R.string.emergency_pin_too_short, Toast.LENGTH_SHORT).show()
-                    return@setOnClickListener
-                }
-                EmergencyPinStore.setPin(this, pin)
-                Toast.makeText(this, R.string.emergency_pin_changed, Toast.LENGTH_SHORT).show()
-                dialog.dismiss()
-                onSuccess()
-            }
-        }
-        dialog.show()
+        EmergencyPinDialog.showSetPin(this, onSuccess)
     }
 
     private fun showEnterEmergencyPinDialog(onSuccess: () -> Unit) {
-        val input = emergencyPinInput(getString(R.string.emergency_pin_enter_current_hint))
-        val dialog = AlertDialog.Builder(this)
-            .setTitle(getString(R.string.emergency_pin_enter_current_title))
-            .setMessage(getString(R.string.emergency_pin_enter_current_message))
-            .setView(emergencyPinContainer(input))
-            .setPositiveButton(getString(R.string.ok), null)
-            .setNegativeButton(getString(R.string.cancel), null)
-            .create()
-
-        dialog.setOnShowListener {
-            dialog.styleSwitchlyDialogButtons()
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                val pin = input.text?.toString()?.trim().orEmpty()
-                if (!EmergencyPinStore.matchesPin(this, pin)) {
-                    Toast.makeText(this, R.string.emergency_pin_incorrect, Toast.LENGTH_SHORT).show()
-                    return@setOnClickListener
-                }
-                dialog.dismiss()
-                onSuccess()
-            }
-        }
-        dialog.show()
-    }
-
-    private fun emergencyPinInput(hintText: String): EditText {
-        return EditText(this).apply {
-            inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD
-            hint = hintText
-            backgroundTintList = AccentColor.getActiveColor(this@SettingsActivity)
-        }
-    }
-
-    private fun emergencyPinContainer(input: EditText): FrameLayout {
-        return FrameLayout(this).apply {
-            val margin = (24 * resources.displayMetrics.density).toInt()
-            setPadding(margin, 0, margin, 0)
-            addView(
-                input,
-                FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
-                )
-            )
-        }
+        EmergencyPinDialog.showEnterPin(this, onSuccess)
     }
 
     private fun showEmergencyUnlockStartDialog() {
-        AlertDialog.Builder(this)
+        MaterialAlertDialogBuilder(this)
             .setTitle(getString(R.string.pref_emergency_title))
             .setMessage(getString(R.string.emergency_action_start_15))
             .setNegativeButton(R.string.cancel, null)
-            .setPositiveButton(R.string.ok) { _, _ ->
+            .setPositiveButton(R.string.ok) { _, dialog ->
+                // Anchor to the dialog window so the pill is visible above it.
+                val pillAnchor = (dialog as? AlertDialog)?.window?.decorView
+                    ?: findViewById<View>(android.R.id.content)
                 if (EmergencyBypassStore.enableIfAllowed(this, 15)) {
                     AppLogStore.append(this, "Emergency", "Emergency mode started from Settings for 15m")
-                    SwitchModeStore.setTemporarilyDisabled(this, 15 * 60_000L)
-                    Toast.makeText(this, getString(R.string.emergency_enabled_toast, 15), Toast.LENGTH_SHORT).show()
+                    SwitchModeStore.setTemporarilyDisabled(this, 15 * 60_000L, isEmergency = true)
+                    pillAnchor.showWarnPill(getString(R.string.emergency_enabled_toast, 15))
                     BlockingRuntime.ensureRunning(this)
                     applyRestrictedAccessState()
                 } else {
-                    Toast.makeText(this, getString(R.string.emergency_used_today), Toast.LENGTH_SHORT).show()
+                    pillAnchor.showWarnPill(getString(R.string.emergency_used_today))
                 }
             }
             .showAccented()

@@ -120,7 +120,11 @@ class QuickActionReceiver : BroadcastReceiver() {
                 return false
             }
 
-            SwitchModeStore.setTemporarilyDisabled(context, minutes * 60_000L)
+            val applied = SwitchModeStore.setTemporarilyDisabled(context, minutes * 60_000L)
+            if (!applied) {
+                refreshWidgets(context)
+                return false
+            }
             AppLogStore.append(context, "Profiles", "Manual toggle action=temp_disable profile=${ProfileStore.getCurrent(context)} duration=${minutes * 60_000L}ms")
             BlockingRuntime.ensureRunning(context)
             AppLogStore.append(context, "Widget", "action_result action=temp_disable result=changed reason=applied durationMin=$minutes")

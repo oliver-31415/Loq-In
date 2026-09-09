@@ -1,22 +1,27 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="settings_find_title">Einstellung finden</string>
-    <string name="settings_find_hint">NFC, Akku, Backup … eingeben</string>
+
+    <!-- ====================================================== -->
+    <!-- Settings search -->
+    <!-- ====================================================== -->
+    <string name="settings_find_title">Einstellung suchen</string>
+    <string name="settings_find_hint">NFC, Akku, Backup eingeben…</string>
     <string name="settings_search_terms_keys">NFC, QR, Barcode, Tags</string>
-    <string name="settings_search_terms_display">Widgets, Kacheln, Verknüpfungen, Home</string>
-    <string name="settings_search_terms_permissions">Akku, Hintergrund, Bedienungshilfe, Autostart</string>
-    <string name="settings_search_terms_account">Backup, Wiederherstellung, Sync, Konto, Konto löschen, Kontolöschung</string>
+    <string name="settings_search_terms_display">Widgets, Kacheln, Verknüpfungen, Startseite</string>
+    <string name="settings_search_terms_permissions">Akku, Hintergrund, Bedienungshilfen, Autostart</string>
+    <string name="settings_search_terms_account">Backup, Wiederherstellen, Sync, Konto, Konto löschen, Kontolöschung</string>
     <string name="settings_search_terms_developer">Deinstallationsschutz, Geräteadministrator, ADB</string>
-    <string name="settings_search_terms_blocking">Kontrollmodus, temporärer Timer, Regeln</string>
+    <string name="settings_search_terms_blocking">Steuerungsmodus, Zeitweiser Timer, Regeln</string>
 
     <!-- ====================================================== -->
     <!-- Settings sections -->
     <!-- ====================================================== -->
     <string name="settings_section_controls">Steuerung</string>
-    <string name="settings_section_personalization">Darstellung</string>
+    <string name="settings_section_personalization">Personalisierung</string>
     <string name="settings_section_reliability">Berechtigungen &amp; Zuverlässigkeit</string>
     <string name="settings_section_data">Konto &amp; Daten</string>
-    <string name="settings_section_help">Hilfe &amp; Info</string>
+    <string name="settings_section_help">Hilfe &amp; Über</string>
+    <string name="settings_section_info">Info</string>
     <string name="settings_section_developer">Entwickler</string>
 
     <!-- ====================================================== -->
@@ -24,14 +29,16 @@
     <!-- ====================================================== -->
     <string name="settings_keys_codes_title">Schlüssel &amp; Codes</string>
     <string name="settings_keys_codes_summary">NFC-Tags, gekoppelte Tags, QR-Codes und Barcode-Aktionen verwalten</string>
+    <string name="pref_show_session_missed_notifications_title">Verpasste Benachrichtigungen anzeigen</string>
+    <string name="pref_show_session_missed_notifications_summary">Zusammenfassung stummgeschalteter Benachrichtigungen nach einer Sitzung anzeigen</string>
 
     <!-- ====================================================== -->
     <!-- Personalization -->
     <!-- ====================================================== -->
-    <string name="settings_theme_title">Darstellung</string>
+    <string name="settings_theme_title">Erscheinungsbild</string>
     <string name="settings_theme_summary">Design, Farben &amp; Sprache</string>
-    <string name="settings_display_shortcuts_title">Widgets &amp; Shortcuts</string>
-    <string name="settings_display_shortcuts_summary">Verwalte Schnelleinstellungen-Kacheln und Android-Widgets</string>
+    <string name="settings_display_shortcuts_title">Widgets &amp; Verknüpfungen</string>
+    <string name="settings_display_shortcuts_summary">Schnelleinstellungs-Kacheln und Android-Widgets verwalten</string>
 
     <!-- ====================================================== -->
     <!-- Permissions and reliability -->
@@ -39,15 +46,31 @@
     <string name="settings_permissions_reliability_title">Berechtigungen &amp; Zuverlässigkeit</string>
     <string name="settings_permissions_reliability_summary">Berechtigungen und Hintergrundzuverlässigkeit</string>
     <string name="pref_permissions_title">Berechtigungen</string>
-    <string name="pref_permissions_summary">Prüfe und verwalte die Systemberechtigungen, die Switchly benötigt.</string>
+    <string name="pref_permissions_summary">Die Systemberechtigungen prüfen und verwalten, die Switchly benötigt.</string>
     <string name="settings_emergency_unlock_title">Notfall-Entsperrung</string>
     <string name="settings_emergency_unlock_summary">Notfall-Entsperrung starten, pausieren, fortsetzen oder beenden</string>
 
     <!-- ====================================================== -->
-    <!-- Account and data -->
+    <!-- Account screen -->
     <!-- ====================================================== -->
+    <string name="account_title">Konto</string>
+    <string name="account_section_account">Konto</string>
+    <string name="account_section_activity_history">Aktivität &amp; Verlauf</string>
+    <string name="account_section_security_access">Sicherheit &amp; Zugriff</string>
+    <string name="account_section_setup_data">Einrichtung &amp; Daten</string>
+    <string name="account_section_data">Backup &amp; Daten</string>
+    <string name="account_section_info">Info</string>
+    <string name="account_overview_title">Switchly-Übersicht</string>
+    <string name="account_overview_summary">Zähler, Pläne und Aktionen im Überblick</string>
+    <string name="account_keys_codes_title">Meine Schlüssel und Codes</string>
+    <string name="account_keys_codes_summary">NFC-Tags, QR- und Barcode-Schlüssel</string>
+    <string name="account_disclaimer_title">Haftungsausschluss</string>
+    <string name="account_disclaimer_summary">Was Switchly kann und was nicht</string>
+    <string name="account_disclaimer_body">Switchly hilft dir, Ablenkungen zu reduzieren, indem Apps, Websites und ausgewählte In-App-Inhalte blockiert werden, solange der Schutz aktiv ist. Das Blockieren hängt von Systemberechtigungen (Bedienungshilfen, Nutzungszugriff) ab und kann durch Akkuoptimierung, Herstellerverhalten und App-Updates beeinflusst werden. Die Notfall-Entsperrung ist bewusst begrenzt. Switchly wird ohne Gewähr bereitgestellt; du bist selbst dafür verantwortlich, die Bedingungen deiner Geräte und Dienste einzuhalten.</string>
     <string name="settings_account_title">Konto</string>
     <string name="settings_account_summary">Backup, Notfall-PIN &amp; Sync</string>
+    <string name="pref_change_emergency_pin_title">Notfall-PIN ändern</string>
+    <string name="pref_change_emergency_pin_summary">Notfall-PIN für die Notfall-Entsperrung festlegen oder ändern</string>
     <string name="settings_backup_title">Backup</string>
     <string name="settings_backup_summary">Deine Konfiguration synchronisieren &amp; wiederherstellen</string>
     <string name="settings_backup_create_title">Backup</string>
@@ -67,7 +90,7 @@
     <string name="settings_contact_support_title">Support</string>
     <string name="settings_contact_support_summary">Hilfe erhalten, Bericht senden und Diagnose ansehen</string>
     <string name="settings_info_title">Info</string>
-    <string name="settings_info_summary">App-, Geräte- und Entwicklerdetails</string>
+    <string name="settings_info_summary">App-Info, Hilfe, Support und mehr</string>
 
     <!-- ====================================================== -->
     <!-- Reset app data -->

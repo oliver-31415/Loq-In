@@ -1,18 +1,38 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="200dp"
-    android:height="100dp"
+    android:height="120dp"
     android:viewportWidth="240"
-    android:viewportHeight="120">
+    android:viewportHeight="144">
+    <!-- Rounded hero card base -->
     <path
-        android:pathData="M24,0h192a24,24 0,0 1,24 24v72a24,24 0,0 1,-24 24h-192a24,24 0,0 1,-24 -24v-72a24,24 0,0 1,24 -24z"
-        android:fillColor="#111827" />
+        android:pathData="M24,4h192a20,20 0,0 1,20 20v96a20,20 0,0 1,-20 20h-192a20,20 0,0 1,-20 -20v-96a20,20 0,0 1,20 -20z"
+        android:fillColor="#2E8B57" />
+    <!-- Organic top-right blob highlight -->
     <path
-        android:pathData="M24,0h192a24,24 0,0 1,24 24v26h-240v-26a24,24 0,0 1,24 -24z"
-        android:fillColor="#263238" />
+        android:pathData="M140,4h76a20,20 0,0 1,20 20v50c-20,-10 -50,-20 -96,-70z"
+        android:fillColor="#4034C98A" />
+    <!-- Organic bottom-left blob highlight -->
     <path
-        android:pathData="M22,20a10,10 0,1 0,20 0a10,10 0,1 0,-20 0"
-        android:fillColor="#8BE9FD" />
+        android:pathData="M4,90c30,-20 70,-10 90,50h-70a20,20 0,0 1,-20 -20z"
+        android:fillColor="#594FD9A0" />
+    <!-- Security Shield Header Icon -->
     <path
-        android:pathData="M48,16h110v8h-110zM40,58h160v32h-160z"
+        android:pathData="M24,20L31,17L38,20V26C38,30.5 35,34.7 31,36C27,34.7 24,30.5 24,26V20Z"
         android:fillColor="#FFFFFF" />
+    <!-- Profile Name line -->
+    <path
+        android:pathData="M44,23h60v8h-60z"
+        android:fillColor="#FFFFFF" />
+    <!-- Status Pill badge -->
+    <path
+        android:pathData="M184,20h30a6,6 0,0 1,6 6v0a6,6 0,0 1,-6 6h-30a6,6 0,0 1,-6 -6v0a6,6 0,0 1,6 -6z"
+        android:fillColor="#33FFFFFF" />
+    <!-- Big Bold Chronometer ("01:23:45" bar representation) -->
+    <path
+        android:pathData="M36,60h168v24h-168z"
+        android:fillColor="#FFFFFF" />
+    <!-- Subtitle stat line -->
+    <path
+        android:pathData="M70,96h100v8h-100z"
+        android:fillColor="#CCFFFFFF" />
 </vector>

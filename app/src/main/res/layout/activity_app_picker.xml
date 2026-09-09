@@ -33,7 +33,7 @@
         </com.google.android.material.appbar.MaterialToolbar>
     </com.google.android.material.appbar.AppBarLayout>
 
-    <!-- Content with search + list + save -->
+    <!-- Content -->
     <LinearLayout
         android:id="@+id/content"
         android:layout_width="match_parent"
@@ -41,10 +41,136 @@
         android:orientation="vertical"
         android:paddingStart="12dp"
         android:paddingEnd="12dp"
-        android:paddingBottom="12dp"
+        android:paddingBottom="8dp"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
-        <!-- Search field in the same style as FAQ -->
+        <!-- Rule options -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardRuleSettings"
+            style="@style/Switchly.Card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            app:cardUseCompatPadding="false">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="14dp">
+
+                <TextView
+                    android:id="@+id/tvProfileRuleModeTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/profile_rule_mode_title"
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvProfileRuleModeSummary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:maxLines="2"
+                    android:ellipsize="end"
+                    android:text="@string/profile_rule_mode_block_summary"
+                    android:textColor="?android:attr/textColorSecondary"
+                    android:textSize="12.5sp" />
+
+                    <com.google.android.material.button.MaterialButtonToggleGroup
+                        android:id="@+id/toggleProfileRuleMode"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        app:selectionRequired="true"
+                        app:singleSelection="true">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnBlockSelectedMode"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:minHeight="48dp"
+                            android:maxLines="2"
+                            android:text="@string/profile_rule_mode_block"
+                            android:textSize="13sp"
+                            app:cornerRadius="16dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnAllowSelectedMode"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:minHeight="48dp"
+                            android:maxLines="2"
+                            android:text="@string/profile_rule_mode_allow"
+                            android:textSize="13sp"
+                            app:cornerRadius="16dp" />
+                    </com.google.android.material.button.MaterialButtonToggleGroup>
+
+                    <LinearLayout
+                        android:id="@+id/bulkActionsRow"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:orientation="horizontal">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnSelectAll"
+                            style="@style/Widget.Material3.Button.TonalButton"
+                            android:layout_width="0dp"
+                            android:layout_height="44dp"
+                            android:layout_weight="1"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:maxLines="1"
+                            android:minHeight="44dp"
+                            android:text="@string/app_picker_select_all"
+                            android:textSize="13sp"
+                            app:cornerRadius="14dp"
+                            app:icon="@drawable/check_circle_24"
+                            app:iconGravity="textStart"
+                            app:strokeWidth="0dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnClearAll"
+                            style="@style/Widget.Material3.Button.TonalButton"
+                            android:layout_width="0dp"
+                            android:layout_height="44dp"
+                            android:layout_marginStart="8dp"
+                            android:layout_weight="1"
+                            android:insetTop="0dp"
+                            android:insetBottom="0dp"
+                            android:maxLines="1"
+                            android:minHeight="44dp"
+                            android:text="@string/app_picker_clear_all"
+                            android:textSize="13sp"
+                            app:cornerRadius="14dp"
+                            app:icon="@drawable/close_24"
+                            app:iconGravity="textStart"
+                            app:strokeWidth="0dp" />
+                    </LinearLayout>
+
+                    <CheckBox
+                        android:id="@+id/cbAutoBlockNewApps"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="@string/app_picker_auto_block_new_apps_title"
+                        android:textColor="?android:attr/textColorPrimary" />
+
+                    <TextView
+                        android:id="@+id/tvAutoBlockNewAppsSummary"
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:visibility="gone"
+                        android:text="@string/app_picker_auto_block_new_apps_summary" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- Search -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/searchBox"
             android:layout_width="match_parent"
@@ -61,120 +187,24 @@
                 android:imeOptions="actionSearch" />
         </com.google.android.material.textfield.TextInputLayout>
 
-        <TextView
-            android:id="@+id/tvProfileRuleModeTitle"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:text="@string/profile_rule_mode_title"
-            android:textColor="?android:attr/textColorPrimary"
-            android:textStyle="bold" />
-
-        <com.google.android.material.button.MaterialButtonToggleGroup
-            android:id="@+id/toggleProfileRuleMode"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            app:selectionRequired="true"
-            app:singleSelection="true">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnBlockSelectedMode"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:minHeight="48dp"
-                android:text="@string/profile_rule_mode_block"
-                app:cornerRadius="4dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnAllowSelectedMode"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:minHeight="48dp"
-                android:text="@string/profile_rule_mode_allow"
-                app:cornerRadius="4dp" />
-        </com.google.android.material.button.MaterialButtonToggleGroup>
-
-        <TextView
-            android:id="@+id/tvProfileRuleModeSummary"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
-            android:text="@string/profile_rule_mode_block_summary"
-            android:textColor="?android:attr/textColorSecondary"
-            android:textSize="13sp" />
-
-        <LinearLayout
-            android:id="@+id/bulkActionsRow"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:orientation="horizontal">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnSelectAll"
-                style="@style/Switchly.OutlinedButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:text="@string/app_picker_select_all" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnClearAll"
-                style="@style/Switchly.OutlinedButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:layout_weight="1"
-                android:text="@string/app_picker_clear_all" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/rowAutoBlockNewApps"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:orientation="vertical">
-
-            <CheckBox
-                android:id="@+id/cbAutoBlockNewApps"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/app_picker_auto_block_new_apps_title"
-                android:textColor="?android:attr/textColorPrimary" />
-
-            <TextView
-                android:id="@+id/tvAutoBlockNewAppsSummary"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="48dp"
-                android:layout_marginTop="-4dp"
-                android:layout_marginEnd="8dp"
-                android:text="@string/app_picker_auto_block_new_apps_summary"
-                android:textColor="?android:attr/textColorSecondary"
-                android:textSize="12.5sp" />
-        </LinearLayout>
-
         <!-- App list -->
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/rvApps"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="4dp"
             android:layout_weight="1"
-            android:paddingBottom="32dp"
+            android:paddingBottom="24dp"
             android:clipToPadding="false" />
 
-        <!-- Save button -->
+        <!-- Bottom action -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSave"
             style="@style/Switchly.Button"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:layout_marginBottom="8dp"
+            android:layout_marginTop="6dp"
+            android:layout_marginBottom="4dp"
             android:text="@string/save" />
     </LinearLayout>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

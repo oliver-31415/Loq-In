@@ -200,7 +200,7 @@
     <string name="nfc_temp_hint_profile_enable_toast">Temp-Aktivieren wechselt zu diesem Profil.</string>
     <string name="toast_disable_requires_nfc">Switchly kann derzeit nur per NFC-Tag deaktiviert werden.</string>
     <string name="toast_cannot_disable_while_locked">Switchly ist gesperrt. Nutze dein NFC-Tag, um es zu deaktivieren.</string>
-    <string name="toast_cannot_change_profile_while_locked">Deaktiviere Switchly vollständig, um Profile zu wechseln.</string>
+    <string name="toast_cannot_change_profile_while_locked">Deaktiviere Switchly, um Profile zu wechseln.</string>
 
     <!-- ====================================================== -->
     <!-- NFC URI and scan errors -->

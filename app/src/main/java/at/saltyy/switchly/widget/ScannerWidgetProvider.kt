@@ -27,10 +27,12 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.widget.RemoteViews
+import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import at.saltyy.switchly.R
 import at.saltyy.switchly.feature.entry.QuickActionIconFactory
 import at.saltyy.switchly.feature.entry.ScanLauncherActivity
+import at.saltyy.switchly.feature.theme.AccentColor
 import at.saltyy.switchly.ui.MainActivity
 
 class ScannerWidgetProvider : AppWidgetProvider() {
@@ -71,13 +73,16 @@ class ScannerWidgetProvider : AppWidgetProvider() {
             val minHeight = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT)
             val showExpandedRow = minWidth >= 260 && minHeight >= 190
 
+            val accent = AccentColor.getAccentColorInt(context)
+            val onSurface = ContextCompat.getColor(context, R.color.foqos_on_surface)
+
             return RemoteViews(context.packageName, R.layout.widget_scanner).apply {
-                setImageViewBitmap(R.id.widgetOpenAppIcon, QuickActionIconFactory.createWidgetBitmap(context, R.drawable.apps_24))
-                setImageViewBitmap(R.id.widgetOpenQrIcon, QuickActionIconFactory.createWidgetBitmap(context, R.drawable.qr_code_24))
-                setImageViewBitmap(R.id.widgetOpenBarcodeIcon, QuickActionIconFactory.createWidgetBitmap(context, R.drawable.barcode_24))
-                setImageViewBitmap(R.id.widgetOpenFocusNowIcon, QuickActionIconFactory.createWidgetBitmap(context, R.drawable.play_arrow_24))
-                setImageViewBitmap(R.id.widgetOpenNfcWriteIcon, QuickActionIconFactory.createWidgetBitmap(context, R.drawable.nfc_24))
-                setImageViewBitmap(R.id.widgetOpenBlockedNotificationsIcon, QuickActionIconFactory.createWidgetBitmap(context, R.drawable.notifications_24))
+                setImageViewBitmap(R.id.widgetOpenAppIcon, QuickActionIconFactory.createWidgetBitmap(context, R.drawable.apps_24, onSurface))
+                setImageViewBitmap(R.id.widgetOpenQrIcon, QuickActionIconFactory.createWidgetBitmap(context, R.drawable.qr_code_24, onSurface))
+                setImageViewBitmap(R.id.widgetOpenBarcodeIcon, QuickActionIconFactory.createWidgetBitmap(context, R.drawable.barcode_24, onSurface))
+                setImageViewBitmap(R.id.widgetOpenFocusNowIcon, QuickActionIconFactory.createWidgetBitmap(context, R.drawable.play_arrow_24, accent))
+                setImageViewBitmap(R.id.widgetOpenNfcWriteIcon, QuickActionIconFactory.createWidgetBitmap(context, R.drawable.nfc_24, onSurface))
+                setImageViewBitmap(R.id.widgetOpenBlockedNotificationsIcon, QuickActionIconFactory.createWidgetBitmap(context, R.drawable.notifications_24, onSurface))
 
                 setViewVisibility(
                     R.id.widgetExpandedRow,

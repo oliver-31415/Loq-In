@@ -941,12 +941,12 @@ object HomeModeDialogHelper {
                 onChanged?.invoke()
             }
             .create()
+        dialog.window?.setLayout(
+            (context.resources.displayMetrics.widthPixels * 0.98f).toInt(),
+            ViewGroup.LayoutParams.WRAP_CONTENT
+        )
         dialog.setOnShowListener {
             dialog.styleSwitchlyDialogButtons()
-            dialog.window?.setLayout(
-                (context.resources.displayMetrics.widthPixels * 0.98f).toInt(),
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            )
         }
         dialog.show()
     }

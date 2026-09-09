@@ -11,12 +11,45 @@
     <string name="onb_granted">Granted</string>
     <string name="onb_done">Done</string>
     <string name="onb_start_button">Start Switchly</string>
-    <string name="onb_next">Next</string>
-    <string name="onb_skip">Set up later</string>
+    <string name="onb_next">Continue</string>
+    <string name="onb_continue">Continue</string>
+    <string name="onb_back">Back</string>
+    <string name="onb_skip">Skip</string>
     <string name="onb_open">Open</string>
     <string name="onb_permissions_action">Open next setting</string>
 
     <!-- ====================================================== -->
+        <!-- Streamlined Step 1: Profiles -->
+    <string name="onb_profiles_title">Set up your first Profile</string>
+    <string name="onb_profiles_desc">Switchly organizes all your rules into profiles. Each profile has its own blocked apps, websites, and switch methods.</string>
+    <string name="onb_profiles_point_create">Tap the profile name at the top of the Home screen anytime to create, rename, or switch profiles.</string>
+    <string name="onb_profiles_point_rules">Different rules for different routines: set up profiles for Work, Study, or Sleep.</string>
+    <string name="onb_profiles_point_default">Starting with your active profile: %1$s.</string>
+    <string name="onb_profiles_action">Rename profile</string>
+    <string name="onb_profiles_rename_dialog_title">Rename profile</string>
+    <string name="onb_profiles_rename_hint">Profile name</string>
+    <string name="onb_permissions_hub_desc_simple">Switchly runs entirely on your device. Enable Accessibility and Usage Access below to activate protection.</string>
+
+    <!-- Streamlined Step 2: Apps and Websites -->
+    <string name="onb_block_targets_title">Choose what to block</string>
+    <string name="onb_block_targets_desc">Select the apps and websites you want Switchly to block when this profile is active.</string>
+    <string name="onb_block_targets_apps_title">Blocked Apps</string>
+    <string name="onb_block_targets_apps_desc">Choose apps from your device to block</string>
+    <string name="onb_block_targets_apps_none">Tap to choose apps</string>
+    <string name="onb_block_targets_websites_title">Blocked Websites</string>
+    <string name="onb_block_targets_websites_desc">Add domains and websites to block in browser</string>
+    <string name="onb_block_targets_websites_none">Tap to add websites</string>
+    <string name="onb_block_targets_required">Please select at least one app or website to block before continuing.</string>
+    <string name="onb_block_targets_completed_both">%1$d apps · %2$d websites</string>
+    <plurals name="onb_apps_count_plural">
+        <item quantity="one">%1$d app selected</item>
+        <item quantity="other">%1$d apps selected</item>
+    </plurals>
+    <plurals name="onb_websites_count_plural">
+        <item quantity="one">%1$d website blocked</item>
+        <item quantity="other">%1$d websites blocked</item>
+    </plurals>
+
     <!-- Welcome and core concept -->
     <!-- ====================================================== -->
     <string name="onb_welcome_title">Welcome to Switchly</string>
@@ -24,7 +57,7 @@
     <string name="onb_core_point_choose">Pick the apps, websites and supported in-app sections you want each profile to protect.</string>
     <string name="onb_core_point_control">Choose the control channels you trust: NFC, schedules, QR, barcode or manual controls.</string>
     <string name="onb_core_point_enforce">Temporary actions end automatically, while protected settings stay read-only during active protection.</string>
-    
+
     <!-- ====================================================== -->
     <!-- Usage report onboarding step -->
     <!-- ====================================================== -->
@@ -81,7 +114,9 @@
     <!-- ====================================================== -->
     <string name="onb_permissions_hub_title">Permissions overview</string>
     <string name="onb_permissions_hub_mode_desc">Set up the permissions for %1$s. Accessibility and Usage Access are required to continue.</string>
+    <string name="onb_permissions_hub_mode_desc_advanced_protection">Set up the permissions for %1$s. Android Advanced Protection is active, so Accessibility may be unavailable. Usage Access enables Switchly’s limited basic app-blocking fallback; full website and in-app protection still requires Accessibility.</string>
     <string name="onb_required_permissions_hub">Please enable Accessibility and Usage Access before continuing. The other items can be set up now or later.</string>
+    <string name="onb_required_permissions_hub_advanced_protection">Advanced Protection is active. Enable Usage Access to continue with limited basic app blocking. Full website and in-app protection still requires Accessibility.</string>
     <string name="onb_perm_accessibility_title">Accessibility</string>
     <string name="onb_perm_accessibility_desc">Required for core app and website blocking.</string>
     <string name="onb_perm_usage_title">Usage Access</string>
@@ -154,6 +189,7 @@
 
     <string name="onb_home_customize_title">Choose your Home layout</string>
     <string name="onb_home_customize_desc">Choose a Home mode or use Custom to arrange cards and their contents.</string>
+
     <!-- ====================================================== -->
     <!-- Usage loading and Home mode selection -->
     <!-- ====================================================== -->
@@ -181,7 +217,9 @@
     <string name="onb_optional_support_title">Contact the developer</string>
     <string name="onb_optional_support_desc">Send a support request and attach generated logs and device information when reporting a bug.</string>
 
+    <!-- ====================================================== -->
     <!-- Optional setup previews -->
+    <!-- ====================================================== -->
     <string name="onb_optional_hidden_usage_row_title">Usage &amp; Insights</string>
     <string name="onb_optional_hidden_usage_row_desc">Keep selected apps out of usage reports and rankings.</string>
     <string name="onb_optional_hidden_picker_row_title">App Picker</string>
@@ -212,4 +250,5 @@
     <string name="onb_optional_access_more_action">More access controls</string>
     <string name="onb_optional_faq_open_action">Open the full FAQ</string>
     <string name="onb_optional_support_open_action">Open Support</string>
+
 </resources>

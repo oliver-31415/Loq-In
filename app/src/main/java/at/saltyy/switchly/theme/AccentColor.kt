@@ -83,7 +83,78 @@ object AccentColor {
         }
     }
 
-    fun getToolbarColor(context: Context): Int = getAccentColorInt(context)
+    // Foqos restyle: toolbars are flat surface (no accent header). The accent stays on
+    // buttons/controls. All activities that tint their toolbar programmatically get the
+    // surface color here, so the whole app flips consistently.
+    fun getToolbarColor(context: Context): Int = ContextCompat.getColor(context, R.color.foqos_surface)
 
     fun getActiveColor(context: Context): ColorStateList = ColorStateList.valueOf(getAccentColorInt(context))
+
+    /**
+     * Concrete container wash for icon roundels/badges. Same reason as
+     * [getDatePickerTheme]: ?attr/colorPrimaryContainer inside drawables and
+     * dialog contexts can resolve to the base green instead of the live
+     * accent, so set it explicitly in code.
+     */
+    fun getAccentContainerColorInt(context: Context): Int = when (getOption(context)) {
+        Option.GREEN  -> ContextCompat.getColor(context, R.color.accent_green_container)
+        Option.BLUE   -> ContextCompat.getColor(context, R.color.accent_blue_container)
+        Option.ORANGE -> ContextCompat.getColor(context, R.color.accent_orange_container)
+        Option.PURPLE -> ContextCompat.getColor(context, R.color.accent_purple_container)
+        Option.PINK   -> ContextCompat.getColor(context, R.color.accent_pink_container)
+        Option.TEAL   -> ContextCompat.getColor(context, R.color.accent_teal_container)
+        Option.RED    -> ContextCompat.getColor(context, R.color.accent_red_container)
+        Option.AMBER  -> ContextCompat.getColor(context, R.color.accent_amber_container)
+        Option.GRAY   -> ContextCompat.getColor(context, R.color.accent_gray_container)
+        Option.CUSTOM -> androidx.core.graphics.ColorUtils.setAlphaComponent(getAccentColorInt(context), 0x2E)
+    }
+
+    /**
+     * Concrete date-picker dialog theme for the current accent. The picker is
+     * themed with setTheme(), which resolves against a dialog overlay — not
+     * the activity theme — so ?attr references to the live accent cannot
+     * resolve there (they crash inflation). One overlay per accent carries
+     * concrete colors instead.
+     */
+    fun getDatePickerTheme(context: Context): Int = when (getOption(context)) {
+        Option.BLUE   -> R.style.ThemeOverlay_Switchly_DatePicker_Blue
+        Option.ORANGE -> R.style.ThemeOverlay_Switchly_DatePicker_Orange
+        Option.PURPLE -> R.style.ThemeOverlay_Switchly_DatePicker_Purple
+        Option.PINK   -> R.style.ThemeOverlay_Switchly_DatePicker_Pink
+        Option.TEAL   -> R.style.ThemeOverlay_Switchly_DatePicker_Teal
+        Option.RED    -> R.style.ThemeOverlay_Switchly_DatePicker_Red
+        Option.AMBER  -> R.style.ThemeOverlay_Switchly_DatePicker_Amber
+        Option.GRAY   -> R.style.ThemeOverlay_Switchly_DatePicker_Gray
+        else          -> R.style.ThemeOverlay_Switchly_DatePicker
+    }
+
+    /**
+     * Concrete time-picker dialog theme for the current accent.
+     */
+    fun getTimePickerTheme(context: Context): Int = when (getOption(context)) {
+        Option.BLUE   -> R.style.ThemeOverlay_Switchly_TimePicker_Blue
+        Option.ORANGE -> R.style.ThemeOverlay_Switchly_TimePicker_Orange
+        Option.PURPLE -> R.style.ThemeOverlay_Switchly_TimePicker_Purple
+        Option.PINK   -> R.style.ThemeOverlay_Switchly_TimePicker_Pink
+        Option.TEAL   -> R.style.ThemeOverlay_Switchly_TimePicker_Teal
+        Option.RED    -> R.style.ThemeOverlay_Switchly_TimePicker_Red
+        Option.AMBER  -> R.style.ThemeOverlay_Switchly_TimePicker_Amber
+        Option.GRAY   -> R.style.ThemeOverlay_Switchly_TimePicker_Gray
+        else          -> R.style.ThemeOverlay_Switchly_TimePicker
+    }
+
+    /**
+     * Concrete Material alert dialog theme for the current accent.
+     */
+    fun getDialogTheme(context: Context): Int = when (getOption(context)) {
+        Option.BLUE   -> R.style.ThemeOverlay_Switchly_Dialog_Blue
+        Option.ORANGE -> R.style.ThemeOverlay_Switchly_Dialog_Orange
+        Option.PURPLE -> R.style.ThemeOverlay_Switchly_Dialog_Purple
+        Option.PINK   -> R.style.ThemeOverlay_Switchly_Dialog_Pink
+        Option.TEAL   -> R.style.ThemeOverlay_Switchly_Dialog_Teal
+        Option.RED    -> R.style.ThemeOverlay_Switchly_Dialog_Red
+        Option.AMBER  -> R.style.ThemeOverlay_Switchly_Dialog_Amber
+        Option.GRAY   -> R.style.ThemeOverlay_Switchly_Dialog_Gray
+        else          -> R.style.ThemeOverlay_Switchly_Dialog
+    }
 }

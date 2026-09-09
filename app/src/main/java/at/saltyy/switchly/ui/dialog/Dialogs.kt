@@ -57,6 +57,92 @@ object Dialogs {
     fun builder(ctx: Context): MaterialAlertDialogBuilder = MaterialAlertDialogBuilder(ctx)
 }
 
+/**
+ * Rounded, dark-aware text input for dialogs (replaces the old underline EditText).
+ * Colors resolve from the caller's theme — Theme.Switchly maps all M3 roles to the
+ * night-aware foqos_* tokens, so the field reads correctly in light AND dark mode.
+ */
+fun Context.styledDialogEditText(): android.widget.EditText {
+    fun dp(v: Int): Int = (v * resources.displayMetrics.density + 0.5f).toInt()
+    val accent = AccentColor.getAccentColorInt(this)
+    val onSurface = MaterialColors.getColor(this, com.google.android.material.R.attr.colorOnSurface, Color.BLACK)
+    val surfaceVariant = androidx.core.content.ContextCompat.getColor(this, R.color.foqos_surface_variant)
+    val outlineColor = ColorUtils.setAlphaComponent(onSurface, 0x2E)
+
+    val unFocusedBg = android.graphics.drawable.GradientDrawable().apply {
+        cornerRadius = dp(14).toFloat()
+        setColor(surfaceVariant)
+        setStroke(dp(1), outlineColor)
+    }
+    val focusedBg = android.graphics.drawable.GradientDrawable().apply {
+        cornerRadius = dp(14).toFloat()
+        setColor(surfaceVariant)
+        setStroke(dp(2), accent)
+    }
+    val bgStateList = android.graphics.drawable.StateListDrawable().apply {
+        addState(intArrayOf(android.R.attr.state_focused), focusedBg)
+        addState(intArrayOf(), unFocusedBg)
+    }
+
+    return android.widget.EditText(this).apply {
+        isSingleLine = true
+        setTextColor(onSurface)
+        setHintTextColor(ColorUtils.setAlphaComponent(onSurface, 0x66))
+        highlightColor = ColorUtils.setAlphaComponent(accent, 0x40)
+        background = bgStateList
+        setPadding(dp(16), dp(13), dp(16), dp(13))
+        textSize = 16f
+        runCatching {
+            CustomAccentApplier.tintEditTextCursorAndSelection(this, accent)
+        }
+    }
+}
+
+/**
+ * Foqos-style single-input dialog (rename / create): dark-aware surface,
+ * rounded field, accent-filled Save button, keyboard raised.
+ */
+fun Context.showSwitchlyInputDialog(
+    title: CharSequence,
+    initialText: String? = null,
+    hint: CharSequence? = null,
+    confirmText: CharSequence = getString(R.string.save),
+    onConfirm: (String) -> Unit
+): AlertDialog {
+    val input = styledDialogEditText().apply {
+        initialText?.let {
+            setText(it)
+            setSelection(it.length)
+        }
+        hint?.let { this.hint = it }
+    }
+    val container = android.widget.FrameLayout(this).apply {
+        val padH = (24 * resources.displayMetrics.density + 0.5f).toInt()
+        val padTop = (12 * resources.displayMetrics.density + 0.5f).toInt()
+        val padBottom = (4 * resources.displayMetrics.density + 0.5f).toInt()
+        setPadding(padH, padTop, padH, padBottom)
+        addView(input)
+    }
+    val dialog = MaterialAlertDialogBuilder(this)
+        .setTitle(title)
+        .setView(container)
+        .setPositiveButton(confirmText) { _, _ -> onConfirm(input.text.toString().trim()) }
+        .setNegativeButton(R.string.cancel, null)
+        .create()
+    // Width (and soft-input mode) must be set before show: changing the window
+    // size in OnShow lays out twice and makes the dialog visibly jump.
+    dialog.applySwitchlyDialogWidth(0.90f)
+    dialog.window?.setSoftInputMode(
+        android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE
+    )
+    dialog.setOnShowListener {
+        dialog.styleSwitchlyDialogButtons()
+        input.requestFocus()
+    }
+    dialog.show()
+    return dialog
+}
+
 data class SwitchlyDialogOption(
     val title: CharSequence,
     val summary: CharSequence? = null,
@@ -96,9 +182,9 @@ fun Context.showSwitchlyInfoDialog(
             .setMessage(simpleRow?.value ?: emptyMessage ?: "")
             .setPositiveButton(positiveText, null)
             .create()
+        dialog.applySwitchlyDialogWidth(0.90f)
         dialog.setOnShowListener {
             dialog.styleSwitchlyDialogButtons()
-            dialog.applySwitchlyDialogWidth(0.90f)
         }
         dialog.show()
         return dialog
@@ -157,9 +243,9 @@ fun Context.showSwitchlyInfoDialog(
         .setView(scroll)
         .setPositiveButton(positiveText, null)
         .create()
+    dialog.applySwitchlyDialogWidth(0.90f)
     dialog.setOnShowListener {
         dialog.styleSwitchlyDialogButtons()
-        dialog.applySwitchlyDialogWidth(0.90f)
     }
     dialog.show()
     return dialog
@@ -383,13 +469,13 @@ private fun Context.showSwitchlyOptionDialogInternal(
         builder.setNegativeButton(R.string.cancel) { _, _ -> onCancelled?.invoke() }
     }
     dialog = builder.create()
+    dialog.window?.setLayout((resources.displayMetrics.widthPixels * widthFraction).toInt(), ViewGroup.LayoutParams.WRAP_CONTENT)
 
     dialog.setOnShowListener {
         dialog.styleSwitchlyDialogButtons()
         if (confirmSelection) {
             dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.isEnabled = selectedIndex in options.indices
         }
-        dialog.window?.setLayout((resources.displayMetrics.widthPixels * widthFraction).toInt(), ViewGroup.LayoutParams.WRAP_CONTENT)
     }
     dialog.show()
     return dialog
@@ -643,11 +729,11 @@ fun Context.showSwitchlyMultiChoiceDialog(
         onConfirmed(rowStates)
         dialog.dismiss()
     }
+    dialog.window?.setLayout((resources.displayMetrics.widthPixels * widthFraction).toInt(), ViewGroup.LayoutParams.WRAP_CONTENT)
     dialog.setOnShowListener {
         if (!forceHorizontalButtons) {
             if (options.any { it.destructive }) dialog.styleSwitchlyDestructivePositiveButton() else dialog.styleSwitchlyDialogButtons()
         }
-        dialog.window?.setLayout((resources.displayMetrics.widthPixels * widthFraction).toInt(), ViewGroup.LayoutParams.WRAP_CONTENT)
     }
     dialog.show()
     return dialog
@@ -701,23 +787,29 @@ fun AlertDialog.styleSwitchlyDialogButtons() {
     }
 
     fun styleCommon(b: Button) {
-        b.isAllCaps = false
         b.isSingleLine = false
         b.maxLines = 2
-        b.minWidth = 0
+        b.minWidth = dp(64)
         b.setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
-        val hp = dp(14)
+        val hp = dp(16)
         val vp = dp(8)
         b.setPaddingRelative(hp, vp, hp, vp)
         b.minHeight = dp(40)
         runCatching {
             TextViewCompat.setTextAppearance(b, com.google.android.material.R.style.TextAppearance_MaterialComponents_Button)
         }
+        b.isAllCaps = false
     }
 
     val neg = getButton(AlertDialog.BUTTON_NEGATIVE)
     val neu = getButton(AlertDialog.BUTTON_NEUTRAL)
     val pos = getButton(AlertDialog.BUTTON_POSITIVE)
+
+    val onSurfaceVariant = MaterialColors.getColor(
+        context,
+        com.google.android.material.R.attr.colorOnSurfaceVariant,
+        ColorUtils.setAlphaComponent(onSurface, 0x99)
+    )
 
     pos?.let { b ->
         styleCommon(b)
@@ -727,7 +819,7 @@ fun AlertDialog.styleSwitchlyDialogButtons() {
 
     listOfNotNull(neg, neu).forEach { b ->
         styleCommon(b)
-        b.setTextColor(accent)
+        b.setTextColor(onSurfaceVariant)
         b.backgroundTintList = null
         // Some OEMs keep an old tint; force transparent.
         runCatching { b.setBackgroundColor(Color.TRANSPARENT) }
@@ -752,6 +844,19 @@ fun AlertDialog.styleSwitchlyDialogButtons() {
     }
 
     runCatching { CustomAccentApplier.applyToDialog(this) }
+    runCatching { applySwitchlyDialogCorners() }
+}
+
+fun AlertDialog.applySwitchlyDialogCorners(radiusDp: Float = 24f) {
+    val r = radiusDp * context.resources.displayMetrics.density + 0.5f
+    val surface = MaterialColors.getColor(context, com.google.android.material.R.attr.colorSurface, Color.BLACK)
+    val bg = android.graphics.drawable.GradientDrawable().apply {
+        cornerRadius = r
+        setColor(surface)
+    }
+    val insetH = (12 * context.resources.displayMetrics.density + 0.5f).toInt()
+    val insetV = (16 * context.resources.displayMetrics.density + 0.5f).toInt()
+    window?.setBackgroundDrawable(android.graphics.drawable.InsetDrawable(bg, insetH, insetV, insetH, insetV))
 }
 
 fun AlertDialog.applySwitchlyDialogWidth(widthFraction: Float = 0.94f) {
@@ -823,8 +928,8 @@ fun Context.showSwitchlyFormDialog(
         .setTitle(title)
         .setView(content)
         .create()
+    dialog.applySwitchlyDialogWidth(widthFraction)
     dialog.setOnShowListener {
-        dialog.applySwitchlyDialogWidth(widthFraction)
         runCatching { CustomAccentApplier.applyToDialog(dialog) }
         styleSwitchlyFormButtons(
             deleteButton = null,

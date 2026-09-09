@@ -24,7 +24,6 @@ import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.preference.PreferenceManager
@@ -41,6 +40,7 @@ import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.ui.EdgeToEdgeUtils
 import at.saltyy.switchly.ui.LockedUi
 import at.saltyy.switchly.ui.ThemeUtils
+import at.saltyy.switchly.ui.showWarnPill
 import at.saltyy.switchly.util.EditingLockGuard
 import at.saltyy.switchly.util.LocaleHelper
 import at.saltyy.switchly.util.RelativeTimeFormatter
@@ -139,6 +139,9 @@ class ManageKeysActivity : AppCompatActivity() {
         findViewById<View>(R.id.cardPairedTags).visibility = if (showNfc) View.VISIBLE else View.GONE
         findViewById<View>(R.id.cardGenerateQr).visibility = if (showQr) View.VISIBLE else View.GONE
         findViewById<View>(R.id.cardManageBarcodes).visibility = if (showBarcode) View.VISIBLE else View.GONE
+        findViewById<View>(R.id.dividerWriteNfc)?.visibility = if (showNfc) View.VISIBLE else View.GONE
+        findViewById<View>(R.id.dividerPairedTags)?.visibility = if (showNfc && (showQr || showBarcode)) View.VISIBLE else View.GONE
+        findViewById<View>(R.id.dividerGenerateQr)?.visibility = if (showQr && showBarcode) View.VISIBLE else View.GONE
     }
 
     private fun setupCards() {
@@ -204,7 +207,7 @@ class ManageKeysActivity : AppCompatActivity() {
     }
 
     private fun showFeatureDisabledToast(messageRes: Int) {
-        Toast.makeText(this, messageRes, Toast.LENGTH_LONG).show()
+        findViewById<View>(android.R.id.content).showWarnPill(messageRes)
     }
 
     private fun openManagePairedTags() {
@@ -212,8 +215,8 @@ class ManageKeysActivity : AppCompatActivity() {
         runCatching {
             startActivity(Intent(this, ManagePairedTagsActivity::class.java))
         }.onFailure { error ->
-            AppLogStore.append(this, "NFC", "Failed to open Manage Paired Tags", error)
-            Toast.makeText(this, R.string.error_open_manage_paired_tags, Toast.LENGTH_LONG).show()
+            AppLogStore.append(this, "NFC", "Failed to open Manage Paired Tags")
+            findViewById<View>(android.R.id.content).showWarnPill(R.string.error_open_manage_paired_tags)
         }
     }
 

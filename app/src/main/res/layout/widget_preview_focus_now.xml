@@ -6,13 +6,13 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:gravity="center"
-    android:padding="12dp"
-    android:background="@color/widget_scanner_surface"
+    android:padding="10dp"
+    android:background="@drawable/widget_action_squircle_bg"
     tools:ignore="UseCompoundDrawables">
 
     <ImageView
-        android:layout_width="30dp"
-        android:layout_height="30dp"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
         android:contentDescription="@null"
         android:src="@drawable/widget_play_24" />
 
@@ -21,7 +21,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
         android:text="@string/widget_focus_now_name"
-        android:textColor="@color/widget_scanner_title"
+        android:textColor="@color/foqos_on_surface"
         android:textSize="11sp"
         android:textStyle="bold"
         android:maxLines="1"

@@ -29,6 +29,7 @@ import androidx.annotation.ColorInt
 import androidx.annotation.DrawableRes
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.appcompat.view.ContextThemeWrapper
+import androidx.core.content.ContextCompat
 import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.graphics.drawable.IconCompat
 import at.saltyy.switchly.R
@@ -41,9 +42,6 @@ object QuickActionIconFactory {
 
     @ColorInt
     private const val TILE_ICON_TINT: Int = Color.WHITE
-
-    @ColorInt
-    private const val WIDGET_ICON_TINT: Int = Color.WHITE
 
     fun createShortcutIcon(context: Context, @DrawableRes drawableRes: Int): IconCompat {
         return IconCompat.createWithBitmap(
@@ -69,13 +67,19 @@ object QuickActionIconFactory {
         )
     }
 
-    fun createWidgetBitmap(context: Context, @DrawableRes drawableRes: Int): Bitmap {
+    fun createWidgetBitmap(
+        context: Context,
+        @DrawableRes drawableRes: Int,
+        @ColorInt tint: Int = ContextCompat.getColor(context, R.color.foqos_on_surface),
+        canvasSizeDp: Int = 28,
+        iconSizeDp: Int = 24,
+    ): Bitmap {
         return createBitmap(
             context = context,
             drawableRes = drawableRes,
-            tint = WIDGET_ICON_TINT,
-            canvasSizeDp = 28,
-            iconSizeDp = 24,
+            tint = tint,
+            canvasSizeDp = canvasSizeDp,
+            iconSizeDp = iconSizeDp,
         )
     }
 

@@ -141,11 +141,12 @@ object ActiveDurationStore {
 
         when {
             enabledNow && currentSince <= 0L -> {
-                sp.edit { putLong(KEY_ACTIVE_SINCE_MS, now) }
+                sp.edit(commit = true) { putLong(KEY_ACTIVE_SINCE_MS, now) }
             }
             !enabledNow && currentSince > 0L -> {
                 addFinishedRange(ctx, currentSince, now)
-                sp.edit { putLong(KEY_ACTIVE_SINCE_MS, 0L) }
+                sp.edit(commit = true) { putLong(KEY_ACTIVE_SINCE_MS, 0L) }
+                SessionMissedNotificationsStore.onSessionCompleted(ctx, currentSince, now)
             }
         }
     }

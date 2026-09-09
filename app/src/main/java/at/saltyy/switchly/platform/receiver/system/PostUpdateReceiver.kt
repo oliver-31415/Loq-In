@@ -22,6 +22,8 @@ package at.saltyy.switchly.platform.receiver.system
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import at.saltyy.switchly.blocking.BlockingRuntime
+import at.saltyy.switchly.data.prefs.SwitchModeStore
 import at.saltyy.switchly.platform.receiver.location.LocationTriggerMonitor
 import at.saltyy.switchly.util.PersistentStatusNotifier
 import at.saltyy.switchly.util.ProtectionStatusNotifier
@@ -39,6 +41,9 @@ class PostUpdateReceiver : BroadcastReceiver() {
 
         val appContext = ctx.applicationContext
         runCatching { LocationTriggerMonitor.ensureStarted(appContext) }
+        if (SwitchModeStore.isEnabled(appContext)) {
+            runCatching { BlockingRuntime.ensureRunning(appContext) }
+        }
         runCatching { ProtectionStatusNotifier.refresh(appContext) }
         runCatching { PersistentStatusNotifier.refresh(appContext) }
     }

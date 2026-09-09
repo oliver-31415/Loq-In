@@ -36,26 +36,15 @@ object WebUsageRepo {
     }
 
     fun getThisMonthSummary(ctx: Context, topN: Int = 20): UsageSummary {
-        val c = java.util.Calendar.getInstance()
-        val today = java.util.Calendar.getInstance()
-        c.set(java.util.Calendar.DAY_OF_MONTH, 1)
-        // days since start of month including today
-        val dayMs = 24L * 60L * 60L * 1000L
-        val startDay = (c.timeInMillis/dayMs)
-        val endDay = (today.timeInMillis/dayMs)
-        val days = ((endDay - startDay) + 1).toInt().coerceAtLeast(1).coerceAtMost(366)
-        return getSummary(ctx, days = days, topN = topN)
+        // Trailing 30 days, NOT the calendar month.
+        return getSummary(ctx, days = 30, topN = topN)
     }
 
     fun getThisYearSummary(ctx: Context, topN: Int = 20): UsageSummary {
-        val c = java.util.Calendar.getInstance()
-        val today = java.util.Calendar.getInstance()
-        c.set(java.util.Calendar.MONTH, java.util.Calendar.JANUARY)
-        c.set(java.util.Calendar.DAY_OF_MONTH, 1)
-        val dayMs = 24L * 60L * 60L * 1000L
-        val startDay = (c.timeInMillis/dayMs)
-        val endDay = (today.timeInMillis/dayMs)
-        val days = ((endDay - startDay) + 1).toInt().coerceAtLeast(1).coerceAtMost(366)
+        val days = java.util.Calendar.getInstance()
+            .get(java.util.Calendar.DAY_OF_YEAR)
+            .coerceAtLeast(1)
+            .coerceAtMost(366)
         return getSummary(ctx, days = days, topN = topN)
     }
 
@@ -85,18 +74,11 @@ object WebUsageRepo {
 
     fun getOverallSummary(ctx: Context, topN: Int = 20): UsageSummary {
         WebUsageStore.flush(ctx)
-        val prefs = androidx.preference.PreferenceManager.getDefaultSharedPreferences(ctx)
         val totalsByDomain = HashMap<String, Long>()
-
-        for ((k, v) in prefs.all) {
-            if (!k.startsWith("web_usage_day_")) continue
-            // web_usage_day_YYYYMMDD_<domain>
-            val rest = k.removePrefix("web_usage_day_")
-            if (rest.length <= 9) continue
-            val domain = rest.substring(9)
-            val ms = (v as? Long) ?: 0L
+        for (domain in WebUsageStore.getDomains(ctx)) {
+            val ms = WebUsageStore.getUsageMsAllTime(ctx, domain)
             if (domain.isNotBlank() && ms > 0L) {
-                totalsByDomain[domain] = (totalsByDomain[domain] ?: 0L) + ms
+                totalsByDomain[domain] = ms
             }
         }
 

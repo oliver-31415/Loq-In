@@ -200,7 +200,7 @@
     <string name="nfc_temp_hint_profile_enable_toast">Temporary enable switches to this profile.</string>
     <string name="toast_disable_requires_nfc">Switchly can currently only be disabled via NFC tag.</string>
     <string name="toast_cannot_disable_while_locked">Switchly is locked. Use your NFC tag to disable it.</string>
-    <string name="toast_cannot_change_profile_while_locked">Fully disable Switchly to change profiles.</string>
+    <string name="toast_cannot_change_profile_while_locked">Turn off Switchly to change profiles.</string>
 
     <!-- ====================================================== -->
     <!-- NFC URI and scan errors -->

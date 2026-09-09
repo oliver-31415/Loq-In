@@ -42,7 +42,6 @@ object UsageStatsRepo {
     private const val EVENT_ACTIVITY_PAUSED = 2
     private const val EVENT_SCREEN_NON_INTERACTIVE = 16
     private const val EVENT_KEYGUARD_SHOWN = 17
-    private const val EVENT_ACTIVITY_STOPPED = 23
 
     private fun startOfDayLocal(timeMs: Long): Long {
         val c = Calendar.getInstance()
@@ -55,6 +54,13 @@ object UsageStatsRepo {
     }
 
     private fun startOfTodayLocal(): Long = startOfDayLocal(System.currentTimeMillis())
+
+    private fun startOfPreviousLocalDay(timeMs: Long): Long {
+        val c = Calendar.getInstance()
+        c.timeInMillis = startOfDayLocal(timeMs)
+        c.add(Calendar.DAY_OF_YEAR, -1)
+        return c.timeInMillis
+    }
 
     private fun startOfTomorrowLocal(): Long {
         val c = Calendar.getInstance()
@@ -115,15 +121,9 @@ object UsageStatsRepo {
     }
 
     fun getThisMonthSummary(ctx: Context, topN: Int = 20): UsageSummary {
-        val c = Calendar.getInstance()
-        c.set(Calendar.DAY_OF_MONTH, 1)
-        c.set(Calendar.HOUR_OF_DAY, 0)
-        c.set(Calendar.MINUTE, 0)
-        c.set(Calendar.SECOND, 0)
-        c.set(Calendar.MILLISECOND, 0)
-        val from = c.timeInMillis
-        val to = System.currentTimeMillis()
-        return getSummary(ctx, from, to, topN)
+        // Trailing 30 days (today + previous 29), NOT the calendar month —
+        // matches every other Month range in the app.
+        return getLastNDaysSummary(ctx, 30, topN)
     }
 
     fun getThisYearSummary(ctx: Context, topN: Int = 20): UsageSummary {
@@ -145,14 +145,19 @@ object UsageStatsRepo {
     }
 
     fun getTodaySummary(ctx: Context, topN: Int = 20): UsageSummary {
-        // Prefer Switchly's own per-day store for "today".
-        // Some devices/OEMs over-report UsageStats for the current day and can leak yesterday's total into today's app values, which then causes early blocking.
-        // If the internal store is still empty, fall back to a live system query so the Today tab doesn't look blank.
-        val byPkg = HashMap(UsageStore.getUsageMsMapToday(ctx))
-        if (byPkg.isEmpty()) {
-            return getSummary(ctx, startOfTodayLocal(), System.currentTimeMillis(), topN)
+        // User-facing Today statistics should represent the whole device day, not only the time during which Switchly protection happened to be enabled.
+        // When Usage Access is available and this query is already running off the main thread, prefer Android's live usage data.
+        // getSingleDayUsageByPackage() also merges Switchly's local counter as a floor, which keeps the result useful on OEMs that publish UsageStats with a delay.
+        // Important: profile/app-limit enforcement intentionally continues to use Switchly's own counters. 
+        // This display-only path must not make a delayed or OEM-inflated UsageStats value trigger a limit early.
+        if (!isMainThread() && hasUsageAccess(ctx)) {
+            val systemSummary = getSummary(ctx, startOfTodayLocal(), System.currentTimeMillis(), topN)
+            if (systemSummary.totalTimeMs > 0L || systemSummary.topApps.isNotEmpty()) {
+                return systemSummary
+            }
         }
 
+        val byPkg = HashMap(UsageStore.getUsageMsMapToday(ctx))
         val it = byPkg.keys.iterator()
         while (it.hasNext()) {
             val pkg = it.next()
@@ -198,11 +203,14 @@ object UsageStatsRepo {
         }
 
         val safeNow = now.coerceAtMost(System.currentTimeMillis())
-        val dayStart = startOfTodayLocal()
+        val dayStart = startOfDayLocal(safeNow)
+        val queryFrom = startOfPreviousLocalDay(dayStart)
         val buckets = LongArray(24)
         val usm = ctx.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
         val events = try {
-            usm.queryEvents(dayStart, safeNow)
+            // Look back one local day only to establish which package, if any, was already foreground at midnight.
+            // addRangeToHourlyBuckets() clips all counted time to dayStart, so the previous day's time is never included.
+            usm.queryEvents(queryFrom, safeNow)
         } catch (_: SecurityException) {
             null
         } catch (_: Throwable) {
@@ -210,31 +218,47 @@ object UsageStatsRepo {
         }
 
         if (events != null) {
-            var activeStart: Long? = null
+            var foregroundPackage: String? = null
+            var foregroundStart = queryFrom
+
+            fun closeForeground(atMs: Long) {
+                if (foregroundPackage == packageName) {
+                    addRangeToHourlyBuckets(
+                        buckets,
+                        dayStart,
+                        maxOf(foregroundStart, dayStart),
+                        minOf(atMs, safeNow)
+                    )
+                }
+                foregroundPackage = null
+            }
+
             val e = UsageEvents.Event()
             while (events.hasNextEvent()) {
                 events.getNextEvent(e)
-                if (e.packageName != packageName) continue
+                val eventAt = e.timeStamp.coerceIn(queryFrom, safeNow)
                 when (e.eventType) {
+                    EVENT_SCREEN_NON_INTERACTIVE,
+                    EVENT_KEYGUARD_SHOWN -> closeForeground(eventAt)
+
                     EVENT_ACTIVITY_RESUMED -> {
-                        val startAt = e.timeStamp.coerceIn(dayStart, safeNow)
-                        val prev = activeStart
-                        if (prev == null || startAt < prev) activeStart = startAt
+                        val pkg = e.packageName ?: continue
+                        if (foregroundPackage == pkg) continue
+                        closeForeground(eventAt)
+                        foregroundPackage = pkg
+                        foregroundStart = eventAt
                     }
 
-                    EVENT_ACTIVITY_PAUSED,
-                    EVENT_ACTIVITY_STOPPED -> {
-                        val startAt = activeStart ?: continue
-                        val endAt = e.timeStamp.coerceIn(dayStart, safeNow)
-                        addRangeToHourlyBuckets(buckets, dayStart, startAt, endAt)
-                        activeStart = null
+                    EVENT_ACTIVITY_PAUSED -> {
+                        if (e.packageName == foregroundPackage) {
+                            closeForeground(eventAt)
+                        }
                     }
                 }
             }
 
-            val startAt = activeStart
-            if (startAt != null) {
-                addRangeToHourlyBuckets(buckets, dayStart, startAt, safeNow)
+            if (foregroundPackage != null) {
+                closeForeground(safeNow)
             }
         }
 
@@ -599,10 +623,31 @@ object UsageStatsRepo {
     ): HashMap<String, Long> {
         val usm = ctx.getSystemService(Context.USAGE_STATS_SERVICE) as UsageStatsManager
         val byPkg = HashMap<String, Long>()
+        val isCurrentLocalDay = dayStart == startOfTodayLocal()
 
-        mergeUsage(byPkg, queryAggregateUsage(usm, dayStart, dayEnd, onlyPackage))
-        mergeUsage(byPkg, queryDailyUsage(usm, dayStart, dayEnd, onlyPackage))
-        mergeUsage(byPkg, queryEventDerivedUsage(usm, dayStart, dayEnd, onlyPackage))
+        if (isCurrentLocalDay) {
+            // Android's DAILY/aggregate UsageStats buckets are not guaranteed to be clipped to the exact local-midnight window requested by the caller.
+            // On some devices a bucket overlapping midnight contains foreground time from the previous evening, which can make "Today" keep growing before midnight and then carry that usage into the next day.
+            //
+            // UsageEvents are timestamped, so derive the live current-day value from events and clip every interval to [local midnight, now].
+            // Start the event scan one local day earlier only to recover an app that was already foreground exactly at midnight; time before dayStart is never counted.
+            mergeUsage(
+                byPkg,
+                queryEventDerivedUsage(
+                    usm = usm,
+                    from = dayStart,
+                    to = dayEnd,
+                    onlyPackage = onlyPackage,
+                    eventQueryFrom = startOfPreviousLocalDay(dayStart)
+                )
+            )
+        } else {
+            // Keep the existing historical-day strategy.
+            // Historical system data can be sparse on some OEMs, so the bucketed sources remain useful outside the live Today window.
+            mergeUsage(byPkg, queryAggregateUsage(usm, dayStart, dayEnd, onlyPackage))
+            mergeUsage(byPkg, queryDailyUsage(usm, dayStart, dayEnd, onlyPackage))
+            mergeUsage(byPkg, queryEventDerivedUsage(usm, dayStart, dayEnd, onlyPackage))
+        }
 
         // Only merge the live in-memory "today" usage for the actual current-day window.
         // Historical single-day queries (used by month/year/overall detail screens) must not pull in today's buffered value, otherwise today's usage gets duplicated into every historical day and long-range totals explode.
@@ -688,51 +733,68 @@ object UsageStatsRepo {
         usm: UsageStatsManager,
         from: Long,
         to: Long,
-        onlyPackage: String?
+        onlyPackage: String?,
+        eventQueryFrom: Long = from
     ): Map<String, Long> {
-        if (isMainThread()) {
+        if (isMainThread() || to <= from) {
             return emptyMap()
         }
+        val queryFrom = eventQueryFrom.coerceAtMost(from)
         val events = try {
-            usm.queryEvents(from, to)
+            usm.queryEvents(queryFrom, to)
         } catch (_: SecurityException) {
             return emptyMap()
         } catch (_: Throwable) {
             return emptyMap()
         }
 
-        val starts = HashMap<String, Long>()
         val totals = HashMap<String, Long>()
+        var foregroundPackage: String? = null
+        var foregroundStart = queryFrom
+
+        fun closeForeground(atMs: Long) {
+            val pkg = foregroundPackage ?: return
+            val startAt = maxOf(foregroundStart, from)
+            val endAt = minOf(atMs, to)
+            if (endAt > startAt && (onlyPackage == null || pkg == onlyPackage)) {
+                totals[pkg] = (totals[pkg] ?: 0L) + (endAt - startAt)
+            }
+            foregroundPackage = null
+        }
+
         val e = UsageEvents.Event()
         while (events.hasNextEvent()) {
             events.getNextEvent(e)
-            val pkg = e.packageName ?: continue
-            if (onlyPackage != null && pkg != onlyPackage) continue
+            val eventAt = e.timeStamp.coerceIn(queryFrom, to)
             when (e.eventType) {
+                EVENT_SCREEN_NON_INTERACTIVE,
+                EVENT_KEYGUARD_SHOWN -> closeForeground(eventAt)
+
                 EVENT_ACTIVITY_RESUMED -> {
-                    val startAt = e.timeStamp.coerceAtLeast(from)
-                    val prev = starts[pkg]
-                    if (prev == null || startAt < prev) starts[pkg] = startAt
+                    val pkg = e.packageName ?: continue
+                    if (foregroundPackage == pkg) {
+                        // Activity changes inside one app can emit another RESUMED event.
+                        // Keep the original package-level foreground start so those transitions do not split or inflate the app's usage.
+                        continue
+                    }
+                    closeForeground(eventAt)
+                    foregroundPackage = pkg
+                    foregroundStart = eventAt
                 }
 
-                EVENT_ACTIVITY_PAUSED,
-                EVENT_ACTIVITY_STOPPED -> {
-                    val startAt = starts.remove(pkg) ?: continue
-                    val endAt = e.timeStamp.coerceAtMost(to)
-                    if (endAt > startAt) {
-                        totals[pkg] = (totals[pkg] ?: 0L) + (endAt - startAt)
+                EVENT_ACTIVITY_PAUSED -> {
+                    // Event type 2 is also MOVE_TO_BACKGROUND on pre-Android-10 devices.
+                    // Only close when the paused/backgrounded package is still the package we currently consider foreground; later STOP events are intentionally ignored because they may belong to an older Activity after another Activity in the same package has already resumed.
+                    if (e.packageName == foregroundPackage) {
+                        closeForeground(eventAt)
                     }
                 }
             }
         }
 
-        for ((pkg, startAt) in starts) {
-            val safeStart = startAt.coerceIn(from, to)
-            if (to > safeStart) {
-                totals[pkg] = (totals[pkg] ?: 0L) + (to - safeStart)
-            }
+        if (foregroundPackage != null) {
+            closeForeground(to)
         }
-
         return totals
     }
 

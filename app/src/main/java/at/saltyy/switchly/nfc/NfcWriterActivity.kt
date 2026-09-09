@@ -68,6 +68,7 @@ import at.saltyy.switchly.premium.PremiumManager
 import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.ui.EdgeToEdgeUtils
 import at.saltyy.switchly.ui.ThemeUtils
+import at.saltyy.switchly.ui.showWarnPill
 import at.saltyy.switchly.ui.SwitchlyDropdownAdapter
 import at.saltyy.switchly.ui.dialog.showAccented
 import at.saltyy.switchly.util.EditingLockGuard
@@ -94,7 +95,7 @@ class NfcWriterActivity : AppCompatActivity() {
             statusRow.alpha = 1f
             statusProgress.isVisible = false
 
-            val okColor = ContextCompat.getColor(this, R.color.status_ok)
+            val okColor = at.saltyy.switchly.theme.AccentColor.getAccentColorInt(this)
             val errorColor = ContextCompat.getColor(this, R.color.status_error)
             val neutralColor = ContextCompat.getColor(this, R.color.status_neutral)
 
@@ -247,7 +248,7 @@ class NfcWriterActivity : AppCompatActivity() {
             tvStatus.setTextColor(ContextCompat.getColor(this, R.color.status_error))
             statusRow.setOnClickListener { openProtectionControls() }
             btnArmWrite.setOnClickListener {
-                Toast.makeText(this, R.string.nfc_write_locked_while_enabled, Toast.LENGTH_SHORT).show()
+                statusRow.showWarnPill(R.string.nfc_write_locked_while_enabled)
                 openProtectionControls()
             }
         } else {
@@ -278,7 +279,7 @@ class NfcWriterActivity : AppCompatActivity() {
 
         nfcAdapter = NfcAdapter.getDefaultAdapter(this)
         if (nfcAdapter == null) {
-            Toast.makeText(this, getString(R.string.nfc_not_available), Toast.LENGTH_LONG).show()
+            findViewById<View>(android.R.id.content).showWarnPill(getString(R.string.nfc_not_available))
             finish()
             return
         }
@@ -300,6 +301,10 @@ class NfcWriterActivity : AppCompatActivity() {
 
         // Button tinted with the accent color
         btnArmWrite.backgroundTintList = AccentColor.getActiveColor(this)
+
+        // Spinner would otherwise keep the compile-time default green
+        // (its tint list is null, so the generic recolor pass skips it).
+        statusProgress.indeterminateTintList = AccentColor.getActiveColor(this)
 
         // Text fields (dropdown outlines) accent tint
         tintTextFieldsWithAccent()
@@ -601,7 +606,7 @@ class NfcWriterActivity : AppCompatActivity() {
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
             val mins = input.text?.toString()?.trim()?.toIntOrNull()
             if (mins == null || mins !in 1..1440) {
-                Toast.makeText(this, R.string.nfc_time_custom_invalid, Toast.LENGTH_SHORT).show()
+                input.showWarnPill(R.string.nfc_time_custom_invalid)
                 return@setOnClickListener
             }
 
@@ -785,7 +790,7 @@ class NfcWriterActivity : AppCompatActivity() {
 
     private fun buildUriForSelected() {
         if (isNfcTagWritingLocked()) {
-            Toast.makeText(this, R.string.nfc_write_locked_while_enabled, Toast.LENGTH_SHORT).show()
+            findViewById<View>(android.R.id.content).showWarnPill(R.string.nfc_write_locked_while_enabled)
             openProtectionControls()
             return
         }
@@ -797,7 +802,7 @@ class NfcWriterActivity : AppCompatActivity() {
             val pairedTagsEnabled = PreferenceManager.getDefaultSharedPreferences(this)
                 .getBoolean(BlockingToggleKeys.KEY_ENABLE_PAIRED_UIDS, false)
             if (!pairedTagsEnabled) {
-                Toast.makeText(this, R.string.nfc_action_desc_pair_uid_disabled, Toast.LENGTH_LONG).show()
+                findViewById<View>(android.R.id.content).showWarnPill(R.string.nfc_action_desc_pair_uid_disabled)
                 openProtectionControls()
                 return
             }
@@ -848,7 +853,7 @@ class NfcWriterActivity : AppCompatActivity() {
                 } else {
                     R.string.nfc_temp_hint_profile_enable_toast
                 }
-            Toast.makeText(this, msgRes, Toast.LENGTH_LONG).show()
+            findViewById<View>(android.R.id.content).showWarnPill(msgRes)
         }
 
         val uri = if (isProfile) {

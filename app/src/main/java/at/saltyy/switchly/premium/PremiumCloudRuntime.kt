@@ -30,17 +30,19 @@ import com.google.firebase.firestore.SetOptions
  * Syncs the user's premium state to Firestore.
  * Stored under:
  *   switchly_users/<uid>:
- *     hasPremium            : Boolean
- *     premiumLastSyncedAt   : Long (Unix timestamp in milliseconds)
+ *     hasPremiumClientMirror : Boolean
+ *     hasPremiumExternal     : Boolean (server-managed only)
+ *     premiumLastSyncedAt    : Long (Unix timestamp in milliseconds)
  * Notes:
- * - This is only a mirror for cloud-based features or remote diagnostics.
+ * - hasPremiumClientMirror is diagnostic only and must never grant Premium.
+ * - hasPremiumExternal is the only Firestore entitlement trusted by the app.
  * - Play builds use local Play Billing; external-payment builds can restore a verified backend entitlement.
  */
 object PremiumCloudRuntime {
 
     private const val TAG = "PremiumCloudRuntime"
     private const val COLLECTION = "switchly_users"
-    private const val FIELD_HAS_PREMIUM = "hasPremium"
+    private const val FIELD_HAS_PREMIUM_CLIENT_MIRROR = "hasPremiumClientMirror"
     private const val FIELD_HAS_PREMIUM_EXTERNAL = "hasPremiumExternal"
 
     /**
@@ -61,7 +63,7 @@ object PremiumCloudRuntime {
         val doc = db.collection(COLLECTION).document(uid)
 
         val data = mapOf(
-            FIELD_HAS_PREMIUM to isPremium,
+            FIELD_HAS_PREMIUM_CLIENT_MIRROR to isPremium,
             "premiumLastSyncedAt" to System.currentTimeMillis()
         )
 
@@ -75,8 +77,8 @@ object PremiumCloudRuntime {
     }
 
     /**
-     * Reads external entitlement mirrored by your payment backend/webhook.
-     * The webhook can set either hasPremiumExternal=true or hasPremium=true.
+     * Reads the external entitlement written by the verified payment backend/webhook.
+     * Client-mirrored fields are intentionally never accepted as an entitlement.
      */
     fun refreshExternalEntitlement(
         ctx: Context,
@@ -96,9 +98,7 @@ object PremiumCloudRuntime {
         val db = FirebaseFirestore.getInstance()
         db.collection(COLLECTION).document(uid).get()
             .addOnSuccessListener { doc ->
-                val active = doc.getBoolean(FIELD_HAS_PREMIUM_EXTERNAL)
-                    ?: doc.getBoolean(FIELD_HAS_PREMIUM)
-                    ?: false
+                val active = doc.getBoolean(FIELD_HAS_PREMIUM_EXTERNAL) ?: false
 
                 PremiumManager.setPremiumFromExternalVerified(ctx, active)
                 onResult(active, null)

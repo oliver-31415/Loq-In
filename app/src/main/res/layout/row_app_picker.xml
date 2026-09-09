@@ -8,11 +8,11 @@
     android:layout_marginTop="3dp"
     android:layout_marginBottom="3dp"
     android:foreground="?attr/selectableItemBackground"
-    app:cardBackgroundColor="@color/switchly_card_bg"
+    app:cardBackgroundColor="@color/foqos_surface"
     app:cardCornerRadius="18dp"
     app:cardElevation="1dp"
     app:cardUseCompatPadding="false"
-    app:strokeColor="@color/switchly_card_stroke"
+    app:strokeColor="@color/foqos_outline_variant"
     app:strokeWidth="1dp">
 
     <LinearLayout
@@ -99,52 +99,6 @@
                 android:text="@string/unavailable_app_remove_hint"
                 android:textColor="?android:attr/textColorSecondary"
                 android:textSize="12sp" />
-
-            <!-- LIMIT ROW: icon + state + "Daily limit: Xm" -->
-            <LinearLayout
-                android:id="@+id/limitRow"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:visibility="gone">
-
-                <ImageView
-                    android:id="@+id/ivTimer"
-                    android:layout_width="16dp"
-                    android:layout_height="16dp"
-                    android:layout_marginEnd="6dp"
-                    android:contentDescription="@string/set_daily_limit"
-                    android:src="@drawable/schedule_24"
-                    app:tint="?attr/colorOnSurface" />
-
-                <TextView
-                    android:id="@+id/tvState"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/limit_set"
-                    android:textColor="?android:attr/textColorSecondary"
-                    android:textSize="12sp" />
-
-                <TextView
-                    android:id="@+id/tvMetaSeparator"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="6dp"
-                    android:layout_marginEnd="6dp"
-                    android:text="@string/common_bullet"
-                    android:textColor="?android:attr/textColorSecondary"
-                    android:textSize="12sp" />
-
-                <TextView
-                    android:id="@+id/tvLimit"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/daily_limit_10"
-                    android:textColor="?android:attr/textColorSecondary"
-                    android:textSize="12sp" />
-            </LinearLayout>
         </LinearLayout>
 
         <ImageButton

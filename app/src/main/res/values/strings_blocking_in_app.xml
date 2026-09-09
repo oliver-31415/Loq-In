@@ -5,9 +5,14 @@
     <!-- In-app blocking overview -->
     <!-- ====================================================== -->
     <string name="in_app_rules_title">In-app rules</string>
-
     <string name="in_app_rules_info_title">In-app rules</string>
-    <string name="in_app_rules_info_body">In-app rules apply only to the selected profile.\n\nChoose a mode:\n• Block selected: Only selected sections are blocked.\n• Allow selected: Selected sections stay available; other supported sections of that app are blocked.\n\nStatus:\n• Available: Supported for the installed app version.\n• Experimental: May vary by app version, language, entry point, or device.\n• Disabled: The app is not installed or the rule cannot currently be used.\n• Coming soon: Planned, but not yet enforceable.\n\nSwitchly detects these sections using Accessibility. Changes to supported apps can affect detection.</string>
+    <string name="in_app_rules_info_body">In-app rules apply only to the selected profile.\n\nChoose a mode:\n• Block selected: Only selected sections are blocked.\n• Allow selected: Selected sections stay available; other supported sections of that app are blocked.\n\nStatus:\n• Available: Supported for the installed app version.\n• Experimental: May vary by app version, language, entry point, or device.\n• Disabled: The app is not installed or the rule cannot currently be used.\n• Coming soon: Planned, but not yet enforceable.\n\nSwitchly detects these sections using Accessibility. For YouTube Shorts, 2.2.5 combines navigation state, screen geometry and multiple Accessibility text/content-description signals instead of relying on a single internal view ID. Short delayed re-checks help when YouTube loads controls asynchronously. Changes to supported apps can still affect detection.\n\nYouTube Shorts can use two layers together: Switchly keeps its own Shorts detection and blocking active, while YouTube’s native Settings → Time management → Shorts feed limit → 0 can add a second layer. Switchly also recognizes the native limit-reached screen as an additional high-confidence Shorts signal. The YouTube limit can still be dismissed, so Switchly remains the primary enforcement layer.</string>
+    <string name="in_app_youtube_native_limit_compact_title">Extra Shorts protection</string>
+    <string name="in_app_youtube_native_limit_compact_summary">YouTube limit · 0 min recommended</string>
+    <string name="in_app_youtube_native_limit_compact_action">Set up</string>
+    <string name="in_app_youtube_native_limit_guide_title">YouTube Shorts feed limit</string>
+    <string name="in_app_youtube_native_limit_guide_body">In YouTube, open Settings → Time management → Shorts feed limit and set it to 0 minutes. Keep Switchly’s Shorts rule enabled as the primary blocking layer. YouTube’s own limit is an additional layer and can still be dismissed.</string>
+    <string name="in_app_youtube_open_youtube">Open YouTube</string>
     <string name="in_app_rule_mode_title">In-app rule mode</string>
     <string name="in_app_rule_mode_block">Block selected</string>
     <string name="in_app_rule_mode_allow">Allow selected</string>
@@ -54,6 +59,9 @@
     <string name="in_app_status_supported">Available</string>
     <string name="in_app_status_experimental">Experimental</string>
     <string name="in_app_status_planned">Coming soon</string>
+    <string name="in_app_status_not_installed">Not installed</string>
+    <string name="in_app_status_disabled">Disabled</string>
+    <string name="in_app_status_installed">Installed</string>
     <string name="in_app_rules_facebook">Facebook</string>
     <string name="in_app_rules_tiktok">TikTok</string>
     <string name="in_app_rules_for_you">For You feed</string>
@@ -75,4 +83,8 @@
     <string name="blocking_comments_blocked_title">Comments are blocked!</string>
     <string name="blocking_surface_base_message">You can’t use this app’s feature while Switchly is active.</string>
 
+    <string name="in_app_rules_active_summary_block">%1$d of %2$d sections blocked</string>
+    <string name="in_app_rules_active_summary_allow">%1$d of %2$d sections allowed</string>
+    <string name="in_app_rules_none_active">No rules active · Tap to expand</string>
+    <string name="in_app_recognized_variants">Recognized: %1$s</string>
 </resources>

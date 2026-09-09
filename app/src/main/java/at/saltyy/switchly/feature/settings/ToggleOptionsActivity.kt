@@ -60,6 +60,7 @@ import at.saltyy.switchly.data.prefs.AutostartStore
 import at.saltyy.switchly.data.prefs.BlockingToggleKeys
 import at.saltyy.switchly.data.prefs.EmergencyBypassStore
 import at.saltyy.switchly.data.prefs.NotificationBlockStore
+import at.saltyy.switchly.data.prefs.SessionMissedNotificationsStore
 import at.saltyy.switchly.data.prefs.SwitchModeStore
 import at.saltyy.switchly.feature.faq.FaqActivity
 import at.saltyy.switchly.feature.onboarding.QuickTileHelper
@@ -68,10 +69,11 @@ import at.saltyy.switchly.theme.CustomAccentApplier
 import at.saltyy.switchly.ui.EdgeToEdgeUtils
 import at.saltyy.switchly.ui.ThemeUtils
 import at.saltyy.switchly.ui.applySwitchlyStyle
+import at.saltyy.switchly.ui.showWarnPill
 import at.saltyy.switchly.ui.dialog.SwitchlyDialogOption
 import at.saltyy.switchly.ui.dialog.showSwitchlyOptionDialog
 import at.saltyy.switchly.ui.dialog.styleSwitchlyDialogButtons
-import at.saltyy.switchly.util.EditingLockGuard
+import at.saltyy.switchly.ui.dialog.EmergencyPinDialog
 import at.saltyy.switchly.util.LocaleHelper
 import at.saltyy.switchly.util.PersistentStatusNotifier
 import at.saltyy.switchly.util.SwitchlyAppAccessGuard
@@ -103,7 +105,7 @@ open class ToggleOptionsActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         ThemeUtils.applyAccentTheme(this)
         super.onCreate(savedInstanceState)
-        if (SwitchlyAppAccessGuard.blockIfLocked(this)) {
+        if (blockIfProtectionLockedForThisSection()) {
             return
         }
         setContentView(R.layout.activity_toggle_options)
@@ -175,6 +177,7 @@ open class ToggleOptionsActivity : AppCompatActivity() {
 
         // Switches (Protection)
         val switchBlockNotifications = findViewById<SwitchMaterial>(R.id.switchBlockNotifications)
+        val switchSessionMissedNotifications = findViewById<SwitchMaterial>(R.id.switchSessionMissedNotifications)
         val switchAutostart = findViewById<SwitchMaterial>(R.id.switchAutostart)
 
         // Switches (UI & Info)
@@ -220,10 +223,13 @@ open class ToggleOptionsActivity : AppCompatActivity() {
         val rowBarcodeQuickTile = findViewById<View>(R.id.rowBarcodeQuickTile)
 
         val rowBlockNotifs = findViewById<View>(R.id.rowBlockNotifications)
+        val rowSessionMissedNotifications = findViewById<View>(R.id.rowSessionMissedNotifications)
         val rowAutostart = findViewById<View>(R.id.rowAutostart)
 
         val rowEmergency = findViewById<View>(R.id.rowEmergency)
         val dividerBeforeEmergency = findViewById<View>(R.id.dividerAfterAutostart)
+        val rowChangeEmergencyPin = findViewById<View>(R.id.rowChangeEmergencyPin)
+        val dividerAfterEmergency = findViewById<View>(R.id.dividerAfterEmergency)
         val rowShowQuickActions = findViewById<View>(R.id.rowShowQuickActions)
         val rowShowTemporaryMode = findViewById<View>(R.id.rowShowTemporaryMode)
         val rowLockActiveTemporaryTimer = findViewById<View>(R.id.rowLockActiveTemporaryTimer)
@@ -263,12 +269,14 @@ open class ToggleOptionsActivity : AppCompatActivity() {
         tintLeadingIcon(rowMixedAllowScheduleEditing, accent)
         tintLeadingIcon(rowMixedAllowNfcTagWriting, accent)
         tintLeadingIcon(rowRequireNfcUnlock, accent)
+        tintLeadingIcon(rowSessionMissedNotifications, accent)
         tintLeadingIcon(rowQuickTile, accent)
         tintLeadingIcon(rowQrQuickTile, accent)
         tintLeadingIcon(rowBarcodeQuickTile, accent)
         tintLeadingIcon(rowBlockNotifs, accent)
         tintLeadingIcon(rowAutostart, accent)
         tintLeadingIcon(rowEmergency, accent)
+        tintLeadingIcon(rowChangeEmergencyPin, accent)
         tintLeadingIcon(rowShowQuickActions, accent)
         tintLeadingIcon(rowShowTemporaryMode, accent)
         tintLeadingIcon(rowLockActiveTemporaryTimer, accent)
@@ -458,6 +466,7 @@ open class ToggleOptionsActivity : AppCompatActivity() {
             switchMixedAllowScheduleEditing,
             switchMixedAllowNfcTagWriting,
             switchBlockNotifications,
+            switchSessionMissedNotifications,
             switchAutostart,
             switchEmergency,
             switchShowQuickActions,
@@ -487,6 +496,14 @@ open class ToggleOptionsActivity : AppCompatActivity() {
         switchMixedAllowNfcTagWriting.isChecked = AutomationModeStore.isMixedAllowNfcTagWriting(ctx)
 
         switchBlockNotifications.isChecked = NotificationBlockStore.isEnabled(ctx)
+        switchSessionMissedNotifications.isChecked = SessionMissedNotificationsStore.isFeatureEnabled(ctx)
+
+        fun syncSessionMissedState(blockNotifsEnabled: Boolean) {
+            rowSessionMissedNotifications.alpha = if (blockNotifsEnabled) 1f else 0.5f
+            switchSessionMissedNotifications.isEnabled = blockNotifsEnabled
+            rowSessionMissedNotifications.isClickable = blockNotifsEnabled
+        }
+        syncSessionMissedState(switchBlockNotifications.isChecked)
         switchAutostart.isChecked = AutostartStore.isEnabled(ctx)
 
         switchEmergency.isChecked = EmergencyBypassStore.isFeatureEnabled(ctx)
@@ -553,11 +570,8 @@ open class ToggleOptionsActivity : AppCompatActivity() {
                 PersistentStatusNotifier.setEnabled(this, false)
                 switchPersistentStatusNotification.isChecked = false
                 refreshStatusNotificationModeUi()
-                Toast.makeText(
-                    this,
-                    getString(R.string.status_notification_permission_denied),
-                    Toast.LENGTH_LONG
-                ).show()
+                findViewById<View>(android.R.id.content)
+                    .showWarnPill(getString(R.string.status_notification_permission_denied))
             }
         }
 
@@ -596,6 +610,9 @@ open class ToggleOptionsActivity : AppCompatActivity() {
             // Home shortcut visibility toggle.
             rowEmergency.visibility = View.VISIBLE
             dividerBeforeEmergency.visibility = View.VISIBLE
+            val emergencyEnabled = switchEmergency.isChecked
+            rowChangeEmergencyPin.visibility = if (emergencyEnabled) View.VISIBLE else View.GONE
+            dividerAfterEmergency.visibility = if (emergencyEnabled) View.VISIBLE else View.GONE
         }
         refreshEmergencyFeatureVisibility()
 
@@ -614,13 +631,10 @@ open class ToggleOptionsActivity : AppCompatActivity() {
         }
 
         fun canChangeControlMode(showToast: Boolean = true): Boolean {
-            val allowed = !EditingLockGuard.isLocked(ctx)
+            val allowed = !SwitchlyAppAccessGuard.isControlSettingsLocked(ctx)
             if (!allowed && showToast) {
-                Toast.makeText(
-                    ctx,
-                    getString(R.string.mode_switch_requires_switchly_disabled),
-                    Toast.LENGTH_SHORT
-                ).show()
+                findViewById<View>(android.R.id.content)
+                    .showWarnPill(getString(R.string.mode_switch_requires_switchly_disabled))
             }
             return allowed
         }
@@ -688,21 +702,15 @@ open class ToggleOptionsActivity : AppCompatActivity() {
 
         fun onControlModeRowClicked(target: AutomationModeStore.Mode) {
             if (!AutomationModeStore.isModeSupported(ctx, target)) {
-                Toast.makeText(
-                    ctx,
-                    getString(R.string.mode_not_supported_on_device),
-                    Toast.LENGTH_SHORT
-                ).show()
+                findViewById<View>(android.R.id.content)
+                    .showWarnPill(getString(R.string.mode_not_supported_on_device))
                 return
             }
 
             val active = AutomationModeStore.getMode(ctx)
             if (target == active) {
-                Toast.makeText(
-                    ctx,
-                    getString(R.string.mode_already_active_fmt, modeLabel(target)),
-                    Toast.LENGTH_SHORT
-                ).show()
+                findViewById<View>(android.R.id.content)
+                    .showWarnPill(getString(R.string.mode_already_active_fmt, modeLabel(target)))
                 return
             }
 
@@ -710,11 +718,8 @@ open class ToggleOptionsActivity : AppCompatActivity() {
                 return
             }
 
-            Toast.makeText(
-                ctx,
-                getString(R.string.mode_switch_info_toast),
-                Toast.LENGTH_SHORT
-            ).show()
+            findViewById<View>(android.R.id.content)
+                .showWarnPill(getString(R.string.mode_switch_info_toast))
             applyControlModeSelection(target, userInitiated = true)
         }
 
@@ -733,7 +738,8 @@ open class ToggleOptionsActivity : AppCompatActivity() {
                     ignoreControlModeListener = true
                     sw.isChecked = true
                     ignoreControlModeListener = false
-                    Toast.makeText(ctx, getString(R.string.mode_one_must_stay_active), Toast.LENGTH_SHORT).show()
+                    findViewById<View>(android.R.id.content)
+                        .showWarnPill(getString(R.string.mode_one_must_stay_active))
                     return@setOnCheckedChangeListener
                 }
 
@@ -742,11 +748,8 @@ open class ToggleOptionsActivity : AppCompatActivity() {
                         ignoreControlModeListener = true
                         sw.isChecked = false
                         ignoreControlModeListener = false
-                        Toast.makeText(
-                            ctx,
-                            getString(R.string.mode_not_supported_on_device),
-                            Toast.LENGTH_SHORT
-                        ).show()
+                    findViewById<View>(android.R.id.content)
+                        .showWarnPill(getString(R.string.mode_not_supported_on_device))
                         return@setOnCheckedChangeListener
                     }
                     if (!canChangeControlMode()) {
@@ -882,14 +885,42 @@ open class ToggleOptionsActivity : AppCompatActivity() {
             ).applySwitchlyStyle().show()
         }
 
-        rowQuickTile.setOnClickListener {
-            if (!isQuickSettingsTileMarkedAdded(KEY_QS_TILE_REQUESTED)) addQuickTile()
+        // The system offers no API to query or remove tiles, so our "added" flag can
+        // go stale (e.g. tile removed from the panel). Tapping always explains removal
+        // and offers "Add again", which re-runs the system flow and refreshes the flag.
+        rowQuickTile.setOnClickListener { tapped ->
+            if (isQuickSettingsTileMarkedAdded(KEY_QS_TILE_REQUESTED)) {
+                tapped.showWarnPill(
+                    R.string.pref_qs_tile_already_added_hint,
+                    getString(R.string.pref_qs_tile_add_again),
+                ) { addQuickTile() }
+            } else {
+                addQuickTile()
+            }
         }
-        rowQrQuickTile.setOnClickListener {
-            if (!isQuickSettingsTileMarkedAdded(KEY_QR_QS_TILE_REQUESTED)) requestQrQuickTile()
+        rowQrQuickTile.setOnClickListener { tapped ->
+            when {
+                !AutomationModeStore.isCameraSupported(ctx) ->
+                    tapped.showWarnPill(getString(R.string.mode_not_supported_on_device))
+                isQuickSettingsTileMarkedAdded(KEY_QR_QS_TILE_REQUESTED) ->
+                    tapped.showWarnPill(
+                        R.string.pref_qs_tile_already_added_hint,
+                        getString(R.string.pref_qs_tile_add_again),
+                    ) { requestQrQuickTile() }
+                else -> requestQrQuickTile()
+            }
         }
-        rowBarcodeQuickTile.setOnClickListener {
-            if (!isQuickSettingsTileMarkedAdded(KEY_BARCODE_QS_TILE_REQUESTED)) requestBarcodeQuickTile()
+        rowBarcodeQuickTile.setOnClickListener { tapped ->
+            when {
+                !AutomationModeStore.isCameraSupported(ctx) ->
+                    tapped.showWarnPill(getString(R.string.mode_not_supported_on_device))
+                isQuickSettingsTileMarkedAdded(KEY_BARCODE_QS_TILE_REQUESTED) ->
+                    tapped.showWarnPill(
+                        R.string.pref_qs_tile_already_added_hint,
+                        getString(R.string.pref_qs_tile_add_again),
+                    ) { requestBarcodeQuickTile() }
+                else -> requestBarcodeQuickTile()
+            }
         }
         refreshQuickSettingsTileRows()
 
@@ -900,11 +931,20 @@ open class ToggleOptionsActivity : AppCompatActivity() {
         rowWidgetBlockedNotifications.setOnClickListener { requestPinWidget(BlockedNotificationsWidgetProvider::class.java) }
 
         rowBlockNotifs.setOnClickListener { switchBlockNotifications.toggle() }
+        rowSessionMissedNotifications.setOnClickListener {
+            if (switchBlockNotifications.isChecked) {
+                switchSessionMissedNotifications.toggle()
+            }
+        }
         rowAutostart.setOnClickListener {
             if (canEditActiveAccess()) switchAutostart.toggle()
         }
         rowEmergency.setOnClickListener {
             if (canEditActiveAccess()) switchEmergency.toggle()
+        }
+        rowChangeEmergencyPin.setOnClickListener {
+            if (!canEditActiveAccess()) return@setOnClickListener
+            EmergencyPinDialog.showChangePinFlow(this)
         }
         rowShowQuickActions.setOnClickListener { switchShowQuickActions.toggle() }
         rowShowTemporaryMode.setOnClickListener {
@@ -1053,9 +1093,15 @@ open class ToggleOptionsActivity : AppCompatActivity() {
             AutostartStore.setEnabled(ctx, isChecked)
         }
 
+        // Session missed notifications
+        switchSessionMissedNotifications.setOnCheckedChangeListener { _, isChecked ->
+            SessionMissedNotificationsStore.setFeatureEnabled(ctx, isChecked)
+        }
+
         // Block notifications
         switchBlockNotifications.setOnCheckedChangeListener { _, isChecked ->
             NotificationBlockStore.setEnabled(ctx, isChecked)
+            syncSessionMissedState(isChecked)
 
             if (isChecked && !NotificationBlockStore.hasListenerAccess(ctx)) {
                 Snackbar.make(
@@ -1087,6 +1133,7 @@ open class ToggleOptionsActivity : AppCompatActivity() {
                 return@setOnCheckedChangeListener
             }
             EmergencyBypassStore.setFeatureEnabled(ctx, isChecked)
+            refreshEmergencyFeatureVisibility()
         }
 
         // Blocking master toggles
@@ -1157,11 +1204,8 @@ open class ToggleOptionsActivity : AppCompatActivity() {
             }
             if (isChecked && !NotificationManagerCompat.from(this).areNotificationsEnabled()) {
                 buttonView.isChecked = false
-                Toast.makeText(
-                    this,
-                    getString(R.string.status_notification_permission_denied),
-                    Toast.LENGTH_LONG
-                ).show()
+                findViewById<View>(android.R.id.content)
+                    .showWarnPill(getString(R.string.status_notification_permission_denied))
                 return@setOnCheckedChangeListener
             }
             PersistentStatusNotifier.setEnabled(this, isChecked)
@@ -1214,7 +1258,7 @@ open class ToggleOptionsActivity : AppCompatActivity() {
                 AutomationModeStore.Mode.BARCODE to findViewById<SwitchMaterial>(R.id.switchModeBarcode),
                 AutomationModeStore.Mode.MIXED to findViewById<SwitchMaterial>(R.id.switchModeMixed),
             )
-            val modeSwitchingAllowed = !EditingLockGuard.isLocked(this)
+            val modeSwitchingAllowed = !SwitchlyAppAccessGuard.isControlSettingsLocked(this)
             rowMap.forEach { (key, row) ->
                 val selected = key == mode
                 val supported = AutomationModeStore.isModeSupported(this, key)
@@ -1248,11 +1292,26 @@ open class ToggleOptionsActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (SwitchlyAppAccessGuard.blockIfLocked(this)) {
+        if (blockIfProtectionLockedForThisSection()) {
             return
         }
         refreshLiveLockUi()
         CustomAccentApplier.applyIfNeeded(this)
+    }
+
+    private fun allowsControlSettingsRecovery(): Boolean {
+        if (intent?.hasExtra(EXTRA_VIEW_SECTION) != true) {
+            return false
+        }
+        return normalizeSection(intent?.getStringExtra(EXTRA_VIEW_SECTION)) == SECTION_BLOCKING
+    }
+
+    private fun blockIfProtectionLockedForThisSection(): Boolean {
+        return if (allowsControlSettingsRecovery()) {
+            SwitchlyAppAccessGuard.blockControlSettingsIfLocked(this)
+        } else {
+            SwitchlyAppAccessGuard.blockIfLocked(this)
+        }
     }
 
     private fun applySwitchAccentTints() {
@@ -1391,21 +1450,18 @@ open class ToggleOptionsActivity : AppCompatActivity() {
     }
 
     private fun isMixedChannelEditingLocked(): Boolean {
-        return EditingLockGuard.isLocked(this)
+        return SwitchlyAppAccessGuard.isControlSettingsLocked(this)
     }
 
     private fun isActiveAccessEditingLocked(): Boolean {
-        return EditingLockGuard.isLocked(this)
+        return SwitchlyAppAccessGuard.isControlSettingsLocked(this)
     }
 
     private fun canEditMixedChannels(showToast: Boolean = true): Boolean {
         val allowed = !isMixedChannelEditingLocked()
         if (!allowed && showToast) {
-            Toast.makeText(
-                this,
-                getString(R.string.mixed_channels_locked_while_switchly_enabled),
-                Toast.LENGTH_SHORT
-            ).show()
+            findViewById<View>(android.R.id.content)
+                .showWarnPill(R.string.mixed_channels_locked_while_switchly_enabled)
         }
         return allowed
     }
@@ -1413,11 +1469,8 @@ open class ToggleOptionsActivity : AppCompatActivity() {
     private fun canEditActiveAccess(showToast: Boolean = true): Boolean {
         val allowed = !isActiveAccessEditingLocked()
         if (!allowed && showToast) {
-            Toast.makeText(
-                this,
-                getString(R.string.mixed_channels_locked_while_switchly_enabled),
-                Toast.LENGTH_SHORT
-            ).show()
+            findViewById<View>(android.R.id.content)
+                .showWarnPill(R.string.mixed_channels_locked_while_switchly_enabled)
         }
         return allowed
     }
@@ -1462,8 +1515,9 @@ open class ToggleOptionsActivity : AppCompatActivity() {
     ) {
         val added = isQuickSettingsTileMarkedAdded(addedKey)
         findViewById<View>(rowId)?.apply {
-            isEnabled = supported && !added
-            isClickable = supported && !added
+            // Stay tappable (dimmed): taps explain the state via pill instead of doing nothing.
+            isEnabled = true
+            isClickable = true
             alpha = if (!supported || added) 0.52f else 1f
         }
         findViewById<TextView>(summaryId)?.setText(

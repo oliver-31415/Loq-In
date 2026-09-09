@@ -23,9 +23,9 @@ import android.content.Context
 import at.saltyy.switchly.data.prefs.UsageStore
 
 /**
- * Single source of truth for app usage "today" when user-facing timers and limits are involved.
- * We intentionally use Switchly's internal per-day counter here. On some devices/OEMs,
- * UsageStats for the current day can be delayed or include stale data from the previous day, which causes apps to be blocked before the real daily limit is actually reached.
+ * Single source of truth for app usage "today" when enforcement/timers are involved.
+ * This intentionally uses Switchly's internal per-day counter.
+ * User-facing Statistics may use Android Usage Access for whole-device screen-time reporting, but enforcement stays local because some devices/OEMs publish delayed or stale UsageStats values that could otherwise trigger a limit early.
  */
 object AppUsageToday {
     fun getUsageMsToday(

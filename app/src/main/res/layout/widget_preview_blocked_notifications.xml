@@ -5,14 +5,14 @@
     android:layout_height="match_parent"
     android:orientation="horizontal"
     android:gravity="center_vertical"
-    android:padding="14dp"
-    android:background="@color/widget_scanner_surface">
+    android:padding="16dp"
+    android:background="@drawable/widget_card_bg">
 
     <ImageView
-        android:layout_width="34dp"
-        android:layout_height="34dp"
-        android:padding="7dp"
-        android:background="@color/widget_scanner_button_surface"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:padding="8dp"
+        android:background="@drawable/widget_tile_bg"
         android:contentDescription="@null"
         android:src="@drawable/widget_notifications_24" />
 
@@ -27,8 +27,8 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="@string/widget_blocked_notifications_name"
-            android:textColor="@color/widget_scanner_title"
-            android:textSize="13sp"
+            android:textColor="@color/foqos_on_surface"
+            android:textSize="14sp"
             android:textStyle="bold"
             android:maxLines="1"
             android:ellipsize="end" />
@@ -36,10 +36,10 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="3dp"
+            android:layout_marginTop="4dp"
             android:text="@string/widget_blocked_notifications_preview_row"
-            android:textColor="@color/widget_scanner_text"
-            android:textSize="11sp"
+            android:textColor="@color/foqos_on_surface_variant"
+            android:textSize="12sp"
             android:maxLines="1"
             android:ellipsize="end" />
     </LinearLayout>

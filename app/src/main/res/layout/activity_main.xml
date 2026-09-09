@@ -8,35 +8,18 @@
     android:background="@color/switchly_bg"
     tools:ignore="UseCompoundDrawables,Overdraw,TooManyViews">
 
-    <!-- Topbar -->
-    <com.google.android.material.appbar.AppBarLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:fitsSystemWindows="true">
-
-        <com.google.android.material.appbar.MaterialToolbar
-            android:id="@+id/toolbar"
-            style="@style/Switchly.TopBar"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:minHeight="?attr/actionBarSize"
-            app:navigationIcon="@null"
-            app:title="@string/app_name" />
-    </com.google.android.material.appbar.AppBarLayout>
-
     <!-- Content -->
     <androidx.core.widget.NestedScrollView
         android:id="@+id/scrollMain"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingStart="14dp"
-        android:paddingTop="16dp"
-        android:paddingEnd="14dp"
-        android:paddingBottom="96dp"
+        android:paddingStart="16dp"
+        android:paddingTop="0dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="24dp"
         android:clipToPadding="false"
         android:fillViewport="true"
-        android:overScrollMode="never"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+        android:overScrollMode="never">
 
         <LinearLayout
             android:id="@+id/layoutHomeRoot"
@@ -44,6 +27,20 @@
             android:layout_height="wrap_content"
             android:orientation="vertical"
             android:animateLayoutChanges="true">
+
+            <!-- Foqos AppTitle equivalent: inline title, scrolls with content -->
+            <com.google.android.material.appbar.MaterialToolbar
+                android:id="@+id/toolbar"
+                style="@style/Switchly.TopBar"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="0dp"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp"
+                app:navigationIcon="@null"
+                app:title="@string/app_name"
+                app:titleTextAppearance="@style/TextAppearance.Switchly.LargeTitle" />
+
 
             <!-- Setup/permissions -->
             <com.google.android.material.card.MaterialCardView
@@ -57,10 +54,10 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:paddingStart="14dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="14dp"
-                    android:paddingBottom="14dp">
+                    android:paddingStart="18dp"
+                    android:paddingTop="18dp"
+                    android:paddingEnd="18dp"
+                    android:paddingBottom="18dp">
 
                     <LinearLayout
                         android:id="@+id/layoutProtectionStatus"
@@ -126,8 +123,8 @@
                         android:id="@+id/btnFinishSetup"
                         style="@style/Switchly.Button"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="14dp"
+                        android:layout_height="56dp"
+                        android:layout_marginTop="16dp"
                         android:text="@string/dashboard_setup_cta"
                         app:icon="@drawable/security_24"
                         app:iconGravity="textStart"
@@ -135,10 +132,124 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- Activity heatmap (Foqos BlockedSessionsHabitTracker):
+                 section title + Hide pill float on the page above the card -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                android:layout_marginBottom="8dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/tvActivityTitle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:maxLines="1"
+                    android:text="@string/activity_section_title"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
+
+                <LinearLayout
+                    android:id="@+id/btnActivityHide"
+                    style="@style/Switchly.HeaderPill"
+                    android:layout_width="wrap_content"
+                    android:layout_height="38dp"
+                    android:layout_marginEnd="8dp">
+
+                    <ImageView
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/visibility_off_24"
+                        app:tint="?attr/colorOnSurface" />
+
+                    <TextView
+                        android:id="@+id/tvHeaderPillLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="7dp"
+                        android:text="@string/activity_hide"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/btnMoreInsights"
+                    style="@style/Switchly.HeaderPill"
+                    android:layout_width="wrap_content"
+                    android:layout_height="38dp">
+
+                    <ImageView
+                        android:id="@+id/ivMoreInsightsIcon"
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/bar_chart_24"
+                        app:tint="?attr/colorOnSurface" />
+
+                    <TextView
+                        android:id="@+id/tvMoreInsightsLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="7dp"
+                        android:text="@string/activity_more_insights"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardActivity"
+                style="@style/Switchly.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingStart="14dp"
+                    android:paddingTop="12dp"
+                    android:paddingEnd="14dp"
+                    android:paddingBottom="14dp">
+
+                    <TextView
+                        android:id="@+id/tvHeatmapLegend"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:textSize="12sp"
+                        tools:text="legend" />
+
+                    <at.saltyy.switchly.ui.widgets.FoqosHeatmapView
+                        android:id="@+id/activityHeatmap"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:contentDescription="@string/activity_heatmap_content_desc" />
+
+                    <TextView
+                        android:id="@+id/tvActivityDetail"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:alpha="0.8"
+                        android:textSize="13sp"
+                        android:visibility="gone"
+                        tools:text="1 Sept · 12m blocked"
+                        tools:visibility="visible" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
             <Space
                 android:id="@+id/spaceBeforeStatusCard"
                 android:layout_width="1dp"
-                android:layout_height="12dp" />
+                android:layout_height="10dp" />
 
             <!-- Status/primary action -->
             <com.google.android.material.card.MaterialCardView
@@ -152,10 +263,272 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:paddingStart="14dp"
+                    android:paddingTop="12dp"
+                    android:paddingEnd="14dp"
+                    android:paddingBottom="14dp">
 
-                    <!-- Hero status -->
+                    <!-- Foqos-style Profiles section -->
                     <LinearLayout
+                        android:id="@+id/layoutProfilesHeader"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:id="@+id/tvProfilesTitle"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/profile_rows_title"
+                            android:textSize="20sp"
+                            android:textStyle="bold" />
+
+                        <LinearLayout
+                            android:id="@+id/btnManageProfiles"
+                            style="@style/Switchly.HeaderPill"
+                            android:layout_width="wrap_content"
+                            android:layout_height="38dp">
+
+                            <ImageView
+                                android:layout_width="16dp"
+                                android:layout_height="16dp"
+                                android:contentDescription="@null"
+                                android:src="@drawable/layers_24"
+                                app:tint="?attr/colorOnSurface" />
+
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="7dp"
+                                android:text="@string/profile_rows_manage"
+                                android:textSize="13sp"
+                                android:textStyle="bold"
+                                android:textColor="?attr/colorOnSurface" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Foqos hero profile card: active profile summary -->
+                    <LinearLayout
+                        android:id="@+id/heroProfileRoot"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_marginTop="4dp"
+                        android:padding="14dp"
+                        android:background="@drawable/hero_profile_bg"
+                        android:foreground="?attr/selectableItemBackground"
+                        android:clickable="true"
+                        android:focusable="true">
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <TextView
+                                android:id="@+id/tvHeroProfileName"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:textSize="24sp"
+                                android:textStyle="bold"
+                                android:textColor="#FFFFFFFF"
+                                tools:text="Work Profile" />
+
+                            <ImageView
+                                android:id="@+id/ibtnHeroEdit"
+                                android:layout_width="36dp"
+                                android:layout_height="36dp"
+                                android:padding="8dp"
+                                android:background="@drawable/bg_round_white"
+                                android:contentDescription="@string/profile_rows_manage"
+                                android:src="@drawable/edit_24"
+                                app:tint="#FFFFFFFF" />
+                        </LinearLayout>
+
+                        <TextView
+                            android:id="@+id/tvHeroChips"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="6dp"
+                            android:textSize="12sp"
+                            android:textColor="#E6FFFFFF"
+                            tools:text="Block selected · Auto-block new apps" />
+
+                        <LinearLayout
+                            android:id="@+id/rowHeroStrategy"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="8dp"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:background="?attr/selectableItemBackground"
+                            android:clickable="true"
+                            android:focusable="true">
+
+                            <FrameLayout
+                                android:layout_width="34dp"
+                                android:layout_height="34dp"
+                                android:background="@drawable/bg_round_white_soft">
+
+                                <ImageView
+                                    android:id="@+id/ivHeroStrategyIcon"
+                                    android:layout_width="18dp"
+                                    android:layout_height="18dp"
+                                    android:layout_gravity="center"
+                                    android:contentDescription="@null"
+                                    android:src="@drawable/security_24"
+                                    app:tint="#FFFFFFFF" />
+                            </FrameLayout>
+
+                            <TextView
+                                android:id="@+id/tvHeroStrategy"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="10dp"
+                                android:layout_weight="1"
+                                android:textSize="15sp"
+                                android:textStyle="bold"
+                                android:textColor="#FFFFFFFF"
+                                tools:text="Manual Blocking" />
+                        </LinearLayout>
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:orientation="horizontal"
+                            android:baselineAligned="false">
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:id="@+id/tvHeroStatAppsLabel"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/hero_stat_apps"
+                                    android:textSize="12sp"
+                                    android:textColor="#CCFFFFFF" />
+
+                                <TextView
+                                    android:id="@+id/tvHeroStatApps"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:textSize="18sp"
+                                    android:textStyle="bold"
+                                    android:textColor="#FFFFFFFF"
+                                    tools:text="9" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:id="@+id/tvHeroStatDomainsLabel"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/hero_stat_domains"
+                                    android:textSize="12sp"
+                                    android:textColor="#CCFFFFFF" />
+
+                                <TextView
+                                    android:id="@+id/tvHeroStatDomains"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:textSize="18sp"
+                                    android:textStyle="bold"
+                                    android:textColor="#FFFFFFFF"
+                                    tools:text="0" />
+                            </LinearLayout>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:id="@+id/tvHeroStatBlocksLabel"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/hero_stat_blocks"
+                                    android:textSize="12sp"
+                                    android:textColor="#CCFFFFFF" />
+
+                                <TextView
+                                    android:id="@+id/tvHeroStatBlocks"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:textSize="18sp"
+                                    android:textStyle="bold"
+                                    android:textColor="#FFFFFFFF"
+                                    tools:text="11" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <!-- Foqos launcher pill: primary enable/disable + active timer,
+                             docked to the bottom edge of the hero card -->
+                        <LinearLayout
+                            android:id="@+id/rowHeroActions"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="10dp"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnToggle"
+                                style="@style/Switchly.Button"
+                                android:layout_width="0dp"
+                                android:layout_height="50dp"
+                                android:layout_weight="1"
+                                android:textSize="16sp"
+                                android:text="@string/dashboard_toggle_enable" />
+
+                            <TextView
+                                android:id="@+id/tvActiveDuration"
+                                android:layout_width="wrap_content"
+                                android:layout_height="50dp"
+                                android:layout_marginStart="10dp"
+                                android:gravity="center"
+                                android:paddingStart="14dp"
+                                android:paddingEnd="14dp"
+                                android:visibility="gone"
+                                android:text="@string/dashboard_active_duration_placeholder"
+                                android:textSize="15sp"
+                                android:textStyle="bold" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Rows hidden: the hero card + Switch profile button replace them -->
+                    <LinearLayout
+                        android:id="@+id/profileRowsContainer"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:layout_marginTop="4dp"
+                        android:visibility="gone" />
+
+                    <com.google.android.material.divider.MaterialDivider
+                        style="@style/Switchly.Divider"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:layout_marginBottom="6dp" />
+
+                    <!-- Hero status (hidden: status lives in the dock launcher) -->
+                    <LinearLayout
+                        android:visibility="gone"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
@@ -163,11 +536,12 @@
 
                         <ImageView
                             android:id="@+id/ivStatusIcon"
-                            android:layout_width="52dp"
-                            android:layout_height="52dp"
-                            android:padding="8dp"
+                            android:layout_width="46dp"
+                            android:layout_height="46dp"
+                            android:padding="6dp"
                             android:contentDescription="@string/app_name"
-                            android:src="@drawable/app_blocking_black_24" />
+                            android:src="@drawable/app_blocking_black_24"
+                            app:tint="?attr/colorPrimary" />
 
                         <LinearLayout
                             android:layout_width="0dp"
@@ -181,31 +555,13 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:text="@string/protection_status_placeholder"
-                                android:textSize="22sp"
+                                android:textSize="28sp"
                                 android:textStyle="bold"
+                                android:letterSpacing="-0.01"
                                 android:maxLines="2" />
 
-                            <TextView
-                                android:id="@+id/tvActiveDuration"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="8dp"
-                                android:minHeight="34dp"
-                                android:gravity="center_vertical"
-                                android:visibility="visible"
-                                android:text="@string/dashboard_active_duration_placeholder"
-                                android:textSize="15sp"
-                                android:textStyle="bold" />
                         </LinearLayout>
                     </LinearLayout>
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnToggle"
-                        style="@style/Switchly.Button"
-                        android:layout_width="match_parent"
-                        android:layout_height="54dp"
-                        android:layout_marginTop="16dp"
-                        android:text="@string/dashboard_toggle_enable" />
 
                     <!-- Current configuration summary -->
                     <LinearLayout
@@ -213,6 +569,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="14dp"
+                        android:visibility="gone"
                         android:minHeight="42dp"
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
@@ -290,51 +647,146 @@
                         android:text="@string/dashboard_nfc_locked_hint"
                         android:textSize="13sp" />
 
-                    <TextView
-                        android:id="@+id/tvTempHint"
+                    <!-- Quick-entry action tiles (Foqos list-row style): icon roundel +
+                         title + state subtitle; Kotlin retints them accent when active.
+                         Side-by-side so the full-width heatmap still fits on screen. -->
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
-                        android:minHeight="40dp"
-                        android:gravity="center_vertical"
-                        android:paddingStart="10dp"
-                        android:paddingTop="9dp"
-                        android:paddingEnd="12dp"
-                        android:paddingBottom="9dp"
-                        android:background="?attr/selectableItemBackground"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:alpha="0.9"
-                        android:text="@string/dashboard_temp_hint"
-                        android:textSize="13sp"
-                        android:maxLines="1"
-                        android:ellipsize="end"
-                        android:drawablePadding="10dp"
-                        app:drawableEndCompat="@drawable/keyboard_arrow_right_24"
-                        app:drawableStartCompat="@drawable/schedule_24" />
+                        android:orientation="horizontal"
+                        android:baselineAligned="false">
 
-                    <TextView
-                        android:id="@+id/tvEmergencyHint"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:minHeight="40dp"
-                        android:gravity="center_vertical"
-                        android:paddingStart="10dp"
-                        android:paddingTop="9dp"
-                        android:paddingEnd="12dp"
-                        android:paddingBottom="9dp"
-                        android:background="?attr/selectableItemBackground"
-                        android:clickable="true"
-                        android:focusable="true"
-                        android:alpha="0.9"
-                        android:text="@string/dashboard_emergency_hint_ready"
-                        android:textSize="13sp"
-                        android:maxLines="1"
-                        android:ellipsize="end"
-                        android:drawablePadding="10dp"
-                        app:drawableEndCompat="@drawable/keyboard_arrow_right_24"
-                        app:drawableStartCompat="@drawable/security_24" />
+                        <LinearLayout
+                            android:id="@+id/tvTempHint"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:minHeight="54dp"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:paddingStart="10dp"
+                            android:paddingTop="9dp"
+                            android:paddingEnd="8dp"
+                            android:paddingBottom="9dp"
+                            android:background="@drawable/bg_tile_neutral"
+                            android:foreground="?attr/selectableItemBackground"
+                            android:clickable="true"
+                            android:focusable="true">
+
+                            <FrameLayout
+                                android:layout_width="34dp"
+                                android:layout_height="34dp"
+                                android:background="@drawable/bg_roundel_neutral">
+
+                                <ImageView
+                                    android:id="@+id/ivTempTileIcon"
+                                    android:layout_width="17dp"
+                                    android:layout_height="17dp"
+                                    android:layout_gravity="center"
+                                    android:contentDescription="@null"
+                                    android:src="@drawable/schedule_24"
+                                    app:tint="?attr/colorOnSurface" />
+                            </FrameLayout>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="10dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:id="@+id/tvTempTileTitle"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:textSize="13.5sp"
+                                    android:textStyle="bold"
+                                    android:textColor="?attr/colorOnSurface"
+                                    android:maxLines="1"
+                                    tools:text="Take a break" />
+
+                                <TextView
+                                    android:id="@+id/tvTempTileSubtitle"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="1dp"
+                                    android:alpha="0.75"
+                                    android:textSize="11sp"
+                                    android:textColor="?attr/colorOnSurface"
+                                    android:maxLines="1"
+                                    android:ellipsize="end"
+                                    tools:text="Choose duration" />
+                            </LinearLayout>
+                        </LinearLayout>
+
+                        <Space
+                            android:layout_width="8dp"
+                            android:layout_height="1dp" />
+
+                        <LinearLayout
+                            android:id="@+id/tvEmergencyHint"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:minHeight="54dp"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:paddingStart="10dp"
+                            android:paddingTop="9dp"
+                            android:paddingEnd="8dp"
+                            android:paddingBottom="9dp"
+                            android:background="@drawable/bg_tile_neutral"
+                            android:foreground="?attr/selectableItemBackground"
+                            android:clickable="true"
+                            android:focusable="true">
+
+                            <FrameLayout
+                                android:layout_width="34dp"
+                                android:layout_height="34dp"
+                                android:background="@drawable/bg_roundel_neutral">
+
+                                <ImageView
+                                    android:id="@+id/ivEmergencyTileIcon"
+                                    android:layout_width="17dp"
+                                    android:layout_height="17dp"
+                                    android:layout_gravity="center"
+                                    android:contentDescription="@null"
+                                    android:src="@drawable/security_24"
+                                    app:tint="?attr/colorOnSurface" />
+                            </FrameLayout>
+
+                            <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="10dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:id="@+id/tvEmergencyTileTitle"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:textSize="13.5sp"
+                                    android:textStyle="bold"
+                                    android:textColor="?attr/colorOnSurface"
+                                    android:maxLines="1"
+                                    tools:text="Emergency" />
+
+                                <TextView
+                                    android:id="@+id/tvEmergencyTileSubtitle"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="1dp"
+                                    android:alpha="0.75"
+                                    android:textSize="11sp"
+                                    android:textColor="?attr/colorOnSurface"
+                                    android:maxLines="1"
+                                    android:ellipsize="end"
+                                    tools:text="Ready · once a day" />
+                            </LinearLayout>
+                        </LinearLayout>
+                    </LinearLayout>
 
                     <com.google.android.material.divider.MaterialDivider
                         android:id="@+id/dividerBeforeProfileDropdown"
@@ -344,12 +796,13 @@
                         android:layout_marginTop="14dp"
                         android:layout_marginBottom="14dp" />
 
-                    <!-- Profile dropdown -->
+                    <!-- Profile dropdown (replaced by profile rows; kept for compat) -->
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/layoutProfileDropdown"
                         style="@style/Switchly.DropdownLayout"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:visibility="gone"
                         android:hint="@string/select_profile"
                         app:endIconMode="dropdown_menu">
 
@@ -368,9 +821,10 @@
             </com.google.android.material.card.MaterialCardView>
 
             <include
-                layout="@layout/view_home_quick_actions" />
+                layout="@layout/view_home_quick_actions"
+                android:visibility="gone" />
 
-            <!-- Next schedule (optional) -->
+            <!-- Next schedule (optional; hidden in SPA home) -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardNextSchedule"
                 style="@style/Switchly.Card"
@@ -428,9 +882,10 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- App list -->
+            <!-- App list (hidden in SPA home; editing lives in the profile sheet) -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardBlockedApps"
+                android:visibility="gone"
                 style="@style/Switchly.Card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -459,7 +914,7 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:text="@string/blocked_list_title"
-                            android:textSize="16sp"
+                            android:textSize="17sp"
                             android:textStyle="bold" />
 
                         <com.google.android.material.button.MaterialButton
@@ -557,9 +1012,20 @@
         android:visibility="gone"
         android:importantForAccessibility="no" />
 
-    <!-- Bottom-Navigation -->
-    <com.google.android.material.bottomnavigation.BottomNavigationView
-        android:id="@+id/bottomNav"
+
+    <!-- Bottom dock: only the (hidden) bottom nav remains for Kotlin compat;
+         the Foqos launcher pill moved into the hero card -->
+    <LinearLayout
+        android:id="@+id/layoutBottomDock"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="bottom"
+        android:orientation="vertical">
+
+        <!-- Bottom-Navigation (removed in SPA restyle; view kept for Kotlin compat) -->
+        <com.google.android.material.bottomnavigation.BottomNavigationView
+            android:id="@+id/bottomNav"
+            android:visibility="gone"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom"
@@ -568,4 +1034,5 @@
         android:background="?attr/colorSurface"
         app:labelVisibilityMode="labeled"
         app:menu="@menu/menu_bottom_main" />
+    </LinearLayout>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

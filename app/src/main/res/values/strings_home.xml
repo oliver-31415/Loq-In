@@ -5,6 +5,8 @@
     <!-- Dashboard profile state -->
     <!-- ====================================================== -->
     <string name="dashboard_active_profile_fmt">Active profile: %1$s</string>
+    <!-- Needed by the in-progress widget refactor. -->
+    <string name="dashboard_status_enabled">Protection is on</string>
     <string name="dashboard_active_profile_unknown">Active profile: —</string>
     <string name="dashboard_unavailable_hint_pick_apps">Not installed on this device.\nOpen “App rules” to remove.</string>
 
@@ -13,11 +15,6 @@
     <!-- ====================================================== -->
     <string name="dashboard_blocked_app_action_edit_limits">Edit limits</string>
     <string name="dashboard_blocked_app_action_edit_limits_summary">Set time or open limits for %1$s.</string>
-    <string name="dashboard_blocked_app_limits_title">Edit limits</string>
-    <string name="dashboard_blocked_app_action_time_limit">Edit time limit</string>
-    <string name="dashboard_blocked_app_action_time_limit_summary">Limit allowed minutes before blocking.</string>
-    <string name="dashboard_blocked_app_action_open_limit">Edit open limit</string>
-    <string name="dashboard_blocked_app_action_open_limit_summary">Limit how often the app can be opened today.</string>
     <string name="dashboard_blocked_app_action_remove">Remove app</string>
     <string name="dashboard_blocked_app_action_remove_summary">Remove %1$s from the current profile.</string>
     <string name="dashboard_blocked_app_remove_title">Remove app</string>
@@ -90,6 +87,11 @@
     <string name="dashboard_temp_sheet_sub_disable">Pause Switchly for a short time</string>
     <string name="dashboard_temp_sheet_sub_disable_locked">Temporary disable is locked (NFC lock is active). Use Emergency Unlock if needed.</string>
     <string name="dashboard_temp_sheet_cancel_timer">Cancel timer</string>
+    <string name="dashboard_temp_ends_at">Ends at %1$s</string>
+            <string name="minutes">Minutes</string>
+    <string name="dashboard_action_lock_in">Lock in</string>
+    <string name="dashboard_action_lock_in_duration">Lock in for %1$s</string>
+    <string name="dashboard_action_enable_duration">Enable for %1$s</string>
     <string name="dashboard_temp_hint">Temporary mode - choose action</string>
     <string name="dashboard_temp_hint_enable">Temporary enable - choose duration</string>
     <string name="dashboard_temp_hint_enable_profile">Temporarily enable %1$s</string>
@@ -98,6 +100,24 @@
     <string name="dashboard_temp_nudge">Tip:\nUse temporary mode for quick 5–60 minute sessions.</string>
     <string name="dashboard_temp_active_changes_locked">This timer is protected. Home cannot replace or shorten it. A temporary pause can still be ended early to restore protection.</string>
     <string name="dashboard_temp_discovery_done">Temporary mode is ready. Open it from the status card anytime.</string>
+
+    <!-- Quick-entry action tiles (temporary timer / emergency bypass) -->
+    <string name="tile_temp_title_plain">Temporary</string>
+    <string name="tile_temp_title_pause">Take a break</string>
+    <string name="tile_temp_title_enable">Temporarily enable</string>
+    <string name="tile_temp_title_active_paused">Temporarily paused</string>
+    <string name="tile_temp_title_active_enabled">Temporarily enabled</string>
+    <string name="tile_temp_subtitle_choose">Choose duration</string>
+    <string name="tile_temp_subtitle_time">%1$s left</string>
+    <string name="tile_temp_subtitle_locked">Unavailable while NFC unlock is on</string>
+    <string name="tile_emergency_title">Emergency unlock</string>
+    <string name="tile_emergency_title_active">Emergency active</string>
+    <string name="tile_emergency_title_paused">Emergency paused</string>
+    <string name="tile_emergency_subtitle_ready">Ready · once a day</string>
+    <string name="tile_emergency_subtitle_used">Already used today</string>
+    <string name="tile_emergency_subtitle_off">Off · enable it in Switchly controls</string>
+    <string name="tile_emergency_subtitle_active">%1$d min · tap to pause</string>
+    <string name="tile_emergency_subtitle_paused">%1$d min · tap to resume</string>
 
     <!-- ====================================================== -->
     <!-- Home actions and tiles -->
@@ -184,4 +204,80 @@
     <string name="dashboard_pause_until_next_schedule">Pause until next schedule change</string>
     <string name="dashboard_pause_until_leave_location">Pause until I leave this location</string>
     <string name="dashboard_pause_until_tomorrow">Pause until tomorrow</string>
+
+    <!-- Activity heatmap (Foqos-style habit tracker) -->
+    <string name="activity_section_title">4 Week Activity</string>
+    <string name="activity_heatmap_content_desc">Heatmap of blocked focus time for the last 28 days</string>
+    <string name="profile_row_meta_fmt">%1$s | %2$s</string>
+    <string name="activity_day_detail_fmt">%1$s · %2$s blocked</string>
+    <string name="activity_day_none_fmt">%1$s · nothing blocked</string>
+
+    <!-- Profile edit sheet (SPA) -->
+    <string name="profile_sheet_edit_profile">Edit profile</string>
+    <string name="profile_sheet_rename">Rename</string>
+    <string name="profile_sheet_mode_title">Rule mode</string>
+    <string name="profile_sheet_apps">Apps</string>
+    <string name="profile_sheet_apps_summary">Choose blocked or allowed apps</string>
+    <string name="profile_sheet_websites">Websites</string>
+    <string name="profile_sheet_websites_summary">Blocked or allowed domains</string>
+    <string name="profile_sheet_inapp">In-app rules</string>
+    <string name="profile_sheet_inapp_summary">Shorts, Reels, feeds and more</string>
+    <string name="profile_sheet_schedules">Schedules</string>
+    <string name="profile_sheet_schedules_summary">Time, Wi-Fi, Bluetooth and location</string>
+    <string name="profile_sheet_pauses">Breaks</string>
+    <string name="profile_sheet_pauses_summary">Caps for taking breaks</string>
+    <string name="profile_sheet_insights">Insights &amp; history</string>
+    <string name="profile_sheet_insights_summary">Statistics, events and sessions</string>
+    <string name="profile_sheet_delete">Delete profile</string>
+    <string name="profile_sheet_delete_confirm">Delete profile \"%1$s\"? Its rules and limits are removed.</string>
+    <string name="profile_sheet_last_profile">This is the only profile — create another before deleting it.</string>
+    <string name="profile_sheet_rename_hint">Profile name</string>
+
+    <string name="profile_sheet_tap_to_rename">Tap to rename</string>
+
+    <!-- Foqos-style profile rows on Home -->
+    <string name="profile_rows_title">Profile</string>
+    <string name="profile_rows_manage">Switch profile</string>
+    <string name="profile_row_active">Selected</string>
+    <string name="activity_hide">Hide</string>
+    <string name="activity_show">Show</string>
+    <string name="activity_more_insights">More insights</string>
+    <string name="emergency_manage_subtitle">Once per day · 15 minutes · protection pauses while active</string>
+    <string name="hero_stat_apps">Apps</string>
+    <string name="hero_stat_domains">Domains</string>
+    <string name="hero_stat_blocks">Blocks · 28d</string>
+    <string name="hero_strategy_manual">Manual Blocking</string>
+    <string name="hero_chip_mode_block">Block selected</string>
+    <string name="hero_chip_mode_allow">Allow selected</string>
+    <string name="hero_chip_autoblock">Auto-block new apps</string>
+    <string name="hero_chip_temporary">Temporary</string>
+    <string name="hero_chip_emergency">Emergency</string>
+    <string name="settings_title">Settings</string>
+
+    <!-- Blocking mode picker (hero strategy row) -->
+    <string name="blocking_mode_title">Blocking method</string>
+    <string name="blocking_mode_mixed">Mixed mode</string>
+    <string name="blocking_mode_mixed_desc">Manual button plus the channels you allow</string>
+    <string name="blocking_mode_nfc">NFC mode</string>
+    <string name="blocking_mode_nfc_desc">Only NFC tags can change Switchly</string>
+    <string name="blocking_mode_qr">QR mode</string>
+    <string name="blocking_mode_qr_desc">Only QR scans can change Switchly</string>
+    <string name="blocking_mode_barcode">Barcode mode</string>
+    <string name="blocking_mode_barcode_desc">Only barcode scans can change Switchly</string>
+    <string name="blocking_mode_schedule">Schedule mode</string>
+    <string name="blocking_mode_schedule_desc">Only schedules can change Switchly</string>
+    <string name="blocking_mode_unsupported">Not available on this device</string>
+    <string name="profile_rows_switch">Switch profile</string>
+    <string name="profile_sheet_new_profile">New profile</string>
+    <string name="dashboard_accessibility_not_connected">Accessibility service · not connected</string>
+
+    <!-- Session complete missed notifications popup -->
+    <string name="session_missed_notifications_title">Session Complete</string>
+    <string name="session_missed_notifications_count_single">You missed 1 notification while focused</string>
+    <string name="session_missed_notifications_count_fmt">You missed %1$d notifications while focused</string>
+    <string name="session_missed_notifications_done">Done</string>
+    <string name="session_missed_notifications_view_all">View all in Inbox</string>
+    <string name="session_missed_notifications_dont_show_again">Don\'t show again</string>
+    <string name="session_missed_notifications_disabled_hint">You can turn this back on anytime in Settings</string>
+
 </resources>

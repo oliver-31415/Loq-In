@@ -50,6 +50,27 @@
     <!-- Profile labels and duplicate names -->
     <!-- ====================================================== -->
     <string name="profile_label_default">Profil</string>
+    <!-- Needed by the in-progress widget refactor. -->
+    <string name="profile_default_name">Profil</string>
+    <string name="temp_pause_action">Pausen</string>
+    <string name="temp_pause_title">Pausen</string>
+    <string name="temp_pause_summary_unlimited">Unbegrenzt</string>
+    <string name="temp_pause_part_count_fmt">%1$d/Tag</string>
+    <string name="temp_pause_part_max_fmt">max. %1$d Min.</string>
+    <string name="temp_pause_part_total_fmt">%1$d Min./Tag</string>
+    <string name="temp_pause_used_fmt">Heute genutzt: %1$d Pausen · %2$d Min.</string>
+    <string name="temp_pause_field_count">Pausen pro Tag (0 = unbegrenzt)</string>
+    <string name="temp_pause_field_per_pause">Max. Minuten pro Pause (0 = unbegrenzt)</string>
+    <string name="temp_pause_field_per_day">Max. Pausenminuten pro Tag (0 = unbegrenzt)</string>
+    <string name="temp_pause_zero_hint">0 bedeutet unbegrenzt.</string>
+    <string name="temp_pause_reset_today">Heute zurücksetzen</string>
+    <string name="temp_pause_error_range_fmt">Muss zwischen 0 und %1$d liegen</string>
+    <string name="temp_pause_exhausted">Keine Pausen mehr heute für dieses Profil</string>
+    <string name="temp_pause_exhausted_pauses">Tägliches Pausenlimit erreicht (%1$d Pausen heute genutzt).</string>
+    <string name="temp_pause_exhausted_minutes">Tägliche Pausenzeit aufgebraucht (%1$d Min. heute genutzt).</string>
+    <string name="temp_pause_exceeds_limit">Überschreitet Pausenlimit (max. %1$d Min. erlaubt).</string>
+    <string name="temp_pause_reset_blocked_active">Pausennutzung kann bei aktiver Blockierung nicht zurückgesetzt werden.</string>
+    <string name="temp_pause_reset_success">Pausennutzung für heute zurückgesetzt.</string>
     <string name="profile_duplicate_name_fmt">%1$s (Kopie)</string>
     <string name="profile_duplicate_name_numbered_fmt">%1$s (Kopie %2$d)</string>
 
@@ -70,5 +91,13 @@
         <item quantity="other">%d Websites</item>
     </plurals>
     <string name="state_profile_on_status">Aktiv</string>
+
+
+    <!-- ====================================================== -->
+    <!-- Eingeschränkte Bearbeitung bei aktivem Schutz -->
+    <!-- ====================================================== -->
+    <string name="profile_limited_edit_title">Eingeschränkt bearbeitbar, solange Switchly aktiv ist</string>
+    <string name="profile_limited_edit_body">Du kannst Profile ansehen, erstellen, duplizieren und umbenennen sowie ihre App-Auswahl verschärfen. Löschen und Profilwechsel bleiben gesperrt, bis Switchly deaktiviert ist.</string>
+    <string name="profile_limited_edit_row">Eingeschränkt bearbeitbar · Öffnen zum Ansehen oder Verschärfen.</string>
 
 </resources>

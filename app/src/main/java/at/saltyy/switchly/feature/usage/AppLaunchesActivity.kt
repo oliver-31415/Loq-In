@@ -28,6 +28,7 @@ import android.os.Bundle
 import android.provider.Settings
 import android.view.Gravity
 import android.view.View
+import androidx.core.view.children
 import android.view.ViewGroup
 import android.widget.CheckBox
 import android.widget.FrameLayout
@@ -45,7 +46,6 @@ import at.saltyy.switchly.data.prefs.AttemptLimitStore
 import at.saltyy.switchly.data.prefs.ProfileStore
 import at.saltyy.switchly.data.prefs.SessionLimitStore
 import at.saltyy.switchly.data.prefs.UsageLimitStore
-import at.saltyy.switchly.data.prefs.UsageStore
 import at.saltyy.switchly.feature.stats.StatsFormat
 import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.ui.EdgeToEdgeUtils
@@ -148,6 +148,7 @@ class AppLaunchesActivity : AppCompatActivity() {
         coordinator.addView(FloatingActionButton(this).apply {
             setImageResource(R.drawable.tune_24)
             val accent = AccentColor.getAccentColorInt(this@AppLaunchesActivity)
+            backgroundTintList = ColorStateList.valueOf(accent)
             imageTintList = ColorStateList.valueOf(if (MaterialColors.isColorLight(accent)) Color.BLACK else Color.WHITE)
             contentDescription = getString(R.string.app_launches_sort_filter_title)
             setOnClickListener { showSortFilterDialog() }
@@ -190,7 +191,7 @@ class AppLaunchesActivity : AppCompatActivity() {
                 runCatching { StatsArchiveSync.sync(ctx) }
             }
             val launchCounts = AppLaunchCountStore.getMapForDateRange(ctx, from, to)
-            val usageTotals = UsageStore.getUsageMsMapForDateRange(ctx, from, to)
+            val usageTotals = usageTotalsForRange(ctx, range, from, to)
             val summaries = launchCounts
                 .filterKeys { pkg -> !UsageInsightsAppFilter.shouldHide(ctx, pkg) }
                 .map { (pkg, count) ->
@@ -227,6 +228,22 @@ class AppLaunchesActivity : AppCompatActivity() {
                 }
             }
         }.start()
+    }
+
+    private fun usageTotalsForRange(
+        ctx: Context,
+        range: Range,
+        from: Long,
+        to: Long,
+    ): Map<String, Long> {
+        val summary = when (range) {
+            Range.TODAY -> AppUsageRepo.getTodaySummary(ctx, Int.MAX_VALUE)
+            Range.WEEK -> AppUsageRepo.getLastNDaysSummary(ctx, 7, Int.MAX_VALUE)
+            Range.MONTH -> AppUsageRepo.getThisMonthSummary(ctx, Int.MAX_VALUE)
+            Range.YEAR -> AppUsageRepo.getThisYearSummary(ctx, Int.MAX_VALUE)
+            Range.CUSTOM -> AppUsageRepo.getDateRangeSummary(ctx, from, to, Int.MAX_VALUE)
+        }
+        return summary.topApps.associate { item -> item.packageName to item.timeMs }
     }
 
     private fun showSortFilterDialog() {
@@ -391,7 +408,7 @@ class AppLaunchesActivity : AppCompatActivity() {
                 minHeight = dp(40)
                 insetTop = 0
                 insetBottom = 0
-                cornerRadius = dp(4)
+                cornerRadius = dp(14)
                 setAllCaps(false)
                 layoutParams = if (range == Range.CUSTOM) {
                     LinearLayout.LayoutParams(dp(44), dp(40))
@@ -405,7 +422,7 @@ class AppLaunchesActivity : AppCompatActivity() {
         }
         if (checkedId != View.NO_ID) group.check(checkedId)
         ids.forEach { (buttonId, range) ->
-            group.findViewById<MaterialButton>(buttonId)?.let { styleRangeButton(it, range == currentRange) }
+            group.findViewById<MaterialButton>(buttonId)?.let { it.isChecked = (range == currentRange); styleRangeButton(it, range == currentRange) }
         }
         group.addOnButtonCheckedListener { _, checkedButtonId, isChecked ->
             if (!isChecked) return@addOnButtonCheckedListener
@@ -476,18 +493,16 @@ class AppLaunchesActivity : AppCompatActivity() {
         })
     }
 
+
     private fun styleRangeButton(button: MaterialButton, active: Boolean) {
-        val activeBg = AccentColor.getAccentColorInt(this)
-        val activeText = if (MaterialColors.isColorLight(activeBg)) Color.BLACK else Color.WHITE
-        val inactiveBg = MaterialColors.getColor(this, com.google.android.material.R.attr.colorSurfaceVariant, 0)
-        val inactiveText = MaterialColors.getColor(this, com.google.android.material.R.attr.colorOnSurface, 0)
-        val outline = MaterialColors.getColor(this, com.google.android.material.R.attr.colorOutline, inactiveText)
-        button.backgroundTintList = ColorStateList.valueOf(if (active) activeBg else inactiveBg)
-        button.setTextColor(if (active) activeText else inactiveText)
-        button.iconTint = ColorStateList.valueOf(if (active) activeText else inactiveText)
-        button.strokeColor = ColorStateList.valueOf(if (active) activeBg else outline)
-        button.strokeWidth = resources.displayMetrics.density.toInt().coerceAtLeast(1)
-        button.rippleColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(activeBg, 0x35))
+        // Shared segmented look: one pill control, filled-accent selection.
+        // (Same language as SegmentedToggleUi on the detail pages.)
+        val buttons = (button.parent as? android.view.ViewGroup)
+            ?.children
+            ?.filterIsInstance<com.google.android.material.button.MaterialButton>()
+            ?.toList() ?: listOf(button)
+        val selectedId = buttons.firstOrNull { it.isChecked }?.id ?: button.id
+        at.saltyy.switchly.ui.SegmentedToggleUi.apply(this, buttons, selectedId)
     }
 
     private fun windowForRange(range: Range): Pair<Long, Long> {
@@ -511,7 +526,7 @@ class AppLaunchesActivity : AppCompatActivity() {
         val currentStart = customRangeStartMillis ?: startOfTodayMillis()
         val currentEnd = customRangeEndMillis ?: now
         val picker = MaterialDatePicker.Builder.dateRangePicker()
-            .setTheme(com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialCalendar)
+            .setTheme(at.saltyy.switchly.theme.AccentColor.getDatePickerTheme(this))
             .setTitleText(R.string.activity_history_range_custom)
             .setSelection(androidx.core.util.Pair(localDayToDatePickerUtcMillis(currentStart), localDayToDatePickerUtcMillis(currentEnd)))
             .build()
@@ -575,8 +590,8 @@ class AppLaunchesActivity : AppCompatActivity() {
             ).apply { topMargin = dp(10) }
             radius = dp(22).toFloat()
             strokeWidth = dp(1)
-            strokeColor = ContextCompat.getColor(this@AppLaunchesActivity, R.color.switchly_card_stroke)
-            setCardBackgroundColor(ContextCompat.getColor(this@AppLaunchesActivity, R.color.switchly_card_bg))
+            strokeColor = ContextCompat.getColor(this@AppLaunchesActivity, R.color.foqos_outline_variant)
+            setCardBackgroundColor(ContextCompat.getColor(this@AppLaunchesActivity, R.color.foqos_surface))
         }
     }
 

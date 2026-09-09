@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Active blocking: layered blob artwork in the spirit of Foqos's card -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:type="linear"
+                android:angle="315"
+                android:startColor="#FF2FA36B"
+                android:centerColor="#FF177A4B"
+                android:endColor="#FF0A3524" />
+            <corners android:radius="28dp" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:type="radial"
+                android:gradientRadius="460dp"
+                android:centerX="0.12"
+                android:centerY="0.05"
+                android:startColor="#8CB9F0CE"
+                android:endColor="#00B9F0CE" />
+            <corners android:radius="28dp" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:type="radial"
+                android:gradientRadius="420dp"
+                android:centerX="0.95"
+                android:centerY="0.35"
+                android:startColor="#594FD9A0"
+                android:endColor="#004FD9A0" />
+            <corners android:radius="28dp" />
+        </shape>
+    </item>
+    <item>
+        <shape android:shape="rectangle">
+            <gradient
+                android:type="radial"
+                android:gradientRadius="520dp"
+                android:centerX="0.55"
+                android:centerY="1.05"
+                android:startColor="#4034C98A"
+                android:endColor="#0034C98A" />
+            <corners android:radius="28dp" />
+        </shape>
+    </item>
+</layer-list>

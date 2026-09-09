@@ -27,6 +27,7 @@ import android.graphics.drawable.GradientDrawable
 import android.view.View
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -42,6 +43,7 @@ import at.saltyy.switchly.data.prefs.InAppLimitStore
 import at.saltyy.switchly.data.prefs.InAppRuleStore
 import at.saltyy.switchly.data.prefs.SurfaceLimitStore
 import at.saltyy.switchly.data.prefs.ProfileRuleModeStore
+import at.saltyy.switchly.data.prefs.TempPauseStore
 import at.saltyy.switchly.data.prefs.WebsiteRuleModeStore
 import at.saltyy.switchly.data.prefs.ProfileStore
 import at.saltyy.switchly.data.prefs.SwitchModeStore
@@ -77,10 +79,14 @@ class ManageProfilesActivity : AppCompatActivity() {
 
     private fun syncProfileLockUi() {
         val locked = isProfileLockActive()
+        findViewById<View>(R.id.cardProfilesLimitedEditing)?.visibility = if (locked) View.VISIBLE else View.GONE
+        findViewById<MaterialToolbar>(R.id.toolbar)?.subtitle =
+            if (locked) getString(R.string.profile_limited_edit_title) else null
         findViewById<FloatingActionButton>(R.id.fabAdd)?.apply {
-            isEnabled = !locked
-            isClickable = !locked
-            alpha = if (locked) 0.45f else 1f
+            // Creating another inactive profile does not weaken the profile currently enforcing protection.
+            isEnabled = true
+            isClickable = true
+            alpha = 1f
         }
         list.alpha = 1f
         if (::adapter.isInitialized && adapter.itemCount > 0) {
@@ -110,6 +116,9 @@ class ManageProfilesActivity : AppCompatActivity() {
 
         val fabAdd = findViewById<FloatingActionButton>(R.id.fabAdd)
         fabAdd.backgroundTintList = AccentColor.getActiveColor(this)
+        findViewById<View>(R.id.cardProfilesLimitedEditing)?.setOnClickListener {
+            EditingLockGuard.showLockedDialog(this, R.string.edit_locked_manage_profiles)
+        }
 
         list = findViewById(R.id.listProfiles)
         list.layoutManager = LinearLayoutManager(this)
@@ -122,9 +131,7 @@ class ManageProfilesActivity : AppCompatActivity() {
         )
 
         findViewById<FloatingActionButton>(R.id.fabAdd).setOnClickListener {
-            if (!isProfileLockActive()) {
-                showAddProfileSheet()
-            }
+            showAddProfileSheet()
         }
 
         lifecycleScope.launch {
@@ -173,19 +180,19 @@ class ManageProfilesActivity : AppCompatActivity() {
             val summary: String?,
             val icon: Int,
             val destructive: Boolean = false,
+            val enabled: Boolean = true,
             val perform: () -> Unit,
         )
 
+        val locked = isProfileLockActive()
         val actions = mutableListOf<ProfileAction>()
 
-        if (name == current) {
-            actions += ProfileAction(
-                title = getString(R.string.action_manage_selected_apps),
-                summary = getString(R.string.profile_action_apps_summary),
-                icon = R.drawable.apps_24,
-                perform = { openAppListForProfile(name) }
-            )
-        }
+        actions += ProfileAction(
+            title = getString(R.string.action_manage_selected_apps),
+            summary = getString(R.string.profile_action_apps_summary),
+            icon = R.drawable.apps_24,
+            perform = { openAppListForProfile(name) }
+        )
 
         actions += listOf(
             ProfileAction(
@@ -207,6 +214,7 @@ class ManageProfilesActivity : AppCompatActivity() {
                 title = getString(R.string.action_set_active_profile),
                 summary = getString(R.string.profile_action_set_active_summary),
                 icon = R.drawable.switch_account_24,
+                enabled = !locked,
                 perform = { setActiveProfile(name) }
             )
         }
@@ -216,6 +224,7 @@ class ManageProfilesActivity : AppCompatActivity() {
             summary = getString(R.string.destructive_cannot_be_undone),
             icon = R.drawable.delete_24,
             destructive = true,
+            enabled = !locked,
             perform = { deleteProfile(name) }
         )
 
@@ -226,7 +235,8 @@ class ManageProfilesActivity : AppCompatActivity() {
                     title = action.title,
                     summary = action.summary,
                     iconRes = action.icon,
-                    destructive = action.destructive
+                    destructive = action.destructive,
+                    enabled = action.enabled,
                 )
             }
         ) { which ->
@@ -237,24 +247,25 @@ class ManageProfilesActivity : AppCompatActivity() {
     private fun openAppListForProfile(profile: String) {
         val intent = Intent(this, AppPickerActivity::class.java).apply {
             putExtra(AppPickerActivity.EXTRA_PROFILE_NAME, profile)
+            putExtra(AppPickerActivity.EXTRA_ALLOW_LOCKED_PROFILE_STRICT_EDITS, true)
         }
         startActivity(intent)
     }
 
     private fun showAddProfileSheet() {
-        if (isProfileLockActive()) {
-            return
-        }
-
         showProfileNameDialog(
             title = getString(R.string.add_profile),
             positiveText = getString(R.string.create),
             initialValue = "",
-            initialDescription = ""
+            initialDescription = "",
+            allowWhileLocked = true,
         ) { name, description ->
             if (ProfileStore.addProfile(this, name)) {
                 ProfileStore.setDescription(this, name, description)
-                ProfileStore.setCurrent(this, name)
+                // Preserve the currently enforcing profile while protection is active.
+                if (!isProfileLockActive()) {
+                    ProfileStore.setCurrent(this, name)
+                }
                 refresh()
                 snackRoot().showSwitchlyStatus(getString(R.string.profile_created_open_apps, name))
                 snackRoot().post { openAppListForProfile(name) }
@@ -266,16 +277,13 @@ class ManageProfilesActivity : AppCompatActivity() {
     }
 
     private fun showRenameProfileSheet(oldName: String) {
-        if (isProfileLockActive()) {
-            return
-        }
-
         val oldDescription = ProfileStore.getDescription(this, oldName)
         showProfileNameDialog(
             title = getString(R.string.profile_details_title),
             positiveText = getString(R.string.save),
             initialValue = oldName,
-            initialDescription = oldDescription
+            initialDescription = oldDescription,
+            allowWhileLocked = true,
         ) { newName, description ->
             when {
                 newName != oldName && ProfileStore.getProfiles(this).contains(newName) -> {
@@ -303,6 +311,7 @@ class ManageProfilesActivity : AppCompatActivity() {
         positiveText: String,
         initialValue: String = "",
         initialDescription: String = "",
+        allowWhileLocked: Boolean = false,
         onSubmit: (String, String) -> String?
     ) {
         val content = layoutInflater.inflate(R.layout.dialog_profile_name, FrameLayout(this), false)
@@ -325,7 +334,7 @@ class ManageProfilesActivity : AppCompatActivity() {
             dialog.styleSwitchlyDialogButtons()
 
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                if (isProfileLockActive()) {
+                if (isProfileLockActive() && !allowWhileLocked) {
                     dialog.dismiss()
                     syncProfileLockUi()
                     return@setOnClickListener
@@ -375,9 +384,6 @@ class ManageProfilesActivity : AppCompatActivity() {
     }
 
     private fun duplicateProfile(name: String) {
-        if (isProfileLockActive()) {
-            return
-        }
         val blocked = ProfileStore.getBlockedForProfile(this, name)
         val allowed = ProfileStore.getAllowedForProfile(this, name)
         var i = 0
@@ -403,6 +409,7 @@ class ManageProfilesActivity : AppCompatActivity() {
             InAppLimitStore.copyProfile(this, name, newName)
             SurfaceLimitStore.copyProfile(this, name, newName)
             InAppRuleStore.copyProfile(this, name, newName)
+            TempPauseStore.copyProfile(this, name, newName)
             snackRoot().showSwitchlyStatus(getString(R.string.profile_duplicated, newName))
             refresh()
         } else {
@@ -460,6 +467,7 @@ class ManageProfilesActivity : AppCompatActivity() {
             private val badge: TextView = view.findViewById(R.id.tvActiveBadge)
             private val card: MaterialCardView = view.findViewById(R.id.cardProfile)
             private val activeBar: View = view.findViewById(R.id.viewActiveBar)
+            private val actionState: ImageView = view.findViewById(R.id.ivProfileActionState)
 
             fun bind(name: String) {
                 val modeLabel = if (ProfileRuleModeStore.isAllowMode(this@ManageProfilesActivity, name)) {
@@ -468,8 +476,16 @@ class ManageProfilesActivity : AppCompatActivity() {
                     getString(R.string.profile_rule_mode_block)
                 }
                 tv.text = getString(R.string.profile_name_mode_format, name, modeLabel)
-                subtitle.text = ProfileStore.getDescription(this@ManageProfilesActivity, name)
-                    .ifBlank { getString(R.string.profile_row_subtitle) }
+                val limitedEditing = isProfileLockActive()
+                val description = ProfileStore.getDescription(this@ManageProfilesActivity, name)
+                subtitle.text = when {
+                    limitedEditing && description.isBlank() -> getString(R.string.profile_limited_edit_row)
+                    description.isBlank() -> getString(R.string.profile_row_subtitle)
+                    else -> description
+                }
+                actionState.setImageResource(R.drawable.edit_24)
+                actionState.contentDescription = getString(R.string.edit)
+                actionState.alpha = 1f
 
                 val isActive = name == ProfileStore.getCurrent(this@ManageProfilesActivity)
                 badge.visibility = if (isActive) View.VISIBLE else View.GONE
@@ -484,13 +500,11 @@ class ManageProfilesActivity : AppCompatActivity() {
                     setColor(accent)
                     cornerRadius = dp(999).toFloat()
                 }
-                val readOnly = isProfileLockActive()
-                itemView.alpha = if (readOnly) 0.82f else 1f
-                itemView.isClickable = !readOnly
+                itemView.alpha = 1f
+                // Profiles remain inspectable while protection is active. The action sheet exposes only
+                // safe operations; destructive/profile-switching actions stay disabled until Switchly is off.
+                itemView.isClickable = true
                 itemView.setOnClickListener {
-                    if (isProfileLockActive()) {
-                        return@setOnClickListener
-                    }
                     val currentPosition = bindingAdapterPosition
                     if (currentPosition != RecyclerView.NO_POSITION) showActions(currentPosition)
                 }

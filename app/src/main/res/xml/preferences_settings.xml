@@ -54,22 +54,6 @@
             app:iconSpaceReserved="false" />
 
         <Preference
-            android:key="pref_home_mode_appearance"
-            android:layout="@layout/item_pref_card"
-            android:title="@string/pref_home_layout_mode_title"
-            android:summary="@string/pref_home_layout_mode_summary"
-            android:icon="@drawable/dashboard_24"
-            app:iconSpaceReserved="false" />
-
-        <Preference
-            android:key="pref_customize_home_appearance"
-            android:layout="@layout/item_pref_card"
-            android:title="@string/pref_home_layout_custom_title"
-            android:summary="@string/pref_home_layout_custom_summary"
-            android:icon="@drawable/tune_24"
-            app:iconSpaceReserved="false" />
-
-        <Preference
             android:key="pref_theme_color"
             android:layout="@layout/item_pref_card"
             android:title="@string/pref_theme_color_title"
@@ -130,6 +114,14 @@
             android:title="@string/pref_google_account_title"
             android:summary="@string/pref_google_account_summary_logged_out"
             android:icon="@drawable/cloud_24"
+            app:iconSpaceReserved="false" />
+
+        <Preference
+            android:key="pref_change_emergency_pin"
+            android:layout="@layout/item_pref_card"
+            android:title="@string/pref_change_emergency_pin_title"
+            android:summary="@string/pref_change_emergency_pin_summary"
+            android:icon="@drawable/lock_24"
             app:iconSpaceReserved="false" />
 
         <PreferenceScreen
@@ -245,9 +237,9 @@
         <Preference
             android:key="pref_other_help_contact"
             android:layout="@layout/item_pref_card"
-            android:title="@string/settings_contact_support_title"
-            android:summary="@string/settings_contact_support_summary"
-            android:icon="@drawable/help_24"
+            android:title="@string/support_logs_unified_title"
+            android:summary="@string/support_logs_unified_desc"
+            android:icon="@drawable/list_alt_24"
             app:iconSpaceReserved="false" />
 
         <Preference
@@ -279,15 +271,7 @@
                 android:layout="@layout/item_pref_card"
                 android:title="@string/about_device_info_title"
                 android:summary="@string/about_device_info_summary"
-                android:icon="@drawable/info_24"
-                app:iconSpaceReserved="false" />
-
-            <Preference
-                android:key="pref_about_developer_info"
-                android:layout="@layout/item_pref_card"
-                android:title="@string/about_developer_info_title"
-                android:summary="@string/about_developer_info_summary"
-                android:icon="@drawable/info_24"
+                android:icon="@drawable/mobile_24"
                 app:iconSpaceReserved="false" />
 
             <Preference
@@ -296,22 +280,6 @@
                 android:title="@string/privacy_report_title"
                 android:summary="@string/privacy_report_settings_summary"
                 android:icon="@drawable/security_24"
-                app:iconSpaceReserved="false" />
-
-            <Preference
-                android:key="pref_about_store"
-                android:layout="@layout/item_pref_card"
-                android:title="@string/about_store_label"
-                android:summary="@string/store_card_summary"
-                android:icon="@drawable/nfc_24"
-                app:iconSpaceReserved="false" />
-
-            <Preference
-                android:key="pref_about_other_switchly_products"
-                android:layout="@layout/item_pref_card"
-                android:title="@string/about_other_switchly_products_title"
-                android:summary="@string/about_other_switchly_products_summary"
-                android:icon="@drawable/apps_24"
                 app:iconSpaceReserved="false" />
 
         </PreferenceScreen>

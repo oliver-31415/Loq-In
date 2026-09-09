@@ -36,6 +36,7 @@ import at.saltyy.switchly.premium.PremiumRedeemRuntime
 import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.ui.EdgeToEdgeUtils
 import at.saltyy.switchly.ui.ThemeUtils
+import at.saltyy.switchly.ui.showWarnPillOnContent
 import at.saltyy.switchly.util.LocaleHelper
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
@@ -147,11 +148,7 @@ class PremiumInfoActivity : AppCompatActivity() {
     private fun setupButtons() {
         purchaseButton.setOnClickListener {
             if (PremiumManager.isPremium(this)) {
-                Toast.makeText(
-                    this,
-                    getString(R.string.premium_already_owned),
-                    Toast.LENGTH_SHORT
-                ).show()
+                showWarnPillOnContent(getString(R.string.premium_already_owned))
             } else {
                 purchaseFlowOpening = true
                 purchaseFlowLeftActivity = false

@@ -109,6 +109,11 @@ object PersistentStatusNotifier {
         )
 
         val enabled = SwitchModeStore.isEnabled(ctx)
+        val tempDisableRemaining = SwitchModeStore.getTemporaryRemainingMillis(ctx)
+        val tempEnableRemaining = SwitchModeStore.getTemporaryEnableRemainingMillis(ctx)
+        val tempCountdownRemaining = maxOf(tempDisableRemaining, tempEnableRemaining)
+        val tempDisableActive = tempDisableRemaining > 0L
+        val tempEnableActive = tempEnableRemaining > 0L
         val mode = detailMode(ctx)
         val needsAppCount = mode == MODE_APP_COUNT || mode == MODE_FULL
         val rawProfile = if (needsAppCount) ProfileStore.getCurrent(ctx).orEmpty() else ""
@@ -155,10 +160,11 @@ object PersistentStatusNotifier {
             .setSmallIcon(if (enabled) R.drawable.lock_24 else R.drawable.lock_open_24)
             .setContentTitle(
                 ctx.getString(
-                    if (enabled) {
-                        R.string.status_notification_enabled_title
-                    } else {
-                        R.string.status_notification_disabled_title
+                    when {
+                        tempDisableActive -> R.string.status_notification_temp_disable_title
+                        tempEnableActive -> R.string.status_notification_temp_enable_title
+                        enabled -> R.string.status_notification_enabled_title
+                        else -> R.string.status_notification_disabled_title
                     }
                 )
             )
@@ -178,20 +184,34 @@ object PersistentStatusNotifier {
             .setDefaults(0)
             .setPriority(NotificationCompat.PRIORITY_LOW)
 
-        when (mode) {
-            MODE_APP_COUNT -> notificationBuilder.setContentText(appCountText)
-            MODE_FULL -> notificationBuilder.setContentText(
-                ctx.getString(
-                    R.string.status_notification_profile_apps_fmt,
-                    rawProfile.ifBlank { ctx.getString(R.string.status_notification_no_profile) },
-                    appCountText,
-                )
+        when {
+            tempDisableActive -> notificationBuilder.setContentText(
+                ctx.getString(R.string.status_notification_temp_disable_body)
             )
-            MODE_STATUS_ONLY, MODE_ACTIVE_TIME -> notificationBuilder.setContentText(null)
+            tempEnableActive -> notificationBuilder.setContentText(
+                ctx.getString(R.string.status_notification_temp_enable_body)
+            )
+            else -> when (mode) {
+                MODE_APP_COUNT -> notificationBuilder.setContentText(appCountText)
+                MODE_FULL -> notificationBuilder.setContentText(
+                    ctx.getString(
+                        R.string.status_notification_profile_apps_fmt,
+                        rawProfile.ifBlank { ctx.getString(R.string.status_notification_no_profile) },
+                        appCountText,
+                    )
+                )
+                MODE_STATUS_ONLY, MODE_ACTIVE_TIME -> notificationBuilder.setContentText(null)
+            }
         }
 
         val showActiveTime = enabled && (mode == MODE_ACTIVE_TIME || mode == MODE_FULL)
-        if (showActiveTime) {
+        if (tempCountdownRemaining > 0L) {
+            notificationBuilder
+                .setWhen(System.currentTimeMillis() + tempCountdownRemaining)
+                .setUsesChronometer(true)
+                .setChronometerCountDown(true)
+                .setShowWhen(true)
+        } else if (showActiveTime) {
             val activeSince = SwitchModeStore.getActiveSinceMillis(ctx)
             if (activeSince in 1..System.currentTimeMillis()) {
                 notificationBuilder

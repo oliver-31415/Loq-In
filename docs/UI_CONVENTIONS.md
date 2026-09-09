@@ -11,7 +11,7 @@ This document records the visual and interaction rules used across Switchly. Fol
 
 ## Navigation and trailing icons
 Use the trailing icon according to the destination or action.
-| Behavior | Trailing indicator | Existing resource / pattern |
+| Behavior | Trailing indicator | Existing resource/pattern |
 | --- | --- | --- |
 | Opens another screen, submenu, or editor inside Switchly | Right chevron | `@drawable/keyboard_arrow_right_24` |
 | Opens Android system UI, Android settings, another app, or an external website | Open externally | `@drawable/open_in_new_24` |
@@ -36,7 +36,7 @@ Do not use `open_in_new` for ordinary in-app navigation. Do not use a chevron fo
 - Use `visibility_off_24` for Hidden apps entries; use `apps_24` only for ordinary app selection or app lists.
 - System UI may render an icon outside the app theme. Icons passed to Quick Settings or other Android system surfaces must be self-contained, monochrome, and must not depend on theme attributes such as `?attr/colorOnSurface`.
 - Decorative icons use `android:contentDescription="@null"`. Standalone icon buttons require a translated content description.
-- Icon-only `MaterialButton` controls use empty text, centered gravity, equal horizontal padding, and `ICON_GRAVITY_TEXT_START` / `app:iconGravity="textStart"`; the default start icon gravity leaves standalone icons visibly off-center.
+- Icon-only `MaterialButton` controls use empty text, centered gravity, equal horizontal padding, and `ICON_GRAVITY_TEXT_START`/`app:iconGravity="textStart"`; the default start icon gravity leaves standalone icons visibly off-center.
 
 ## Rows and actions
 - The whole row should be clickable when it represents one clear destination or action.

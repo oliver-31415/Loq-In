@@ -382,8 +382,8 @@ class ActiveTimeDetailActivity : AppCompatActivity() {
     }
 
     private fun MaterialCardView.applySwitchlyCardColors() {
-        setCardBackgroundColor(ContextCompat.getColor(this@ActiveTimeDetailActivity, R.color.switchly_card_bg))
-        strokeColor = ContextCompat.getColor(this@ActiveTimeDetailActivity, R.color.switchly_card_stroke)
+        setCardBackgroundColor(ContextCompat.getColor(this@ActiveTimeDetailActivity, R.color.foqos_surface))
+        strokeColor = ContextCompat.getColor(this@ActiveTimeDetailActivity, R.color.foqos_outline_variant)
         strokeWidth = dp(1)
     }
 

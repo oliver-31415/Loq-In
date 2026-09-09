@@ -13,7 +13,7 @@
     <string name="toggle_group_manage_blocking_modes">Kontrollmodi</string>
     <string name="settings_blocking_modes_summary">Wähle, wie Switchly aktiviert oder deaktiviert wird.</string>
     <string name="toggle_group_manage_other_blocking_features">Funktionszugriff</string>
-    <string name="settings_blocking_features_summary">Steuere den Zugriff bei aktivem Switchly und konfiguriere den Systemstatus.</string>
+    <string name="settings_blocking_features_summary">Zugriff bei aktivem Schutz, Benachrichtigungen &amp; Zusammenfassung sowie Status.</string>
 
     <!-- ====================================================== -->
     <!-- Sections and guidance -->
@@ -73,10 +73,10 @@
     <string name="pref_mixed_allow_nfc_title">NFC-Steuerung</string>
     <string name="pref_mixed_allow_nfc_summary">Erlaubt NFC-Aktionen zur Steuerung von Switchly.</string>
     <string name="toggle_detail_mixed_allow_nfc">Wenn aktiviert, werden NFC-Aktionen im gemischten Modus akzeptiert, inklusive geschriebener Tags und gekoppelter Tags. Andere erlaubte Kanäle funktionieren weiterhin.</string>
-    <string name="pref_mixed_allow_qr_title">QR-Kanal erlauben</string>
+    <string name="pref_mixed_allow_qr_title">QR-Steuerung</string>
     <string name="pref_mixed_allow_qr_summary">Erlaubt QR-Aktionen zur Steuerung.</string>
     <string name="toggle_detail_mixed_allow_qr">Wenn aktiviert, ist die QR-Steuerung im gemischten Modus erlaubt.</string>
-    <string name="pref_mixed_allow_barcode_title">Barcode-Kanal erlauben</string>
+    <string name="pref_mixed_allow_barcode_title">Barcode-Steuerung</string>
     <string name="pref_mixed_allow_barcode_summary">Erlaubt Barcode-Aktionen zur Steuerung von Switchly.</string>
     <string name="toggle_detail_mixed_allow_barcode">Wenn aktiviert, werden gespeicherte Barcode-Aktionen im gemischten Modus akzeptiert.</string>
     <string name="pref_mixed_allow_button_title">Manuelle Steuerung</string>
@@ -89,8 +89,8 @@
     <string name="pref_lock_active_temporary_timer_summary">Home kann einen laufenden Schutz-Timer nicht ersetzen oder verkürzen. Eine temporäre Pause kann nur beendet werden, um den Schutz wiederherzustellen. Erlaubte NFC-, QR- und Barcode-Aktionen funktionieren weiter.</string>
     <string name="mixed_channels_locked_while_switchly_enabled">Deaktiviere Switchly, um Steuerungsmethoden und Zugriffsregeln zu bearbeiten.</string>
     <string name="pref_mixed_allow_app_picking_title">App-Auswahl erlauben</string>
-    <string name="pref_mixed_allow_app_picking_summary">Erlaubt das Öffnen der App-Auswahl, während Switchly aktiv ist.</string>
-    <string name="toggle_detail_mixed_allow_app_picking">Standardmäßig ist das aus Sicherheitsgründen gesperrt, solange Switchly aktiv ist. Aktiviere dies nur, wenn App-Listen-Änderungen trotz aktivem Schutz gewünscht sind.</string>
+    <string name="pref_mixed_allow_app_picking_summary">Erlaubt das Öffnen der App-Regeln, während Switchly aktiv ist. Es sind nur Änderungen erlaubt, die den Schutz verstärken.</string>
+    <string name="toggle_detail_mixed_allow_app_picking">Wenn aktiviert, können App-Regeln auch bei aktivem Switchly geöffnet werden. Bestehender Schutz kann weiterhin nicht entfernt werden: Bei Ausgewählte blockieren sind nur Ergänzungen möglich, bei Ausgewählte erlauben nur das Entfernen erlaubter Ausnahmen.</string>
     <string name="pref_mixed_allow_profile_switching_title">Profile verwalten/wechseln erlauben</string>
     <string name="pref_mixed_allow_profile_switching_summary">Erlaubt das Verwalten oder Wechseln von Profilen, während Switchly aktiv ist.</string>
     <string name="toggle_detail_mixed_allow_profile_switching">Standardmäßig gesperrt, solange Switchly aktiv ist. Aktiviere das nur, wenn Profile bewusst während aktivem Schutz verwaltet oder gewechselt werden dürfen.</string>
@@ -122,8 +122,11 @@
     <string name="blocking_uninstall_friction_title">Deinstallations-Reibung aktiv</string>
     <string name="blocking_uninstall_friction_message">Switchly erschwert gerade den Zugriff auf deinstallationsbezogene Screens, solange der Schutz aktiv ist. Das ist nur Reibung, keine echte Deinstallationssperre. Deaktiviere Switchly zuerst über deine erlaubte Methode, wenn du fortfahren willst.</string>
     <string name="switchly_settings_locked_title">Einstellungen öffnen?</string>
-    <string name="settings_restricted_open_message">Switchly ist aktiv. Die Einstellungen können weiterhin angesehen werden, aber schutzrelevante Optionen lassen sich erst ändern, wenn Switchly vollständig deaktiviert ist.</string>
+    <string name="settings_restricted_open_message">Switchly ist aktiv. Die Einstellungen können weiterhin angesehen werden, aber schutzrelevante Optionen lassen sich erst ändern, wenn Switchly deaktiviert ist.</string>
     <string name="settings_open_restricted">Einstellungen öffnen</string>
+    <string name="switchly_account_locked_title">Konto öffnen?</string>
+    <string name="account_restricted_open_message">Switchly ist aktiv. Das Konto kann weiterhin angesehen werden, aber schutzrelevante Optionen lassen sich erst ändern, wenn Switchly deaktiviert ist.</string>
+    <string name="account_open_restricted">Konto öffnen</string>
     <string name="settings_restricted_action_unavailable">Nicht verfügbar, solange Switchly aktiv ist.</string>
     <string name="blocking_settings_bypass_title">Switchly-Einstellungen geschützt</string>
     <string name="blocking_settings_bypass_message">Diese Systemeinstellungsseite könnte Switchly deaktivieren oder abschwächen, solange der Schutz aktiv ist. Deaktiviere Switchly zuerst über deine erlaubte Methode, wenn du diese Einstellungen ändern willst.</string>
@@ -209,7 +212,7 @@
     <string name="toggle_subsection_status">Systemstatus</string>
     <string name="toggle_subsection_status_summary">Konfiguriert die optionale dauerhafte Benachrichtigung in der Android-Systemleiste.</string>
     <string name="pref_persistent_status_notification_title">Dauerhafte Statusbenachrichtigung</string>
-    <string name="pref_persistent_status_notification_summary">Zeigt eine lautlose dauerhafte Benachrichtigung mit optionaler Aktivzeit und App-Information.</string>
+    <string name="pref_persistent_status_notification_summary">Zeigt eine lautlose dauerhafte Benachrichtigung mit optionaler Aktivzeit, App-Information und Countdown für temporäre Zustände.</string>
     <string name="pref_persistent_status_notification_mode_title">Benachrichtigungsdetails</string>
     <string name="status_notification_mode_status_only">Nur Status</string>
     <string name="status_notification_mode_active_time">Status + Aktivzeit</string>
@@ -244,6 +247,8 @@
     <string name="pref_barcode_qs_tile_title">Barcode-Scanner-Kachel</string>
     <string name="pref_barcode_qs_tile_summary">Fügt einen Schnelleinstellungen-Shortcut zum Öffnen des Barcode-Scanners hinzu.</string>
     <string name="pref_qs_tile_already_added">Bereits hinzugefügt</string>
+    <string name="pref_qs_tile_already_added_hint">Bereits hinzugefügt. Switchly kann die Kachel nicht selbst entfernen — öffne die Schnelleinstellungen, tippe auf Bearbeiten und entferne die Kachel dort.</string>
+    <string name="pref_qs_tile_add_again">Erneut hinzufügen</string>
     <string name="pref_widget_barcode_title">Barcode-Scanner-Widget</string>
     <string name="pref_widget_barcode_summary">Fügt ein Startseiten-Widget zum Öffnen des Barcode-Scanners hinzu.</string>
     <string name="pref_widget_qr_title">QR-Scanner-Widget</string>
@@ -265,10 +270,12 @@
     <string name="edit_locked_manage_qr_codes">Deaktiviere Switchly, um QR-Codes zu erstellen, anzuzeigen, zu kopieren oder zu teilen.</string>
     <string name="edit_locked_manage_barcodes">Deaktiviere Switchly, um Barcodes zu verwalten.</string>
     <string name="edit_locked_manage_websites">Deaktiviere Switchly, um Website-Regeln zu bearbeiten.</string>
-    <string name="edit_locked_manage_profiles">Deaktiviere Switchly, um Profile zu verwalten.</string>
+    <string name="edit_locked_manage_profiles">Einige Profilaktionen bleiben gesperrt, solange Switchly aktiv ist. Du kannst Profile ansehen, erstellen, duplizieren und umbenennen sowie App-Auswahlen verschärfen. Deaktiviere Switchly zum Löschen oder Wechseln von Profilen.</string>
     <string name="edit_locked_write_nfc_tags">Deaktiviere Switchly, um NFC-Tags zu schreiben oder zu koppeln.</string>
     <string name="edit_locked_manage_blocked_notifications">Deaktiviere Switchly, um blockierte Benachrichtigungen zu öffnen.</string>
-    <string name="toast_disable_switchly_to_edit_blocked_apps">Deaktiviere Switchly vollständig, um App-Regeln zu bearbeiten.</string>
+    <string name="edit_locked_manage_schedules">Deaktiviere Switchly, um Zeitpläne zu verwalten.</string>
+    <string name="edit_locked_manage_temp_pauses">Deaktiviere Switchly, um Pausenlimits zu ändern.</string>
+    <string name="toast_disable_switchly_to_edit_blocked_apps">Deaktiviere Switchly, um App-Regeln zu bearbeiten.</string>
     <string name="toast_disable_switchly_to_switch_profiles">Deaktiviere Switchly, bevor du Profile wechselst.</string>
     <string name="toast_disable_switchly_to_edit_websites">Deaktiviere Switchly, bevor du Website-Regeln bearbeitest.</string>
     <string name="toast_disable_switchly_to_edit_app_limits">Deaktiviere Switchly, bevor du App-Limits bearbeitest.</string>
@@ -298,5 +305,21 @@
     <string name="home_custom_next_schedule_summary">Zeigt den nächsten geplanten Schedule-Wechsel.</string>
     <string name="home_custom_blocked_apps_summary">Zeigt die ausgewählten Apps des aktiven Profils und den Verwalten-Button.</string>
     <string name="home_custom_profile_dropdown_summary">Zeigt die Profilauswahl innerhalb der Schutzsteuerung.</string>
+
+    <!-- ====================================================== -->
+    <!-- vivo/iQOO Accessibility process-resilience guard -->
+    <!-- ====================================================== -->
+    <string name="oem_accessibility_guard_channel_name">Schutz-Zuverlässigkeit</string>
+    <string name="oem_accessibility_guard_channel_description">Hält den Switchly-Schutz auf Geräten zuverlässig aktiv, bei denen die Bedienungshilfe beim Entfernen aus den letzten Apps beendet werden kann.</string>
+    <string name="oem_accessibility_guard_title">Switchly-Schutz aktiv</string>
+    <string name="oem_accessibility_guard_text">Hält den Bedienungshilfe-Schutz auf diesem Gerät aktiv.</string>
+
+    <!-- ====================================================== -->
+    <!-- Temporary status notification -->
+    <!-- ====================================================== -->
+    <string name="status_notification_temp_disable_title">Temporäre Pause</string>
+    <string name="status_notification_temp_enable_title">Temporärer Schutz</string>
+    <string name="status_notification_temp_disable_body">Der Schutz wird nach Ablauf des Timers wieder aktiviert</string>
+    <string name="status_notification_temp_enable_body">Der temporäre Schutz endet nach Ablauf des Timers</string>
 
 </resources>

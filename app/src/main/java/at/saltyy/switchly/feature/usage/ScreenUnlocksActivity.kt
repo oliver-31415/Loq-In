@@ -28,6 +28,7 @@ import android.os.Bundle
 import android.provider.Settings
 import android.view.Gravity
 import android.view.View
+import androidx.core.view.children
 import android.view.ViewGroup
 import android.widget.CheckBox
 import android.widget.FrameLayout
@@ -57,6 +58,7 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.card.MaterialCardView
+import com.google.android.material.divider.MaterialDivider
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -126,7 +128,7 @@ class ScreenUnlocksActivity : AppCompatActivity() {
 
         content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(16), dp(16), dp(16), dp(96))
+            setPadding(dp(16), dp(8), dp(16), dp(96))
         }
         root.addView(ScrollView(this).apply { addView(content) }, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
@@ -141,6 +143,7 @@ class ScreenUnlocksActivity : AppCompatActivity() {
         coordinator.addView(FloatingActionButton(this).apply {
             setImageResource(R.drawable.tune_24)
             val accent = AccentColor.getAccentColorInt(this@ScreenUnlocksActivity)
+            backgroundTintList = ColorStateList.valueOf(accent)
             imageTintList = ColorStateList.valueOf(if (MaterialColors.isColorLight(accent)) Color.BLACK else Color.WHITE)
             contentDescription = getString(R.string.screen_unlocks_sort_filter_title)
             setOnClickListener { showSortFilterDialog() }
@@ -316,22 +319,55 @@ class ScreenUnlocksActivity : AppCompatActivity() {
             getString(R.string.screen_unlocks_detail_summary_title),
             resources.getQuantityString(R.plurals.screen_unlocks_count, sessions.size, sessions.size)
         ))
-        sessions.forEach { session ->
-            content.addView(unlockRow(session))
+
+        val grouped = linkedMapOf<Long, MutableList<UsageTimelineRepo.UnlockSession>>()
+        for (session in sessions) {
+            grouped.getOrPut(dayStartMillis(session.startMs)) { mutableListOf() }.add(session)
+        }
+
+        var isFirst = true
+        grouped.forEach { (dayStart, daySessions) ->
+            content.addView(createSectionHeader(formatDayHeader(dayStart), isFirst))
+            isFirst = false
+
+            val card = createDayCard()
+            val cardContent = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = ViewGroup.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT
+                )
+            }
+            daySessions.forEachIndexed { index, session ->
+                if (index > 0) {
+                    cardContent.addView(createDivider())
+                }
+                cardContent.addView(unlockRow(session))
+            }
+            card.addView(cardContent)
+            content.addView(card)
         }
     }
 
-    private fun unlockRow(session: UsageTimelineRepo.UnlockSession): ViewGroup {
-        val card = baseCard()
+    private fun unlockRow(session: UsageTimelineRepo.UnlockSession): View {
+        val typedValue = android.util.TypedValue()
+        theme.resolveAttribute(android.R.attr.selectableItemBackground, typedValue, true)
+        val accentColor = AccentColor.getAccentColorInt(this)
+        val secondaryTextColor = MaterialColors.getColor(this, android.R.attr.textColorSecondary, Color.GRAY)
+
         val row = LinearLayout(this).apply {
+            minimumHeight = dp(52)
             gravity = Gravity.CENTER_VERTICAL
             orientation = LinearLayout.HORIZONTAL
-            setPadding(dp(16), dp(14), dp(16), dp(14))
+            setPadding(dp(16), dp(12), dp(16), dp(12))
+            setBackgroundResource(typedValue.resourceId)
+            isClickable = true
+            isFocusable = true
         }
         row.addView(ImageView(this).apply {
             setImageResource(R.drawable.lock_open_24)
-            setColorFilter(AccentColor.getAccentColorInt(this@ScreenUnlocksActivity))
-            layoutParams = LinearLayout.LayoutParams(dp(34), dp(34))
+            setColorFilter(accentColor)
+            layoutParams = LinearLayout.LayoutParams(dp(24), dp(24))
         })
         row.addView(LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -339,26 +375,107 @@ class ScreenUnlocksActivity : AppCompatActivity() {
                 marginStart = dp(14)
             }
             addView(TextView(this@ScreenUnlocksActivity).apply {
-                text = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT).format(Date(session.startMs))
-                textSize = 16f
+                text = DateFormat.getTimeInstance(DateFormat.SHORT).format(Date(session.startMs))
+                textSize = 15f
                 setTypeface(typeface, Typeface.BOLD)
             })
             addView(TextView(this@ScreenUnlocksActivity).apply {
                 text = getString(R.string.screen_unlocks_row_summary, StatsFormat.prettyMsWithSeconds(session.durationMs))
-                alpha = 0.75f
+                setTextColor(secondaryTextColor)
                 textSize = 13f
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { topMargin = dp(2) }
             })
         })
         row.addView(ImageView(this).apply {
             setImageResource(R.drawable.keyboard_arrow_right_24)
-            setColorFilter(ContextCompat.getColor(this@ScreenUnlocksActivity, android.R.color.darker_gray))
+            alpha = 0.7f
+            setColorFilter(secondaryTextColor)
             layoutParams = LinearLayout.LayoutParams(dp(18), dp(18))
         })
-        card.addView(row)
-        card.setOnClickListener {
+        row.setOnClickListener {
             startActivity(ScreenUnlockDetailActivity.intent(this, session.startMs, session.endMs))
         }
-        return card
+        return row
+    }
+
+    private fun createSectionHeader(title: String, isFirst: Boolean): TextView {
+        val secondaryTextColor = MaterialColors.getColor(this, android.R.attr.textColorSecondary, Color.GRAY)
+        return TextView(this).apply {
+            setTextAppearance(R.style.Switchly_SectionHeader)
+            text = title
+            setTextColor(secondaryTextColor)
+            textSize = 14f
+            setTypeface(typeface, Typeface.BOLD)
+            includeFontPadding = false
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = dp(if (isFirst) 14 else 20)
+                bottomMargin = dp(6)
+            }
+        }
+    }
+
+    private fun createDayCard(): MaterialCardView {
+        return MaterialCardView(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            radius = dp(22).toFloat()
+            strokeWidth = dp(1)
+            strokeColor = ContextCompat.getColor(this@ScreenUnlocksActivity, R.color.foqos_outline_variant)
+            setCardBackgroundColor(ContextCompat.getColor(this@ScreenUnlocksActivity, R.color.foqos_surface))
+        }
+    }
+
+    private fun createDivider(): View {
+        return MaterialDivider(this).apply {
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
+            dividerInsetStart = dp(54)
+            dividerThickness = dp(1)
+            dividerColor = ContextCompat.getColor(this@ScreenUnlocksActivity, R.color.switchly_divider)
+        }
+    }
+
+    private fun dayStartMillis(timeMs: Long): Long {
+        return Calendar.getInstance().apply {
+            timeInMillis = timeMs
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+    }
+
+    private fun formatDayHeader(dayStartMs: Long): String {
+        val todayCal = Calendar.getInstance().apply {
+            timeInMillis = startOfTodayMillis()
+        }
+        val targetCal = Calendar.getInstance().apply {
+            timeInMillis = dayStartMs
+        }
+
+        val isToday = targetCal.get(Calendar.YEAR) == todayCal.get(Calendar.YEAR) &&
+                targetCal.get(Calendar.DAY_OF_YEAR) == todayCal.get(Calendar.DAY_OF_YEAR)
+
+        todayCal.add(Calendar.DAY_OF_YEAR, -1)
+        val isYesterday = targetCal.get(Calendar.YEAR) == todayCal.get(Calendar.YEAR) &&
+                targetCal.get(Calendar.DAY_OF_YEAR) == todayCal.get(Calendar.DAY_OF_YEAR)
+
+        val dateStr = DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(dayStartMs))
+        return when {
+            isToday -> "${getString(R.string.stats_range_today)} · $dateStr"
+            isYesterday -> "${getString(R.string.relative_time_yesterday).replaceFirstChar { it.uppercase() }} · $dateStr"
+            else -> dateStr
+        }
     }
 
     private fun addRangeChips() {
@@ -391,7 +508,7 @@ class ScreenUnlocksActivity : AppCompatActivity() {
                 minHeight = dp(40)
                 insetTop = 0
                 insetBottom = 0
-                cornerRadius = dp(4)
+                cornerRadius = dp(14)
                 setAllCaps(false)
                 layoutParams = if (range == Range.CUSTOM) {
                     LinearLayout.LayoutParams(dp(44), dp(40))
@@ -405,7 +522,7 @@ class ScreenUnlocksActivity : AppCompatActivity() {
         }
         if (checkedId != View.NO_ID) group.check(checkedId)
         ids.forEach { (buttonId, range) ->
-            group.findViewById<MaterialButton>(buttonId)?.let { styleRangeButton(it, range == currentRange) }
+            group.findViewById<MaterialButton>(buttonId)?.let { it.isChecked = (range == currentRange); styleRangeButton(it, range == currentRange) }
         }
         group.addOnButtonCheckedListener { _, checkedButtonId, isChecked ->
             if (!isChecked) return@addOnButtonCheckedListener
@@ -476,18 +593,16 @@ class ScreenUnlocksActivity : AppCompatActivity() {
         })
     }
 
+
     private fun styleRangeButton(button: MaterialButton, active: Boolean) {
-        val activeBg = AccentColor.getAccentColorInt(this)
-        val activeText = if (MaterialColors.isColorLight(activeBg)) Color.BLACK else Color.WHITE
-        val inactiveBg = MaterialColors.getColor(this, com.google.android.material.R.attr.colorSurfaceVariant, 0)
-        val inactiveText = MaterialColors.getColor(this, com.google.android.material.R.attr.colorOnSurface, 0)
-        val outline = MaterialColors.getColor(this, com.google.android.material.R.attr.colorOutline, inactiveText)
-        button.backgroundTintList = ColorStateList.valueOf(if (active) activeBg else inactiveBg)
-        button.setTextColor(if (active) activeText else inactiveText)
-        button.iconTint = ColorStateList.valueOf(if (active) activeText else inactiveText)
-        button.strokeColor = ColorStateList.valueOf(if (active) activeBg else outline)
-        button.strokeWidth = resources.displayMetrics.density.toInt().coerceAtLeast(1)
-        button.rippleColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(activeBg, 0x35))
+        // Shared segmented look: one pill control, filled-accent selection.
+        // (Same language as SegmentedToggleUi on the detail pages.)
+        val buttons = (button.parent as? android.view.ViewGroup)
+            ?.children
+            ?.filterIsInstance<com.google.android.material.button.MaterialButton>()
+            ?.toList() ?: listOf(button)
+        val selectedId = buttons.firstOrNull { it.isChecked }?.id ?: button.id
+        at.saltyy.switchly.ui.SegmentedToggleUi.apply(this, buttons, selectedId)
     }
 
     private fun windowForRange(range: Range): Pair<Long, Long> {
@@ -511,7 +626,7 @@ class ScreenUnlocksActivity : AppCompatActivity() {
         val currentStart = customRangeStartMillis ?: startOfTodayMillis()
         val currentEnd = customRangeEndMillis ?: now
         val picker = MaterialDatePicker.Builder.dateRangePicker()
-            .setTheme(com.google.android.material.R.style.ThemeOverlay_MaterialComponents_MaterialCalendar)
+            .setTheme(at.saltyy.switchly.theme.AccentColor.getDatePickerTheme(this))
             .setTitleText(R.string.activity_history_range_custom)
             .setSelection(androidx.core.util.Pair(localDayToDatePickerUtcMillis(currentStart), localDayToDatePickerUtcMillis(currentEnd)))
             .build()
@@ -568,8 +683,8 @@ class ScreenUnlocksActivity : AppCompatActivity() {
             ).apply { topMargin = dp(10) }
             radius = dp(22).toFloat()
             strokeWidth = dp(1)
-            strokeColor = ContextCompat.getColor(this@ScreenUnlocksActivity, R.color.switchly_card_stroke)
-            setCardBackgroundColor(ContextCompat.getColor(this@ScreenUnlocksActivity, R.color.switchly_card_bg))
+            strokeColor = ContextCompat.getColor(this@ScreenUnlocksActivity, R.color.foqos_outline_variant)
+            setCardBackgroundColor(ContextCompat.getColor(this@ScreenUnlocksActivity, R.color.foqos_surface))
         }
     }
 

@@ -165,8 +165,8 @@ class ScreenUnlockDetailActivity : AppCompatActivity() {
                 }
                 radius = dp(22).toFloat()
                 strokeWidth = dp(1)
-                strokeColor = ContextCompat.getColor(this@ScreenUnlockDetailActivity, R.color.switchly_card_stroke)
-                setCardBackgroundColor(ContextCompat.getColor(this@ScreenUnlockDetailActivity, R.color.switchly_card_bg))
+                strokeColor = ContextCompat.getColor(this@ScreenUnlockDetailActivity, R.color.foqos_outline_variant)
+                setCardBackgroundColor(ContextCompat.getColor(this@ScreenUnlockDetailActivity, R.color.foqos_surface))
                 addView(LinearLayout(this@ScreenUnlockDetailActivity).apply {
                     gravity = Gravity.CENTER_VERTICAL
                     orientation = LinearLayout.HORIZONTAL
@@ -203,7 +203,7 @@ class ScreenUnlockDetailActivity : AppCompatActivity() {
     }
 
     private fun timelineMarker(first: Boolean, last: Boolean): LinearLayout {
-        val lineColor = ContextCompat.getColor(this, R.color.switchly_card_stroke)
+        val lineColor = ContextCompat.getColor(this, R.color.foqos_outline_variant)
         return LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             gravity = Gravity.CENTER_HORIZONTAL
@@ -249,8 +249,8 @@ class ScreenUnlockDetailActivity : AppCompatActivity() {
             ).apply { topMargin = dp(10) }
             radius = dp(22).toFloat()
             strokeWidth = dp(1)
-            strokeColor = ContextCompat.getColor(this@ScreenUnlockDetailActivity, R.color.switchly_card_stroke)
-            setCardBackgroundColor(ContextCompat.getColor(this@ScreenUnlockDetailActivity, R.color.switchly_card_bg))
+            strokeColor = ContextCompat.getColor(this@ScreenUnlockDetailActivity, R.color.foqos_outline_variant)
+            setCardBackgroundColor(ContextCompat.getColor(this@ScreenUnlockDetailActivity, R.color.foqos_surface))
         }
     }
 

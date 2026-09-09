@@ -23,10 +23,11 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import androidx.core.net.toUri
-import android.widget.Toast
 import at.saltyy.switchly.BuildConfig
 import at.saltyy.switchly.R
 import at.saltyy.switchly.auth.Auth
+import at.saltyy.switchly.ui.showWarnPillAnywhere
+import at.saltyy.switchly.ui.showWarnPillOnContent
 import at.saltyy.switchly.data.prefs.AppLogStore
 
 /**
@@ -54,19 +55,19 @@ object ExternalPaymentRuntime {
 
     fun launchCheckout(activity: Activity): Boolean {
         if (!BuildConfig.SWITCHLY_EXTERNAL_PAYMENTS_ENABLED) {
-            Toast.makeText(activity, R.string.premium_external_payments_disabled, Toast.LENGTH_SHORT).show()
+            activity.showWarnPillOnContent(R.string.premium_external_payments_disabled)
             return false
         }
 
         if (BuildConfig.SWITCHLY_FIREBASE_ENABLED && Auth.uid().isNullOrBlank()) {
-            Toast.makeText(activity, R.string.premium_external_sign_in_to_buy, Toast.LENGTH_LONG).show()
+            activity.showWarnPillOnContent(R.string.premium_external_sign_in_to_buy)
             AppLogStore.append(activity, TAG, "Checkout needs signed-in Firebase user")
             return false
         }
 
         val url = checkoutUrl()
         if (url.isEmpty()) {
-            Toast.makeText(activity, R.string.premium_external_payments_not_configured, Toast.LENGTH_LONG).show()
+            activity.showWarnPillOnContent(R.string.premium_external_payments_not_configured)
             AppLogStore.append(
                 activity,
                 TAG,
@@ -84,13 +85,13 @@ object ExternalPaymentRuntime {
 
     fun openCustomerPortal(context: Context): Boolean {
         if (!BuildConfig.SWITCHLY_EXTERNAL_PAYMENTS_ENABLED) {
-            Toast.makeText(context, R.string.premium_external_payments_disabled, Toast.LENGTH_SHORT).show()
+            context.showWarnPillAnywhere(R.string.premium_external_payments_disabled)
             return false
         }
 
         val portalUrl = customerPortalUrl()
         if (portalUrl.isEmpty()) {
-            Toast.makeText(context, R.string.premium_external_portal_not_configured, Toast.LENGTH_LONG).show()
+            context.showWarnPillAnywhere(R.string.premium_external_portal_not_configured)
             AppLogStore.append(
                 context,
                 TAG,
@@ -120,7 +121,7 @@ object ExternalPaymentRuntime {
                 }
                 .build()
         }.getOrElse {
-            Toast.makeText(context, R.string.premium_external_invalid_url, Toast.LENGTH_LONG).show()
+            context.showWarnPillAnywhere(R.string.premium_external_invalid_url)
             AppLogStore.append(context, TAG, "Invalid external payment URL", it)
             return false
         }
@@ -135,7 +136,7 @@ object ExternalPaymentRuntime {
             AppLogStore.append(context, TAG, "Opened $action URL via ${providerName()}")
             true
         }.getOrElse {
-            Toast.makeText(context, R.string.premium_external_no_browser, Toast.LENGTH_LONG).show()
+            context.showWarnPillAnywhere(R.string.premium_external_no_browser)
             AppLogStore.append(context, TAG, "Failed to open $action URL", it)
             false
         }

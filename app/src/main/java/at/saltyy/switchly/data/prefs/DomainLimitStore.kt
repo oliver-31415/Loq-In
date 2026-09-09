@@ -60,10 +60,12 @@ object DomainLimitStore {
         return minutes.coerceAtLeast(0)
     }
 
-    fun getLimitMinutes(ctx: Context, domain: String): Int {
+    fun getLimitMinutes(ctx: Context, domain: String): Int =
+        getLimitMinutesForProfile(ctx, currentProfile(ctx), domain)
+
+    fun getLimitMinutesForProfile(ctx: Context, profile: String, domain: String): Int {
         val d = DomainBlockStore.normalize(domain) ?: return 0
-        val profile = currentProfile(ctx)
-        val scoped = scopedKey(profile, d)
+        val scoped = scopedKey(sanitizeProfile(profile), d)
         val scopedMinutes = readMinutesRaw(ctx, scoped)
         if (scopedMinutes > 0) {
             return scopedMinutes
@@ -80,10 +82,13 @@ object DomainLimitStore {
         return profileless
     }
 
-    fun setLimitMinutes(ctx: Context, domain: String, minutes: Int) {
+    fun setLimitMinutes(ctx: Context, domain: String, minutes: Int) =
+        setLimitMinutesForProfile(ctx, currentProfile(ctx), domain, minutes)
+
+    fun setLimitMinutesForProfile(ctx: Context, profile: String, domain: String, minutes: Int) {
         val d = DomainBlockStore.normalize(domain) ?: return
         val m = minutes.coerceAtLeast(0)
-        val scoped = scopedKey(currentProfile(ctx), d)
+        val scoped = scopedKey(sanitizeProfile(profile), d)
         prefs(ctx).edit {
             if (m <= 0) remove(scoped) else putInt(scoped, m)
             // Clear profileless storage once this domain is touched in a profile-scoped build.
@@ -91,10 +96,13 @@ object DomainLimitStore {
         }
     }
 
-    fun clear(ctx: Context, domain: String) {
+    fun clear(ctx: Context, domain: String) =
+        clearForProfile(ctx, currentProfile(ctx), domain)
+
+    fun clearForProfile(ctx: Context, profile: String, domain: String) {
         val d = DomainBlockStore.normalize(domain) ?: return
         prefs(ctx).edit {
-            remove(scopedKey(currentProfile(ctx), d))
+            remove(scopedKey(sanitizeProfile(profile), d))
             remove(profilelessKey(d))
         }
     }
@@ -103,9 +111,12 @@ object DomainLimitStore {
      * Returns all domains that currently have a stored limit key for the active profile.
      * Profileless global keys are included and lazily migrated when they are read.
      */
-    fun getDomainsWithLimit(ctx: Context): Set<String> {
+    fun getDomainsWithLimit(ctx: Context): Set<String> =
+        getDomainsWithLimitForProfile(ctx, currentProfile(ctx))
+
+    fun getDomainsWithLimitForProfile(ctx: Context, profile: String): Set<String> {
         val p = prefs(ctx)
-        val profilePrefix = PREFIX + PROFILE_SEGMENT + currentProfile(ctx) + "__"
+        val profilePrefix = PREFIX + PROFILE_SEGMENT + sanitizeProfile(profile) + "__"
         val scoped = p.all.keys
             .asSequence()
             .filter { it.startsWith(profilePrefix) }
@@ -159,7 +170,9 @@ object DomainLimitStore {
             return
         }
         p.edit {
-            for (key in keys) remove(key)
+            for (k in keys) {
+                remove(k)
+            }
         }
     }
 }

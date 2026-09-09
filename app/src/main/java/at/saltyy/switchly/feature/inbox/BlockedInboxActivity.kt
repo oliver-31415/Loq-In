@@ -40,12 +40,15 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import at.saltyy.switchly.R
 import at.saltyy.switchly.util.EditingLockGuard
+import android.widget.Toast
 import at.saltyy.switchly.data.prefs.BlockedInboxStore
+import at.saltyy.switchly.data.prefs.SessionMissedNotificationsStore
 import at.saltyy.switchly.data.prefs.BlockedNotificationEvent
 import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.theme.CustomAccentApplier
 import at.saltyy.switchly.ui.EdgeToEdgeUtils
 import at.saltyy.switchly.ui.ThemeUtils
+import at.saltyy.switchly.ui.showWarnPillOnContent
 import at.saltyy.switchly.ui.SwitchlyDropdownAdapter
 import at.saltyy.switchly.ui.attachEditDeleteSwipe
 import at.saltyy.switchly.ui.updateSelectionSubtitle
@@ -340,6 +343,10 @@ class BlockedInboxActivity : AppCompatActivity() {
         // In selection mode, delete action is "Delete selected". Outside, it enters selection mode.
         menu.findItem(R.id.action_delete)?.title =
             if (selectionMode) getString(R.string.delete) else getString(R.string.select)
+        menu.findItem(R.id.action_clear_all)?.isVisible = !readOnly && !selectionMode && allItems.isNotEmpty()
+        val recapItem = menu.findItem(R.id.action_session_missed_notifications)
+        recapItem?.isVisible = !selectionMode
+        recapItem?.isChecked = SessionMissedNotificationsStore.isFeatureEnabled(this)
         return super.onPrepareOptionsMenu(menu)
     }
 
@@ -366,6 +373,23 @@ class BlockedInboxActivity : AppCompatActivity() {
                 } else {
                     enterSelectionMode(); true
                 }
+            }
+
+            R.id.action_session_missed_notifications -> {
+                val next = !item.isChecked
+                item.isChecked = next
+                SessionMissedNotificationsStore.setFeatureEnabled(this, next)
+                val msg = if (next) {
+                    R.string.pref_show_session_missed_notifications_title
+                } else {
+                    R.string.session_missed_notifications_disabled_hint
+                }
+                showWarnPillOnContent(msg)
+                true
+            }
+
+            R.id.action_clear_all -> {
+                confirmClearAll(); true
             }
 
             else -> super.onOptionsItemSelected(item)
@@ -439,6 +463,26 @@ class BlockedInboxActivity : AppCompatActivity() {
             .create()
         dialog.setOnShowListener { dialog.styleSwitchlyDialogButtons() }
         dialog.show()
+    }
+
+    private fun confirmClearAll() {
+        if (isReadOnly() || allItems.isEmpty()) {
+            return
+        }
+        MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.blocked_inbox_clear_all)
+            .setMessage(getString(R.string.blocked_inbox_clear_all_confirm) + "\n\n" + getString(R.string.destructive_cannot_be_undone))
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.delete) { _, _ ->
+                if (isReadOnly()) {
+                    return@setPositiveButton
+                }
+                BlockedInboxStore.clear(this)
+                BlockedNotificationsWidgetProvider.refreshAll(this)
+                exitSelectionMode()
+                load()
+            }
+            .showDestructiveAccented()
     }
 
     private fun confirmDeleteSelected() {
@@ -553,8 +597,8 @@ class BlockedInboxActivity : AppCompatActivity() {
                     card.setCardBackgroundColor(ColorUtils.setAlphaComponent(accent, 0x14))
                 } else {
                     card.strokeWidth = (1 * holder.itemView.resources.displayMetrics.density).toInt().coerceAtLeast(1)
-                    card.strokeColor = ContextCompat.getColor(ctx, R.color.switchly_card_stroke)
-                    card.setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.switchly_card_bg))
+                    card.strokeColor = ContextCompat.getColor(ctx, R.color.foqos_outline_variant)
+                    card.setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.foqos_surface))
                 }
             }
             holder.more.visibility = if (selecting) View.GONE else View.VISIBLE
