@@ -5857,7 +5857,14 @@ class SwitchlyAccessibilityService : AccessibilityService() {
                     ytHomeSurfaceCandidate -> isYouTubeHomeFeedShortsPlayer(root, event)
                     ytExplicitShortsContext -> isLikelyYouTubeShortsPlayer(root, event) || hasYouTubeShortsPlayerControl(root)
                     else -> isYouTubeShortsScreen(root, event) ||
-                        (eventTextMatches(event, YT_SHORTS_PLAYER_HINT_LABELS) && hasYouTubeShortsPlayerControl(root))
+                        // The bare hint-text + controls combination also fired on normal watch
+                        // pages: a content event carrying "share"/"comment" text plus control
+                        // nodes belonging to a preloaded Shorts shelf tile (or the page's own
+                        // share/comment overlay). Requiring the full-screen portrait player
+                        // geometry keeps this path for actual Shorts players only.
+                        (eventTextMatches(event, YT_SHORTS_PLAYER_HINT_LABELS) &&
+                            hasYouTubeShortsPlayerControl(root) &&
+                            hasYouTubeShortsPlayerGeometry(root))
                 }
             val ytPipEntryNow = isYouTubePipEntryEvent(event)
             val ytMiniPlayerNow = isLikelyYouTubeMiniPlayerVisible(root)
@@ -7026,60 +7033,108 @@ class SwitchlyAccessibilityService : AccessibilityService() {
     private fun detectYouTubeSelectedSurface(root: AccessibilityNodeInfo): String? {
         val width = resources.displayMetrics.widthPixels.coerceAtLeast(1)
         val height = resources.displayMetrics.heightPixels.coerceAtLeast(1)
-        var positionCandidate: String? = null
-        var labelCandidate: String? = null
 
-        // Older code first scanned by position and then could scan the entire tree four more times for Home/Shorts/Subscriptions/You labels.
-        // Collapse that into one bounded pass.
-        findAnyNode(
-            root = root,
-            maxNodes = YT_SELECTED_NODE_SCAN_COUNT,
-            maxDepth = YT_SELECTED_NODE_SCAN_DEPTH,
-            timeBudgetMs = YT_SELECTED_NODE_SCAN_BUDGET_MS,
-        ) { node ->
+        fun isUsableNavNode(node: AccessibilityNodeInfo): Boolean {
             // Only isSelected counts here. isCheckedCompat() widened "selected" to any checked
             // node (playback-speed/quality bottom sheets), and a checked control in the bottom
             // band position-mapped to a nav tab — a right-side one triggered
             // conflictingSelected and cancelled legitimate Shorts blocks.
-            val active = node.isSelected
-            if (!active) return@findAnyNode false
-
+            if (!node.isSelected) return false
             val nodePkg = node.packageName?.toString()?.lowercase(Locale.ROOT).orEmpty()
-            if (nodePkg.isNotBlank() && !isYouTubePackage(nodePkg)) return@findAnyNode false
+            if (nodePkg.isNotBlank() && !isYouTubePackage(nodePkg)) return false
+            return true
+        }
 
+        fun classify(node: AccessibilityNodeInfo): Pair<String?, String?> {
             val bounds = Rect()
             runCatching { node.getBoundsInScreen(bounds) }.getOrNull()
-            if (bounds.isEmpty) return@findAnyNode false
+            if (bounds.isEmpty) return null to null
             val centerY = bounds.exactCenterY() / height.toFloat()
-            if (centerY < 0.72f) return@findAnyNode false
-
+            if (centerY < 0.72f) return null to null
             val widthRatio = bounds.width() / width.toFloat()
             val heightRatio = bounds.height() / height.toFloat()
-            if (widthRatio > 0.35f || heightRatio > 0.22f) return@findAnyNode false
-
+            if (widthRatio > 0.35f || heightRatio > 0.22f) return null to null
             val t = node.text?.toString().orEmpty()
             val cd = node.contentDescription?.toString().orEmpty()
             val vid = node.viewIdResourceName?.lowercase(Locale.ROOT).orEmpty()
             val direct = listOf(t, cd, vid).filter { it.isNotBlank() }.joinToString(" ")
-
-            labelCandidate = when {
+            val label = when {
                 anyNeedleMatches(direct, YT_SHORTS_LABELS) -> "yt:shorts"
                 anyNeedleMatches(direct, YT_SUBSCRIPTIONS_LABELS) -> "yt:subscriptions"
                 anyNeedleMatches(direct, YT_YOU_LABELS) -> "yt:you"
                 anyNeedleMatches(direct, YT_HOME_LABELS) -> "yt:home"
                 else -> null
             }
-            if (labelCandidate != null) {
-                true
-            } else {
-                if (positionCandidate == null) {
-                    positionCandidate = youtubeSurfaceFromBottomCenter(bounds.exactCenterX() / width.toFloat())
+            val position = youtubeSurfaceFromBottomCenter(bounds.exactCenterX() / width.toFloat())
+            return label to position
+        }
+
+        // Stage 1: when the real bottom-nav container is present, scan ONLY its subtree.
+        // Verified on device: on Shorts the pivot subtree is ~24 nodes and the only selected
+        // nodes in the entire tree are the nav tabs inside it. Whole-tree scans instead pick
+        // up recycler-selected feed rows, preloaded Shorts shelf tiles, and filter chips
+        // (e.g. a selected "All" chip on the watch page), which misclassified normal videos
+        // as Shorts roughly every re-entry-guard expiry.
+        val pivotBar = findAnyNode(root) { node ->
+            val vid = node.viewIdResourceName?.lowercase(Locale.ROOT).orEmpty()
+            vid.contains("pivot") || vid.contains("bottom_bar")
+        }
+        if (pivotBar != null) {
+            var labelCandidate: String? = null
+            var positionCandidate: String? = null
+            findAnyNode(
+                root = pivotBar,
+                maxNodes = YT_SELECTED_NODE_SCAN_COUNT,
+                maxDepth = YT_SELECTED_NODE_SCAN_DEPTH,
+                timeBudgetMs = YT_SELECTED_NODE_SCAN_BUDGET_MS,
+            ) { node ->
+                if (!isUsableNavNode(node)) return@findAnyNode false
+                val (label, position) = classify(node)
+                if (label != null) {
+                    labelCandidate = label
+                    return@findAnyNode true
+                }
+                if (position != null && positionCandidate == null) {
+                    positionCandidate = position
                 }
                 false
             }
+            if (labelCandidate != null) return labelCandidate
+            if (positionCandidate != null) return positionCandidate
+            // Nav container exists but reports nothing selected: never fall through to a
+            // whole-tree scan — every other "selected" node on screen is a false tab signal.
+            return null
         }
 
-        return labelCandidate ?: positionCandidate
+        // Stage 2 fallback: no pivot/bottom-bar container on this screen (the watch page
+        // hides the nav entirely). Only accept a selected node that carries BOTH an explicit
+        // tab label AND a nav-ish view id; position-only mapping here produced false
+        // yt:shorts from recycler-selected shelf tiles.
+        var fallback: String? = null
+        findAnyNode(
+            root = root,
+            maxNodes = YT_SELECTED_NODE_SCAN_COUNT,
+            maxDepth = YT_SELECTED_NODE_SCAN_DEPTH,
+            timeBudgetMs = YT_SELECTED_NODE_SCAN_BUDGET_MS,
+        ) { node ->
+            if (!isUsableNavNode(node)) return@findAnyNode false
+            val vid = node.viewIdResourceName?.lowercase(Locale.ROOT).orEmpty()
+            if (!vid.contains("pivot") &&
+                !vid.contains("bottom") &&
+                !vid.contains("navigation") &&
+                !vid.contains("tab") &&
+                !vid.contains("nav")
+            ) {
+                return@findAnyNode false
+            }
+            val (label, _) = classify(node)
+            if (label != null) {
+                fallback = label
+                return@findAnyNode true
+            }
+            false
+        }
+        return fallback
     }
 
     private fun youtubeSurfaceFromBottomCenter(centerX: Float): String? {
@@ -7584,6 +7639,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         val height = resources.displayMetrics.heightPixels.coerceAtLeast(1)
         val bounds = Rect()
         val matchedGroups = LinkedHashSet<Int>()
+        val matchedGroupCenterY = HashMap<Int, Float>()
 
         findAnyNode(root) { node ->
             val nodePkg = node.packageName?.toString()?.lowercase(Locale.getDefault()).orEmpty()
@@ -7605,12 +7661,23 @@ class SwitchlyAccessibilityService : AccessibilityService() {
             YT_SHORTS_CONTROL_GROUPS.forEachIndexed { index, tokens ->
                 if (index !in matchedGroups && tokens.any { containsSemanticToken(signal, it) }) {
                     matchedGroups += index
+                    matchedGroupCenterY[index] = centerY
                 }
             }
-            matchedGroups.size >= 4
+            // A genuine Shorts player rail has many distinct controls spread down the right
+            // edge (verified on device: like cy~0.58 through share cy~0.90, spread ~0.31).
+            // A handful of same-y overlay buttons (watch-page share/comment cluster, or the
+            // action row of a preloaded shelf tile) must not count as a Shorts rail.
+            matchedGroups.size >= 3 &&
+                (matchedGroupCenterY.values.max() - matchedGroupCenterY.values.min()) >= 0.2f
         }
 
-        return matchedGroups.size
+        val spread = if (matchedGroupCenterY.isEmpty()) {
+            0f
+        } else {
+            matchedGroupCenterY.values.max() - matchedGroupCenterY.values.min()
+        }
+        return if (matchedGroups.size >= 3 && spread >= 0.2f) matchedGroups.size else 0
     }
 
     private fun containsSemanticToken(signal: String, rawToken: String): Boolean {
