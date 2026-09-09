@@ -1,9 +1,28 @@
 {
     "releases": [
         {
+            "id": "loqin-v2.2.8",
+            "version": "v2.2.8",
+            "date": "September 10, 2026",
+            "app": "Loq In",
+            "body": [
+                "Loq In, continued from Switchly. This is the first release of the rebranded app.",
+                "Added a Foqos-inspired look: a redesigned Home with profile hero cards, animated status artwork and a weekly activity heatmap.",
+                "Restyled sheets, dialogs, themes and onboarding; Settings was slimmed into Account and Info hubs and onboarding was streamlined to a 4-step flow.",
+                "Added deterministic YouTube Shorts and Facebook Reels blocking (Scrolless-style detection), hardened against watch pages, passive home-feed playback and stale view trees.",
+                "Instagram embedded Reels now open on a clips-viewer fast path, close with a single BACK and return to the feed.",
+                "Fixed wrong-site website blocks in Firefox that were triggered by page text.",
+                "Temporary pauses are now called Breaks.",
+                "Added a clock-style duration dial for Breaks and a redesigned temporary sheet with quick presets.",
+                "Added a modern square per-digit emergency PIN dialog and fixed a crash when changing the emergency PIN.",
+                "Added a new Appearance screen for accents and themes.",
+                "Backup, restore and reset flows are now shared between Settings and Account, and a backup launcher crash was fixed.",
+                "Added a support log viewer and session missed notifications, plus app lock polish."
+            ]
+        },
+        {
             "version": "v2.2.8",
             "date": "September 1, 2026",
-            "releaseType": "public",
             "body": [
                 "Hardened active-protection Settings bypass prevention for Switchly's Accessibility service, including direct Android Settings search/deep-link entry points, AOSP and OEM service detail/toggle pages, and Samsung's separate Accessibility helper package, while keeping unrelated Accessibility features available.",
                 "Modernized edge-to-edge system-bar handling for Android 15 and later by using the current compatibility APIs and explicit inset handling for classic XML screens.",
@@ -21,12 +40,12 @@
                 "Improved NFC write reliability by turning interrupted and wrong-tag results into explicit paused states that stop loading and ignore further tags until Try again is tapped, while keeping reader mode quiet to prevent repeated system NFC vibration loops.",
                 "Restored clear NFC write success feedback with one explicit vibration and improved tag rediscovery suppression after successful or interrupted writes.",
                 "Updated Google Play Billing 8 one-time purchase handling to select an eligible permanent Premium buy offer and pass its offer token into the purchase flow, with clearer diagnostics when Play returns no eligible product or offer for an account or region."
-            ]
+            ],
+            "app": "Switchly"
         },
         {
             "version": "v2.2.7",
             "date": "August 31, 2026",
-            "releaseType": "public",
             "sourceVersions": [
                 "v2.2.0",
                 "v2.2.1",
@@ -57,12 +76,12 @@
                 "Improved notification features with an optional synchronized protection-status notification, active profile and session information, temporary-state countdowns, improved blocked-notification history, and a protected Delete all action.",
                 "Improved Android 14 and Android 16 compatibility and general stability, including startup ANR hardening, foreground-service reliability, NFC and schedule fixes, Google Maps legacy-renderer compatibility, defensive framework fallbacks, Billing improvements, preference migration, resource cleanup, and extensive lint and crash hardening.",
                 "Polished navigation, dialogs, lists, icons, spacing, empty states, scaling, accessibility guidance, larger-font handling, and visual consistency throughout Home, Rules, Activity, Settings, onboarding, profiles, schedules, statistics, and support."
-            ]
+            ],
+            "app": "Switchly"
         },
         {
             "version": "v2.2.6",
             "date": "August 29, 2026",
-            "releaseType": "beta",
             "body": [
                 "Added Android 16 Advanced Protection awareness: Permissions and Support diagnostics now identify Advanced Protection, explain why Accessibility may be unavailable, and can start a limited best-effort Usage Access fallback for basic whole-app Block selected / Allow selected rules while clearly keeping website, in-app, navigation, and usage-limit protection Accessibility-only.",
                 "Fixed onboarding guidance cards truncating text on narrow displays or larger font scaling; onboarding rows now expand and wrap their full title, info, and status text.",
@@ -93,12 +112,13 @@
                 "Added a Delete all action for blocked notification history, with confirmation and the existing protection editing lock respected.",
                 "Moved the app-usage distribution donut into a dedicated Most used apps statistics screen with Today, Week, Month, Year, and custom ranges plus a tappable usage ranking, while keeping App & Website Usage focused on its normal detailed list view.",
                 "Enhanced the optional persistent status notification with a live countdown while Temporary Disable or Temporary Enable is active."
-            ]
+            ],
+            "app": "Switchly",
+            "show": false
         },
         {
             "version": "v2.2.5-beta",
             "date": "August 22, 2026",
-            "releaseType": "beta",
             "body": [
                 "Refined Info with clearer Device and Developer iconography and more focused System, Device, and Technical detail presentation.",
                 "Strengthened YouTube Shorts in-app detection with multi-signal Accessibility semantics, right-side control clustering, delayed re-checks for asynchronously loaded controls, and less dependence on volatile internal YouTube view IDs.",
@@ -114,12 +134,13 @@
                 "Hardened Accessibility protection while Switchly is active: Switchly now explicitly ensures it does not request the system Accessibility button, and its own Accessibility settings surface is guarded while protection is enabled; Android-controlled shortcuts configured by the user may still vary by device.",
                 "Improved Accessibility health diagnostics for isolated/OEM profile cases: when Android reports the service as enabled but Switchly never receives a live connection or heartbeat, Permissions, Home, notifications, and support reports now show an explicit not-connected state instead of treating it as a normal enabled/disabled toggle.",
                 "Polished Usage and Device info presentation: daily app limits now sit with the app identity instead of leaving a loose footer line, usage cards use tighter spacing, and Device info uses clearer Android, API, manufacturer, model, security, locale, ABI, and fingerprint iconography."
-            ]
+            ],
+            "app": "Switchly",
+            "show": false
         },
         {
             "version": "v2.2.4-beta",
             "date": "August 11, 2026",
-            "releaseType": "beta",
             "body": [
                 "Refined the 2.2 experience with more consistent navigation, dialogs, buttons, accents, empty states, disabled states, and feedback across Home, Rules, Activity, and Settings.",
                 "Reworked onboarding and protection guidance around a clearer model: choose what to protect, decide which control channels may change protection, and let Switchly keep those rules in place.",
@@ -140,12 +161,13 @@
                 "Improved Usage & Insights stability, scanner-history empty states, schedule permission handling, preference migration compatibility, Android 16 support, Google Play Billing, lint cleanup, and final release polish.",
                 "Fixed an NFC writing regression where a detected tag could be routed through the normal Switchly scan flow instead of being written.",
                 "Improved force-stop protection guidance: active Device Admin is now explained more accurately, while managed Device Owner/Profile Owner setups also disable user control such as Force Stop and clearing app data on supported Android versions."
-            ]
+            ],
+            "app": "Switchly",
+            "show": false
         },
         {
             "version": "v2.2.3-beta",
             "date": "July 29, 2026",
-            "releaseType": "beta",
             "body": [
                 "Added an optional silent persistent status notification that shows whether Switchly is enabled and which profile is selected.",
                 "Added a direct Profiles action to the status notification and kept its state synchronized with manual, scheduled, temporary, NFC, QR, barcode, profile, boot, and app-start changes.",
@@ -167,12 +189,13 @@
                 "Redesigned Support as a central help and diagnostics screen, moved the live log viewer out of Developer tools, and made recent logs directly viewable or copyable without unlocking Developer mode.",
                 "Refined Permissions with a compact Issues/OK toolbar status and clearer re-check feedback, fixed forced onboarding to return to Help & about, grouped the Switchly Store directly above Other Switchly apps under Info, removed the unused Troubleshooting screen, opened Developer tools directly with a compact topbar mode toggle, polished the Support report dialog, and corrected 2.2.2 to appear as a beta release.",
                 "Added a compatibility warning before restoring older or different backup formats and clarified that Switchly performs a best-effort migration for compatible legacy counters."
-            ]
+            ],
+            "app": "Switchly",
+            "show": false
         },
         {
             "version": "v2.2.2-beta",
             "date": "July 22, 2026",
-            "releaseType": "beta",
             "body": [
                 "Made uninstall protection independent from app access lock, with PIN or biometric confirmation before it can be disabled in Switchly.",
                 "Improved navigation and shortcut reliability: Rules now open directly in read-only mode during active or temporary protection, bottom-navigation destinations switch without animating the entire screen, launcher scanner shortcuts reliably return to the existing Switchly task, and Home uses one shared camera action for choosing QR or barcode scanning.",
@@ -208,12 +231,13 @@
                 "Separated official signed release packaging from public unsigned validation builds so public repository builds remain reproducible without private signing files.",
                 "Refined icon semantics across App lock, Activity History, support, QR sharing, and Quick Settings setup, including clearer PIN, biometric, send, share, and completed-state icons.",
                 "Normalized vector drawable structure around the shared 960 × 960 icon viewport, added a dedicated Hidden apps visibility icon, and removed permanently hidden App picker, Home setup, Premium, In-app, and info-screen UI remnants together with their unused code and strings."
-            ]
+            ],
+            "app": "Switchly",
+            "show": false
         },
         {
             "version": "v2.2.1-beta",
             "date": "July 9, 2026",
-            "releaseType": "beta",
             "body": [
                 "Reorganized bottom navigation to use Activity instead of Insights, with direct entries for active time, usage statistics, app launches, screen unlocks, activity history, and blocked notifications.",
                 "Renamed the NFC, QR, barcode, and paired-tag management area to Keys & codes for clearer wording and consistent screen titles.",
@@ -264,12 +288,13 @@
                 "Fixed startup ANR risk by deferring shortcut, trigger, policy, Play Integrity, and usage-stat binder work away from the main thread.",
                 "Fixed onboarding permission return behavior, support email visibility, editor actions, swipe actions, popup Cancel behavior, obsolete resource cleanup, and Material date picker theme handling.",
                 "Fixed custom temporary duration input so manual minute values support the same 24-hour maximum as NFC/QR temporary actions."
-            ]
+            ],
+            "app": "Switchly",
+            "show": false
         },
         {
             "version": "v2.2.0-beta",
             "date": "June 21, 2026",
-            "releaseType": "beta",
             "body": [
                 "Major 2.2.0 update with a reworked setup experience, cleaner controls, improved usage insights, and many UX fixes",
                 "Added the reworked onboarding with app picking, control mode selection first, mode-based permissions, and a cleaner Ready to start review",
@@ -307,12 +332,13 @@
                 "Unified option dialogs and popup menus with clearer selected states, destructive actions, disabled-state dialogs, and consistent add/edit flows",
                 "Updated the feedback notice for Switchly 2.2.0 to request reports for onboarding, usage timer, Help Center, Home display options, Customize Home, setup flows, dialogs, and blocking controls",
                 "Cleaned strings, translations, changelog entries, stale onboarding resources, and lint warnings around setup and UX polish"
-            ]
+            ],
+            "app": "Switchly",
+            "show": false
         },
         {
             "version": "v2.1.5",
             "date": "June 10, 2026",
-            "releaseType": "public",
             "body": [
                 "Added Premium redeem-code support for eligible non-Play builds",
                 "Added online Switchly Premium code redeem support for Firebase/direct builds",
@@ -360,12 +386,12 @@
                 "Polished the logging, Premium, Blocking controls, and In-app blocking screens for clearer wording and layout",
                 "Updated the 2.1.5 feedback notice to mention split-screen, pop-up view, and in-app blocking areas that still need reports",
                 "Updated FAQ and troubleshooting text for Premium redeem codes, battery setup, key-management behavior, Home actions, schedule reliability, website blocking, and in-app blocking limitations"
-            ]
+            ],
+            "app": "Switchly"
         },
         {
             "version": "v2.1.4",
             "date": "May 24, 2026",
-            "releaseType": "public",
             "sourceVersions": [
                 "v2.1.3-beta"
             ],
@@ -385,12 +411,12 @@
                 "Reduced noisy schedule evaluation and billing logs in internal app logs",
                 "Expanded the FAQ with clearer troubleshooting help for QR scanning, Quick Actions, widgets, tiles, shortcuts, maps, schedules, support reports, and Developer Mode",
                 "Improved diagnostics for barcode fallback handling, website tracking, schedule timing, geofence registration, map setup, battery checks, and blocking runtime decisions"
-            ]
+            ],
+            "app": "Switchly"
         },
         {
             "version": "v2.1.3-beta",
             "date": "May 17, 2026",
-            "releaseType": "beta",
             "body": [
                 "Fixed app time limits sometimes being enforced too early after profile or schedule changes",
                 "Improved app limit tracking so usage is evaluated more safely for the currently active profile",
@@ -423,12 +449,13 @@
                 "Updated the experimental features notice for 2.1.x and removed outdated wording",
                 "Improved disabled/locked visuals for safety and While Blocking is Active options while Switchly is enabled",
                 "Added additional diagnostics for app limit decisions, scanner handling, schedules, notification blocking, and app resolution safety"
-            ]
+            ],
+            "app": "Switchly",
+            "show": false
         },
         {
             "version": "v2.1.2",
             "date": "May 10, 2026",
-            "releaseType": "public",
             "body": [
                 "Added a Play-compliant Accessibility Service disclosure and consent flow",
                 "Added clearer in-app explanation before opening Android Accessibility settings",
@@ -440,12 +467,12 @@
                 "Improved menu/navigation logic and internal UI consistency",
                 "Improved string quality and resource grouping",
                 "Cleaned up code comments, spacing, and release changelog entries"
-            ]
+            ],
+            "app": "Switchly"
         },
         {
             "version": "v2.1.1",
             "date": "May 6, 2026",
-            "releaseType": "public",
             "sourceVersions": [
                 "v2.1.0"
             ],
@@ -480,12 +507,12 @@
                 "Improved release-build hygiene by removing local development files from release zips",
                 "Reduced release logging for sensitive diagnostics by gating debug-only logs behind debug builds",
                 "Cleaned up manifest comments and release configuration around NFC dispatch and exported activity behavior"
-            ]
+            ],
+            "app": "Switchly"
         },
         {
             "version": "v2.1.0",
             "date": "Apr 25, 2026",
-            "releaseType": "beta",
             "body": [
                 "Added location schedules with geofence triggers, radius and cooldown options, plus full schedule editor support",
                 "Added a visual Google Maps location picker with map search, current location support, improved styling, and manual location entry fallback",
@@ -518,12 +545,13 @@
                 "Cleaned up old naming, unused compatibility leftovers, imports, dead code, and build configuration",
                 "Refactored accessibility blocking internals to make foreground detection, block decisions, launch handling, browser state, and in-app surface tracking easier to maintain",
                 "Improved internal diagnostics and support info around schedules, profiles, uninstall friction, managed-device state, advanced tools, backup, and OEM-specific reliability behavior"
-            ]
+            ],
+            "app": "Switchly",
+            "show": false
         },
         {
             "version": "v2.0.9",
             "date": "Apr 19, 2026",
-            "releaseType": "public",
             "sourceVersions": [
                 "2.0.8-beta",
                 "2.0.7-beta",
@@ -548,12 +576,12 @@
                 "Improved app lock refresh behavior, emergency PIN compatibility, and temporary profile restore behavior",
                 "Improved safety handling and warnings for critical system and recovery apps such as Settings, Play Store, installers, permission controller, Files, and browsers",
                 "Improved overall reliability across cloud sync and background operations"
-            ]
+            ],
+            "app": "Switchly"
         },
         {
             "version": "v2.0.8-beta",
             "date": "Apr 15, 2026",
-            "releaseType": "beta",
             "body": [
                 "Fixed Google sign-in issues caused by unreliable client ID lookup",
                 "Improved Google sign-in error handling",
@@ -571,12 +599,13 @@
                 "Added info actions in the top bar for Schedule Actions and NFC Write",
                 "Expanded FAQ/help for barcode and QR usage",
                 "Improved cloud sync and background reliability"
-            ]
+            ],
+            "app": "Switchly",
+            "show": false
         },
         {
             "version": "v2.0.7-beta",
             "date": "Apr 12, 2026",
-            "releaseType": "beta",
             "body": [
                 "Improved Firefox blocking so typing and autocomplete suggestions no longer trigger before a page is actually opened",
                 "Improved browser redirect handling so blocked websites no longer close the whole browser app",
@@ -594,12 +623,13 @@
                 "Improved safety protections for critical Android apps and recovery-related system surfaces",
                 "Added loop protection for repeated blocked app relaunches",
                 "Improved Settings blocking safeguards"
-            ]
+            ],
+            "app": "Switchly",
+            "show": false
         },
         {
             "version": "v2.0.6-beta",
             "date": "Apr 5, 2026",
-            "releaseType": "beta",
             "body": [
                 "Improved Firefox blocking to reduce false triggers when typing or using autocomplete",
                 "Added more in-app blocking options for Instagram, Snapchat, and X",
@@ -618,12 +648,13 @@
                 "Improved authentication error messages",
                 "Added automated GitLab release builds with downloadable APK artifacts",
                 "Updated the FAQ with battery optimization setup, NFC tag pairing behavior, read-only tag information, and the public issue board"
-            ]
+            ],
+            "app": "Switchly",
+            "show": false
         },
         {
             "version": "v2.0.5",
             "date": "Mar 30, 2026",
-            "releaseType": "public",
             "sourceVersions": [
                 "2.0.4-beta"
             ],
@@ -633,12 +664,12 @@
                 "Fixed Google login issues for some users",
                 "Improved Firefox website blocking compatibility after browser URL detection changes",
                 "Improved browser website detection reliability"
-            ]
+            ],
+            "app": "Switchly"
         },
         {
             "version": "v2.0.4-beta",
             "date": "Mar 25, 2026",
-            "releaseType": "beta",
             "body": [
                 "Fixed blocked apps occasionally triggering one-handed mode on some Samsung devices",
                 "Fixed Mixed Mode schedule handling when NFC required to disable was enabled",
@@ -663,24 +694,25 @@
                 "Changed QR code sharing to share the QR as an image instead of plain text",
                 "Improved Wi-Fi trigger reliability, reboot recovery, and permission guidance",
                 "Expanded Xiaomi/Redmi/POCO troubleshooting guidance"
-            ]
+            ],
+            "app": "Switchly",
+            "show": false
         },
         {
             "version": "v2.0.3",
             "date": "Mar 17, 2026",
-            "releaseType": "public",
             "body": [
                 "Fixed NFC scanning stopping after writing a tag",
                 "Fixed the NFC write flow so the write screen no longer intercepts follow-up scans",
                 "Improved NFC entry and write handling for more reliable scanning and actions",
                 "Changed NFC handling so only explicit switchly:// tags are accepted",
                 "Prevented unrelated NFC tags from accidentally triggering Switchly actions"
-            ]
+            ],
+            "app": "Switchly"
         },
         {
             "version": "v2.0.2",
             "date": "Mar 17, 2026",
-            "releaseType": "public",
             "body": [
                 "Added optional barcode support with barcode scanning, barcode management, and barcode-based actions",
                 "Added a new app lock with PIN and biometric unlock support",
@@ -690,12 +722,12 @@
                 "Simplified QR/barcode settings by removing redundant action toggles from additional features",
                 "Changed schedules to be read-only while Switchly is active",
                 "Added various smaller bug fixes and UI improvements across the app"
-            ]
+            ],
+            "app": "Switchly"
         },
         {
             "version": "v2.0.1",
             "date": "Mar 15, 2026",
-            "releaseType": "public",
             "body": [
                 "Fixed crashes in paired NFC tags, profile dialogs, and blocked websites dialogs",
                 "Fixed overlapping schedules and schedule manual override issues",
@@ -723,12 +755,12 @@
                 "Added a new info dialog on the home screen with support and download links",
                 "Added direct download links in the app info screens",
                 "Added Switchly Launcher to the Other apps section"
-            ]
+            ],
+            "app": "Switchly"
         },
         {
             "version": "v2.0.0",
             "date": "Mar 09, 2026",
-            "releaseType": "public",
             "sourceVersions": [
                 "1.5.9-beta",
                 "1.5.8-beta",
@@ -748,24 +780,25 @@
                 "Fixed theme and custom accent inconsistencies across dialogs, inputs, controls, charts, and other UI elements",
                 "Removed older or less reliable integrations such as TikTok/X in-app blocking and Snapchat support",
                 "Updated Switchly for better overall performance, cleanup, and consistency"
-            ]
+            ],
+            "app": "Switchly"
         },
         {
             "version": "v1.5.9-beta",
             "date": "Mar 06, 2026",
-            "releaseType": "beta",
             "body": [
                 "Fixed NFC tag entry issues so NFC-triggered actions and profile changes apply more reliably",
                 "Fixed a profile switching issue where Wi-Fi and schedule automation could override the active profile unexpectedly",
                 "Removed Snapchat support completely from Switchly",
                 "Added smaller fixes and improvements across the app",
                 "Added Switchly Lite info"
-            ]
+            ],
+            "app": "Switchly",
+            "show": false
         },
         {
             "version": "v1.5.8-beta",
             "date": "Mar 04, 2026",
-            "releaseType": "beta",
             "body": [
                 "Fixed Blocked right now status updating instantly when attempts run out, and added clearer blocked reasons",
                 "Improved statistics charts with better X-axis labeling, prevented popups while dragging, and ensured chart popups use the custom accent",
@@ -776,23 +809,25 @@
                 "Improved custom color consistency across dialogs, radios, filters, inputs, and schedule UI",
                 "Improved NFC and paired tags polish",
                 "Mitigated a rare Google Play Billing ProxyBillingActivity crash"
-            ]
+            ],
+            "app": "Switchly",
+            "show": false
         },
         {
             "version": "v1.5.7-beta",
             "date": "Mar 01, 2026",
-            "releaseType": "beta",
             "body": [
                 "Added app limits by attempts (number of launches)",
                 "Fixed custom color rendering for uninstalled apps",
                 "Minor UI and design adjustments",
                 "General bug fixes and stability improvements"
-            ]
+            ],
+            "app": "Switchly",
+            "show": false
         },
         {
             "version": "v1.5.6-beta",
             "date": "Feb 27, 2026",
-            "releaseType": "beta",
             "body": [
                 "Fixed Statistics FAB filter icon color in dark mode",
                 "Improved website usage tracking reliability",
@@ -808,12 +843,13 @@
                 "Updated Firebase BOM",
                 "Fixed Android lint issues and cleaned up chart drawing allocations",
                 "General cleanup and resource/layout tidying"
-            ]
+            ],
+            "app": "Switchly",
+            "show": false
         },
         {
             "version": "v1.5.5-beta",
             "date": "Feb 25, 2026",
-            "releaseType": "beta",
             "body": [
                 "Fixed crash when opening Blocked Websites",
                 "Fixed schedule add/edit dialog crashes on Android 16",
@@ -840,12 +876,13 @@
                 "Hardened system receivers by disabling unnecessary exported components",
                 "Fixed wrong-colored icons across the app",
                 "Removed unused strings/resources and applied lint cleanup"
-            ]
+            ],
+            "app": "Switchly",
+            "show": false
         },
         {
             "version": "v1.5.4-beta",
             "date": "Feb 21, 2026",
-            "releaseType": "beta",
             "body": [
                 "Removed in-app blocking for TikTok and X",
                 "Improved Instagram in-app blocking to address recent issues",
@@ -859,12 +896,13 @@
                 "Cleaned up icons and fixed mismatches",
                 "Removed temporary disable statistics information due to incorrect counting issues",
                 "General bug fixes, lint cleanup, and stability improvements"
-            ]
+            ],
+            "app": "Switchly",
+            "show": false
         },
         {
             "version": "v1.5.3",
             "date": "Feb 13, 2026",
-            "releaseType": "public",
             "sourceVersions": [
                 "1.5.2-beta",
                 "1.5.1-beta",
@@ -895,23 +933,23 @@
                 "Removed visible QA scaling matrix block from troubleshooting UI",
                 "Deprecated/hidden Require NFC to disable Switchly after the mode-system refactor",
                 "Removed Facebook in-app blocking"
-            ]
+            ],
+            "app": "Switchly"
         },
         {
             "version": "v1.4.4",
             "date": "Feb 12, 2026",
-            "releaseType": "public",
             "body": [
                 "Official release focused on Google sign-in reliability",
                 "Fixed an issue where previously authorized accounts could sign in, but first-time accounts could fail",
                 "Resolved No matching Google accounts found errors for new Google account sign-ins",
                 "Updated the Google sign-in flow to reliably support both returning and first-time users"
-            ]
+            ],
+            "app": "Switchly"
         },
         {
             "version": "v1.5.2-beta",
             "date": "Feb 11, 2026",
-            "releaseType": "beta",
             "body": [
                 "Fixed Toggle Options crash caused by unsupported theme attribute resolution on some devices",
                 "Improved accent and theme consistency in Customize and Toggle Options",
@@ -929,12 +967,13 @@
                 "Added clear messaging when Temporary Disable is unavailable while NFC-required mode is enabled",
                 "Improved cleanup of uninstalled apps",
                 "General UX polish, wording updates, and stability improvements"
-            ]
+            ],
+            "app": "Switchly",
+            "show": false
         },
         {
             "version": "v1.5.1-beta",
             "date": "Feb 10, 2026",
-            "releaseType": "beta",
             "body": [
                 "Improved Schedule setup flow for Wi-Fi so scan-and-select is now the main path",
                 "Improved Bluetooth picker handling in Schedules",
@@ -946,12 +985,13 @@
                 "Improved NFC write help/info wording and formatting",
                 "Improved wording across the app",
                 "General bug fixes and stability improvements"
-            ]
+            ],
+            "app": "Switchly",
+            "show": false
         },
         {
             "version": "v1.5.0-beta",
             "date": "Feb 09, 2026",
-            "releaseType": "beta",
             "body": [
                 "Major beta update with a complete UI rework",
                 "Added new bottom navigation and quick actions",
@@ -974,24 +1014,25 @@
                 "Improved coloring logic for better consistency with Custom Color",
                 "Added more hints and infos to understand the app better",
                 "Added an info button to NFC Write explaining the modes aside from FAQ"
-            ]
+            ],
+            "app": "Switchly",
+            "show": false
         },
         {
             "version": "v1.4.3",
             "date": "Feb 07, 2026",
-            "releaseType": "public",
             "body": [
                 "Hotfix release focused on schedule and NFC reliability",
                 "Fixed schedules not triggering reliably on some devices",
                 "Fixed blocked apps not locking immediately if already open when a schedule starts",
                 "Fixed an NFC toggle plus range schedule issue where profiles could remain enabled past the scheduled end time",
                 "Temporarily removed UID from NFC tag writing"
-            ]
+            ],
+            "app": "Switchly"
         },
         {
             "version": "v1.4.2",
             "date": "Jan 28, 2026",
-            "releaseType": "public",
             "body": [
                 "Bugfix and cleanup release",
                 "Fixed a critical issue where temporary disable and enable could behave incorrectly",
@@ -1001,12 +1042,12 @@
                 "Removed outdated support paths and adjusted related core logic",
                 "Polished UI spacing and cleaned translations",
                 "Release channels: Website and Play Store"
-            ]
+            ],
+            "app": "Switchly"
         },
         {
             "version": "v1.4.1",
             "date": "Jan 22, 2026",
-            "releaseType": "public",
             "body": [
                 "Added new bottom navigation: Blocking, Insights, Settings",
                 "Reworked the Settings hub",
@@ -1014,94 +1055,95 @@
                 "Added Wi-Fi schedule picker with scan and pick network",
                 "Added troubleshooting screen and blocked notifications inbox",
                 "Improved UI spacing and fixed multiple stability issues"
-            ]
+            ],
+            "app": "Switchly"
         },
         {
             "version": "v1.4.0",
             "date": "Jan 22, 2026",
-            "releaseType": "public",
             "body": [
                 "Major backend change: Accessibility-based blocking for better reliability",
                 "Refreshed Permissions screen with battery optimisation and cleaner cards",
                 "Made Wi-Fi and Bluetooth monitoring only run when needed",
                 "Improved schedule and blocking logic with stability fixes"
-            ]
+            ],
+            "app": "Switchly"
         },
         {
             "version": "v1.3.1",
             "date": "Jan 13, 2026",
-            "releaseType": "public",
             "body": [
                 "Refreshed UI for Permissions and Toggle Options",
                 "Improved onboarding/tutorial",
                 "Improved permission logic for Wi-Fi and Bluetooth",
                 "Cleaned up schedule UI and fixed performance issues"
-            ]
+            ],
+            "app": "Switchly"
         },
         {
             "version": "v1.3.0",
             "date": "Jan 2026",
-            "releaseType": "public",
             "body": [
                 "Revamped Wi-Fi and Bluetooth trigger logic",
                 "Added new notification blocking option",
                 "Upgraded Insights/statistics and improved onboarding"
-            ]
+            ],
+            "app": "Switchly"
         },
         {
             "version": "v1.2.3",
             "date": "Dec 28, 2025",
-            "releaseType": "public",
             "body": [
                 "Improved scheduling reliability",
                 "Made Time, Wi-Fi, Bluetooth, and NFC schedules apply more consistently",
                 "Improved alarm handling and fixed edge cases"
-            ]
+            ],
+            "app": "Switchly"
         },
         {
             "version": "v1.2.2",
             "date": "Dec 17, 2025",
-            "releaseType": "public",
             "body": [
                 "Added Temporary enable feature",
                 "Added optional QR code usage",
                 "Added app limits and dedicated usage page",
                 "Major UI rework and stability improvements"
-            ]
+            ],
+            "app": "Switchly"
         },
         {
             "version": "v1.2.1",
             "date": "Dec 01, 2025",
-            "releaseType": "public",
             "body": [
                 "Added scheduler with time, Wi-Fi, and Bluetooth triggers",
                 "Reworked permission flow and expanded FAQ",
                 "Upgraded backup handling and Firebase adjustments"
-            ]
+            ],
+            "app": "Switchly"
         },
         {
             "version": "v1.1.0",
             "date": "Nov 2025",
-            "releaseType": "public",
             "body": [
                 "Improved profiles and general stability"
-            ]
+            ],
+            "app": "Switchly"
         },
         {
             "version": "v1.0.9",
             "date": "Nov 2025",
-            "releaseType": "public",
             "body": [
                 "Bug fixes and small UI polish"
-            ]
+            ],
+            "app": "Switchly"
         },
         {
             "version": "v1.0.0",
             "date": "Nov 14, 2025",
-            "releaseType": "public",
             "body": [
                 "Started maintaining the Switchly repository"
-            ]
+            ],
+            "app": "Switchly"
         }
     ]
 }

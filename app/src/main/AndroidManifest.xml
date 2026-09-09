@@ -395,6 +395,11 @@
             android:label="@string/settings_changelog_title"
             android:parentActivityName=".feature.settings.SettingsActivity" />
 
+        <!-- Legal disclaimer screen -->
+        <activity
+            android:name=".feature.about.DisclaimerActivity"
+            android:exported="false" />
+
         <!-- Support screen -->
         <activity
             android:name=".feature.support.SupportActivity"

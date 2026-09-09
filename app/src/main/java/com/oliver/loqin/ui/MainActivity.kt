@@ -122,7 +122,6 @@ import com.oliver.loqin.feature.settings.InAppRulesActivity
 import com.oliver.loqin.feature.settings.SettingsActivity
 import com.oliver.loqin.feature.settings.ToggleOptionsActivity
 import com.oliver.loqin.feature.settings.HomeModeDialogHelper
-import com.oliver.loqin.feature.support.SupportLogActivity
 import com.oliver.loqin.feature.tools.RulesHubActivity
 import com.oliver.loqin.feature.tools.ActivityHubActivity
 import com.oliver.loqin.feature.usage.ActiveTimeActivity
@@ -5061,10 +5060,6 @@ class MainActivity : AppCompatActivity() {
                 SettingsActivity.openWithAccessCheck(this)
                 true
             }
-            R.id.action_info -> {
-                showDevelopmentInfoDialog()
-                true
-            }
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -5235,18 +5230,6 @@ class MainActivity : AppCompatActivity() {
         }
 
         sheet.show()
-    }
-
-    private fun showDevelopmentInfoDialog() {
-        // Legacy info dialog for the header info button.
-        MaterialAlertDialogBuilder(this)
-            .setTitle(getString(R.string.main_info_title))
-            .setMessage(getString(R.string.main_development_info_message))
-            .setPositiveButton(getString(R.string.support_logs_unified_title)) { _, _ ->
-                startActivity(Intent(this, SupportLogActivity::class.java))
-            }
-            .setNegativeButton(getString(R.string.close), null)
-            .showAccented()
     }
 
     private fun openHeaderScanner() {

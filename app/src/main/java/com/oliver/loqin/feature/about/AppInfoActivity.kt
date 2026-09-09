@@ -115,6 +115,15 @@ class AppInfoActivity : TilesInfoActivity() {
                 sectionTitle = getString(R.string.about_section_install),
                 iconRes = R.drawable.schedule_24
             ),
+            Tile(
+                getString(R.string.disclaimer_title),
+                getString(R.string.disclaimer_summary),
+                sectionTitle = getString(R.string.about_section_legal),
+                onClick = { startActivity(Intent(this, DisclaimerActivity::class.java)) },
+                showOpenButton = true,
+                enableLongPressCopy = false,
+                iconRes = R.drawable.info_24
+            ),
         )
     }
 

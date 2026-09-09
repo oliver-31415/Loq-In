@@ -19,7 +19,6 @@
 package com.oliver.loqin.feature.about
 
 import android.content.res.Configuration
-import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -34,28 +33,26 @@ import com.oliver.loqin.ui.EdgeToEdgeUtils
 import com.oliver.loqin.ui.ThemeUtils
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
-import com.google.android.material.tabs.TabLayout
 import org.json.JSONObject
 
-private enum class ReleaseType {
-    PUBLIC,
-    BETA
-}
+private const val DEFAULT_APP = "Switchly"
 
 private data class ReleaseDefinition(
     val id: String,
     val version: String,
     val date: String,
+    val app: String,
+    val shown: Boolean,
     val ownLines: List<String>,
     val sourceVersions: List<String>,
-    val releaseType: ReleaseType,
 )
 
 private data class ReleaseNote(
     val version: String,
     val date: String,
+    val app: String,
+    val shown: Boolean,
     val lines: List<String>,
-    val releaseType: ReleaseType,
 )
 
 private enum class ChangeKind {
@@ -88,37 +85,7 @@ class WhatsNewActivity : AppCompatActivity() {
         WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
 
         val notes = loadReleaseNotes()
-        setupReleaseTypeTabs(notes)
-    }
-
-    private fun setupReleaseTypeTabs(notes: List<ReleaseNote>) {
-        val tabLayout = findViewById<TabLayout>(R.id.tabLayoutReleaseType)
-        val accent = AccentColor.getAccentColorInt(this)
-        tabLayout.setSelectedTabIndicatorColor(accent)
-        tabLayout.setTabTextColors(ColorStateList(
-            arrayOf(intArrayOf(android.R.attr.state_selected), intArrayOf()),
-            intArrayOf(accent, withAlpha(toolbarForegroundColor(), 0xB8))
-        ))
-        tabLayout.removeAllTabs()
-        tabLayout.addTab(tabLayout.newTab().setText(R.string.changelog_tab_public).setTag(ReleaseType.PUBLIC))
-        tabLayout.addTab(tabLayout.newTab().setText(R.string.changelog_tab_beta).setTag(ReleaseType.BETA))
-
-        fun select(type: ReleaseType) {
-            renderReleaseNotes(notes.filter { it.releaseType == type })
-        }
-
-        tabLayout.addOnTabSelectedListener(object : TabLayout.OnTabSelectedListener {
-            override fun onTabSelected(tab: TabLayout.Tab) {
-                select((tab.tag as? ReleaseType) ?: ReleaseType.PUBLIC)
-            }
-
-            override fun onTabUnselected(tab: TabLayout.Tab) = Unit
-            override fun onTabReselected(tab: TabLayout.Tab) = Unit
-        })
-
-        // Render the initial tab explicitly because the first tab may already be selected by TabLayout and selecting it again does not always trigger the callback.
-        select(ReleaseType.PUBLIC)
-        tabLayout.getTabAt(0)?.select()
+        renderReleaseNotes(notes)
     }
 
     private fun toolbarForegroundColor(): Int {
@@ -131,16 +98,41 @@ class WhatsNewActivity : AppCompatActivity() {
         }
     }
 
-    private fun withAlpha(color: Int, alpha: Int): Int =
-        (color and 0x00FFFFFF) or (alpha shl 24)
+    private fun sectionHeaderTitle(app: String): String = when (app) {
+        "Loq In" -> getString(R.string.changelog_section_loqin)
+        "Switchly" -> getString(R.string.changelog_section_legacy)
+        else -> app
+    }
+
+    private fun createSectionHeader(title: String, isFirst: Boolean): TextView =
+        TextView(this).apply {
+            text = title
+            setTextColor(AccentColor.getAccentColorInt(this@WhatsNewActivity))
+            textSize = 12.5f
+            typeface = android.graphics.Typeface.DEFAULT_BOLD
+            letterSpacing = 0.06f
+            isAllCaps = true
+            setPadding(dp(4), if (isFirst) dp(2) else dp(14), dp(4), dp(5))
+        }
+
+    private fun dp(value: Int): Int =
+        (value * resources.displayMetrics.density + 0.5f).toInt()
 
     private fun renderReleaseNotes(notes: List<ReleaseNote>) {
         val container = findViewById<LinearLayout>(R.id.releaseNotesContainer)
         container.removeAllViews()
 
         val inflater = LayoutInflater.from(this)
+        var lastApp: String? = null
+        var isFirstSection = true
 
         notes.forEachIndexed { index, note ->
+            if (note.app != lastApp) {
+                container.addView(createSectionHeader(sectionHeaderTitle(note.app), isFirstSection))
+                lastApp = note.app
+                isFirstSection = false
+            }
+
             val item = inflater.inflate(R.layout.item_release_note, container, false)
             val tvVersion = item.findViewById<TextView>(R.id.tvVersion)
             val tvDate = item.findViewById<TextView>(R.id.tvDate)
@@ -309,6 +301,7 @@ class WhatsNewActivity : AppCompatActivity() {
 
     // Loads release notes from res/raw/changelog.json.
     //  `sourceVersions` inherits source release bodies recursively, preserving source order and de-duplicating equivalent lines.
+    //  Entries with "show": false are kept for inheritance but not rendered (e.g. legacy beta-only releases).
     private fun loadReleaseNotes(): List<ReleaseNote> {
         return runCatching {
             val json = resources.openRawResource(R.raw.changelog)
@@ -324,12 +317,6 @@ class WhatsNewActivity : AppCompatActivity() {
                 val version = r.optString("version").trim()
                 if (version.isBlank()) continue
 
-                val releaseType = when (r.optString("releaseType").trim().lowercase()) {
-                    "beta" -> ReleaseType.BETA
-                    "public" -> ReleaseType.PUBLIC
-                    else -> if (version.lowercase().contains("beta")) ReleaseType.BETA else ReleaseType.PUBLIC
-                }
-
                 val ownLines = readBodyLines(r)
                 val sources = mutableListOf<String>()
                 r.optJSONArray("sourceVersions")?.let { sourceArray ->
@@ -342,9 +329,10 @@ class WhatsNewActivity : AppCompatActivity() {
                     id = r.optString("id").trim().ifBlank { version },
                     version = version,
                     date = r.optString("date").trim(),
+                    app = r.optString("app").trim().ifBlank { DEFAULT_APP },
+                    shown = r.optBoolean("show", true),
                     ownLines = ownLines,
                     sourceVersions = sources,
-                    releaseType = releaseType,
                 )
             }
 
@@ -369,10 +357,11 @@ class WhatsNewActivity : AppCompatActivity() {
                 if (lines.isEmpty()) null else ReleaseNote(
                     version = definition.version,
                     date = definition.date,
+                    app = definition.app,
+                    shown = definition.shown,
                     lines = lines,
-                    releaseType = definition.releaseType,
                 )
-            }
+            }.filter { it.shown }
         }.getOrElse { emptyList() }
     }
 
