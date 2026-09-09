@@ -78,7 +78,7 @@ object UsageDatePickerAccentTint {
 
     private fun applyToRoot(activity: Activity, root: View) {
         val accent = AccentColor.getAccentColorInt(activity)
-        val defaultAccent = ContextCompat.getColor(activity, R.color.accent_default_green)
+        val defaultAccent = ContextCompat.getColor(activity, R.color.accent_default_blue)
         val onAccent = if (ColorUtils.calculateLuminance(accent) > 0.45) Color.BLACK else Color.WHITE
         val subtleAccent = ColorUtils.setAlphaComponent(accent, 0x30)
 

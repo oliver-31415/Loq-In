@@ -6,7 +6,7 @@
     <!-- Rounded hero card base -->
     <path
         android:pathData="M24,4h192a20,20 0,0 1,20 20v96a20,20 0,0 1,-20 20h-192a20,20 0,0 1,-20 -20v-96a20,20 0,0 1,20 -20z"
-        android:fillColor="#2E8B57" />
+        android:fillColor="#6BA6E8" />
     <!-- Organic top-right blob highlight -->
     <path
         android:pathData="M140,4h76a20,20 0,0 1,20 20v50c-20,-10 -50,-20 -96,-70z"

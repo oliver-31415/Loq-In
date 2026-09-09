@@ -9,17 +9,17 @@
 
     <style name="Theme.LoqIn" parent="Theme.LoqIn.Base">
         <item name="android:windowLightStatusBar">true</item>
-        <!-- Default (green) accent tokens so ?attr/colorPrimaryContainer etc.
+        <!-- Default (soft blue) accent tokens so ?attr/colorPrimaryContainer etc.
              resolve per-accent; variants below override all of these. -->
-        <item name="colorPrimary">@color/accent_default_green</item>
-        <item name="colorPrimaryVariant">@color/accent_default_green</item>
-        <item name="colorSecondary">@color/accent_default_green</item>
-        <item name="colorAccent">@color/accent_default_green</item>
-        <item name="colorControlActivated">@color/accent_default_green</item>
-        <item name="colorPrimaryContainer">@color/accent_green_container</item>
-        <item name="colorOnPrimaryContainer">@color/accent_green_on_container</item>
-        <item name="colorSecondaryContainer">@color/accent_green_container</item>
-        <item name="colorOnSecondaryContainer">@color/accent_green_on_container</item>
+        <item name="colorPrimary">@color/accent_default_blue</item>
+        <item name="colorPrimaryVariant">@color/accent_default_blue</item>
+        <item name="colorSecondary">@color/accent_default_blue</item>
+        <item name="colorAccent">@color/accent_default_blue</item>
+        <item name="colorControlActivated">@color/accent_default_blue</item>
+        <item name="colorPrimaryContainer">@color/accent_default_blue_container</item>
+        <item name="colorOnPrimaryContainer">@color/accent_default_blue_on_container</item>
+        <item name="colorSecondaryContainer">@color/accent_default_blue_container</item>
+        <item name="colorOnSecondaryContainer">@color/accent_default_blue_on_container</item>
     </style>
     <!-- Material 3 + Expressive: soft warm neutrals, generous corner radii, calm green accent -->
     <!-- Base application theme -->
@@ -41,15 +41,15 @@
     <style name="Theme.LoqIn.Base" parent="Theme.Material3.Light.NoActionBar">
 
         <!-- Accent/primary colors -->
-        <item name="colorPrimary">@color/accent_default_green</item>
-        <item name="colorPrimaryVariant">@color/accent_default_green</item>
-        <item name="colorSecondary">@color/accent_default_green</item>
-        <item name="colorAccent">@color/accent_default_green</item>
-        <item name="colorControlActivated">@color/accent_default_green</item>
-        <item name="colorPrimaryContainer">@color/accent_green_container</item>
-        <item name="colorOnPrimaryContainer">@color/accent_green_on_container</item>
-        <item name="colorSecondaryContainer">@color/accent_green_container</item>
-        <item name="colorOnSecondaryContainer">@color/accent_green_on_container</item>
+        <item name="colorPrimary">@color/accent_default_blue</item>
+        <item name="colorPrimaryVariant">@color/accent_default_blue</item>
+        <item name="colorSecondary">@color/accent_default_blue</item>
+        <item name="colorAccent">@color/accent_default_blue</item>
+        <item name="colorControlActivated">@color/accent_default_blue</item>
+        <item name="colorPrimaryContainer">@color/accent_default_blue_container</item>
+        <item name="colorOnPrimaryContainer">@color/accent_default_blue_on_container</item>
+        <item name="colorSecondaryContainer">@color/accent_default_blue_container</item>
+        <item name="colorOnSecondaryContainer">@color/accent_default_blue_on_container</item>
 
         <!-- Foqos surfaces / backgrounds -->
         <item name="android:colorBackground">@color/foqos_bg</item>
@@ -95,11 +95,11 @@
         <item name="colorOnError">@color/m3_sys_color_light_on_error</item>
         <item name="colorOnErrorContainer">@color/m3_sys_color_light_on_error_container</item>
         <item name="colorOnPrimary">@color/foqos_on_primary</item>
-        <item name="colorOnPrimaryContainer">@color/accent_green_on_container</item>
+        <item name="colorOnPrimaryContainer">@color/accent_default_blue_on_container</item>
         <item name="colorOnPrimaryFixed">@color/m3_sys_color_on_primary_fixed</item>
         <item name="colorOnPrimaryFixedVariant">@color/m3_sys_color_on_primary_fixed_variant</item>
         <item name="colorOnSecondary">@color/foqos_on_primary</item>
-        <item name="colorOnSecondaryContainer">@color/accent_green_on_container</item>
+        <item name="colorOnSecondaryContainer">@color/accent_default_blue_on_container</item>
         <item name="colorOnSecondaryFixed">@color/m3_sys_color_on_secondary_fixed</item>
         <item name="colorOnSecondaryFixedVariant">@color/m3_sys_color_on_secondary_fixed_variant</item>
         <item name="colorOnSurface">@color/foqos_on_surface</item>
@@ -111,15 +111,15 @@
         <item name="colorOnTertiaryFixedVariant">@color/m3_sys_color_on_tertiary_fixed_variant</item>
         <item name="colorOutline">@color/foqos_outline</item>
         <item name="colorOutlineVariant">@color/foqos_outline_variant</item>
-        <item name="colorPrimary">@color/accent_default_green</item>
-        <item name="colorPrimaryContainer">@color/accent_green_container</item>
+        <item name="colorPrimary">@color/accent_default_blue</item>
+        <item name="colorPrimaryContainer">@color/accent_default_blue_container</item>
         <item name="colorPrimaryDark">?attr/colorPrimary</item>
         <item name="colorPrimaryFixed">@color/m3_sys_color_primary_fixed</item>
         <item name="colorPrimaryFixedDim">@color/m3_sys_color_primary_fixed_dim</item>
         <item name="colorPrimaryInverse">@color/m3_sys_color_light_inverse_primary</item>
         <item name="colorPrimaryVariant">?attr/colorPrimary</item>
-        <item name="colorSecondary">@color/accent_default_green</item>
-        <item name="colorSecondaryContainer">@color/accent_green_container</item>
+        <item name="colorSecondary">@color/accent_default_blue</item>
+        <item name="colorSecondaryContainer">@color/accent_default_blue_container</item>
         <item name="colorSecondaryFixed">@color/m3_sys_color_secondary_fixed</item>
         <item name="colorSecondaryFixedDim">@color/m3_sys_color_secondary_fixed_dim</item>
         <item name="colorSecondaryVariant">?attr/colorSecondary</item>
@@ -351,9 +351,9 @@
          stock M3 calendar overlay otherwise falls back to its baseline
          green palette). Per-accent copies below override these. -->
     <style name="ThemeOverlay.LoqIn.DatePicker" parent="ThemeOverlay.Material3.MaterialCalendar">
-        <item name="colorPrimary">@color/accent_default_green</item>
+        <item name="colorPrimary">@color/accent_default_blue</item>
         <item name="colorOnPrimary">@color/foqos_on_primary</item>
-        <item name="colorSecondary">@color/accent_default_green</item>
+        <item name="colorSecondary">@color/accent_default_blue</item>
         <item name="colorOnSecondary">@color/foqos_on_primary</item>
         <item name="colorSurface">@color/foqos_surface</item>
         <item name="colorOnSurface">@color/foqos_on_surface</item>
@@ -400,17 +400,17 @@
     </style>
 
     <style name="ThemeOverlay.LoqIn.TimePicker" parent="ThemeOverlay.Material3.MaterialTimePicker">
-        <item name="colorPrimary">@color/accent_default_green</item>
+        <item name="colorPrimary">@color/accent_default_blue</item>
         <item name="colorOnPrimary">@color/foqos_on_primary</item>
-        <item name="colorPrimaryContainer">@color/accent_green_container</item>
-        <item name="colorOnPrimaryContainer">@color/accent_green_on_container</item>
-        <item name="colorSecondary">@color/accent_default_green</item>
+        <item name="colorPrimaryContainer">@color/accent_default_blue_container</item>
+        <item name="colorOnPrimaryContainer">@color/accent_default_blue_on_container</item>
+        <item name="colorSecondary">@color/accent_default_blue</item>
         <item name="colorOnSecondary">@color/foqos_on_primary</item>
-        <item name="colorSecondaryContainer">@color/accent_green_container</item>
-        <item name="colorOnSecondaryContainer">@color/accent_green_on_container</item>
-        <item name="colorTertiary">@color/accent_default_green</item>
-        <item name="colorTertiaryContainer">@color/accent_green_container</item>
-        <item name="colorOnTertiaryContainer">@color/accent_green_on_container</item>
+        <item name="colorSecondaryContainer">@color/accent_default_blue_container</item>
+        <item name="colorOnSecondaryContainer">@color/accent_default_blue_on_container</item>
+        <item name="colorTertiary">@color/accent_default_blue</item>
+        <item name="colorTertiaryContainer">@color/accent_default_blue_container</item>
+        <item name="colorOnTertiaryContainer">@color/accent_default_blue_on_container</item>
         <item name="colorSurface">@color/foqos_surface</item>
         <item name="colorOnSurface">@color/foqos_on_surface</item>
         <item name="colorOnSurfaceVariant">@color/foqos_on_surface_variant</item>

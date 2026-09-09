@@ -82,7 +82,7 @@ object CustomAccentApplier {
 
     fun isAccentRecoloringNeeded(context: Context): Boolean {
         val accent = AccentColor.getAccentColorInt(context) and 0x00FFFFFF
-        val defaultGreen = ContextCompat.getColor(context, R.color.accent_default_green) and 0x00FFFFFF
+        val defaultGreen = ContextCompat.getColor(context, R.color.accent_default_blue) and 0x00FFFFFF
         return accent != defaultGreen || AccentColor.getOption(context) == AccentColor.Option.CUSTOM
     }
 
@@ -101,7 +101,7 @@ object CustomAccentApplier {
         applyToView(root, activity)
 
         val accent = AccentColor.getAccentColorInt(activity)
-        val defaultAccent = ContextCompat.getColor(activity, R.color.accent_default_green)
+        val defaultAccent = ContextCompat.getColor(activity, R.color.accent_default_blue)
 
         // Late passes for Recycler/Fragment inflation and async view attachments.
         val passes = longArrayOf(80L, 240L, 500L, 900L)
@@ -116,7 +116,7 @@ object CustomAccentApplier {
 
     fun applyToView(root: View, context: Context) {
         val accent = AccentColor.getAccentColorInt(context)
-        val defaultAccent = ContextCompat.getColor(context, R.color.accent_default_green)
+        val defaultAccent = ContextCompat.getColor(context, R.color.accent_default_blue)
         recolorRecursive(root, defaultAccent, accent)
     }
 

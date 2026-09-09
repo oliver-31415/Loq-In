@@ -19,14 +19,16 @@
     <color name="foqos_outline_variant">#FF262624</color>
 
     <!-- Primary -->
-    <color name="foqos_primary">#FF2E8B57</color>
+    <color name="foqos_primary">#FF6BA6E8</color>
     <color name="foqos_on_primary">#FFFFFFFF</color>
-    <color name="foqos_primary_container">#FF1F4433</color>
-    <color name="foqos_on_primary_container">#FFC9EBD6</color>
-    <color name="foqos_secondary_container">#FF25352C</color>
-    <color name="foqos_on_secondary_container">#FFD8EADF</color>
+    <color name="foqos_primary_container">#FF1E3A5F</color>
+    <color name="foqos_on_primary_container">#FFCBE3FA</color>
+    <color name="foqos_secondary_container">#FF22334A</color>
+    <color name="foqos_on_secondary_container">#FFD6E5F5</color>
 
     <!-- Accent containers (dark) -->
+    <color name="accent_default_blue_container">#FF1E3A5F</color>
+    <color name="accent_default_blue_on_container">#FFCBE3FA</color>
     <color name="accent_green_container">#FF1F4433</color>
     <color name="accent_green_on_container">#FFC9EBD6</color>
     <color name="accent_blue_container">#FF173A5C</color>

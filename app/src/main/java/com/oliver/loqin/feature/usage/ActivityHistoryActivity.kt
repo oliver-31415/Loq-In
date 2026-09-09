@@ -561,7 +561,7 @@ class ActivityHistoryActivity : AppCompatActivity() {
         }
 
         val accent = AccentColor.getAccentColorInt(this)
-        val defaultAccent = ContextCompat.getColor(this, R.color.accent_default_green)
+        val defaultAccent = ContextCompat.getColor(this, R.color.accent_default_blue)
         val onAccent = readableAccentTextColor(accent)
         val subtleAccent = ColorUtils.setAlphaComponent(accent, 0x22)
 

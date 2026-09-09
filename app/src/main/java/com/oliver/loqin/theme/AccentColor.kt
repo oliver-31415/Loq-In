@@ -62,7 +62,7 @@ object AccentColor {
     fun getAccentColorInt(context: Context): Int {
         val prefs = PreferenceManager.getDefaultSharedPreferences(context)
         return when (getOption(context)) {
-            Option.GREEN  -> ContextCompat.getColor(context, R.color.accent_green)
+            Option.GREEN  -> ContextCompat.getColor(context, R.color.accent_default_blue)
             Option.BLUE   -> ContextCompat.getColor(context, R.color.accent_blue)
             Option.ORANGE -> ContextCompat.getColor(context, R.color.accent_orange)
             Option.PURPLE -> ContextCompat.getColor(context, R.color.accent_purple)
@@ -72,11 +72,11 @@ object AccentColor {
             Option.AMBER  -> ContextCompat.getColor(context, R.color.accent_amber)
             Option.GRAY   -> ContextCompat.getColor(context, R.color.accent_gray)
             Option.CUSTOM -> {
-                val hex = prefs.getString(PREF_CUSTOM, "#2E8B57") ?: "#2E8B57"
+                val hex = prefs.getString(PREF_CUSTOM, "#6BA6E8") ?: "#6BA6E8"
                 try {
                     hex.toColorInt()
                 } catch (e: IllegalArgumentException) {
-                    ContextCompat.getColor(context, R.color.accent_green)
+                    ContextCompat.getColor(context, R.color.accent_default_blue)
                 }
             }
         }
@@ -96,7 +96,7 @@ object AccentColor {
      * accent, so set it explicitly in code.
      */
     fun getAccentContainerColorInt(context: Context): Int = when (getOption(context)) {
-        Option.GREEN  -> ContextCompat.getColor(context, R.color.accent_green_container)
+        Option.GREEN  -> ContextCompat.getColor(context, R.color.accent_default_blue_container)
         Option.BLUE   -> ContextCompat.getColor(context, R.color.accent_blue_container)
         Option.ORANGE -> ContextCompat.getColor(context, R.color.accent_orange_container)
         Option.PURPLE -> ContextCompat.getColor(context, R.color.accent_purple_container)

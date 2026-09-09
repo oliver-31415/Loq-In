@@ -1027,9 +1027,9 @@ class SettingsFragment : PreferenceFragmentCompat() {
             "amber" -> ContextCompat.getColor(ctx, R.color.accent_amber)
             "gray" -> ContextCompat.getColor(ctx, R.color.accent_gray)
             "custom" -> runCatching {
-                (prefs.getString("pref_accent_custom", "#2E8B57") ?: "#2E8B57").toColorInt()
-            }.getOrDefault(ContextCompat.getColor(ctx, R.color.accent_green))
-            else -> ContextCompat.getColor(ctx, R.color.accent_green)
+                (prefs.getString("pref_accent_custom", "#6BA6E8") ?: "#6BA6E8").toColorInt()
+            }.getOrDefault(ContextCompat.getColor(ctx, R.color.accent_default_blue))
+            else -> ContextCompat.getColor(ctx, R.color.accent_default_blue)
         }
     }
 
@@ -1314,7 +1314,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
         val prefs = PreferenceManager.getDefaultSharedPreferences(context)
         val key = prefs.getString("pref_accent", "default") ?: "default"
         return if (key == "custom") {
-            val hex = prefs.getString("pref_accent_custom", "#2E8B57") ?: "#2E8B57"
+            val hex = prefs.getString("pref_accent_custom", "#6BA6E8") ?: "#6BA6E8"
             try { hex.toColorInt() } catch (_: IllegalArgumentException) { AccentColor.getAccentColorInt(context) }
         } else {
             AccentColor.getAccentColorInt(context)

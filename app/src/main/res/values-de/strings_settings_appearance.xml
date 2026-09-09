@@ -37,7 +37,7 @@
     <!-- ====================================================== -->
     <string name="pref_accent_custom">Benutzerdefinierte Farbe…</string>
     <string name="pref_accent_custom_title">Benutzerdefinierte Farbe</string>
-    <string name="pref_accent_default_summary">Loq Ins klassische grüne Akzentfarbe.</string>
+    <string name="pref_accent_default_summary">Loq Ins Standard-Akzentfarbe (weiches Blau).</string>
     <string name="pref_accent_blue_summary">Ein ruhiger Blauton für einen klareren technischen Look.</string>
     <string name="pref_accent_orange_summary">Ein warmer Orangeton mit stärkerem Kontrast.</string>
     <string name="pref_accent_purple_summary">Ein weicher Lilaton für dunklere Setups.</string>

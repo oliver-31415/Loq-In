@@ -867,7 +867,7 @@ class MainActivity : AppCompatActivity() {
         val steps = listOf(
             BottomNavTourStep(
                 itemId = R.id.nav_home,
-                iconRes = R.drawable.loqin_home_nav,
+                iconRes = R.drawable.loqin_home_nav_24,
                 titleRes = R.string.nav_tour_home_title,
                 descriptionRes = R.string.nav_tour_home_desc,
             ),
@@ -2031,7 +2031,7 @@ class MainActivity : AppCompatActivity() {
         // Row icons + green labels follow the live accent (?attr/colorPrimary would fall
         // back to the compile-time green since Home never applies an accent theme variant).
         val sheetAccent = AccentColor.getAccentColorInt(this)
-        val sheetGreen = ContextCompat.getColor(this, R.color.accent_default_green) and 0x00FFFFFF
+        val sheetGreen = ContextCompat.getColor(this, R.color.accent_default_blue) and 0x00FFFFFF
         val dangerRow = view.findViewById<View>(R.id.rowSheetDelete)
         fun inDangerRow(v: android.view.View): Boolean {
             var p = v.parent

@@ -24,20 +24,22 @@
     <color name="foqos_outline">#FFE4E2DC</color>
     <color name="foqos_outline_variant">#FFEEEEE8</color>
 
-    <!-- Primary (calm green, matches Loq In default accent) -->
+    <!-- Primary (soft blue, matches Loq In default accent) -->
     <!-- tools:ignore: reserved M3 token set for the Foqos restyle rollout -->
-    <color name="foqos_primary" tools:ignore="UnusedResources">#FF2E8B57</color>
+    <color name="foqos_primary" tools:ignore="UnusedResources">#FF6BA6E8</color>
     <color name="foqos_on_primary" tools:ignore="UnusedResources">#FFFFFFFF</color>
-    <color name="foqos_primary_container" tools:ignore="UnusedResources">#FFD8F0E2</color>
-    <color name="foqos_on_primary_container" tools:ignore="UnusedResources">#FF0F3D24</color>
-    <color name="foqos_secondary_container" tools:ignore="UnusedResources">#FFE3EFE8</color>
-    <color name="foqos_on_secondary_container" tools:ignore="UnusedResources">#FF1F3A2C</color>
+    <color name="foqos_primary_container" tools:ignore="UnusedResources">#FFE1EDFB</color>
+    <color name="foqos_on_primary_container" tools:ignore="UnusedResources">#FF133A63</color>
+    <color name="foqos_secondary_container" tools:ignore="UnusedResources">#FFE9F1FA</color>
+    <color name="foqos_on_secondary_container" tools:ignore="UnusedResources">#FF1E3A5F</color>
 
     <!-- =========================
          ACCENT CONTAINERS (M3)
          Soft tinted containers derived from each Loq In accent,
          so switches/chips/dialogs follow the active accent under M3.
          ========================= -->
+    <color name="accent_default_blue_container">#FFE1EDFB</color>
+    <color name="accent_default_blue_on_container">#FF133A63</color>
     <color name="accent_green_container">#FFD8F0E2</color>
     <color name="accent_green_on_container">#FF0F3D24</color>
     <color name="accent_blue_container">#FFD6E4F5</color>

@@ -81,7 +81,7 @@ object ThemeUtils {
      */
     private fun retintUnthemedPrimaryIcons(activity: Activity) {
         val accent = AccentColor.getAccentColorInt(activity)
-        val fallback = activity.getColor(R.color.accent_default_green) and 0x00FFFFFF
+        val fallback = activity.getColor(R.color.accent_default_blue) and 0x00FFFFFF
         val root = activity.findViewById<View>(android.R.id.content) ?: return
 
         fun matchesGreen(color: Int): Boolean {

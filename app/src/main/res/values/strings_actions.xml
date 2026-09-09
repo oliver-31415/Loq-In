@@ -45,7 +45,7 @@
     <!-- ====================================================== -->
     <!-- Accent colors -->
     <!-- ====================================================== -->
-    <string name="accent_default">Default (Green)</string>
+    <string name="accent_default">Default (Soft Blue)</string>
     <string name="accent_blue">Blue</string>
     <string name="accent_teal">Teal</string>
     <string name="accent_purple">Purple</string>

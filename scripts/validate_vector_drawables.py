@@ -13,6 +13,8 @@ DRAWABLE_DIR = Path(__file__).resolve().parents[1] / "app/src/main/res/drawable"
 
 ALLOWED_SIZE_EXCEPTIONS = {
     "language_24.xml": ("24dp", "24dp", "24", "24"),
+    "ic_launcher_foreground_loqin.xml": ("108dp", "108dp", "108", "108"),
+    "ic_launcher_monochrome_loqin.xml": ("108dp", "108dp", "108", "108"),
     "widget_active_timer_preview.xml": ("200dp", "100dp", "240", "120"),
     "widget_notifications_20.xml": ("20dp", "20dp", "960", "960"),
     "widget_toggle_off_20.xml": ("20dp", "20dp", "960", "960"),
