@@ -274,7 +274,7 @@
     <string name="edit_locked_write_nfc_tags">Turn off Switchly to write or pair NFC tags.</string>
     <string name="edit_locked_manage_blocked_notifications">Turn off Switchly to open blocked notifications.</string>
     <string name="edit_locked_manage_schedules">Turn off Switchly to manage schedules.</string>
-    <string name="edit_locked_manage_temp_pauses">Turn off Switchly to change temporary pause limits.</string>
+    <string name="edit_locked_manage_temp_pauses">Turn off Switchly to change break limits.</string>
     <string name="toast_disable_switchly_to_edit_blocked_apps">Turn off Switchly to edit app rules.</string>
     <string name="toast_disable_switchly_to_switch_profiles">Turn off Switchly before switching profiles.</string>
     <string name="toast_disable_switchly_to_edit_websites">Turn off Switchly before editing website rules.</string>

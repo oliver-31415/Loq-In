@@ -52,8 +52,8 @@
     <string name="profile_label_default">Profil</string>
     <!-- Needed by the in-progress widget refactor. -->
     <string name="profile_default_name">Profil</string>
-    <string name="temp_pause_action">Temporäre Pausen</string>
-    <string name="temp_pause_title">Temporäre Pausen</string>
+    <string name="temp_pause_action">Pausen</string>
+    <string name="temp_pause_title">Pausen</string>
     <string name="temp_pause_summary_unlimited">Unbegrenzt</string>
     <string name="temp_pause_part_count_fmt">%1$d/Tag</string>
     <string name="temp_pause_part_max_fmt">max. %1$d Min.</string>

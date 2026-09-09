@@ -704,7 +704,7 @@
                                     android:textStyle="bold"
                                     android:textColor="?attr/colorOnSurface"
                                     android:maxLines="1"
-                                    tools:text="Temporary pause" />
+                                    tools:text="Take a break" />
 
                                 <TextView
                                     android:id="@+id/tvTempTileSubtitle"

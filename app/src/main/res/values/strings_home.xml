@@ -103,7 +103,7 @@
 
     <!-- Quick-entry action tiles (temporary timer / emergency bypass) -->
     <string name="tile_temp_title_plain">Temporary</string>
-    <string name="tile_temp_title_pause">Temporary pause</string>
+    <string name="tile_temp_title_pause">Take a break</string>
     <string name="tile_temp_title_enable">Temporarily enable</string>
     <string name="tile_temp_title_active_paused">Temporarily paused</string>
     <string name="tile_temp_title_active_enabled">Temporarily enabled</string>
@@ -224,8 +224,8 @@
     <string name="profile_sheet_inapp_summary">Shorts, Reels, feeds and more</string>
     <string name="profile_sheet_schedules">Schedules</string>
     <string name="profile_sheet_schedules_summary">Time, Wi-Fi, Bluetooth and location</string>
-    <string name="profile_sheet_pauses">Temporary pauses</string>
-    <string name="profile_sheet_pauses_summary">Caps for pausing protection</string>
+    <string name="profile_sheet_pauses">Breaks</string>
+    <string name="profile_sheet_pauses_summary">Caps for taking breaks</string>
     <string name="profile_sheet_insights">Insights &amp; history</string>
     <string name="profile_sheet_insights_summary">Statistics, events and sessions</string>
     <string name="profile_sheet_delete">Delete profile</string>

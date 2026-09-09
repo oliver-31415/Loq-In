@@ -274,7 +274,7 @@
     <string name="edit_locked_write_nfc_tags">Deaktiviere Switchly, um NFC-Tags zu schreiben oder zu koppeln.</string>
     <string name="edit_locked_manage_blocked_notifications">Deaktiviere Switchly, um blockierte Benachrichtigungen zu öffnen.</string>
     <string name="edit_locked_manage_schedules">Deaktiviere Switchly, um Zeitpläne zu verwalten.</string>
-    <string name="edit_locked_manage_temp_pauses">Deaktiviere Switchly, um temporäre Pausenlimits zu ändern.</string>
+    <string name="edit_locked_manage_temp_pauses">Deaktiviere Switchly, um Pausenlimits zu ändern.</string>
     <string name="toast_disable_switchly_to_edit_blocked_apps">Deaktiviere Switchly, um App-Regeln zu bearbeiten.</string>
     <string name="toast_disable_switchly_to_switch_profiles">Deaktiviere Switchly, bevor du Profile wechselst.</string>
     <string name="toast_disable_switchly_to_edit_websites">Deaktiviere Switchly, bevor du Website-Regeln bearbeitest.</string>
