@@ -41,6 +41,7 @@ import android.widget.Toast
 import androidx.core.content.edit
 import androidx.core.net.toUri
 import at.saltyy.switchly.R
+import at.saltyy.switchly.data.prefs.ActiveDurationStore
 import at.saltyy.switchly.data.prefs.AppLaunchCountStore
 import at.saltyy.switchly.data.prefs.AppLogStore
 import at.saltyy.switchly.data.prefs.AttemptLimitStore
@@ -1318,13 +1319,15 @@ class SwitchlyAccessibilityService : AccessibilityService() {
             return
         }
         runCatching { BlockedTimeStore.addProtectionMsToday(this, delta) }
-        // Wall-clock reconciliation: while blocking runs, the live session duration is
-        // the floor for today's total, so gaps from reinstalls or paused accrual
-        // (screen off/keyguard) still end up counted.
+        // Wall-clock reconciliation: while blocking runs, the live day-clipped
+        // duration is the floor for today's total, so gaps from reinstalls or
+        // paused accrual (screen off/keyguard) still end up counted. Must be
+        // day-clipped (not the full session length) or an overnight session
+        // stamps yesterday's hours onto today on every tick.
         runCatching {
             BlockedTimeStore.ensureProtectionTodayAtLeast(
                 this,
-                SwitchModeStore.getActiveDurationMillis(this)
+                ActiveDurationStore.todayMs(this)
             )
         }
     }
