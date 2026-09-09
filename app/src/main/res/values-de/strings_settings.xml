@@ -46,7 +46,7 @@
     <string name="settings_permissions_reliability_title">Berechtigungen &amp; Zuverlässigkeit</string>
     <string name="settings_permissions_reliability_summary">Berechtigungen und Hintergrundzuverlässigkeit</string>
     <string name="pref_permissions_title">Berechtigungen</string>
-    <string name="pref_permissions_summary">Die Systemberechtigungen prüfen und verwalten, die Switchly benötigt.</string>
+    <string name="pref_permissions_summary">Die Systemberechtigungen prüfen und verwalten, die Loq In benötigt.</string>
     <string name="settings_emergency_unlock_title">Notfall-Entsperrung</string>
     <string name="settings_emergency_unlock_summary">Notfall-Entsperrung starten, pausieren, fortsetzen oder beenden</string>
 
@@ -55,8 +55,8 @@
     <!-- ====================================================== -->
     <string name="account_title">Konto</string>
     <string name="account_disclaimer_title">Haftungsausschluss</string>
-    <string name="account_disclaimer_summary">Was Switchly kann und was nicht</string>
-    <string name="account_disclaimer_body">Switchly hilft dir, Ablenkungen zu reduzieren, indem Apps, Websites und ausgewählte In-App-Inhalte blockiert werden, solange der Schutz aktiv ist. Das Blockieren hängt von Systemberechtigungen (Bedienungshilfen, Nutzungszugriff) ab und kann durch Akkuoptimierung, Herstellerverhalten und App-Updates beeinflusst werden. Die Notfall-Entsperrung ist bewusst begrenzt. Switchly wird ohne Gewähr bereitgestellt; du bist selbst dafür verantwortlich, die Bedingungen deiner Geräte und Dienste einzuhalten.</string>
+    <string name="account_disclaimer_summary">Was Loq In kann und was nicht</string>
+    <string name="account_disclaimer_body">Loq In hilft dir, Ablenkungen zu reduzieren, indem Apps, Websites und ausgewählte In-App-Inhalte blockiert werden, solange der Schutz aktiv ist. Das Blockieren hängt von Systemberechtigungen (Bedienungshilfen, Nutzungszugriff) ab und kann durch Akkuoptimierung, Herstellerverhalten und App-Updates beeinflusst werden. Die Notfall-Entsperrung ist bewusst begrenzt. Loq In wird ohne Gewähr bereitgestellt; du bist selbst dafür verantwortlich, die Bedingungen deiner Geräte und Dienste einzuhalten.</string>
     <string name="settings_account_title">Konto</string>
     <string name="settings_account_summary">Backup, Notfall-PIN &amp; Sync</string>
     <string name="pref_change_emergency_pin_title">Notfall-PIN ändern</string>
@@ -85,9 +85,9 @@
     <!-- ====================================================== -->
     <!-- Reset app data -->
     <!-- ====================================================== -->
-    <string name="pref_reset_app_data_title">Alle Switchly-Daten löschen</string>
+    <string name="pref_reset_app_data_title">Alle Loq In-Daten löschen</string>
     <string name="pref_reset_app_data_summary">Setzt alle lokalen App-Daten und Einstellungen zurück</string>
-    <string name="pref_reset_app_data_confirm_title">Alle Switchly-Daten löschen?</string>
+    <string name="pref_reset_app_data_confirm_title">Alle Loq In-Daten löschen?</string>
     <string name="pref_reset_app_data_confirm_message">Dadurch werden alle lokalen Profile, Regeln, Statistiken, gekoppelten Tags und Einstellungen auf diesem Gerät entfernt. Cloud-Backups werden nicht automatisch gelöscht.</string>
     <string name="pref_reset_app_data_done">Alle lokalen Daten wurden gelöscht.</string>
 

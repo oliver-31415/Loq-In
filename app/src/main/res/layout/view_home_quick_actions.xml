@@ -3,7 +3,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/cardQuickActions"
-    style="@style/Switchly.Card"
+    style="@style/LoqIn.Card"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginTop="16dp">
@@ -66,7 +66,7 @@
 
         <com.google.android.material.divider.MaterialDivider
             android:id="@+id/dividerQuickActions"
-            style="@style/Switchly.Divider"
+            style="@style/LoqIn.Divider"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="6dp"
@@ -91,7 +91,7 @@
 
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/tileManageApps"
-                    style="@style/Switchly.TileCard"
+                    style="@style/LoqIn.TileCard"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_margin="6dp"
@@ -137,7 +137,7 @@
 
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/tileProfiles"
-                    style="@style/Switchly.TileCard"
+                    style="@style/LoqIn.TileCard"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_margin="6dp"
@@ -183,7 +183,7 @@
 
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/tileWriteNfc"
-                    style="@style/Switchly.TileCard"
+                    style="@style/LoqIn.TileCard"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_margin="6dp"
@@ -237,7 +237,7 @@
 
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/tileToggleOptions"
-                    style="@style/Switchly.TileCard"
+                    style="@style/LoqIn.TileCard"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_margin="6dp"
@@ -293,7 +293,7 @@
 
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/tileQr"
-                    style="@style/Switchly.TileCard"
+                    style="@style/LoqIn.TileCard"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_margin="6dp"
@@ -339,7 +339,7 @@
 
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/tileBarcode"
-                    style="@style/Switchly.TileCard"
+                    style="@style/LoqIn.TileCard"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_margin="6dp"
@@ -394,7 +394,7 @@
 
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/tileNfcWrite"
-                    style="@style/Switchly.TileCard"
+                    style="@style/LoqIn.TileCard"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_margin="6dp"
@@ -440,7 +440,7 @@
 
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/tileBlockedNotifications"
-                    style="@style/Switchly.TileCard"
+                    style="@style/LoqIn.TileCard"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_margin="6dp"

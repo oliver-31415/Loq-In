@@ -17,7 +17,7 @@
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
-            style="@style/Switchly.TopBar"
+            style="@style/LoqIn.TopBar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:minHeight="?attr/actionBarSize"
@@ -43,7 +43,7 @@
 
             <!-- Hero: domain identity + big total for the selected range -->
             <com.google.android.material.card.MaterialCardView
-                style="@style/Switchly.Card"
+                style="@style/LoqIn.Card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 app:cardUseCompatPadding="false">
@@ -154,7 +154,7 @@
 
             <!-- Daily limit -->
             <TextView
-                style="@style/Switchly.SectionHeader"
+                style="@style/LoqIn.SectionHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="22dp"
@@ -162,7 +162,7 @@
 
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardDailyLimit"
-                style="@style/Switchly.Card"
+                style="@style/LoqIn.Card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
@@ -209,14 +209,14 @@
 
             <!-- Usage over time -->
             <TextView
-                style="@style/Switchly.SectionHeader"
+                style="@style/LoqIn.SectionHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="22dp"
                 android:text="@string/usage_details_activity_section" />
 
             <com.google.android.material.card.MaterialCardView
-                style="@style/Switchly.Card"
+                style="@style/LoqIn.Card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
@@ -237,7 +237,7 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnRangeToday"
-                            style="@style/Switchly.Segment"
+                            style="@style/LoqIn.Segment"
                             android:layout_width="0dp"
                             android:layout_height="44dp"
                             android:layout_weight="1"
@@ -245,7 +245,7 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnRangeWeek"
-                            style="@style/Switchly.Segment"
+                            style="@style/LoqIn.Segment"
                             android:layout_width="0dp"
                             android:layout_height="44dp"
                             android:layout_weight="1"
@@ -253,7 +253,7 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnRangeMonth"
-                            style="@style/Switchly.Segment"
+                            style="@style/LoqIn.Segment"
                             android:layout_width="0dp"
                             android:layout_height="44dp"
                             android:layout_weight="1"
@@ -261,7 +261,7 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnRangeYear"
-                            style="@style/Switchly.Segment"
+                            style="@style/LoqIn.Segment"
                             android:layout_width="0dp"
                             android:layout_height="44dp"
                             android:layout_weight="1"
@@ -269,7 +269,7 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnRangeCustom"
-                            style="@style/Switchly.Segment"
+                            style="@style/LoqIn.Segment"
                             android:layout_width="52dp"
                             android:layout_height="44dp"
                             android:minWidth="0dp"
@@ -301,7 +301,7 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnClearCustomRange"
-                            style="@style/Switchly.OutlinedButton.CompactSegment"
+                            style="@style/LoqIn.OutlinedButton.CompactSegment"
                             android:layout_width="wrap_content"
                             android:layout_height="36dp"
                             android:minWidth="0dp"
@@ -317,7 +317,7 @@
                         android:textColor="?attr/colorOnSurface"
                         android:textSize="13sp" />
 
-                    <at.saltyy.switchly.ui.widgets.UsageDetailChartView
+                    <com.oliver.loqin.ui.widgets.UsageDetailChartView
                         android:id="@+id/chart"
                         android:layout_width="match_parent"
                         android:layout_height="190dp"

@@ -80,7 +80,7 @@
     <!-- Destinations -->
     <LinearLayout
         android:id="@+id/rowSheetApps"
-        style="@style/Switchly.SheetRow"
+        style="@style/LoqIn.SheetRow"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="18dp"
@@ -139,7 +139,7 @@
 
     <LinearLayout
         android:id="@+id/rowSheetWebsites"
-        style="@style/Switchly.SheetRow"
+        style="@style/LoqIn.SheetRow"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
@@ -198,7 +198,7 @@
 
     <LinearLayout
         android:id="@+id/rowSheetInApp"
-        style="@style/Switchly.SheetRow"
+        style="@style/LoqIn.SheetRow"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
@@ -257,7 +257,7 @@
 
     <LinearLayout
         android:id="@+id/rowSheetSchedules"
-        style="@style/Switchly.SheetRow"
+        style="@style/LoqIn.SheetRow"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
@@ -316,7 +316,7 @@
 
     <LinearLayout
         android:id="@+id/rowSheetTempPauses"
-        style="@style/Switchly.SheetRow"
+        style="@style/LoqIn.SheetRow"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
@@ -377,7 +377,7 @@
     <!-- Danger -->
     <LinearLayout
         android:id="@+id/rowSheetDelete"
-        style="@style/Switchly.SheetRow"
+        style="@style/LoqIn.SheetRow"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"

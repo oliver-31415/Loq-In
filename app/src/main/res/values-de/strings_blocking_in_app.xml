@@ -6,17 +6,17 @@
     <!-- ====================================================== -->
     <string name="in_app_rules_title">In-App-Regeln</string>
     <string name="in_app_rules_info_title">In-App-Regeln</string>
-    <string name="in_app_rules_info_body">In-App-Regeln gelten nur für das ausgewählte Profil.\n\nWähle einen Modus:\n• Ausgewählte blockieren: Nur ausgewählte Bereiche werden blockiert.\n• Ausgewählte erlauben: Ausgewählte Bereiche bleiben verfügbar; andere unterstützte Bereiche dieser App werden blockiert.\n\nStatus:\n• Verfügbar: Für die installierte App-Version unterstützt.\n• Experimentell: Kann je nach App-Version, Sprache, Einstiegspunkt oder Gerät unterschiedlich funktionieren.\n• Deaktiviert: Die App ist nicht installiert oder die Regel kann derzeit nicht genutzt werden.\n• Demnächst: Geplant, aber noch nicht funktionsfähig.\n\nSwitchly erkennt diese Bereiche mithilfe der Bedienungshilfe. Bei YouTube Shorts kombiniert 2.2.5 Navigationsstatus, Bildschirmgeometrie und mehrere Text-/Inhaltsbeschreibungs-Signale, statt sich auf eine einzelne interne View-ID zu verlassen. Kurze verzögerte Prüfungen helfen, wenn YouTube Bedienelemente asynchron lädt. Änderungen an unterstützten Apps können die Erkennung weiterhin beeinflussen.\n\nYouTube Shorts kann zwei Ebenen gemeinsam nutzen: Switchly lässt seine eigene Shorts-Erkennung und Blockierung aktiv, während YouTubes natives Einstellungen → Zeitmanagement → Limit für den Shorts-Feed → 0 eine zweite Ebene ergänzt. Switchly erkennt außerdem den nativen Bildschirm „Limit erreicht“ als zusätzliches starkes Shorts-Signal. Das YouTube-Limit kann weiterhin geschlossen werden, daher bleibt Switchly die primäre Blockierung.</string>
+    <string name="in_app_rules_info_body">In-App-Regeln gelten nur für das ausgewählte Profil.\n\nWähle einen Modus:\n• Ausgewählte blockieren: Nur ausgewählte Bereiche werden blockiert.\n• Ausgewählte erlauben: Ausgewählte Bereiche bleiben verfügbar; andere unterstützte Bereiche dieser App werden blockiert.\n\nStatus:\n• Verfügbar: Für die installierte App-Version unterstützt.\n• Experimentell: Kann je nach App-Version, Sprache, Einstiegspunkt oder Gerät unterschiedlich funktionieren.\n• Deaktiviert: Die App ist nicht installiert oder die Regel kann derzeit nicht genutzt werden.\n• Demnächst: Geplant, aber noch nicht funktionsfähig.\n\nLoq In erkennt diese Bereiche mithilfe der Bedienungshilfe. Bei YouTube Shorts kombiniert 2.2.5 Navigationsstatus, Bildschirmgeometrie und mehrere Text-/Inhaltsbeschreibungs-Signale, statt sich auf eine einzelne interne View-ID zu verlassen. Kurze verzögerte Prüfungen helfen, wenn YouTube Bedienelemente asynchron lädt. Änderungen an unterstützten Apps können die Erkennung weiterhin beeinflussen.\n\nYouTube Shorts kann zwei Ebenen gemeinsam nutzen: Loq In lässt seine eigene Shorts-Erkennung und Blockierung aktiv, während YouTubes natives Einstellungen → Zeitmanagement → Limit für den Shorts-Feed → 0 eine zweite Ebene ergänzt. Loq In erkennt außerdem den nativen Bildschirm „Limit erreicht“ als zusätzliches starkes Shorts-Signal. Das YouTube-Limit kann weiterhin geschlossen werden, daher bleibt Loq In die primäre Blockierung.</string>
     <string name="in_app_youtube_native_limit_compact_title">Zusätzlicher Shorts-Schutz</string>
     <string name="in_app_youtube_native_limit_compact_summary">YouTube-Limit · 0 Min. empfohlen</string>
     <string name="in_app_youtube_native_limit_compact_action">Einrichten</string>
     <string name="in_app_youtube_native_limit_guide_title">YouTube Shorts-Feed-Limit</string>
-    <string name="in_app_youtube_native_limit_guide_body">Öffne in YouTube Einstellungen → Zeitmanagement → Limit für den Shorts-Feed und stelle es auf 0 Minuten. Lass die Shorts-Regel in Switchly als primäre Blockierung aktiviert. YouTubes eigenes Limit ist eine zusätzliche Ebene und kann weiterhin geschlossen werden.</string>
+    <string name="in_app_youtube_native_limit_guide_body">Öffne in YouTube Einstellungen → Zeitmanagement → Limit für den Shorts-Feed und stelle es auf 0 Minuten. Lass die Shorts-Regel in Loq In als primäre Blockierung aktiviert. YouTubes eigenes Limit ist eine zusätzliche Ebene und kann weiterhin geschlossen werden.</string>
     <string name="in_app_youtube_open_youtube">YouTube öffnen</string>
     <string name="in_app_rule_mode_title">In-App-Regelmodus</string>
     <string name="in_app_rule_mode_block">Ausgewählte blockieren</string>
     <string name="in_app_rule_mode_allow">Ausgewählte erlauben</string>
-    <string name="in_app_rule_mode_block_summary">Schalter markieren Bereiche, die Switchly blockieren soll.</string>
+    <string name="in_app_rule_mode_block_summary">Schalter markieren Bereiche, die Loq In blockieren soll.</string>
     <string name="in_app_rule_mode_allow_summary">Nur ausgewählte Bereiche bleiben verfügbar. Andere unterstützte Bereiche dieser App werden blockiert, sobald mindestens ein Bereich ausgewählt ist.</string>
     <string name="in_app_rule_allow_confirm_title">„Ausgewählte erlauben“ verwenden?</string>
     <string name="in_app_rule_allow_confirm_body_counted">Mit den aktuell installierten Apps gilt: %1$s und %2$s. Apps ohne ausgewählten Bereich sind nicht betroffen.</string>
@@ -73,7 +73,7 @@
     <!-- ====================================================== -->
     <string name="edit">Bearbeiten</string>
     <string name="blocking_in_app_limit_reached_title">In-App-Limit erreicht!</string>
-    <string name="blocking_instagram_comments_blocked_message">Instagram-Kommentare werden von Switchly blockiert.</string>
+    <string name="blocking_instagram_comments_blocked_message">Instagram-Kommentare werden von Loq In blockiert.</string>
     <string name="blocking_daily_limit_duration_fmt">Tägliches Limit: %1$s</string>
 
     <!-- ====================================================== -->
@@ -81,7 +81,7 @@
     <!-- ====================================================== -->
     <string name="blocking_surface_blocked_title">%1$s ist blockiert!</string>
     <string name="blocking_comments_blocked_title">Kommentare sind blockiert!</string>
-    <string name="blocking_surface_base_message">Du kannst diese App-Funktion nicht nutzen, solange Switchly aktiv ist.</string>
+    <string name="blocking_surface_base_message">Du kannst diese App-Funktion nicht nutzen, solange Loq In aktiv ist.</string>
 
     <string name="in_app_rules_active_summary_block">%1$d von %2$d Bereichen blockiert</string>
     <string name="in_app_rules_active_summary_allow">%1$d von %2$d Bereichen erlaubt</string>

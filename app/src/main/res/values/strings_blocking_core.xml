@@ -7,8 +7,8 @@
     <string name="rules_hub_title">Rules</string>
     <string name="rules_hub_profiles_section">Profiles</string>
     <string name="rules_hub_categories_section">Rules for this profile</string>
-    <string name="switchly_rules_locked_title">Open Rules?</string>
-    <string name="rules_restricted_open_message">Switchly is active. You can still add protection to the active profile. Changes that remove protection, widen allowed exceptions, switch rule modes, or edit protected settings remain locked.</string>
+    <string name="loqin_rules_locked_title">Open Rules?</string>
+    <string name="rules_restricted_open_message">Loq In is active. You can still add protection to the active profile. Changes that remove protection, widen allowed exceptions, switch rule modes, or edit protected settings remain locked.</string>
     <string name="rules_open_restricted">Open Rules</string>
     <string name="rules_apps_title">App rules</string>
     <string name="rules_apps_summary">Choose blocked or allowed apps, limits, and app rules</string>
@@ -26,6 +26,6 @@
     <!-- ====================================================== -->
     <!-- Active protection editing -->
     <!-- ====================================================== -->
-    <string name="rules_tighten_only_active_message">You can add more protection while Switchly is active. Removing existing protection or widening allowed exceptions still requires an allowed control action.</string>
+    <string name="rules_tighten_only_active_message">You can add more protection while Loq In is active. Removing existing protection or widening allowed exceptions still requires an allowed control action.</string>
 
 </resources>

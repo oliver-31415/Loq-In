@@ -11,7 +11,7 @@
     <!-- Android 16+ public API used to detect Advanced Protection Mode and explain limited fallback behavior -->
     <uses-permission android:name="android.permission.QUERY_ADVANCED_PROTECTION_MODE" tools:targetApi="36" />
 
-    <!-- Direct system prompt for excluding Switchly from battery optimization -->
+    <!-- Direct system prompt for excluding LoqIn from battery optimization -->
     <uses-permission
         android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS"
         tools:ignore="BatteryLife" />
@@ -89,12 +89,12 @@
     <!-- Camera access for QR and barcode scanning -->
     <uses-permission android:name="android.permission.CAMERA" />
 
-    <!-- Camera hardware is optional so Switchly can install on devices without a camera -->
+    <!-- Camera hardware is optional so LoqIn can install on devices without a camera -->
     <uses-feature
         android:name="android.hardware.camera"
         android:required="false" />
 
-    <!-- NFC hardware is optional so Switchly can install on devices without NFC -->
+    <!-- NFC hardware is optional so LoqIn can install on devices without NFC -->
     <uses-feature
         android:name="android.hardware.nfc"
         android:required="false" />
@@ -131,11 +131,11 @@
     </queries>
 
     <application
-        android:name=".app.SwitchlyApp"
+        android:name=".app.LoqInApp"
         android:label="@string/app_name"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher_round"
-        android:theme="@style/Theme.Switchly"
+        android:theme="@style/Theme.LoqIn"
         android:screenOrientation="portrait"
         android:supportsRtl="true"
         android:allowBackup="false"
@@ -161,7 +161,7 @@
             android:permission="android.permission.BIND_DEVICE_ADMIN">
             <meta-data
                 android:name="android.app.device_admin"
-                android:resource="@xml/switchly_device_admin" />
+                android:resource="@xml/loqin_device_admin" />
             <intent-filter>
                 <action android:name="android.app.action.DEVICE_ADMIN_ENABLED" />
             </intent-filter>
@@ -260,17 +260,17 @@
             android:name=".nfc.NfcWriteWaitingActivity"
             android:exported="false" />
 
-        <!-- NFC dispatch activity for Switchly NDEF and fallback tag scans -->
+        <!-- NFC dispatch activity for LoqIn NDEF and fallback tag scans -->
         <activity
             android:name=".nfc.NfcEntryActivity"
             android:exported="true"
             android:launchMode="singleTop">
 
-            <!-- Switchly action and legacy URI tags. Host validation happens in code. -->
+            <!-- LoqIn action and legacy URI tags. Host validation happens in code. -->
             <intent-filter>
                 <action android:name="android.nfc.action.NDEF_DISCOVERED" />
                 <category android:name="android.intent.category.DEFAULT" />
-                <data android:scheme="switchly" />
+                <data android:scheme="loqin" />
             </intent-filter>
 
             <!-- Paired UID fallback for writable tags that contain unrelated plain text. -->
@@ -289,7 +289,7 @@
                 android:name="android.nfc.action.TECH_DISCOVERED"
                 android:resource="@xml/nfc_tech_filter" />
 
-            <!-- Fallback for blank/non-NDEF tags so Switchly can still react. -->
+            <!-- Fallback for blank/non-NDEF tags so LoqIn can still react. -->
             <intent-filter>
                 <action android:name="android.nfc.action.TAG_DISCOVERED" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -303,7 +303,7 @@
             android:excludeFromRecents="true"
             android:taskAffinity=""
             android:launchMode="singleTask"
-            android:theme="@style/Theme.Switchly.Blocker"
+            android:theme="@style/Theme.LoqIn.Blocker"
             tools:ignore="DiscouragedApi" />
 
         <!-- Support log viewer -->
@@ -364,7 +364,7 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="switchly" />
+                <data android:scheme="loqin" />
             </intent-filter>
         </activity>
 
@@ -402,9 +402,9 @@
             android:label="@string/support_title"
             android:parentActivityName=".feature.settings.SettingsActivity" />
 
-        <!-- Switchly action and input overview -->
+        <!-- LoqIn action and input overview -->
         <activity
-            android:name=".feature.usage.SwitchlyOverviewActivity"
+            android:name=".feature.usage.LoqInOverviewActivity"
             android:exported="false" />
 
         <!-- Active time overview -->
@@ -417,7 +417,7 @@
             android:name=".feature.usage.ActiveTimeDetailActivity"
             android:exported="false" />
 
-        <!-- Recent Switchly activity timeline -->
+        <!-- Recent LoqIn activity timeline -->
         <activity
             android:name=".feature.usage.ActivityHistoryActivity"
             android:exported="false" />
@@ -508,16 +508,6 @@
             android:name=".feature.about.DeviceInfoActivity"
             android:exported="false" />
 
-        <!-- Other Switchly products screen -->
-        <activity
-            android:name=".feature.about.OtherSwitchlyProductsActivity"
-            android:exported="false" />
-
-        <!-- Developer information screen -->
-        <activity
-            android:name=".feature.about.DeveloperInfoActivity"
-            android:exported="false" />
-
         <activity
             android:name=".feature.about.PrivacyReportActivity"
             android:exported="false" />
@@ -590,11 +580,11 @@
             android:name=".platform.receiver.schedule.ScheduleReceiver"
             android:exported="false" />
 
-        <!-- Quick Settings tile for toggling Switchly -->
+        <!-- Quick Settings tile for toggling LoqIn -->
         <service
-            android:name=".platform.tile.SwitchlyTileService"
+            android:name=".platform.tile.LoqInTileService"
             android:exported="true"
-            android:icon="@drawable/qs_switchly_24"
+            android:icon="@drawable/qs_loqin_24"
             android:label="@string/app_name"
             android:permission="android.permission.BIND_QUICK_SETTINGS_TILE">
             <intent-filter>
@@ -736,7 +726,7 @@
             android:label="@string/widget_next_schedule_name">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
-                <action android:name="at.saltyy.switchly.schedule.NEXT_CHANGED" />
+                <action android:name="com.oliver.loqin.schedule.NEXT_CHANGED" />
                 <action android:name="android.intent.action.TIME_SET" />
                 <action android:name="android.intent.action.TIMEZONE_CHANGED" />
                 <action android:name="android.intent.action.DATE_CHANGED" />
@@ -747,7 +737,7 @@
                 android:resource="@xml/next_schedule_widget_info" />
         </receiver>
 
-        <!-- Home-screen widget showing the current active Switchly timer -->
+        <!-- Home-screen widget showing the current active LoqIn timer -->
         <receiver
             android:name=".feature.widget.ActiveTimerWidgetProvider"
             android:exported="true"
@@ -762,7 +752,7 @@
 
         <!-- Accessibility service used for app and website blocking -->
         <service
-            android:name=".blocking.SwitchlyAccessibilityService"
+            android:name=".blocking.LoqInAccessibilityService"
             android:exported="false"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
             android:stopWithTask="false">
@@ -771,12 +761,12 @@
             </intent-filter>
             <meta-data
                 android:name="android.accessibilityservice"
-                android:resource="@xml/switchly_accessibility_config" />
+                android:resource="@xml/loqin_accessibility_config" />
         </service>
 
         <!--
              vivo/iQOO may terminate the app process when its Recent Apps task is removed, even while Android still visually reports the Accessibility service as enabled.
-             This targeted guard keeps the process foreground-important only on affected OEMs while Switchly protection is enabled. 
+             This targeted guard keeps the process foreground-important only on affected OEMs while LoqIn protection is enabled. 
              It does not grant or re-enable Accessibility.
         -->
         <service
@@ -786,7 +776,7 @@
             android:stopWithTask="false">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="Keeps the user-enabled Switchly Accessibility blocking runtime alive on vivo/iQOO devices that otherwise terminate the app process when its Recent Apps task is removed." />
+                android:value="Keeps the user-enabled Loq In Accessibility blocking runtime alive on vivo/iQOO devices that otherwise terminate the app process when its Recent Apps task is removed." />
         </service>
 
         <!--

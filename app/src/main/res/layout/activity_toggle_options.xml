@@ -15,7 +15,7 @@
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
-            style="@style/Switchly.TopBar"
+            style="@style/LoqIn.TopBar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:minHeight="?attr/actionBarSize"
@@ -124,7 +124,7 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnOpenFaqTips"
-                        style="@style/Switchly.TextButton"
+                        style="@style/LoqIn.TextButton"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
@@ -1090,7 +1090,7 @@
                     android:orientation="vertical"
                     android:padding="6dp">
 
-                    <!-- Require NFC to disable Switchly -->
+                    <!-- Require NFC to disable LoqIn -->
                     <LinearLayout
                         android:id="@+id/rowRequireNfcUnlock"
                         android:layout_width="match_parent"
@@ -1552,7 +1552,7 @@
                         android:background="?attr/colorOnSurface"
                         android:alpha="0.12" />
 
-                    <!-- Start Switchly after reboot -->
+                    <!-- Start LoqIn after reboot -->
                     <LinearLayout
                         android:id="@+id/rowAutostart"
                         android:layout_width="match_parent"
@@ -1741,7 +1741,7 @@
                 android:alpha="0.82"
                 android:text="@string/toggle_section_ui_summary" />
 
-            <!-- In-app Home: Switchly Home cards and shortcuts -->
+            <!-- In-app Home: LoqIn Home cards and shortcuts -->
             <TextView
                 android:id="@+id/tvDisplayHomeSection"
                 android:textAppearance="?attr/textAppearanceSubtitle1"

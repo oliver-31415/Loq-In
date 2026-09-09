@@ -30,9 +30,9 @@
     <string name="qr_minutes_custom">Benutzerdefiniert…</string>
     <string name="qr_minutes_custom_title">Benutzerdefinierte Minuten</string>
     <string name="qr_minutes_hint">Minuten eingeben</string>
-    <string name="qr_clipboard_label">Switchly-URI</string>
+    <string name="qr_clipboard_label">Loq In-URI</string>
     <string name="qr_profile_fallback">Profil</string>
-    <string name="qr_scan_with_switchly_hint">Mit Switchly scannen. Externe Scanner können ihn als Suche öffnen.</string>
+    <string name="qr_scan_with_loqin_hint">Mit Loq In scannen. Externe Scanner können ihn als Suche öffnen.</string>
 
     <!-- ====================================================== -->
     <!-- QR scanner and errors -->
@@ -43,14 +43,14 @@
     <!-- ====================================================== -->
     <!-- QR entry points -->
     <!-- ====================================================== -->
-    <string name="qr_scan_option_summary">Kamera öffnen und einen vorhandenen Switchly-QR-Code scannen.</string>
-    <string name="qr_manage_option_summary">Switchly-QR-Aktionen erstellen, anzeigen, speichern oder teilen.</string>
+    <string name="qr_scan_option_summary">Kamera öffnen und einen vorhandenen Loq In-QR-Code scannen.</string>
+    <string name="qr_manage_option_summary">Loq In-QR-Aktionen erstellen, anzeigen, speichern oder teilen.</string>
 
     <!-- ====================================================== -->
     <!-- Camera permission and external scanner confirmation -->
     <!-- ====================================================== -->
-    <string name="external_qr_confirm_title">Switchly-QR-Aktion ausführen?</string>
-    <string name="external_qr_confirm_message">Dieser Link wurde von einem externen QR-Scanner geöffnet. Fahre nur fort, wenn du bewusst einen Switchly-QR-Code gescannt hast.</string>
+    <string name="external_qr_confirm_title">Loq In-QR-Aktion ausführen?</string>
+    <string name="external_qr_confirm_message">Dieser Link wurde von einem externen QR-Scanner geöffnet. Fahre nur fort, wenn du bewusst einen Loq In-QR-Code gescannt hast.</string>
     <string name="external_qr_confirm_action">Aktion ausführen</string>
 
     <!-- ====================================================== -->

@@ -9,7 +9,7 @@
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tilDomain"
-        style="@style/Switchly.TextInputLayout"
+        style="@style/LoqIn.TextInputLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="@string/domain_rule_hint_example"
@@ -27,7 +27,7 @@
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tilMode"
-        style="@style/Switchly.DropdownLayout"
+        style="@style/LoqIn.DropdownLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
@@ -35,7 +35,7 @@
 
         <com.google.android.material.textfield.MaterialAutoCompleteTextView
             android:id="@+id/acMode"
-            style="@style/Switchly.AutoCompleteText"
+            style="@style/LoqIn.AutoCompleteText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="none"
@@ -44,7 +44,7 @@
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tilDailyLimit"
-        style="@style/Switchly.TextInputLayout"
+        style="@style/LoqIn.TextInputLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"

@@ -3,7 +3,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    style="@style/Switchly.Card"
+    style="@style/LoqIn.Card"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginTop="8dp">
@@ -26,7 +26,7 @@
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
                 android:textAppearance="@style/TextAppearance.Material3.TitleMedium"
-                android:textColor="@color/switchly_text_primary"
+                android:textColor="@color/loqin_text_primary"
                 tools:text="v2.2.1-beta" />
 
             <TextView
@@ -34,7 +34,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:textAppearance="@style/TextAppearance.Material3.LabelMedium"
-                android:textColor="@color/switchly_text_secondary"
+                android:textColor="@color/loqin_text_secondary"
                 tools:text="Jul 9, 2026" />
         </LinearLayout>
 
@@ -44,7 +44,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
             android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-            android:textColor="@color/switchly_text_primary"
+            android:textColor="@color/loqin_text_primary"
             android:lineSpacingExtra="4dp"
             android:breakStrategy="balanced"
             android:hyphenationFrequency="normal"
@@ -52,7 +52,7 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnToggleBody"
-            style="@style/Switchly.TextButton"
+            style="@style/LoqIn.TextButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"

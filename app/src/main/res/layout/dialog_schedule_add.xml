@@ -22,7 +22,7 @@
         <!-- 1. SCHEDULE TITLE (AT THE VERY TOP) -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/layoutTitle"
-            style="@style/Switchly.TextInputLayout"
+            style="@style/LoqIn.TextInputLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
@@ -111,7 +111,7 @@
         <!-- 2B. PROFILE SELECTOR (When choosing profile freely) -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/layoutProfile"
-            style="@style/Switchly.DropdownLayout"
+            style="@style/LoqIn.DropdownLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
@@ -120,7 +120,7 @@
 
             <com.google.android.material.textfield.MaterialAutoCompleteTextView
                 android:id="@+id/spinnerProfile"
-                style="@style/Switchly.DropdownText"
+                style="@style/LoqIn.DropdownText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
@@ -138,7 +138,7 @@
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/layoutTimeMode"
-                style="@style/Switchly.DropdownLayout"
+                style="@style/LoqIn.DropdownLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="@string/schedules_time_mode"
@@ -146,7 +146,7 @@
 
                 <com.google.android.material.textfield.MaterialAutoCompleteTextView
                     android:id="@+id/spinnerTimeMode"
-                    style="@style/Switchly.DropdownText"
+                    style="@style/LoqIn.DropdownText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center_vertical"
@@ -167,7 +167,7 @@
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/layoutWifiSsid"
-                style="@style/Switchly.TextInputLayout"
+                style="@style/LoqIn.TextInputLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="@string/schedules_wifi_ssid_hint"
@@ -210,7 +210,7 @@
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/layoutBtName"
-                style="@style/Switchly.TextInputLayout"
+                style="@style/LoqIn.TextInputLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="@string/schedules_bt_name_hint"
@@ -266,7 +266,7 @@
             <!-- Single location box: type an address or coordinates, then Search -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/layoutLocationQuery"
-                style="@style/Switchly.TextInputLayout"
+                style="@style/LoqIn.TextInputLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="@string/schedules_location_picker_hint"
@@ -386,7 +386,7 @@
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chipRadius100"
-                    style="@style/Switchly.DayChip"
+                    style="@style/LoqIn.DayChip"
                     app:chipStrokeWidth="0dp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -395,7 +395,7 @@
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chipRadius250"
-                    style="@style/Switchly.DayChip"
+                    style="@style/LoqIn.DayChip"
                     app:chipStrokeWidth="0dp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -404,7 +404,7 @@
 
                 <com.google.android.material.chip.Chip
                     android:id="@+id/chipRadius500"
-                    style="@style/Switchly.DayChip"
+                    style="@style/LoqIn.DayChip"
                     app:chipStrokeWidth="0dp"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -414,7 +414,7 @@
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/layoutLocationTrigger"
-                style="@style/Switchly.DropdownLayout"
+                style="@style/LoqIn.DropdownLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
@@ -423,7 +423,7 @@
 
                 <com.google.android.material.textfield.MaterialAutoCompleteTextView
                     android:id="@+id/spinnerLocationTrigger"
-                    style="@style/Switchly.DropdownText"
+                    style="@style/LoqIn.DropdownText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center_vertical"
@@ -433,7 +433,7 @@
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/layoutLocationCooldown"
-                style="@style/Switchly.DropdownLayout"
+                style="@style/LoqIn.DropdownLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
@@ -442,7 +442,7 @@
 
                 <com.google.android.material.textfield.MaterialAutoCompleteTextView
                     android:id="@+id/spinnerLocationCooldown"
-                    style="@style/Switchly.DropdownText"
+                    style="@style/LoqIn.DropdownText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center_vertical"
@@ -461,7 +461,7 @@
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/layoutAction"
-                style="@style/Switchly.DropdownLayout"
+                style="@style/LoqIn.DropdownLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="@string/schedules_field_action"
@@ -469,7 +469,7 @@
 
                 <com.google.android.material.textfield.MaterialAutoCompleteTextView
                     android:id="@+id/spinnerAction"
-                    style="@style/Switchly.DropdownText"
+                    style="@style/LoqIn.DropdownText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center_vertical"
@@ -500,7 +500,7 @@
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/layoutConnActionConnect"
-                style="@style/Switchly.DropdownLayout"
+                style="@style/LoqIn.DropdownLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:hint="@string/schedules_when_connected"
@@ -508,7 +508,7 @@
 
                 <com.google.android.material.textfield.MaterialAutoCompleteTextView
                     android:id="@+id/spinnerConnActionConnect"
-                    style="@style/Switchly.DropdownText"
+                    style="@style/LoqIn.DropdownText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center_vertical"
@@ -518,7 +518,7 @@
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/layoutConnActionDisconnect"
-                style="@style/Switchly.DropdownLayout"
+                style="@style/LoqIn.DropdownLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp"
@@ -527,7 +527,7 @@
 
                 <com.google.android.material.textfield.MaterialAutoCompleteTextView
                     android:id="@+id/spinnerConnActionDisconnect"
-                    style="@style/Switchly.DropdownText"
+                    style="@style/LoqIn.DropdownText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center_vertical"
@@ -1202,7 +1202,7 @@
         <!-- 9. NOTE (AT THE VERY BOTTOM) -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/layoutNote"
-            style="@style/Switchly.TextInputLayout"
+            style="@style/LoqIn.TextInputLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:hint="@string/schedules_field_note_hint"

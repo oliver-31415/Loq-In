@@ -13,7 +13,7 @@
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
-            style="@style/Switchly.TopBar"
+            style="@style/LoqIn.TopBar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:minHeight="?attr/actionBarSize"
@@ -31,7 +31,7 @@
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardWebsiteRuleSettings"
-            style="@style/Switchly.Card"
+            style="@style/LoqIn.Card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
@@ -167,7 +167,7 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnEmptyAddWebsite"
-                        style="@style/Switchly.OutlinedButton"
+                        style="@style/LoqIn.OutlinedButton"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="14dp"

@@ -13,7 +13,7 @@
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
-            style="@style/Switchly.TopBar"
+            style="@style/LoqIn.TopBar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:minHeight="?attr/actionBarSize"
@@ -52,13 +52,13 @@
                 android:layout_marginTop="8dp"
                 android:gravity="center"
                 android:textAppearance="?attr/textAppearanceBodyMedium"
-                android:textColor="@color/switchly_text_primary"
+                android:textColor="@color/loqin_text_primary"
                 android:textIsSelectable="true" />
 
             <!-- Action dropdown -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilAction"
-                style="@style/Switchly.DropdownLayout"
+                style="@style/LoqIn.DropdownLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
@@ -67,7 +67,7 @@
 
                 <com.google.android.material.textfield.MaterialAutoCompleteTextView
                     android:id="@+id/actionDropdown"
-                    style="@style/Switchly.DropdownText"
+                    style="@style/LoqIn.DropdownText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="none" />
@@ -76,7 +76,7 @@
             <!-- Profile dropdown (shown only for profile actions) -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilProfile"
-                style="@style/Switchly.DropdownLayout"
+                style="@style/LoqIn.DropdownLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
@@ -86,7 +86,7 @@
 
                 <com.google.android.material.textfield.MaterialAutoCompleteTextView
                     android:id="@+id/profileDropdown"
-                    style="@style/Switchly.DropdownText"
+                    style="@style/LoqIn.DropdownText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="none" />
@@ -95,7 +95,7 @@
             <!-- Minutes dropdown (shown only for temp actions) -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilMinutes"
-                style="@style/Switchly.DropdownLayout"
+                style="@style/LoqIn.DropdownLayout"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
@@ -105,7 +105,7 @@
 
                 <com.google.android.material.textfield.MaterialAutoCompleteTextView
                     android:id="@+id/minutesDropdown"
-                    style="@style/Switchly.DropdownText"
+                    style="@style/LoqIn.DropdownText"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:inputType="none" />
@@ -120,7 +120,7 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnCopy"
-                    style="@style/Switchly.Button"
+                    style="@style/LoqIn.Button"
                     android:layout_width="0dp"
                     android:layout_height="48dp"
                     android:layout_weight="1"
@@ -135,7 +135,7 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnShare"
-                    style="@style/Switchly.Button"
+                    style="@style/LoqIn.Button"
                     android:layout_width="0dp"
                     android:layout_height="48dp"
                     android:layout_weight="1"
@@ -152,9 +152,9 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:gravity="center"
-                android:text="@string/qr_scan_with_switchly_hint"
+                android:text="@string/qr_scan_with_loqin_hint"
                 android:textAppearance="?attr/textAppearanceBodyMedium"
-                android:textColor="@color/switchly_text_secondary" />
+                android:textColor="@color/loqin_text_secondary" />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

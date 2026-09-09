@@ -65,7 +65,7 @@
     <string name="schedules_wifi_enable_wifi">Please turn on Wi-Fi first.</string>
     <string name="schedules_wifi_location_required">Location must be turned on to read the Wi-Fi SSID.</string>
     <string name="schedules_wifi_location_hint">Wi-Fi schedules need Wi-Fi access to read the current SSID. On Android 13+, also allow Nearby Wi-Fi devices. Make sure Location is turned on in Quick Settings.</string>
-    <string name="schedules_wifi_fix_message">Switchly can only read Wi-Fi names when you are connected to Wi-Fi and Location is enabled (Android 10+). If you just connected, come back and tap “Use current Wi-Fi” again.</string>
+    <string name="schedules_wifi_fix_message">Loq In can only read Wi-Fi names when you are connected to Wi-Fi and Location is enabled (Android 10+). If you just connected, come back and tap “Use current Wi-Fi” again.</string>
     <string name="schedules_wifi_open_picker">Open Wi-Fi picker</string>
     <string name="schedules_wifi_pick_title">Pick a Wi-Fi network</string>
     <string name="schedules_wifi_retry_scan">Retry scan</string>
@@ -90,10 +90,10 @@
     <string name="schedules_insight_timeline_item_fmt">%1$s - %2$s “%3$s” (%4$s)</string>
     <string name="schedules_overlap_warning_title">Overlapping schedule</string>
     <string name="schedules_overlap_warning_message_fmt">This overlaps with “%1$s”. The later schedule may override the active profile.\n\nSave anyway?</string>
-    <string name="schedules_overlap_enabled_message_fmt">This overlaps with “%1$s”. If both schedules match, Switchly uses schedule priority and logs the decision.</string>
+    <string name="schedules_overlap_enabled_message_fmt">This overlaps with “%1$s”. If both schedules match, Loq In uses schedule priority and logs the decision.</string>
     <string name="schedules_overlap_warning_save">Save anyway</string>
-    <string name="schedules_dialog_nfc_lock_hint">NFC lock active: this action cannot change the Switchly state until you unlock with NFC/QR.</string>
-    <string name="schedules_nfc_lock_add_dialog_hint">NFC lock is active. Only actions that do not disable Switchly are shown right now.</string>
+    <string name="schedules_dialog_nfc_lock_hint">NFC lock active: this action cannot change the Loq In state until you unlock with NFC/QR.</string>
+    <string name="schedules_nfc_lock_add_dialog_hint">NFC lock is active. Only actions that do not disable Loq In are shown right now.</string>
     <string name="schedules_dialog_nfc_lock_filtered_hint">NFC lock is active. Conflicting disable/toggle actions are hidden.</string>
     <plurals name="delete_schedules_confirm">
         <item quantity="one">Delete %1$d schedule?</item>
@@ -162,12 +162,12 @@
     <string name="schedules_attached_profile_caption">Attached profile</string>
     <string name="schedules_attached_badge">Locked to profile</string>
     <string name="schedules_action_info_title">Schedule actions</string>
-    <string name="schedules_action_info_enable_body">Enables Switchly with the selected profile when the schedule starts.</string>
-    <string name="schedules_action_info_disable_body">Disables Switchly when the schedule starts. Use this only for planned breaks.</string>
-    <string name="schedules_action_info_toggle_body">Flips the current state. If Switchly is enabled it disables it, and if it is disabled it enables it.</string>
-    <string name="schedules_action_info_enable_disable_body">Enables Switchly for the selected time range, then disables it again at the end.</string>
-    <string name="schedules_action_info_disable_enable_body">Disables Switchly for the selected time range, then enables it again at the end.</string>
-    <string name="schedules_action_info_tip">Tip: If schedules overlap, Switchly uses the priority below and logs the decision. Make sure battery/background permissions are allowed so schedule checks can run reliably.</string>
+    <string name="schedules_action_info_enable_body">Enables Loq In with the selected profile when the schedule starts.</string>
+    <string name="schedules_action_info_disable_body">Disables Loq In when the schedule starts. Use this only for planned breaks.</string>
+    <string name="schedules_action_info_toggle_body">Flips the current state. If Loq In is enabled it disables it, and if it is disabled it enables it.</string>
+    <string name="schedules_action_info_enable_disable_body">Enables Loq In for the selected time range, then disables it again at the end.</string>
+    <string name="schedules_action_info_disable_enable_body">Disables Loq In for the selected time range, then enables it again at the end.</string>
+    <string name="schedules_action_info_tip">Tip: If schedules overlap, Loq In uses the priority below and logs the decision. Make sure battery/background permissions are allowed so schedule checks can run reliably.</string>
 
     <!-- ====================================================== -->
     <!-- Schedule days and groups -->
@@ -244,7 +244,7 @@
     <string name="schedules_error_bt_required">Please enter a Bluetooth device name.</string>
     <string name="schedules_error_location_required">Please choose a location first.</string>
 
-    <string name="schedules_priority_info_body">Priority when actions overlap:\n1. Manual/NFC override\n2. Emergency unlock\n3. Temporary actions\n4. Location schedules\n5. Wi-Fi/Bluetooth schedules\n6. Time schedules\n\nIf multiple schedules match, Switchly logs the conflict and applies the winning schedule instead of silently hiding it.</string>
+    <string name="schedules_priority_info_body">Priority when actions overlap:\n1. Manual/NFC override\n2. Emergency unlock\n3. Temporary actions\n4. Location schedules\n5. Wi-Fi/Bluetooth schedules\n6. Time schedules\n\nIf multiple schedules match, Loq In logs the conflict and applies the winning schedule instead of silently hiding it.</string>
 
     <!-- ====================================================== -->
     <!-- Entry point/dialog -->

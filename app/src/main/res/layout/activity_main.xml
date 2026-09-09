@@ -5,7 +5,7 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/switchly_bg"
+    android:background="@color/loqin_bg"
     tools:ignore="UseCompoundDrawables,Overdraw,TooManyViews">
 
     <!-- Content -->
@@ -31,7 +31,7 @@
             <!-- Foqos AppTitle equivalent: inline title, scrolls with content -->
             <com.google.android.material.appbar.MaterialToolbar
                 android:id="@+id/toolbar"
-                style="@style/Switchly.TopBar"
+                style="@style/LoqIn.TopBar"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:minHeight="0dp"
@@ -39,13 +39,13 @@
                 android:paddingBottom="2dp"
                 app:navigationIcon="@null"
                 app:title="@string/app_name"
-                app:titleTextAppearance="@style/TextAppearance.Switchly.LargeTitle" />
+                app:titleTextAppearance="@style/TextAppearance.LoqIn.LargeTitle" />
 
 
             <!-- Setup/permissions -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardSetup"
-                style="@style/Switchly.Card"
+                style="@style/LoqIn.Card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:visibility="gone">
@@ -121,7 +121,7 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnFinishSetup"
-                        style="@style/Switchly.Button"
+                        style="@style/LoqIn.Button"
                         android:layout_width="match_parent"
                         android:layout_height="56dp"
                         android:layout_marginTop="16dp"
@@ -154,7 +154,7 @@
 
                 <LinearLayout
                     android:id="@+id/btnActivityHide"
-                    style="@style/Switchly.HeaderPill"
+                    style="@style/LoqIn.HeaderPill"
                     android:layout_width="wrap_content"
                     android:layout_height="38dp"
                     android:layout_marginEnd="8dp">
@@ -179,7 +179,7 @@
 
                 <LinearLayout
                     android:id="@+id/btnMoreInsights"
-                    style="@style/Switchly.HeaderPill"
+                    style="@style/LoqIn.HeaderPill"
                     android:layout_width="wrap_content"
                     android:layout_height="38dp">
 
@@ -205,7 +205,7 @@
 
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardActivity"
-                style="@style/Switchly.Card"
+                style="@style/LoqIn.Card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
@@ -226,7 +226,7 @@
                         android:textSize="12sp"
                         tools:text="legend" />
 
-                    <at.saltyy.switchly.ui.widgets.FoqosHeatmapView
+                    <com.oliver.loqin.ui.widgets.FoqosHeatmapView
                         android:id="@+id/activityHeatmap"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
@@ -254,7 +254,7 @@
             <!-- Status/primary action -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardStatus"
-                style="@style/Switchly.Card"
+                style="@style/LoqIn.Card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
@@ -287,7 +287,7 @@
 
                         <LinearLayout
                             android:id="@+id/btnManageProfiles"
-                            style="@style/Switchly.HeaderPill"
+                            style="@style/LoqIn.HeaderPill"
                             android:layout_width="wrap_content"
                             android:layout_height="38dp">
 
@@ -488,7 +488,7 @@
 
                             <com.google.android.material.button.MaterialButton
                                 android:id="@+id/btnToggle"
-                                style="@style/Switchly.Button"
+                                style="@style/LoqIn.Button"
                                 android:layout_width="0dp"
                                 android:layout_height="50dp"
                                 android:layout_weight="1"
@@ -520,7 +520,7 @@
                         android:visibility="gone" />
 
                     <com.google.android.material.divider.MaterialDivider
-                        style="@style/Switchly.Divider"
+                        style="@style/LoqIn.Divider"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
@@ -629,7 +629,7 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnSimplePickApps"
-                        style="@style/Switchly.OutlinedButton"
+                        style="@style/LoqIn.OutlinedButton"
                         android:layout_width="match_parent"
                         android:layout_height="44dp"
                         android:layout_marginTop="8dp"
@@ -790,7 +790,7 @@
 
                     <com.google.android.material.divider.MaterialDivider
                         android:id="@+id/dividerBeforeProfileDropdown"
-                        style="@style/Switchly.Divider"
+                        style="@style/LoqIn.Divider"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="14dp"
@@ -799,7 +799,7 @@
                     <!-- Profile dropdown (replaced by profile rows; kept for compat) -->
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/layoutProfileDropdown"
-                        style="@style/Switchly.DropdownLayout"
+                        style="@style/LoqIn.DropdownLayout"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:visibility="gone"
@@ -808,7 +808,7 @@
 
                         <com.google.android.material.textfield.MaterialAutoCompleteTextView
                             android:id="@+id/profileDropdown"
-                            style="@style/Switchly.DropdownText"
+                            style="@style/LoqIn.DropdownText"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:hint="@null"
@@ -827,7 +827,7 @@
             <!-- Next schedule (optional; hidden in SPA home) -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardNextSchedule"
-                style="@style/Switchly.Card"
+                style="@style/LoqIn.Card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
@@ -886,7 +886,7 @@
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardBlockedApps"
                 android:visibility="gone"
-                style="@style/Switchly.Card"
+                style="@style/LoqIn.Card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp">
@@ -919,7 +919,7 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnPickApps"
-                            style="@style/Switchly.TextButton"
+                            style="@style/LoqIn.TextButton"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/pick_apps"
@@ -946,7 +946,7 @@
                         android:orientation="vertical">
 
                         <com.google.android.material.divider.MaterialDivider
-                            style="@style/Switchly.Divider"
+                            style="@style/LoqIn.Divider"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="12dp"

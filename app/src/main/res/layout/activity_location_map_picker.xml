@@ -59,7 +59,7 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnMapPickerSearch"
-            style="@style/Switchly.OutlinedButton"
+            style="@style/LoqIn.OutlinedButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"

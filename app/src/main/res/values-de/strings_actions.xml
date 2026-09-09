@@ -10,12 +10,12 @@
     <!-- ====================================================== -->
     <!-- Quick Settings tiles -->
     <!-- ====================================================== -->
-    <string name="qs_label_on">Switchly EIN</string>
-    <string name="qs_label_off">Switchly AUS</string>
+    <string name="qs_label_on">Loq In EIN</string>
+    <string name="qs_label_off">Loq In AUS</string>
     <string name="qs_added_ok">Kachel hinzugefügt</string>
     <string name="qs_added_already">Kachel ist bereits hinzugefügt</string>
     <string name="qs_added_cancel">Abgebrochen</string>
-    <string name="qs_tile_add_hint">Schnelleinstellungen öffnen → Bearbeiten → „Switchly“ zu den aktiven Kacheln ziehen</string>
+    <string name="qs_tile_add_hint">Schnelleinstellungen öffnen → Bearbeiten → „Loq In“ zu den aktiven Kacheln ziehen</string>
     <string name="qr_qs_tile_add_hint">Schnelleinstellungen öffnen → Bearbeiten → „QR scannen“ zu den aktiven Kacheln ziehen</string>
     <string name="barcode_qs_tile_add_hint">Schnelleinstellungen öffnen → Bearbeiten → „Barcode scannen“ zu den aktiven Kacheln ziehen</string>
 
@@ -23,18 +23,18 @@
     <!-- Updates -->
     <!-- ====================================================== -->
     <string name="update_available_title">Update verfügbar</string>
-    <string name="update_available_message">Eine neue Switchly-Version ist im Google Play Store verfügbar.</string>
+    <string name="update_available_message">Eine neue Loq In-Version ist im Google Play Store verfügbar.</string>
     <string name="update_available_cta">Aktualisieren</string>
-    <string name="switchly_update_up_to_date">Du bist bereits auf dem neuesten Stand</string>
-    <string name="switchly_update_check_failed">Google Play konnte nicht auf Updates geprüft werden.</string>
+    <string name="loqin_update_up_to_date">Du bist bereits auf dem neuesten Stand</string>
+    <string name="loqin_update_check_failed">Google Play konnte nicht auf Updates geprüft werden.</string>
     <string name="update_maintenance_title">Wartungsupdate</string>
     <string name="update_feature_title">Feature-Update</string>
     <string name="update_major_title">Großes Update</string>
     <string name="update_breaking_title">Wichtiges Update</string>
-    <string name="update_version_transition_fmt">Switchly %1$s → %2$s</string>
+    <string name="update_version_transition_fmt">Loq In %1$s → %2$s</string>
     <string name="update_maintenance_intro">Ein kleineres Update mit Fokus auf Fehlerbehebungen, Zuverlässigkeit und Feinschliff.</string>
-    <string name="update_feature_intro">Das ist ein größeres Switchly-Update mit neuen Funktionen und Verhaltensänderungen, die sich anzusehen lohnen.</string>
-    <string name="update_major_intro">Das ist ein großes Update auf eine neue Switchly-Generation. Sieh dir die Änderungen vor dem Update an.</string>
+    <string name="update_feature_intro">Das ist ein größeres Loq In-Update mit neuen Funktionen und Verhaltensänderungen, die sich anzusehen lohnen.</string>
+    <string name="update_major_intro">Das ist ein großes Update auf eine neue Loq In-Generation. Sieh dir die Änderungen vor dem Update an.</string>
     <string name="update_breaking_intro">Dieses Release enthält ausdrücklich markierte Kompatibilitäts- oder Verhaltensänderungen. Sieh sie dir vor dem Update an.</string>
     <string name="update_highlights_title">Highlights</string>
     <string name="update_whats_new">Was ist neu?</string>
@@ -72,44 +72,44 @@
     <string name="shortcut_barcode_long">Barcode-Scan</string>
     <string name="shortcut_nfc_short">NFC schreiben</string>
     <string name="shortcut_focus_now_short">Fokus jetzt</string>
-    <string name="shortcut_focus_now_long">Switchly jetzt aktivieren</string>
+    <string name="shortcut_focus_now_long">Loq In jetzt aktivieren</string>
 
     <!-- ====================================================== -->
     <!-- Widgets -->
     <!-- ====================================================== -->
-    <string name="widget_scanner_name">Switchly Hub</string>
-    <string name="widget_scanner_title">Switchly Hub</string>
+    <string name="widget_scanner_name">Loq In Hub</string>
+    <string name="widget_scanner_title">Loq In Hub</string>
     <string name="widget_scanner_open_app">App öffnen</string>
     <string name="widget_hub_nfc">NFC</string>
     <string name="widget_hub_blocked_notifications">Blockiert</string>
     <string name="widget_hub_focus_now">Fokus</string>
     <string name="widget_focus_now_name">Fokus jetzt</string>
-    <string name="widget_focus_now_applied">Switchly aktiviert.</string>
-    <string name="widget_focus_already_active">Switchly ist bereits aktiv.</string>
+    <string name="widget_focus_now_applied">Loq In aktiviert.</string>
+    <string name="widget_focus_already_active">Loq In ist bereits aktiv.</string>
     <string name="widget_action_requires_permissions">Schließe zuerst die Berechtigungen ab.</string>
     <string name="widget_pause_15">15 Min</string>
     <string name="widget_pause_30">30 Min</string>
     <string name="widget_pause_60">1 Stunde</string>
     <plurals name="widget_pause_applied_fmt">
-        <item quantity="one">Switchly für %1$d Minute pausiert.</item>
-        <item quantity="other">Switchly für %1$d Minuten pausiert.</item>
+        <item quantity="one">Loq In für %1$d Minute pausiert.</item>
+        <item quantity="other">Loq In für %1$d Minuten pausiert.</item>
     </plurals>
-    <string name="widget_pause_already_disabled">Switchly ist bereits deaktiviert.</string>
+    <string name="widget_pause_already_disabled">Loq In ist bereits deaktiviert.</string>
     <string name="widget_next_schedule_open">Zeitpläne öffnen</string>
     <string name="widget_qr_name">QR-Scanner</string>
     <string name="widget_barcode_name">Barcode-Scanner</string>
     <string name="widget_nfc_name">NFC-Schreiber</string>
     <string name="widget_blocked_notifications_name">Blockierte Benachrichtigungen</string>
-    <string name="widget_pause_blocker_name">Switchly pausieren</string>
+    <string name="widget_pause_blocker_name">Loq In pausieren</string>
     <string name="widget_next_schedule_name">Nächster Zeitplan</string>
-    <string name="widget_scanner_desc">Schnellzugriff auf Switchly, QR, Barcode, NFC, Fokus und blockierte Benachrichtigungen.</string>
-    <string name="widget_qr_desc">Öffnet den Switchly QR-Scanner.</string>
-    <string name="widget_barcode_desc">Öffnet den Switchly Barcode-Scanner.</string>
-    <string name="widget_nfc_desc">Öffnet den Switchly NFC-Schreiber.</string>
-    <string name="widget_focus_now_desc">Aktiviert Switchly direkt vom Homescreen.</string>
+    <string name="widget_scanner_desc">Schnellzugriff auf Loq In, QR, Barcode, NFC, Fokus und blockierte Benachrichtigungen.</string>
+    <string name="widget_qr_desc">Öffnet den Loq In QR-Scanner.</string>
+    <string name="widget_barcode_desc">Öffnet den Loq In Barcode-Scanner.</string>
+    <string name="widget_nfc_desc">Öffnet den Loq In NFC-Schreiber.</string>
+    <string name="widget_focus_now_desc">Aktiviert Loq In direkt vom Homescreen.</string>
     <string name="widget_blocked_notifications_desc">Zeigt zuletzt blockierte Benachrichtigungen.</string>
-    <string name="widget_pause_blocker_desc">Pausiert Switchly temporär für 15, 30 oder 60 Minuten.</string>
-    <string name="widget_next_schedule_desc">Zeigt die nächste geplante Switchly-Zeitplanänderung.</string>
+    <string name="widget_pause_blocker_desc">Pausiert Loq In temporär für 15, 30 oder 60 Minuten.</string>
+    <string name="widget_next_schedule_desc">Zeigt die nächste geplante Loq In-Zeitplanänderung.</string>
     <string name="widget_next_schedule_preview_time">Heute · 18:00</string>
     <string name="widget_blocked_notifications_preview_row">Letzte blockierte Hinweise</string>
 

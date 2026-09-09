@@ -13,7 +13,7 @@
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
-            style="@style/Switchly.TopBar"
+            style="@style/LoqIn.TopBar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:minHeight="?attr/actionBarSize"
@@ -58,7 +58,7 @@
                     <!-- Profile -->
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/tilProfile"
-                        style="@style/Switchly.DropdownLayout"
+                        style="@style/LoqIn.DropdownLayout"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:hint="@string/nfc_profile_hint"
@@ -66,7 +66,7 @@
 
                         <com.google.android.material.textfield.MaterialAutoCompleteTextView
                             android:id="@+id/ddProfile"
-                            style="@style/Switchly.DropdownText"
+                            style="@style/LoqIn.DropdownText"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:hint="@null"
@@ -79,7 +79,7 @@
                     <!-- Action -->
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/tilAction"
-                        style="@style/Switchly.DropdownLayout"
+                        style="@style/LoqIn.DropdownLayout"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
@@ -89,7 +89,7 @@
 
                         <com.google.android.material.textfield.MaterialAutoCompleteTextView
                             android:id="@+id/ddAction"
-                            style="@style/Switchly.DropdownText"
+                            style="@style/LoqIn.DropdownText"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:hint="@null"
@@ -102,7 +102,7 @@
                     <!-- Temp disable duration (only visible when action = temp) -->
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/tilTime"
-                        style="@style/Switchly.DropdownLayout"
+                        style="@style/LoqIn.DropdownLayout"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
@@ -112,7 +112,7 @@
 
                         <com.google.android.material.textfield.MaterialAutoCompleteTextView
                             android:id="@+id/ddTime"
-                            style="@style/Switchly.DropdownText"
+                            style="@style/LoqIn.DropdownText"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:hint="@null"

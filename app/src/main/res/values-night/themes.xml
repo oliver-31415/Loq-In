@@ -4,7 +4,7 @@
          entries of the same style name at night — so it must repeat the full
          per-accent colorPrimary set, or every ?attr/colorPrimary widget (FAB,
          outlined buttons, chips) falls back to the green Base at night. -->
-    <style name="Theme.Switchly" parent="Theme.Switchly.Base">
+    <style name="Theme.LoqIn" parent="Theme.LoqIn.Base">
         <item name="android:windowLightStatusBar">false</item>
         <item name="colorPrimary">@color/accent_default_green</item>
         <item name="colorPrimaryVariant">@color/accent_default_green</item>
@@ -21,7 +21,7 @@
         <item name="android:textColorSecondary">@color/foqos_on_surface_variant</item>
     </style>
 
-    <style name="Theme.Switchly.Accent.Green" parent="Theme.Switchly">
+    <style name="Theme.LoqIn.Accent.Green" parent="Theme.LoqIn">
         <item name="android:windowLightStatusBar">false</item>
         <item name="colorPrimary">@color/accent_green</item>
         <item name="colorPrimaryVariant">@color/accent_green</item>
@@ -34,7 +34,7 @@
         <item name="colorOnSecondaryContainer">@color/accent_green_on_container</item>
     </style>
 
-    <style name="Theme.Switchly.Accent.Blue" parent="Theme.Switchly">
+    <style name="Theme.LoqIn.Accent.Blue" parent="Theme.LoqIn">
         <item name="android:windowLightStatusBar">false</item>
         <item name="colorPrimary">@color/accent_blue</item>
         <item name="colorPrimaryVariant">@color/accent_blue</item>
@@ -47,7 +47,7 @@
         <item name="colorOnSecondaryContainer">@color/accent_blue_on_container</item>
     </style>
 
-    <style name="Theme.Switchly.Accent.Orange" parent="Theme.Switchly">
+    <style name="Theme.LoqIn.Accent.Orange" parent="Theme.LoqIn">
         <item name="android:windowLightStatusBar">false</item>
         <item name="colorPrimary">@color/accent_orange</item>
         <item name="colorPrimaryVariant">@color/accent_orange</item>
@@ -60,7 +60,7 @@
         <item name="colorOnSecondaryContainer">@color/accent_orange_on_container</item>
     </style>
 
-    <style name="Theme.Switchly.Accent.Purple" parent="Theme.Switchly">
+    <style name="Theme.LoqIn.Accent.Purple" parent="Theme.LoqIn">
         <item name="android:windowLightStatusBar">false</item>
         <item name="colorPrimary">@color/accent_purple</item>
         <item name="colorPrimaryVariant">@color/accent_purple</item>
@@ -73,7 +73,7 @@
         <item name="colorOnSecondaryContainer">@color/accent_purple_on_container</item>
     </style>
 
-    <style name="Theme.Switchly.Accent.Red" parent="Theme.Switchly">
+    <style name="Theme.LoqIn.Accent.Red" parent="Theme.LoqIn">
         <item name="android:windowLightStatusBar">false</item>
         <item name="colorPrimary">@color/accent_red</item>
         <item name="colorPrimaryVariant">@color/accent_red</item>
@@ -86,7 +86,7 @@
         <item name="colorOnSecondaryContainer">@color/accent_red_on_container</item>
     </style>
 
-    <style name="Theme.Switchly.Accent.Pink" parent="Theme.Switchly">
+    <style name="Theme.LoqIn.Accent.Pink" parent="Theme.LoqIn">
         <item name="android:windowLightStatusBar">false</item>
         <item name="colorPrimary">@color/accent_pink</item>
         <item name="colorPrimaryVariant">@color/accent_pink</item>
@@ -99,7 +99,7 @@
         <item name="colorOnSecondaryContainer">@color/accent_pink_on_container</item>
     </style>
 
-    <style name="Theme.Switchly.Accent.Teal" parent="Theme.Switchly">
+    <style name="Theme.LoqIn.Accent.Teal" parent="Theme.LoqIn">
         <item name="android:windowLightStatusBar">false</item>
         <item name="colorPrimary">@color/accent_teal</item>
         <item name="colorPrimaryVariant">@color/accent_teal</item>
@@ -112,7 +112,7 @@
         <item name="colorOnSecondaryContainer">@color/accent_teal_on_container</item>
     </style>
 
-    <style name="Theme.Switchly.Accent.Amber" parent="Theme.Switchly">
+    <style name="Theme.LoqIn.Accent.Amber" parent="Theme.LoqIn">
         <item name="android:windowLightStatusBar">false</item>
         <item name="colorPrimary">@color/accent_amber</item>
         <item name="colorPrimaryVariant">@color/accent_amber</item>
@@ -125,7 +125,7 @@
         <item name="colorOnSecondaryContainer">@color/accent_amber_on_container</item>
     </style>
 
-    <style name="Theme.Switchly.Accent.Gray" parent="Theme.Switchly">
+    <style name="Theme.LoqIn.Accent.Gray" parent="Theme.LoqIn">
         <item name="android:windowLightStatusBar">false</item>
         <item name="colorPrimary">@color/accent_gray</item>
         <item name="colorPrimaryVariant">@color/accent_gray</item>

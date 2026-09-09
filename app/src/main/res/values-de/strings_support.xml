@@ -11,7 +11,7 @@
     <string name="support_logs_copied">Neueste Logs kopiert</string>
     <string name="support_choose_report_data">Mitgesendete Daten auswählen</string>
     <string name="support_include_debug">Debug-Infos anhängen</string>
-    <string name="support_include_debug_summary">App, Gerät, Berechtigungen, Switchly-Status, Zeitpläne und Laufzeitstatus</string>
+    <string name="support_include_debug_summary">App, Gerät, Berechtigungen, Loq In-Status, Zeitpläne und Laufzeitstatus</string>
     <string name="support_include_advanced_debug">Erweiterte Diagnoseinfos anhängen</string>
     <string name="support_include_advanced_debug_summary">Ergänzt interne Einstellungs- und Funktionszähler im Debug-Report</string>
     <string name="support_include_setup_details">Einrichtungsdetails anhängen</string>
@@ -20,11 +20,11 @@
     <string name="support_include_active_profile_apps_summary">Ergänzt App-Namen und Paket-IDs, die durch den Regelmodus des aktiven Profils ausgewählt sind</string>
     <string name="support_debug_preface">Bitte beschreibe dein Problem oberhalb dieser Zeile.</string>
     <string name="support_include_logs">Logs anhängen</string>
-    <string name="support_include_logs_summary">Ergänzt aktuelle Switchly-Ereignisse und Diagnose-Logs</string>
+    <string name="support_include_logs_summary">Ergänzt aktuelle Loq In-Ereignisse und Diagnose-Logs</string>
     <string name="support_latest_logs_heading">Neueste Logs</string>
     <string name="support_response_time_short">Antwortzeit: bis zu 7 Tage</string>
     <string name="support_response_time_title">Support-Antwortzeit</string>
-    <string name="support_response_time_details">Switchly wird von einer einzelnen Person entwickelt und unterstützt. Ich lese Support-Nachrichten und Fehlerberichte so schnell wie möglich; Antworten können je nach Auslastung bis zu 7 Tage dauern.\n\nFüge bei Problemen mit Schutz, Zeitplänen oder Berechtigungen möglichst Diagnoseinformationen hinzu. Das erleichtert die Fehlersuche.</string>
+    <string name="support_response_time_details">Loq In wird von einer einzelnen Person entwickelt und unterstützt. Ich lese Support-Nachrichten und Fehlerberichte so schnell wie möglich; Antworten können je nach Auslastung bis zu 7 Tage dauern.\n\nFüge bei Problemen mit Schutz, Zeitplänen oder Berechtigungen möglichst Diagnoseinformationen hinzu. Das erleichtert die Fehlersuche.</string>
 
     <!-- ====================================================== -->
     <!-- Onboarding link -->
@@ -37,21 +37,14 @@
     <!-- ====================================================== -->
     <string name="support_hero_title">Wie können wir helfen?</string>
     <string name="support_diagnostics_section">Diagnose</string>
-    <string name="support_contact_section">Kontakt</string>
     <string name="support_view_logs_title">Logs ansehen</string>
-    <string name="support_view_logs_desc">Öffnet eine Live-Ansicht der letzten 250 internen Switchly-Log-Zeilen.</string>
+    <string name="support_view_logs_desc">Öffnet eine Live-Ansicht der letzten 250 internen Loq In-Log-Zeilen.</string>
     <string name="support_logs_view_title">Support-Logs</string>
-    <string name="support_logs_view_body">Live-Ansicht aktueller interner Switchly-Ereignisse. Reproduziere ein Problem zuerst, damit die relevanten Einträge hier erscheinen.</string>
+    <string name="support_logs_view_body">Live-Ansicht aktueller interner Loq In-Ereignisse. Reproduziere ein Problem zuerst, damit die relevanten Einträge hier erscheinen.</string>
     <string name="support_logs_view_refresh">Aktualisieren</string>
     <string name="support_logs_view_copy">Logs kopieren</string>
     <string name="support_logs_view_empty">Keine aktuellen App-Logs.</string>
-    <string name="support_discord_label">Discord</string>
-    <string name="support_gitlab_issues_label">GitLab-Issues</string>
-    <string name="support_copy_discord">Discord-Link kopieren</string>
-    <string name="support_discord_copied">Discord-Link kopiert</string>
-    <string name="support_copy_gitlab_issues">GitLab-Issues-Link kopieren</string>
-    <string name="support_gitlab_issues_copied">GitLab-Issues-Link kopiert</string>
-    <string name="support_report_clipboard_label">Switchly-Supportbericht</string>
+    <string name="support_report_clipboard_label">Loq In-Supportbericht</string>
     <string name="support_report_copied">Supportbericht in die Zwischenablage kopiert.</string>
     <string name="support_logs_unified_title">App-Logs</string>
     <string name="support_logs_unified_desc">Interne Diagnose-Logs ansehen, filtern, teilen und kopieren.</string>
@@ -76,6 +69,6 @@
     <string name="support_logs_range_last_250">Letzte 250 Zeilen</string>
     <string name="support_logs_range_last_n_desc">Die neuesten %d Einträge</string>
     <string name="support_logs_card_title">Aktuelle Logs kopieren</string>
-    <string name="support_logs_card_desc">Kopiere aktuelle Switchly-Ereignisse für eine bestehende Nachricht oder ein Issue.</string>
+    <string name="support_logs_card_desc">Kopiere aktuelle Loq In-Ereignisse für eine bestehende Nachricht oder ein Issue.</string>
 
 </resources>

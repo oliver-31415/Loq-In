@@ -10,7 +10,7 @@
     <string name="onb_badge_optional">Optional</string>
     <string name="onb_granted">Granted</string>
     <string name="onb_done">Done</string>
-    <string name="onb_start_button">Start Switchly</string>
+    <string name="onb_start_button">Start Loq In</string>
     <string name="onb_next">Continue</string>
     <string name="onb_continue">Continue</string>
     <string name="onb_back">Back</string>
@@ -21,18 +21,18 @@
     <!-- ====================================================== -->
         <!-- Streamlined Step 1: Profiles -->
     <string name="onb_profiles_title">Set up your first Profile</string>
-    <string name="onb_profiles_desc">Switchly organizes all your rules into profiles. Each profile has its own blocked apps, websites, and switch methods.</string>
+    <string name="onb_profiles_desc">Loq In organizes all your rules into profiles. Each profile has its own blocked apps, websites, and switch methods.</string>
     <string name="onb_profiles_point_create">Tap the profile name at the top of the Home screen anytime to create, rename, or switch profiles.</string>
     <string name="onb_profiles_point_rules">Different rules for different routines: set up profiles for Work, Study, or Sleep.</string>
     <string name="onb_profiles_point_default">Starting with your active profile: %1$s.</string>
     <string name="onb_profiles_action">Rename profile</string>
     <string name="onb_profiles_rename_dialog_title">Rename profile</string>
     <string name="onb_profiles_rename_hint">Profile name</string>
-    <string name="onb_permissions_hub_desc_simple">Switchly runs entirely on your device. Enable Accessibility and Usage Access below to activate protection.</string>
+    <string name="onb_permissions_hub_desc_simple">Loq In runs entirely on your device. Enable Accessibility and Usage Access below to activate protection.</string>
 
     <!-- Streamlined Step 2: Apps and Websites -->
     <string name="onb_block_targets_title">Choose what to block</string>
-    <string name="onb_block_targets_desc">Select the apps and websites you want Switchly to block when this profile is active.</string>
+    <string name="onb_block_targets_desc">Select the apps and websites you want Loq In to block when this profile is active.</string>
     <string name="onb_block_targets_apps_title">Blocked Apps</string>
     <string name="onb_block_targets_apps_desc">Choose apps from your device to block</string>
     <string name="onb_block_targets_apps_none">Tap to choose apps</string>
@@ -52,8 +52,8 @@
 
     <!-- Welcome and core concept -->
     <!-- ====================================================== -->
-    <string name="onb_welcome_title">Welcome to Switchly</string>
-    <string name="onb_welcome_desc">Choose what to protect, decide which controls may change protection, then let Switchly keep those rules in place.</string>
+    <string name="onb_welcome_title">Welcome to Loq In</string>
+    <string name="onb_welcome_desc">Choose what to protect, decide which controls may change protection, then let Loq In keep those rules in place.</string>
     <string name="onb_core_point_choose">Pick the apps, websites and supported in-app sections you want each profile to protect.</string>
     <string name="onb_core_point_control">Choose the control channels you trust: NFC, schedules, QR, barcode or manual controls.</string>
     <string name="onb_core_point_enforce">Temporary actions end automatically, while protected settings stay read-only during active protection.</string>
@@ -62,7 +62,7 @@
     <!-- Usage report onboarding step -->
     <!-- ====================================================== -->
     <string name="onb_usage_report_title">Show your current usage</string>
-    <string name="onb_usage_report_desc">Want to see more details before choosing apps? Allow Usage Access below and Switchly will add a private 7-day report as the next step. You can continue without it.</string>
+    <string name="onb_usage_report_desc">Want to see more details before choosing apps? Allow Usage Access below and Loq In will add a private 7-day report as the next step. You can continue without it.</string>
     <string name="onb_usage_permission_status_ready">Ready · The 7-day report is now the next step</string>
     <string name="onb_usage_permission_status_optional">Optional · Tap to allow</string>
     <string name="onb_usage_report_private_title">Optional 7-day preview</string>
@@ -85,12 +85,12 @@
     <!-- Pick apps -->
     <!-- ====================================================== -->
     <string name="onb_pick_title">Pick apps to block</string>
-    <string name="onb_pick_desc_required">Choose at least one app before continuing. Pick deliberately based on what you actually want Switchly to block.</string>
+    <string name="onb_pick_desc_required">Choose at least one app before continuing. Pick deliberately based on what you actually want Loq In to block.</string>
     <string name="onb_pick_action">Choose apps</string>
     <string name="onb_pick_point_goal">Choose apps based on the behavior you want to reduce or block.</string>
     <string name="onb_pick_point_system_apps">Some launcher, authentication, security and system apps are safer left unblocked unless you have tested them.</string>
     <string name="onb_pick_empty_title">No apps selected yet</string>
-    <string name="onb_pick_empty_desc">Open the app picker and choose the apps Switchly should handle for this profile.</string>
+    <string name="onb_pick_empty_desc">Open the app picker and choose the apps Loq In should handle for this profile.</string>
     <string name="onb_pick_empty_status">Choose at least one app before starting.</string>
     <plurals name="onb_apps_picked_count">
         <item quantity="one">Change %1$d selected app</item>
@@ -106,25 +106,25 @@
     <string name="onb_controls_action">Choose mode</string>
     <string name="onb_controls_selected">Mode selected</string>
     <string name="onb_controls_point_enable_disable">Allow only the paths you want: NFC, schedules, QR, barcode or manual controls.</string>
-    <string name="onb_controls_point_lock_edits">Protection-related edits stay read-only while Switchly is active.</string>
-    <string name="onb_required_controls">Please choose how Switchly should be controlled before continuing.</string>
+    <string name="onb_controls_point_lock_edits">Protection-related edits stay read-only while Loq In is active.</string>
+    <string name="onb_required_controls">Please choose how Loq In should be controlled before continuing.</string>
 
     <!-- ====================================================== -->
     <!-- Permissions overview -->
     <!-- ====================================================== -->
     <string name="onb_permissions_hub_title">Permissions overview</string>
     <string name="onb_permissions_hub_mode_desc">Set up the permissions for %1$s. Accessibility and Usage Access are required to continue.</string>
-    <string name="onb_permissions_hub_mode_desc_advanced_protection">Set up the permissions for %1$s. Android Advanced Protection is active, so Accessibility may be unavailable. Usage Access enables Switchly’s limited basic app-blocking fallback; full website and in-app protection still requires Accessibility.</string>
+    <string name="onb_permissions_hub_mode_desc_advanced_protection">Set up the permissions for %1$s. Android Advanced Protection is active, so Accessibility may be unavailable. Usage Access enables Loq In’s limited basic app-blocking fallback; full website and in-app protection still requires Accessibility.</string>
     <string name="onb_required_permissions_hub">Please enable Accessibility and Usage Access before continuing. The other items can be set up now or later.</string>
     <string name="onb_required_permissions_hub_advanced_protection">Advanced Protection is active. Enable Usage Access to continue with limited basic app blocking. Full website and in-app protection still requires Accessibility.</string>
     <string name="onb_perm_accessibility_title">Accessibility</string>
     <string name="onb_perm_accessibility_desc">Required for core app and website blocking.</string>
     <string name="onb_perm_usage_title">Usage Access</string>
-    <string name="onb_perm_usage_desc">Allows Switchly to read Android’s local usage history so it can build the preview and usage statistics.</string>
+    <string name="onb_perm_usage_desc">Allows Loq In to read Android’s local usage history so it can build the preview and usage statistics.</string>
     <string name="onb_perm_notifications_title">Notifications</string>
     <string name="onb_perm_notifications_desc">Only needed when notification blocking is enabled.</string>
     <string name="onb_perm_battery_title">Battery unrestricted</string>
-    <string name="onb_perm_battery_desc">Helps Switchly stay reliable in the background.</string>
+    <string name="onb_perm_battery_desc">Helps Loq In stay reliable in the background.</string>
     <string name="onb_perm_triggers_title">Location, Wi-Fi and Bluetooth</string>
     <string name="onb_perm_triggers_desc">Only needed for location, Wi-Fi or Bluetooth schedules.</string>
     <string name="onb_perm_camera_title">Camera</string>
@@ -132,7 +132,7 @@
     <string name="onb_perm_exact_alarm_title">Exact alarms</string>
     <string name="onb_perm_exact_alarm_desc">Helps timed schedules run reliably.</string>
     <string name="onb_perm_nfc_title">Launch via NFC</string>
-    <string name="onb_perm_nfc_desc">If you use NFC tags, Android may require Switchly to be allowed under Special app access &gt; Launch via NFC. Passive tags normally require the device to be unlocked.</string>
+    <string name="onb_perm_nfc_desc">If you use NFC tags, Android may require Loq In to be allowed under Special app access &gt; Launch via NFC. Passive tags normally require the device to be unlocked.</string>
     <string name="onb_permission_status_ready">Ready</string>
     <string name="onb_permission_status_missing">Setup needed</string>
     <string name="onb_permission_status_manual">Check manually</string>
@@ -143,7 +143,7 @@
     <string name="onb_keys_title_selected">Set up your selected keys</string>
     <string name="onb_keys_desc_selected">You chose %1$s as control channel(s). Set them up now, or skip and do it later.</string>
     <string name="onb_keys_action">Open Keys &amp; codes</string>
-    <string name="onb_keys_point_actions">NFC, QR and barcodes can enable, disable or toggle Switchly.</string>
+    <string name="onb_keys_point_actions">NFC, QR and barcodes can enable, disable or toggle Loq In.</string>
     <string name="onb_keys_point_manage">Keys &amp; codes is where your NFC, QR, and barcode items are stored.</string>
 
     <!-- ====================================================== -->
@@ -153,7 +153,7 @@
     <string name="onb_schedule_desc_selected">You chose schedules as a control channel. Add your first schedule now, or skip and do it later.</string>
     <string name="onb_schedule_action">Open Schedules</string>
     <string name="onb_schedule_added">Schedule added</string>
-    <string name="onb_schedule_point_actions">Schedules can enable or disable Switchly automatically.</string>
+    <string name="onb_schedule_point_actions">Schedules can enable or disable Loq In automatically.</string>
     <string name="onb_schedule_point_permissions">Timed, location, Wi-Fi and Bluetooth schedules may need extra permissions.</string>
 
     <!-- ====================================================== -->
@@ -161,7 +161,7 @@
     <!-- ====================================================== -->
     <string name="onb_start_title">Ready to start</string>
     <string name="onb_start_desc_clean">Review what is protected, which controls may change it, and whether the required permissions are ready. You can customize the rest later in Settings.</string>
-    <string name="onb_start_test_toast">Switchly enabled. Try opening one blocked app to test it.</string>
+    <string name="onb_start_test_toast">Loq In enabled. Try opening one blocked app to test it.</string>
     <string name="onb_review_profile_title">Profile</string>
     <string name="onb_review_mode_title">Allowed controls</string>
 
@@ -209,7 +209,7 @@
     <string name="onb_optional_display_title">Widgets &amp; shortcuts</string>
     <string name="onb_optional_display_desc">Add Android Quick Settings tiles and Home screen widgets.</string>
     <string name="onb_optional_app_lock_title">App lock &amp; uninstall protection</string>
-    <string name="onb_optional_app_lock_desc">Protect access to Switchly and add optional uninstall friction. Advanced managed-device protection stays a separate technical setup.</string>
+    <string name="onb_optional_app_lock_desc">Protect access to Loq In and add optional uninstall friction. Advanced managed-device protection stays a separate technical setup.</string>
     <string name="onb_optional_feature_access_title">Feature access</string>
     <string name="onb_optional_feature_access_desc">Choose what remains accessible while protection is active and review advanced controls.</string>
     <string name="onb_optional_faq_title">FAQ &amp; setup help</string>
@@ -230,10 +230,10 @@
     <string name="onb_optional_display_tiles_desc">Add control, QR and barcode shortcuts to Android Quick Settings.</string>
     <string name="onb_optional_display_widgets_title">Android widgets</string>
     <string name="onb_optional_display_widgets_desc">Add scanner, schedule, timer and notification widgets to the Home screen.</string>
-    <string name="onb_optional_app_lock_row_title">Switchly app lock</string>
-    <string name="onb_optional_app_lock_row_desc">Require your PIN or biometrics before Switchly can be opened.</string>
+    <string name="onb_optional_app_lock_row_title">Loq In app lock</string>
+    <string name="onb_optional_app_lock_row_desc">Require your PIN or biometrics before Loq In can be opened.</string>
     <string name="onb_optional_uninstall_row_title">Uninstall protection</string>
-    <string name="onb_optional_uninstall_row_desc">Add Android Device Admin friction before Switchly can be removed.</string>
+    <string name="onb_optional_uninstall_row_desc">Add Android Device Admin friction before Loq In can be removed.</string>
     <string name="onb_optional_faq_background_title">Background access checklist</string>
     <string name="onb_optional_faq_background_desc">Check battery mode, Accessibility, auto-start and the permissions needed for reliable protection.</string>
     <string name="onb_optional_faq_device_steps_title">Device-specific background steps</string>

@@ -96,8 +96,8 @@
     <!-- ====================================================== -->
     <!-- Active-protection limited-edit feedback -->
     <!-- ====================================================== -->
-    <string name="profile_limited_edit_title">Limited editing while Switchly is active</string>
-    <string name="profile_limited_edit_body">You can review, create, duplicate, and rename profiles, and tighten their app selection. Deleting or switching profiles stays locked until Switchly is disabled.</string>
+    <string name="profile_limited_edit_title">Limited editing while Loq In is active</string>
+    <string name="profile_limited_edit_body">You can review, create, duplicate, and rename profiles, and tighten their app selection. Deleting or switching profiles stays locked until Loq In is disabled.</string>
     <string name="profile_limited_edit_row">Limited editing · Open to review or tighten apps.</string>
 
 </resources>

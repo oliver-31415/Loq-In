@@ -15,7 +15,7 @@
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
-            style="@style/Switchly.TopBar"
+            style="@style/LoqIn.TopBar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:minHeight="?attr/actionBarSize"
@@ -120,7 +120,7 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnOpenAccessibility"
-                            style="@style/Switchly.OutlinedButton"
+                            style="@style/LoqIn.OutlinedButton"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="10dp"
@@ -191,7 +191,7 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnOpenUsageAccess"
-                            style="@style/Switchly.OutlinedButton"
+                            style="@style/LoqIn.OutlinedButton"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="10dp"
@@ -281,7 +281,7 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnOpenNotifications"
-                            style="@style/Switchly.OutlinedButton"
+                            style="@style/LoqIn.OutlinedButton"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="10dp"
@@ -352,7 +352,7 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnOpenNotificationAccess"
-                            style="@style/Switchly.OutlinedButton"
+                            style="@style/LoqIn.OutlinedButton"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="10dp"
@@ -442,7 +442,7 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnOpenExactAlarms"
-                            style="@style/Switchly.OutlinedButton"
+                            style="@style/LoqIn.OutlinedButton"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="10dp"
@@ -513,7 +513,7 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnOpenNfc"
-                            style="@style/Switchly.OutlinedButton"
+                            style="@style/LoqIn.OutlinedButton"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="10dp"
@@ -584,7 +584,7 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnReqLocation"
-                            style="@style/Switchly.OutlinedButton"
+                            style="@style/LoqIn.OutlinedButton"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="10dp"
@@ -592,7 +592,7 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnOpenLocation"
-                            style="@style/Switchly.OutlinedButton"
+                            style="@style/LoqIn.OutlinedButton"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
@@ -663,7 +663,7 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnReqBluetooth"
-                            style="@style/Switchly.OutlinedButton"
+                            style="@style/LoqIn.OutlinedButton"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="10dp"
@@ -671,7 +671,7 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnOpenBluetooth"
-                            style="@style/Switchly.OutlinedButton"
+                            style="@style/LoqIn.OutlinedButton"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
@@ -754,7 +754,7 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnReqBattery"
-                        style="@style/Switchly.OutlinedButton"
+                        style="@style/LoqIn.OutlinedButton"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="10dp"
@@ -762,7 +762,7 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnOpenBattery"
-                        style="@style/Switchly.OutlinedButton"
+                        style="@style/LoqIn.OutlinedButton"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
@@ -844,7 +844,7 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnOpenAutostart"
-                            style="@style/Switchly.OutlinedButton"
+                            style="@style/LoqIn.OutlinedButton"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="10dp"

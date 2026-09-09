@@ -19,7 +19,7 @@
     <string name="blocked_websites_empty_body">Add a website this profile should block.</string>
     <string name="empty_action_add_first_website">Add first website</string>
     <string name="website_rules_info_title">Website rules</string>
-    <string name="website_rules_info_body">Website rules apply only to the selected profile.\n\nChoose a mode:\n• Block selected: Enabled domains are blocked.\n• Allow selected: Enabled domains stay available; other detected websites are blocked.\n\nUse the checkbox next to a domain to pause or resume its rule without deleting it. Switchly detects visible URLs in supported browsers using Accessibility. Browser updates and privacy features can affect detection.\n\nThe current compatibility list and troubleshooting steps are available in Help.</string>
+    <string name="website_rules_info_body">Website rules apply only to the selected profile.\n\nChoose a mode:\n• Block selected: Enabled domains are blocked.\n• Allow selected: Enabled domains stay available; other detected websites are blocked.\n\nUse the checkbox next to a domain to pause or resume its rule without deleting it. Loq In detects visible URLs in supported browsers using Accessibility. Browser updates and privacy features can affect detection.\n\nThe current compatibility list and troubleshooting steps are available in Help.</string>
     <string name="website_rule_mode_title">Website rule mode</string>
     <string name="website_rule_mode_block_summary">Selected enabled websites are blocked while this profile is active.</string>
     <string name="website_rule_mode_allow_summary">Selected enabled websites are allowed. Other websites are blocked while this profile is active.</string>

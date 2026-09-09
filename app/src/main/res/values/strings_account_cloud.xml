@@ -40,11 +40,11 @@
     <string name="settings_confirm_file_backup_title">Back up to file</string>
     <string name="settings_confirm_file_restore_title">Restore from file</string>
     <string name="restore_compatibility_warning_title">Older backup</string>
-    <string name="restore_compatibility_version_fmt">Created with Switchly %1$s.</string>
-    <string name="restore_compatibility_version_unknown">The Switchly version of this backup could not be determined.</string>
+    <string name="restore_compatibility_version_fmt">Created with Loq In %1$s.</string>
+    <string name="restore_compatibility_version_unknown">The Loq In version of this backup could not be determined.</string>
     <string name="restore_compatibility_warning_body">This backup uses an older or different data format. Some parts may not restore completely or may behave differently in the current version.</string>
-    <string name="restore_compatibility_warning_statistics">Switchly will try to migrate compatible counters from this backup. Data that older versions did not store, especially exact sessions or history, may still be incomplete or missing.</string>
-    <string name="settings_confirm_file_restore_message">Restore a local JSON backup and overwrite current Switchly data? For safety, Switchly and active schedules will be disabled after restore.</string>
+    <string name="restore_compatibility_warning_statistics">Loq In will try to migrate compatible counters from this backup. Data that older versions did not store, especially exact sessions or history, may still be incomplete or missing.</string>
+    <string name="settings_confirm_file_restore_message">Restore a local JSON backup and overwrite current Loq In data? For safety, Loq In and active schedules will be disabled after restore.</string>
     <string name="settings_confirm_file_backup_message_with_included_categories">Create a local backup file?\n\nIncluded:\n%1$s</string>
     <string name="settings_confirm_file_backup_message_with_categories">Create a local backup file?\n\nIncluded:\n%1$s\n\nExcluded/kept on restore:\n%2$s</string>
 
@@ -75,7 +75,7 @@
     <string name="backup_select_categories_title">Choose backup data</string>
     <string name="restore_select_categories_title">Choose restore data</string>
     <string name="restore_contents_preview_title">Backup contents</string>
-    <string name="restore_contents_preview_body">Profiles: %1$d\nApp rules: %2$d\nWebsite rules: %3$d\nSchedules: %4$d\nStatistics: %5$s\n\nSelected categories replace their current local data. Switchly and schedules remain disabled after restore.</string>
+    <string name="restore_contents_preview_body">Profiles: %1$d\nApp rules: %2$d\nWebsite rules: %3$d\nSchedules: %4$d\nStatistics: %5$s\n\nSelected categories replace their current local data. Loq In and schedules remain disabled after restore.</string>
     <string name="restore_contents_preview_continue">Choose restore data</string>
     <string name="restore_contents_statistics_included">included</string>
     <string name="restore_contents_statistics_not_included">not included</string>

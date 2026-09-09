@@ -19,7 +19,7 @@
     <!-- ====================================================== -->
     <!-- Activity hub shortcut -->
     <!-- ====================================================== -->
-    <string name="activity_blocked_notifications_summary">Review notifications that Switchly blocked</string>
+    <string name="activity_blocked_notifications_summary">Review notifications that Loq In blocked</string>
 
     <!-- ====================================================== -->
     <!-- Filter and sort -->

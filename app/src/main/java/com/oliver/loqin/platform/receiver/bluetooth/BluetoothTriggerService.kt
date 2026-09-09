@@ -1,0 +1,332 @@
+/*
+ * Loq In
+ * Copyright (C) 2026 Loq In Contributors
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+package com.oliver.loqin.platform.receiver.bluetooth
+
+import com.oliver.loqin.BuildConfig
+import android.Manifest
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.app.Service
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothManager
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
+import android.content.pm.PackageManager
+import android.content.pm.ServiceInfo
+import android.os.Build
+import android.os.Handler
+import android.os.IBinder
+import android.os.Looper
+import android.util.Log
+import androidx.core.app.NotificationCompat
+import androidx.core.app.ServiceCompat
+import androidx.core.content.ContextCompat
+import androidx.core.content.IntentCompat
+import com.oliver.loqin.R
+import com.oliver.loqin.platform.receiver.schedule.ScheduleReceiver
+import com.oliver.loqin.platform.receiver.wifi.WifiBtCache
+import com.oliver.loqin.ui.MainActivity
+
+class BluetoothTriggerService : Service() {
+
+    private val handler = Handler(Looper.getMainLooper())
+    private var retryCount = 0
+
+    private val br = object : BroadcastReceiver() {
+        override fun onReceive(ctx: Context, intent: Intent) {
+            runCatching {
+                when (intent.action) {
+                    BluetoothDevice.ACTION_ACL_CONNECTED,
+                    BluetoothDevice.ACTION_BOND_STATE_CHANGED -> {
+                        cacheFromIntent(intent, reason = "connected")
+                        sendTick(reason = "connected", eventBtConnected = true)
+                        scheduleRetryIfNeeded(reason = "connected")
+                    }
+
+                    BluetoothDevice.ACTION_ACL_DISCONNECTED -> {
+                        WifiBtCache.clearBt(applicationContext)
+                        sendTick(reason = "disconnected", eventBtConnected = false)
+                    }
+
+                    BluetoothAdapter.ACTION_STATE_CHANGED -> {
+                        val state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, -1)
+                        if (state != BluetoothAdapter.STATE_ON) {
+                            WifiBtCache.clearBt(applicationContext)
+                            sendTick(reason = "btOff", eventBtConnected = false)
+                        } else {
+                            sendTick(reason = "btOn")
+                            scheduleRetryIfNeeded(reason = "btOn")
+                        }
+                    }
+                }
+            }.onFailure { error ->
+                Log.e(TAG, "Bluetooth trigger callback failed", error)
+                this@BluetoothTriggerService.stopSelf()
+            }
+        }
+    }
+
+    override fun onCreate() {
+        super.onCreate()
+
+        // We are started via ContextCompat.startForegroundService().
+        // If we don't call startForeground() fast enough (or it throws), Android will crash the app.
+        if (!ensureForegroundOrStop()) {
+            return
+        }
+
+        val f = IntentFilter().apply {
+            addAction(BluetoothDevice.ACTION_ACL_CONNECTED)
+            addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED)
+            addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
+            addAction(BluetoothAdapter.ACTION_STATE_CHANGED)
+        }
+        val registered = runCatching {
+            ContextCompat.registerReceiver(
+                this,
+                br,
+                f,
+                ContextCompat.RECEIVER_NOT_EXPORTED
+            )
+        }.onFailure { error ->
+            Log.e(TAG, "Failed to register Bluetooth trigger receiver", error)
+        }.isSuccess
+
+        if (!registered) {
+            stopSelf()
+            return
+        }
+
+        runCatching {
+            cacheFromSystem(reason = "serviceStart")
+            sendTick(reason = "serviceStart")
+            scheduleRetryIfNeeded(reason = "serviceStart")
+        }.onFailure { error ->
+            Log.e(TAG, "Initial Bluetooth trigger refresh failed", error)
+            stopSelf()
+        }
+    }
+
+    override fun onDestroy() {
+        handler.removeCallbacksAndMessages(null)
+        runCatching { unregisterReceiver(br) }
+
+        runCatching { ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE) }
+        super.onDestroy()
+    }
+
+    override fun onBind(intent: Intent?): IBinder? = null
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        return if (ensureForegroundOrStop()) {
+            START_STICKY
+        } else {
+            START_NOT_STICKY
+        }
+    }
+
+    // Tracks whether startForeground() completed successfully.
+    // On permission or policy failure, the service stops before Android times it out.
+    private var foregroundStarted = false
+
+    private fun ensureForegroundOrStop(): Boolean {
+        if (foregroundStarted) {
+            return true
+        }
+
+        val nm = getSystemService(NotificationManager::class.java)
+
+        runCatching {
+            nm?.createNotificationChannel(
+                NotificationChannel(
+                    NOTIF_CHANNEL_ID,
+                    getString(R.string.notif_channel_bluetooth_triggers_name),
+                    NotificationManager.IMPORTANCE_LOW
+                ).apply {
+                    description = getString(R.string.notif_channel_bluetooth_triggers_desc)
+                    setSound(null, null)
+                    enableVibration(false)
+                    setShowBadge(false)
+                }
+            )
+        }
+
+        val notif = buildNotification()
+
+        val ok = runCatching {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                startForeground(NOTIF_ID, notif, ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
+            } else {
+                startForeground(NOTIF_ID, notif)
+            }
+        }.recoverCatching {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                startForeground(NOTIF_ID, notif, 0)
+            } else {
+                startForeground(NOTIF_ID, notif)
+            }
+        }.recoverCatching {
+            startForeground(NOTIF_ID, notif)
+        }.isSuccess
+
+        if (!ok) {
+            Log.e(TAG, "Failed to enter foreground. Stopping service to avoid process crash.")
+            runCatching { ServiceCompat.stopForeground(this, ServiceCompat.STOP_FOREGROUND_REMOVE) }
+            stopSelf()
+            return false
+        }
+
+        foregroundStarted = true
+        return true
+    }
+
+    private fun buildNotification(): Notification {
+        val openAppIntent = Intent(this, MainActivity::class.java).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+        }
+
+        val contentPi = PendingIntent.getActivity(
+            this,
+            0,
+            openAppIntent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        return NotificationCompat.Builder(this, NOTIF_CHANNEL_ID)
+            .setSmallIcon(R.drawable.app_blocking_white_24)
+            .setOngoing(true)
+            .setOnlyAlertOnce(true)
+            .setContentTitle(getString(R.string.notif_bluetooth_schedules_title))
+            .setContentText(getString(R.string.notif_bluetooth_schedules_content))
+            .setContentIntent(contentPi)
+            .setSilent(true)
+            .setDefaults(0)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .build()
+    }
+
+    private fun sendTick(reason: String, eventBtConnected: Boolean? = null) {
+        val cached = WifiBtCache.getBt(applicationContext)
+
+        if (BuildConfig.DEBUG) Log.d(
+            TAG,
+            "bt tick: $reason cachedName=${cached.name} cachedAddr=${cached.addr} connected=$eventBtConnected"
+        )
+
+        sendBroadcast(
+            Intent(this, ScheduleReceiver::class.java).apply {
+                action = ScheduleReceiver.ACTION_TICK
+                putExtra("bt_reason", reason)
+                cached.name?.takeIf { it.isNotBlank() }?.let { putExtra("eventBtName", it) }
+                cached.addr?.takeIf { it.isNotBlank() }?.let { putExtra("eventBtAddr", it) }
+                if (eventBtConnected != null) putExtra("eventBtConnected", eventBtConnected)
+            }
+        )
+    }
+
+    private fun cacheFromIntent(intent: Intent, reason: String) {
+        val device: BluetoothDevice? = IntentCompat.getParcelableExtra(intent, BluetoothDevice.EXTRA_DEVICE, BluetoothDevice::class.java)
+        if (device != null) cacheDevice(device, reason)
+    }
+
+    private fun cacheFromSystem(reason: String) {
+        val bm = getSystemService(BluetoothManager::class.java)
+        val adapter = bm?.adapter ?: return
+        if (!adapter.isEnabled) {
+            return
+        }
+        if (BuildConfig.DEBUG) Log.d(TAG, "bt system start ($reason) - waiting for events")
+    }
+
+    private fun cacheDevice(device: BluetoothDevice, reason: String) {
+        val addr = safeGetAddress(device)
+        val name = safeGetName(device)
+
+        WifiBtCache.setBt(applicationContext, name, addr)
+        if (BuildConfig.DEBUG) Log.d(TAG, "cached bt name='${name}' addr='${addr}' ($reason)")
+        retryCount = 0
+    }
+
+    private fun safeGetAddress(device: BluetoothDevice): String? {
+        return try {
+            device.address
+        } catch (_: Throwable) {
+            null
+        }
+    }
+
+    private fun safeGetName(device: BluetoothDevice): String? {
+        return try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                val granted = ContextCompat.checkSelfPermission(
+                    applicationContext,
+                    Manifest.permission.BLUETOOTH_CONNECT
+                ) == PackageManager.PERMISSION_GRANTED
+                if (!granted) {
+                    return null
+                }
+                device.name
+            } else {
+                device.name
+            }
+        } catch (_: Throwable) {
+            null
+        }
+    }
+
+    private fun scheduleRetryIfNeeded(reason: String) {
+        val cached = WifiBtCache.getBt(applicationContext)
+        val haveAddr = !cached.addr.isNullOrBlank()
+        val haveName = !cached.name.isNullOrBlank()
+        if (haveAddr || haveName) {
+            return
+        }
+
+        if (retryCount >= 5) {
+            Log.w(TAG, "bt still missing after retries ($reason). Likely missing BLUETOOTH_CONNECT or BT off.")
+            return
+        }
+
+        val delays = longArrayOf(700, 1200, 2000, 3500, 5000)
+        val delay = delays[retryCount.coerceIn(0, delays.lastIndex)]
+        retryCount++
+
+        handler.postDelayed({
+            runCatching {
+                sendTick(reason = "retry")
+            }.onFailure { error ->
+                Log.e(TAG, "Bluetooth retry callback failed", error)
+                stopSelf()
+            }
+        }, delay)
+
+        if (BuildConfig.DEBUG) Log.d(TAG, "scheduled bt retry in ${delay}ms ($reason)")
+    }
+
+    companion object {
+        private const val TAG = "BluetoothTriggerService"
+        private const val NOTIF_CHANNEL_ID = "loqin_bt_triggers_silent"
+        private const val NOTIF_ID = 23001
+    }
+}

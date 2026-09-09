@@ -65,7 +65,7 @@
     <string name="schedules_wifi_enable_wifi">Bitte schalte zuerst WLAN ein.</string>
     <string name="schedules_wifi_location_required">Der Standort muss aktiviert sein, um die WLAN-SSID zu lesen.</string>
     <string name="schedules_wifi_location_hint">WLAN-Zeitpläne benötigen Zugriff auf WLAN, um die aktuelle SSID zu lesen. Ab Android 13 muss zusätzlich „Geräte in der Nähe“ erlaubt sein. Aktiviere außerdem den Standort in den Schnelleinstellungen.</string>
-    <string name="schedules_wifi_fix_message">Switchly kann WLAN-Namen nur lesen, wenn du mit WLAN verbunden bist und der Standort aktiviert ist (Android 10+). Wenn du dich gerade erst verbunden hast, kehre zurück und tippe erneut auf „Aktuelles WLAN verwenden“.</string>
+    <string name="schedules_wifi_fix_message">Loq In kann WLAN-Namen nur lesen, wenn du mit WLAN verbunden bist und der Standort aktiviert ist (Android 10+). Wenn du dich gerade erst verbunden hast, kehre zurück und tippe erneut auf „Aktuelles WLAN verwenden“.</string>
     <string name="schedules_wifi_open_picker">WLAN-Auswahl öffnen</string>
     <string name="schedules_wifi_pick_title">WLAN-Netzwerk auswählen</string>
     <string name="schedules_wifi_retry_scan">Scan wiederholen</string>
@@ -90,10 +90,10 @@
     <string name="schedules_insight_timeline_item_fmt">%1$s - %2$s „%3$s“ (%4$s)</string>
     <string name="schedules_overlap_warning_title">Zeitplan überschneidet sich</string>
     <string name="schedules_overlap_warning_message_fmt">Das überschneidet sich mit „%1$s“. Der spätere Zeitplan kann das aktive Profil überschreiben.\n\nTrotzdem speichern?</string>
-    <string name="schedules_overlap_enabled_message_fmt">Überschneidet sich mit „%1$s“. Wenn beide Zeitpläne passen, nutzt Switchly die Zeitplan-Priorität und protokolliert die Entscheidung.</string>
+    <string name="schedules_overlap_enabled_message_fmt">Überschneidet sich mit „%1$s“. Wenn beide Zeitpläne passen, nutzt Loq In die Zeitplan-Priorität und protokolliert die Entscheidung.</string>
     <string name="schedules_overlap_warning_save">Trotzdem speichern</string>
-    <string name="schedules_dialog_nfc_lock_hint">NFC-Sperre aktiv: Diese Aktion kann den Switchly-Status erst nach dem Entsperren per NFC/QR ändern.</string>
-    <string name="schedules_nfc_lock_add_dialog_hint">NFC-Sperre ist aktiv. Derzeit werden nur Aktionen angezeigt, die Switchly nicht deaktivieren.</string>
+    <string name="schedules_dialog_nfc_lock_hint">NFC-Sperre aktiv: Diese Aktion kann den Loq In-Status erst nach dem Entsperren per NFC/QR ändern.</string>
+    <string name="schedules_nfc_lock_add_dialog_hint">NFC-Sperre ist aktiv. Derzeit werden nur Aktionen angezeigt, die Loq In nicht deaktivieren.</string>
     <string name="schedules_dialog_nfc_lock_filtered_hint">NFC-Sperre ist aktiv. Konfliktierende Deaktivierungs-/Umschaltaktionen sind ausgeblendet.</string>
     <plurals name="delete_schedules_confirm">
         <item quantity="one">%1$d Zeitplan löschen?</item>
@@ -162,12 +162,12 @@
     <string name="schedules_attached_profile_caption">Zugeordnetes Profil</string>
     <string name="schedules_attached_badge">Profil fixiert</string>
     <string name="schedules_action_info_title">Zeitplan-Aktionen</string>
-    <string name="schedules_action_info_enable_body">Schaltet Switchly mit dem ausgewählten Profil ein, wenn dieser Zeitplan auslöst.</string>
-    <string name="schedules_action_info_disable_body">Schaltet Switchly aus, wenn dieser Zeitplan auslöst.</string>
-    <string name="schedules_action_info_toggle_body">Wechselt Switchly je nach aktuellem Zustand zwischen ein und aus.</string>
-    <string name="schedules_action_info_enable_disable_body">Schaltet Switchly zur Startzeit ein und zur Endzeit wieder aus.</string>
-    <string name="schedules_action_info_disable_enable_body">Schaltet Switchly zur Startzeit aus und zur Endzeit wieder ein.</string>
-    <string name="schedules_action_info_tip">Tipp: Wenn sich Zeitpläne überschneiden, nutzt Switchly die folgende Priorität und protokolliert die Entscheidung.</string>
+    <string name="schedules_action_info_enable_body">Schaltet Loq In mit dem ausgewählten Profil ein, wenn dieser Zeitplan auslöst.</string>
+    <string name="schedules_action_info_disable_body">Schaltet Loq In aus, wenn dieser Zeitplan auslöst.</string>
+    <string name="schedules_action_info_toggle_body">Wechselt Loq In je nach aktuellem Zustand zwischen ein und aus.</string>
+    <string name="schedules_action_info_enable_disable_body">Schaltet Loq In zur Startzeit ein und zur Endzeit wieder aus.</string>
+    <string name="schedules_action_info_disable_enable_body">Schaltet Loq In zur Startzeit aus und zur Endzeit wieder ein.</string>
+    <string name="schedules_action_info_tip">Tipp: Wenn sich Zeitpläne überschneiden, nutzt Loq In die folgende Priorität und protokolliert die Entscheidung.</string>
 
     <!-- ====================================================== -->
     <!-- Schedule days and groups -->
@@ -244,7 +244,7 @@
     <string name="schedules_error_bt_required">Bitte gib einen Bluetooth-Gerätenamen ein.</string>
     <string name="schedules_error_location_required">Bitte wähle zuerst einen Standort aus.</string>
 
-    <string name="schedules_priority_info_body">Priorität bei Überschneidungen:\n1. Manuelle/NFC-Übersteuerung\n2. Notfall-Entsperrung\n3. Temporäre Aktionen\n4. Standort-Zeitpläne\n5. WLAN-/Bluetooth-Zeitpläne\n6. Zeit-Zeitpläne\n\nWenn mehrere Zeitpläne passen, protokolliert Switchly den Konflikt und wendet den Gewinner an, statt ihn still zu verstecken.</string>
+    <string name="schedules_priority_info_body">Priorität bei Überschneidungen:\n1. Manuelle/NFC-Übersteuerung\n2. Notfall-Entsperrung\n3. Temporäre Aktionen\n4. Standort-Zeitpläne\n5. WLAN-/Bluetooth-Zeitpläne\n6. Zeit-Zeitpläne\n\nWenn mehrere Zeitpläne passen, protokolliert Loq In den Konflikt und wendet den Gewinner an, statt ihn still zu verstecken.</string>
 
     <!-- ====================================================== -->
     <!-- Entry point/dialog -->

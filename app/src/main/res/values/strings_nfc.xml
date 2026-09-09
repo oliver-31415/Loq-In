@@ -6,7 +6,7 @@
     <!-- ====================================================== -->
     <string name="nfc_writer_title">NFC tag writer</string>
     <string name="nfc_write_intro_title">Writing NFC action tags</string>
-    <string name="nfc_write_onboarding_message">Choose Toggle, Enable, Disable, or a temporary action, then write it to a writable NFC tag. After writing, scan the tag once while the phone is unlocked. If Android asks which app should open it, choose Switchly and Always. UID pairing is only for read-only tags or per-tag limits and does not write an action to the tag.</string>
+    <string name="nfc_write_onboarding_message">Choose Toggle, Enable, Disable, or a temporary action, then write it to a writable NFC tag. After writing, scan the tag once while the phone is unlocked. If Android asks which app should open it, choose Loq In and Always. UID pairing is only for read-only tags or per-tag limits and does not write an action to the tag.</string>
     <string name="nfc_profile_hint">Profile</string>
     <string name="nfc_profile_none">Universal</string>
     <string name="nfc_duration_hint">Temporary duration</string>
@@ -30,17 +30,17 @@
     <string name="nfc_write_repeated_failure_title">Writing keeps getting interrupted</string>
     <string name="nfc_write_pair_uid_instead">Pair UID instead</string>
     <string name="nfc_write_try_another_tag">Try another tag</string>
-    <string name="nfc_write_uid_fallback_too_small">The selected action does not fit on this tag. You can pair its UID instead and store the action inside Switchly, or try a larger tag.</string>
-    <string name="nfc_write_uid_fallback_read_only">This tag cannot be rewritten. Pair its UID instead to store the action inside Switchly.</string>
-    <string name="nfc_write_uid_fallback_unsupported">Android cannot write a normal NDEF action to this tag. Pair its UID instead to use it through Switchly.</string>
+    <string name="nfc_write_uid_fallback_too_small">The selected action does not fit on this tag. You can pair its UID instead and store the action inside Loq In, or try a larger tag.</string>
+    <string name="nfc_write_uid_fallback_read_only">This tag cannot be rewritten. Pair its UID instead to store the action inside Loq In.</string>
+    <string name="nfc_write_uid_fallback_unsupported">Android cannot write a normal NDEF action to this tag. Pair its UID instead to use it through Loq In.</string>
     <string name="nfc_write_uid_fallback_repeated">The connection was interrupted several times. Pair the tag by UID instead, or try writing again while holding it still.</string>
     <string name="nfc_write_uid_fallback_generic">Pair this tag by UID instead, or try another tag.</string>
     <string name="nfc_rewrite_wrong_tag_title">Different tag detected</string>
     <string name="nfc_rewrite_wrong_tag_message">Hold the original tag to the phone. Expected: %1$s\n\nDetected: %2$s</string>
     <string name="nfc_rewrite_unknown_uid">unknown UID</string>
     <string name="nfc_rewrite_waiting_expected">Ready to rewrite tag %1$s</string>
-    <string name="nfc_write_locked_while_enabled">NFC tag writing is locked while Switchly is active.</string>
-    <string name="nfc_write_locked_status">Disable Switchly to write or pair a new NFC tag, or allow NFC tag writing in Mixed mode.</string>
+    <string name="nfc_write_locked_while_enabled">NFC tag writing is locked while Loq In is active.</string>
+    <string name="nfc_write_locked_status">Disable Loq In to write or pair a new NFC tag, or allow NFC tag writing in Mixed mode.</string>
     <string name="nfc_write_locked_button">NFC tag writing locked</string>
     <string name="nfc_not_available">NFC is not available on this device</string>
     <string name="nfc_system_disabled_button">Enable system NFC</string>
@@ -63,19 +63,19 @@
     <!-- ====================================================== -->
     <!-- NFC action descriptions -->
     <!-- ====================================================== -->
-    <string name="nfc_action_desc_enable">Writes a tag that enables Switchly.</string>
-    <string name="nfc_action_desc_disable">Writes a tag that disables Switchly.</string>
-    <string name="nfc_action_desc_toggle">Writes a tag that toggles Switchly ON/OFF.</string>
+    <string name="nfc_action_desc_enable">Writes a tag that enables Loq In.</string>
+    <string name="nfc_action_desc_disable">Writes a tag that disables Loq In.</string>
+    <string name="nfc_action_desc_toggle">Writes a tag that toggles Loq In ON/OFF.</string>
     <plurals name="nfc_action_desc_temp_disable">
-        <item quantity="one">Writes a tag that disables Switchly for %1$d minute, then restores the previous state.</item>
-        <item quantity="other">Writes a tag that disables Switchly for %1$d minutes, then restores the previous state.</item>
+        <item quantity="one">Writes a tag that disables Loq In for %1$d minute, then restores the previous state.</item>
+        <item quantity="other">Writes a tag that disables Loq In for %1$d minutes, then restores the previous state.</item>
     </plurals>
     <plurals name="nfc_action_desc_temp_enable">
-        <item quantity="one">Writes a tag that enables Switchly for %1$d minute, then restores the previous state.</item>
-        <item quantity="other">Writes a tag that enables Switchly for %1$d minutes, then restores the previous state.</item>
+        <item quantity="one">Writes a tag that enables Loq In for %1$d minute, then restores the previous state.</item>
+        <item quantity="other">Writes a tag that enables Loq In for %1$d minutes, then restores the previous state.</item>
     </plurals>
     <string name="nfc_action_desc_temp_disable_ask">Use “Ask when scanned” if you want to choose the break length each time. Great for short intentional unlocks without creating many tags.</string>
-    <string name="nfc_action_desc_temp_enable_ask">Use “Ask when scanned” if you want to choose the blocking length each time. When the timer ends, Switchly restores the state from before the scan.</string>
+    <string name="nfc_action_desc_temp_enable_ask">Use “Ask when scanned” if you want to choose the blocking length each time. When the timer ends, Loq In restores the state from before the scan.</string>
     <string name="nfc_action_desc_pair_uid">Advanced: pair this tag by UID without writing anything to it. Use this for read-only tags or per-tag limits, not for normal writable toggle/disable tags.</string>
     <string name="nfc_action_desc_pair_uid_disabled">Tag pairing is disabled. Open Settings → Controls → Feature access, enable Paired NFC tags, and scan the tag again.</string>
     <string name="nfc_action_desc_profile_selected">Selected profile: %1$s</string>
@@ -198,9 +198,9 @@
     <string name="nfc_feedback_already_started">%1$s is already enabled</string>
     <string name="nfc_temp_hint_profile_disable_toast">Profile must be active for temp disable.</string>
     <string name="nfc_temp_hint_profile_enable_toast">Temporary enable switches to this profile.</string>
-    <string name="toast_disable_requires_nfc">Switchly can currently only be disabled via NFC tag.</string>
-    <string name="toast_cannot_disable_while_locked">Switchly is locked. Use your NFC tag to disable it.</string>
-    <string name="toast_cannot_change_profile_while_locked">Turn off Switchly to change profiles.</string>
+    <string name="toast_disable_requires_nfc">Loq In can currently only be disabled via NFC tag.</string>
+    <string name="toast_cannot_disable_while_locked">Loq In is locked. Use your NFC tag to disable it.</string>
+    <string name="toast_cannot_change_profile_while_locked">Turn off Loq In to change profiles.</string>
 
     <!-- ====================================================== -->
     <!-- NFC URI and scan errors -->

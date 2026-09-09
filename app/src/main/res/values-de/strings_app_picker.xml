@@ -23,7 +23,7 @@
     <string name="blocked_app_default">App blockiert</string>
     <string name="no_blocked_apps">Keine blockierten Apps</string>
     <string name="no_allowed_apps">Keine erlaubten Apps</string>
-    <string name="blocked_message">Du kannst diese App nicht nutzen, solange Switchly aktiv ist.</string>
+    <string name="blocked_message">Du kannst diese App nicht nutzen, solange Loq In aktiv ist.</string>
     <string name="search_apps">Apps suchen</string>
 
     <!-- ====================================================== -->
@@ -68,10 +68,10 @@
     <string name="app_picker_protected_launcher_hint">Dein aktueller Launcher ist geschützt, weil das Blockieren eine Sperrschleife verursachen oder den Homescreen unbenutzbar machen kann.</string>
     <string name="app_picker_protected_caution_title">Diese App ist sicherheitsrelevant</string>
     <string name="app_picker_protected_warning_title">Geschützte App trotzdem blockieren?</string>
-    <string name="app_picker_protected_warning_message">Android oder dein Gerät könnte von dieser App abhängig sein. Das Blockieren kann Sperrschleifen verursachen, Homescreen, Tastatur, Anrufe, Berechtigungen, Einrichtung oder Wiederherstellung beschädigen und das Gerät schwer benutzbar machen. Switchly kann nicht garantieren, dass dein Gerät danach wiederherstellbar bleibt. Fahre nur fort, wenn du das Risiko verstehst und akzeptierst.</string>
+    <string name="app_picker_protected_warning_message">Android oder dein Gerät könnte von dieser App abhängig sein. Das Blockieren kann Sperrschleifen verursachen, Homescreen, Tastatur, Anrufe, Berechtigungen, Einrichtung oder Wiederherstellung beschädigen und das Gerät schwer benutzbar machen. Loq In kann nicht garantieren, dass dein Gerät danach wiederherstellbar bleibt. Fahre nur fort, wenn du das Risiko verstehst und akzeptierst.</string>
     <string name="app_picker_block_protected_confirm">Trotzdem blockieren</string>
     <string name="app_picker_keyboard_warning_title">Aktuelle Tastatur trotzdem blockieren?</string>
-    <string name="app_picker_keyboard_warning_message">Das Blockieren deiner aktuellen Tastatur kann Tippen, Passworteingaben, Suche oder die Wiederherstellung von Switchly verhindern. Stelle sicher, dass eine andere Tastatur und die Notfall-Entsperrung verfügbar sind.</string>
+    <string name="app_picker_keyboard_warning_message">Das Blockieren deiner aktuellen Tastatur kann Tippen, Passworteingaben, Suche oder die Wiederherstellung von Loq In verhindern. Stelle sicher, dass eine andere Tastatur und die Notfall-Entsperrung verfügbar sind.</string>
     <string name="app_picker_launcher_warning_title">Aktuellen Launcher trotzdem blockieren?</string>
     <string name="app_picker_launcher_warning_message">Das Blockieren deines aktuellen Launchers kann eine dauernde Homescreen-Sperrschleife verursachen oder dich ohne nutzbaren Homescreen zurücklassen. Stelle sicher, dass ein anderer Launcher und die Notfall-Entsperrung verfügbar sind.</string>
     <string name="app_picker_assistant_hint">Google- und Assistent-Apps können blockiert werden, das kann auf manchen Geräten aber Launcher-Suche oder Sprachassistenz beeinflussen.</string>

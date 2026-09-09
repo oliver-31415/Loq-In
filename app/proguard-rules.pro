@@ -46,7 +46,7 @@
 ############################################
 # If you use deep links with reflection/custom class loading: not needed for your current setup
 ############################################
-# -keep class at.saltyy.switchly.** { *; }
+# -keep class com.oliver.loqin.** { *; }
 
 # Keep the Play services task listeners used reflectively by CameraX/GMS callbacks in minified release builds.
 -keep class com.google.android.gms.tasks.OnSuccessListener { *; }

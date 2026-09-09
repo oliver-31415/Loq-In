@@ -4,8 +4,8 @@
     <!-- ====================================================== -->
     <!-- Autostart and reliability shortcuts -->
     <!-- ====================================================== -->
-    <string name="pref_autostart_title">Start Switchly after reboot</string>
-    <string name="pref_autostart_summary">Start Switchly again after reboot.</string>
-    <string name="toggle_detail_autostart">After a reboot, Switchly tries to start itself again so your protection profile comes back automatically.</string>
+    <string name="pref_autostart_title">Start Loq In after reboot</string>
+    <string name="pref_autostart_summary">Start Loq In again after reboot.</string>
+    <string name="toggle_detail_autostart">After a reboot, Loq In tries to start itself again so your protection profile comes back automatically.</string>
 
 </resources>

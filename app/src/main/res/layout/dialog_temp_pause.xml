@@ -20,7 +20,7 @@
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tilTempPauseCount"
-        style="@style/Switchly.TextInputLayout"
+        style="@style/LoqIn.TextInputLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="@string/temp_pause_field_count"
@@ -40,7 +40,7 @@
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tilTempPausePerPause"
-        style="@style/Switchly.TextInputLayout"
+        style="@style/LoqIn.TextInputLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
@@ -61,7 +61,7 @@
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tilTempPausePerDay"
-        style="@style/Switchly.TextInputLayout"
+        style="@style/LoqIn.TextInputLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"

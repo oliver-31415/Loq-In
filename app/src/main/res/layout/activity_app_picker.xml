@@ -13,7 +13,7 @@
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
-            style="@style/Switchly.TopBar"
+            style="@style/LoqIn.TopBar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:minHeight="?attr/actionBarSize"
@@ -47,7 +47,7 @@
         <!-- Rule options -->
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardRuleSettings"
-            style="@style/Switchly.Card"
+            style="@style/LoqIn.Card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
@@ -200,7 +200,7 @@
         <!-- Bottom action -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSave"
-            style="@style/Switchly.Button"
+            style="@style/LoqIn.Button"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"

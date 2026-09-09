@@ -28,7 +28,7 @@
     <string name="dashboard_emergency_hint_active">Emergency active (%1$d min) — tap to pause or end</string>
     <string name="dashboard_emergency_hint_paused">Emergency paused (%1$d min) — tap to resume or end</string>
     <string name="dashboard_emergency_hint_used_today">Emergency unlock already used today</string>
-    <string name="dashboard_emergency_hint_disabled">Emergency unlock is off — open Switchly controls</string>
+    <string name="dashboard_emergency_hint_disabled">Emergency unlock is off — open Loq In controls</string>
     <string name="widget_active_timer_title">Active timer</string>
     <string name="widget_active_timer_inactive">Not active</string>
     <string name="widget_active_timer_desc">Shows the current active timer.</string>
@@ -54,14 +54,14 @@
     <!-- ====================================================== -->
     <!-- Dashboard setup and state -->
     <!-- ====================================================== -->
-    <string name="dashboard_nfc_locked_hint">Locked: disable Switchly via NFC tag</string>
+    <string name="dashboard_nfc_locked_hint">Locked: disable Loq In via NFC tag</string>
     <string name="dashboard_setup_title">Almost ready</string>
     <string name="dashboard_setup_subtitle">Enable these items so blocking works reliably.</string>
     <plurals name="dashboard_setup_subtitle_missing">
         <item quantity="one">Enable this item so blocking works reliably.</item>
         <item quantity="other">Enable these items so blocking works reliably.</item>
     </plurals>
-    <string name="dashboard_setup_desc">Finish the required permissions so Switchly can block apps reliably.</string>
+    <string name="dashboard_setup_desc">Finish the required permissions so Loq In can block apps reliably.</string>
     <string name="dashboard_setup_cta">Finish setup</string>
     <string name="dashboard_blocked_now_title">Blocked right now</string>
     <string name="dashboard_blocked_now_reason_profile">Blocked by profile</string>
@@ -84,7 +84,7 @@
     <string name="dashboard_temp_status_disabled">Temporarily paused • %1$s left</string>
     <string name="dashboard_temp_sheet_sub_enable">Enable blocking for a short time</string>
     <string name="dashboard_temp_sheet_sub_enable_profile">Enable %1$s for a short time</string>
-    <string name="dashboard_temp_sheet_sub_disable">Pause Switchly for a short time</string>
+    <string name="dashboard_temp_sheet_sub_disable">Pause Loq In for a short time</string>
     <string name="dashboard_temp_sheet_sub_disable_locked">Temporary disable is locked (NFC lock is active). Use Emergency Unlock if needed.</string>
     <string name="dashboard_temp_sheet_cancel_timer">Cancel timer</string>
     <string name="dashboard_temp_ends_at">Ends at %1$s</string>
@@ -115,7 +115,7 @@
     <string name="tile_emergency_title_paused">Emergency paused</string>
     <string name="tile_emergency_subtitle_ready">Ready · once a day</string>
     <string name="tile_emergency_subtitle_used">Already used today</string>
-    <string name="tile_emergency_subtitle_off">Off · enable it in Switchly controls</string>
+    <string name="tile_emergency_subtitle_off">Off · enable it in Loq In controls</string>
     <string name="tile_emergency_subtitle_active">%1$d min · tap to pause</string>
     <string name="tile_emergency_subtitle_paused">%1$d min · tap to resume</string>
 
@@ -158,8 +158,7 @@
     <string name="scanner_choice_title">Scan a code</string>
     <string name="main_info_title">Still in development</string>
     <string name="main_info_contact_action">Contact</string>
-    <string name="main_info_older_versions_action">Downloads</string>
-    <string name="main_development_info_message">Switchly is still in development. I test it as carefully as I can with open beta phases, but Android behaves differently across devices, so I cannot catch every issue on my own.\nIf something is not working right for you, please send me a mail.\n\nYou can open the download page from the button below.</string>
+    <string name="main_development_info_message">Loq In is still in development. I test it as carefully as I can with open beta phases, but Android behaves differently across devices, so I cannot catch every issue on my own.\nIf something is not working right for you, please send me a mail.\n\nYou can open the download page from the button below.</string>
     <string name="home_layout_default">Default</string>
     <string name="home_layout_minimal">Simple</string>
     <string name="home_layout_detailed">Advanced</string>
@@ -259,13 +258,13 @@
     <string name="blocking_mode_mixed">Mixed mode</string>
     <string name="blocking_mode_mixed_desc">Manual button plus the channels you allow</string>
     <string name="blocking_mode_nfc">NFC mode</string>
-    <string name="blocking_mode_nfc_desc">Only NFC tags can change Switchly</string>
+    <string name="blocking_mode_nfc_desc">Only NFC tags can change Loq In</string>
     <string name="blocking_mode_qr">QR mode</string>
-    <string name="blocking_mode_qr_desc">Only QR scans can change Switchly</string>
+    <string name="blocking_mode_qr_desc">Only QR scans can change Loq In</string>
     <string name="blocking_mode_barcode">Barcode mode</string>
-    <string name="blocking_mode_barcode_desc">Only barcode scans can change Switchly</string>
+    <string name="blocking_mode_barcode_desc">Only barcode scans can change Loq In</string>
     <string name="blocking_mode_schedule">Schedule mode</string>
-    <string name="blocking_mode_schedule_desc">Only schedules can change Switchly</string>
+    <string name="blocking_mode_schedule_desc">Only schedules can change Loq In</string>
     <string name="blocking_mode_unsupported">Not available on this device</string>
     <string name="profile_rows_switch">Switch profile</string>
     <string name="profile_sheet_new_profile">New profile</string>

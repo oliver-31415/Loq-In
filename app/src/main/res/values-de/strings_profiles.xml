@@ -96,8 +96,8 @@
     <!-- ====================================================== -->
     <!-- Eingeschränkte Bearbeitung bei aktivem Schutz -->
     <!-- ====================================================== -->
-    <string name="profile_limited_edit_title">Eingeschränkt bearbeitbar, solange Switchly aktiv ist</string>
-    <string name="profile_limited_edit_body">Du kannst Profile ansehen, erstellen, duplizieren und umbenennen sowie ihre App-Auswahl verschärfen. Löschen und Profilwechsel bleiben gesperrt, bis Switchly deaktiviert ist.</string>
+    <string name="profile_limited_edit_title">Eingeschränkt bearbeitbar, solange Loq In aktiv ist</string>
+    <string name="profile_limited_edit_body">Du kannst Profile ansehen, erstellen, duplizieren und umbenennen sowie ihre App-Auswahl verschärfen. Löschen und Profilwechsel bleiben gesperrt, bis Loq In deaktiviert ist.</string>
     <string name="profile_limited_edit_row">Eingeschränkt bearbeitbar · Öffnen zum Ansehen oder Verschärfen.</string>
 
 </resources>

@@ -21,14 +21,14 @@
     <!-- Core permissions -->
     <!-- ====================================================== -->
     <string name="permissions_accessibility_title">Accessibility service</string>
-    <string name="permissions_accessibility_desc">Required for app, website, supported in-app, and usage-limit protection: lets Switchly detect foreground changes and the visible information needed for configured rules.</string>
-    <string name="permissions_accessibility_desc_advanced_protection">Android Advanced Protection is enabled. It can prevent Switchly’s Accessibility service from being available. Full website, in-app, navigation, and usage-limit protection still needs Accessibility. If Usage Access is granted, Switchly can run a limited best-effort fallback for basic whole-app Block selected/Allow selected rules. Android can still restrict blocker screens started from the background, so this fallback is not equivalent to full Accessibility protection. For full Switchly protection, disable Device protection under Android Settings → Security &amp; privacy → Advanced Protection.</string>
+    <string name="permissions_accessibility_desc">Required for app, website, supported in-app, and usage-limit protection: lets Loq In detect foreground changes and the visible information needed for configured rules.</string>
+    <string name="permissions_accessibility_desc_advanced_protection">Android Advanced Protection is enabled. It can prevent Loq In’s Accessibility service from being available. Full website, in-app, navigation, and usage-limit protection still needs Accessibility. If Usage Access is granted, Loq In can run a limited best-effort fallback for basic whole-app Block selected/Allow selected rules. Android can still restrict blocker screens started from the background, so this fallback is not equivalent to full Accessibility protection. For full Loq In protection, disable Device protection under Android Settings → Security &amp; privacy → Advanced Protection.</string>
     <string name="permissions_usage_access_title">App usage access</string>
-    <string name="permissions_usage_access_desc">Required for screen-time statistics and daily app limits. Enable “App usage data” access for Switchly.</string>
-    <string name="permissions_battery_oem_note">Some devices do not offer an “Unrestricted” battery option. If you already enabled the highest available background setting for Switchly, that may already be the maximum supported on your device.</string>
+    <string name="permissions_usage_access_desc">Required for screen-time statistics and daily app limits. Enable “App usage data” access for Loq In.</string>
+    <string name="permissions_battery_oem_note">Some devices do not offer an “Unrestricted” battery option. If you already enabled the highest available background setting for Loq In, that may already be the maximum supported on your device.</string>
     <string name="permissions_exact_alarms_note">If exact alarms are not allowed, time-based schedules may be delayed or not run at the correct time.</string>
     <string name="permissions_battery_title">Battery optimization</string>
-    <string name="permissions_battery_desc">Set Switchly to Unrestricted/Not optimized. Android “Optimized” mode can still delay schedules, geofences, receivers, and background reliability.</string>
+    <string name="permissions_battery_desc">Set Loq In to Unrestricted/Not optimized. Android “Optimized” mode can still delay schedules, geofences, receivers, and background reliability.</string>
     <string name="permissions_battery_allowed">Unrestricted</string>
     <string name="permissions_battery_not_allowed">Optimized/restricted</string>
     <string name="permissions_battery_highest_available">Best available confirmed</string>
@@ -40,7 +40,7 @@
     <string name="permissions_nfc_status_manual">Check manually</string>
     <string name="permissions_nfc_status_not_allowed">Launch permission missing</string>
     <string name="permissions_nfc_status_system_disabled">System NFC disabled</string>
-    <string name="permissions_nfc_desc">Required for opening Switchly from NFC tags. Make sure system NFC is enabled and, when available, allow Switchly under Special app access → Launch via NFC. Android normally requires the device to be unlocked before scanning.</string>
+    <string name="permissions_nfc_desc">Required for opening Loq In from NFC tags. Make sure system NFC is enabled and, when available, allow Loq In under Special app access → Launch via NFC. Android normally requires the device to be unlocked before scanning.</string>
 
     <!-- ====================================================== -->
     <!-- Trigger and notification permissions -->
@@ -50,18 +50,18 @@
     <string name="permissions_bluetooth_title">Bluetooth (Nearby devices)</string>
     <string name="permissions_bluetooth_desc">Needed for Bluetooth-based schedules on Android 12+. You can enable it here before creating a schedule.</string>
     <string name="permissions_notifications_title">Notifications</string>
-    <string name="permissions_notifications_desc">Required so Switchly can show status updates and reminders in the notification shade.</string>
+    <string name="permissions_notifications_desc">Required so Loq In can show status updates and reminders in the notification shade.</string>
     <string name="permissions_notification_access_title">Notification access</string>
     <string name="permissions_notification_access_desc">Required to hide notifications from apps blocked by your active profile (notification listener access).</string>
-    <string name="toast_notification_listener_required">To hide blocked-app notifications, enable notification access for Switchly.</string>
+    <string name="toast_notification_listener_required">To hide blocked-app notifications, enable notification access for Loq In.</string>
 
     <!-- ====================================================== -->
     <!-- OEM/autostart permission -->
     <!-- ====================================================== -->
     <string name="permissions_autostart_title">Manufacturer background settings</string>
-    <string name="permissions_autostart_desc">Some devices add sleep, battery, auto-start, or background activity controls beyond standard Android. Review the guide for your manufacturer so Switchly is not restricted.</string>
-    <string name="permissions_autostart_desc_vivo">vivo/iQOO: check Autostart, Associated startup, and Unrestricted battery/background access. Associated startup is separate on some devices and may be needed to keep Accessibility connected after Switchly is removed from Recents.</string>
-    <string name="permissions_autostart_desc_vivo_accessibility_disabled">vivo/iQOO appears to have turned Accessibility off after it was previously working. Enable Associated startup, keep Switchly unrestricted in battery/background settings, then turn Switchly Accessibility back on. If Phone Manager shows an App risks warning, choose “Turn it back on”.</string>
+    <string name="permissions_autostart_desc">Some devices add sleep, battery, auto-start, or background activity controls beyond standard Android. Review the guide for your manufacturer so Loq In is not restricted.</string>
+    <string name="permissions_autostart_desc_vivo">vivo/iQOO: check Autostart, Associated startup, and Unrestricted battery/background access. Associated startup is separate on some devices and may be needed to keep Accessibility connected after Loq In is removed from Recents.</string>
+    <string name="permissions_autostart_desc_vivo_accessibility_disabled">vivo/iQOO appears to have turned Accessibility off after it was previously working. Enable Associated startup, keep Loq In unrestricted in battery/background settings, then turn Loq In Accessibility back on. If Phone Manager shows an App risks warning, choose “Turn it back on”.</string>
 
     <!-- ====================================================== -->
     <!-- Permission action buttons -->
@@ -79,26 +79,26 @@
     <!-- Why dialogs and disclosures -->
     <!-- ====================================================== -->
     <string name="permissions_why_dialog_header">Why this matters</string>
-    <string name="accessibility_service_desc">Lets Switchly detect foreground apps, supported browser URLs/text, and supported in-app navigation when needed to enforce configured protection and usage limits.</string>
+    <string name="accessibility_service_desc">Lets Loq In detect foreground apps, supported browser URLs/text, and supported in-app navigation when needed to enforce configured protection and usage limits.</string>
     <string name="accessibility_disclosure_title">Accessibility service consent</string>
-    <string name="accessibility_disclosure_message">Switchly uses the Android Accessibility Service for app, website, and supported in-app protection.
+    <string name="accessibility_disclosure_message">Loq In uses the Android Accessibility Service for app, website, and supported in-app protection.
 
-What Switchly can access while the service is active:
+What Loq In can access while the service is active:
 • The currently opened app and window changes
 • Visible text and URLs in supported browsers when needed to check website rules
 • In-app navigation events in supported apps when needed for in-app rules and limits
 
-How Switchly uses this access:
+How Loq In uses this access:
 • To detect protected apps, websites, and supported in-app sections and redirect you away from them
 • To enforce app and website limits and record local usage/blocking statistics
 • To keep protection responsive when the foreground app or visible page changes
 
 Accessibility is not used to prevent uninstall, enable Device Admin or Device Owner, or change managed-device policies. Those protections use separate Android device-management APIs and require separate user or provisioning steps.
 
-Switchly does not use Accessibility to read passwords or private messages and does not sell or share Accessibility data for advertising. Processing for these protection features happens on your device.
+Loq In does not use Accessibility to read passwords or private messages and does not sell or share Accessibility data for advertising. Processing for these protection features happens on your device.
 
 You can decline this permission, but app, website, and supported in-app protection that depends on foreground detection will not work without it.</string>
-    <string name="accessibility_disclosure_checkbox">I understand what Accessibility lets Switchly access and how it is used for protection.</string>
+    <string name="accessibility_disclosure_checkbox">I understand what Accessibility lets Loq In access and how it is used for protection.</string>
     <string name="accessibility_disclosure_accept">I agree</string>
     <string name="accessibility_disclosure_decline">Not now</string>
 
@@ -106,12 +106,12 @@ You can decline this permission, but app, website, and supported in-app protecti
     <!-- Runtime permission explanations -->
     <!-- ====================================================== -->
     <string name="perm_location_title">Location permission</string>
-    <string name="perm_location_why_wifi_ssid">Android treats the Wi-Fi name (SSID) as location-related information. Switchly needs precise location to read the current Wi-Fi reliably. On some devices running Android 13 and newer, Nearby Wi-Fi devices may also be required.</string>
+    <string name="perm_location_why_wifi_ssid">Android treats the Wi-Fi name (SSID) as location-related information. Loq In needs precise location to read the current Wi-Fi reliably. On some devices running Android 13 and newer, Nearby Wi-Fi devices may also be required.</string>
     <string name="perm_location_denied_wifi_schedule">Location permission denied. Wi-Fi schedules may not work without this permission.</string>
-    <string name="perm_location_why_geofence">Location schedules use geofences. For that, Switchly needs precise location. You can grant it here before creating the schedule. If the schedule should still trigger while the app is not open, background location is also required on Android 10 and newer.</string>
+    <string name="perm_location_why_geofence">Location schedules use geofences. For that, Loq In needs precise location. You can grant it here before creating the schedule. If the schedule should still trigger while the app is not open, background location is also required on Android 10 and newer.</string>
     <string name="perm_location_denied_geofence_schedule">Location permission denied. Location schedules may not work without this permission.</string>
     <string name="perm_location_background_title">Background location</string>
-    <string name="perm_location_background_why_geofence">To run location schedules in the background, open Switchly’s app settings and change Location access to “Allow all the time”. On Android 11 and newer, this is granted from the system settings screen, not the first permission popup.</string>
+    <string name="perm_location_background_why_geofence">To run location schedules in the background, open Loq In’s app settings and change Location access to “Allow all the time”. On Android 11 and newer, this is granted from the system settings screen, not the first permission popup.</string>
     <string name="perm_bt_title">Nearby devices permission</string>
     <string name="perm_bt_why_needed">To detect connected Bluetooth devices for Bluetooth schedules, Android requires the “Nearby devices” permission. You can grant it here before creating the schedule.</string>
     <string name="perm_bt_denied_schedule">Bluetooth permission denied. Bluetooth schedules may not work without this permission.</string>
@@ -122,18 +122,18 @@ You can decline this permission, but app, website, and supported in-app protecti
     <string name="protection_inactive_title">Protection inactive</string>
     <string name="protection_inactive_text">Accessibility is off. Tap to check.</string>
     <string name="protection_accessibility_not_connected_title">Accessibility not connected</string>
-    <string name="protection_accessibility_not_connected_text">Android reports Accessibility as enabled, but Switchly is not receiving events. Tap to check.</string>
+    <string name="protection_accessibility_not_connected_text">Android reports Accessibility as enabled, but Loq In is not receiving events. Tap to check.</string>
     <string name="protection_accessibility_oem_disabled_title">Accessibility was turned off</string>
-    <string name="protection_accessibility_oem_disabled_text">On vivo/iQOO, Phone Manager may disable Switchly Accessibility. Enable Associated startup, then turn Accessibility back on.</string>
+    <string name="protection_accessibility_oem_disabled_text">On vivo/iQOO, Phone Manager may disable Loq In Accessibility. Enable Associated startup, then turn Accessibility back on.</string>
     <string name="permissions_status_oem_accessibility_disabled">Disabled by system/Phone Manager</string>
     <string name="permissions_status_advanced_protection">Advanced Protection active - Accessibility unavailable</string>
     <string name="permissions_status_advanced_protection_fallback_starting">Advanced Protection - limited app fallback starting</string>
     <string name="permissions_status_advanced_protection_fallback_active">Advanced Protection - limited app fallback active</string>
     <string name="protection_advanced_protection_title">Limited protection - Advanced Protection</string>
-    <string name="protection_advanced_protection_no_fallback_text">Accessibility is unavailable while Advanced Protection is enabled. Grant Usage Access for limited basic app blocking, or disable Device protection for full Switchly protection.</string>
+    <string name="protection_advanced_protection_no_fallback_text">Accessibility is unavailable while Advanced Protection is enabled. Grant Usage Access for limited basic app blocking, or disable Device protection for full Loq In protection.</string>
     <string name="advanced_protection_fallback_channel_name">Limited app protection</string>
     <string name="advanced_protection_fallback_channel_description">Runs basic app blocking from Usage Access when Android Advanced Protection makes Accessibility unavailable.</string>
-    <string name="advanced_protection_fallback_notification_title">Switchly limited app protection</string>
+    <string name="advanced_protection_fallback_notification_title">Loq In limited app protection</string>
     <string name="advanced_protection_fallback_notification_text">Advanced Protection is active. Basic app blocking is running through Usage Access; website and in-app rules are unavailable.</string>
 
     <!-- ====================================================== -->
@@ -141,7 +141,7 @@ You can decline this permission, but app, website, and supported in-app protecti
     <!-- ====================================================== -->
     <string name="permissions_health_recheck">Re-check</string>
     <string name="permissions_health_rechecked_all_good">Re-check complete:\nAll required permissions look good</string>
-    <string name="permissions_health_rechecked_with_mismatch">Re-check complete:\nAccessibility is enabled in Android, but Switchly is not connected</string>
+    <string name="permissions_health_rechecked_with_mismatch">Re-check complete:\nAccessibility is enabled in Android, but Loq In is not connected</string>
     <plurals name="permissions_health_rechecked_missing">
         <item quantity="one">Re-check complete:\n%1$d required permission is missing</item>
         <item quantity="other">Re-check complete:\n%1$d required permissions are missing</item>

@@ -40,11 +40,11 @@
     <string name="settings_confirm_file_backup_title">In Datei sichern</string>
     <string name="settings_confirm_file_restore_title">Aus Datei wiederherstellen</string>
     <string name="restore_compatibility_warning_title">Älteres Backup</string>
-    <string name="restore_compatibility_version_fmt">Erstellt mit Switchly %1$s.</string>
-    <string name="restore_compatibility_version_unknown">Die Switchly-Version dieses Backups konnte nicht ermittelt werden.</string>
+    <string name="restore_compatibility_version_fmt">Erstellt mit Loq In %1$s.</string>
+    <string name="restore_compatibility_version_unknown">Die Loq In-Version dieses Backups konnte nicht ermittelt werden.</string>
     <string name="restore_compatibility_warning_body">Dieses Backup verwendet ein älteres oder anderes Datenformat. Einige Bereiche werden möglicherweise nicht vollständig wiederhergestellt oder verhalten sich in der aktuellen Version anders.</string>
-    <string name="restore_compatibility_warning_statistics">Switchly versucht, kompatible Zähler aus diesem Backup zu migrieren. Daten, die ältere Versionen nicht gespeichert haben – besonders genaue Sitzungen oder Verläufe – können weiterhin unvollständig sein oder fehlen.</string>
-    <string name="settings_confirm_file_restore_message">Lokales JSON-Backup wiederherstellen und aktuelle Switchly-Daten überschreiben? Aus Sicherheitsgründen werden Switchly und aktive Zeitpläne nach der Wiederherstellung deaktiviert.</string>
+    <string name="restore_compatibility_warning_statistics">Loq In versucht, kompatible Zähler aus diesem Backup zu migrieren. Daten, die ältere Versionen nicht gespeichert haben – besonders genaue Sitzungen oder Verläufe – können weiterhin unvollständig sein oder fehlen.</string>
+    <string name="settings_confirm_file_restore_message">Lokales JSON-Backup wiederherstellen und aktuelle Loq In-Daten überschreiben? Aus Sicherheitsgründen werden Loq In und aktive Zeitpläne nach der Wiederherstellung deaktiviert.</string>
     <string name="settings_confirm_file_backup_message_with_included_categories">Lokale Backup-Datei erstellen?\n\nEnthalten:\n%1$s</string>
     <string name="settings_confirm_file_backup_message_with_categories">Lokale Sicherungsdatei erstellen?\n\nEnthalten:\n%1$s\n\nAusgeschlossen und bei der Wiederherstellung behalten:\n%2$s</string>
 
@@ -75,7 +75,7 @@
     <string name="backup_select_categories_title">Backup-Daten wählen</string>
     <string name="restore_select_categories_title">Daten zur Wiederherstellung wählen</string>
     <string name="restore_contents_preview_title">Inhalt der Sicherung</string>
-    <string name="restore_contents_preview_body">Profile: %1$d\nApp-Regeln: %2$d\nWebsite-Regeln: %3$d\nZeitpläne: %4$d\nStatistiken: %5$s\n\nAusgewählte Kategorien ersetzen die aktuellen lokalen Daten. Switchly und Zeitpläne bleiben nach der Wiederherstellung deaktiviert.</string>
+    <string name="restore_contents_preview_body">Profile: %1$d\nApp-Regeln: %2$d\nWebsite-Regeln: %3$d\nZeitpläne: %4$d\nStatistiken: %5$s\n\nAusgewählte Kategorien ersetzen die aktuellen lokalen Daten. Loq In und Zeitpläne bleiben nach der Wiederherstellung deaktiviert.</string>
     <string name="restore_contents_preview_continue">Daten auswählen</string>
     <string name="restore_contents_statistics_included">enthalten</string>
     <string name="restore_contents_statistics_not_included">nicht enthalten</string>

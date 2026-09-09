@@ -21,14 +21,14 @@
     <!-- Core permissions -->
     <!-- ====================================================== -->
     <string name="permissions_accessibility_title">Bedienungshilfe-Dienst</string>
-    <string name="permissions_accessibility_desc">Erforderlich für App-, Website-, unterstützten In-App- und Nutzungslimit-Schutz: damit Switchly Vordergrundwechsel und die für konfigurierte Regeln nötigen sichtbaren Informationen erkennen kann.</string>
-    <string name="permissions_accessibility_desc_advanced_protection">Android Advanced Protection ist aktiviert. Dadurch kann der Bedienungshilfe-Dienst von Switchly nicht verfügbar sein. Für vollständigen Website-, In-App-, Navigations- und Nutzungslimit-Schutz wird die Bedienungshilfe weiterhin benötigt. Wenn Nutzungszugriff erteilt ist, kann Switchly einen eingeschränkten Best-Effort-Fallback für einfache vollständige App-Regeln in „Ausgewählte blockieren“/„Ausgewählte erlauben“ verwenden. Android kann Blocker-Fenster aus dem Hintergrund weiterhin einschränken, daher ersetzt dieser Fallback den vollständigen Bedienungshilfe-Schutz nicht. Für vollständigen Switchly-Schutz deaktiviere Geräteschutz unter Android-Einstellungen → Sicherheit &amp; Datenschutz → Advanced Protection.</string>
+    <string name="permissions_accessibility_desc">Erforderlich für App-, Website-, unterstützten In-App- und Nutzungslimit-Schutz: damit Loq In Vordergrundwechsel und die für konfigurierte Regeln nötigen sichtbaren Informationen erkennen kann.</string>
+    <string name="permissions_accessibility_desc_advanced_protection">Android Advanced Protection ist aktiviert. Dadurch kann der Bedienungshilfe-Dienst von Loq In nicht verfügbar sein. Für vollständigen Website-, In-App-, Navigations- und Nutzungslimit-Schutz wird die Bedienungshilfe weiterhin benötigt. Wenn Nutzungszugriff erteilt ist, kann Loq In einen eingeschränkten Best-Effort-Fallback für einfache vollständige App-Regeln in „Ausgewählte blockieren“/„Ausgewählte erlauben“ verwenden. Android kann Blocker-Fenster aus dem Hintergrund weiterhin einschränken, daher ersetzt dieser Fallback den vollständigen Bedienungshilfe-Schutz nicht. Für vollständigen Loq In-Schutz deaktiviere Geräteschutz unter Android-Einstellungen → Sicherheit &amp; Datenschutz → Advanced Protection.</string>
     <string name="permissions_usage_access_title">App-Nutzungszugriff</string>
-    <string name="permissions_usage_access_desc">Erforderlich für Bildschirmzeit-Statistiken und tägliche App-Limits. Aktiviere den Zugriff auf „App-Nutzungsdaten“ für Switchly.</string>
-    <string name="permissions_battery_oem_note">Manche Geräte bieten keine Akkuoption „Uneingeschränkt“ an. Wenn du für Switchly bereits die höchstmögliche Hintergrund- oder Akku-Einstellung aktiviert hast, ist das auf deinem Gerät möglicherweise bereits das Maximum.</string>
+    <string name="permissions_usage_access_desc">Erforderlich für Bildschirmzeit-Statistiken und tägliche App-Limits. Aktiviere den Zugriff auf „App-Nutzungsdaten“ für Loq In.</string>
+    <string name="permissions_battery_oem_note">Manche Geräte bieten keine Akkuoption „Uneingeschränkt“ an. Wenn du für Loq In bereits die höchstmögliche Hintergrund- oder Akku-Einstellung aktiviert hast, ist das auf deinem Gerät möglicherweise bereits das Maximum.</string>
     <string name="permissions_exact_alarms_note">Wenn exakte Alarme nicht erlaubt sind, können zeitbasierte Zeitpläne verspätet oder nicht zur richtigen Zeit ausgeführt werden.</string>
     <string name="permissions_battery_title">Akku-Optimierung</string>
-    <string name="permissions_battery_desc">Setze Switchly auf Uneingeschränkt/Nicht optimiert. Androids „Optimiert“-Modus kann Zeitpläne, Geofences, Empfänger und Hintergrundzuverlässigkeit trotzdem verzögern.</string>
+    <string name="permissions_battery_desc">Setze Loq In auf Uneingeschränkt/Nicht optimiert. Androids „Optimiert“-Modus kann Zeitpläne, Geofences, Empfänger und Hintergrundzuverlässigkeit trotzdem verzögern.</string>
     <string name="permissions_battery_allowed">Uneingeschränkt</string>
     <string name="permissions_battery_not_allowed">Optimiert/eingeschränkt</string>
     <string name="permissions_battery_highest_available">Bestmögliche Einstellung bestätigt</string>
@@ -40,7 +40,7 @@
     <string name="permissions_nfc_status_manual">Manuell prüfen</string>
     <string name="permissions_nfc_status_not_allowed">Startberechtigung fehlt</string>
     <string name="permissions_nfc_status_system_disabled">System-NFC deaktiviert</string>
-    <string name="permissions_nfc_desc">Erforderlich, um Switchly über NFC-Tags zu öffnen. Aktiviere System-NFC und erlaube Switchly, falls vorhanden, unter Spezieller App-Zugriff → Per NFC starten. Android verlangt normalerweise ein entsperrtes Gerät.</string>
+    <string name="permissions_nfc_desc">Erforderlich, um Loq In über NFC-Tags zu öffnen. Aktiviere System-NFC und erlaube Loq In, falls vorhanden, unter Spezieller App-Zugriff → Per NFC starten. Android verlangt normalerweise ein entsperrtes Gerät.</string>
 
     <!-- ====================================================== -->
     <!-- Trigger and notification permissions -->
@@ -50,18 +50,18 @@
     <string name="permissions_bluetooth_title">Bluetooth (Geräte in der Nähe)</string>
     <string name="permissions_bluetooth_desc">Benötigt für Bluetooth-basierte Zeitpläne unter Android 12+. Du kannst das hier schon vor dem Erstellen eines Zeitplans aktivieren.</string>
     <string name="permissions_notifications_title">Benachrichtigungen</string>
-    <string name="permissions_notifications_desc">Erforderlich, damit Switchly Statusmeldungen und Erinnerungen in den Benachrichtigungen anzeigen kann.</string>
+    <string name="permissions_notifications_desc">Erforderlich, damit Loq In Statusmeldungen und Erinnerungen in den Benachrichtigungen anzeigen kann.</string>
     <string name="permissions_notification_access_title">Benachrichtigungszugriff</string>
     <string name="permissions_notification_access_desc">Erforderlich, um Benachrichtigungen von Apps auszublenden, die durch dein aktives Profil blockiert sind (Benachrichtigungs-Listener-Zugriff).</string>
-    <string name="toast_notification_listener_required">Um Benachrichtigungen blockierter Apps auszublenden, aktiviere den Benachrichtigungszugriff für Switchly.</string>
+    <string name="toast_notification_listener_required">Um Benachrichtigungen blockierter Apps auszublenden, aktiviere den Benachrichtigungszugriff für Loq In.</string>
 
     <!-- ====================================================== -->
     <!-- OEM/autostart permission -->
     <!-- ====================================================== -->
     <string name="permissions_autostart_title">Hersteller-Hintergrundeinstellungen</string>
-    <string name="permissions_autostart_desc">Manche Geräte ergänzen eigene Schlaf-, Akku-, Autostart- oder Hintergrundregeln. Prüfe den Guide für deinen Hersteller, damit Switchly nicht eingeschränkt wird.</string>
-    <string name="permissions_autostart_desc_vivo">vivo/iQOO: Prüfe Autostart, Zugeordneter Start/Associated startup sowie uneingeschränkten Akku-/Hintergrundzugriff. Associated startup ist auf manchen Geräten eine eigene Option und kann nötig sein, damit die Bedienungshilfe nach dem Entfernen von Switchly aus den letzten Apps verbunden bleibt.</string>
-    <string name="permissions_autostart_desc_vivo_accessibility_disabled">vivo/iQOO scheint die Bedienungshilfe ausgeschaltet zu haben, nachdem sie zuvor funktioniert hat. Aktiviere Zugeordneter Start/Associated startup, erlaube Switchly uneingeschränkte Akku-/Hintergrundnutzung und schalte anschließend die Switchly-Bedienungshilfe wieder ein. Wenn Phone Manager eine Warnung zu App-Risiken zeigt, wähle „Wieder einschalten“.</string>
+    <string name="permissions_autostart_desc">Manche Geräte ergänzen eigene Schlaf-, Akku-, Autostart- oder Hintergrundregeln. Prüfe den Guide für deinen Hersteller, damit Loq In nicht eingeschränkt wird.</string>
+    <string name="permissions_autostart_desc_vivo">vivo/iQOO: Prüfe Autostart, Zugeordneter Start/Associated startup sowie uneingeschränkten Akku-/Hintergrundzugriff. Associated startup ist auf manchen Geräten eine eigene Option und kann nötig sein, damit die Bedienungshilfe nach dem Entfernen von Loq In aus den letzten Apps verbunden bleibt.</string>
+    <string name="permissions_autostart_desc_vivo_accessibility_disabled">vivo/iQOO scheint die Bedienungshilfe ausgeschaltet zu haben, nachdem sie zuvor funktioniert hat. Aktiviere Zugeordneter Start/Associated startup, erlaube Loq In uneingeschränkte Akku-/Hintergrundnutzung und schalte anschließend die Loq In-Bedienungshilfe wieder ein. Wenn Phone Manager eine Warnung zu App-Risiken zeigt, wähle „Wieder einschalten“.</string>
 
     <!-- ====================================================== -->
     <!-- Permission action buttons -->
@@ -79,26 +79,26 @@
     <!-- Why dialogs and disclosures -->
     <!-- ====================================================== -->
     <string name="permissions_why_dialog_header">Darum ist das wichtig</string>
-    <string name="accessibility_service_desc">Ermöglicht Switchly, Vordergrund-Apps, unterstützte Browser-URLs/-Texte und unterstützte In-App-Navigation zu erkennen, wenn dies zum Durchsetzen konfigurierter Schutzregeln und Nutzungslimits nötig ist.</string>
+    <string name="accessibility_service_desc">Ermöglicht Loq In, Vordergrund-Apps, unterstützte Browser-URLs/-Texte und unterstützte In-App-Navigation zu erkennen, wenn dies zum Durchsetzen konfigurierter Schutzregeln und Nutzungslimits nötig ist.</string>
     <string name="accessibility_disclosure_title">Zustimmung zum Bedienungshilfe-Dienst</string>
-    <string name="accessibility_disclosure_message">Switchly verwendet den Android-Bedienungshilfe-Dienst für App-, Website- und unterstützten In-App-Schutz.
+    <string name="accessibility_disclosure_message">Loq In verwendet den Android-Bedienungshilfe-Dienst für App-, Website- und unterstützten In-App-Schutz.
 
-Worauf Switchly zugreifen kann, während der Dienst aktiv ist:
+Worauf Loq In zugreifen kann, während der Dienst aktiv ist:
 • Die aktuell geöffnete App und Fensterwechsel
 • Sichtbaren Text und URLs in unterstützten Browsern, wenn dies zum Prüfen von Website-Regeln nötig ist
 • In-App-Navigationsereignisse in unterstützten Apps, wenn dies für In-App-Regeln und Limits nötig ist
 
-Wie Switchly diesen Zugriff verwendet:
+Wie Loq In diesen Zugriff verwendet:
 • Um geschützte Apps, Websites und unterstützte In-App-Bereiche zu erkennen und dich daraus wegzuleiten
 • Um App- und Website-Limits durchzusetzen und lokale Nutzungs-/Blockierungsstatistiken zu erfassen
 • Damit der Schutz auf Wechsel der Vordergrund-App oder sichtbaren Seite reagieren kann
 
-Die Bedienungshilfe wird nicht verwendet, um eine Deinstallation zu verhindern, Geräteadmin oder Device Owner zu aktivieren oder Managed-Device-Richtlinien zu ändern. Dafür nutzt Switchly getrennte Android-Geräteverwaltungs-APIs mit separaten Nutzer- oder Bereitstellungsschritten.
+Die Bedienungshilfe wird nicht verwendet, um eine Deinstallation zu verhindern, Geräteadmin oder Device Owner zu aktivieren oder Managed-Device-Richtlinien zu ändern. Dafür nutzt Loq In getrennte Android-Geräteverwaltungs-APIs mit separaten Nutzer- oder Bereitstellungsschritten.
 
-Switchly verwendet die Bedienungshilfe nicht zum Lesen von Passwörtern oder privaten Nachrichten und verkauft oder teilt Bedienungshilfe-Daten nicht für Werbung. Die Verarbeitung für diese Schutzfunktionen erfolgt auf deinem Gerät.
+Loq In verwendet die Bedienungshilfe nicht zum Lesen von Passwörtern oder privaten Nachrichten und verkauft oder teilt Bedienungshilfe-Daten nicht für Werbung. Die Verarbeitung für diese Schutzfunktionen erfolgt auf deinem Gerät.
 
 Du kannst diese Berechtigung ablehnen. App-, Website- und unterstützter In-App-Schutz, der die Vordergrunderkennung benötigt, funktioniert dann jedoch nicht.</string>
-    <string name="accessibility_disclosure_checkbox">Ich verstehe, worauf Switchly über die Bedienungshilfe zugreifen kann und wie dieser Zugriff für den Schutz verwendet wird.</string>
+    <string name="accessibility_disclosure_checkbox">Ich verstehe, worauf Loq In über die Bedienungshilfe zugreifen kann und wie dieser Zugriff für den Schutz verwendet wird.</string>
     <string name="accessibility_disclosure_accept">Ich stimme zu</string>
     <string name="accessibility_disclosure_decline">Nicht jetzt</string>
 
@@ -106,12 +106,12 @@ Du kannst diese Berechtigung ablehnen. App-, Website- und unterstützter In-App-
     <!-- Runtime permission explanations -->
     <!-- ====================================================== -->
     <string name="perm_location_title">Standortberechtigung</string>
-    <string name="perm_location_why_wifi_ssid">Android behandelt den WLAN-Namen (SSID) als standortbezogene Information. Switchly benötigt präzisen Standort, um das aktuelle WLAN zuverlässig zu lesen. Auf manchen Geräten mit Android 13 und neuer kann zusätzlich „WLAN-Geräte in der Nähe“ nötig sein.</string>
+    <string name="perm_location_why_wifi_ssid">Android behandelt den WLAN-Namen (SSID) als standortbezogene Information. Loq In benötigt präzisen Standort, um das aktuelle WLAN zuverlässig zu lesen. Auf manchen Geräten mit Android 13 und neuer kann zusätzlich „WLAN-Geräte in der Nähe“ nötig sein.</string>
     <string name="perm_location_denied_wifi_schedule">Standortberechtigung verweigert. WLAN-Zeitpläne funktionieren ohne diese Berechtigung möglicherweise nicht.</string>
-    <string name="perm_location_why_geofence">Standortbasierte Zeitpläne verwenden Geofences. Dafür benötigt Switchly präzisen Standort. Du kannst ihn hier schon vor dem Erstellen des Zeitplans freigeben. Wenn der Zeitplan auch dann auslösen soll, wenn die App nicht geöffnet ist, ist unter Android 10 und neuer zusätzlich Standort im Hintergrund erforderlich.</string>
+    <string name="perm_location_why_geofence">Standortbasierte Zeitpläne verwenden Geofences. Dafür benötigt Loq In präzisen Standort. Du kannst ihn hier schon vor dem Erstellen des Zeitplans freigeben. Wenn der Zeitplan auch dann auslösen soll, wenn die App nicht geöffnet ist, ist unter Android 10 und neuer zusätzlich Standort im Hintergrund erforderlich.</string>
     <string name="perm_location_denied_geofence_schedule">Standortberechtigung verweigert. Standortbasierte Zeitpläne funktionieren ohne diese Berechtigung möglicherweise nicht.</string>
     <string name="perm_location_background_title">Standort im Hintergrund</string>
-    <string name="perm_location_background_why_geofence">Damit standortbasierte Zeitpläne im Hintergrund funktionieren, öffne die App-Einstellungen von Switchly und stelle den Standortzugriff auf „Immer erlauben“. Unter Android 11 und neuer wird das über die System-Einstellungsseite gewährt, nicht im ersten Berechtigungsdialog.</string>
+    <string name="perm_location_background_why_geofence">Damit standortbasierte Zeitpläne im Hintergrund funktionieren, öffne die App-Einstellungen von Loq In und stelle den Standortzugriff auf „Immer erlauben“. Unter Android 11 und neuer wird das über die System-Einstellungsseite gewährt, nicht im ersten Berechtigungsdialog.</string>
     <string name="perm_bt_title">Berechtigung „Geräte in der Nähe“</string>
     <string name="perm_bt_why_needed">Um verbundene Bluetooth-Geräte für Bluetooth-Zeitpläne zu erkennen, benötigt Android die Berechtigung „Geräte in der Nähe“. Du kannst sie hier schon vor dem Erstellen des Zeitplans freigeben.</string>
     <string name="perm_bt_denied_schedule">Bluetooth-Berechtigung verweigert. Bluetooth-Zeitpläne funktionieren ohne diese Berechtigung möglicherweise nicht.</string>
@@ -122,18 +122,18 @@ Du kannst diese Berechtigung ablehnen. App-, Website- und unterstützter In-App-
     <string name="protection_inactive_title">Schutz inaktiv</string>
     <string name="protection_inactive_text">Bedienungshilfe ist aus. Tippe zum Prüfen.</string>
     <string name="protection_accessibility_not_connected_title">Bedienungshilfe nicht verbunden</string>
-    <string name="protection_accessibility_not_connected_text">Android meldet die Bedienungshilfe als aktiviert, aber Switchly empfängt keine Ereignisse. Tippe zum Prüfen.</string>
+    <string name="protection_accessibility_not_connected_text">Android meldet die Bedienungshilfe als aktiviert, aber Loq In empfängt keine Ereignisse. Tippe zum Prüfen.</string>
     <string name="protection_accessibility_oem_disabled_title">Bedienungshilfe wurde ausgeschaltet</string>
-    <string name="protection_accessibility_oem_disabled_text">Auf vivo/iQOO kann Phone Manager die Switchly-Bedienungshilfe deaktivieren. Aktiviere Associated startup und schalte die Bedienungshilfe danach wieder ein.</string>
+    <string name="protection_accessibility_oem_disabled_text">Auf vivo/iQOO kann Phone Manager die Loq In-Bedienungshilfe deaktivieren. Aktiviere Associated startup und schalte die Bedienungshilfe danach wieder ein.</string>
     <string name="permissions_status_oem_accessibility_disabled">Durch System/Phone Manager deaktiviert</string>
     <string name="permissions_status_advanced_protection">Advanced Protection aktiv - Bedienungshilfe nicht verfügbar</string>
     <string name="permissions_status_advanced_protection_fallback_starting">Advanced Protection - eingeschränkter App-Fallback startet</string>
     <string name="permissions_status_advanced_protection_fallback_active">Advanced Protection - eingeschränkter App-Fallback aktiv</string>
     <string name="protection_advanced_protection_title">Eingeschränkter Schutz - Advanced Protection</string>
-    <string name="protection_advanced_protection_no_fallback_text">Während Advanced Protection aktiv ist, ist die Bedienungshilfe nicht verfügbar. Erteile Nutzungszugriff für eingeschränktes App-Blocking oder deaktiviere den Geräteschutz für vollständigen Switchly-Schutz.</string>
+    <string name="protection_advanced_protection_no_fallback_text">Während Advanced Protection aktiv ist, ist die Bedienungshilfe nicht verfügbar. Erteile Nutzungszugriff für eingeschränktes App-Blocking oder deaktiviere den Geräteschutz für vollständigen Loq In-Schutz.</string>
     <string name="advanced_protection_fallback_channel_name">Eingeschränkter App-Schutz</string>
     <string name="advanced_protection_fallback_channel_description">Führt einfaches App-Blocking über Nutzungszugriff aus, wenn Android Advanced Protection die Bedienungshilfe nicht verfügbar macht.</string>
-    <string name="advanced_protection_fallback_notification_title">Switchly: eingeschränkter App-Schutz</string>
+    <string name="advanced_protection_fallback_notification_title">Loq In: eingeschränkter App-Schutz</string>
     <string name="advanced_protection_fallback_notification_text">Advanced Protection ist aktiv. Einfaches App-Blocking läuft über Nutzungszugriff; Website- und In-App-Regeln sind nicht verfügbar.</string>
 
     <!-- ====================================================== -->
@@ -141,7 +141,7 @@ Du kannst diese Berechtigung ablehnen. App-, Website- und unterstützter In-App-
     <!-- ====================================================== -->
     <string name="permissions_health_recheck">Neu prüfen</string>
     <string name="permissions_health_rechecked_all_good">Neuprüfung abgeschlossen:\nAlle erforderlichen Berechtigungen sind gesetzt</string>
-    <string name="permissions_health_rechecked_with_mismatch">Neuprüfung abgeschlossen:\nDie Bedienungshilfe ist in Android aktiviert, aber Switchly ist nicht verbunden</string>
+    <string name="permissions_health_rechecked_with_mismatch">Neuprüfung abgeschlossen:\nDie Bedienungshilfe ist in Android aktiviert, aber Loq In ist nicht verbunden</string>
     <plurals name="permissions_health_rechecked_missing">
         <item quantity="one">Neuprüfung abgeschlossen:\n%1$d erforderliche Berechtigung fehlt</item>
         <item quantity="other">Neuprüfung abgeschlossen:\n%1$d erforderliche Berechtigungen fehlen</item>

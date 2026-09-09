@@ -2,15 +2,15 @@
 <resources>
 
     <!-- App -->
-    <color name="switchly_bg">#FF101010</color>
+    <color name="loqin_bg">#FF101010</color>
     <color name="contact_text">#FFF5F7FA</color>
-    <color name="switchly_text_primary">#FFF5F7FA</color>
-    <color name="switchly_text_secondary">#FFC7CDD6</color>
+    <color name="loqin_text_primary">#FFF5F7FA</color>
+    <color name="loqin_text_secondary">#FFC7CDD6</color>
 
     <!-- Cards -->
-    <color name="switchly_card_bg">#FF24272D</color>
-    <color name="switchly_card_stroke">#26FFFFFF</color>
-    <color name="switchly_divider">#26FFFFFF</color>
+    <color name="loqin_card_bg">#FF24272D</color>
+    <color name="loqin_card_stroke">#26FFFFFF</color>
+    <color name="loqin_divider">#26FFFFFF</color>
 
     <!-- Unavailable app row -->
     <color name="unavailable_row_bg">#FF20242B</color>

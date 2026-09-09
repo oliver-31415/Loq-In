@@ -5,21 +5,15 @@
     <!-- About screen cards -->
     <!-- ====================================================== -->
     <string name="about_app_info_title">App info</string>
-    <string name="about_app_info_summary">Version, build, and links</string>
+    <string name="about_app_info_summary">Version, build, and install details</string>
     <string name="about_device_info_title">Device info</string>
     <string name="about_device_info_summary">System, hardware and technical details</string>
-    <string name="about_developer_info_title">Developer info</string>
-    <string name="about_developer_info_summary">Developer and project details</string>
-    <string name="about_other_switchly_products_title">Other Switchly apps</string>
-    <string name="about_other_switchly_products_summary">Switchly Lite, Launcher, and related apps</string>
     <string name="about_section_app">App</string>
     <string name="about_section_build">Build</string>
     <string name="about_section_install">Install</string>
-    <string name="about_section_links">Links</string>
     <string name="about_section_system">System</string>
     <string name="about_section_device">Device</string>
     <string name="about_section_technical">Technical</string>
-    <string name="about_section_contact">Contact</string>
     <string name="about_section_admin_status">Admin status</string>
     <string name="about_section_adb_tools">ADB tools</string>
     <string name="about_section_documentation">Documentation</string>
@@ -30,7 +24,6 @@
     <string name="about_abi_label">ABI</string>
     <string name="about_android_label">Android version</string>
     <string name="about_api_level_label">API level</string>
-    <string name="about_apk_variant_label">APK variant</string>
     <string name="about_app_name_label">App name</string>
     <string name="about_brand_label">Brand</string>
     <string name="about_build_type_label">Build type</string>
@@ -51,50 +44,6 @@
     <string name="about_version_label">Version</string>
 
     <!-- ====================================================== -->
-    <!-- Developer and external links -->
-    <!-- ====================================================== -->
-    <string name="about_dev_name_label">Developer</string>
-    <string name="about_email_label">Email</string>
-    <string name="about_gitlab_label">GitLab Repository</string>
-    <string name="about_store_label">Switchly Store</string>
-    <string name="about_website_label">Website</string>
-    <string name="about_mail">Email</string>
-    <string name="about_developer_name" translatable="false">Saltyy (Andi S.)</string>
-    <string name="about_website_url" translatable="false">https://switchly.saltyy.at</string>
-    <string name="about_store_url" translatable="false">https://switchly.saltyy.at/store/</string>
-    <string name="store_card_summary">Official NFC and QR tags.</string>
-    <string name="store_open_failed">Could not open the Switchly Store.</string>
-    <string name="about_developer_website_url" translatable="false">https://saltyy.at</string>
-    <string name="about_dev_mail_address" translatable="false">andi@saltyy.at</string>
-    <string name="about_mail_address" translatable="false">support@saltyy.at</string>
-    <string name="about_gitlab_url" translatable="false">https://gitlab.com/Saltyy/switchly-public</string>
-    <string name="about_mail_copied">Email copied</string>
-
-    <!-- ====================================================== -->
-    <!-- Download links -->
-    <!-- ====================================================== -->
-    <string name="about_downloads_url" translatable="false">https://switchly.saltyy.at/downloads</string>
-
-    <!-- ====================================================== -->
-    <!-- Related Switchly products -->
-    <!-- ====================================================== -->
-    <string name="about_older_versions_label">Downloads</string>
-    <string name="about_switchly_lite_play_store_label">Switchly Lite – Play Store</string>
-    <string name="about_switchly_launcher_play_store_label">Switchly Launcher – Play Store</string>
-    <string name="about_switchly_lite">Switchly Lite</string>
-    <string name="about_switchly_lite_bonus">A lighter version for simple flows like NFC, button actions, and timed schedules.</string>
-    <string name="about_switchly_launcher">Switchly Launcher</string>
-    <string name="about_switchly_launcher_bonus">A simple and strong launcher made for a more minimal, distraction-free setup.</string>
-    <string name="about_switchly_lite_playstore_url" translatable="false">https://play.google.com/store/apps/details?id=at.saltyy.switchly.lite</string>
-    <string name="about_switchly_launcher_playstore_url" translatable="false">https://play.google.com/store/apps/details?id=at.saltyy.switchlylauncher</string>
-    <string name="about_other_apps_info_title">Other Switchly apps</string>
-    <string name="about_other_apps_info_body">Switchly Lite is the lighter app for simple NFC, button, and schedule setups.\n\nSwitchly Launcher is a minimal launcher for stricter, distraction-free phone setups.</string>
-
-    <!-- ====================================================== -->
-    <!-- Developer labels and link feedback -->
-    <!-- ====================================================== -->
-    <string name="dev_name_line">Developer: Saltyy (Andi S.)</string>
-    <string name="about_no_browser">No browser app found</string>
-    <string name="about_play_store_link_copied">Play Store link copied</string>
+        <string name="about_no_browser">No browser app found</string>
 
 </resources>

@@ -4,8 +4,8 @@
     <!-- ====================================================== -->
     <!-- Autostart and reliability shortcuts -->
     <!-- ====================================================== -->
-    <string name="pref_autostart_title">Switchly nach Neustart starten</string>
-    <string name="pref_autostart_summary">Startet Switchly nach einem Neustart wieder.</string>
-    <string name="toggle_detail_autostart">Nach einem Neustart versucht Switchly automatisch wieder zu starten, damit dein Schutzprofil direkt aktiv ist.</string>
+    <string name="pref_autostart_title">Loq In nach Neustart starten</string>
+    <string name="pref_autostart_summary">Startet Loq In nach einem Neustart wieder.</string>
+    <string name="toggle_detail_autostart">Nach einem Neustart versucht Loq In automatisch wieder zu starten, damit dein Schutzprofil direkt aktiv ist.</string>
 
 </resources>

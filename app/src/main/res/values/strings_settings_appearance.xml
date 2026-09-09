@@ -12,13 +12,13 @@
     <!-- Theme and display mode -->
     <!-- ====================================================== -->
     <string name="pref_theme_mode_title">Display mode</string>
-    <string name="pref_theme_mode_summary">Choose how Switchly is displayed.</string>
+    <string name="pref_theme_mode_summary">Choose how Loq In is displayed.</string>
     <string name="pref_theme_mode_light">Light</string>
     <string name="pref_theme_mode_dark">Dark</string>
     <string name="pref_theme_mode_system">Follow system</string>
     <string name="pref_theme_mode_system_summary">Follow your Android light/dark setting.</string>
-    <string name="pref_theme_mode_light_summary">Use the light Switchly theme.</string>
-    <string name="pref_theme_mode_dark_summary">Use the dark Switchly theme.</string>
+    <string name="pref_theme_mode_light_summary">Use the light Loq In theme.</string>
+    <string name="pref_theme_mode_dark_summary">Use the dark Loq In theme.</string>
 
     <!-- ====================================================== -->
     <!-- Time format -->
@@ -37,7 +37,7 @@
     <!-- ====================================================== -->
     <string name="pref_accent_custom">Custom color…</string>
     <string name="pref_accent_custom_title">Custom color</string>
-    <string name="pref_accent_default_summary">The default green Switchly accent.</string>
+    <string name="pref_accent_default_summary">The default green Loq In accent.</string>
     <string name="pref_accent_blue_summary">A calm blue accent for a cleaner technical feel.</string>
     <string name="pref_accent_orange_summary">A warm orange accent with stronger contrast.</string>
     <string name="pref_accent_purple_summary">A soft purple accent for darker setups.</string>
@@ -77,8 +77,8 @@
     <!-- Language -->
     <!-- ====================================================== -->
     <string name="pref_language_system_summary">Use your device language when available.</string>
-    <string name="pref_language_en_summary">Use English for all Switchly screens.</string>
-    <string name="pref_language_de_summary">Use German for all Switchly screens.</string>
+    <string name="pref_language_en_summary">Use English for all Loq In screens.</string>
+    <string name="pref_language_de_summary">Use German for all Loq In screens.</string>
     <string name="pref_language_summary">Choose the app language.</string>
     <string-array name="pref_language_entries">
         <item>System</item>

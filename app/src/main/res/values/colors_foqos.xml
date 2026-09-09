@@ -4,7 +4,7 @@
     <!--
         Foqos-inspired Material 3 Expressive token palette (light).
         Soft warm paper neutrals, hairline outlines, calm green primary.
-        These tokens exist alongside the original Switchly palette so the
+        These tokens exist alongside the original Loq In palette so the
         restyle can be rolled out screen-by-screen without touching
         upstream-owned color files.
     -->
@@ -24,7 +24,7 @@
     <color name="foqos_outline">#FFE4E2DC</color>
     <color name="foqos_outline_variant">#FFEEEEE8</color>
 
-    <!-- Primary (calm green, matches Switchly default accent) -->
+    <!-- Primary (calm green, matches Loq In default accent) -->
     <!-- tools:ignore: reserved M3 token set for the Foqos restyle rollout -->
     <color name="foqos_primary" tools:ignore="UnusedResources">#FF2E8B57</color>
     <color name="foqos_on_primary" tools:ignore="UnusedResources">#FFFFFFFF</color>
@@ -35,7 +35,7 @@
 
     <!-- =========================
          ACCENT CONTAINERS (M3)
-         Soft tinted containers derived from each Switchly accent,
+         Soft tinted containers derived from each Loq In accent,
          so switches/chips/dialogs follow the active accent under M3.
          ========================= -->
     <color name="accent_green_container">#FFD8F0E2</color>

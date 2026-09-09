@@ -19,24 +19,24 @@
     <string name="app_lock_pin_set">App-PIN gespeichert.</string>
     <string name="app_lock_pin_hint_new">Neue PIN (mind. 4 Ziffern)</string>
     <string name="app_lock_pin_hint_enter">App-PIN eingeben</string>
-    <string name="app_lock_pin_title">Switchly-PIN</string>
-    <string name="app_lock_pin_message">Diese PIN kann den Switchly-App-Zugriff und Änderungen am Deinstallationsschutz schützen.</string>
+    <string name="app_lock_pin_title">Loq In-PIN</string>
+    <string name="app_lock_pin_message">Diese PIN kann den Loq In-App-Zugriff und Änderungen am Deinstallationsschutz schützen.</string>
     <string name="app_lock_pin_incorrect">Falsche PIN.</string>
     <string name="app_lock_pin_too_short">Die PIN muss mindestens 4 Ziffern haben.</string>
-    <string name="app_lock_unlock_title">Switchly entsperren</string>
+    <string name="app_lock_unlock_title">Loq In entsperren</string>
     <string name="app_lock_unlock_message">Gib deine App-PIN ein oder nutze Biometrie, um fortzufahren.</string>
     <string name="app_lock_unlock_button">Entsperren</string>
-    <string name="app_lock_enable_title">Switchly-App schützen</string>
-    <string name="app_lock_enable_summary">Beim Öffnen von Switchly PIN oder Biometrie verlangen.</string>
-    <string name="app_lock_setup_pin_first">Lege zuerst eine Switchly-PIN fest.</string>
+    <string name="app_lock_enable_title">Loq In-App schützen</string>
+    <string name="app_lock_enable_summary">Beim Öffnen von Loq In PIN oder Biometrie verlangen.</string>
+    <string name="app_lock_setup_pin_first">Lege zuerst eine Loq In-PIN fest.</string>
 
     <!-- ====================================================== -->
     <!-- Biometric unlock -->
     <!-- ====================================================== -->
     <string name="app_lock_biometric_title">Biometrische Bestätigung erlauben</string>
-    <string name="app_lock_biometric_summary">Gesicht oder Fingerabdruck kann Switchly entsperren und geschützte Änderungen statt der PIN bestätigen.</string>
+    <string name="app_lock_biometric_summary">Gesicht oder Fingerabdruck kann Loq In entsperren und geschützte Änderungen statt der PIN bestätigen.</string>
     <string name="app_lock_biometric_button">Biometrie verwenden</string>
-    <string name="app_lock_biometric_prompt_title">Switchly entsperren</string>
+    <string name="app_lock_biometric_prompt_title">Loq In entsperren</string>
     <string name="app_lock_biometric_prompt_subtitle">Nutze Gesicht oder Fingerabdruck, um die App zu öffnen.</string>
     <string name="app_lock_biometric_not_available">Biometrie ist auf diesem Gerät gerade nicht verfügbar.</string>
 
@@ -47,11 +47,11 @@
     <string name="app_lock_emergency_pin_summary">Separate PIN für Emergency Unlock festlegen, falls du einen sicheren Ausweg brauchst.</string>
     <string name="app_lock_screen_title">App-Sperre</string>
     <string name="app_lock_strict_protection_title">Deinstallationsschutz</string>
-    <string name="app_lock_strict_protection_summary">Verwendet Android-Geräteadmin als Entfernungsschutz. Auf Standard-Android deaktiviert ein aktiver Geräteadmin auch „Stopp erzwingen“; Hersteller können davon abweichen. Zum Ausschalten in Switchly ist deine PIN oder Biometrie nötig.</string>
+    <string name="app_lock_strict_protection_summary">Verwendet Android-Geräteadmin als Entfernungsschutz. Auf Standard-Android deaktiviert ein aktiver Geräteadmin auch „Stopp erzwingen“; Hersteller können davon abweichen. Zum Ausschalten in Loq In ist deine PIN oder Biometrie nötig.</string>
     <string name="app_lock_strict_protection_summary_device_admin_active">Der Geräteadmin-Schutz ist aktiv. Standard-Android deaktiviert „Stopp erzwingen“ für aktive Geräteadmin-Apps und erschwert die Deinstallation deutlich; Hersteller-Einstellungen können abweichen. Android kann weiterhin einen Systemweg zum Deaktivieren des Administrators anbieten.</string>
-    <string name="app_lock_strict_protection_summary_device_owner_active">Der verwaltete Schutz ist über Android Device Owner aktiv. Switchlys Paket ist für die Deinstallation gesperrt und ab Android 11 ist auch die Benutzersteuerung wie „Stopp erzwingen“ und App-Daten löschen deaktiviert.</string>
-    <string name="app_lock_strict_protection_summary_profile_owner_active">Der verwaltete Schutz ist über Android Profile Owner aktiv. Switchlys Paket ist für die Deinstallation gesperrt und ab Android 11 ist auch die Benutzersteuerung wie „Stopp erzwingen“ und App-Daten löschen deaktiviert.</string>
-    <string name="app_lock_strict_protection_summary_managed_not_active">Managed-Device-Besitz ist aktiv, Android meldet derzeit aber nicht alle erwarteten Switchly-Schutzrichtlinien als aktiv. Prüfe die Developer-Tools oder einen Supportbericht.</string>
+    <string name="app_lock_strict_protection_summary_device_owner_active">Der verwaltete Schutz ist über Android Device Owner aktiv. Loq Ins Paket ist für die Deinstallation gesperrt und ab Android 11 ist auch die Benutzersteuerung wie „Stopp erzwingen“ und App-Daten löschen deaktiviert.</string>
+    <string name="app_lock_strict_protection_summary_profile_owner_active">Der verwaltete Schutz ist über Android Profile Owner aktiv. Loq Ins Paket ist für die Deinstallation gesperrt und ab Android 11 ist auch die Benutzersteuerung wie „Stopp erzwingen“ und App-Daten löschen deaktiviert.</string>
+    <string name="app_lock_strict_protection_summary_managed_not_active">Managed-Device-Besitz ist aktiv, Android meldet derzeit aber nicht alle erwarteten Loq In-Schutzrichtlinien als aktiv. Prüfe die Developer-Tools oder einen Supportbericht.</string>
     <string name="app_lock_strict_protection_summary_admin_inactive">Deinstallationsschutz ist konfiguriert, der Android-Admin-/Managed-Status ist aber nicht mehr aktiv. Aktiviere den Schutz erneut, um ihn wiederherzustellen.</string>
     <string name="app_lock_strict_protection_summary_managed_available">Managed-Device-Besitz ist bereits aktiv. Aktiviere den Deinstallationsschutz, um die verwaltete Deinstallationssperre anzuwenden und ab Android 11 auch Benutzeraktionen wie „Stopp erzwingen“ und App-Daten löschen zu deaktivieren.</string>
     <string name="app_lock_strict_protection_admin_explanation">Der Deinstallationsschutz verwendet Android-Geräteadmin. Auf Standard-Android können aktive Geräteadmin-Apps in den App-Infos nicht per „Stopp erzwingen“ beendet werden; Hersteller können davon abweichen. Android kann weiterhin einen Systemweg zum Deaktivieren des Admins anbieten. Ein erweitertes Device-Owner-/Profile-Owner-Setup kann zusätzlich eine verwaltete Deinstallationssperre erzwingen und ab Android 11 Benutzeraktionen wie „Stopp erzwingen“ und App-Daten löschen deaktivieren.</string>
@@ -59,7 +59,7 @@
     <string name="app_lock_strict_protection_not_granted">Geräteadmin wurde nicht aktiviert.</string>
     <string name="app_lock_strict_protection_disabled">Deinstallationsschutz deaktiviert.</string>
     <string name="app_lock_uninstall_disable_auth_title">Deinstallationsschutz deaktivieren?</string>
-    <string name="app_lock_uninstall_disable_auth_message">Bestätige mit deiner Switchly-PIN oder Biometrie, bevor Geräteadmin entfernt wird.</string>
+    <string name="app_lock_uninstall_disable_auth_message">Bestätige mit deiner Loq In-PIN oder Biometrie, bevor Geräteadmin entfernt wird.</string>
     <string name="app_lock_uninstall_use_pin">PIN verwenden</string>
     <string name="app_lock_uninstall_disable_action">Deaktivieren</string>
 

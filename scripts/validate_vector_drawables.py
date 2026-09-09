@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate Switchly vector drawable structure without external dependencies."""
+"""Validate Loq In vector drawable structure without external dependencies."""
 
 from __future__ import annotations
 

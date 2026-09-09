@@ -11,9 +11,9 @@
     <string name="keys_codes_paired_tags_title">Gepaarte Tags verwalten</string>
     <string name="keys_codes_paired_tags_summary">UID-only/schreibgeschützte Tags koppeln und Limits pro Tag festlegen</string>
     <string name="keys_codes_manage_qr_title">QR-Codes verwalten</string>
-    <string name="keys_codes_manage_qr_summary">Einen Switchly-QR-Code erstellen</string>
+    <string name="keys_codes_manage_qr_summary">Einen Loq In-QR-Code erstellen</string>
     <string name="keys_codes_manage_barcodes_title">Barcodes verwalten</string>
-    <string name="keys_codes_manage_barcodes_summary">Physische Barcodes auf Switchly-Aktionen mappen</string>
+    <string name="keys_codes_manage_barcodes_summary">Physische Barcodes auf Loq In-Aktionen mappen</string>
 
     <!-- ====================================================== -->
     <!-- Locked or disabled states -->
@@ -28,10 +28,10 @@
     <!-- Info dialogs -->
     <!-- ====================================================== -->
     <string name="qr_info_title">QR-Code-Aktionen</string>
-    <string name="qr_info_body">QR-Codes können beim Scannen folgende Switchly-Aktionen ausführen:\n• Schutz aktivieren oder deaktivieren\n• Aktuellen Status umschalten\n• Temporäre Aktion starten\n• Profil wechseln\n\nFür das zuverlässigste Ergebnis solltest du Switchly-QR-Codes mit dem integrierten Switchly-QR-Scanner scannen. Manche externen Scanner, darunter Google Lens auf einigen Geräten, behandeln den Switchly-Aktionslink stattdessen als Suche.\n\nFür eine strengere Einrichtung kannst du nur die gewünschten Steuerungskanäle aktiviert lassen.</string>
+    <string name="qr_info_body">QR-Codes können beim Scannen folgende Loq In-Aktionen ausführen:\n• Schutz aktivieren oder deaktivieren\n• Aktuellen Status umschalten\n• Temporäre Aktion starten\n• Profil wechseln\n\nFür das zuverlässigste Ergebnis solltest du Loq In-QR-Codes mit dem integrierten Loq In-QR-Scanner scannen. Manche externen Scanner, darunter Google Lens auf einigen Geräten, behandeln den Loq In-Aktionslink stattdessen als Suche.\n\nFür eine strengere Einrichtung kannst du nur die gewünschten Steuerungskanäle aktiviert lassen.</string>
     <string name="manage_barcodes_info_title">Barcode-Aktionen</string>
-    <string name="manage_barcodes_info_body">Gespeicherte Barcodes verbinden einen physischen Code mit einer Switchly-Aktion:\n• Schutz aktivieren, deaktivieren oder umschalten\n• Temporäre Aktion starten\n• Profil wechseln\n\nFür eine größere Hürde kannst du den Barcode außer Reichweite aufbewahren. Mit „Beim Scannen fragen“ wählst du die Dauer während des Scans.</string>
+    <string name="manage_barcodes_info_body">Gespeicherte Barcodes verbinden einen physischen Code mit einer Loq In-Aktion:\n• Schutz aktivieren, deaktivieren oder umschalten\n• Temporäre Aktion starten\n• Profil wechseln\n\nFür eine größere Hürde kannst du den Barcode außer Reichweite aufbewahren. Mit „Beim Scannen fragen“ wählst du die Dauer während des Scans.</string>
     <string name="paired_tags_info_title">Gekoppelte NFC-Tags</string>
-    <string name="paired_tags_info_body">Gekoppelte Tags werden anhand ihrer eindeutigen ID erkannt.\n• Schreibgeschützte Tags verwenden die in Switchly eingerichtete Aktion.\n• Beschreibbare Tags können ihre gespeicherte Aktion oder eine eigene Überschreibung verwenden.\n• Tageslimits und Abklingzeiten gelten für Entsperrungen und Schutzpausen.\n\nFür normale beschreibbare Switchly-Tags ist das Koppeln optional, solange du keine Einstellungen oder Limits pro Tag benötigst.</string>
+    <string name="paired_tags_info_body">Gekoppelte Tags werden anhand ihrer eindeutigen ID erkannt.\n• Schreibgeschützte Tags verwenden die in Loq In eingerichtete Aktion.\n• Beschreibbare Tags können ihre gespeicherte Aktion oder eine eigene Überschreibung verwenden.\n• Tageslimits und Abklingzeiten gelten für Entsperrungen und Schutzpausen.\n\nFür normale beschreibbare Loq In-Tags ist das Koppeln optional, solange du keine Einstellungen oder Limits pro Tag benötigst.</string>
 
 </resources>

@@ -19,24 +19,24 @@
     <string name="app_lock_pin_set">App PIN saved.</string>
     <string name="app_lock_pin_hint_new">New PIN (min. 4 digits)</string>
     <string name="app_lock_pin_hint_enter">Enter app PIN</string>
-    <string name="app_lock_pin_title">Switchly PIN</string>
-    <string name="app_lock_pin_message">This PIN can protect Switchly app access and changes to uninstall protection.</string>
+    <string name="app_lock_pin_title">Loq In PIN</string>
+    <string name="app_lock_pin_message">This PIN can protect Loq In app access and changes to uninstall protection.</string>
     <string name="app_lock_pin_incorrect">Incorrect PIN.</string>
     <string name="app_lock_pin_too_short">PIN must be at least 4 digits.</string>
-    <string name="app_lock_unlock_title">Unlock Switchly</string>
+    <string name="app_lock_unlock_title">Unlock Loq In</string>
     <string name="app_lock_unlock_message">Enter your app PIN or use biometrics to continue.</string>
     <string name="app_lock_unlock_button">Unlock</string>
-    <string name="app_lock_enable_title">Protect Switchly app</string>
-    <string name="app_lock_enable_summary">Require PIN or biometrics when opening Switchly.</string>
-    <string name="app_lock_setup_pin_first">Set a Switchly PIN first.</string>
+    <string name="app_lock_enable_title">Protect Loq In app</string>
+    <string name="app_lock_enable_summary">Require PIN or biometrics when opening Loq In.</string>
+    <string name="app_lock_setup_pin_first">Set a Loq In PIN first.</string>
 
     <!-- ====================================================== -->
     <!-- Biometric unlock -->
     <!-- ====================================================== -->
     <string name="app_lock_biometric_title">Allow biometric confirmation</string>
-    <string name="app_lock_biometric_summary">Face or fingerprint can unlock Switchly and confirm protected changes instead of the PIN.</string>
+    <string name="app_lock_biometric_summary">Face or fingerprint can unlock Loq In and confirm protected changes instead of the PIN.</string>
     <string name="app_lock_biometric_button">Use biometrics</string>
-    <string name="app_lock_biometric_prompt_title">Unlock Switchly</string>
+    <string name="app_lock_biometric_prompt_title">Unlock Loq In</string>
     <string name="app_lock_biometric_prompt_subtitle">Use face or fingerprint to open the app.</string>
     <string name="app_lock_biometric_not_available">Biometrics are not available on this device right now.</string>
 
@@ -47,11 +47,11 @@
     <string name="app_lock_emergency_pin_summary">Set the separate PIN used for Emergency Unlock when you need a safe fallback.</string>
     <string name="app_lock_screen_title">App lock</string>
     <string name="app_lock_strict_protection_title">Uninstall protection</string>
-    <string name="app_lock_strict_protection_summary">Uses Android Device Admin for removal protection. On standard Android, an active Device Admin also disables Force Stop; manufacturer behavior can differ. Turning this protection off in Switchly requires your PIN or biometrics.</string>
+    <string name="app_lock_strict_protection_summary">Uses Android Device Admin for removal protection. On standard Android, an active Device Admin also disables Force Stop; manufacturer behavior can differ. Turning this protection off in Loq In requires your PIN or biometrics.</string>
     <string name="app_lock_strict_protection_summary_device_admin_active">Device Admin protection is active. Standard Android disables Force Stop for active device-admin apps and adds strong uninstall friction; manufacturer Settings apps can differ. Android can still offer a system path to deactivate the administrator.</string>
-    <string name="app_lock_strict_protection_summary_device_owner_active">Managed protection is active through Android Device Owner. The Switchly package is uninstall-blocked and, on Android 11+, user control such as Force Stop and clearing app data is disabled.</string>
-    <string name="app_lock_strict_protection_summary_profile_owner_active">Managed protection is active through Android Profile Owner. The Switchly package is uninstall-blocked and, on Android 11+, user control such as Force Stop and clearing app data is disabled.</string>
-    <string name="app_lock_strict_protection_summary_managed_not_active">Managed-device ownership is active, but Android is not currently reporting all expected Switchly protection policies as active. Check Developer Tools or a support report.</string>
+    <string name="app_lock_strict_protection_summary_device_owner_active">Managed protection is active through Android Device Owner. The Loq In package is uninstall-blocked and, on Android 11+, user control such as Force Stop and clearing app data is disabled.</string>
+    <string name="app_lock_strict_protection_summary_profile_owner_active">Managed protection is active through Android Profile Owner. The Loq In package is uninstall-blocked and, on Android 11+, user control such as Force Stop and clearing app data is disabled.</string>
+    <string name="app_lock_strict_protection_summary_managed_not_active">Managed-device ownership is active, but Android is not currently reporting all expected Loq In protection policies as active. Check Developer Tools or a support report.</string>
     <string name="app_lock_strict_protection_summary_admin_inactive">Uninstall protection is configured, but its Android admin/managed state is no longer active. Enable it again to restore protection.</string>
     <string name="app_lock_strict_protection_summary_managed_available">Managed-device ownership is already active. Enable uninstall protection to apply managed uninstall blocking and, on Android 11+, disable user control such as Force Stop and clearing app data.</string>
     <string name="app_lock_strict_protection_admin_explanation">Uninstall protection uses Android Device Admin. On standard Android, active device-admin apps cannot be Force Stopped from App Info, although manufacturer Settings apps can differ. Android may still offer a system path to deactivate the admin. Advanced Device Owner/Profile Owner setup can additionally enforce managed uninstall blocking and, on Android 11+, disable user control such as Force Stop and clearing app data.</string>
@@ -59,7 +59,7 @@
     <string name="app_lock_strict_protection_not_granted">Device Admin was not enabled.</string>
     <string name="app_lock_strict_protection_disabled">Uninstall protection disabled.</string>
     <string name="app_lock_uninstall_disable_auth_title">Disable uninstall protection?</string>
-    <string name="app_lock_uninstall_disable_auth_message">Confirm with your Switchly PIN or biometrics before Device Admin is removed.</string>
+    <string name="app_lock_uninstall_disable_auth_message">Confirm with your Loq In PIN or biometrics before Device Admin is removed.</string>
     <string name="app_lock_uninstall_use_pin">Use PIN</string>
     <string name="app_lock_uninstall_disable_action">Disable</string>
 

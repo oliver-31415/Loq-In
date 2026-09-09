@@ -14,7 +14,7 @@
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
-            style="@style/Switchly.TopBar"
+            style="@style/LoqIn.TopBar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:minHeight="?attr/actionBarSize"
@@ -39,13 +39,13 @@
             android:orientation="vertical">
 
             <TextView
-                style="@style/Switchly.SectionHeader"
+                style="@style/LoqIn.SectionHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/keys_codes_section" />
 
             <com.google.android.material.card.MaterialCardView
-                style="@style/Switchly.Card"
+                style="@style/LoqIn.Card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp">
@@ -121,7 +121,7 @@
 
                     <com.google.android.material.divider.MaterialDivider
                         android:id="@+id/dividerWriteNfc"
-                        style="@style/Switchly.Divider"
+                        style="@style/LoqIn.Divider"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         app:dividerInsetStart="54dp" />
@@ -183,7 +183,7 @@
 
                     <com.google.android.material.divider.MaterialDivider
                         android:id="@+id/dividerPairedTags"
-                        style="@style/Switchly.Divider"
+                        style="@style/LoqIn.Divider"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         app:dividerInsetStart="54dp" />
@@ -254,7 +254,7 @@
 
                     <com.google.android.material.divider.MaterialDivider
                         android:id="@+id/dividerGenerateQr"
-                        style="@style/Switchly.Divider"
+                        style="@style/LoqIn.Divider"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         app:dividerInsetStart="54dp" />

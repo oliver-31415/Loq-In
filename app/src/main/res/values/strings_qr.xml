@@ -30,9 +30,9 @@
     <string name="qr_minutes_custom">Custom…</string>
     <string name="qr_minutes_custom_title">Custom minutes</string>
     <string name="qr_minutes_hint">Enter minutes</string>
-    <string name="qr_clipboard_label">Switchly URI</string>
+    <string name="qr_clipboard_label">Loq In URI</string>
     <string name="qr_profile_fallback">Profile</string>
-    <string name="qr_scan_with_switchly_hint">Scan with Switchly. External scanners may open it as a search.</string>
+    <string name="qr_scan_with_loqin_hint">Scan with Loq In. External scanners may open it as a search.</string>
 
     <!-- ====================================================== -->
     <!-- QR scanner and errors -->
@@ -43,14 +43,14 @@
     <!-- ====================================================== -->
     <!-- QR entry points -->
     <!-- ====================================================== -->
-    <string name="qr_scan_option_summary">Open the camera and scan an existing Switchly QR code.</string>
-    <string name="qr_manage_option_summary">Create, view, save or share Switchly QR actions.</string>
+    <string name="qr_scan_option_summary">Open the camera and scan an existing Loq In QR code.</string>
+    <string name="qr_manage_option_summary">Create, view, save or share Loq In QR actions.</string>
 
     <!-- ====================================================== -->
     <!-- Camera permission and external scanner confirmation -->
     <!-- ====================================================== -->
-    <string name="external_qr_confirm_title">Run Switchly QR action?</string>
-    <string name="external_qr_confirm_message">This link was opened from an external QR scanner. Only continue if you intentionally scanned a Switchly QR code.</string>
+    <string name="external_qr_confirm_title">Run Loq In QR action?</string>
+    <string name="external_qr_confirm_message">This link was opened from an external QR scanner. Only continue if you intentionally scanned a Loq In QR code.</string>
     <string name="external_qr_confirm_action">Run action</string>
 
     <!-- ====================================================== -->

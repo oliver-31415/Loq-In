@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- ====================================================== -->
+    <!-- Loq In overview -->
+    <!-- ====================================================== -->
+    <string name="loqin_overview_title">Loq In-Übersicht</string>
+    <string name="loqin_overview_summary">Scans, aktive Zeit, Öffnungen, Blockierungen, Limits, Aktionen und Zeitpläne</string>
+    <string name="loqin_overview_info_title">Über die Loq In-Übersicht</string>
+    <string name="loqin_overview_info_body">Diese Übersicht zählt:\n• NFC-, QR- und Barcode-Scans\n• Aktive Zeit\n• App-Öffnungen und Blockierungen\n• Erreichte Limits\n• Änderungen des Schutzstatus\n• Ausgeführte Zeitpläne\n\nDiese Statistiken werden lokal gespeichert. Sie sind nur in einer Sicherung enthalten, wenn „Statistiken/Zähler“ ausgewählt ist. Einige Detailzähler beginnen erst mit dem Update, das sie eingeführt hat.</string>
+    <string name="loqin_overview_storage_note">Lokal gespeichert und in Backups mit „Statistiken/Zähler“ enthalten. Detaillierte Statusänderungszähler beginnen mit diesem Update.</string>
+    <string name="loqin_overview_range_overall">Gesamt</string>
+    <string name="loqin_overview_section_scans">Scans und Eingaben</string>
+    <string name="loqin_overview_section_activity">Nutzung und Schutz</string>
+    <string name="loqin_overview_section_actions">Loq In-Aktionen</string>
+    <string name="loqin_overview_section_schedules">Zeitpläne</string>
+    <string name="loqin_overview_nfc_scans">NFC-Scans</string>
+    <string name="loqin_overview_qr_scans">QR-Scans</string>
+    <string name="loqin_overview_barcode_scans">Barcode-Scans</string>
+    <string name="loqin_overview_active_time">Aktive Zeit</string>
+    <string name="loqin_overview_app_launches">Öffnungen</string>
+    <string name="loqin_overview_blocks">Blockierungen</string>
+    <string name="loqin_overview_limits_reached">Erreichte Limits</string>
+    <string name="loqin_overview_enabled">Loq In aktiviert</string>
+    <string name="loqin_overview_disabled">Loq In deaktiviert</string>
+    <string name="loqin_overview_temporary_enables">Temporäre Aktivierungen</string>
+    <string name="loqin_overview_emergency_unlocks">Notfall-Entsperrungen</string>
+    <string name="loqin_overview_schedules_executed">Zeitpläne ausgeführt</string>
+    <string name="loqin_overview_schedule_enables">Zeitpläne, die Loq In aktiviert haben</string>
+    <string name="loqin_overview_schedule_disables">Zeitpläne, die Loq In deaktiviert haben</string>
+
+</resources>

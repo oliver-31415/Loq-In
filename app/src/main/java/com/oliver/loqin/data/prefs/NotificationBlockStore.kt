@@ -1,0 +1,48 @@
+/*
+ * Loq In
+ * Copyright (C) 2026 Loq In Contributors
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+package com.oliver.loqin.data.prefs
+
+import android.content.Context
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.edit
+
+/**
+ * Global toggle for hiding notifications from apps that are currently blocked by the active profile.
+ * Note: the user must grant Notification Listener Access in system settings for this to work.
+ */
+object NotificationBlockStore {
+    private const val PREFS = "loqin_prefs"
+    private const val KEY_ENABLED = "block_notifications_enabled"
+
+    private fun prefs(context: Context) =
+        context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+
+    fun isEnabled(context: Context): Boolean {
+        return prefs(context).getBoolean(KEY_ENABLED, true)
+    }
+
+    fun setEnabled(context: Context, enabled: Boolean) {
+        prefs(context).edit { putBoolean(KEY_ENABLED, enabled) }
+    }
+
+    fun hasListenerAccess(context: Context): Boolean {
+        return NotificationManagerCompat.getEnabledListenerPackages(context)
+            .contains(context.packageName)
+    }
+}

@@ -26,5 +26,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "switchly"
+rootProject.name = "loqin"
 include(":app")

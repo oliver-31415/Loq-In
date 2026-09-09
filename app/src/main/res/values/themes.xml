@@ -4,10 +4,10 @@
     <!-- =========================
          THEME: Base + compatibility alias
          ========================= -->
-    <!-- Backwards-compatible alias (older builds referenced @style/Switchly as the app theme) -->
-    <style name="Switchly" parent="Theme.Switchly" />
+    <!-- Backwards-compatible alias (older builds referenced @style/LoqIn as the app theme) -->
+    <style name="LoqIn" parent="Theme.LoqIn" />
 
-    <style name="Theme.Switchly" parent="Theme.Switchly.Base">
+    <style name="Theme.LoqIn" parent="Theme.LoqIn.Base">
         <item name="android:windowLightStatusBar">true</item>
         <!-- Default (green) accent tokens so ?attr/colorPrimaryContainer etc.
              resolve per-accent; variants below override all of these. -->
@@ -38,7 +38,7 @@
         so the theme is identical in both modes and colors flip via resource config.
         This also avoids the same native resolution bug around DayNight theme copies.
     -->
-    <style name="Theme.Switchly.Base" parent="Theme.Material3.Light.NoActionBar">
+    <style name="Theme.LoqIn.Base" parent="Theme.Material3.Light.NoActionBar">
 
         <!-- Accent/primary colors -->
         <item name="colorPrimary">@color/accent_default_green</item>
@@ -319,13 +319,13 @@
         <item name="toolbarSurfaceStyle">@style/Widget.Material3.Toolbar.Surface</item>
 
         <!-- Global Material component styles -->
-        <item name="materialButtonStyle">@style/Switchly.Button</item>
-        <item name="materialButtonOutlinedStyle">@style/Switchly.OutlinedButton</item>
-        <item name="floatingActionButtonStyle">@style/Switchly.Fab</item>
-        <item name="materialCardViewStyle">@style/Switchly.Card</item>
+        <item name="materialButtonStyle">@style/LoqIn.Button</item>
+        <item name="materialButtonOutlinedStyle">@style/LoqIn.OutlinedButton</item>
+        <item name="floatingActionButtonStyle">@style/LoqIn.Fab</item>
+        <item name="materialCardViewStyle">@style/LoqIn.Card</item>
 
         <!-- Toolbar/ActionBar -->
-        <item name="toolbarStyle">@style/Switchly.TopBar</item>
+        <item name="toolbarStyle">@style/LoqIn.TopBar</item>
         <item name="actionBarTheme">@style/ThemeOverlay.Material3.ActionBar</item>
         <item name="actionBarPopupTheme">@style/ThemeOverlay.Material3.Light</item>
         <item name="android:textColorPrimaryInverse">@android:color/white</item>
@@ -334,14 +334,14 @@
             IMPORTANT:
             Do NOT apply the ExposedDropdownMenu TextInputLayout style globally.
             It causes crashes when a normal EditText is placed inside a TextInputLayout (Material requires an AutoCompleteTextView for exposed dropdowns).
-            Use Switchly.DropdownLayout only on actual dropdown fields in XML.
+            Use LoqIn.DropdownLayout only on actual dropdown fields in XML.
         -->
-        <item name="textInputStyle">@style/Switchly.TextInputLayout</item>
-        <item name="autoCompleteTextViewStyle">@style/Switchly.AutoCompleteText</item>
+        <item name="textInputStyle">@style/LoqIn.TextInputLayout</item>
+        <item name="autoCompleteTextViewStyle">@style/LoqIn.AutoCompleteText</item>
 
         <!-- Dialog overlay -->
-        <item name="materialAlertDialogTheme">@style/ThemeOverlay.Switchly.Dialog</item>
-        <item name="alertDialogTheme">@style/ThemeOverlay.Switchly.Dialog.Alert</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.LoqIn.Dialog</item>
+        <item name="alertDialogTheme">@style/ThemeOverlay.LoqIn.Dialog.Alert</item>
         <item name="colorBackgroundFloating">@color/foqos_surface</item>
         <item name="android:colorBackgroundFloating">@color/foqos_surface</item>
     </style>
@@ -350,7 +350,7 @@
          overlay cannot resolve attributes from the activity theme, and the
          stock M3 calendar overlay otherwise falls back to its baseline
          green palette). Per-accent copies below override these. -->
-    <style name="ThemeOverlay.Switchly.DatePicker" parent="ThemeOverlay.Material3.MaterialCalendar">
+    <style name="ThemeOverlay.LoqIn.DatePicker" parent="ThemeOverlay.Material3.MaterialCalendar">
         <item name="colorPrimary">@color/accent_default_green</item>
         <item name="colorOnPrimary">@color/foqos_on_primary</item>
         <item name="colorSecondary">@color/accent_default_green</item>
@@ -360,46 +360,46 @@
         <item name="colorOnSurfaceVariant">@color/foqos_on_surface_variant</item>
         <item name="colorSurfaceContainerHigh">@color/foqos_surface_container_high</item>
     </style>
-    <style name="ThemeOverlay.Switchly.DatePicker.Blue" parent="ThemeOverlay.Switchly.DatePicker">
+    <style name="ThemeOverlay.LoqIn.DatePicker.Blue" parent="ThemeOverlay.LoqIn.DatePicker">
         <item name="colorPrimary">@color/accent_blue</item>
         <item name="colorSecondary">@color/accent_blue</item>
     </style>
-    <style name="ThemeOverlay.Switchly.DatePicker.Orange" parent="ThemeOverlay.Switchly.DatePicker">
+    <style name="ThemeOverlay.LoqIn.DatePicker.Orange" parent="ThemeOverlay.LoqIn.DatePicker">
         <item name="colorPrimary">@color/accent_orange</item>
         <item name="colorSecondary">@color/accent_orange</item>
     </style>
-    <style name="ThemeOverlay.Switchly.DatePicker.Purple" parent="ThemeOverlay.Switchly.DatePicker">
+    <style name="ThemeOverlay.LoqIn.DatePicker.Purple" parent="ThemeOverlay.LoqIn.DatePicker">
         <item name="colorPrimary">@color/accent_purple</item>
         <item name="colorSecondary">@color/accent_purple</item>
     </style>
-    <style name="ThemeOverlay.Switchly.DatePicker.Red" parent="ThemeOverlay.Switchly.DatePicker">
+    <style name="ThemeOverlay.LoqIn.DatePicker.Red" parent="ThemeOverlay.LoqIn.DatePicker">
         <item name="colorPrimary">@color/accent_red</item>
         <item name="colorSecondary">@color/accent_red</item>
     </style>
-    <style name="ThemeOverlay.Switchly.DatePicker.Pink" parent="ThemeOverlay.Switchly.DatePicker">
+    <style name="ThemeOverlay.LoqIn.DatePicker.Pink" parent="ThemeOverlay.LoqIn.DatePicker">
         <item name="colorPrimary">@color/accent_pink</item>
         <item name="colorSecondary">@color/accent_pink</item>
     </style>
-    <style name="ThemeOverlay.Switchly.DatePicker.Teal" parent="ThemeOverlay.Switchly.DatePicker">
+    <style name="ThemeOverlay.LoqIn.DatePicker.Teal" parent="ThemeOverlay.LoqIn.DatePicker">
         <item name="colorPrimary">@color/accent_teal</item>
         <item name="colorSecondary">@color/accent_teal</item>
     </style>
-    <style name="ThemeOverlay.Switchly.DatePicker.Amber" parent="ThemeOverlay.Switchly.DatePicker">
+    <style name="ThemeOverlay.LoqIn.DatePicker.Amber" parent="ThemeOverlay.LoqIn.DatePicker">
         <item name="colorPrimary">@color/accent_amber</item>
         <item name="colorSecondary">@color/accent_amber</item>
     </style>
-    <style name="ThemeOverlay.Switchly.DatePicker.Gray" parent="ThemeOverlay.Switchly.DatePicker">
+    <style name="ThemeOverlay.LoqIn.DatePicker.Gray" parent="ThemeOverlay.LoqIn.DatePicker">
         <item name="colorPrimary">@color/accent_gray</item>
         <item name="colorSecondary">@color/accent_gray</item>
     </style>
 
     <!-- Time picker: concrete accent colors (prevents M3 fallback to baseline green/pink).
          Per-accent variants below override primary and container colors. -->
-    <style name="Widget.Switchly.TimePicker.Clock" parent="Widget.Material3.MaterialTimePicker.Clock">
+    <style name="Widget.LoqIn.TimePicker.Clock" parent="Widget.Material3.MaterialTimePicker.Clock">
         <item name="clockNumberTextColor">@color/m3_timepicker_clock_text_color</item>
     </style>
 
-    <style name="ThemeOverlay.Switchly.TimePicker" parent="ThemeOverlay.Material3.MaterialTimePicker">
+    <style name="ThemeOverlay.LoqIn.TimePicker" parent="ThemeOverlay.Material3.MaterialTimePicker">
         <item name="colorPrimary">@color/accent_default_green</item>
         <item name="colorOnPrimary">@color/foqos_on_primary</item>
         <item name="colorPrimaryContainer">@color/accent_green_container</item>
@@ -418,9 +418,9 @@
         <item name="colorSurfaceContainerHighest">@color/foqos_surface_variant</item>
         <item name="colorOnBackground">@color/foqos_on_surface</item>
         <item name="android:textColorPrimary">@color/foqos_on_surface</item>
-        <item name="materialClockStyle">@style/Widget.Switchly.TimePicker.Clock</item>
+        <item name="materialClockStyle">@style/Widget.LoqIn.TimePicker.Clock</item>
     </style>
-    <style name="ThemeOverlay.Switchly.TimePicker.Blue" parent="ThemeOverlay.Switchly.TimePicker">
+    <style name="ThemeOverlay.LoqIn.TimePicker.Blue" parent="ThemeOverlay.LoqIn.TimePicker">
         <item name="colorPrimary">@color/accent_blue</item>
         <item name="colorSecondary">@color/accent_blue</item>
         <item name="colorTertiary">@color/accent_blue</item>
@@ -431,7 +431,7 @@
         <item name="colorTertiaryContainer">@color/accent_blue_container</item>
         <item name="colorOnTertiaryContainer">@color/accent_blue_on_container</item>
     </style>
-    <style name="ThemeOverlay.Switchly.TimePicker.Orange" parent="ThemeOverlay.Switchly.TimePicker">
+    <style name="ThemeOverlay.LoqIn.TimePicker.Orange" parent="ThemeOverlay.LoqIn.TimePicker">
         <item name="colorPrimary">@color/accent_orange</item>
         <item name="colorSecondary">@color/accent_orange</item>
         <item name="colorTertiary">@color/accent_orange</item>
@@ -442,7 +442,7 @@
         <item name="colorTertiaryContainer">@color/accent_orange_container</item>
         <item name="colorOnTertiaryContainer">@color/accent_orange_on_container</item>
     </style>
-    <style name="ThemeOverlay.Switchly.TimePicker.Purple" parent="ThemeOverlay.Switchly.TimePicker">
+    <style name="ThemeOverlay.LoqIn.TimePicker.Purple" parent="ThemeOverlay.LoqIn.TimePicker">
         <item name="colorPrimary">@color/accent_purple</item>
         <item name="colorSecondary">@color/accent_purple</item>
         <item name="colorTertiary">@color/accent_purple</item>
@@ -453,7 +453,7 @@
         <item name="colorTertiaryContainer">@color/accent_purple_container</item>
         <item name="colorOnTertiaryContainer">@color/accent_purple_on_container</item>
     </style>
-    <style name="ThemeOverlay.Switchly.TimePicker.Red" parent="ThemeOverlay.Switchly.TimePicker">
+    <style name="ThemeOverlay.LoqIn.TimePicker.Red" parent="ThemeOverlay.LoqIn.TimePicker">
         <item name="colorPrimary">@color/accent_red</item>
         <item name="colorSecondary">@color/accent_red</item>
         <item name="colorTertiary">@color/accent_red</item>
@@ -464,7 +464,7 @@
         <item name="colorTertiaryContainer">@color/accent_red_container</item>
         <item name="colorOnTertiaryContainer">@color/accent_red_on_container</item>
     </style>
-    <style name="ThemeOverlay.Switchly.TimePicker.Pink" parent="ThemeOverlay.Switchly.TimePicker">
+    <style name="ThemeOverlay.LoqIn.TimePicker.Pink" parent="ThemeOverlay.LoqIn.TimePicker">
         <item name="colorPrimary">@color/accent_pink</item>
         <item name="colorSecondary">@color/accent_pink</item>
         <item name="colorTertiary">@color/accent_pink</item>
@@ -475,7 +475,7 @@
         <item name="colorTertiaryContainer">@color/accent_pink_container</item>
         <item name="colorOnTertiaryContainer">@color/accent_pink_on_container</item>
     </style>
-    <style name="ThemeOverlay.Switchly.TimePicker.Teal" parent="ThemeOverlay.Switchly.TimePicker">
+    <style name="ThemeOverlay.LoqIn.TimePicker.Teal" parent="ThemeOverlay.LoqIn.TimePicker">
         <item name="colorPrimary">@color/accent_teal</item>
         <item name="colorSecondary">@color/accent_teal</item>
         <item name="colorTertiary">@color/accent_teal</item>
@@ -486,7 +486,7 @@
         <item name="colorTertiaryContainer">@color/accent_teal_container</item>
         <item name="colorOnTertiaryContainer">@color/accent_teal_on_container</item>
     </style>
-    <style name="ThemeOverlay.Switchly.TimePicker.Amber" parent="ThemeOverlay.Switchly.TimePicker">
+    <style name="ThemeOverlay.LoqIn.TimePicker.Amber" parent="ThemeOverlay.LoqIn.TimePicker">
         <item name="colorPrimary">@color/accent_amber</item>
         <item name="colorSecondary">@color/accent_amber</item>
         <item name="colorTertiary">@color/accent_amber</item>
@@ -497,7 +497,7 @@
         <item name="colorTertiaryContainer">@color/accent_amber_container</item>
         <item name="colorOnTertiaryContainer">@color/accent_amber_on_container</item>
     </style>
-    <style name="ThemeOverlay.Switchly.TimePicker.Gray" parent="ThemeOverlay.Switchly.TimePicker">
+    <style name="ThemeOverlay.LoqIn.TimePicker.Gray" parent="ThemeOverlay.LoqIn.TimePicker">
         <item name="colorPrimary">@color/accent_gray</item>
         <item name="colorSecondary">@color/accent_gray</item>
         <item name="colorTertiary">@color/accent_gray</item>
@@ -512,7 +512,7 @@
     <!-- Dialog overlay that keeps controls in sync with the current accent theme.
          Colors are night-aware: plain (framework/appcompat) dialogs and Material
          dialogs both resolve foqos_* tokens, which flip via values-night. -->
-    <style name="ThemeOverlay.Switchly.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+    <style name="ThemeOverlay.LoqIn.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
         <item name="elevationOverlayEnabled">false</item>
         <item name="colorSurface">@color/foqos_surface</item>
         <item name="colorOnSurface">@color/foqos_on_surface</item>
@@ -521,7 +521,7 @@
         <item name="colorControlHighlight">?attr/colorOnSurface</item>
         <item name="colorAccent">@color/foqos_on_surface</item>
     </style>
-    <style name="ThemeOverlay.Switchly.Dialog.Blue" parent="ThemeOverlay.Switchly.Dialog">
+    <style name="ThemeOverlay.LoqIn.Dialog.Blue" parent="ThemeOverlay.LoqIn.Dialog">
         <item name="colorPrimary">@color/accent_blue</item>
         <item name="colorSecondary">@color/accent_blue</item>
         <item name="colorAccent">@color/accent_blue</item>
@@ -529,7 +529,7 @@
         <item name="colorPrimaryContainer">@color/accent_blue_container</item>
         <item name="colorOnPrimaryContainer">@color/accent_blue_on_container</item>
     </style>
-    <style name="ThemeOverlay.Switchly.Dialog.Orange" parent="ThemeOverlay.Switchly.Dialog">
+    <style name="ThemeOverlay.LoqIn.Dialog.Orange" parent="ThemeOverlay.LoqIn.Dialog">
         <item name="colorPrimary">@color/accent_orange</item>
         <item name="colorSecondary">@color/accent_orange</item>
         <item name="colorAccent">@color/accent_orange</item>
@@ -537,7 +537,7 @@
         <item name="colorPrimaryContainer">@color/accent_orange_container</item>
         <item name="colorOnPrimaryContainer">@color/accent_orange_on_container</item>
     </style>
-    <style name="ThemeOverlay.Switchly.Dialog.Purple" parent="ThemeOverlay.Switchly.Dialog">
+    <style name="ThemeOverlay.LoqIn.Dialog.Purple" parent="ThemeOverlay.LoqIn.Dialog">
         <item name="colorPrimary">@color/accent_purple</item>
         <item name="colorSecondary">@color/accent_purple</item>
         <item name="colorAccent">@color/accent_purple</item>
@@ -545,7 +545,7 @@
         <item name="colorPrimaryContainer">@color/accent_purple_container</item>
         <item name="colorOnPrimaryContainer">@color/accent_purple_on_container</item>
     </style>
-    <style name="ThemeOverlay.Switchly.Dialog.Red" parent="ThemeOverlay.Switchly.Dialog">
+    <style name="ThemeOverlay.LoqIn.Dialog.Red" parent="ThemeOverlay.LoqIn.Dialog">
         <item name="colorPrimary">@color/accent_red</item>
         <item name="colorSecondary">@color/accent_red</item>
         <item name="colorAccent">@color/accent_red</item>
@@ -553,7 +553,7 @@
         <item name="colorPrimaryContainer">@color/accent_red_container</item>
         <item name="colorOnPrimaryContainer">@color/accent_red_on_container</item>
     </style>
-    <style name="ThemeOverlay.Switchly.Dialog.Pink" parent="ThemeOverlay.Switchly.Dialog">
+    <style name="ThemeOverlay.LoqIn.Dialog.Pink" parent="ThemeOverlay.LoqIn.Dialog">
         <item name="colorPrimary">@color/accent_pink</item>
         <item name="colorSecondary">@color/accent_pink</item>
         <item name="colorAccent">@color/accent_pink</item>
@@ -561,7 +561,7 @@
         <item name="colorPrimaryContainer">@color/accent_pink_container</item>
         <item name="colorOnPrimaryContainer">@color/accent_pink_on_container</item>
     </style>
-    <style name="ThemeOverlay.Switchly.Dialog.Teal" parent="ThemeOverlay.Switchly.Dialog">
+    <style name="ThemeOverlay.LoqIn.Dialog.Teal" parent="ThemeOverlay.LoqIn.Dialog">
         <item name="colorPrimary">@color/accent_teal</item>
         <item name="colorSecondary">@color/accent_teal</item>
         <item name="colorAccent">@color/accent_teal</item>
@@ -569,7 +569,7 @@
         <item name="colorPrimaryContainer">@color/accent_teal_container</item>
         <item name="colorOnPrimaryContainer">@color/accent_teal_on_container</item>
     </style>
-    <style name="ThemeOverlay.Switchly.Dialog.Amber" parent="ThemeOverlay.Switchly.Dialog">
+    <style name="ThemeOverlay.LoqIn.Dialog.Amber" parent="ThemeOverlay.LoqIn.Dialog">
         <item name="colorPrimary">@color/accent_amber</item>
         <item name="colorSecondary">@color/accent_amber</item>
         <item name="colorAccent">@color/accent_amber</item>
@@ -577,7 +577,7 @@
         <item name="colorPrimaryContainer">@color/accent_amber_container</item>
         <item name="colorOnPrimaryContainer">@color/accent_amber_on_container</item>
     </style>
-    <style name="ThemeOverlay.Switchly.Dialog.Gray" parent="ThemeOverlay.Switchly.Dialog">
+    <style name="ThemeOverlay.LoqIn.Dialog.Gray" parent="ThemeOverlay.LoqIn.Dialog">
         <item name="colorPrimary">@color/accent_gray</item>
         <item name="colorSecondary">@color/accent_gray</item>
         <item name="colorAccent">@color/accent_gray</item>
@@ -587,7 +587,7 @@
     </style>
 
     <!-- Same tokens for plain androidx AlertDialog.Builder panels (alertDialogTheme). -->
-    <style name="ThemeOverlay.Switchly.Dialog.Alert" parent="ThemeOverlay.Material3.Dialog.Alert">
+    <style name="ThemeOverlay.LoqIn.Dialog.Alert" parent="ThemeOverlay.Material3.Dialog.Alert">
         <item name="colorPrimary">@color/foqos_on_surface</item>
         <item name="colorSecondary">@color/foqos_on_surface</item>
         <item name="colorSurface">@color/foqos_surface</item>
@@ -602,7 +602,7 @@
          THEME: Accent variants
          ========================= -->
     <!-- Green (explicit twin of the default green base) -->
-    <style name="Theme.Switchly.Accent.Green" parent="Theme.Switchly">
+    <style name="Theme.LoqIn.Accent.Green" parent="Theme.LoqIn">
         <item name="colorPrimary">@color/accent_green</item>
         <item name="colorPrimaryVariant">@color/accent_green</item>
         <item name="colorSecondary">@color/accent_green</item>
@@ -615,7 +615,7 @@
     </style>
 
     <!-- Blue -->
-    <style name="Theme.Switchly.Accent.Blue" parent="Theme.Switchly">
+    <style name="Theme.LoqIn.Accent.Blue" parent="Theme.LoqIn">
         <item name="colorPrimary">@color/accent_blue</item>
         <item name="colorPrimaryVariant">@color/accent_blue</item>
         <item name="colorSecondary">@color/accent_blue</item>
@@ -628,7 +628,7 @@
     </style>
 
     <!-- Orange -->
-    <style name="Theme.Switchly.Accent.Orange" parent="Theme.Switchly">
+    <style name="Theme.LoqIn.Accent.Orange" parent="Theme.LoqIn">
         <item name="colorPrimary">@color/accent_orange</item>
         <item name="colorPrimaryVariant">@color/accent_orange</item>
         <item name="colorSecondary">@color/accent_orange</item>
@@ -641,7 +641,7 @@
     </style>
 
     <!-- Purple -->
-    <style name="Theme.Switchly.Accent.Purple" parent="Theme.Switchly">
+    <style name="Theme.LoqIn.Accent.Purple" parent="Theme.LoqIn">
         <item name="colorPrimary">@color/accent_purple</item>
         <item name="colorPrimaryVariant">@color/accent_purple</item>
         <item name="colorSecondary">@color/accent_purple</item>
@@ -654,7 +654,7 @@
     </style>
 
     <!-- Red -->
-    <style name="Theme.Switchly.Accent.Red" parent="Theme.Switchly">
+    <style name="Theme.LoqIn.Accent.Red" parent="Theme.LoqIn">
         <item name="colorPrimary">@color/accent_red</item>
         <item name="colorPrimaryVariant">@color/accent_red</item>
         <item name="colorSecondary">@color/accent_red</item>
@@ -667,7 +667,7 @@
     </style>
 
     <!-- Pink -->
-    <style name="Theme.Switchly.Accent.Pink" parent="Theme.Switchly">
+    <style name="Theme.LoqIn.Accent.Pink" parent="Theme.LoqIn">
         <item name="colorPrimary">@color/accent_pink</item>
         <item name="colorPrimaryVariant">@color/accent_pink</item>
         <item name="colorSecondary">@color/accent_pink</item>
@@ -680,7 +680,7 @@
     </style>
 
     <!-- Teal -->
-    <style name="Theme.Switchly.Accent.Teal" parent="Theme.Switchly">
+    <style name="Theme.LoqIn.Accent.Teal" parent="Theme.LoqIn">
         <item name="colorPrimary">@color/accent_teal</item>
         <item name="colorPrimaryVariant">@color/accent_teal</item>
         <item name="colorSecondary">@color/accent_teal</item>
@@ -693,7 +693,7 @@
     </style>
 
     <!-- Amber -->
-    <style name="Theme.Switchly.Accent.Amber" parent="Theme.Switchly">
+    <style name="Theme.LoqIn.Accent.Amber" parent="Theme.LoqIn">
         <item name="colorPrimary">@color/accent_amber</item>
         <item name="colorPrimaryVariant">@color/accent_amber</item>
         <item name="colorSecondary">@color/accent_amber</item>
@@ -706,7 +706,7 @@
     </style>
 
     <!-- Gray -->
-    <style name="Theme.Switchly.Accent.Gray" parent="Theme.Switchly">
+    <style name="Theme.LoqIn.Accent.Gray" parent="Theme.LoqIn">
         <item name="colorPrimary">@color/accent_gray</item>
         <item name="colorPrimaryVariant">@color/accent_gray</item>
         <item name="colorSecondary">@color/accent_gray</item>

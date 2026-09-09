@@ -23,7 +23,7 @@
     <string name="blocked_app_default">App blocked</string>
     <string name="no_blocked_apps">No blocked apps</string>
     <string name="no_allowed_apps">No allowed apps</string>
-    <string name="blocked_message">You can’t use this app while Switchly is active.</string>
+    <string name="blocked_message">You can’t use this app while Loq In is active.</string>
     <string name="search_apps">Search apps</string>
 
     <!-- ====================================================== -->
@@ -68,10 +68,10 @@
     <string name="app_picker_protected_launcher_hint">Your current launcher is protected because blocking it can trap you in a blocking loop or make Home unavailable.</string>
     <string name="app_picker_protected_caution_title">This app is safety-sensitive</string>
     <string name="app_picker_protected_warning_title">Block protected app anyway?</string>
-    <string name="app_picker_protected_warning_message">Android or your device may depend on this app. Blocking it can cause repeated blocking loops, break Home, typing, calls, permissions, setup, or recovery, and may make the device difficult to use. Switchly cannot guarantee that your device remains recoverable. Continue only if you understand and accept the risk.</string>
+    <string name="app_picker_protected_warning_message">Android or your device may depend on this app. Blocking it can cause repeated blocking loops, break Home, typing, calls, permissions, setup, or recovery, and may make the device difficult to use. Loq In cannot guarantee that your device remains recoverable. Continue only if you understand and accept the risk.</string>
     <string name="app_picker_block_protected_confirm">Block anyway</string>
     <string name="app_picker_keyboard_warning_title">Block your current keyboard anyway?</string>
-    <string name="app_picker_keyboard_warning_message">Blocking your current keyboard can prevent you from typing, entering passwords, searching, or recovering Switchly settings. Make sure another keyboard and Emergency Unlock are available.</string>
+    <string name="app_picker_keyboard_warning_message">Blocking your current keyboard can prevent you from typing, entering passwords, searching, or recovering Loq In settings. Make sure another keyboard and Emergency Unlock are available.</string>
     <string name="app_picker_launcher_warning_title">Block your current launcher anyway?</string>
     <string name="app_picker_launcher_warning_message">Blocking your current launcher can cause a repeated Home-screen blocking loop or leave you without a usable Home screen. Make sure another launcher and Emergency Unlock are available.</string>
     <string name="app_picker_assistant_hint">Google and assistant apps can be blocked, but doing so may affect launcher search or voice-assistant features on some devices.</string>

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Watches Switchly upstream (GitLab) test/main branches for new commits.
+# Watches the Loq In upstream (GitLab) test/main branches for new commits.
 # State lives outside the repo so `git status` stays clean.
 # Notifies via notify-send (desktop) and always appends to the log.
 set -u
 
-URL="https://gitlab.com/Saltyy/switchly-public.git"
-STATE_DIR="${HOME}/.local/share/switchly-upstream-watch"
+URL="https://gitlab.com/your-user/loqin.git"
+STATE_DIR="${HOME}/.local/share/loqin-upstream-watch"
 STATE_FILE="${STATE_DIR}/refs.state"
 LOG_FILE="${STATE_DIR}/watch.log"
 
@@ -26,7 +26,7 @@ notify() {
             --dest org.freedesktop.Notifications \
             --object-path /org/freedesktop/Notifications \
             --method org.freedesktop.Notifications.Notify \
-            "Switchly" 0 "" "${title}" "${body}" "[]" "{}" 15000 >/dev/null 2>&1 || true
+            "Loq In" 0 "" "${title}" "${body}" "[]" "{}" 15000 >/dev/null 2>&1 || true
     fi
 }
 
@@ -63,7 +63,7 @@ for ref in main test; do
     if [[ "${old_sha}" != "${new_sha}" ]]; then
         write_state "${ref}" "${new_sha}"
         notify \
-            "Switchly upstream/${ref} moved" \
+            "Loq In upstream/${ref} moved" \
             "${old_sha:0:8}..${new_sha:0:8} — check for merge work"
     fi
 done

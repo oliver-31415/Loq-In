@@ -11,7 +11,7 @@
     <string name="support_logs_copied">Latest logs copied</string>
     <string name="support_choose_report_data">Choose what to include</string>
     <string name="support_include_debug">Include debug info</string>
-    <string name="support_include_debug_summary">App, device, permissions, Switchly state, schedules, and runtime status</string>
+    <string name="support_include_debug_summary">App, device, permissions, Loq In state, schedules, and runtime status</string>
     <string name="support_include_advanced_debug">Include extended diagnostics</string>
     <string name="support_include_advanced_debug_summary">Adds internal preference and feature-state counters to the debug report</string>
     <string name="support_include_setup_details">Include setup details</string>
@@ -20,11 +20,11 @@
     <string name="support_include_active_profile_apps_summary">Adds app names and package IDs selected by the active profile rule mode</string>
     <string name="support_debug_preface">Please describe your issue above this line.</string>
     <string name="support_include_logs">Include the logs</string>
-    <string name="support_include_logs_summary">Adds recent Switchly events and diagnostic log entries</string>
+    <string name="support_include_logs_summary">Adds recent Loq In events and diagnostic log entries</string>
     <string name="support_latest_logs_heading">Latest logs</string>
     <string name="support_response_time_short">Response time: up to 7 days</string>
     <string name="support_response_time_title">Support response time</string>
-    <string name="support_response_time_details">Switchly is developed and supported by one person. I read support messages and bug reports as soon as possible, but replies can sometimes take up to 7 days depending on workload.\n\nPlease include debug info when reporting blocking, schedule, or permission issues. This helps me understand what happened much faster.</string>
+    <string name="support_response_time_details">Loq In is developed and supported by one person. I read support messages and bug reports as soon as possible, but replies can sometimes take up to 7 days depending on workload.\n\nPlease include debug info when reporting blocking, schedule, or permission issues. This helps me understand what happened much faster.</string>
 
     <!-- ====================================================== -->
     <!-- Onboarding link -->
@@ -37,23 +37,14 @@
     <!-- ====================================================== -->
     <string name="support_hero_title">How can we help?</string>
     <string name="support_diagnostics_section">Diagnostics</string>
-    <string name="support_contact_section">Contact</string>
     <string name="support_view_logs_title">View logs</string>
-    <string name="support_view_logs_desc">Open a live view of the latest 250 internal Switchly log lines.</string>
+    <string name="support_view_logs_desc">Open a live view of the latest 250 internal Loq In log lines.</string>
     <string name="support_logs_view_title">Support logs</string>
-    <string name="support_logs_view_body">Live view of recent internal Switchly events. Reproduce an issue first so the relevant entries appear here.</string>
+    <string name="support_logs_view_body">Live view of recent internal Loq In events. Reproduce an issue first so the relevant entries appear here.</string>
     <string name="support_logs_view_refresh">Refresh</string>
     <string name="support_logs_view_copy">Copy logs</string>
     <string name="support_logs_view_empty">No recent app logs.</string>
-    <string name="support_discord_label">Discord</string>
-    <string name="support_gitlab_issues_label">GitLab Issues</string>
-    <string name="support_discord_url" translatable="false">https://discord.gg/PC5zn2NeCg</string>
-    <string name="support_gitlab_issues_url" translatable="false">https://gitlab.com/Saltyy/switchly-public/-/issues</string>
-    <string name="support_copy_discord">Copy Discord link</string>
-    <string name="support_discord_copied">Discord link copied</string>
-    <string name="support_copy_gitlab_issues">Copy GitLab Issues link</string>
-    <string name="support_gitlab_issues_copied">GitLab Issues link copied</string>
-    <string name="support_report_clipboard_label">Switchly support report</string>
+    <string name="support_report_clipboard_label">Loq In support report</string>
     <string name="support_report_copied">Support report copied to the clipboard.</string>
     <string name="support_logs_unified_title">App logs</string>
     <string name="support_logs_unified_desc">View, filter, share, and copy internal diagnostic logs.</string>
@@ -78,6 +69,6 @@
     <string name="support_logs_range_last_250">Last 250 lines</string>
     <string name="support_logs_range_last_n_desc">Most recent %d entries</string>
     <string name="support_logs_card_title">Copy latest logs</string>
-    <string name="support_logs_card_desc">Copy recent Switchly events to paste them into an existing message or issue.</string>
+    <string name="support_logs_card_desc">Copy recent Loq In events to paste them into an existing message or issue.</string>
 
 </resources>

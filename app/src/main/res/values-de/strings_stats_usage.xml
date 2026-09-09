@@ -97,7 +97,7 @@
     <string name="app_usage_detail_subtitle">Nutzung, Limits und Aktivität</string>
     <string name="website_usage_detail_title">Website-Nutzungsdetails</string>
     <string name="website_usage_detail_subtitle">Nutzung, Limit und Regelstatus</string>
-    <string name="usage_details_info_body">Die Zusammenfassung zeigt:\n• Nutzungszeit\n• App-Öffnungen\n• Blockierungen\n\nNutze die Limit-Aktion oder eine Limit-Karte, um Limits zu bearbeiten. Tageslimits werden täglich zurückgesetzt. Sitzungslimits beginnen mit einer neuen aktiven Sitzung von Switchly oder dem Profil neu.</string>
+    <string name="usage_details_info_body">Die Zusammenfassung zeigt:\n• Nutzungszeit\n• App-Öffnungen\n• Blockierungen\n\nNutze die Limit-Aktion oder eine Limit-Karte, um Limits zu bearbeiten. Tageslimits werden täglich zurückgesetzt. Sitzungslimits beginnen mit einer neuen aktiven Sitzung von Loq In oder dem Profil neu.</string>
     <string name="usage_details_limits_section">Limits</string>
     <string name="usage_details_activity_section">Nutzung im Zeitverlauf</string>
     <string name="website_usage_info_title">Website-Nutzungsdetails</string>
@@ -130,7 +130,7 @@
     <string name="activity_entry_active_time">Aktive Zeit</string>
     <string name="activity_entry_active_time_summary">Gesamte Aktivzeit, Sessions und Tagesaktivität.</string>
     <string name="activity_entry_activity_history">Aktivitätsverlauf</string>
-    <string name="activity_entry_activity_history_summary">Aktuelle Switchly-Profil-, Zeitplan-, Standort-, NFC-, QR-, Barcode-, temporäre und manuelle Ereignisse ansehen.</string>
+    <string name="activity_entry_activity_history_summary">Aktuelle Loq In-Profil-, Zeitplan-, Standort-, NFC-, QR-, Barcode-, temporäre und manuelle Ereignisse ansehen.</string>
 
     <!-- ====================================================== -->
     <!-- Most used apps -->
@@ -150,7 +150,7 @@
     <!-- ====================================================== -->
     <string name="statistics_usage_title">App- &amp; Website-Nutzung</string>
     <string name="statistics_usage_info_title">App- &amp; Website-Nutzung</string>
-    <string name="statistics_usage_info_body">Jede Zeile kann anzeigen:\n• Nutzungszeit\n• App-Öffnungen\n• Blockierungen\n\nHinweis: Die Website-Nutzung wird nur erfasst, während die Switchly-Blockierung aktiv ist.\n\nNutze die Limit-Aktion, um Tages- oder Sitzungslimits zu bearbeiten. Switchly konzentriert sich auf schutzbezogene Aktivitäten und ersetzt keine vollständige Digital-Wellbeing-Auswertung.</string>
+    <string name="statistics_usage_info_body">Jede Zeile kann anzeigen:\n• Nutzungszeit\n• App-Öffnungen\n• Blockierungen\n\nHinweis: Die Website-Nutzung wird nur erfasst, während die Loq In-Blockierung aktiv ist.\n\nNutze die Limit-Aktion, um Tages- oder Sitzungslimits zu bearbeiten. Loq In konzentriert sich auf schutzbezogene Aktivitäten und ersetzt keine vollständige Digital-Wellbeing-Auswertung.</string>
     <string name="stats_range_today">Heute</string>
     <string name="stats_range_week">Woche</string>
     <string name="stats_range_month">Monat</string>
@@ -165,7 +165,7 @@
     <string name="usage_range_week">Woche</string>
     <string name="usage_range_month">Monat</string>
     <string name="usage_range_year">Jahr</string>
-    <string name="usage_access_needed_desc">Bitte aktiviere für Switchly den Zugriff auf „App-Nutzungsdaten“, um deine Bildschirmzeit-Statistiken anzuzeigen.</string>
+    <string name="usage_access_needed_desc">Bitte aktiviere für Loq In den Zugriff auf „App-Nutzungsdaten“, um deine Bildschirmzeit-Statistiken anzuzeigen.</string>
     <string name="usage_open_settings">Einstellungen öffnen</string>
     <string name="usage_row_tap_hint_app">Tippe auf eine App-Zeile, um Details zu öffnen.</string>
     <string name="usage_row_tap_hint_website">Wird erfasst, während Blockierung aktiv ist · Tippe auf eine Zeile für Details</string>
@@ -234,7 +234,7 @@
     <!-- ====================================================== -->
     <string name="active_time_title">Aktive Zeit</string>
     <string name="active_time_info_title">Aktive Zeit</string>
-    <string name="active_time_info_body">Zeigt, wie lange Switchly aktiv war. Die aktuelle Fokussitzung wird mitgerechnet, solange sie läuft. Beim Deaktivieren wird die Sitzung abgeschlossen und für den Fortschritt gespeichert.</string>
+    <string name="active_time_info_body">Zeigt, wie lange Loq In aktiv war. Die aktuelle Fokussitzung wird mitgerechnet, solange sie läuft. Beim Deaktivieren wird die Sitzung abgeschlossen und für den Fortschritt gespeichert.</string>
     <string name="active_time_total_label">Gesamte aktive Zeit</string>
     <string name="active_time_current_session">Aktuelle Session: %1$s</string>
     <string name="active_time_average_day">Durchschnitt pro Tag: %1$s</string>
@@ -250,19 +250,19 @@
     <string name="active_time_day_sessions_hint">Tippe den Tag in der Übersicht an, um Sessions zu sehen</string>
     <string name="active_time_graph_days">Tages-Graph</string>
     <string name="active_time_activity_history_title">Aktivitätsverlauf</string>
-    <string name="active_time_activity_history_empty">Für diesen Tag wurden noch keine Switchly-Aktivitäten gefunden.</string>
+    <string name="active_time_activity_history_empty">Für diesen Tag wurden noch keine Loq In-Aktivitäten gefunden.</string>
 
     <!-- ====================================================== -->
     <!-- Activity history -->
     <!-- ====================================================== -->
-    <string name="activity_history_recent_empty">Noch keine aktuellen Switchly-Aktivitäten gefunden.</string>
+    <string name="activity_history_recent_empty">Noch keine aktuellen Loq In-Aktivitäten gefunden.</string>
     <string name="activity_history_filter_action">Aktion</string>
     <string name="activity_history_range_custom">Benutzerdefiniert</string>
     <string name="activity_history_range_custom_title">Zeitraum auswählen</string>
     <string name="activity_history_range_custom_value">%1$s - %2$s</string>
     <string name="stats_range_clear">Zurücksetzen</string>
     <string name="activity_history_info_title">Aktivitätsverlauf</string>
-    <string name="activity_history_info_message">Der Aktivitätsverlauf zeigt aktuelle Switchly-Ereignisse, darunter Profilwechsel, Zeitpläne, Standort, WLAN/Bluetooth, NFC, QR, Barcode, temporäre Aktionen, manuelle Steuerung und Notfall-Entsperrungen. Nutze die Zeitraum-Chips und Sortieren &amp; Filtern, um die Timeline einzugrenzen.</string>
+    <string name="activity_history_info_message">Der Aktivitätsverlauf zeigt aktuelle Loq In-Ereignisse, darunter Profilwechsel, Zeitpläne, Standort, WLAN/Bluetooth, NFC, QR, Barcode, temporäre Aktionen, manuelle Steuerung und Notfall-Entsperrungen. Nutze die Zeitraum-Chips und Sortieren &amp; Filtern, um die Timeline einzugrenzen.</string>
     <string name="activity_history_type_all">Alle</string>
     <string name="activity_history_type_profiles">Profile</string>
     <string name="activity_history_type_schedules">Zeitpläne</string>
@@ -296,12 +296,12 @@
     <!-- ====================================================== -->
     <!-- Activity history events -->
     <!-- ====================================================== -->
-    <string name="activity_history_schedule_title">Zeitplan hat Switchly geändert</string>
-    <string name="activity_history_location_schedule_title">Standort-Zeitplan hat Switchly geändert</string>
-    <string name="activity_history_wifi_schedule_title">WLAN-Zeitplan hat Switchly geändert</string>
-    <string name="activity_history_bluetooth_schedule_title">Bluetooth-Zeitplan hat Switchly geändert</string>
+    <string name="activity_history_schedule_title">Zeitplan hat Loq In geändert</string>
+    <string name="activity_history_location_schedule_title">Standort-Zeitplan hat Loq In geändert</string>
+    <string name="activity_history_wifi_schedule_title">WLAN-Zeitplan hat Loq In geändert</string>
+    <string name="activity_history_bluetooth_schedule_title">Bluetooth-Zeitplan hat Loq In geändert</string>
     <string name="activity_history_schedule_blocked_title">Zeitplan blockiert</string>
-    <string name="activity_history_schedule_blocked_by_nfc">Ein Zeitplan wollte Switchly deaktivieren, aber NFC ist dafür erforderlich.</string>
+    <string name="activity_history_schedule_blocked_by_nfc">Ein Zeitplan wollte Loq In deaktivieren, aber NFC ist dafür erforderlich.</string>
     <string name="activity_history_location_title">Standort-Ereignis</string>
     <string name="activity_history_wifi_title">WLAN-Ereignis</string>
     <string name="activity_history_bluetooth_title">Bluetooth-Ereignis</string>
@@ -310,10 +310,10 @@
     <string name="activity_history_barcode_title">Barcode</string>
     <string name="activity_history_temp_expired_title">Temporäre Aktion beendet</string>
     <string name="activity_history_profile_restored_title">Profil wiederhergestellt</string>
-    <string name="activity_history_source_input_changed_title">%1$s-Eingabe hat Switchly geändert</string>
-    <string name="activity_history_manual_changed_title">Manuelle Eingabe hat Switchly geändert</string>
-    <string name="activity_history_temporary_changed_title">Temporärer Modus hat Switchly geändert</string>
-    <string name="activity_history_emergency_changed_title">Notfall-Entsperrung hat Switchly geändert</string>
+    <string name="activity_history_source_input_changed_title">%1$s-Eingabe hat Loq In geändert</string>
+    <string name="activity_history_manual_changed_title">Manuelle Eingabe hat Loq In geändert</string>
+    <string name="activity_history_temporary_changed_title">Temporärer Modus hat Loq In geändert</string>
+    <string name="activity_history_emergency_changed_title">Notfall-Entsperrung hat Loq In geändert</string>
     <string name="activity_history_action_line">Aktion: %1$s</string>
     <string name="activity_history_profile_line">Profil: %1$s</string>
     <string name="activity_history_duration_line">Dauer: %1$s</string>
@@ -341,11 +341,11 @@
     <!-- ====================================================== -->
     <!-- Usage empty states -->
     <!-- ====================================================== -->
-    <string name="usage_apps_no_accessibility">Für die App-Nutzungsstatistik muss die Switchly-Bedienungshilfe aktiviert sein.</string>
-    <string name="usage_apps_no_data">Noch keine App-Nutzungsdaten vorhanden. Switchly erfasst die App-Nutzung, solange die Bedienungshilfe aktiviert ist.</string>
+    <string name="usage_apps_no_accessibility">Für die App-Nutzungsstatistik muss die Loq In-Bedienungshilfe aktiviert sein.</string>
+    <string name="usage_apps_no_data">Noch keine App-Nutzungsdaten vorhanden. Loq In erfasst die App-Nutzung, solange die Bedienungshilfe aktiviert ist.</string>
     <string name="usage_apps_no_blocked">Im aktiven Profil sind noch keine Apps konfiguriert.</string>
-    <string name="usage_websites_no_accessibility">Website-Tracking benötigt aktivierte Switchly-Bedienungshilfe.</string>
-    <string name="usage_websites_no_data">Noch keine Website-Daten. Website-Nutzung wird erfasst, während die Switchly-Blockierung in unterstützten Browsern (Chrome, Brave, Edge, Firefox, Ecosia …) aktiv ist.</string>
+    <string name="usage_websites_no_accessibility">Website-Tracking benötigt aktivierte Loq In-Bedienungshilfe.</string>
+    <string name="usage_websites_no_data">Noch keine Website-Daten. Website-Nutzung wird erfasst, während die Loq In-Blockierung in unterstützten Browsern (Chrome, Brave, Edge, Firefox, Ecosia …) aktiv ist.</string>
     <string name="usage_websites_no_blocked">Im aktiven Profil sind noch keine Website-Regeln konfiguriert.</string>
 
     <!-- ====================================================== -->
@@ -378,13 +378,13 @@
     <!-- Ausgeblendete Apps -->
     <!-- ====================================================== -->
     <string name="ignored_usage_apps_title">Ausgeblendete Apps</string>
-    <string name="ignored_usage_apps_summary">Apps aus Insights oder dem Switchly-Schutz ausblenden</string>
+    <string name="ignored_usage_apps_summary">Apps aus Insights oder dem Loq In-Schutz ausblenden</string>
     <string name="hidden_apps_tab_usage">Bildschirmzeit / Stats</string>
     <string name="hidden_apps_tab_pickers">Blockierung / Schutz</string>
     <string name="hidden_apps_tab_usage_subtitle">Aus Nutzungsstatistiken, Diagrammen und Zusammenfassungen ausgeblendet.</string>
-    <string name="hidden_apps_tab_pickers_subtitle">Aus Switchly-Blockierung, App-Auswahl und Bedienungshilfen ausgeschlossen.</string>
+    <string name="hidden_apps_tab_pickers_subtitle">Aus Loq In-Blockierung, App-Auswahl und Bedienungshilfen ausgeschlossen.</string>
     <string name="hidden_apps_usage_description">Hier ausgewählte Apps erscheinen nicht in Top-Apps, Nutzungsübersichten, Timelines, Öffnungszahlen oder im Nutzungsbericht des Onboardings. Blockierungsregeln und Profile werden nicht verändert.</string>
-    <string name="hidden_apps_picker_description">Hier ausgewählte Apps werden in Switchly-App-Auswahlen ausgeblendet und solange sie ausgeblendet sind vom Switchly-Schutz ausgenommen. Switchly liest für diese Apps keine Accessibility-Inhalte, führt keine In-App- oder Website-Erkennung aus, blockiert die App nicht, erzwingt keine vorhandenen App-Limits und blendet ihre Benachrichtigungen nicht aus. Vorhandene Konfiguration bleibt gespeichert und wird wieder aktiv, sobald die App wieder eingeblendet wird. Hinweis: Banking- oder Wallet-Apps können trotzdem erkennen, dass auf dem Gerät ein Accessibility-Dienst eines Drittanbieters aktiviert ist.</string>
+    <string name="hidden_apps_picker_description">Hier ausgewählte Apps werden in Loq In-App-Auswahlen ausgeblendet und solange sie ausgeblendet sind vom Loq In-Schutz ausgenommen. Loq In liest für diese Apps keine Accessibility-Inhalte, führt keine In-App- oder Website-Erkennung aus, blockiert die App nicht, erzwingt keine vorhandenen App-Limits und blendet ihre Benachrichtigungen nicht aus. Vorhandene Konfiguration bleibt gespeichert und wird wieder aktiv, sobald die App wieder eingeblendet wird. Hinweis: Banking- oder Wallet-Apps können trotzdem erkennen, dass auf dem Gerät ein Accessibility-Dienst eines Drittanbieters aktiviert ist.</string>
     <string name="ignored_usage_apps_search_hint">Apps suchen</string>
     <string name="ignored_usage_apps_info">Über ausgeblendete Apps</string>
     <string name="ignored_usage_apps_clear">Diese Liste leeren</string>
@@ -400,11 +400,11 @@
     <!-- Usage support -->
     <!-- ====================================================== -->
     <string name="usage_point_dialog_title">%1$s - %2$s</string>
-    <string name="usage_switchly_fallback_title">Noch keine Daten von Switchly</string>
-    <string name="usage_switchly_fallback_message">Für diesen Zeitraum hat Switchly noch keine Nutzungsdaten erfasst. Möchtest du stattdessen die aktuellen Statistiken deines Smartphones anzeigen?</string>
-    <string name="usage_switchly_fallback_positive">Handy-Statistiken anzeigen</string>
+    <string name="usage_loqin_fallback_title">Noch keine Daten von Loq In</string>
+    <string name="usage_loqin_fallback_message">Für diesen Zeitraum hat Loq In noch keine Nutzungsdaten erfasst. Möchtest du stattdessen die aktuellen Statistiken deines Smartphones anzeigen?</string>
+    <string name="usage_loqin_fallback_positive">Handy-Statistiken anzeigen</string>
     <string name="cannot_set_limit_unavailable">Für eine nicht verfügbare App kann kein Limit gesetzt werden.</string>
-    <string name="usage_timeline_recent_details_unavailable">Für diesen Zeitraum sind noch keine archivierten App-Öffnungen verfügbar. Switchly speichert exakte Sitzungen jetzt lokal und übernimmt sie in Statistik-Backups; der aktuelle Android-Verlauf wird importiert, wenn der Nutzungszugriff verfügbar ist.</string>
+    <string name="usage_timeline_recent_details_unavailable">Für diesen Zeitraum sind noch keine archivierten App-Öffnungen verfügbar. Loq In speichert exakte Sitzungen jetzt lokal und übernimmt sie in Statistik-Backups; der aktuelle Android-Verlauf wird importiert, wenn der Nutzungszugriff verfügbar ist.</string>
     <string name="usage_chart_other_apps">Andere</string>
 
 </resources>

@@ -12,7 +12,7 @@
     <!-- ====================================================== -->
     <!-- Local data -->
     <!-- ====================================================== -->
-    <string name="privacy_report_local_title">Local Switchly data</string>
+    <string name="privacy_report_local_title">Local Loq In data</string>
     <string name="privacy_report_profiles_schedules_title">Profiles &amp; schedules</string>
     <string name="privacy_report_profiles_schedules_summary">Profiles: %1$d · Schedules: %2$d</string>
     <string name="privacy_report_rules_title">Rules</string>
@@ -24,16 +24,16 @@
     <!-- ====================================================== -->
     <!-- Data not stored -->
     <!-- ====================================================== -->
-    <string name="privacy_report_not_stored_title">Not stored by Switchly</string>
+    <string name="privacy_report_not_stored_title">Not stored by Loq In</string>
     <string name="privacy_report_not_stored_compact">Passwords, messages and screen contents are not stored</string>
-    <string name="privacy_report_not_stored_summary">Switchly does not store passwords, private messages, complete browser history, or the visible screen content processed by Accessibility. Accessibility events are evaluated locally for blocking.</string>
+    <string name="privacy_report_not_stored_summary">Loq In does not store passwords, private messages, complete browser history, or the visible screen content processed by Accessibility. Accessibility events are evaluated locally for blocking.</string>
 
     <!-- ====================================================== -->
     <!-- Data sharing -->
     <!-- ====================================================== -->
     <string name="privacy_report_sharing_title">Data sharing</string>
     <string name="privacy_report_sharing_compact">Local by default; online services depend on the APK variant</string>
-    <string name="privacy_report_sharing_summary">Switchly’s blocking engine does not automatically upload profile names, app/website rules, blocked-notification contents, or detailed usage history. These can leave the device when you explicitly use cloud backup, send a support report, or export/share data.</string>
+    <string name="privacy_report_sharing_summary">Loq In’s blocking engine does not automatically upload profile names, app/website rules, blocked-notification contents, or detailed usage history. These can leave the device when you explicitly use cloud backup, send a support report, or export/share data.</string>
 
     <!-- ====================================================== -->
     <!-- Backup -->
@@ -47,20 +47,20 @@
     <!-- ====================================================== -->
     <string name="privacy_report_export_report_title">Share privacy overview</string>
     <string name="privacy_report_export_report_summary">Share this overview without exporting your actual rules or usage history.</string>
-    <string name="privacy_report_export_data_title">Export selected Switchly data</string>
+    <string name="privacy_report_export_data_title">Export selected Loq In data</string>
     <string name="privacy_report_export_data_summary">Create a local JSON backup using the current selection: %1$s</string>
     <string name="privacy_report_export_select_title">Choose data to export</string>
     <string name="privacy_report_export_select_action">Export</string>
     <string name="privacy_report_export_select_empty">Select at least one data category.</string>
     <string name="privacy_report_export_progress">Preparing data export…</string>
-    <string name="privacy_report_export_done">Switchly data exported.</string>
-    <string name="privacy_report_export_failed">Switchly data could not be exported.</string>
-    <string name="privacy_report_export_body">Switchly Privacy Report\n\nStored locally:\n%1$s\n\nNot stored:\n%2$s\n\nData sharing:\n%3$s\n\nBackup preset: %4$s\n%5$s</string>
+    <string name="privacy_report_export_done">Loq In data exported.</string>
+    <string name="privacy_report_export_failed">Loq In data could not be exported.</string>
+    <string name="privacy_report_export_body">Loq In Privacy Report\n\nStored locally:\n%1$s\n\nNot stored:\n%2$s\n\nData sharing:\n%3$s\n\nBackup preset: %4$s\n%5$s</string>
 
     <!-- ====================================================== -->
     <!-- Delete local data -->
     <!-- ====================================================== -->
-    <string name="privacy_report_delete_title">Delete all local Switchly data</string>
+    <string name="privacy_report_delete_title">Delete all local Loq In data</string>
     <string name="privacy_report_delete_summary">Remove profiles, rules, schedules, statistics, paired tags and settings from this device.</string>
 
 </resources>

@@ -17,7 +17,7 @@
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
-            style="@style/Switchly.TopBar"
+            style="@style/LoqIn.TopBar"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:minHeight="?attr/actionBarSize"
@@ -125,7 +125,7 @@
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnSaveIgnoredApps"
-        style="@style/Switchly.PrimaryButton"
+        style="@style/LoqIn.PrimaryButton"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"

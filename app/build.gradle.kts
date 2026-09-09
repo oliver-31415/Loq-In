@@ -6,21 +6,21 @@ plugins {
     id("com.google.devtools.ksp")
 }
 
-val switchlyVersionCode = 228
-val switchlyVersionName = "2.2.8"
+val loqinVersionCode = 228
+val loqinVersionName = "2.2.8"
 
-val switchlySecretPropertiesFile = rootProject.file("signing.properties")
-val switchlySecretProperties = Properties().apply {
-    if (switchlySecretPropertiesFile.isFile) {
-        switchlySecretPropertiesFile.inputStream().use { input -> load(input) }
+val loqinSecretPropertiesFile = rootProject.file("signing.properties")
+val loqinSecretProperties = Properties().apply {
+    if (loqinSecretPropertiesFile.isFile) {
+        loqinSecretPropertiesFile.inputStream().use { input -> load(input) }
     }
 }
 
-fun switchlySecretProperty(name: String) = providers.gradleProperty(name)
+fun loqinSecretProperty(name: String) = providers.gradleProperty(name)
     .orElse(providers.environmentVariable(name))
-    .orElse(providers.provider { switchlySecretProperties.getProperty(name) ?: "" })
+    .orElse(providers.provider { loqinSecretProperties.getProperty(name) ?: "" })
 
-fun String.switchlyTrimUnquoted(): String {
+fun String.loqinTrimUnquoted(): String {
     val trimmed = trim()
     if (trimmed.length >= 2) {
         val first = trimmed.first()
@@ -32,20 +32,14 @@ fun String.switchlyTrimUnquoted(): String {
     return trimmed
 }
 
-fun Provider<String>.switchlyTrimmedUnquoted(): Provider<String> = map { it.switchlyTrimUnquoted() }
+fun Provider<String>.loqinTrimmedUnquoted(): Provider<String> = map { it.loqinTrimUnquoted() }
 
-// Public links/contact values for official builds.
-// Keep these configurable so forks can build Switchly without official project URLs compiled into the APK.
-val switchlyWebsiteUrl = switchlySecretProperty("SWITCHLY_WEBSITE_URL")
-val switchlyDownloadsUrl = switchlySecretProperty("SWITCHLY_DOWNLOADS_URL")
-val switchlySupportEmail = switchlySecretProperty("SWITCHLY_DEV_EMAIL")
+val mapsApiKey = loqinSecretProperty("MAPS_API_KEY").loqinTrimmedUnquoted()
 
-val mapsApiKey = switchlySecretProperty("MAPS_API_KEY").switchlyTrimmedUnquoted()
-
-val releaseStoreFile = switchlySecretProperty("SWITCHLY_RELEASE_STORE_FILE")
-val releaseStorePassword = switchlySecretProperty("SWITCHLY_RELEASE_STORE_PASSWORD")
-val releaseKeyAlias = switchlySecretProperty("SWITCHLY_RELEASE_KEY_ALIAS")
-val releaseKeyPassword = switchlySecretProperty("SWITCHLY_RELEASE_KEY_PASSWORD")
+val releaseStoreFile = loqinSecretProperty("LOQIN_RELEASE_STORE_FILE")
+val releaseStorePassword = loqinSecretProperty("LOQIN_RELEASE_STORE_PASSWORD")
+val releaseKeyAlias = loqinSecretProperty("LOQIN_RELEASE_KEY_ALIAS")
+val releaseKeyPassword = loqinSecretProperty("LOQIN_RELEASE_KEY_PASSWORD")
 val releaseSigningConfigured = listOf(
     releaseStoreFile,
     releaseStorePassword,
@@ -54,25 +48,21 @@ val releaseSigningConfigured = listOf(
 ).all { it.get().isNotBlank() }
 
 android {
-    namespace = "at.saltyy.switchly"
+    namespace = "com.oliver.loqin"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "at.saltyy.switchly"
+        applicationId = "com.oliver.loqin"
         minSdk = 27
         targetSdk = 36
 
-        versionCode = switchlyVersionCode
-        versionName = switchlyVersionName
+        versionCode = loqinVersionCode
+        versionName = loqinVersionName
 
         manifestPlaceholders["MAPS_API_KEY"] = mapsApiKey.get()
 
-        resValue("string", "about_website_url", switchlyWebsiteUrl.get())
-        resValue("string", "about_downloads_url", switchlyDownloadsUrl.get())
-        resValue("string", "about_mail_address", switchlySupportEmail.get())
-
-        buildConfigField("boolean", "SWITCHLY_HAS_MAPS_API_KEY", mapsApiKey.get().isNotBlank().toString())
-        buildConfigField("boolean", "SWITCHLY_RELEASE_SIGNING_CONFIGURED", releaseSigningConfigured.toString())
+        buildConfigField("boolean", "LOQIN_HAS_MAPS_API_KEY", mapsApiKey.get().isNotBlank().toString())
+        buildConfigField("boolean", "LOQIN_RELEASE_SIGNING_CONFIGURED", releaseSigningConfigured.toString())
     }
 
     buildFeatures {
@@ -95,7 +85,7 @@ android {
         debug {
             // Separate app id so local builds co-install with the Play Store release
             // instead of being blocked by version/signature mismatch.
-            applicationIdSuffix = ".foqosdev"
+            applicationIdSuffix = ".loqindev"
         }
         release {
             isMinifyEnabled = true
