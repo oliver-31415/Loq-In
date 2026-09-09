@@ -164,36 +164,32 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
 
         adapter = AppUsageAdapter(
             onClick = { item ->
-                if (!StatsPremiumGate.isPremium(this)) {
-                    StatsPremiumGate.show(this)
-                } else {
-                    val selectedRange = screenTimeDetailRange(currentRange)
+                val selectedRange = screenTimeDetailRange(currentRange)
 
-                    if (isWebMode) {
-                        val detailIntent = Intent(this, WebsiteUsageDetailActivity::class.java)
-                            .putExtra(WebsiteUsageDetailActivity.EXTRA_DOMAIN, item.packageName)
-                            .putExtra(WebsiteUsageDetailActivity.EXTRA_LABEL, item.label)
-                            .putExtra(WebsiteUsageDetailActivity.EXTRA_INITIAL_RANGE, websiteDetailRange(currentRange))
-                        if (currentRange == Range.CUSTOM) {
-                            customRangeStartMillis?.let { detailIntent.putExtra(WebsiteUsageDetailActivity.EXTRA_INITIAL_START_MS, it) }
-                            customRangeEndMillis?.let { detailIntent.putExtra(WebsiteUsageDetailActivity.EXTRA_INITIAL_END_MS, it) }
-                        }
-                        startActivity(
-                            detailIntent
-                        )
-                    } else {
-                        val detailIntent = Intent(this, AppUsageDetailActivity::class.java)
-                            .putExtra(AppUsageDetailActivity.EXTRA_PKG, item.packageName)
-                            .putExtra(AppUsageDetailActivity.EXTRA_LABEL, item.label)
-                            .putExtra(AppUsageDetailActivity.EXTRA_INITIAL_RANGE, selectedRange)
-                        if (currentRange == Range.CUSTOM) {
-                            customRangeStartMillis?.let { detailIntent.putExtra(AppUsageDetailActivity.EXTRA_INITIAL_START_MS, it) }
-                            customRangeEndMillis?.let { detailIntent.putExtra(AppUsageDetailActivity.EXTRA_INITIAL_END_MS, it) }
-                        }
-                        startActivity(
-                            detailIntent
-                        )
+                if (isWebMode) {
+                    val detailIntent = Intent(this, WebsiteUsageDetailActivity::class.java)
+                        .putExtra(WebsiteUsageDetailActivity.EXTRA_DOMAIN, item.packageName)
+                        .putExtra(WebsiteUsageDetailActivity.EXTRA_LABEL, item.label)
+                        .putExtra(WebsiteUsageDetailActivity.EXTRA_INITIAL_RANGE, websiteDetailRange(currentRange))
+                    if (currentRange == Range.CUSTOM) {
+                        customRangeStartMillis?.let { detailIntent.putExtra(WebsiteUsageDetailActivity.EXTRA_INITIAL_START_MS, it) }
+                        customRangeEndMillis?.let { detailIntent.putExtra(WebsiteUsageDetailActivity.EXTRA_INITIAL_END_MS, it) }
                     }
+                    startActivity(
+                        detailIntent
+                    )
+                } else {
+                    val detailIntent = Intent(this, AppUsageDetailActivity::class.java)
+                        .putExtra(AppUsageDetailActivity.EXTRA_PKG, item.packageName)
+                        .putExtra(AppUsageDetailActivity.EXTRA_LABEL, item.label)
+                        .putExtra(AppUsageDetailActivity.EXTRA_INITIAL_RANGE, selectedRange)
+                    if (currentRange == Range.CUSTOM) {
+                        customRangeStartMillis?.let { detailIntent.putExtra(AppUsageDetailActivity.EXTRA_INITIAL_START_MS, it) }
+                        customRangeEndMillis?.let { detailIntent.putExtra(AppUsageDetailActivity.EXTRA_INITIAL_END_MS, it) }
+                    }
+                    startActivity(
+                        detailIntent
+                    )
                 }
             },
             onEditLimits = { item ->
@@ -430,11 +426,8 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
     }
 
     private fun ensureRangeAllowed(range: Range): Boolean {
-        if (range == Range.TODAY || StatsPremiumGate.canUseExtendedStats(this)) {
-            return true
-        }
-        StatsPremiumGate.show(this)
-        return false
+        // Extended stat ranges are available to everyone.
+        return true
     }
 
     private fun showCustomRangePicker() {

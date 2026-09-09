@@ -230,8 +230,6 @@
     <string name="schedules_location_map_picker_search_action">Suchen</string>
     <string name="schedules_location_map_picker_no_selection">Tippe auf die Karte, um einen Standort auszuwählen.</string>
     <string name="schedules_location_map_picker_selected">Ausgewählt: %1$s</string>
-    <string name="schedules_location_picker_premium_title">Standortauswahl ist Premium</string>
-    <string name="schedules_location_picker_premium_message">Schalte standortbasierte Zeitpläne und die visuelle Standortauswahl mit Switchly Premium frei.</string>
     <string name="schedules_location_map_picker_load_failed">Karte nicht verfügbar. Prüfe Verbindung, VPN, Private DNS oder Adblocker. Suche und manuelle Auswahl funktionieren weiterhin.</string>
 
     <!-- ====================================================== -->

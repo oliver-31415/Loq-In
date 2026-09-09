@@ -421,11 +421,8 @@ class WebsiteUsageDetailActivity : AppCompatActivity() {
     }
 
     private fun ensureRangeAllowed(range: Range, showGate: Boolean = true): Boolean {
-        if (range == Range.TODAY || StatsPremiumGate.canUseExtendedStats(this)) {
-            return true
-        }
-        if (showGate) StatsPremiumGate.show(this)
-        return false
+        // Extended stat ranges are available to everyone.
+        return true
     }
 
     private fun chipIdForRange(range: Range): Int {

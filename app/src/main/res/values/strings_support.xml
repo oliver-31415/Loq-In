@@ -5,11 +5,8 @@
     <!-- Support contact flow -->
     <!-- ====================================================== -->
     <string name="support_title">Support</string>
-    <string name="support_desc">Email support and choose which diagnostics to include.</string>
-    <string name="support_email_subject">Switchly Support</string>
+    <string name="support_desc">Contact support and choose which diagnostics to include in your report.</string>
     <string name="support_open_email">Contact Support</string>
-    <string name="support_copy_email">Copy email</string>
-    <string name="support_copied">Email copied</string>
     <string name="support_copy_latest_logs">Copy latest logs</string>
     <string name="support_logs_copied">Latest logs copied</string>
     <string name="support_choose_report_data">Choose what to include</string>
@@ -27,7 +24,7 @@
     <string name="support_latest_logs_heading">Latest logs</string>
     <string name="support_response_time_short">Response time: up to 7 days</string>
     <string name="support_response_time_title">Support response time</string>
-    <string name="support_response_time_details">Switchly is developed and supported by one person. I read support messages and bug reports as soon as possible, but replies can sometimes take up to 7 days depending on workload.\n\nPlease include debug info when reporting blocking, schedule, premium, or permission issues. This helps me understand what happened much faster.</string>
+    <string name="support_response_time_details">Switchly is developed and supported by one person. I read support messages and bug reports as soon as possible, but replies can sometimes take up to 7 days depending on workload.\n\nPlease include debug info when reporting blocking, schedule, or permission issues. This helps me understand what happened much faster.</string>
 
     <!-- ====================================================== -->
     <!-- Onboarding link -->
@@ -48,7 +45,6 @@
     <string name="support_logs_view_refresh">Refresh</string>
     <string name="support_logs_view_copy">Copy logs</string>
     <string name="support_logs_view_empty">No recent app logs.</string>
-    <string name="support_email_label">Support email</string>
     <string name="support_discord_label">Discord</string>
     <string name="support_gitlab_issues_label">GitLab Issues</string>
     <string name="support_discord_url" translatable="false">https://discord.gg/PC5zn2NeCg</string>
@@ -57,9 +53,8 @@
     <string name="support_discord_copied">Discord link copied</string>
     <string name="support_copy_gitlab_issues">Copy GitLab Issues link</string>
     <string name="support_gitlab_issues_copied">GitLab Issues link copied</string>
-    <string name="support_no_email_app">No email app available</string>
     <string name="support_report_clipboard_label">Switchly support report</string>
-    <string name="support_email_fallback_copied">Could not open an email app. The support report was copied to the clipboard.</string>
+    <string name="support_report_copied">Support report copied to the clipboard.</string>
     <string name="support_logs_unified_title">App logs</string>
     <string name="support_logs_unified_desc">View, filter, share, and copy internal diagnostic logs.</string>
     <string name="support_logs_search_hint">Search logs…</string>

@@ -49,7 +49,7 @@ object FileBackupRuntime {
                 .put(FIELD_EXPORTED_AT, System.currentTimeMillis())
                 .put(FIELD_APP_VERSION_NAME, BuildConfig.VERSION_NAME)
                 .put(FIELD_APP_VERSION_CODE, BuildConfig.VERSION_CODE)
-                .put(FIELD_PAYLOAD, toJsonValue(CloudSyncRuntime.createLocalBackupPayload(ctx, selection)))
+                .put(FIELD_PAYLOAD, toJsonValue(LocalBackupPayload.createLocalBackupPayload(ctx, selection)))
 
             ctx.contentResolver.openOutputStream(uri, "wt")?.use { stream ->
                 OutputStreamWriter(stream, Charsets.UTF_8).use { writer ->
@@ -61,7 +61,7 @@ object FileBackupRuntime {
 
     fun restoreBackupFromUri(ctx: Context, uri: Uri): Result<Unit> {
         return runCatching {
-            CloudSyncRuntime.applyBackupPayload(ctx, readBackupPayloadFromUri(ctx, uri).getOrThrow())
+            LocalBackupPayload.applyBackupPayload(ctx, readBackupPayloadFromUri(ctx, uri).getOrThrow())
         }.onFailure { AppLogStore.appendRateLimited(ctx, TAG, "File restore failed", it) }
     }
 
@@ -83,7 +83,7 @@ object FileBackupRuntime {
 
     fun restoreBackupPayload(ctx: Context, payload: Map<*, *>): Result<Unit> {
         return runCatching {
-            CloudSyncRuntime.applyBackupPayload(ctx, payload)
+            LocalBackupPayload.applyBackupPayload(ctx, payload)
         }.onFailure { AppLogStore.appendRateLimited(ctx, TAG, "File restore failed", it) }
     }
 

@@ -43,7 +43,6 @@ import at.saltyy.switchly.data.prefs.AppLogStore
 import at.saltyy.switchly.data.prefs.EmergencyBypassStore
 import at.saltyy.switchly.data.prefs.EmergencyPinStore
 import at.saltyy.switchly.data.prefs.SwitchModeStore
-import at.saltyy.switchly.feature.premium.PremiumInfoActivity
 import at.saltyy.switchly.feature.qr.QrGenerateActivity
 import at.saltyy.switchly.feature.schedule.SchedulesActivity
 import at.saltyy.switchly.feature.tools.RulesHubActivity

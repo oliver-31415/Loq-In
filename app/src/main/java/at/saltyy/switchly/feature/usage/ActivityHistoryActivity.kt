@@ -384,11 +384,8 @@ class ActivityHistoryActivity : AppCompatActivity() {
     }
 
     private fun ensureRangeAllowed(option: RangeFilter): Boolean {
-        if (option == RangeFilter.TODAY || StatsPremiumGate.canUseExtendedStats(this)) {
-            return true
-        }
-        StatsPremiumGate.show(this)
-        return false
+        // Extended stat ranges are available to everyone.
+        return true
     }
 
     private fun rangeChipText(option: RangeFilter): String = getString(option.labelRes)

@@ -64,7 +64,6 @@ import at.saltyy.switchly.data.prefs.BlockingToggleKeys
 import at.saltyy.switchly.data.prefs.ProfileStore
 import at.saltyy.switchly.data.prefs.SwitchModeStore
 import at.saltyy.switchly.feature.settings.ToggleOptionsActivity
-import at.saltyy.switchly.premium.PremiumManager
 import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.ui.EdgeToEdgeUtils
 import at.saltyy.switchly.ui.ThemeUtils
@@ -475,7 +474,6 @@ class NfcWriterActivity : AppCompatActivity() {
 
     private fun setupTimeDropdown() {
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-        val isPremium = PremiumManager.isPremium(this)
 
         val entries = mutableListOf<String>()
         val values = mutableListOf<String>()
@@ -490,12 +488,10 @@ class NfcWriterActivity : AppCompatActivity() {
         )
         values += listOf("5", "10", "15", "20", "25", "30")
 
-        if (isPremium) {
-            entries += getString(R.string.nfc_time_custom)
-            values += "custom"
-            entries += getString(R.string.nfc_time_ask_when_scanned)
-            values += TEMP_ASK_WHEN_SCANNED_VALUE
-        }
+        entries += getString(R.string.nfc_time_custom)
+        values += "custom"
+        entries += getString(R.string.nfc_time_ask_when_scanned)
+        values += TEMP_ASK_WHEN_SCANNED_VALUE
 
         ddTime.setAdapter(SwitchlyDropdownAdapter(this, entries))
 
@@ -513,7 +509,7 @@ class NfcWriterActivity : AppCompatActivity() {
 
         ddTime.setOnItemClickListener { _, _, position, _ ->
             val selected = values.getOrNull(position) ?: return@setOnItemClickListener
-            if (isPremium && selected == "custom") {
+            if (selected == "custom") {
                 showCustomTimeDialog()
             } else {
                 prefs.edit { putString("pref_nfc_unlock_minutes", selected) }

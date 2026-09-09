@@ -39,7 +39,6 @@ import android.text.InputType
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.style.ForegroundColorSpan
-import android.util.Patterns
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -68,9 +67,7 @@ import androidx.preference.PreferenceManager
 import androidx.preference.PreferenceScreen
 import androidx.preference.SwitchPreferenceCompat
 import androidx.recyclerview.widget.RecyclerView
-import at.saltyy.switchly.BuildConfig
 import at.saltyy.switchly.R
-import at.saltyy.switchly.auth.AccountDeletion
 import at.saltyy.switchly.blocking.BlockingRuntime
 import at.saltyy.switchly.data.prefs.ActivityHistoryLogStore
 import at.saltyy.switchly.data.prefs.AppLogStore
@@ -85,7 +82,6 @@ import at.saltyy.switchly.data.sync.BackupCategoryFilter
 import at.saltyy.switchly.data.sync.BackupSelection
 import at.saltyy.switchly.data.sync.BackupSelectionStore
 import at.saltyy.switchly.data.statistics.StatsPersistence
-import at.saltyy.switchly.data.sync.CloudSyncRuntime
 import at.saltyy.switchly.data.sync.FileBackupRuntime
 import at.saltyy.switchly.feature.about.AppInfoActivity
 import at.saltyy.switchly.feature.about.DeveloperInfoActivity
@@ -100,7 +96,6 @@ import at.saltyy.switchly.feature.schedule.SchedulesActivity
 import at.saltyy.switchly.feature.settings.ManagePairedTagsActivity
 import at.saltyy.switchly.feature.support.SupportLogActivity
 import at.saltyy.switchly.nfc.NfcWriterActivity
-import at.saltyy.switchly.premium.PremiumManager
 import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.theme.CustomAccentApplier
 import at.saltyy.switchly.ui.MainActivity
@@ -121,7 +116,6 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.progressindicator.CircularProgressIndicator
 import org.json.JSONArray
 import com.google.android.material.radiobutton.MaterialRadioButton
-import com.google.firebase.auth.FirebaseAuth
 import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -165,7 +159,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
     }
 
     private var focusApplied: Boolean = false
-    private var authListener: FirebaseAuth.AuthStateListener? = null
     private var nextChangedReceiver: BroadcastReceiver? = null
     private var lastNestedNavKey: String? = null
     private var lastNestedNavAtMs: Long = 0L
@@ -188,11 +181,10 @@ class SettingsFragment : PreferenceFragmentCompat() {
     }
 
 
-    private data class IconActionItem(val title: String, val iconRes: Int, val tintIcon: Boolean = true)
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
-        backupFlows.onLibraryChanged = { updateGooglePrefSummary(); updateCloudPrefVisibility() }
+        backupFlows.onLibraryChanged = { updateCloudPrefVisibility() }
     }
 
     override fun onCreatePreferences(savedInstanceState: Bundle?, rootKey: String?) {
@@ -477,15 +469,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
             true
         }
 
-        // Google account (popup only for sign-in/out/delete)
-        findPreference<Preference>("pref_google_account")?.apply {
-            isVisible = BuildConfig.SWITCHLY_FIREBASE_ENABLED
-            setOnPreferenceClickListener {
-                showGoogleAccountDialog()
-                true
-            }
-        }
-
         // Emergency unlock PIN (Account)
         findPreference<Preference>("pref_change_emergency_pin")?.setOnPreferenceClickListener {
             showChangeEmergencyPinFlow()
@@ -493,29 +476,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
 
         // Backup as standalone prefs
-        findPreference<Preference>("pref_cloud_backup")?.setOnPreferenceClickListener {
-            backupFlows.cloudBackup()
-            true
-        }
-
-        // Backup & restore screen itself: warn instead of dead navigation while locked.
-        findPreference<Preference>("screen_backup_restore")?.setOnPreferenceClickListener {
-            if (denyRestrictedAccountData()) {
-                true
-            } else {
-                false
-            }
-        }
-
-        // Restore as standalone prefs
-        findPreference<Preference>("pref_cloud_restore")?.setOnPreferenceClickListener {
-            if (denyRestrictedAccountData()) {
-                return@setOnPreferenceClickListener true
-            }
-            backupFlows.cloudRestore()
-            true
-        }
-
         findPreference<Preference>("pref_file_backup")?.setOnPreferenceClickListener {
             backupFlows.fileBackup()
             true
@@ -529,11 +489,12 @@ class SettingsFragment : PreferenceFragmentCompat() {
             true
         }
 
-        // Delete backups
-        findPreference<Preference>("pref_cloud_delete_backups")?.apply {
-            setOnPreferenceClickListener {
-                showDeleteBackupsDialog()
+        // Backup & restore screen itself: warn instead of dead navigation while locked.
+        findPreference<Preference>("screen_backup_restore")?.setOnPreferenceClickListener {
+            if (denyRestrictedAccountData()) {
                 true
+            } else {
+                false
             }
         }
 
@@ -572,7 +533,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
 
         // Initial UI state
-        updateGooglePrefSummary()
         updateCloudPrefVisibility()
         refreshEmergencyPref()
         refreshLockUi()
@@ -585,21 +545,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
                 findPreference<SwitchPreferenceCompat>("pref_switch_mode")?.isChecked = enabledNow
                 findPreference<SwitchPreferenceCompat>("pref_switchly_enabled")?.isChecked = enabledNow
                 refreshLockUi()
-            }
-        }
-
-        // Auth listener for Firebase account builds only.
-        if (BuildConfig.SWITCHLY_FIREBASE_ENABLED) {
-            authListener = FirebaseAuth.AuthStateListener {
-                if (isAdded) {
-                    updateGooglePrefSummary()
-                    updateCloudPrefVisibility()
-                }
-            }
-            // Firebase can be missing during dev builds (e.g. no google-services.json).
-            // Don't crash Settings screen if Firebase isn't initialized.
-            authListener?.let { listener ->
-                runCatching { FirebaseAuth.getInstance().addAuthStateListener(listener) }
             }
         }
     }
@@ -654,13 +599,9 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
     }
 
-    // Hide/show cloud backup actions depending on login state. File backup stays available offline.
+    // File backup stays available offline; cloud backup preferences are gone.
     private fun updateCloudPrefVisibility() {
-        val loggedIn = BuildConfig.SWITCHLY_FIREBASE_ENABLED && at.saltyy.switchly.auth.Auth.uid() != null
         findPreference<PreferenceScreen>("screen_backup")?.isVisible = true
-        findPreference<Preference>("pref_cloud_backup")?.isVisible = loggedIn
-        findPreference<Preference>("pref_cloud_restore")?.isVisible = loggedIn
-        findPreference<Preference>("pref_cloud_delete_backups")?.isVisible = loggedIn
         findPreference<Preference>("pref_file_backup")?.isVisible = true
         findPreference<Preference>("pref_file_restore")?.isVisible = true
     }
@@ -779,7 +720,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
         refreshEmergencyPref()
         updateTimeFormatSummary(findPreference("pref_time_format"))
         updateNextScheduleIndicator()
-        updateGooglePrefSummary()
         updateCloudPrefVisibility()
         refreshBlockedInboxPreferenceState()
         CustomAccentApplier.applyIfNeeded(requireActivity())
@@ -813,13 +753,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
     }
 
     override fun onDestroyView() {
-        if (BuildConfig.SWITCHLY_FIREBASE_ENABLED) {
-            authListener?.let { listener ->
-                runCatching { FirebaseAuth.getInstance().removeAuthStateListener(listener) }
-            }
-        }
-        authListener = null
-
         nextChangedReceiver?.let { runCatching { requireContext().unregisterReceiver(it) } }
         nextChangedReceiver = null
 
@@ -1009,24 +942,13 @@ class SettingsFragment : PreferenceFragmentCompat() {
     private fun showThemeColorDialog() {
         val ctx = requireContext()
         val prefs = PreferenceManager.getDefaultSharedPreferences(ctx)
-        val isPremium = PremiumManager.isPremium(ctx)
         val current = prefs.getString("pref_accent", "default") ?: "default"
 
         val allEntries = resources.getStringArray(R.array.pref_accent_entries)
         val allValues = resources.getStringArray(R.array.pref_accent_values)
 
-        val freeCount = minOf(5, allEntries.size, allValues.size)
-
-        val entries: Array<String>
-        val values: Array<String>
-
-        if (isPremium) {
-            entries = allEntries + getString(R.string.pref_accent_custom)
-            values = allValues + "custom"
-        } else {
-            entries = allEntries.copyOfRange(0, freeCount)
-            values = allValues.copyOfRange(0, freeCount)
-        }
+        val entries = allEntries + getString(R.string.pref_accent_custom)
+        val values = allValues + "custom"
 
         val checked = values.indexOf(current).let { idx -> if (idx >= 0) idx else 0 }
 
@@ -1241,11 +1163,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
 
     private fun showCustomColorPicker() {
         val ctx = requireContext()
-        if (!PremiumManager.isPremium(ctx)) {
-            requireView().showWarnPill(R.string.premium_required_for_theme)
-            return
-        }
-
         val prefs = PreferenceManager.getDefaultSharedPreferences(ctx)
         val defaultAccent = AccentColor.getAccentColorInt(requireContext())
         val defaultHex = String.format("#%06X", 0xFFFFFF and defaultAccent)
@@ -1308,547 +1225,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
         }
         dialog.show()
     }
-
-    // Account (Google + email/password)
-    private fun updateGooglePrefSummary() {
-        val pref = findPreference<Preference>("pref_google_account") ?: return
-        val ctx = requireContext()
-        pref.isVisible = BuildConfig.SWITCHLY_FIREBASE_ENABLED
-        if (!BuildConfig.SWITCHLY_FIREBASE_ENABLED) {
-            return
-        }
-        val user = runCatching { FirebaseAuth.getInstance().currentUser }.getOrNull()
-
-        val base = if (user != null) {
-            val email = user.email?.trim().orEmpty()
-            if (email.isNotEmpty()) getString(R.string.settings_account_logged_in_as, email)
-            else getString(R.string.settings_account_logged_in)
-        } else {
-            getString(R.string.settings_account_logged_out)
-        }
-
-        if (user == null) {
-            pref.summary = base
-            return
-        }
-
-        val prefs = PreferenceManager.getDefaultSharedPreferences(ctx)
-        val lastBackup = prefs.getLong("pref_last_backup_epoch_ms", -1L)
-        if (lastBackup <= 0L) {
-            pref.summary = base
-            return
-        }
-
-        val df = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
-        val formatted = df.format(Date(lastBackup))
-        pref.summary = "$base\n" + getString(R.string.settings_last_backup, formatted)
-    }
-
-    private fun showGoogleAccountDialog() {
-        val ctx = requireContext()
-        val loggedIn = at.saltyy.switchly.auth.Auth.uid() != null
-
-        if (!loggedIn) {
-            ctx.showSwitchlyOptionDialog(
-                title = getString(R.string.settings_account_dialog_title),
-                options = listOf(
-                    SwitchlyDialogOption(
-                        title = getString(R.string.settings_account_action_sign_in),
-                        summary = getString(R.string.settings_account_sign_in_summary),
-                        iconRes = R.drawable.login_24
-                    ),
-                    SwitchlyDialogOption(
-                        title = getString(R.string.settings_account_action_create),
-                        summary = getString(R.string.settings_account_create_summary),
-                        iconRes = R.drawable.account_box_24
-                    )
-                ),
-                compact = false,
-                showCancelButton = false,
-                widthFraction = 0.94f
-            ) { which ->
-                when (which) {
-                    0 -> showAccountSignInDialog()
-                    1 -> showAccountCreateDialog()
-                }
-            }
-            return
-        }
-
-        val restricted = isRestrictedSettingsAccess()
-        val items = buildList {
-            add(IconActionItem(getString(R.string.sign_out), R.drawable.logout_24))
-            if (!restricted) {
-                add(IconActionItem(getString(R.string.settings_account_action_delete), R.drawable.delete_24))
-            }
-        }
-
-        ctx.showSwitchlyOptionDialog(
-            title = getString(R.string.settings_account_dialog_title),
-            options = items.map {
-                SwitchlyDialogOption(
-                    title = it.title,
-                    iconRes = it.iconRes,
-                    destructive = it.iconRes == R.drawable.delete_24
-                )
-            }
-        ) { which ->
-            when (which) {
-                0 -> confirmAction(
-                    title = getString(R.string.sign_out),
-                    message = getString(R.string.settings_confirm_sign_out_message),
-                    positiveText = getString(R.string.sign_out),
-                ) {
-                    at.saltyy.switchly.auth.Auth.signOut(ctx) {
-                        PreferenceManager.getDefaultSharedPreferences(ctx).edit {
-                            remove("pref_last_backup_epoch_ms")
-                        }
-                        updateGooglePrefSummary()
-                        updateCloudPrefVisibility()
-                        view?.showWarnPill(getString(R.string.settings_signed_out))
-                    }
-                }
-
-                1 -> {
-                    if (isRestrictedSettingsAccess()) {
-                        requireView().showWarnPill(R.string.settings_restricted_action_unavailable)
-                    } else {
-                        confirmAction(
-                            title = getString(R.string.settings_account_delete_confirm_title),
-                            message = getString(R.string.settings_account_delete_confirm_message),
-                            positiveText = getString(R.string.delete),
-                        ) {
-                            beginAccountDeletionFlow()
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private fun beginAccountDeletionFlow() {
-        val ctx = requireContext()
-        val user = runCatching { FirebaseAuth.getInstance().currentUser }.getOrNull()
-        if (user == null) {
-                view?.showWarnPill(R.string.settings_google_logged_out)
-
-            return
-        }
-
-        if (user.isAnonymous) {
-            performAccountDeletion()
-            return
-        }
-
-        val providers = user.providerData
-            .map { it.providerId }
-            .filter { it.isNotBlank() }
-            .toSet()
-        val hasGoogle = "google.com" in providers
-        val hasPassword = "password" in providers
-
-        when {
-            hasGoogle && hasPassword -> {
-                ctx.showSwitchlyOptionDialog(
-                    title = getString(R.string.account_delete_verify_title),
-                    options = listOf(
-                        SwitchlyDialogOption(
-                            title = getString(R.string.account_delete_verify_google),
-                            summary = getString(R.string.account_delete_verify_google_summary),
-                            iconDrawable = ContextCompat.getDrawable(ctx, R.drawable.google_24),
-                        ),
-                        SwitchlyDialogOption(
-                            title = getString(R.string.account_delete_verify_password),
-                            summary = getString(R.string.account_delete_verify_password_summary),
-                            iconRes = R.drawable.lock_24,
-                        ),
-                    ),
-                    compact = false,
-                    showCancelButton = true,
-                    widthFraction = 0.94f,
-                ) { which ->
-                    if (which == 0) reauthenticateForAccountDeletionWithGoogle()
-                    else showAccountDeletionPasswordDialog()
-                }
-            }
-            hasGoogle -> reauthenticateForAccountDeletionWithGoogle()
-            hasPassword -> showAccountDeletionPasswordDialog()
-            else -> {
-                view?.showWarnPill(R.string.account_delete_reauth_provider_unsupported)
-            }
-        }
-    }
-
-    private fun reauthenticateForAccountDeletionWithGoogle() {
-        val activity = activity ?: return
-        at.saltyy.switchly.auth.AuthRuntime.reauthenticateWithGoogle(activity) { success, error ->
-            if (!isAdded) return@reauthenticateWithGoogle
-            if (success) {
-                performAccountDeletion()
-            } else {
-                val message = at.saltyy.switchly.auth.AuthRuntime.userFacingError(
-                    requireContext(),
-                    error,
-                    at.saltyy.switchly.auth.AuthRuntime.AuthAction.GOOGLE_SIGN_IN,
-                )
-                view?.showWarnPill(message)
-            }
-        }
-    }
-
-    private fun showAccountDeletionPasswordDialog() {
-        val ctx = requireContext()
-        val user = runCatching { FirebaseAuth.getInstance().currentUser }.getOrNull() ?: return
-        val email = user.email?.trim().orEmpty()
-        val density = resources.displayMetrics.density
-        val margin = (24 * density).toInt()
-
-        val passwordInput = EditText(ctx).apply {
-            hint = getString(R.string.settings_account_password_hint)
-            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-            backgroundTintList = AccentColor.getActiveColor(ctx)
-        }
-        val container = FrameLayout(ctx).apply {
-            setPadding(margin, 0, margin, 0)
-            addView(
-                passwordInput,
-                FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                ),
-            )
-        }
-
-        val message = if (email.isBlank()) {
-            getString(R.string.account_delete_verify_password_message)
-        } else {
-            getString(R.string.account_delete_verify_password_message_email, email)
-        }
-        val dialog = AlertDialog.Builder(ctx)
-            .setTitle(R.string.account_delete_verify_title)
-            .setMessage(message)
-            .setView(container)
-            .setNegativeButton(R.string.cancel, null)
-            .setPositiveButton(R.string.continue_label, null)
-            .create()
-
-        dialog.setOnShowListener {
-            dialog.styleSwitchlyDialogButtons()
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setOnClickListener {
-                val password = passwordInput.text?.toString().orEmpty()
-                if (password.isBlank()) {
-                    passwordInput.showWarnPill(R.string.settings_account_password_required)
-                    return@setOnClickListener
-                }
-
-                val positive = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
-                positive?.isEnabled = false
-                at.saltyy.switchly.auth.AuthRuntime.reauthenticateWithEmail(ctx, password) { success, error ->
-                    if (!isAdded) return@reauthenticateWithEmail
-                    positive?.isEnabled = true
-                    if (success) {
-                        dialog.dismiss()
-                        performAccountDeletion()
-                    } else {
-                        val errorText = at.saltyy.switchly.auth.AuthRuntime.userFacingError(
-                            ctx,
-                            error,
-                            at.saltyy.switchly.auth.AuthRuntime.AuthAction.EMAIL_SIGN_IN,
-                        )
-                        passwordInput.showWarnPill(errorText)
-                    }
-                }
-            }
-        }
-        dialog.show()
-    }
-
-    private fun performAccountDeletion() {
-        val ctx = context ?: return
-        val loadingDialog = showProgressDialog(
-            ctx,
-            R.string.settings_account_action_delete,
-            R.string.account_delete_progress,
-        )
-        AccountDeletion.deleteAccount(ctx) { result ->
-            activity?.runOnUiThread {
-                if (loadingDialog.isShowing) loadingDialog.dismiss()
-                if (!isAdded) return@runOnUiThread
-
-                if (result.success) {
-                    updateGooglePrefSummary()
-                    updateCloudPrefVisibility()
-                    view?.showWarnPill(R.string.account_deleted)
-                    return@runOnUiThread
-                }
-
-                val errorText = result.error?.localizedMessage ?: getString(R.string.error_unknown)
-                val message = when (result.stage) {
-                    AccountDeletion.Stage.BACKUPS -> getString(
-                        R.string.account_delete_failed_delete_backups_fmt,
-                        errorText,
-                    )
-                    AccountDeletion.Stage.CLOUD_DATA -> getString(
-                        R.string.account_delete_failed_delete_cloud_data_fmt,
-                        errorText,
-                    )
-                    AccountDeletion.Stage.AUTH_ACCOUNT -> getString(
-                        R.string.account_delete_failed_auth_after_cloud_fmt,
-                        errorText,
-                    )
-                    null -> getString(R.string.account_delete_failed_delete_account_fmt, errorText)
-                }
-                MaterialAlertDialogBuilder(ctx)
-                    .setTitle(R.string.account_delete_failed_title)
-                    .setMessage(message)
-                    .setPositiveButton(R.string.ok, null)
-                    .showAccented()
-            }
-        }
-    }
-
-    private fun showAccountSignInDialog() {
-        val ctx = requireContext()
-        val googleAvailable = at.saltyy.switchly.auth.AuthRuntime.isGoogleSignInAvailable(ctx)
-        val items = buildList {
-            if (googleAvailable) add(IconActionItem(getString(R.string.settings_account_continue_google), R.drawable.google_24, tintIcon = false))
-            add(IconActionItem(getString(R.string.settings_account_sign_in_email), R.drawable.mail_24))
-        }
-
-        ctx.showSwitchlyOptionDialog(
-            title = getString(R.string.settings_account_action_sign_in),
-            options = items.map { item ->
-                val isGoogle = item.iconRes == R.drawable.google_24
-                SwitchlyDialogOption(
-                    title = item.title,
-                    summary = getString(if (isGoogle) R.string.settings_account_google_summary else R.string.settings_account_email_sign_in_summary),
-                    iconRes = if (item.tintIcon) item.iconRes else null,
-                    iconDrawable = if (item.tintIcon) null else ContextCompat.getDrawable(ctx, item.iconRes)
-                )
-            },
-            compact = false,
-            showCancelButton = false,
-            widthFraction = 0.94f
-        ) { which ->
-            when {
-                googleAvailable && which == 0 -> startGoogleAccountSignIn()
-                else -> showEmailPasswordDialog(createAccount = false)
-            }
-        }
-    }
-
-    private fun showAccountCreateDialog() {
-        val ctx = requireContext()
-        val googleAvailable = at.saltyy.switchly.auth.AuthRuntime.isGoogleSignInAvailable(ctx)
-        val items = buildList {
-            if (googleAvailable) add(IconActionItem(getString(R.string.settings_account_continue_google), R.drawable.google_24, tintIcon = false))
-            add(IconActionItem(getString(R.string.settings_account_create_email), R.drawable.mail_24))
-        }
-
-        ctx.showSwitchlyOptionDialog(
-            title = getString(R.string.settings_account_action_create),
-            options = items.map { item ->
-                val isGoogle = item.iconRes == R.drawable.google_24
-                SwitchlyDialogOption(
-                    title = item.title,
-                    summary = getString(if (isGoogle) R.string.settings_account_google_summary else R.string.settings_account_email_create_summary),
-                    iconRes = if (item.tintIcon) item.iconRes else null,
-                    iconDrawable = if (item.tintIcon) null else ContextCompat.getDrawable(ctx, item.iconRes)
-                )
-            },
-            compact = false,
-            showCancelButton = false,
-            widthFraction = 0.94f
-        ) { which ->
-            when {
-                googleAvailable && which == 0 -> startGoogleAccountSignIn()
-                else -> showEmailPasswordDialog(createAccount = true)
-            }
-        }
-    }
-
-    private fun startGoogleAccountSignIn() {
-        findPreference<Preference>("pref_google_account")?.summary =
-            getString(R.string.settings_account_signing_in)
-        at.saltyy.switchly.auth.Auth.startSignIn(requireActivity()) { _, _ ->
-            if (!isAdded) return@startSignIn
-            updateGooglePrefSummary()
-            updateCloudPrefVisibility()
-        }
-    }
-
-    private fun showEmailPasswordDialog(createAccount: Boolean) {
-        val ctx = requireContext()
-        val density = resources.displayMetrics.density
-        val margin = (24 * density).toInt()
-        val spacing = (12 * density).toInt()
-
-        val emailInput = EditText(ctx).apply {
-            hint = getString(R.string.settings_account_email_hint)
-            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
-            backgroundTintList = AccentColor.getActiveColor(ctx)
-        }
-
-        val passwordInput = EditText(ctx).apply {
-            hint = getString(R.string.settings_account_password_hint)
-            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_PASSWORD
-            backgroundTintList = AccentColor.getActiveColor(ctx)
-        }
-
-        val container = LinearLayout(ctx).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(margin, 0, margin, 0)
-            addView(
-                emailInput,
-                LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
-                )
-            )
-            addView(
-                passwordInput,
-                LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
-                ).apply {
-                    topMargin = spacing
-                }
-            )
-        }
-
-        val titleRes = if (createAccount) {
-            R.string.settings_account_action_create
-        } else {
-            R.string.settings_account_action_sign_in
-        }
-        val positiveRes = if (createAccount) {
-            R.string.settings_account_create_email
-        } else {
-            R.string.settings_account_sign_in_email
-        }
-
-        val builder = AlertDialog.Builder(ctx)
-            .setTitle(getString(titleRes))
-            .setView(container)
-            .setNegativeButton(getString(R.string.cancel), null)
-            .setPositiveButton(getString(positiveRes), null)
-
-        if (!createAccount) {
-            builder.setNeutralButton(getString(R.string.settings_account_action_reset_password), null)
-        }
-
-        val dialog = builder.create()
-
-        dialog.setOnShowListener {
-            dialog.styleSwitchlyDialogButtons()
-            if (!createAccount) {
-                dialog.getButton(AlertDialog.BUTTON_NEUTRAL)?.setOnClickListener {
-                    dialog.dismiss()
-                    showPasswordResetDialog()
-                }
-            }
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setOnClickListener {
-                val email = emailInput.text?.toString()?.trim().orEmpty()
-                val password = passwordInput.text?.toString().orEmpty()
-
-                if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-                    emailInput.showWarnPill(getString(R.string.settings_account_invalid_email))
-                    return@setOnClickListener
-                }
-                if (password.isBlank()) {
-                    passwordInput.showWarnPill(R.string.settings_account_password_required)
-                    return@setOnClickListener
-                }
-                if (createAccount && password.length < 8) {
-                    passwordInput.showWarnPill(resources.getQuantityString(R.plurals.settings_account_password_min_length, 8, 8))
-                    return@setOnClickListener
-                }
-
-                val positive = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
-                positive?.isEnabled = false
-
-                val onFinished: (Boolean, String?) -> Unit = { success, _ ->
-                    positive?.isEnabled = true
-                    if (success && isAdded) {
-                        updateGooglePrefSummary()
-                        updateCloudPrefVisibility()
-                        dialog.dismiss()
-                    }
-                }
-
-                if (createAccount) {
-                    at.saltyy.switchly.auth.Auth.createAccountWithEmail(ctx, email, password, onFinished)
-                } else {
-                    at.saltyy.switchly.auth.Auth.signInWithEmail(ctx, email, password, onFinished)
-                }
-            }
-        }
-        dialog.show()
-    }
-
-    private fun showPasswordResetDialog() {
-        val ctx = requireContext()
-        val input = EditText(ctx).apply {
-            hint = getString(R.string.settings_account_email_hint)
-            inputType = InputType.TYPE_CLASS_TEXT or InputType.TYPE_TEXT_VARIATION_EMAIL_ADDRESS
-            backgroundTintList = AccentColor.getActiveColor(ctx)
-        }
-
-        val container = FrameLayout(ctx).apply {
-            val margin = (24 * resources.displayMetrics.density).toInt()
-            setPadding(margin, 0, margin, 0)
-            addView(
-                input,
-                FrameLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT
-                )
-            )
-        }
-
-        val dialog = AlertDialog.Builder(ctx)
-            .setTitle(getString(R.string.settings_account_action_reset_password))
-            .setMessage(getString(R.string.settings_account_reset_password_message))
-            .setView(container)
-            .setNegativeButton(getString(R.string.cancel), null)
-            .setPositiveButton(getString(R.string.settings_account_send_reset_email), null)
-            .create()
-
-        dialog.setOnShowListener {
-            dialog.styleSwitchlyDialogButtons()
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setOnClickListener {
-                val email = input.text?.toString()?.trim().orEmpty()
-                if (!Patterns.EMAIL_ADDRESS.matcher(email).matches()) {
-                    input.showWarnPill(getString(R.string.settings_account_invalid_email))
-                    return@setOnClickListener
-                }
-                val positive = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
-                positive?.isEnabled = false
-                at.saltyy.switchly.auth.Auth.sendPasswordResetEmail(ctx, email) { success, _ ->
-                    if (!isAdded) return@sendPasswordResetEmail
-                    positive?.isEnabled = true
-                    if (success) {
-                        dialog.dismiss()
-                    }
-                }
-            }
-        }
-        dialog.show()
-    }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     private fun showProgressDialog(ctx: Context, titleRes: Int, messageRes: Int): AlertDialog {
         val content = LayoutInflater.from(ctx).inflate(R.layout.dialog_progress, null, false)
@@ -2213,90 +1589,6 @@ class SettingsFragment : PreferenceFragmentCompat() {
         EmergencyPinDialog.showEnterPin(act, onSuccess)
     }
 
-    private fun showDeleteBackupsDialog(vararg _ignored: Any?) {
-        showDeleteBackupsDialog()
-    }
-
-    private fun showDeleteBackupsDialog() {
-        val initialCtx = context ?: return
-        val loadingDialog = showProgressDialog(
-            initialCtx,
-            R.string.settings_delete_backups_title,
-            R.string.cloud_restore_loading
-        )
-
-        CloudSyncRuntime.listBackups(initialCtx) { ok, err, backups ->
-            val activeCtx = context ?: return@listBackups
-            if (!isAdded) return@listBackups
-            if (loadingDialog.isShowing) loadingDialog.dismiss()
-            if (!ok) {
-                view?.showWarnPill(getString(R.string.cloud_error_fmt, err ?: getString(R.string.error_unknown)))
-                return@listBackups
-            }
-
-            val list = backups.orEmpty()
-            if (list.isEmpty()) {
-                view?.showWarnPill(getString(R.string.cloud_no_backups))
-                return@listBackups
-            }
-
-            val df = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
-            val labels = list.map { df.format(Date(it.createdAt)) }.toTypedArray()
-            val checked = BooleanArray(labels.size)
-
-            activeCtx.showSwitchlyMultiChoiceDialog(
-                title = getString(R.string.settings_delete_backups_title),
-                options = labels.map { SwitchlyDialogOption(title = it, destructive = true) },
-                checked = checked,
-                positiveTextRes = R.string.delete
-            ) { result ->
-                val ids = list.indices.filter { result[it] }.map { list[it].id }
-                if (ids.isEmpty()) return@showSwitchlyMultiChoiceDialog
-
-                val deleteDialog = showProgressDialog(
-                    activeCtx,
-                    R.string.settings_delete_backups_title,
-                    R.string.cloud_delete_backups_loading
-                )
-                var remaining = ids.size
-                var failed = 0
-                var lastError: String? = null
-
-                fun finishOne(ok: Boolean, err: String?) {
-                    if (!ok) {
-                        failed += 1
-                        if (!err.isNullOrBlank()) lastError = err
-                    }
-                    remaining -= 1
-                    if (remaining > 0) {
-                        return
-                    }
-
-                    val ctx = context ?: return
-                    if (!isAdded) {
-                        return
-                    }
-                    if (deleteDialog.isShowing) deleteDialog.dismiss()
-                    val message = if (failed == 0) {
-                        getString(R.string.deleted)
-                    } else {
-                        getString(R.string.cloud_error_fmt, lastError ?: getString(R.string.error_unknown))
-                    }
-                    view?.showWarnPill(message)
-                }
-
-                ids.forEach { id ->
-                    runCatching {
-                        CloudSyncRuntime.deleteBackup(activeCtx, id) { ok, err ->
-                            finishOne(ok, err)
-                        }
-                    }.onFailure { e ->
-                        finishOne(false, e.localizedMessage)
-                    }
-                }
-            }
-        }
-    }
 
     companion object {
         const val ARG_FOCUS_KEY = "switchly.settings.focus_key"

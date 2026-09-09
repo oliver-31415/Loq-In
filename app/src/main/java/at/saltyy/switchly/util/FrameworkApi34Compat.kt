@@ -34,7 +34,7 @@ import at.saltyy.switchly.R
 
 /**
  * Defensive runtime guard for API-34 system images that report SDK 34+ but are missing framework members that AndroidX Core legitimately expects to exist on API 34.
- * Crashlytics has seen these finalized API-34 members missing on the same Android 14 / Pixel 8 Pro image:
+ * These finalized API-34 members were seen missing on the same Android 14 / Pixel 8 Pro image:
  *  - AccessibilityAction.ACTION_SCROLL_IN_DIRECTION
  *  - TextView.setLineHeight(int, float)
  *  - WindowInsets.Type.systemOverlays()

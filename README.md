@@ -32,80 +32,22 @@ This includes **Toasts, dialogs, notifications, and inline UI labels**.
 ---
 
 ## APK Build Options
-Switchly supports three direct APK configurations plus one Play Store AAB.
+Switchly builds a single app with the standard `debug` and `release` build types.
 
-| Variant          | Gradle artifact        | Backup/sign-in/payment behavior                                                                   |
-| ---------------- | ---------------------- | ------------------------------------------------------------------------------------------------- |
-| `full`           | `fullRelease`          | Google sign-in, Firebase email/password, Firebase cloud backup, file backup, Google Play Billing  |
-| `firebase-email` | `firebaseEmailRelease` | Firebase email/password, Firebase cloud backup, file backup, external checkout URL for Premium    |
-| `offline`        | `offlineRelease`       | File backup only; Firebase is not initialized; optional offline redeem can be configured privately at build time |
-| `full-playstore` | `fullRelease` AAB      | Google Play Store build using Google Play Billing; custom redeem-code UI stays hidden              |
-
-Build and lint all official signed APK options plus the full Play Store AAB with Gradle:
+Build:
 ```bash
-./gradlew :app:release-apk
+./gradlew :app:assembleDebug
 ```
 
-Equivalent alias:
+Release build (unsigned unless `signing.properties` provides the release keystore):
 ```bash
-./gradlew :app:releaseApk
+./gradlew :app:assembleRelease
 ```
-
-The official task requires the maintainer's private Firebase and signing inputs. Public clones can always validate the offline release without any secrets:
-```bash
-./gradlew :app:public-release-apk
-```
-
-Without a signing key, the public task writes `Switchly-<version>-offline-unsigned.apk` so the artifact cannot be mistaken for an official release.
-
-Official outputs are written to `dist/` using website-friendly names:
-```text
-Switchly-<version>-full.apk
-Switchly-<version>-firebase-email.apk
-Switchly-<version>-offline.apk
-Switchly-<version>-full-playstore.aab
-```
-
-Upload `Switchly-<version>-full-playstore.aab` to the Google Play Console. Put the APK files on the website download page.
-
-Individual release tasks:
-```bash
-./gradlew :app:assembleFullRelease
-./gradlew :app:assembleFirebaseEmailRelease
-./gradlew :app:assembleOfflineRelease
-./gradlew :app:bundleFullRelease
-```
-
-Before publishing an update, the maintainer can verify that the previous direct-download public APK uses the same signer as the configured release key:
-```bash
-./gradlew :app:checkSwitchlyUpgradeCompatibility -PSWITCHLY_UPGRADE_BASE_APK=/path/to/previous-public.apk
-```
-
-If `SWITCHLY_UPGRADE_BASE_APK` is supplied while running `release-apk`, this signer check runs automatically. This signer comparison applies to the direct-download APK path. Play Store upgrades must also be tested through a Play testing track. It verifies signing compatibility only; still perform one real on-device upgrade smoke test with App Lock/uninstall protection enabled to confirm that app data and Android admin/managed-owner state remain intact.
-
-See [`docs/APK_VARIANTS.md`](./docs/APK_VARIANTS.md) for build details and [`docs/EXTERNAL_PAYMENTS_STRIPE.md`](./docs/EXTERNAL_PAYMENTS_STRIPE.md) for Stripe/direct payment setup.
 
 ---
 
-## Firebase/Google Services
-Firebase support is optional for local/offline builds, but the `full` and `firebaseEmail` release artifacts need a valid Firebase config.
-
-To enable Firebase release artifacts, place your Firebase config at:
-```text
-app/google-services.json
-```
-
-Or keep it outside the repo and point Gradle to it from `signing.properties`:
-```properties
-GOOGLE_SERVICES_JSON_PATH=/path/to/google-services.json
-```
-
-For Google Sign-In, Gradle reads the Web client ID from `google-services.json` automatically. You can override it if needed:
-```properties
-GOOGLE_WEB_CLIENT_ID=your-web-client-id.apps.googleusercontent.com
-```
-
-Google Maps and release signing are also configured through `signing.properties`:
+## Maps and Signing Configuration
+Google Maps and release signing are configured through `signing.properties`:
 ```properties
 MAPS_API_KEY=your-maps-api-key
 
@@ -115,20 +57,7 @@ SWITCHLY_RELEASE_KEY_ALIAS=...
 SWITCHLY_RELEASE_KEY_PASSWORD=...
 ```
 
-You can still override any of those via `-P...` or environment variables, for example:
-```bash
-./gradlew :app:release-apk -PGOOGLE_SERVICES_JSON_PATH=/path/to/google-services.json
-```
-
-Notes:
-* Firebase config is not required for `assembleOfflineRelease`
-* The offline flavor sets `BuildConfig.SWITCHLY_FIREBASE_ENABLED=false`, skips Firebase initialization at runtime, disables online purchase/restore, and enables local Premium redeem only when a private build-time allowlist is supplied
-* The Firebase email/password APK supports online Switchly Premium redeem codes and external/direct payment links
-* The Play Store/full build keeps custom Premium redeem hidden so Google Play Billing remains unchanged
-* Current offline builds still include common Google/Firebase dependencies where shared source files reference them; a dependency-free FOSS flavor requires moving those implementations into flavor-specific source sets
-* Google sign-in is enabled only in the `full` flavor
-* Firebase email/password auth is enabled in `full` and `firebaseEmail`
-* Local file backup/restore remains available in all flavors
+You can still override any of those via `-P...` or environment variables.
 
 ---
 
@@ -144,24 +73,6 @@ These values are public and safe to compile into the APK.
 
 ---
 
-## Switchly External Checkout Configuration
-For the `firebaseEmail` APK, configure hosted checkout endpoints in `signing.properties` or via Gradle properties. Open-source/fork builds can leave these blank, but external Premium checkout will then be unavailable.
-
-```properties
-SWITCHLY_EXTERNAL_PAYMENT_PROVIDER=stripe
-SWITCHLY_EXTERNAL_CHECKOUT_URL=https://your-domain.example/pages/pay/checkout/
-SWITCHLY_EXTERNAL_CUSTOMER_PORTAL_URL=https://your-domain.example/pages/pay/customer-portal/
-```
-
-These URLs are public and safe to compile into the APK. Stripe/Firebase secrets stay only on the website/server in `.env`.
-
-Payment behavior by build:
-* `full`/Play Store AAB uses Google Play Billing
-* `firebase-email` can use the configured external checkout URL and restores Premium through Firebase entitlements
-* `offline` has no online Premium purchase/restore flow; local redeem is enabled only when a private `SWITCHLY_OFFLINE_REDEEM_CODE_ALLOWLIST` containing `SALT-OFFLINE-XXXX-XXXX` codes is supplied at build time
-
----
-
 ## Shrinking: Unused Code and Resources
 Release builds enable:
 * **R8/minification** (`minifyEnabled true`)
@@ -171,7 +82,7 @@ This means most unused code/resources are removed automatically at build time.
 
 To verify locally:
 ```bash
-./gradlew :app:assembleOfflineRelease
+./gradlew :app:assembleRelease
 ```
 
 ---

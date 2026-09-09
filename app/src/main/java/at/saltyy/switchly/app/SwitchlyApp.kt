@@ -23,7 +23,6 @@ import android.app.Activity
 import android.app.Application
 import android.content.Context
 import android.os.Bundle
-import at.saltyy.switchly.BuildConfig
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.preference.PreferenceManager
 import at.saltyy.switchly.blocking.BlockingRuntime
@@ -35,13 +34,11 @@ import at.saltyy.switchly.platform.receiver.bluetooth.BluetoothTriggerMonitor
 import at.saltyy.switchly.platform.receiver.location.LocationTriggerMonitor
 import at.saltyy.switchly.platform.receiver.wifi.WifiTriggerMonitor
 import at.saltyy.switchly.security.AppLockManager
-import at.saltyy.switchly.security.PlayIntegrityRuntime
 import at.saltyy.switchly.util.LocaleHelper
 import at.saltyy.switchly.util.AdvancedProtectionCompat
 import at.saltyy.switchly.util.FrameworkApi34Compat
 import at.saltyy.switchly.util.ManagedDevicePolicyHelper
 import at.saltyy.switchly.util.PersistentStatusNotifier
-import com.google.firebase.FirebaseApp
 import java.util.concurrent.Executors
 
 class SwitchlyApp : Application() {
@@ -57,12 +54,6 @@ class SwitchlyApp : Application() {
         // Install the API-34 compatibility shield before any activity is created.
         // It is a no-op on conforming Android framework builds.
         FrameworkApi34Compat.installActivityCrashShield(this)
-
-        // Firebase (Auth/Cloud Sync) is only initialized for Firebase-enabled APK builds.
-        // Offline/file-backup builds skip Firebase startup completely.
-        if (BuildConfig.SWITCHLY_FIREBASE_ENABLED) {
-            runCatching { FirebaseApp.initializeApp(this) }
-        }
 
         // language
         LocaleHelper.setLanguage(this, LocaleHelper.getSavedLanguage(this))
@@ -117,9 +108,6 @@ class SwitchlyApp : Application() {
             runCatching { LocationTriggerMonitor.ensureStarted(appContext) }
 
             runCatching { ManagedDevicePolicyHelper.syncSelfUninstallBlock(appContext) }
-
-            // Diagnostic-only Play Integrity probe. Never blocks users.
-            runCatching { PlayIntegrityRuntime.requestSoftCheck(appContext, "app_start") }
 
             // Reconcile the full Accessibility runtime health and, on Android 16 Advanced Protection devices, the limited UsageEvents fallback when needed.
             if (SwitchModeStore.isEnabled(appContext)) {

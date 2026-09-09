@@ -33,7 +33,7 @@
     <!-- ====================================================== -->
     <string name="privacy_report_sharing_title">Datenweitergabe</string>
     <string name="privacy_report_sharing_compact">Standardmäßig lokal; Online-Dienste hängen von der APK-Variante ab</string>
-    <string name="privacy_report_sharing_summary">Switchlys Schutzsystem lädt Profilnamen, App-/Website-Regeln, Inhalte blockierter Benachrichtigungen oder detaillierte Nutzungsverläufe nicht automatisch hoch. Diese Daten können das Gerät verlassen, wenn du bewusst Cloud-Sicherung, Supportbericht oder Datenexport verwendest.\n\nJe nach APK-Variante können Google Play oder Firebase technische Absturz-, Integritäts-, Anmelde-, Kauf- sowie grundlegende App- und Gerätemetadaten verarbeiten.</string>
+    <string name="privacy_report_sharing_summary">Switchlys Schutzsystem lädt Profilnamen, App-/Website-Regeln, Inhalte blockierter Benachrichtigungen oder detaillierte Nutzungsverläufe nicht automatisch hoch. Diese Daten können das Gerät verlassen, wenn du bewusst Cloud-Sicherung, Supportbericht oder Datenexport verwendest.</string>
 
     <!-- ====================================================== -->
     <!-- Backup -->

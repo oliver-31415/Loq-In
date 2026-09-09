@@ -98,7 +98,6 @@ import at.saltyy.switchly.feature.settings.PermissionsActivity
 import at.saltyy.switchly.feature.settings.ToggleOptionsActivity
 import at.saltyy.switchly.platform.receiver.location.LocationTriggerMonitor
 import at.saltyy.switchly.platform.receiver.schedule.ScheduleReceiver
-import at.saltyy.switchly.premium.PremiumManager
 import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.theme.CustomAccentApplier
 import at.saltyy.switchly.ui.EdgeToEdgeUtils
@@ -671,7 +670,6 @@ class SchedulesActivity : AppCompatActivity() {
             return
         }
 
-        val isPremium = PremiumManager.isPremium(this)
         val nfcLockOn = isNfcLockActiveForSchedules()
 
         data class TypeItem(
@@ -690,7 +688,7 @@ class SchedulesActivity : AppCompatActivity() {
                     NewScheduleMode.TIME
                 )
             )
-            if (isPremium && !nfcLockOn) {
+            if (!nfcLockOn) {
                 add(
                     TypeItem(
                         getString(R.string.schedules_type_wifi),
@@ -2070,7 +2068,6 @@ class SchedulesActivity : AppCompatActivity() {
             }
         }
 
-        val isPremium = PremiumManager.isPremium(this)
 
         val kind: Kind = when {
             preselectedMode == NewScheduleMode.WIFI -> Kind.WIFI
@@ -2092,9 +2089,9 @@ class SchedulesActivity : AppCompatActivity() {
             groupStandardAction.isVisible = isTime || isLocationKind
             groupConnActions.isVisible = isConnKind
 
-            val showWifi = isPremium && isConnKind && kind == Kind.WIFI
-            val showBt = isPremium && isConnKind && kind == Kind.BT
-            val showLocation = isPremium && isLocationKind
+            val showWifi = isConnKind && kind == Kind.WIFI
+            val showBt = isConnKind && kind == Kind.BT
+            val showLocation = isLocationKind
 
             groupWifi.isVisible = showWifi
             groupBt.isVisible = showBt
@@ -3074,9 +3071,9 @@ class SchedulesActivity : AppCompatActivity() {
             setDayButtonChecked(chipSat, (dm and Days.SAT) != 0)
             setDayButtonChecked(chipSun, (dm and Days.SUN) != 0)
 
-            if (kind == Kind.WIFI && isPremium) inputWifiSsid.setText(existing.wifiSsid.orEmpty())
-            if (kind == Kind.BT && isPremium) inputBtName.setText(existing.btDeviceName ?: existing.btDeviceAddress.orEmpty())
-            if (kind == Kind.LOCATION && isPremium) {
+            if (kind == Kind.WIFI) inputWifiSsid.setText(existing.wifiSsid.orEmpty())
+            if (kind == Kind.BT) inputBtName.setText(existing.btDeviceName ?: existing.btDeviceAddress.orEmpty())
+            if (kind == Kind.LOCATION) {
                 suppressLocationQueryWatcher = true
                 inputLocationQuery.setText(existing.locationLabel.orEmpty())
                 suppressLocationQueryWatcher = false
@@ -3334,38 +3331,38 @@ class SchedulesActivity : AppCompatActivity() {
                     return@setOnClickListener
                 }
 
-                val wifiSsid: String? = if (kind == Kind.WIFI && isPremium) {
+                val wifiSsid: String? = if (kind == Kind.WIFI) {
                     inputWifiSsid.text.toString().trim().ifEmpty { null }
                 } else {
                     null
                 }
 
-                val btName: String? = if (kind == Kind.BT && isPremium) {
+                val btName: String? = if (kind == Kind.BT) {
                     inputBtName.text.toString().trim().ifEmpty { null }
                 } else {
                     null
                 }
 
-                val locationQueryText: String = if (kind == Kind.LOCATION && isPremium) {
+                val locationQueryText: String = if (kind == Kind.LOCATION) {
                     inputLocationQuery.text.toString().trim()
                 } else {
                     ""
                 }
                 // Accept pasted coordinates even without an explicit search+pick.
-                if (kind == Kind.LOCATION && isPremium && (locationLat == null || locationLng == null)) {
+                if (kind == Kind.LOCATION && (locationLat == null || locationLng == null)) {
                     parseLocationCoordinateQuery(locationQueryText)?.let { (lat, lng) ->
                         locationLat = lat
                         locationLng = lng
                         updateLocationSummary()
                     }
                 }
-                val locationLabel: String? = if (kind == Kind.LOCATION && isPremium) {
+                val locationLabel: String? = if (kind == Kind.LOCATION) {
                     locationQueryText.ifEmpty { null }
                 } else {
                     null
                 }
 
-                if (kind == Kind.WIFI && isPremium && wifiSsid.isNullOrBlank()) {
+                if (kind == Kind.WIFI && wifiSsid.isNullOrBlank()) {
                     layoutWifiSsid.error = getString(R.string.schedules_error_wifi_required)
                     inputWifiSsid.error = getString(R.string.schedules_error_wifi_required)
                     inputWifiSsid.requestFocus()
@@ -3373,7 +3370,7 @@ class SchedulesActivity : AppCompatActivity() {
                     return@setOnClickListener
                 }
 
-                if (kind == Kind.BT && isPremium && btName.isNullOrBlank()) {
+                if (kind == Kind.BT && btName.isNullOrBlank()) {
                     layoutBtName.error = getString(R.string.schedules_error_bt_required)
                     inputBtName.error = getString(R.string.schedules_error_bt_required)
                     inputBtName.requestFocus()
@@ -3381,7 +3378,7 @@ class SchedulesActivity : AppCompatActivity() {
                     return@setOnClickListener
                 }
 
-                if (kind == Kind.LOCATION && isPremium && (locationLat == null || locationLng == null)) {
+                if (kind == Kind.LOCATION && (locationLat == null || locationLng == null)) {
                     layoutLocationQuery.error = getString(R.string.schedules_error_location_required)
                     inputLocationQuery.error = getString(R.string.schedules_error_location_required)
                     inputLocationQuery.requestFocus()
@@ -3389,21 +3386,21 @@ class SchedulesActivity : AppCompatActivity() {
                     return@setOnClickListener
                 }
 
-                if (kind == Kind.WIFI && isPremium && !wifiSsid.isNullOrBlank() && !hasWifiSsidPermission()) {
+                if (kind == Kind.WIFI && !wifiSsid.isNullOrBlank() && !hasWifiSsidPermission()) {
                     showWhyLocationDialogForWifi()
                     return@setOnClickListener
                 }
 
-                if (kind == Kind.BT && isPremium && !btName.isNullOrBlank() && !hasBluetoothConnectPermission()) {
+                if (kind == Kind.BT && !btName.isNullOrBlank() && !hasBluetoothConnectPermission()) {
                     showWhyBluetoothDialogForSchedules()
                     return@setOnClickListener
                 }
 
-                if (kind == Kind.LOCATION && isPremium && !hasFineLocationPermission()) {
+                if (kind == Kind.LOCATION && !hasFineLocationPermission()) {
                     showWhyLocationDialogForGeofence()
                     return@setOnClickListener
                 }
-                if (kind == Kind.LOCATION && isPremium && !hasBackgroundLocationPermission()) {
+                if (kind == Kind.LOCATION && !hasBackgroundLocationPermission()) {
                     showWhyBackgroundLocationDialogForGeofence()
                     return@setOnClickListener
                 }
@@ -3500,11 +3497,11 @@ class SchedulesActivity : AppCompatActivity() {
                     wifiSsid = wifiSsid,
                     btDeviceName = btName,
                     locationLabel = locationLabel,
-                    locationLat = if (kind == Kind.LOCATION && isPremium) locationLat else null,
-                    locationLng = if (kind == Kind.LOCATION && isPremium) locationLng else null,
-                    locationRadiusMeters = if (kind == Kind.LOCATION && isPremium) selectedRadiusMeters() else 250,
-                    locationTrigger = if (kind == Kind.LOCATION && isPremium) locationTrigger else null,
-                    locationCooldownMinutes = if (kind == Kind.LOCATION && isPremium) selectedCooldownMinutes else 15,
+                    locationLat = if (kind == Kind.LOCATION) locationLat else null,
+                    locationLng = if (kind == Kind.LOCATION) locationLng else null,
+                    locationRadiusMeters = if (kind == Kind.LOCATION) selectedRadiusMeters() else 250,
+                    locationTrigger = if (kind == Kind.LOCATION) locationTrigger else null,
+                    locationCooldownMinutes = if (kind == Kind.LOCATION) selectedCooldownMinutes else 15,
                     action = action
                 )
 

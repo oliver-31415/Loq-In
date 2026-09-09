@@ -82,10 +82,8 @@ import at.saltyy.switchly.data.sync.BackupSelectionStore
 import at.saltyy.switchly.feature.settings.ToggleOptionsActivity
 import at.saltyy.switchly.feature.usage.UsageStatsRepo
 import at.saltyy.switchly.feature.usage.ActivityHistoryRepository
-import at.saltyy.switchly.premium.PremiumManager
 import at.saltyy.switchly.receiver.DPMReceiver
 import at.saltyy.switchly.security.AppLockStore
-import at.saltyy.switchly.security.PlayIntegrityRuntime
 import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.ui.EdgeToEdgeUtils
 import at.saltyy.switchly.ui.ThemeUtils
@@ -112,7 +110,6 @@ import java.util.TimeZone
 class SupportActivity : AppCompatActivity() {
 
     private companion object {
-        private const val SUPPORT_EMAIL = "support@saltyy.at"
         private const val KEY_INCLUDE_DEBUG = "support_include_debug"
         private const val KEY_INCLUDE_ADVANCED_DEBUG = "support_include_advanced_debug"
         private const val KEY_INCLUDE_SETUP_DETAILS = "support_include_setup_details"
@@ -143,23 +140,6 @@ class SupportActivity : AppCompatActivity() {
         toolbar.navigationIcon?.mutate()?.setTint(toolbarIconColor)
         toolbar.setTitleTextColor(toolbarIconColor)
         WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
-
-        val email = SUPPORT_EMAIL
-        findViewById<TextView>(R.id.tvSupportEmail).apply {
-            text = email
-            setTextColor(ContextCompat.getColor(this@SupportActivity, R.color.contact_text))
-            visibility = View.VISIBLE
-            alpha = 1f
-        }
-
-        findViewById<View>(R.id.rowSupportEmail).setOnClickListener { openEmail(email) }
-        findViewById<ImageButton>(R.id.btnCopyEmailInline).apply {
-            ImageViewCompat.setImageTintList(this, AccentColor.getActiveColor(this@SupportActivity))
-            setOnClickListener { tapped ->
-                copyToClipboard(label = getString(R.string.support_copy_email), text = email)
-                tapped.showWarnPill(getString(R.string.support_copied))
-            }
-        }
 
         val discord = getString(R.string.support_discord_url)
         findViewById<TextView>(R.id.tvSupportDiscordUrl).text = displayUrl(discord)
@@ -219,14 +199,6 @@ class SupportActivity : AppCompatActivity() {
     private fun copyToClipboard(label: String, text: String) {
         val cm = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
         cm.setPrimaryClip(ClipData.newPlainText(label, text))
-    }
-
-    private fun openEmail(email: String) {
-        val uri = "mailto:$email?subject=${android.net.Uri.encode(getString(R.string.support_email_subject))}".toUri()
-        runCatching { startActivity(Intent(Intent.ACTION_SENDTO, uri)) }
-            .onFailure {
-                findViewById<View>(android.R.id.content).showWarnPill(getString(R.string.support_no_email_app))
-            }
     }
 
     private fun openUrl(url: String) {
@@ -299,11 +271,11 @@ class SupportActivity : AppCompatActivity() {
                 putBoolean(KEY_INCLUDE_ADVANCED_DEBUG, selection.includeAdvancedDebug)
                 putBoolean(KEY_INCLUDE_LOGS, selection.includeLogs)
             }
-            openSupportEmail(selection)
+            exportSupportReport(selection)
         }
     }
 
-    private fun openSupportEmail(selection: ReportSelection) {
+    private fun exportSupportReport(selection: ReportSelection) {
         val includeDebugReport = selection.includeDebug ||
             selection.includeSetupDetails ||
             selection.includeAdvancedDebug
@@ -330,40 +302,17 @@ class SupportActivity : AppCompatActivity() {
             }
         }
 
-        val subject = getString(R.string.support_email_subject)
-        val body = sections.filter { it.isNotBlank() }
+        val report = sections.filter { it.isNotBlank() }
             .joinToString("\n\n")
             .takeIf { it.isNotBlank() }
+            ?: getString(R.string.support_debug_preface)
 
-        // Put the recipient directly into the mailto URI.
-        // Some Android mail clients do not reliably honour EXTRA_EMAIL on ACTION_SENDTO when the URI is only `mailto:`.
-        // Keep subject/body extras too so large diagnostic reports do not need to be encoded into the URI.
-        val uri = "mailto:$SUPPORT_EMAIL?subject=${android.net.Uri.encode(subject)}".toUri()
-        val intent = Intent(Intent.ACTION_SENDTO, uri).apply {
-            putExtra(Intent.EXTRA_EMAIL, arrayOf(SUPPORT_EMAIL))
-            putExtra(Intent.EXTRA_SUBJECT, subject)
-            body?.let { putExtra(Intent.EXTRA_TEXT, it) }
-        }
-
-        runCatching {
-            startActivity(Intent.createChooser(intent, getString(R.string.support_open_email)))
-        }.onFailure {
-            // Never leave the user at a dead end if Android cannot hand the intent to a mail client.
-            // Preserve the complete report on the clipboard instead.
-            val fallback = buildString {
-                append("To: ").append(SUPPORT_EMAIL).append("\n")
-                append("Subject: ").append(subject).append("\n")
-                if (!body.isNullOrBlank()) {
-                    append("\n").append(body)
-                }
-            }
-            copyToClipboard(
-                label = getString(R.string.support_report_clipboard_label),
-                text = fallback
-            )
-            findViewById<View>(android.R.id.content)
-                .showWarnPill(getString(R.string.support_email_fallback_copied))
-        }
+        copyToClipboard(
+            label = getString(R.string.support_report_clipboard_label),
+            text = report
+        )
+        findViewById<View>(android.R.id.content)
+            .showWarnPill(getString(R.string.support_report_copied))
     }
 
     private fun buildActiveProfileAppsInfo(): String = buildString {
@@ -453,16 +402,8 @@ class SupportActivity : AppCompatActivity() {
             "${getString(R.string.app_name)} ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})"
         )
         line(
-            "APK variant",
-            BuildConfig.SWITCHLY_APK_VARIANT
-        )
-        line(
             "Build type",
             BuildConfig.BUILD_TYPE
-        )
-        line(
-            "Build variant",
-            "${BuildConfig.SWITCHLY_APK_VARIANT}-${BuildConfig.BUILD_TYPE}"
         )
         line(
             "Package",
@@ -582,26 +523,6 @@ class SupportActivity : AppCompatActivity() {
             ToggleOptionsActivity.KEY_HOME_CUSTOM_PROFILE_DROPDOWN to false
         )
 
-        line(
-            "Premium",
-            PremiumManager.isPremium(this@SupportActivity)
-        )
-        line(
-            "Premium source",
-            PremiumManager.premiumSource(this@SupportActivity)
-        )
-        line(
-            "Premium redeem codes enabled",
-            BuildConfig.SWITCHLY_REDEEM_CODES_ENABLED
-        )
-        line(
-            "Premium online redeem enabled",
-            BuildConfig.SWITCHLY_ONLINE_REDEEM_CODES_ENABLED
-        )
-        line(
-            "Premium offline redeem enabled",
-            BuildConfig.SWITCHLY_OFFLINE_REDEEM_CODES_ENABLED
-        )
         line(
             "Switchly enabled",
             SwitchModeStore.isEnabled(this@SupportActivity)
@@ -1168,41 +1089,6 @@ class SupportActivity : AppCompatActivity() {
         line(
             "Exact alarms allowed",
             canScheduleExactAlarmsCompat()
-        )
-
-        section("Play Integrity")
-        val integrity = PlayIntegrityRuntime.snapshot(this@SupportActivity)
-        line(
-            "Soft checks enabled",
-            integrity.enabled
-        )
-        line(
-            "SDK available",
-            integrity.sdkAvailable
-        )
-        line(
-            "Last status",
-            integrity.lastStatus
-        )
-        line(
-            "Last reason",
-            integrity.lastReason
-        )
-        line(
-            "Last request",
-            formatDateTime(integrity.lastRequestMs)
-        )
-        line(
-            "Last success",
-            formatDateTime(integrity.lastSuccessMs)
-        )
-        line(
-            "Last token length",
-            integrity.lastTokenLength
-        )
-        line(
-            "Last error",
-            integrity.lastError.ifBlank { "-" }
         )
 
         section("Schedules")

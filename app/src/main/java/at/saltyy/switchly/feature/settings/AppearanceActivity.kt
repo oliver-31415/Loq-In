@@ -42,12 +42,10 @@ import androidx.core.graphics.toColorInt
 import androidx.preference.PreferenceManager
 import at.saltyy.switchly.R
 import at.saltyy.switchly.util.TimeFormatPrefs
-import at.saltyy.switchly.premium.PremiumManager
 import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.theme.CustomAccentApplier
 import at.saltyy.switchly.ui.EdgeToEdgeUtils
 import at.saltyy.switchly.ui.ThemeUtils
-import at.saltyy.switchly.ui.showWarnPillOnContent
 import at.saltyy.switchly.ui.dialog.SwitchlyDialogOption
 import at.saltyy.switchly.ui.dialog.showSwitchlyOptionDialog
 import at.saltyy.switchly.util.LocaleHelper
@@ -234,24 +232,13 @@ class AppearanceActivity : AppCompatActivity() {
 
     private fun showThemeColorDialog() {
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-        val isPremium = PremiumManager.isPremium(this)
         val current = prefs.getString("pref_accent", "default") ?: "default"
 
         val allEntries = resources.getStringArray(R.array.pref_accent_entries)
         val allValues = resources.getStringArray(R.array.pref_accent_values)
 
-        val freeCount = minOf(5, allEntries.size, allValues.size)
-
-        val entries: Array<String>
-        val values: Array<String>
-
-        if (isPremium) {
-            entries = allEntries + getString(R.string.pref_accent_custom)
-            values = allValues + "custom"
-        } else {
-            entries = allEntries.copyOfRange(0, freeCount)
-            values = allValues.copyOfRange(0, freeCount)
-        }
+        val entries = allEntries + getString(R.string.pref_accent_custom)
+        val values = allValues + "custom"
 
         val checked = values.indexOf(current).let { idx -> if (idx >= 0) idx else 0 }
 
@@ -293,11 +280,6 @@ class AppearanceActivity : AppCompatActivity() {
     }
 
     private fun showCustomColorPicker() {
-        if (!PremiumManager.isPremium(this)) {
-            showWarnPillOnContent(R.string.premium_required_for_theme)
-            return
-        }
-
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
         val defaultAccent = AccentColor.getAccentColorInt(this)
         val defaultHex = String.format("#%06X", 0xFFFFFF and defaultAccent)

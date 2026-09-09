@@ -2,10 +2,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Google Play Billing for Play Store Premium purchases -->
-    <uses-permission android:name="com.android.vending.BILLING" />
-
-    <!-- Network access for billing, maps, update checks, and optional online resources -->
+    <!-- Network access for maps, in-app update checks, and optional online resources -->
     <uses-permission android:name="android.permission.INTERNET" />
 
     <!-- Usage access for screen-time statistics and app blocking decisions -->
@@ -195,12 +192,6 @@
             android:exported="false"
             android:label="@string/settings" />
 
-        <!-- Account hub screen -->
-        <activity
-            android:name=".feature.account.AccountActivity"
-            android:exported="false"
-            android:label="@string/account_title" />
-
         <!-- Appearance screen -->
         <activity
             android:name=".feature.settings.AppearanceActivity"
@@ -332,19 +323,6 @@
             android:name=".feature.faq.FaqActivity"
             android:exported="false"
             android:label="@string/faq_screen_title" />
-
-        <!-- Premium information screen -->
-        <activity
-            android:name=".feature.premium.PremiumInfoActivity"
-            android:exported="false"
-            android:label="@string/premium_title" />
-
-        <!-- Premium redeem-code screen -->
-        <activity
-            android:name=".feature.premium.PremiumRedeemActivity"
-            android:exported="false"
-            android:label="@string/premium_redeem_title"
-            android:parentActivityName=".feature.premium.PremiumInfoActivity" />
 
         <!-- Permission setup screen -->
         <activity

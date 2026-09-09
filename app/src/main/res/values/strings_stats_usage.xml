@@ -397,15 +397,12 @@
     </plurals>
 
     <!-- ====================================================== -->
-    <!-- Usage support and premium -->
+    <!-- Usage support -->
     <!-- ====================================================== -->
     <string name="usage_point_dialog_title">%1$s - %2$s</string>
     <string name="usage_switchly_fallback_title">No tracked data from Switchly yet</string>
     <string name="usage_switchly_fallback_message">Switchly doesn’t have usage data for this time range yet. Show your phone’s current usage statistics instead?</string>
     <string name="usage_switchly_fallback_positive">Show phone stats</string>
-    <string name="usage_details_premium_title">More statistics are part of Premium</string>
-    <string name="usage_details_premium_message">Unlock custom ranges, longer statistics ranges, and detailed drill-down insights with Switchly Premium.</string>
-    <string name="usage_details_premium_action">View Premium</string>
     <string name="cannot_set_limit_unavailable">Can’t set a limit for an unavailable app.</string>
     <string name="usage_timeline_recent_details_unavailable">No archived open sessions are available for this range yet. Switchly now stores exact sessions locally and includes them in statistics backups; recent Android history is imported when Usage Access is available.</string>
     <string name="usage_chart_other_apps">Other</string>

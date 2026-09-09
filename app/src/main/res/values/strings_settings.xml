@@ -54,16 +54,6 @@
     <!-- Account screen -->
     <!-- ====================================================== -->
     <string name="account_title">Account</string>
-    <string name="account_section_account">Account</string>
-    <string name="account_section_activity_history">Activity &amp; history</string>
-    <string name="account_section_security_access">Security &amp; access</string>
-    <string name="account_section_setup_data">Setup &amp; data</string>
-    <string name="account_section_data">Backup &amp; data</string>
-    <string name="account_section_info">Info</string>
-    <string name="account_overview_title">Switchly overview</string>
-    <string name="account_overview_summary">Counters, schedules and actions at a glance</string>
-    <string name="account_keys_codes_title">My keys and codes</string>
-    <string name="account_keys_codes_summary">NFC tags, QR and barcode keys</string>
     <string name="account_disclaimer_title">Disclaimer</string>
     <string name="account_disclaimer_summary">What Switchly can and cannot do</string>
     <string name="account_disclaimer_body">Switchly helps you reduce distractions by blocking apps, websites and selected in-app content while protection is enabled. Blocking depends on system permissions (accessibility, usage access) and can be affected by battery optimization, device manufacturer behavior and app updates. Emergency unlock is intentionally limited. Switchly is provided as-is, without warranty; you remain responsible for complying with your device and service terms.</string>

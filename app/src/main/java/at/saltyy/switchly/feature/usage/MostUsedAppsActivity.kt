@@ -293,11 +293,6 @@ class MostUsedAppsActivity : AppCompatActivity() {
             if (!isChecked) return@addOnButtonCheckedListener
             val selected = ids[checkedId] ?: return@addOnButtonCheckedListener
             if (selected == currentRange) return@addOnButtonCheckedListener
-            if (selected != Range.TODAY && !StatsPremiumGate.canUseExtendedStats(this)) {
-                StatsPremiumGate.show(this)
-                load()
-                return@addOnButtonCheckedListener
-            }
             if (selected == Range.CUSTOM) {
                 showCustomRangePicker()
             } else {
@@ -526,10 +521,6 @@ class MostUsedAppsActivity : AppCompatActivity() {
     }
 
     private fun openAppDetail(app: AppUsage) {
-        if (!StatsPremiumGate.isPremium(this)) {
-            StatsPremiumGate.show(this)
-            return
-        }
         val intent = Intent(this, AppUsageDetailActivity::class.java)
             .putExtra(AppUsageDetailActivity.EXTRA_PKG, app.packageName)
             .putExtra(AppUsageDetailActivity.EXTRA_LABEL, app.label)

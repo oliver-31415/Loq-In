@@ -6,53 +6,23 @@ This repository contains the public release code of Switchly. Development may so
 Before starting larger changes, please contact the maintainer so work can be coordinated and release/policy-sensitive areas stay aligned.
 
 ## Repository scope
-Switchly has multiple build variants:
-- `offline`: local/offline build without Firebase or Google Play Billing
-- `firebaseEmail`: direct/Firebase build
-- `full`: Google Play/full build
-
-The public repository is expected to build the Offline variant without private Firebase files.
-
-Firebase/Google builds may require private configuration such as `google-services.json`, which is intentionally not committed.
+Switchly has a single build with only the standard `debug`/`release` build types.
 
 ## Getting started
 1. Install the latest stable version of Android Studio
 2. Use JDK 17
 3. Clone the repository
-4. Build the Offline variant:
+4. Build:
 ```bash
-./gradlew :app:assembleOfflineDebug
+./gradlew :app:assembleDebug
 ```
 
-For release validation of the public/offline build:
+For release validation:
 ```bash
-./gradlew :app:public-release-apk
+./gradlew :app:assembleRelease
 ```
 
-This task needs no signing key and names unsigned output explicitly.
-
-## Firebase and Google builds
-Firebase/Google configuration is only needed for features related to:
-- Auth
-- Sync
-- Crashlytics
-- Google Play Billing
-- Google Maps/location picker in configured builds
-
-To set it up locally:
-1. Create or use a Firebase project
-2. Add an Android app with the application ID `at.saltyy.switchly`
-3. Download `google-services.json`
-4. Place it in `app/google-services.json` locally, or configure the path outside the repository if supported by your local setup
-
-`google-services.json`, `signing.properties`, keystores, secrets, tokens, and generated build outputs must not be committed.
-
-Maintainer/full release validation and packaging:
-```bash
-./gradlew :app:release-apk
-```
-
-This task validates all published release flavors and requires the private Firebase/signing configuration.
+A release build without a signing key in `signing.properties` stays unsigned. `signing.properties`, keystores, secrets, tokens, and generated build outputs must not be committed.
 
 ## Translation rules
 All user-facing strings must live in Android resources.
@@ -62,14 +32,12 @@ Keep English and German resource keys in sync when possible.
 ## Policy-sensitive areas
 Be extra careful with:
 - Accessibility disclosure and service behavior
-- Google Play Billing and Play Store flavor behavior
-- external/direct payment links in non-Play builds
 - location, Wi-Fi, Bluetooth and exact-alarm scheduling
 - exported NFC/QR/barcode/deep-link entry points
 - backup and restore data handling
 - support/debug report contents
 
-For changes touching Accessibility, schedules, Premium, billing, backup/restore, NFC/QR/barcode actions, blocking logic, or background services, test the affected flavor on a real device when possible.
+For changes touching Accessibility, schedules, backup/restore, NFC/QR/barcode actions, blocking logic, or background services, test the affected area on a real device when possible.
 
 Before changing navigation, icons, dialogs, selection controls, or security-sensitive management screens, read [`UI_CONVENTIONS.md`](./UI_CONVENTIONS.md).
 For vector assets and icon imports, also read [`DRAWABLE_CONVENTIONS.md`](./DRAWABLE_CONVENTIONS.md).
@@ -99,5 +67,5 @@ Please include:
 - what you changed
 - why you changed it
 - screenshots or screen recordings for UI changes, if relevant
-- notes about behavior changes, especially around blocking, schedules, permissions, NFC, QR, barcode, Premium, or profiles
+- notes about behavior changes, especially around blocking, schedules, permissions, NFC, QR, barcode, or profiles
 - what you tested, including device/flavor where relevant

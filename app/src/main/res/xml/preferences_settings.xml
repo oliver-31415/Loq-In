@@ -109,14 +109,6 @@
         app:iconSpaceReserved="false">
 
         <Preference
-            android:key="pref_google_account"
-            android:layout="@layout/item_pref_card"
-            android:title="@string/pref_google_account_title"
-            android:summary="@string/pref_google_account_summary_logged_out"
-            android:icon="@drawable/cloud_24"
-            app:iconSpaceReserved="false" />
-
-        <Preference
             android:key="pref_change_emergency_pin"
             android:layout="@layout/item_pref_card"
             android:title="@string/pref_change_emergency_pin_title"
@@ -141,14 +133,6 @@
                 app:iconSpaceReserved="false">
 
                 <Preference
-                    android:key="pref_cloud_backup"
-                    android:layout="@layout/item_pref_card"
-                    android:title="@string/pref_cloud_backup_title"
-                    android:summary="@string/pref_cloud_backup_summary"
-                    android:icon="@drawable/cloud_upload_24"
-                    app:iconSpaceReserved="false" />
-
-                <Preference
                     android:key="pref_file_backup"
                     android:layout="@layout/item_pref_card"
                     android:title="@string/pref_file_backup_title"
@@ -166,14 +150,6 @@
                 app:iconSpaceReserved="false">
 
                 <Preference
-                    android:key="pref_cloud_restore"
-                    android:layout="@layout/item_pref_card"
-                    android:title="@string/pref_cloud_restore_title"
-                    android:summary="@string/pref_cloud_restore_summary"
-                    android:icon="@drawable/cloud_download_24"
-                    app:iconSpaceReserved="false" />
-
-                <Preference
                     android:key="pref_file_restore"
                     android:layout="@layout/item_pref_card"
                     android:title="@string/pref_file_restore_title"
@@ -181,14 +157,6 @@
                     android:icon="@drawable/cloud_download_24"
                     app:iconSpaceReserved="false" />
             </PreferenceScreen>
-
-            <Preference
-                android:key="pref_cloud_delete_backups"
-                android:layout="@layout/item_pref_card"
-                android:title="@string/pref_cloud_delete_backups_title"
-                android:summary="@string/pref_cloud_delete_backups_summary"
-                android:icon="@drawable/delete_24"
-                app:iconSpaceReserved="false" />
         </PreferenceScreen>
 
         <Preference

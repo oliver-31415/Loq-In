@@ -6,9 +6,8 @@
 -dontwarn kotlinx.coroutines.**
 
 ############################################
-# Firebase (BOM)
+# Google Play services (location/maps)
 ############################################
--dontwarn com.google.firebase.**
 -dontwarn com.google.android.gms.**
 
 ############################################
@@ -49,7 +48,6 @@
 ############################################
 # -keep class at.saltyy.switchly.** { *; }
 
-# Play Integrity is loaded reflectively for soft diagnostics, so keep the SDK API classes in minified release builds.
--keep class com.google.android.play.core.integrity.** { *; }
+# Keep the Play services task listeners used reflectively by CameraX/GMS callbacks in minified release builds.
 -keep class com.google.android.gms.tasks.OnSuccessListener { *; }
 -keep class com.google.android.gms.tasks.OnFailureListener { *; }

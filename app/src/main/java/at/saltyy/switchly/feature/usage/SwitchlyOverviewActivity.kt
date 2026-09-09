@@ -260,13 +260,6 @@ class SwitchlyOverviewActivity : AppCompatActivity() {
     }
 
     private fun selectRange(requestedRange: Range) {
-        if (requestedRange != Range.TODAY && !StatsPremiumGate.canUseExtendedStats(this)) {
-            rangeGroup.check(rangeButtons.getValue(selectedRange).id)
-            syncRangeButtonUi()
-            StatsPremiumGate.show(this)
-            return
-        }
-
         selectedRange = requestedRange
         rangeGroup.check(rangeButtons.getValue(selectedRange).id)
         syncRangeButtonUi()

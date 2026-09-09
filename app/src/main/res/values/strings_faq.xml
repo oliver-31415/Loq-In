@@ -32,9 +32,7 @@
     <string name="faq_q_idiot_qr">How to use Switchly with QR (step by step)</string>
     <string name="faq_a_idiot_qr">1. Create a QR trigger in Switchly.\n2. Print it or keep it on another device/location.\n3. Enable QR control/QR unlock if you want QR to be required.\n4. Open Switchly’s built-in QR scanner and scan the code when you need to unlock, toggle, enable, disable, or switch profile.\n\nExternal camera/QR scanner apps can also work when they support custom app links, but some scanners such as Google Lens may open the Switchly action as a web search instead.</string>
     <string name="faq_q_idiot_save_data">How do I save my data (backup/restore)?</string>
-    <string name="faq_a_idiot_save_data">Open Settings → Account &amp; Data. Local JSON backups work without an account; cloud backups require sign-in. Choose Full backup or include Statistics/counters if you want the durable statistics archive and session history included. You can restore a backup on the same device or after moving to a new device.</string>
-    <string name="faq_q_idiot_delete_account">How do I delete my account?</string>
-    <string name="faq_a_idiot_delete_account">Open Settings → Account → Delete account. This removes your Switchly cloud account data. If you also want a clean phone state, run “Delete all Switchly data” in the in-app reset.</string>
+    <string name="faq_a_idiot_save_data">Open Settings → Account &amp; Data. Local JSON backups work without an account. Choose Full backup or include Statistics/counters if you want the durable statistics archive and session history included. You can restore a backup on the same device or after moving to a new device.</string>
 
     <!-- ====================================================== -->
     <!-- Blocking features -->
@@ -153,14 +151,10 @@
     <string name="faq_a_battery_permission_still_needed">If Switchly still shows that battery/background permission is needed, open Switchly → Permissions &amp; Reliability and use the Battery Optimization button if your device shows it.\n\nIf your device does not show that shortcut, do it manually:\n1. Open Android Battery Optimization settings.\n2. Search for Switchly.\n3. Open the Switchly entry.\n4. If available, enable Allow background usage.\n5. Set the battery/background mode to Unrestricted.\n\nSome devices use different wording such as No restrictions or Don’t optimize. If Unrestricted does not exist on your device, select the highest background access level available.</string>
 
     <!-- ====================================================== -->
-    <!-- Privacy, backup and premium -->
+    <!-- Privacy, backup and support -->
     <!-- ====================================================== -->
     <string name="faq_q_privacy">What data does Switchly collect?</string>
     <string name="faq_a_privacy">Most Switchly logic runs locally on your device. Rules, profiles, statistics, supported session history, internal logs, and blocked notification entries stay local unless you explicitly create a cloud backup, export a local JSON backup, or send a support report.\n\nSwitchly does not sell your data and does not require an account for normal blocking or local backups.</string>
-    <string name="faq_q_premium_overview">What exactly does Switchly Premium include?</string>
-    <string name="faq_a_premium_overview">Switchly Premium unlocks advanced features.\n\nYou get:\n• More accent colors and a custom color picker\n• Custom temporary lock and unlock durations\n• Wi-Fi, Bluetooth, and location schedules\n• Week, month, year, custom range statistics, and detailed drill-down insights\n• Advanced automation and deeper usage insights</string>
-    <string name="faq_q_premium_how">How do I get Premium?</string>
-    <string name="faq_a_premium_how">Open Settings → Premium. Settings remain accessible while protection is active, so the Premium page can still be opened even when protection-related options are read-only.\n\nPlay Store build: Premium uses Google Play Billing.\nDirect/Firebase build: Premium can use the direct checkout/restore flow or a Switchly Premium code from selected Salt Tag bundles/direct purchases.\nOffline build: online purchases are not available; supported Offline builds can unlock with an offline code.\n\nGoogle Play promo codes must be redeemed through Google Play, not through the Switchly code field.</string>
 
     <!-- ====================================================== -->
     <!-- Troubleshooting and support diagnostics -->
@@ -182,7 +176,7 @@
     <string name="faq_q_contact">How can I contact the developer?</string>
     <string name="faq_a_contact">Join the community Discord server for feedback and support:\nhttps://discord.gg/PC5zn2NeCg\n\nFor direct support, open the Support screen in Settings.</string>
     <string name="faq_q_support_switchly">How can I support Switchly?</string>
-    <string name="faq_a_support_switchly">The easiest way to support Switchly is to get Premium through Google Play or, in supported direct builds, through the direct Stripe checkout. Premium is optional, but purchasing it is also a direct way to support continued development.\n\nYou can also get Premium or buy official Switchly tags through the Switchly Store:\nhttps://switchly.saltyy.at/store/</string>
+    <string name="faq_a_support_switchly">The easiest way to support Switchly is to buy official Switchly tags through the Switchly Store. Every purchase supports continued development directly.\n\nSwitchly Store:\nhttps://switchly.saltyy.at/store/</string>
     <string name="faq_q_official_switchly_tags">What are official Switchly tags?</string>
     <string name="faq_a_official_switchly_tags">Official Switchly tags are standard compatible NFC tags inside custom 3D-printed Switchly shells. They are not proprietary hardware and do not unlock hidden functionality — any supported writable NFC tag can work with Switchly.\n\nThe official tags are simply a convenient, good-looking physical option and another way to support development. Because the shells are 3D printed, small layer lines or surface variations are normal. The product page lists the tag type, size, material, and available shapes.\n\nhttps://switchly.saltyy.at/store/</string>
     <!-- ====================================================== -->
@@ -207,7 +201,7 @@
     <string name="faq_category_advanced">Advanced protection</string>
     <string name="faq_category_advanced_summary">Read-only protection, uninstall friction and Developer tools</string>
     <string name="faq_category_account_support">Account, backup &amp; support</string>
-    <string name="faq_category_account_support_summary">Backups, privacy, Premium, support reports and contact</string>
+    <string name="faq_category_account_support_summary">Backups, privacy, support reports and contact</string>
 
     <!-- ====================================================== -->
     <!-- Background access FAQ -->

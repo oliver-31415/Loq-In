@@ -20,6 +20,7 @@
 package at.saltyy.switchly.data.sync
 
 import android.content.Context
+import at.saltyy.switchly.BuildConfig
 import androidx.core.content.edit
 import org.json.JSONArray
 
@@ -206,14 +207,14 @@ object BackupSelectionStore {
 object BackupCategoryFilter {
     const val FIELD_INCLUDED_CATEGORIES = "included_categories"
     const val FIELD_IS_PARTIAL_BACKUP = "partial_backup"
-    private const val FIELD_BACKUP_SCHEMA_VERSION = "backup_schema_version"
-    private const val FIELD_CREATED_WITH_VERSION = "created_with_version"
-    private const val FIELD_CREATED_WITH_VERSION_CODE = "created_with_version_code"
+    const val FIELD_BACKUP_SCHEMA_VERSION = "backup_schema_version"
+    const val FIELD_CREATED_WITH_VERSION = "created_with_version"
+    const val FIELD_CREATED_WITH_VERSION_CODE = "created_with_version_code"
     private const val FIELD_CREATED_AT = "created_at"
     private const val FIELD_PREFS = "prefs"
     private const val FIELD_SWITCHLY_PREFS = "switchly_prefs"
     private const val FIELD_STATS = "stats"
-    private const val FIELD_STATS_DATABASE = "stats_database"
+    const val FIELD_STATS_DATABASE = "stats_database"
     private const val FIELD_SCHEDULES_PREFS = "schedules_prefs"
     private const val FIELD_UI_HINTS_PREFS = "ui_hints_prefs"
     const val FIELD_TEMP_PAUSE_PREFS = "temp_pause_prefs"
@@ -583,3 +584,43 @@ object BackupCategoryFilter {
     private fun org.json.JSONObject.hasNonBlank(key: String): Boolean =
         optString(key, "").isNotBlank()
 }
+
+data class BackupCompatibility(
+    val shouldWarn: Boolean,
+    val createdWithVersion: String?,
+    val legacyStatistics: Boolean,
+)
+
+fun inspectBackupCompatibility(payload: Map<*, *>): BackupCompatibility {
+    val createdWithVersion = payload[BackupCategoryFilter.FIELD_CREATED_WITH_VERSION]
+        ?.toString()
+        ?.trim()
+        ?.takeIf(String::isNotEmpty)
+    val createdWithVersionCode = when (val value = payload[BackupCategoryFilter.FIELD_CREATED_WITH_VERSION_CODE]) {
+        is Number -> value.toLong()
+        is String -> value.toLongOrNull()
+        else -> null
+    }
+    val schemaVersion = when (val value = payload[BackupCategoryFilter.FIELD_BACKUP_SCHEMA_VERSION]) {
+        is Number -> value.toInt()
+        is String -> value.toIntOrNull()
+        else -> null
+    }
+    val includedCategories = BackupCategoryFilter.includedCategoryIdsFromPayload(payload)
+    val includesStatistics = includedCategories == null || BackupCategory.STATISTICS.id in includedCategories
+    val legacyStatistics = includesStatistics && payload[BackupCategoryFilter.FIELD_STATS_DATABASE] !is Map<*, *>
+    val versionDiffers = when {
+        createdWithVersionCode != null -> createdWithVersionCode != BuildConfig.VERSION_CODE.toLong()
+        createdWithVersion != null -> createdWithVersion != BuildConfig.VERSION_NAME
+        else -> true
+    }
+    val schemaDiffers = schemaVersion != BACKUP_SCHEMA_VERSION
+
+    return BackupCompatibility(
+        shouldWarn = versionDiffers || schemaDiffers || legacyStatistics,
+        createdWithVersion = createdWithVersion,
+        legacyStatistics = legacyStatistics,
+    )
+}
+
+internal const val BACKUP_SCHEMA_VERSION = 223

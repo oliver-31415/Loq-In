@@ -397,15 +397,12 @@
     </plurals>
 
     <!-- ====================================================== -->
-    <!-- Usage support and premium -->
+    <!-- Usage support -->
     <!-- ====================================================== -->
     <string name="usage_point_dialog_title">%1$s - %2$s</string>
     <string name="usage_switchly_fallback_title">Noch keine Daten von Switchly</string>
     <string name="usage_switchly_fallback_message">Für diesen Zeitraum hat Switchly noch keine Nutzungsdaten erfasst. Möchtest du stattdessen die aktuellen Statistiken deines Smartphones anzeigen?</string>
     <string name="usage_switchly_fallback_positive">Handy-Statistiken anzeigen</string>
-    <string name="usage_details_premium_title">Mehr Statistiken sind Teil von Premium</string>
-    <string name="usage_details_premium_message">Schalte benutzerdefinierte Zeiträume, längere Statistikzeiträume und detaillierte Drilldown-Einblicke mit Switchly Premium frei.</string>
-    <string name="usage_details_premium_action">Premium ansehen</string>
     <string name="cannot_set_limit_unavailable">Für eine nicht verfügbare App kann kein Limit gesetzt werden.</string>
     <string name="usage_timeline_recent_details_unavailable">Für diesen Zeitraum sind noch keine archivierten App-Öffnungen verfügbar. Switchly speichert exakte Sitzungen jetzt lokal und übernimmt sie in Statistik-Backups; der aktuelle Android-Verlauf wird importiert, wenn der Nutzungszugriff verfügbar ist.</string>
     <string name="usage_chart_other_apps">Andere</string>

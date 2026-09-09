@@ -32,9 +32,7 @@
     <string name="faq_q_idiot_qr">So nutzt du Switchly mit QR (Schritt für Schritt)</string>
     <string name="faq_a_idiot_qr">1. Erstelle einen QR-Trigger in Switchly.\n2. Drucke ihn aus oder speichere ihn auf einem anderen Gerät/Ort.\n3. Aktiviere QR-Steuerung/QR-Entsperrung, wenn QR erforderlich sein soll.\n4. Öffne den integrierten Switchly-QR-Scanner und scanne den Code, wenn du entsperren, umschalten, aktivieren, deaktivieren oder das Profil wechseln möchtest.\n\nExterne Kamera-/QR-Scanner können ebenfalls funktionieren, wenn sie benutzerdefinierte App-Links unterstützen. Manche Scanner wie Google Lens öffnen die Switchly-Aktion jedoch stattdessen als Websuche.</string>
     <string name="faq_q_idiot_save_data">Wie sichere ich meine Daten (Backup/Wiederherstellung)?</string>
-    <string name="faq_a_idiot_save_data">Öffne Einstellungen → Konto &amp; Daten. Lokale JSON-Backups funktionieren ohne Account; Cloud-Backups benötigen eine Anmeldung. Wähle Vollständiges Backup oder schließe Statistiken/Zähler ein, wenn das dauerhafte Statistikarchiv und Sitzungsverläufe enthalten sein sollen. Ein Backup kann auf demselben oder auf einem neuen Gerät wiederhergestellt werden.</string>
-    <string name="faq_q_idiot_delete_account">Wie lösche ich mein Konto?</string>
-    <string name="faq_a_idiot_delete_account">Öffne Einstellungen → Google-Konto → Konto löschen. Dadurch werden deine Switchly-Cloud-Kontodaten entfernt. Wenn du auch lokal alles bereinigen willst, führe in der App-Zurücksetzung „Alle Switchly-Daten löschen“ aus.</string>
+    <string name="faq_a_idiot_save_data">Öffne Einstellungen → Konto &amp; Daten. Lokale JSON-Backups funktionieren ohne Account. Wähle Vollständiges Backup oder schließe Statistiken/Zähler ein, wenn das dauerhafte Statistikarchiv und Sitzungsverläufe enthalten sein sollen. Ein Backup kann auf demselben oder auf einem neuen Gerät wiederhergestellt werden.</string>
 
     <!-- ====================================================== -->
     <!-- Blocking features -->
@@ -153,14 +151,10 @@
     <string name="faq_a_battery_permission_still_needed">Wenn Switchly weiterhin anzeigt, dass die Batterie-/Hintergrund-Berechtigung erforderlich ist, öffne Switchly → Berechtigungen &amp; Zuverlässigkeit und nutze den Button für Batterieoptimierung, falls dein Gerät ihn anzeigt.\n\nFalls dein Gerät diese Verknüpfung nicht anzeigt, mache es manuell:\n1. Öffne die Android-Einstellungen für Batterieoptimierung.\n2. Suche nach Switchly.\n3. Öffne den Switchly-Eintrag.\n4. Aktiviere, falls verfügbar, Hintergrundnutzung zulassen.\n5. Stelle den Batterie-/Hintergrundmodus auf Uneingeschränkt.\n\nManche Geräte verwenden andere Bezeichnungen wie Keine Einschränkungen oder Nicht optimieren. Wenn Uneingeschränkt auf deinem Gerät nicht vorhanden ist, wähle die höchste verfügbare Stufe für Hintergrundzugriff.</string>
 
     <!-- ====================================================== -->
-    <!-- Privacy, backup and premium -->
+    <!-- Privacy, backup and support -->
     <!-- ====================================================== -->
     <string name="faq_q_privacy">Welche Daten sammelt Switchly?</string>
     <string name="faq_a_privacy">Der Großteil der Switchly-Logik läuft lokal auf deinem Gerät. Regeln, Profile, Statistiken, unterstützte Sitzungsverläufe, interne Protokolle und blockierte Benachrichtigungseinträge bleiben lokal, außer du erstellst bewusst eine Cloud-Sicherung, exportierst eine lokale JSON-Sicherung oder sendest einen Supportbericht.\n\nSwitchly verkauft keine Daten und benötigt für normalen Schutz oder lokale Sicherungen kein Konto.</string>
-    <string name="faq_q_premium_overview">Was genau enthält Switchly Premium?</string>
-    <string name="faq_a_premium_overview">Switchly Premium schaltet erweiterte Funktionen frei.\n\nDu bekommst:\n• Mehr Akzentfarben und einen benutzerdefinierten Farbwähler\n• Benutzerdefinierte Dauer für temporäres Sperren und Entsperren\n• WLAN-, Bluetooth- und Standort-Zeitpläne\n• Wochen-, Monats-, Jahres- und benutzerdefinierte Statistikzeiträume mit detaillierten Drilldown-Einblicken\n• Erweiterte Automatisierungen und tiefere Nutzungs-Einblicke</string>
-    <string name="faq_q_premium_how">Wie bekomme ich Premium?</string>
-    <string name="faq_a_premium_how">Öffne Einstellungen → Premium. Die Seite bleibt auch bei aktivem Schutz erreichbar; schutzrelevante Optionen bleiben dabei schreibgeschützt.\n\nPlay-Store-Version: Kauf und Wiederherstellung laufen über Google Play.\nDirekte/Firebase-Version: Premium kann über den direkten Kauf, die Wiederherstellung oder einen unterstützten Switchly-Premium-Code freigeschaltet werden.\nOffline-Version: Online-Käufe sind nicht verfügbar; unterstützte Versionen können einen Offline-Code verwenden.\n\nGoogle-Play-Aktionscodes müssen direkt über Google Play eingelöst werden.</string>
 
     <!-- ====================================================== -->
     <!-- Troubleshooting and support diagnostics -->
@@ -182,7 +176,7 @@
     <string name="faq_q_contact">Wie kann ich den Entwickler kontaktieren?</string>
     <string name="faq_a_contact">Tritt dem Community-Discord-Server für Feedback und Support bei:\nhttps://discord.gg/PC5zn2NeCg\n\nFür direkten Support öffne den Support-Bereich in den Einstellungen.</string>
     <string name="faq_q_support_switchly">Wie kann ich Switchly unterstützen?</string>
-    <string name="faq_a_support_switchly">Am einfachsten unterstützt du Switchly, indem du Premium über Google Play oder in unterstützten direkten Builds über den direkten Stripe-Checkout kaufst. Premium ist optional, aber der Kauf unterstützt die weitere Entwicklung direkt.\n\nIm Switchly Store kannst du ebenfalls Premium erhalten oder offizielle Switchly-Tags kaufen:\nhttps://switchly.saltyy.at/store/</string>
+    <string name="faq_a_support_switchly">Am einfachsten unterstützt du Switchly, indem du offizielle Switchly-Tags im Switchly Store kaufst. Jeder Kauf unterstützt die weitere Entwicklung direkt.\n\nSwitchly Store:\nhttps://switchly.saltyy.at/store/</string>
     <string name="faq_q_official_switchly_tags">Was sind offizielle Switchly-Tags?</string>
     <string name="faq_a_official_switchly_tags">Offizielle Switchly-Tags sind normale kompatible NFC-Tags in individuell gestalteten, 3D-gedruckten Switchly-Gehäusen. Sie sind keine proprietäre Hardware und schalten keine versteckten Funktionen frei — jeder unterstützte beschreibbare NFC-Tag kann mit Switchly funktionieren.\n\nDie offiziellen Tags sind einfach eine praktische, gut aussehende physische Option und eine weitere Möglichkeit, die Entwicklung zu unterstützen. Da die Gehäuse 3D-gedruckt sind, sind kleine Schichtlinien oder Oberflächenunterschiede normal. Auf der Produktseite stehen Tag-Typ, Größe, Material und verfügbare Formen.\n\nhttps://switchly.saltyy.at/store/</string>
 
@@ -208,7 +202,7 @@
     <string name="faq_category_advanced">Erweiterter Schutz</string>
     <string name="faq_category_advanced_summary">Schreibgeschützter Schutz, Deinstallationsschutz und Developer-Tools</string>
     <string name="faq_category_account_support">Konto, Sicherung &amp; Support</string>
-    <string name="faq_category_account_support_summary">Backups, Datenschutz, Premium, Supportberichte und Kontakt</string>
+    <string name="faq_category_account_support_summary">Backups, Datenschutz, Supportberichte und Kontakt</string>
 
     <!-- ====================================================== -->
     <!-- Background access FAQ -->

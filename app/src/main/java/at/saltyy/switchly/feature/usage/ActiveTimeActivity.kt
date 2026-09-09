@@ -316,11 +316,8 @@ class ActiveTimeActivity : AppCompatActivity() {
     }
 
     private fun ensureRangeAllowed(target: Range): Boolean {
-        if (target == Range.TODAY || StatsPremiumGate.canUseExtendedStats(this)) {
-            return true
-        }
-        StatsPremiumGate.show(this)
-        return false
+        // Extended stat ranges are available to everyone.
+        return true
     }
 
     private fun chipIdForRange(target: Range): Int {

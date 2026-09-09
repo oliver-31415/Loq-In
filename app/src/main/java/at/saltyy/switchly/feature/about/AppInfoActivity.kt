@@ -52,7 +52,6 @@ class AppInfoActivity : TilesInfoActivity() {
         val installer = formatInstallerLabel(installerPackage)
 
         val buildType = if (BuildConfig.DEBUG) "Debug" else "Release"
-        val apkVariant = BuildConfig.SWITCHLY_APK_VARIANT
 
         val website = getString(R.string.about_website_url)
         val store = getString(R.string.about_store_url)
@@ -79,12 +78,6 @@ class AppInfoActivity : TilesInfoActivity() {
                 showOpenButton = true,
                 iconRes = R.drawable.cloud_download_24,
                 actionIconRes = R.drawable.cloud_download_24
-            ),
-            Tile(
-                getString(R.string.about_apk_variant_label),
-                apkVariant,
-                sectionTitle = getString(R.string.about_section_build),
-                iconRes = R.drawable.layers_24
             ),
             Tile(
                 getString(R.string.about_build_type_label),

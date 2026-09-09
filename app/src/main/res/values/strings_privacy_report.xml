@@ -33,7 +33,7 @@
     <!-- ====================================================== -->
     <string name="privacy_report_sharing_title">Data sharing</string>
     <string name="privacy_report_sharing_compact">Local by default; online services depend on the APK variant</string>
-    <string name="privacy_report_sharing_summary">Switchly’s blocking engine does not automatically upload profile names, app/website rules, blocked-notification contents, or detailed usage history. These can leave the device when you explicitly use cloud backup, send a support report, or export/share data.\n\nDepending on the APK variant, Google Play or Firebase services may process technical crash, integrity, authentication, purchase, and basic app/device metadata.</string>
+    <string name="privacy_report_sharing_summary">Switchly’s blocking engine does not automatically upload profile names, app/website rules, blocked-notification contents, or detailed usage history. These can leave the device when you explicitly use cloud backup, send a support report, or export/share data.</string>
 
     <!-- ====================================================== -->
     <!-- Backup -->

@@ -33,17 +33,15 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.edit
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
-import at.saltyy.switchly.BuildConfig
 import at.saltyy.switchly.R
-import at.saltyy.switchly.auth.Auth
 import at.saltyy.switchly.data.prefs.ActivityHistoryLogStore
 import at.saltyy.switchly.data.statistics.StatsPersistence
 import at.saltyy.switchly.data.sync.BackupCategory
 import at.saltyy.switchly.data.sync.BackupCategoryFilter
 import at.saltyy.switchly.data.sync.BackupSelection
 import at.saltyy.switchly.data.sync.BackupSelectionStore
-import at.saltyy.switchly.data.sync.CloudSyncRuntime
 import at.saltyy.switchly.data.sync.FileBackupRuntime
+import at.saltyy.switchly.data.sync.inspectBackupCompatibility
 import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.ui.MainActivity
 import at.saltyy.switchly.ui.showWarnPill
@@ -60,14 +58,13 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
-import java.text.DateFormat
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 /**
- * Backup / restore / local-wipe flows shared by Settings and Account.
- * Extracted verbatim from SettingsFragment so both hubs run identical logic.
+ * Backup / restore / local-wipe flows shared by Settings.
+ * Extracted verbatim from SettingsFragment.
  *
  * Owns its activity-result launchers: instantiate as an activity property
  * (before onCreate finishes) so registration happens before STARTED.
@@ -79,13 +76,10 @@ class BackupFlowActions(private val activity: AppCompatActivity) {
 
     private var pendingFileBackupSelection: BackupSelection? = null
     // ------------------------------------------------------------------
-    // Public entry points (Settings prefs and the Account hub).
+    // Public entry points (Settings prefs).
     // ------------------------------------------------------------------
 
-    fun isCloudAvailable(): Boolean =
-        BuildConfig.SWITCHLY_FIREBASE_ENABLED && Auth.uid() != null
-
-    /** Backup / restore option sheet for the Account hub (mirrors the Settings rows). */
+    /** Backup / restore option sheet. */
     fun showBackupOptions() {
         if (isRestricted()) {
             activity.showWarnPillOnContent(R.string.settings_restricted_action_unavailable)
@@ -93,20 +87,6 @@ class BackupFlowActions(private val activity: AppCompatActivity) {
         }
         val options = mutableListOf<SwitchlyDialogOption>()
         val actions = mutableListOf<() -> Unit>()
-        if (isCloudAvailable()) {
-            options += SwitchlyDialogOption(
-                title = activity.getString(R.string.pref_cloud_backup_title),
-                summary = activity.getString(R.string.pref_cloud_backup_summary),
-                iconRes = R.drawable.cloud_upload_24,
-            )
-            actions += ::cloudBackup
-            options += SwitchlyDialogOption(
-                title = activity.getString(R.string.pref_cloud_restore_title),
-                summary = activity.getString(R.string.pref_cloud_restore_summary),
-                iconRes = R.drawable.cloud_download_24,
-            )
-            actions += ::cloudRestore
-        }
         options += SwitchlyDialogOption(
             title = activity.getString(R.string.pref_file_backup_title),
             summary = activity.getString(R.string.pref_file_backup_summary),
@@ -126,62 +106,6 @@ class BackupFlowActions(private val activity: AppCompatActivity) {
             showCancelButton = true,
             widthFraction = 0.94f,
         ) { index -> actions.getOrNull(index)?.invoke() }
-    }
-
-    fun cloudBackup() {
-        showBackupSelectionFlow { selection ->
-            confirmAction(
-                title = activity.getString(R.string.settings_confirm_backup_title),
-                message = backupConfirmMessage(
-                    selection = selection,
-                    fullMessageRes = R.string.settings_confirm_backup_message_with_categories,
-                    includedOnlyMessageRes = R.string.settings_confirm_backup_message_with_included_categories,
-                ),
-                positiveText = activity.getString(R.string.settings_confirm_backup_title),
-            ) {
-                val backupCtx = activity
-                val loadingDialog = showProgressDialog(
-                    backupCtx,
-                    R.string.pref_cloud_backup_title,
-                    R.string.cloud_backup_loading,
-                )
-                val startBackup = {
-                    CloudSyncRuntime.pushLocalState(backupCtx, selection) { ok, err ->
-                        if (!alive()) return@pushLocalState
-                        if (loadingDialog.isShowing) loadingDialog.dismiss()
-                        val msg = if (ok) {
-                            PreferenceManager.getDefaultSharedPreferences(backupCtx).edit {
-                                putLong("pref_last_backup_epoch_ms", System.currentTimeMillis())
-                            }
-                            onLibraryChanged?.invoke()
-                            if (err.isNullOrBlank()) {
-                                activity.getString(R.string.cloud_backup_ok)
-                            } else {
-                                activity.getString(R.string.cloud_backup_ok_cleanup_warning)
-                            }
-                        } else {
-                            activity.getString(R.string.cloud_error_fmt, err ?: activity.getString(R.string.error_unknown))
-                        }
-                        activity.showWarnPillOnContent(msg)
-                    }
-                }
-                if (activity.window?.decorView?.post { startBackup() } != true) startBackup()
-            }
-        }
-    }
-
-    fun cloudRestore() {
-        if (isRestricted()) {
-            activity.showWarnPillOnContent(R.string.settings_restricted_action_unavailable)
-            return
-        }
-        confirmAction(
-            title = activity.getString(R.string.settings_confirm_restore_title),
-            message = activity.getString(R.string.settings_confirm_restore_message),
-            positiveText = activity.getString(R.string.settings_confirm_restore_title),
-        ) {
-            startRestoreFlowWithChoice()
-        }
     }
 
     fun fileBackup() {
@@ -445,120 +369,12 @@ class BackupFlowActions(private val activity: AppCompatActivity) {
         }
     }
 
-    private fun startRestoreFlowWithChoice() {
-        val initialCtx = activity
-        val loadingDialog = showProgressDialog(
-            initialCtx,
-            R.string.pref_cloud_restore_title,
-            R.string.cloud_restore_loading,
-        )
-
-        CloudSyncRuntime.listBackups(initialCtx) { ok, err, backups ->
-            val activeCtx = activity
-            if (!alive()) return@listBackups
-            if (loadingDialog.isShowing) loadingDialog.dismiss()
-            if (!ok) {
-                activity.showWarnPillOnContent(
-                    activity.getString(R.string.cloud_error_fmt, err ?: activity.getString(R.string.error_unknown))
-                )
-                return@listBackups
-            }
-
-            val list = backups ?: emptyList()
-            if (list.isEmpty()) {
-                val restoreDialog = showProgressDialog(
-                    activeCtx,
-                    R.string.pref_cloud_restore_title,
-                    R.string.restore_applying,
-                )
-                CloudSyncRuntime.pullRemoteState(activeCtx) { ok2, err2 ->
-                    if (restoreDialog.isShowing) {
-                        restoreDialog.dismiss()
-                    }
-                    val restoreCtx = activity
-                    if (!alive()) return@pullRemoteState
-                    if (ok2) {
-                        activity.showWarnPillOnContent(activity.getString(R.string.cloud_restore_ok_restart))
-                        restartAppTask()
-                    } else {
-                        activity.showWarnPillOnContent(
-                            activity.getString(R.string.cloud_error_fmt, err2 ?: activity.getString(R.string.error_unknown))
-                        )
-                    }
-                }
-                return@listBackups
-            }
-
-            val df = DateFormat.getDateTimeInstance(DateFormat.SHORT, DateFormat.SHORT)
-            val labels = list.map { meta -> df.format(Date(meta.createdAt)) }.toTypedArray()
-
-            activeCtx.showSwitchlyOptionDialog(
-                title = activity.getString(R.string.settings_restore_choose_title),
-                options = labels.map { SwitchlyDialogOption(title = it) }
-            ) { which ->
-                val meta = list[which]
-                val payloadDialog = showProgressDialog(
-                    activeCtx,
-                    R.string.pref_cloud_restore_title,
-                    R.string.cloud_restore_loading,
-                )
-                CloudSyncRuntime.loadBackupPayload(activeCtx, meta.id) { ok3, err3, payload ->
-                    if (payloadDialog.isShowing) {
-                        payloadDialog.dismiss()
-                    }
-                    val restoreCtx = activity
-                    if (!alive()) return@loadBackupPayload
-                    if (!ok3 || payload == null) {
-                        activity.showWarnPillOnContent(
-                            activity.getString(R.string.cloud_error_fmt, err3 ?: activity.getString(R.string.error_unknown))
-                        )
-                        return@loadBackupPayload
-                    }
-
-                    showRestoreSelectionDialog(restoreCtx, payload) { selectedPayload ->
-                        showBackupCompatibilityWarningIfNeeded(restoreCtx, selectedPayload) {
-                            val restoreDialog = showProgressDialog(
-                                restoreCtx,
-                                R.string.settings_confirm_restore_title,
-                                R.string.restore_applying,
-                            )
-                            CloudSyncRuntime.applyBackupPayloadAsync(restoreCtx, selectedPayload) { result ->
-                                if (restoreDialog.isShowing) {
-                                    restoreDialog.dismiss()
-                                }
-                                if (!alive()) {
-                                    return@applyBackupPayloadAsync
-                                }
-                                result.fold(
-                                    onSuccess = {
-                                        activity.showWarnPillOnContent(
-                                            activity.getString(R.string.cloud_restore_ok_restart)
-                                        )
-                                        restartAppTask()
-                                    },
-                                    onFailure = { error ->
-                                        activity.showWarnPillOnContent(
-                                            activity.getString(
-                                                R.string.cloud_error_fmt,
-                                                error.localizedMessage ?: activity.getString(R.string.error_unknown),
-                                            )
-                                        )
-                                    },
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     private fun showBackupCompatibilityWarningIfNeeded(
         ctx: Context,
         payload: Map<*, *>,
         onContinue: () -> Unit,
     ) {
-        val compatibility = CloudSyncRuntime.inspectBackupCompatibility(payload)
+        val compatibility = inspectBackupCompatibility(payload)
         if (!compatibility.shouldWarn) {
             onContinue()
             return

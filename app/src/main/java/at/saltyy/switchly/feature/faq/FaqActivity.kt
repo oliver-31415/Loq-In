@@ -432,11 +432,8 @@ class FaqActivity : AppCompatActivity() {
                 iconRes = R.drawable.cloud_24,
                 items = listOf(
                     item(R.string.faq_q_idiot_save_data, R.string.faq_a_idiot_save_data, R.drawable.cloud_24),
-                    item(R.string.faq_q_idiot_delete_account, R.string.faq_a_idiot_delete_account, R.drawable.delete_24),
                     item(R.string.faq_q_privacy, R.string.faq_a_privacy, R.drawable.lock_24),
                     item(R.string.faq_q_support_report_contents, R.string.faq_a_support_report_contents, R.drawable.mail_24),
-                    item(R.string.faq_q_premium_overview, R.string.faq_a_premium_overview, R.drawable.star_24),
-                    item(R.string.faq_q_premium_how, R.string.faq_a_premium_how, R.drawable.star_24),
                     item(R.string.faq_q_support_switchly, R.string.faq_a_support_switchly, R.drawable.star_24),
                     item(R.string.faq_q_contact, R.string.faq_a_contact, R.drawable.mail_24)
                 )

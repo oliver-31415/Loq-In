@@ -120,7 +120,6 @@ import at.saltyy.switchly.feature.settings.ManageBarcodesActivity
 import at.saltyy.switchly.feature.settings.ManageBlockedWebsitesActivity
 import at.saltyy.switchly.feature.settings.PermissionsActivity
 import at.saltyy.switchly.feature.settings.InAppRulesActivity
-import at.saltyy.switchly.feature.account.AccountActivity
 import at.saltyy.switchly.feature.settings.SettingsActivity
 import at.saltyy.switchly.feature.settings.ToggleOptionsActivity
 import at.saltyy.switchly.feature.settings.HomeModeDialogHelper
@@ -132,7 +131,6 @@ import at.saltyy.switchly.feature.usage.AppWebsiteUsageActivity
 import at.saltyy.switchly.feature.usage.QuickLimitDialogs
 import at.saltyy.switchly.feature.stats.StatsFormat
 import at.saltyy.switchly.nfc.NfcWriterActivity
-import at.saltyy.switchly.premium.PremiumManager
 import at.saltyy.switchly.theme.AccentColor
 import at.saltyy.switchly.ui.dialog.Dialogs
 import at.saltyy.switchly.ui.dialog.EmergencyPinDialog
@@ -368,9 +366,6 @@ class MainActivity : AppCompatActivity() {
 
         // Ensure the flow in SwitchModeStore reflects the current prefs
         SwitchModeStore.ensureInit(applicationContext)
-
-        // Refresh premium status from Google Play Billing
-        PremiumManager.refreshFromPlay(this)
 
         // Onboarding gate (versioned)
         val sp = getSharedPreferences("switchly_prefs", MODE_PRIVATE)
@@ -1068,7 +1063,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun applyPressScale(v: View) {
-        // Small scale feedback on press (feels more "premium" without being flashy).
+        // Small scale feedback on press.
         // IMPORTANT: never consume touch events here, otherwise long-press handlers
         // (e.g. btnToggle temporary enable/disable sheet) stop firing.
         var downX = 0f
@@ -5068,7 +5063,7 @@ class MainActivity : AppCompatActivity() {
                 true
             }
             R.id.action_info -> {
-                AccountActivity.openWithAccessCheck(this)
+                showDevelopmentInfoDialog()
                 true
             }
             else -> super.onOptionsItemSelected(item)
@@ -5244,9 +5239,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showDevelopmentInfoDialog() {
-        // Legacy info dialog, superseded by the Account screen (header info
-        // button now opens AccountActivity). Kept for now in case other
-        // callers still reference it.
+        // Legacy info dialog for the header info button.
         val downloadsUrl = getString(R.string.about_downloads_url)
         MaterialAlertDialogBuilder(this)
             .setTitle(getString(R.string.main_info_title))
