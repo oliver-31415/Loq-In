@@ -7615,6 +7615,15 @@ class SwitchlyAccessibilityService : AccessibilityService() {
             val text = node.text?.toString().orEmpty()
             val desc = node.contentDescription?.toString().orEmpty()
             val viewId = node.viewIdResourceName?.lowercase(Locale.getDefault()).orEmpty()
+            // The normal watch page's progress bar is literally named reel_time_bar (shared
+            // player component) and spans the full screen in portrait, which made every
+            // normal video look like a fullscreen Shorts player once a Shorts shelf in the
+            // related feed supplied the semantic rail. Progress bars are never player
+            // geometry; exclude them explicitly (locked-fullscreen Shorts still match via
+            // reel_recycler/reel_player_* IDs).
+            if (viewId.contains("time_bar")) {
+                return@findAnyNode false
+            }
             val signal = "$text $desc $viewId"
             anyNeedleMatches(signal, YT_SHORTS_LABELS) ||
                 viewId.contains("reel") ||
