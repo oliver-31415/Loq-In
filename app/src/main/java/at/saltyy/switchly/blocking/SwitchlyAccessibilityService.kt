@@ -3202,55 +3202,61 @@ class SwitchlyAccessibilityService : AccessibilityService() {
             return null
         }
 
+        // Page content constantly mentions other domains (search results, README links,
+        // social share text). Only treat text as a host signal when it comes from an
+        // address-bar-like node, or when the text itself is an explicit URL string.
+        fun isAddressBarishNode(node: AccessibilityNodeInfo?): Boolean {
+            if (node == null) return false
+            val vid = node.viewIdResourceName?.lowercase(Locale.getDefault()).orEmpty()
+            if (vid.contains("url") || vid.contains("toolbar") || vid.contains("mozac") || vid.contains("origin")) {
+                return true
+            }
+            return node.isEditable || node.isFocused || node.isAccessibilityFocused
+        }
+
+        fun hostFromNode(node: AccessibilityNodeInfo?): String? {
+            if (node == null) return null
+            val trustedNode = isAddressBarishNode(node)
+            val direct = sequenceOf(
+                node.text?.toString(),
+                node.contentDescription?.toString()
+            )
+            for (raw in direct) {
+                val value = raw?.trim().orEmpty()
+                if (value.isEmpty()) continue
+                if (trustedNode || value.startsWith("http")) {
+                    domainFromText(value)?.let { return it }
+                }
+            }
+            return null
+        }
+
         event.text?.forEach { part ->
             val raw = part?.toString()?.trim().orEmpty()
-            if (raw.isNotEmpty()) {
+            if (raw.startsWith("http")) {
                 domainFromText(raw)?.let { return it }
             }
+        }
+        val eventCd = event.contentDescription?.toString()?.trim().orEmpty()
+        if (eventCd.startsWith("http")) {
+            domainFromText(eventCd)?.let { return it }
         }
 
         val sourceCopy = runCatching { event.source?.let { it } }.getOrNull()
         try {
             if (sourceCopy != null) {
-                val direct = sequenceOf(
-                    sourceCopy.text?.toString(),
-                    sourceCopy.contentDescription?.toString()
-                )
-                for (raw in direct) {
-                    val value = raw?.trim().orEmpty()
-                    if (value.isNotEmpty()) {
-                        domainFromText(value)?.let { return it }
-                    }
-                }
+                hostFromNode(sourceCopy)?.let { return it }
 
                 val parent = runCatching { sourceCopy.parent?.let { it } }.getOrNull()
                 try {
                     if (parent != null) {
-                        val parentDirect = sequenceOf(
-                            parent.text?.toString(),
-                            parent.contentDescription?.toString()
-                        )
-                        for (raw in parentDirect) {
-                            val value = raw?.trim().orEmpty()
-                            if (value.isNotEmpty()) {
-                                domainFromText(value)?.let { return it }
-                            }
-                        }
+                        hostFromNode(parent)?.let { return it }
 
                         val childCount = runCatching { parent.childCount }.getOrDefault(0)
                         for (i in 0 until childCount) {
                             val child = runCatching { parent.getChild(i) }.getOrNull() ?: continue
                             try {
-                                val childDirect = sequenceOf(
-                                    child.text?.toString(),
-                                    child.contentDescription?.toString()
-                                )
-                                for (raw in childDirect) {
-                                    val value = raw?.trim().orEmpty()
-                                    if (value.isNotEmpty()) {
-                                        domainFromText(value)?.let { return it }
-                                    }
-                                }
+                                hostFromNode(child)?.let { return it }
                             } finally {
                             }
                         }
@@ -3264,20 +3270,26 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         return null
     }
 
+    /**
+     * Returns (host, fromAddressBar). fromAddressBar=true means the host was read from an
+     * actual address-bar/URL-view node; false means it was inferred from event or page text,
+     * which is frequently WRONG (search results pages and READMEs mention other domains).
+     * Callers must require domain-stability confirmation before blocking untrusted hosts.
+     */
     private fun tryExtractDomainFromBrowser(
         root: AccessibilityNodeInfo?,
         pkg: String,
         event: AccessibilityEvent? = null
-    ): String? {
+    ): Pair<String, Boolean>? {
         if (root == null) {
             return null
         }
 
         if (isEmbeddedBrowserPackage(pkg)) {
-            return tryExtractDomainFromEmbeddedBrowser(root, pkg, event)
+            return tryExtractDomainFromEmbeddedBrowser(root, pkg, event)?.let { it to true }
         }
 
-        tryExtractDomainFromBrowserUrlViews(root, pkg)?.let { return it }
+        tryExtractDomainFromBrowserUrlViews(root, pkg)?.let { return it to true }
 
         val firefoxEditing = isFirefoxFamily(pkg) && isBrowserAddressEditing(root, pkg, event)
         if (firefoxEditing) {
@@ -3291,23 +3303,23 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         try {
             val t = urlNode?.text?.toString()?.trim().orEmpty()
             if (t.isNotBlank()) {
-                domainFromText(t)?.let { return it }
+                domainFromText(t)?.let { return it to true }
             }
 
             val cd = urlNode?.contentDescription?.toString()?.trim().orEmpty()
             if (cd.isNotBlank()) {
-                domainFromText(cd)?.let { return it }
+                domainFromText(cd)?.let { return it to true }
             }
         } finally {
         }
 
         if (isFirefoxFamily(pkg) && !firefoxEditing) {
-            firefoxEventDomainSignal(event)?.let { return it }
+            firefoxEventDomainSignal(event)?.let { return it to false }
             return null
         }
 
         val candidate = findEditableUrlText(root)
-        return candidate?.let { domainFromText(it) }
+        return candidate?.let { text -> domainFromText(text)?.let { it to true } }
     }
 
     private fun domainFromText(raw: String): String? {
@@ -3503,7 +3515,24 @@ class SwitchlyAccessibilityService : AccessibilityService() {
             val normalized = DomainBlockStore.normalize(domain) ?: continue
             val aliases = firefoxDomainAliases(normalized)
             if (aliases.isEmpty()) continue
-            if (haystacks.any { text -> aliases.any { alias -> alias.isNotBlank() && text.contains(alias) } }) {
+            // Alias matching must stay domain-shaped: a bare brand word ("youtube", "x")
+            // appears in ordinary page text (search results, articles) and classified
+            // completely unrelated pages as blocked sites. Requiring the trailing dot
+            // means only real domain references ("youtube.com/watch") match.
+            if (haystacks.any { text ->
+                    aliases.any { alias ->
+                        if (alias.isBlank()) {
+                            false
+                        } else {
+                            // Aliases that are already domains ("x.com") match as-is; bare
+                            // brand words ("youtube") need the trailing dot so only real
+                            // domain references match.
+                            val needle = if (alias.contains('.')) alias else "$alias."
+                            text.contains(needle)
+                        }
+                    }
+                }
+            ) {
                 return normalized
             }
         }
@@ -3711,12 +3740,14 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         val blockWebsitesEnabled = DomainBlockStore.isEnabled(this)
         val blockedDomainsList = if (blockWebsitesEnabled) DomainBlockStore.getEnabledDomains(this).toList() else emptyList()
 
-        val host = tryExtractDomainFromBrowser(root, pkg, event)
-            ?: if (isFirefoxFamily(pkg) && blockWebsitesEnabled) {
+        val hostSignal = tryExtractDomainFromBrowser(root, pkg, event)
+        val inferredFirefoxHost =
+            if (hostSignal == null && isFirefoxFamily(pkg) && blockWebsitesEnabled) {
                 inferFirefoxDomainFromTexts(root, event, blockedDomainsList)
             } else {
                 null
             }
+        val host = hostSignal?.first ?: inferredFirefoxHost
             ?: run {
                 if (isFirefoxFamily(pkg) && (loadedFirefoxPageEvent || !recentEditing)) {
                     browserWebsiteState.currentPendingDomain(pkg, now)?.let { pendingHost ->
@@ -3795,13 +3826,18 @@ class SwitchlyAccessibilityService : AccessibilityService() {
             }
 
         // Require a short stable domain signal to avoid premature blocks on autocomplete suggestions.
-        // For Firefox/Fenix we skip the second-event requirement because some builds emit fewer URL events.
-        val needStability = requiresDomainStability(pkg)
+        // For Firefox/Fenix we skip the second-event requirement for address-bar-sourced hosts
+        // because some builds emit fewer URL events. Hosts inferred from event/page text
+        // (search results, READMEs, link text) are NOT address-bar provenance and MUST wait
+        // for a confirming second signal — otherwise unrelated pages get hard-blocked.
+        val needStability = requiresDomainStability(pkg) ||
+            hostSignal != null && !hostSignal.second ||
+            inferredFirefoxHost != null
         if (browserWebsiteState.noteCandidate(host, now)) {
             appendBlockingLog(
                 category = "website_detect",
                 key = "web-candidate|$pkg|$host",
-                message = "pkg=$pkg host=${sanitizeWebsiteSignal(host)} state=candidate needStability=$needStability event=${eventTypeLabel(event)}" +
+                message = "pkg=$pkg host=${sanitizeWebsiteSignal(host)} state=candidate needStability=$needStability trusted=${hostSignal?.second ?: false} inferred=${inferredFirefoxHost != null} event=${eventTypeLabel(event)}" +
                     if (isFirefoxFamily(pkg)) " ${firefoxSignalSummary(root, event)}" else "",
                 throttleMs = 1_500L
             )
@@ -4052,7 +4088,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         }
 
         val visibleHost = tryExtractDomainFromBrowserUrlViews(root, pkg)
-            ?: tryExtractDomainFromBrowser(root, pkg, null)
+            ?: tryExtractDomainFromBrowser(root, pkg, null)?.first
             ?: return
 
         val stillBlocked = DomainBlockStore.shouldBlockHost(this, visibleHost)
