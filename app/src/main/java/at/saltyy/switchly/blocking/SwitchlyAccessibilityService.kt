@@ -6276,11 +6276,11 @@ class SwitchlyAccessibilityService : AccessibilityService() {
 
             // Explicit tab clicks/selected bottom-nav positions should block immediately.
             // The more conservative state machine below is still kept for scroll/content events, but it was too easy for the guards to suppress every Instagram block on some builds.
-            // When the clips view pager itself is visible, close the Reels viewer with ONE
-            // immediate back BEFORE the popup and skip the post-ack back/relaunch machinery:
-            // the pending-back flow (up to 2 backs + bringPackageToFront relaunch) races the
-            // clip viewer's teardown on embedded Reels and crashed Instagram after the user
-            // returned to the feed.
+            // The clips-viewer fast path must NOT send BACK: tapping an embedded Reel expands
+            // it inline in the feed (there is no separate viewer to close), so BACK hits the
+            // feed's own handler, which calls moveTaskToBack and the whole app vanishes
+            // (reported as a crash; confirmed via wm_task TO_BACK traces). Popup only;
+            // acknowledging it sends the user home.
             val explicitReelsHit = igClipsViewerNow ||
                 reelsTabSelectedNow || instagramPositionSurface == "ig:reels" || reelsHintNow || isInstagramBottomNavEvent(event, IG_REELS_LABELS)
             val explicitExploreHit = exploreTabSelectedNow || instagramPositionSurface == "ig:explore" || exploreHintNow || isInstagramBottomNavEvent(event, IG_EXPLORE_LABELS)
@@ -6290,8 +6290,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
                     blockIgReelsEnabled,
                     getString(R.string.in_app_surface_reels_label),
                     explicitReelsHit,
-                    backCount = if (igClipsViewerNow) 1 else 2,
-                    closeBeforePopup = igClipsViewerNow
+                    backCount = 0
                 )
             ) {
                 return
