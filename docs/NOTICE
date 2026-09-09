@@ -1,7 +1,16 @@
+Loq In
+Copyright (C) 2026 Loq In Contributors
+
+Loq In is licensed under the GNU General Public License v3.0 (see LICENSE).
+
+Loq In is based on Switchly:
+
 Switchly
 Copyright (C) 2025-2026 Saltyy
-Copyright (C) 2026 Switchly Contributors
 
-Switchly uses AndroidX, Material Components, Firebase/Google Play services, CameraX, ML Kit barcode scanning, ZXing, Kotlin, and related open-source/library dependencies. Review Gradle dependency metadata for exact versions and license details.
+The design of Loq In is inspired by Foqos (https://github.com/awaseem/foqos).
+Parts of the blocking logic are derived from Scrollless.
+
+Loq In uses AndroidX, Material Components, Google Play services (location, maps, ML Kit barcode scanning, in-app updates), CameraX, ML Kit, ZXing, Kotlin, and related open-source/library dependencies. Review Gradle dependency metadata for exact versions and license details.
 
 Icons are based on Material Symbols by Google.

@@ -1,2 +1,2 @@
 # Changelog
-All notable changes to this project will be documented on my [`Release Page`](https://release.saltyy.at) or inside the app's [`What's new?`](../app/src/main/res/raw/changelog.json) section.
+All notable changes to Loq In are documented inside the app's **What's new?** section, driven by [`app/src/main/res/raw/changelog.json`](../app/src/main/res/raw/changelog.json).

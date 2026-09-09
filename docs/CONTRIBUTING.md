@@ -1,12 +1,12 @@
-# Contributing to Switchly
-Thanks for your interest in contributing to Switchly.
+# Contributing to Loq In
+Thanks for your interest in contributing to Loq In.
 
-This repository contains the public release code of Switchly. Development may sometimes continue in a private test repository before release-ready changes are synced here.
+This repository contains the public source code of Loq In.
 
-Before starting larger changes, please contact the maintainer so work can be coordinated and release/policy-sensitive areas stay aligned.
+Before starting larger changes, please open an issue first so work can be coordinated and release/policy-sensitive areas stay aligned.
 
 ## Repository scope
-Switchly has a single build with only the standard `debug`/`release` build types.
+Loq In has a single build with only the standard `debug`/`release` build types.
 
 ## Getting started
 1. Install the latest stable version of Android Studio
@@ -44,8 +44,8 @@ For vector assets and icon imports, also read [`DRAWABLE_CONVENTIONS.md`](./DRAW
 
 ## Guidelines
 - Keep changes focused and easy to review
-- Prefer small merge requests over large rewrites
-- Avoid unrelated cleanup in the same merge request
+- Prefer small pull requests over large rewrites
+- Avoid unrelated cleanup in the same pull request
 - Do not commit generated files such as `build/` outputs
 - Do not commit APK/AAB files unless explicitly requested for a release workflow
 - Keep user-facing strings in resources
@@ -68,4 +68,4 @@ Please include:
 - why you changed it
 - screenshots or screen recordings for UI changes, if relevant
 - notes about behavior changes, especially around blocking, schedules, permissions, NFC, QR, barcode, or profiles
-- what you tested, including device/flavor where relevant
+- what you tested, including device and build type where relevant

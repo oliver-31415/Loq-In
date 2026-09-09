@@ -1,5 +1,5 @@
 # Drawable conventions
-Switchly keeps ordinary UI icons structurally identical so new icons are easy to review, replace, and maintain.
+Loq In keeps ordinary UI icons structurally identical so new icons are easy to review, replace, and maintain.
 
 ## Standard 24dp icon
 ```xml
@@ -35,7 +35,7 @@ Drawable XML files omit the XML declaration to match the existing Android resour
 
 ## Intentional exceptions
 These files may differ from the standard template:
-- brand icons such as Google, Discord, and GitLab preserve their official colours;
+- official third-party brand icons preserve their official colours;
 - Quick Settings source icons use a fixed dark fill because Android System UI receives a rendered monochrome bitmap;
 - widget icons use the widget-specific colour resource;
 - blocker-only icons may use a fixed white fill;
