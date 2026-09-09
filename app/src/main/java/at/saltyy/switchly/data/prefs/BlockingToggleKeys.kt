@@ -40,6 +40,9 @@ object BlockingToggleKeys {
     const val KEY_BLOCK_IG_STORIES = "block_ig_stories"
     const val KEY_BLOCK_IG_COMMENTS = "block_ig_comments"
 
+    // Facebook
+    const val KEY_BLOCK_FB_REELS = "block_fb_reels"
+
     // X/Twitter
     const val KEY_BLOCK_X_HOME = "block_x_home"
     const val KEY_BLOCK_X_SEARCH = "block_x_search"
@@ -78,6 +81,8 @@ object BlockingToggleKeys {
         KEY_BLOCK_IG_SEARCH,
         KEY_BLOCK_IG_STORIES,
         KEY_BLOCK_IG_COMMENTS,
+
+        KEY_BLOCK_FB_REELS,
 
         KEY_BLOCK_X_HOME,
         KEY_BLOCK_X_SEARCH,

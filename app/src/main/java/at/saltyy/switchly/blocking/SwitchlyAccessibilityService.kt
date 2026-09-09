@@ -215,6 +215,8 @@ class SwitchlyAccessibilityService : AccessibilityService() {
     private fun isYouTubePackage(pkg: String?): Boolean =
         pkg != null && pkg.lowercase(Locale.getDefault()) in YOUTUBE_PACKAGES
     private val PACKAGE_INSTAGRAM = "com.instagram.android"
+    private val PACKAGE_FACEBOOK = "com.facebook.katana"
+    private val PACKAGE_FACEBOOK_LITE = "com.facebook.lite"
     private val PACKAGE_X = "com.twitter.android"
     private val PACKAGE_SNAPCHAT = "com.snapchat.android"
 
@@ -641,7 +643,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
     }
 
     private fun isSnapchatNavigationEvent(pkg: String, eventType: Int): Boolean {
-        return pkg == PACKAGE_SNAPCHAT &&
+        return (pkg == PACKAGE_SNAPCHAT || pkg == PACKAGE_FACEBOOK || pkg == PACKAGE_FACEBOOK_LITE) &&
             (eventType == AccessibilityEvent.TYPE_VIEW_CLICKED ||
                 eventType == AccessibilityEvent.TYPE_VIEW_SELECTED)
     }
@@ -671,6 +673,9 @@ class SwitchlyAccessibilityService : AccessibilityService() {
                     inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_IG_STORIES) ||
                     inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_IG_COMMENTS)
 
+            pkg == PACKAGE_FACEBOOK || pkg == PACKAGE_FACEBOOK_LITE ->
+                inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_FB_REELS)
+
             pkg == PACKAGE_X ->
                 inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_X_HOME) ||
                     inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_X_SEARCH) ||
@@ -691,6 +696,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         return when {
             isYouTubePackage(pkg) -> YT_LOW_SIGNAL_LABELS
             pkg == PACKAGE_INSTAGRAM -> IG_LOW_SIGNAL_LABELS
+            pkg == PACKAGE_FACEBOOK || pkg == PACKAGE_FACEBOOK_LITE -> listOf("reels")
             pkg == PACKAGE_X -> X_LOW_SIGNAL_LABELS
             pkg == PACKAGE_SNAPCHAT -> SNAP_LOW_SIGNAL_LABELS
             else -> emptyList()
@@ -702,6 +708,8 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         // Skipping probes here can miss legitimate blocks (YouTube Shorts).
         if (isYouTubePackage(pkg) ||
             pkg == PACKAGE_INSTAGRAM ||
+            pkg == PACKAGE_FACEBOOK ||
+            pkg == PACKAGE_FACEBOOK_LITE ||
             pkg == PACKAGE_X ||
             pkg == PACKAGE_SNAPCHAT) {
             return false
@@ -1243,6 +1251,8 @@ class SwitchlyAccessibilityService : AccessibilityService() {
             supportsWebsiteRulesPackage(pkg) ||
                 isYouTubePackage(pkg) ||
                 pkg == PACKAGE_INSTAGRAM ||
+                pkg == PACKAGE_FACEBOOK ||
+                pkg == PACKAGE_FACEBOOK_LITE ||
                 pkg == PACKAGE_X ||
                 pkg == PACKAGE_SNAPCHAT
 
@@ -5455,17 +5465,20 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         if (surfaceGuardActive(pkg, "yt:shorts", now)) {
             return false
         }
-        // Two ways a Shorts player can legitimately be on screen:
+        // Three ways a Shorts player can legitimately be on screen:
         // - nav Shorts tab selected + player heuristics (tab Shorts)
         // - nav still Home/null + a full-screen Shorts player overlay (Shorts opened from the
         //   Home feed shelf keep Home selected in the nav). Without this second path the
         //   quiet-session net could never catch home-feed Shorts and a whole Short played.
+        // - the reel_player_page_container view is visible (deterministic Scrolless-style
+        //   signal; the size gate excludes preloaded shelf tiles)
         val selectedSurface = detectYouTubeSelectedSurface(root)
         val shortsByNavTab = selectedSurface == "yt:shorts" && isLikelyYouTubeShortsPlayer(root)
         val shortsByHomeFeedOverlay =
             (selectedSurface == null || selectedSurface == "yt:home") &&
                 isYouTubeFullScreenShortsPlayerActive(root)
-        if (!shortsByNavTab && !shortsByHomeFeedOverlay) {
+        val shortsByReelContainer = hasVisibleYouTubeReelPlayerContainer(root, pkg)
+        if (!shortsByNavTab && !shortsByHomeFeedOverlay && !shortsByReelContainer) {
             return false
         }
 
@@ -5825,6 +5838,8 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         val supportedInAppPkg =
             isYouTubePackage(pkg) ||
                 pkg == PACKAGE_INSTAGRAM ||
+                pkg == PACKAGE_FACEBOOK ||
+                pkg == PACKAGE_FACEBOOK_LITE ||
                 pkg == PACKAGE_X ||
                 pkg == PACKAGE_SNAPCHAT
         if (!supportedInAppPkg) {
@@ -5895,6 +5910,10 @@ class SwitchlyAccessibilityService : AccessibilityService() {
             val ytShortsEntryNow = isYouTubeShortsEntryEvent(event) || isYouTubeHomeShortsShelfEvent(event, root)
             val ytHomeSurfaceCandidate = ytTappedSurface == "yt:home" || ytSelectedSurface == "yt:home"
             val ytExplicitShortsContext = ytTappedSurface == "yt:shorts" || ytSelectedSurface == "yt:shorts" || ytShortsEntryNow
+            // Deterministic Shorts signal (Scrolless-style view-ID lookup). When this is
+            // visible the Shorts player is on screen regardless of nav state — it covers
+            // tab Shorts AND home-feed overlay Shorts.
+            val ytReelContainerNow = hasVisibleYouTubeReelPlayerContainer(root, pkg)
             val ytShortsPlayerNow =
                 when {
                     ytHomeSurfaceCandidate -> isYouTubeHomeFeedShortsPlayer(root, event)
@@ -5908,7 +5927,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
                         (eventTextMatches(event, YT_SHORTS_PLAYER_HINT_LABELS) &&
                             hasYouTubeShortsPlayerControl(root) &&
                             hasYouTubeShortsPlayerGeometry(root))
-                }
+                } || ytReelContainerNow
             val ytPipEntryNow = isYouTubePipEntryEvent(event)
             val ytMiniPlayerNow = isLikelyYouTubeMiniPlayerVisible(root)
             val ytMiniPlayerGeometryNow = hasYouTubeMiniPlayerGeometry(root)
@@ -5917,7 +5936,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
             // Delayed YouTube retry probes call this path with a null event after the UI has had time to settle.
             // Capture a throttled evidence snapshot there so support reports explain why Shorts was or was not classified without recording any visible text/content from the user's screen.
             if (blockYtShortsEnabled && !ytShortsGuardActive &&
-                (event == null || ytShortsEntryNow || ytShortsPlayerNow || ytTappedSurface == "yt:shorts" || ytSelectedSurface == "yt:shorts")
+                (event == null || ytReelContainerNow || ytShortsEntryNow || ytShortsPlayerNow || ytTappedSurface == "yt:shorts" || ytSelectedSurface == "yt:shorts")
             ) {
                 maybeLogYouTubeShortsEvidence(
                     root = root,
@@ -6140,6 +6159,46 @@ class SwitchlyAccessibilityService : AccessibilityService() {
 
             if (blockYtPipEnabled && (ytTappedSurface == "yt:home" || ytSelectedSurface == "yt:home")) {
                 clearSurfaceEvidence("yt:pip")
+            }
+        }
+
+        if (pkg == PACKAGE_FACEBOOK || pkg == PACKAGE_FACEBOOK_LITE) {
+            val blockFbReelsEnabled = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_FB_REELS)
+            if (blockFbReelsEnabled) {
+                val fbGuardActive = surfaceGuardActive(pkg, "fb:reels", now)
+                // Scrolless-style detection: exact composer attachment labels, a selected
+                // "Reels," nav label, or the nested viewer structure (Facebook), and the
+                // video_view ID on Facebook Lite. All are decisive single-screen signals.
+                val reelsDetected = !fbGuardActive &&
+                    if (pkg == PACKAGE_FACEBOOK_LITE) {
+                        isFacebookLiteReelsViewer(root, pkg)
+                    } else {
+                        isFacebookReelsViewer(root)
+                    }
+                if (reelsDetected) {
+                    logInAppSurfaceDetect(pkg, "fb:reels", true, event, "detected=true pkg=$pkg")
+                    rememberSurfaceHint(pkg, "fb:reels", now)
+                }
+                val strongCue = recentSurfaceHintMatches(pkg, "fb:reels", now) || ytQuickEvent(eventType)
+                if (!fbGuardActive &&
+                    surfaceConfirmed("fb:reels", reelsDetected, required = if (strongCue) 1 else 2)
+                ) {
+                    currentSurfaceKey = "fb:reels"
+                    currentSurfacePkg = pkg
+                    inAppGraceUntilByPkg[pkg] = now + INAPP_POST_BLOCK_GRACE_MS
+                    surfaceBlockGuardUntil["$pkg|fb:reels"] = now + maxOf(INAPP_POST_BLOCK_GRACE_MS, YT_SHORTS_REENTRY_GUARD_MS)
+                    softBlockSurface(
+                        pkg = pkg,
+                        appLabel = safeAppLabel(pkg),
+                        title = getString(R.string.blocking_surface_blocked_title, getString(R.string.in_app_surface_reels_label)),
+                        message = surfaceUsageLine("fb:reels", 0),
+                        backCount = 1,
+                        deferNavigationUntilAcknowledge = true,
+                        returnToPackageOnClose = false,
+                        forceShow = true
+                    )
+                    return
+                }
             }
         }
 
@@ -7503,6 +7562,155 @@ class SwitchlyAccessibilityService : AccessibilityService() {
             return false
         }
         return hasYouTubeDeepShortsSignal(root)
+    }
+
+    /**
+     * Deterministic Shorts detection, ported from Scrolless: the Shorts player view
+     * reel_player_page_container is stable across YouTube builds and resolves through
+     * Android's indexed view-ID lookup — no tree walking. Verified on device: present on
+     * the Shorts page (1.0 x 0.85 of screen), absent on the watch page. The size gate keeps
+     * preloaded home-feed shelf tiles (small embedded players) from matching.
+     */
+    private fun hasVisibleYouTubeReelPlayerContainer(root: AccessibilityNodeInfo, pkg: String): Boolean {
+        val ids = linkedSetOf(
+            "$pkg:id/reel_player_page_container",
+            // Renamed-resource forks and regional variants can keep the original resource package.
+            "com.google.android.youtube:id/reel_player_page_container"
+        )
+        val width = resources.displayMetrics.widthPixels.coerceAtLeast(1)
+        val height = resources.displayMetrics.heightPixels.coerceAtLeast(1)
+        for (id in ids) {
+            val nodes = runCatching { root.findAccessibilityNodeInfosByViewId(id) }.getOrNull().orEmpty()
+            for (node in nodes) {
+                if (!node.isVisibleToUser) continue
+                val bounds = Rect()
+                runCatching { node.getBoundsInScreen(bounds) }.getOrNull() ?: continue
+                if (bounds.isEmpty) continue
+                if (bounds.width() / width.toFloat() >= 0.55f && bounds.height() / height.toFloat() >= 0.55f) {
+                    return true
+                }
+            }
+        }
+        return false
+    }
+
+    private val FB_REELS_COMPOSER_LABELS = setOf(
+        "FbShortsComposerAttachmentComponentSpec_STICKER",
+        "FbShortsComposerAttachmentComponentSpec_GIF"
+    )
+
+    /**
+     * Facebook Reels detection, ported from Scrolless. Facebook exposes different
+     * accessibility trees depending on how a Reel was opened and localizes its labels, so
+     * three independent signals are accepted:
+     * 1. Legacy Reel viewers expose internal composer attachment content descriptions.
+     * 2. A selected navigation label starting with "Reels," (a cheap fast path for locales
+     *    that keep the label, e.g. "Reels, 3 new").
+     * 3. Structural fallback: a large scrollable RecyclerView containing a large
+     *    long-clickable Button containing a large SurfaceView (the video surface).
+     */
+    private fun isFacebookReelsViewer(root: AccessibilityNodeInfo): Boolean {
+        val rootBounds = Rect()
+        runCatching { root.getBoundsInScreen(rootBounds) }.getOrNull() ?: return false
+        if (rootBounds.isEmpty) {
+            return false
+        }
+        val rootW = rootBounds.width().coerceAtLeast(1).toFloat()
+        val rootH = rootBounds.height().coerceAtLeast(1).toFloat()
+
+        data class WorkItem(val node: AccessibilityNodeInfo, val parentStructural: Int?)
+        data class Structural(
+            val id: Int,
+            val parent: Int?,
+            val className: String,
+            val widthFraction: Float,
+            val heightFraction: Float,
+            val scrollable: Boolean,
+            val longClickable: Boolean
+        )
+
+        val queue = ArrayDeque<WorkItem>()
+        queue.addLast(WorkItem(root, null))
+        val structural = ArrayList<Structural>(32)
+        var nextId = 0
+        var visited = 0
+        val deadline = SystemClock.uptimeMillis() + 40L
+
+        while (queue.isNotEmpty() && visited < 400 && SystemClock.uptimeMillis() < deadline) {
+            val item = queue.removeFirst()
+            val node = item.node
+            visited++
+            var structuralId: Int? = null
+            if (node.isVisibleToUser) {
+                val cd = node.contentDescription?.toString().orEmpty()
+                if (cd.isNotEmpty()) {
+                    if (cd in FB_REELS_COMPOSER_LABELS) {
+                        return true
+                    }
+                    if (cd.startsWith("Reels,", ignoreCase = true) && node.isSelected) {
+                        return true
+                    }
+                }
+                val className = node.className?.toString().orEmpty()
+                if (className == "androidx.recyclerview.widget.RecyclerView" ||
+                    className == "android.widget.Button" ||
+                    className == "android.view.SurfaceView"
+                ) {
+                    val bounds = Rect()
+                    runCatching { node.getBoundsInScreen(bounds) }.getOrNull()
+                    if (!bounds.isEmpty) {
+                        structuralId = nextId++
+                        structural += Structural(
+                            id = structuralId,
+                            parent = item.parentStructural,
+                            className = className,
+                            widthFraction = bounds.width() / rootW,
+                            heightFraction = bounds.height() / rootH,
+                            scrollable = node.isScrollable,
+                            longClickable = node.isLongClickable
+                        )
+                    }
+                }
+            }
+            val childParent = structuralId ?: item.parentStructural
+            val childCount = runCatching { node.childCount }.getOrDefault(0)
+            for (i in 0 until childCount) {
+                if (visited + queue.size >= 400) {
+                    break
+                }
+                val child = runCatching { node.getChild(i) }.getOrNull() ?: continue
+                queue.addLast(WorkItem(child, childParent))
+            }
+        }
+
+        if (structural.isEmpty()) {
+            return false
+        }
+        // Related pieces must be nested inside each other (wrapper views in between are fine),
+        // so unrelated large nodes elsewhere on the screen cannot satisfy the rule.
+        val childrenByParent = structural.groupBy { it.parent }
+        fun matches(n: Structural, className: String, wMin: Float, hMin: Float, scrollable: Boolean, longClickable: Boolean): Boolean =
+            n.className == className &&
+                n.widthFraction >= wMin &&
+                n.heightFraction >= hMin &&
+                (!scrollable || n.scrollable) &&
+                (!longClickable || n.longClickable)
+        fun hasDescendant(parentId: Int, pred: (Structural) -> Boolean): Boolean =
+            childrenByParent[parentId].orEmpty().any { child -> pred(child) || hasDescendant(child.id, pred) }
+        return structural.any { rv ->
+            matches(rv, "androidx.recyclerview.widget.RecyclerView", 0.9f, 0.75f, scrollable = true, longClickable = false) &&
+                hasDescendant(rv.id) { btn ->
+                    matches(btn, "android.widget.Button", 0.9f, 0.75f, scrollable = false, longClickable = true) &&
+                        hasDescendant(btn.id) { sv ->
+                            matches(sv, "android.view.SurfaceView", 0.9f, 0.75f, scrollable = false, longClickable = false)
+                        }
+                }
+        }
+    }
+
+    private fun isFacebookLiteReelsViewer(root: AccessibilityNodeInfo, pkg: String): Boolean {
+        val nodes = runCatching { root.findAccessibilityNodeInfosByViewId("$pkg:id/video_view") }.getOrNull().orEmpty()
+        return nodes.any { it.isVisibleToUser }
     }
 
     private fun isYouTubeHomeFeedShortsPlayer(root: AccessibilityNodeInfo, event: AccessibilityEvent? = null): Boolean {

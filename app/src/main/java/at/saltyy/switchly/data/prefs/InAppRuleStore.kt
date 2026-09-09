@@ -102,6 +102,12 @@ object InAppRuleStore {
             BlockingToggleKeys.KEY_BLOCK_IG_STORIES,
             BlockingToggleKeys.KEY_BLOCK_IG_COMMENTS
         ),
+        "com.facebook.katana" to setOf(
+            BlockingToggleKeys.KEY_BLOCK_FB_REELS
+        ),
+        "com.facebook.lite" to setOf(
+            BlockingToggleKeys.KEY_BLOCK_FB_REELS
+        ),
         "com.twitter.android" to setOf(
             BlockingToggleKeys.KEY_BLOCK_X_HOME,
             BlockingToggleKeys.KEY_BLOCK_X_SEARCH,

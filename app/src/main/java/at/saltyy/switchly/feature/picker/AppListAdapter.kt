@@ -554,6 +554,8 @@ class AppListAdapter(
             "app.revanced.android.youtube",
             "app.morphe.android.youtube",
             "com.instagram.android",
+            "com.facebook.katana",
+            "com.facebook.lite",
             "com.twitter.android",
             "com.snapchat.android"
         )

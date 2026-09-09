@@ -877,7 +877,9 @@ class InAppRulesActivity : AppCompatActivity() {
         AppGroup(
             R.string.in_app_rules_facebook,
             "com.facebook.katana",
-            listOf(Surface(R.string.in_app_surface_reels_label, null, null, R.string.in_app_status_planned))
+            listOf(
+                Surface(R.string.in_app_surface_reels_label, BlockingToggleKeys.KEY_BLOCK_FB_REELS, "fb:reels", R.string.in_app_status_experimental)
+            )
         ),
         AppGroup(
             R.string.in_app_rules_tiktok,
