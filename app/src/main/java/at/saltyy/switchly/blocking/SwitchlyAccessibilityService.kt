@@ -395,13 +395,18 @@ class SwitchlyAccessibilityService : AccessibilityService() {
     private val PIP_KILL_COOLDOWN_MS = 8_000L
 
     private val MAX_NODE_SCAN_COUNT = 120
-    private val MAX_NODE_SCAN_DEPTH = 12
+    // Real YouTube trees are far deeper than assumed: Shorts action controls sit at depth ~31,
+    // the bottom nav at depth ~13 (verified on device via uiautomator dump). Depth caps below
+    // that made every scan return after visiting only the first root chain (~9-26 nodes),
+    // which is why Shorts detection found no selected tab and no semantic controls.
+    private val MAX_NODE_SCAN_DEPTH = 32
     // Selected YouTube bottom-nav detection runs on AccessibilityService's main thread.
-    // Keep this much tighter than general-purpose scans because getChild() is a cross-process
-    // Binder call and has been observed stalling for seconds on Samsung Android 12 devices.
-    private val YT_SELECTED_NODE_SCAN_COUNT = 48
-    private val YT_SELECTED_NODE_SCAN_DEPTH = 8
-    private val YT_SELECTED_NODE_SCAN_BUDGET_MS = 18L
+    // The time budget (not the node/depth caps) is the real ANR guard: getChild() is a
+    // cross-process Binder call and has been observed stalling for seconds on Samsung
+    // Android 12 devices. On slow devices the budget truncates the scan gracefully.
+    private val YT_SELECTED_NODE_SCAN_COUNT = 120
+    private val YT_SELECTED_NODE_SCAN_DEPTH = 32
+    private val YT_SELECTED_NODE_SCAN_BUDGET_MS = 25L
 
     // Short-lived policy cache to avoid repeated SharedPreferences/ProfileStore reads on every event.
     private val POLICY_CACHE_TTL_MS = 1_200L
@@ -4110,7 +4115,10 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         root: AccessibilityNodeInfo,
         maxNodes: Int = MAX_NODE_SCAN_COUNT,
         maxDepth: Int = MAX_NODE_SCAN_DEPTH,
-        timeBudgetMs: Long = 0L,
+        // 30 ms wall-clock guard: with the deeper traversal enabled, a slow Binder can turn
+        // 120 getChild() calls into a multi-hundred-ms stall. Budget truncation is graceful
+        // and strictly safer than the previous unbounded-deadline behavior.
+        timeBudgetMs: Long = 30L,
         pred: (AccessibilityNodeInfo) -> Boolean,
     ): AccessibilityNodeInfo? {
         data class WorkItem(val node: AccessibilityNodeInfo, val depth: Int, val owned: Boolean)
@@ -5400,6 +5408,14 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         root: AccessibilityNodeInfo,
         now: Long
     ): Boolean {
+        // Only act when YouTube is genuinely the active window. youtubeCurrentRoot() falls
+        // back to findYouTubeWindowRoot(), which scans all windows and can return a
+        // *background* YouTube root after the user switched apps; blocking on that stale
+        // Shorts tree launched the blocker popup over the app the user switched to.
+        val activeRoot = runCatching { rootInActiveWindow }.getOrNull()
+        if (!isYouTubeRootNode(activeRoot)) {
+            return false
+        }
         if (surfaceGuardActive(pkg, "yt:shorts", now)) {
             return false
         }
@@ -5812,6 +5828,14 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         }
 
         if (isYouTubePackage(pkg)) {
+            // Null-event probes (1 Hz tick, settled retry) must never evaluate YouTube when
+            // YouTube is not the active window. youtubeCurrentRoot() falls back to scanning
+            // ALL windows and can return a background YouTube root after the user switched
+            // apps; with a recent Shorts hint still alive (required=1 confirmation), a stale
+            // Shorts tree then fired the blocker popup over the app the user switched to.
+            if (event == null && !isYouTubeRootNode(runCatching { rootInActiveWindow }.getOrNull())) {
+                return
+            }
             val blockYtHomeEnabled = false
             val blockYtShortsEnabled = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_SHORTS)
             // NOTE: Temporarily hidden YouTube settings (Subscriptions, You, Mini Player, PiP).
