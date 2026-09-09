@@ -551,6 +551,8 @@ class AppListAdapter(
     companion object {
         private val IN_APP_RULE_PACKAGES = setOf(
             "com.google.android.youtube",
+            "app.revanced.android.youtube",
+            "app.morphe.android.youtube",
             "com.instagram.android",
             "com.twitter.android",
             "com.snapchat.android"

@@ -881,7 +881,8 @@ class SwitchlyAccessibilityService : AccessibilityService() {
                     AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED or
                     AccessibilityEvent.TYPE_VIEW_SCROLLED or
                     AccessibilityEvent.TYPE_VIEW_CLICKED or
-                    AccessibilityEvent.TYPE_VIEW_FOCUSED
+                    AccessibilityEvent.TYPE_VIEW_FOCUSED or
+                    AccessibilityEvent.TYPE_VIEW_SELECTED
             feedbackType = AccessibilityServiceInfo.FEEDBACK_GENERIC
             notificationTimeout = 0
             flags =
@@ -3572,11 +3573,11 @@ class SwitchlyAccessibilityService : AccessibilityService() {
             return null
         }
         val active = rootInActiveWindow
-        if (isRootFromPackage(active, PACKAGE_YOUTUBE)) {
+        if (isYouTubeRootNode(active)) {
             return active
         }
         val source = runCatching { event?.source }.getOrNull()
-        if (isRootFromPackage(source, PACKAGE_YOUTUBE)) {
+        if (isYouTubeRootNode(source)) {
             return source
         }
         return findYouTubeWindowRoot() ?: active ?: source
@@ -3590,10 +3591,10 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         for (window in activeWindows) {
             val isAppWindow = runCatching { window.type == AccessibilityWindowInfo.TYPE_APPLICATION }.getOrDefault(false)
             val root = runCatching { window.root }.getOrNull() ?: continue
-            if (isRootFromPackage(root, PACKAGE_YOUTUBE)) {
+            if (isYouTubeRootNode(root)) {
                 return root
             }
-            if (isAppWindow && containsPackageNode(root, PACKAGE_YOUTUBE)) {
+            if (isAppWindow && containsYouTubePackageNode(root)) {
                 return root
             }
         }
@@ -3603,6 +3604,28 @@ class SwitchlyAccessibilityService : AccessibilityService() {
     private fun containsPackageNode(root: AccessibilityNodeInfo, pkg: String): Boolean {
         return findAnyNode(root) { node ->
             node.packageName?.toString()?.lowercase(Locale.getDefault()) == pkg
+        } != null
+    }
+
+    /**
+     * Fork-aware variant of isRootFromPackage(root, PACKAGE_YOUTUBE).
+     * ReVanced/Morphe rename the applicationId, so no accessibility node ever reports
+     * com.google.android.youtube; the literal-package gates above silently disabled
+     * deep Shorts detection, cleanup, and navigation for those clients.
+     */
+    private fun isYouTubeRootNode(root: AccessibilityNodeInfo?): Boolean {
+        val r = root ?: return false
+        if (isYouTubePackage(r.packageName?.toString()?.lowercase(Locale.getDefault()))) {
+            return true
+        }
+        return findAnyNode(r) { node ->
+            isYouTubePackage(node.packageName?.toString()?.lowercase(Locale.getDefault()))
+        } != null
+    }
+
+    private fun containsYouTubePackageNode(root: AccessibilityNodeInfo): Boolean {
+        return findAnyNode(root) { node ->
+            isYouTubePackage(node.packageName?.toString()?.lowercase(Locale.getDefault()))
         } != null
     }
 
@@ -4649,7 +4672,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         fun attempt(step: String, allowFallbackThisStep: Boolean) {
             runCatching {
                 val r = youtubeCurrentRoot()
-                val rootIsYouTube = isRootFromPackage(r, PACKAGE_YOUTUBE)
+                val rootIsYouTube = isYouTubeRootNode(r)
                 val moved = if (rootIsYouTube) {
                     tryNavigateYouTubeToAllowedSafeSurface(r, "$reason:$step")
                 } else {
@@ -4703,7 +4726,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         fun attempt(tag: String) {
             runCatching {
                 val r = youtubeCurrentRoot()
-                val moved = if (isRootFromPackage(r, PACKAGE_YOUTUBE)) {
+                val moved = if (isYouTubeRootNode(r)) {
                     tryNavigateYouTubeToAllowedSafeSurface(r, "$reason:$tag")
                 } else {
                     false
@@ -4722,7 +4745,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         }
 
         runCatching {
-            val moved = if (isRootFromPackage(root, PACKAGE_YOUTUBE)) {
+            val moved = if (isYouTubeRootNode(root)) {
                 tryNavigateYouTubeToAllowedSafeSurface(root, "$reason:immediate")
             } else {
                 false
@@ -4744,7 +4767,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
 
     private fun dismissYouTubeMiniPlayer(reason: String, allowFallbackTap: Boolean = false): Boolean {
         val root = youtubeCurrentRoot() ?: return false
-        if (!isRootFromPackage(root, PACKAGE_YOUTUBE)) {
+        if (!isYouTubeRootNode(root)) {
             return false
         }
 
@@ -5361,6 +5384,62 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         return true
     }
 
+    /**
+     * Safety net for quiet Shorts sessions.
+     *
+     * The 1 Hz tick and the settled retry probe run with a null event; before the evidence
+     * confirmation change they could never block Shorts, so a Shorts session whose UI stops
+     * emitting content events stayed unblocked indefinitely. This path only fires on
+     * unambiguous tree evidence: the bottom nav must report Shorts as selected AND the
+     * Shorts player heuristics (deep signal + portrait geometry) must both be positive.
+     * forceShow=false keeps the popup cooldowns and the visible-popup check active, so a
+     * repeated tick cannot stack popups; the 5 s re-entry guard set below prevents loops.
+     */
+    private fun maybeEnforceYouTubeShortsQuietSessionBlock(
+        pkg: String,
+        root: AccessibilityNodeInfo,
+        now: Long
+    ): Boolean {
+        if (surfaceGuardActive(pkg, "yt:shorts", now)) {
+            return false
+        }
+        if (!isYouTubeShortsScreen(root)) {
+            return false
+        }
+        if (!isLikelyYouTubeShortsPlayer(root)) {
+            return false
+        }
+
+        appendBlockingLog(
+            category = "yt_shorts_quiet_session",
+            key = "yt-shorts-quiet|$pkg",
+            message = "pkg=$pkg action=block reason=quiet_shorts_session",
+            throttleMs = 1_500L
+        )
+        currentSurfaceKey = "yt:shorts"
+        currentSurfacePkg = pkg
+        runCatching { blockLaunchController.pauseActiveMediaPlayback() }
+        dismissYouTubeMiniPlayer("quiet_session_shorts")
+        surfaceBlockGuardUntil["$pkg|yt:shorts"] = now + maxOf(YT_SHORTS_REENTRY_GUARD_MS, INAPP_POST_BLOCK_GRACE_MS)
+        softBlockSurface(
+            pkg = pkg,
+            appLabel = safeAppLabel(pkg),
+            title = getString(R.string.blocking_surface_blocked_title, getString(R.string.in_app_surface_shorts_label)),
+            message = surfaceUsageLine("yt:shorts", 0),
+            backCount = 0,
+            deferNavigationUntilAcknowledge = false,
+            returnToPackageOnClose = true,
+            forceShow = false,
+            postAcknowledgeYouTubeHome = false,
+            postAcknowledgeYouTubeClose = false,
+            postAcknowledgeYouTubeCleanupShorts = true,
+            postAcknowledgeYouTubeCleanupMini = false,
+            prePopupPhoneHome = false,
+            prePopupYouTubeHome = true
+        )
+        return true
+    }
+
     private fun blockYouTubeMiniPlayer(reason: String, targetPkg: String = PACKAGE_YOUTUBE) {
         val pkg = targetPkg
         val now = System.currentTimeMillis()
@@ -5387,7 +5466,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
 
     private fun attemptYouTubeMiniPlayerCloseStrategy(reason: String, strategy: String): Boolean {
         val root = youtubeCurrentRoot() ?: return false
-        if (!isRootFromPackage(root, PACKAGE_YOUTUBE)) {
+        if (!isYouTubeRootNode(root)) {
             return false
         }
         if (!isLikelyYouTubeMiniPlayerVisible(root) && !hasYouTubeMiniPlayerGeometry(root)) {
@@ -5405,7 +5484,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
 
     private fun cleanupYouTubeShortsAfterAck(reason: String): Boolean {
         val root = youtubeCurrentRoot() ?: return false
-        if (!isRootFromPackage(root, PACKAGE_YOUTUBE)) {
+        if (!isYouTubeRootNode(root)) {
             return false
         }
 
@@ -5433,7 +5512,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         recoverToYouTubeHome: Boolean = false
     ): Boolean {
         val r = root ?: return false
-        if (!isRootFromPackage(r, PACKAGE_YOUTUBE) && !containsPackageNode(r, PACKAGE_YOUTUBE)) {
+        if (!isYouTubeRootNode(r)) {
             return false
         }
         if (!isYouTubeShortsScreen(r) && !hasYouTubeDeepShortsSignal(r)) {
@@ -5447,7 +5526,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         lastYouTubeShortsCloseAt = now
 
         runCatching { blockLaunchController.pauseActiveMediaPlayback() }
-        dismissYouTubeMiniPlayer("shorts_close_$reason", allowFallbackTap = true)
+        dismissYouTubeMiniPlayer("shorts_close_$reason")
         val backSent = runCatching { performGlobalAction(GLOBAL_ACTION_BACK) }.getOrDefault(false)
         val targetPkg = r.packageName?.toString()?.takeIf { isYouTubePackage(it) } ?: PACKAGE_YOUTUBE
         surfaceBlockGuardUntil["$targetPkg|yt:shorts"] = now + YT_SHORTS_REENTRY_GUARD_MS
@@ -5459,14 +5538,14 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         )
         handler.postDelayed({
             runCatching {
-                dismissYouTubeMiniPlayer("shorts_close_${reason}_settle_120", allowFallbackTap = true)
+                dismissYouTubeMiniPlayer("shorts_close_${reason}_settle_120")
                 val retryRoot = youtubeCurrentRoot()
                 tryNavigateYouTubeToAllowedSafeSurface(retryRoot, "shorts_close_${reason}_settle_120")
             }
         }, 120L)
         handler.postDelayed({
             runCatching {
-                dismissYouTubeMiniPlayer("shorts_close_${reason}_settle_360", allowFallbackTap = true)
+                dismissYouTubeMiniPlayer("shorts_close_${reason}_settle_360")
                 val retryRoot = youtubeCurrentRoot()
                 tryNavigateYouTubeToAllowedSafeSurface(retryRoot, "shorts_close_${reason}_settle_360")
             }
@@ -5490,7 +5569,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
 
     private fun tryNavigateYouTubeToAllowedSafeSurface(root: AccessibilityNodeInfo?, reason: String): Boolean {
         val r = root ?: return false
-        if (!isRootFromPackage(r, PACKAGE_YOUTUBE)) {
+        if (!isYouTubeRootNode(r)) {
             return false
         }
 
@@ -5781,6 +5860,16 @@ class SwitchlyAccessibilityService : AccessibilityService() {
                 return
             }
 
+            // Null-event probes (1 Hz tick, settled retry) are the only enforcement that runs when
+            // YouTube stops emitting content events while Shorts stays open. Require unambiguous
+            // tree evidence (bottom-nav Shorts selected AND Shorts player heuristics) before
+            // blocking without a fresh event.
+            if (event == null && blockYtShortsEnabled &&
+                maybeEnforceYouTubeShortsQuietSessionBlock(pkg, root, now)
+            ) {
+                return
+            }
+
             if (!ytShortsGuardActive && (ytShortsEntryNow || ytShortsPlayerNow)) {
                 rememberSurfaceHint(pkg, "yt:shorts", now)
             }
@@ -5819,10 +5908,10 @@ class SwitchlyAccessibilityService : AccessibilityService() {
                 prePopupPhoneHome: Boolean = false,
                 prePopupYouTubeHome: Boolean = false
             ): Boolean {
-                if (surfaceKey == "yt:shorts" && eventType == 0) {
-                    clearSurfaceEvidence(surfaceKey)
-                    return false
-                }
+                // Null-event probes (1 Hz tick, settled retry) previously wiped Shorts evidence here,
+                // which made the required=2 confirmation path unreachable and left quiet Shorts
+                // sessions unblocked. Negative probes still clear via surfaceConfirmed(); positive
+                // probes now count as a legitimate confirmation sample.
                 val conflictingTap = ytTappedSurface != null && ytTappedSurface != surfaceKey && ytTappedSurface != "yt:home"
                 val conflictingSelected = ytSelectedSurface != null && ytSelectedSurface != surfaceKey && ytSelectedSurface != "yt:home"
                 if (conflictingTap || conflictingSelected) {
@@ -6924,7 +7013,11 @@ class SwitchlyAccessibilityService : AccessibilityService() {
             maxDepth = YT_SELECTED_NODE_SCAN_DEPTH,
             timeBudgetMs = YT_SELECTED_NODE_SCAN_BUDGET_MS,
         ) { node ->
-            val active = node.isSelected || node.isCheckedCompat()
+            // Only isSelected counts here. isCheckedCompat() widened "selected" to any checked
+            // node (playback-speed/quality bottom sheets), and a checked control in the bottom
+            // band position-mapped to a nav tab — a right-side one triggered
+            // conflictingSelected and cancelled legitimate Shorts blocks.
+            val active = node.isSelected
             if (!active) return@findAnyNode false
 
             val nodePkg = node.packageName?.toString()?.lowercase(Locale.ROOT).orEmpty()
@@ -7102,7 +7195,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         if (type != AccessibilityEvent.TYPE_VIEW_CLICKED) {
             return false
         }
-        if (!isRootFromPackage(root, PACKAGE_YOUTUBE)) {
+        if (!isYouTubeRootNode(root)) {
             return false
         }
 
@@ -7270,7 +7363,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
     }
 
     private fun isYouTubeHomeFeedShortsPlayer(root: AccessibilityNodeInfo, event: AccessibilityEvent? = null): Boolean {
-        if (!isRootFromPackage(root, PACKAGE_YOUTUBE)) {
+        if (!isYouTubeRootNode(root)) {
             return false
         }
         if (hasYouTubeWatchAdOverlaySignal(root, event)) {
@@ -7316,12 +7409,17 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         event: AccessibilityEvent?,
         selectedSurface: String?,
     ): Boolean {
-        if (!isRootFromPackage(root, PACKAGE_YOUTUBE) && !containsPackageNode(root, PACKAGE_YOUTUBE)) {
+        if (!isYouTubeRootNode(root)) {
             return false
         }
 
         // Never suppress a real Shorts surface just because the Short itself is an advertisement.
-        if (selectedSurface == "yt:shorts") {
+        // The ad signal itself cannot distinguish a watch-page ad from an ad inside a Short —
+        // only the selected bottom-nav tab can. So apply the negative evidence only when a
+        // non-Shorts surface is *positively* confirmed; when the bounded nav scan failed to
+        // resolve (selectedSurface == null), suppressing here let ad-supported Shorts evade
+        // detection entirely.
+        if (selectedSurface == null || selectedSurface == "yt:shorts") {
             return false
         }
 
@@ -7355,7 +7453,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         root: AccessibilityNodeInfo,
         event: AccessibilityEvent? = null,
     ): Boolean {
-        if (!isRootFromPackage(root, PACKAGE_YOUTUBE) && !containsPackageNode(root, PACKAGE_YOUTUBE)) {
+        if (!isYouTubeRootNode(root)) {
             return false
         }
 
@@ -7381,7 +7479,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
     }
 
     private fun hasYouTubeShortsPlayerGeometry(root: AccessibilityNodeInfo): Boolean {
-        if (!isRootFromPackage(root, PACKAGE_YOUTUBE)) {
+        if (!isYouTubeRootNode(root)) {
             return false
         }
 
@@ -7417,7 +7515,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
     }
 
     private fun hasYouTubeDeepShortsSignal(root: AccessibilityNodeInfo): Boolean {
-        if (!isRootFromPackage(root, PACKAGE_YOUTUBE) && !containsPackageNode(root, PACKAGE_YOUTUBE)) {
+        if (!isYouTubeRootNode(root)) {
             return false
         }
         if (hasYouTubeWatchAdOverlaySignal(root, null)) {
@@ -7454,7 +7552,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         youtubeShortsControlScore(root) >= 2
 
     private fun youtubeShortsControlScore(root: AccessibilityNodeInfo): Int {
-        if (!isRootFromPackage(root, PACKAGE_YOUTUBE) && !containsPackageNode(root, PACKAGE_YOUTUBE)) {
+        if (!isYouTubeRootNode(root)) {
             return 0
         }
 
@@ -7507,7 +7605,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
 
     private fun isLikelyYouTubeMiniPlayerVisible(root: AccessibilityNodeInfo?): Boolean {
         val r = root ?: return false
-        if (!isRootFromPackage(r, PACKAGE_YOUTUBE)) {
+        if (!isYouTubeRootNode(r)) {
             return false
         }
 
@@ -7541,7 +7639,7 @@ class SwitchlyAccessibilityService : AccessibilityService() {
     }
 
     private fun findYouTubeMiniPlayerBounds(root: AccessibilityNodeInfo): Rect? {
-        if (!isRootFromPackage(root, PACKAGE_YOUTUBE)) {
+        if (!isYouTubeRootNode(root)) {
             return null
         }
 
@@ -7623,8 +7721,8 @@ class SwitchlyAccessibilityService : AccessibilityService() {
             }.getOrDefault(false)
 
             val root = runCatching { window.root }.getOrNull()
-            val containsYouTube = isRootFromPackage(root, PACKAGE_YOUTUBE) ||
-                root?.let { containsPackageNode(it, PACKAGE_YOUTUBE) } == true
+            val containsYouTube = isYouTubeRootNode(root) ||
+                root?.let { containsYouTubePackageNode(it) } == true
             if (!containsYouTube && !inPip) continue
 
             runCatching { window.getBoundsInScreen(bounds) }.getOrNull()
