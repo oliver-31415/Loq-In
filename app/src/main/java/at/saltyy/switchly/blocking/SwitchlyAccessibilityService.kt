@@ -5419,10 +5419,17 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         if (surfaceGuardActive(pkg, "yt:shorts", now)) {
             return false
         }
-        if (!isYouTubeShortsScreen(root)) {
-            return false
-        }
-        if (!isLikelyYouTubeShortsPlayer(root)) {
+        // Two ways a Shorts player can legitimately be on screen:
+        // - nav Shorts tab selected + player heuristics (tab Shorts)
+        // - nav still Home/null + a full-screen Shorts player overlay (Shorts opened from the
+        //   Home feed shelf keep Home selected in the nav). Without this second path the
+        //   quiet-session net could never catch home-feed Shorts and a whole Short played.
+        val selectedSurface = detectYouTubeSelectedSurface(root)
+        val shortsByNavTab = selectedSurface == "yt:shorts" && isLikelyYouTubeShortsPlayer(root)
+        val shortsByHomeFeedOverlay =
+            (selectedSurface == null || selectedSurface == "yt:home") &&
+                isYouTubeFullScreenShortsPlayerActive(root)
+        if (!shortsByNavTab && !shortsByHomeFeedOverlay) {
             return false
         }
 
@@ -7441,6 +7448,27 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         return hasYouTubeDeepShortsSignal(root) && hasYouTubeShortsPlayerGeometry(root)
     }
 
+    /**
+     * True when a full-screen Shorts player is on screen regardless of which bottom-nav tab
+     * is selected. Opening a Short from the Home feed keeps Home selected in the nav (the
+     * player is an overlay on the Home tab), so nav-only classification can never see it.
+     * Requires the full-screen portrait player geometry AND the semantic control rail; the
+     * plain Home feed has shelf tiles with control rails but no full-screen player node,
+     * and the watch page has neither (control score 0 with the spread requirement).
+     */
+    private fun isYouTubeFullScreenShortsPlayerActive(root: AccessibilityNodeInfo): Boolean {
+        if (!isYouTubeRootNode(root)) {
+            return false
+        }
+        if (isLikelyYouTubeMiniPlayerVisible(root) || hasYouTubeMiniPlayerGeometry(root)) {
+            return false
+        }
+        if (!hasYouTubeShortsPlayerGeometry(root)) {
+            return false
+        }
+        return hasYouTubeDeepShortsSignal(root)
+    }
+
     private fun isYouTubeHomeFeedShortsPlayer(root: AccessibilityNodeInfo, event: AccessibilityEvent? = null): Boolean {
         if (!isYouTubeRootNode(root)) {
             return false
@@ -7465,13 +7493,15 @@ class SwitchlyAccessibilityService : AccessibilityService() {
         if (selectedSurface != null && selectedSurface != "yt:home") {
             return false
         }
-        if (isYouTubeHomeShortsShelfVisible(root)) {
+        // The Home feed's Shorts shelf stays in the tree BEHIND the fullscreen home-feed
+        // Shorts viewer, so a bare shelf-visible veto suppressed every passive detection and
+        // let an entire Short play after a re-entry-guard window. Veto only when there is no
+        // full-screen player geometry (i.e. the user is genuinely browsing the Home feed).
+        val playerGeometry = hasYouTubeShortsPlayerGeometry(root)
+        if (!playerGeometry && isYouTubeHomeShortsShelfVisible(root)) {
             return false
         }
-        if (hasYouTubeDeepShortsSignal(root) && hasYouTubeShortsPlayerGeometry(root)) {
-            return true
-        }
-        return false
+        return hasYouTubeDeepShortsSignal(root) && playerGeometry
     }
 
     private fun hasYouTubeWatchAdOverlaySignal(
