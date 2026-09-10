@@ -715,6 +715,11 @@
                 android:resource="@xml/blocked_notifications_widget_info" />
         </receiver>
 
+        <!-- Handles the blocked-notifications widget clear-all action -->
+        <receiver
+            android:name=".widget.BlockedNotificationsActionsReceiver"
+            android:exported="false" />
+
         <!-- Home-screen widget for pausing the blocker -->
         <receiver
             android:name=".widget.PauseBlockerWidgetProvider"

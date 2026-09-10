@@ -5,21 +5,42 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp"
+    android:padding="12dp"
     android:background="@drawable/widget_card_bg"
     android:clickable="true"
     android:focusable="true">
 
-    <TextView
-        android:id="@+id/widgetBlockedHeader"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:text="@string/widget_blocked_notifications_name"
-        android:textColor="@color/foqos_on_surface"
-        android:textSize="14sp"
-        android:textStyle="bold"
-        android:drawablePadding="8dp" />
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <TextView
+            android:id="@+id/widgetBlockedHeader"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:text="@string/widget_blocked_notifications_name"
+            android:textColor="@color/foqos_on_surface"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:drawablePadding="8dp"
+            android:maxLines="1"
+            android:ellipsize="end" />
+
+        <ImageView
+            android:id="@+id/widgetBlockedClear"
+            android:layout_width="26dp"
+            android:layout_height="26dp"
+            android:layout_marginStart="6dp"
+            android:padding="4dp"
+            android:background="@drawable/widget_glance_clear_bg"
+            android:contentDescription="@string/widget_glance_clear_all"
+            android:scaleType="fitCenter"
+            android:visibility="gone" />
+    </LinearLayout>
 
     <TextView
         android:id="@+id/widgetBlockedEmpty"
@@ -32,68 +53,93 @@
         android:textColor="@color/foqos_on_surface_variant"
         android:textSize="13sp" />
 
-    <TextView
+    <LinearLayout
         android:id="@+id/widgetBlockedRow1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="10dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
         android:padding="8dp"
-        android:background="@drawable/widget_tile_bg"
-        android:textColor="@color/foqos_on_surface"
-        android:textSize="12sp"
-        android:maxLines="2"
-        android:ellipsize="end"
-        android:lineSpacingExtra="2dp" />
+        android:background="@drawable/widget_glance_row_bg">
 
-    <TextView
+        <ImageView
+            android:id="@+id/widgetBlockedIcon1"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:contentDescription="@null"
+            android:scaleType="fitCenter" />
+
+        <TextView
+            android:id="@+id/widgetBlockedText1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:textColor="@color/foqos_on_surface"
+            android:textSize="12sp"
+            android:maxLines="2"
+            android:ellipsize="end"
+            android:lineSpacingExtra="2dp" />
+    </LinearLayout>
+
+    <LinearLayout
         android:id="@+id/widgetBlockedRow2"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
         android:padding="8dp"
-        android:background="@drawable/widget_tile_bg"
-        android:textColor="@color/foqos_on_surface"
-        android:textSize="12sp"
-        android:maxLines="2"
-        android:ellipsize="end"
-        android:lineSpacingExtra="2dp" />
+        android:background="@drawable/widget_glance_row_bg">
 
-    <TextView
+        <ImageView
+            android:id="@+id/widgetBlockedIcon2"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:contentDescription="@null"
+            android:scaleType="fitCenter" />
+
+        <TextView
+            android:id="@+id/widgetBlockedText2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:textColor="@color/foqos_on_surface"
+            android:textSize="12sp"
+            android:maxLines="2"
+            android:ellipsize="end"
+            android:lineSpacingExtra="2dp" />
+    </LinearLayout>
+
+    <LinearLayout
         android:id="@+id/widgetBlockedRow3"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
         android:padding="8dp"
-        android:background="@drawable/widget_tile_bg"
-        android:textColor="@color/foqos_on_surface"
-        android:textSize="12sp"
-        android:maxLines="2"
-        android:ellipsize="end"
-        android:lineSpacingExtra="2dp" />
+        android:background="@drawable/widget_glance_row_bg">
 
-    <TextView
-        android:id="@+id/widgetBlockedRow4"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:padding="8dp"
-        android:background="@drawable/widget_tile_bg"
-        android:textColor="@color/foqos_on_surface"
-        android:textSize="12sp"
-        android:maxLines="2"
-        android:ellipsize="end"
-        android:lineSpacingExtra="2dp" />
+        <ImageView
+            android:id="@+id/widgetBlockedIcon3"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:contentDescription="@null"
+            android:scaleType="fitCenter" />
 
-    <TextView
-        android:id="@+id/widgetBlockedRow5"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:padding="8dp"
-        android:background="@drawable/widget_tile_bg"
-        android:textColor="@color/foqos_on_surface"
-        android:textSize="12sp"
-        android:maxLines="2"
-        android:ellipsize="end"
-        android:lineSpacingExtra="2dp" />
+        <TextView
+            android:id="@+id/widgetBlockedText3"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_weight="1"
+            android:textColor="@color/foqos_on_surface"
+            android:textSize="12sp"
+            android:maxLines="2"
+            android:ellipsize="end"
+            android:lineSpacingExtra="2dp" />
+    </LinearLayout>
 </LinearLayout>
