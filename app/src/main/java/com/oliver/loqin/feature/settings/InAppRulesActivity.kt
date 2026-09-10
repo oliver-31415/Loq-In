@@ -424,12 +424,16 @@ class InAppRulesActivity : AppCompatActivity() {
         textCol.addView(tvSubtitle)
         header.addView(textCol)
 
-        // Status Badge (unopened chip shows variant/app name without versions)
+        // Status Badge (collapsed chip shows clean install status, not versions)
         val tvStatus = TextView(this).apply {
             text = when {
                 isYouTube && enabledYtVariants.isNotEmpty() ->
                     enabledYtVariants.joinToString(" · ") { it.label }
-                else -> appDiagnosticLabel(group)
+                status == AppInstallStatus.INSTALLED ->
+                    getString(R.string.in_app_status_installed)
+                status == AppInstallStatus.DISABLED ->
+                    getString(R.string.in_app_status_disabled)
+                else -> getString(R.string.in_app_status_not_installed)
             }
             textSize = 11.5f
             setPadding(dp(8), dp(3), dp(8), dp(3))
@@ -520,6 +524,11 @@ class InAppRulesActivity : AppCompatActivity() {
                 })
             }
             surfacesContainer.addView(noteRow)
+        }
+
+        // Installed-app diagnostic moves into the expanded card
+        if (!isYouTube && status == AppInstallStatus.INSTALLED) {
+            surfacesContainer.addView(buildDiagnosticNoteRow(appDiagnosticLabel(group)))
         }
 
         fun updateSubtitle() {
@@ -682,6 +691,35 @@ class InAppRulesActivity : AppCompatActivity() {
         "com.facebook.katana" -> R.drawable.share_24
         "com.zhiliaoapp.musically" -> R.drawable.widget_play_24
         else -> R.drawable.apps_24
+    }
+
+    private fun buildDiagnosticNoteRow(message: String): View {
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            background = GradientDrawable().apply {
+                cornerRadius = dp(8).toFloat()
+                setColor(ColorUtils.setAlphaComponent(AccentColor.getAccentColorInt(this@InAppRulesActivity), 0x18))
+            }
+            setPadding(dp(10), dp(6), dp(10), dp(6))
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = dp(4)
+                bottomMargin = dp(6)
+            }
+            addView(ImageView(this@InAppRulesActivity).apply {
+                setImageResource(R.drawable.info_24)
+                imageTintList = ColorStateList.valueOf(AccentColor.getAccentColorInt(this@InAppRulesActivity))
+                layoutParams = LinearLayout.LayoutParams(dp(16), dp(16)).apply { marginEnd = dp(8) }
+            })
+            addView(TextView(this@InAppRulesActivity).apply {
+                text = message
+                textSize = 12f
+                setTextColor(onSurfaceColor())
+            })
+        }
     }
 
     private fun appDiagnosticLabel(group: AppGroup): String {
