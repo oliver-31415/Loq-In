@@ -592,8 +592,8 @@ class SettingsActivity : AppCompatActivity() {
     private fun showRootSettings() {
         rootScroll.visibility = View.VISIBLE
         container.visibility = View.GONE
-        supportActionBar?.setDisplayHomeAsUpEnabled(false)
-        toolbar.navigationIcon = null
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        toolbar.navigationIcon = ContextCompat.getDrawable(this, R.drawable.keyboard_arrow_left_24)
         setToolbarTitle(getString(R.string.settings))
     }
 
