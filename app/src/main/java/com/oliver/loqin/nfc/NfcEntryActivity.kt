@@ -44,6 +44,7 @@ import com.oliver.loqin.data.prefs.ScanActionHistoryStore
 import com.oliver.loqin.data.prefs.ProfileStore
 import com.oliver.loqin.data.prefs.SwitchModeStore
 import com.oliver.loqin.data.prefs.TempEnableCountStore
+import com.oliver.loqin.data.prefs.TempPauseStore
 import com.oliver.loqin.feature.qr.QrScanActivity
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.dialog.ClockDurationDialSheet
@@ -468,9 +469,17 @@ class NfcEntryActivity : Activity() {
 
             action.startsWith("temp_disable") -> {
                 if (action == "temp_disable") {
+                    val profileName = ProfileStore.getCurrent(this).orEmpty().trim().ifEmpty { "Default" }
+                    val maxMinutes = tempDisableMaxMinutes(profileName)
+                    if (maxMinutes <= 0) {
+                        showNoBreakAllowance(profileName)
+                        finish()
+                        return false
+                    }
                     showTempDurationDialog(
                         label = getString(R.string.app_name),
-                        messageRes = R.string.temp_disable_duration_message
+                        messageRes = R.string.temp_disable_duration_message,
+                        maxMinutes = maxMinutes
                     ) { durationMs ->
                         if (!consumeScanUnlockQuotaIfNeeded(tag, fromNfc, fromBarcode, rawActionUri)) return@showTempDurationDialog
                         SwitchModeStore.setTemporarilyDisabled(this, durationMs)
@@ -672,9 +681,16 @@ class NfcEntryActivity : Activity() {
                 val current = ProfileStore.getCurrent(this)
                 if (current == profile) {
                     if (action == "temp_disable") {
+                        val maxMinutes = tempDisableMaxMinutes(profile)
+                        if (maxMinutes <= 0) {
+                            showNoBreakAllowance(profile)
+                            finish()
+                            return false
+                        }
                         showTempDurationDialog(
                             label = profile,
-                            messageRes = R.string.temp_disable_duration_message
+                            messageRes = R.string.temp_disable_duration_message,
+                            maxMinutes = maxMinutes
                         ) { durationMs ->
                             if (!consumeScanUnlockQuotaIfNeeded(tag, fromNfc, fromBarcode, rawActionUri)) return@showTempDurationDialog
                             SwitchModeStore.setTemporarilyDisabled(this, durationMs)
@@ -742,6 +758,7 @@ class NfcEntryActivity : Activity() {
         showTempDurationDialog(
             label = label,
             messageRes = R.string.temp_enable_duration_message,
+            maxMinutes = MAX_TEMP_DURATION_MINUTES,
             applyDuration = applyDuration
         )
     }
@@ -749,23 +766,25 @@ class NfcEntryActivity : Activity() {
     private fun showTempDurationDialog(
         label: String,
         messageRes: Int,
+        maxMinutes: Int = MAX_TEMP_DURATION_MINUTES,
         applyDuration: (Long) -> Unit
     ) {
         // Universal temporary actions are meant to be flexible.
         // Fixed durations already exist as explicit actions such as temp_enable15/temp_disable15, so bare temp_enable/temp_disable opens the custom duration input directly.
-        showCustomTempDurationDialog(label, messageRes, applyDuration)
+        showCustomTempDurationDialog(label, messageRes, maxMinutes, applyDuration)
     }
 
     private fun showCustomTempDurationDialog(
         label: String,
         messageRes: Int,
+        maxMinutes: Int,
         applyDuration: (Long) -> Unit
     ) {
         ClockDurationDialSheet.show(
             activity = this,
             title = getString(R.string.temp_enable_duration_custom_title),
             subtitle = getString(messageRes, label),
-            maxMinutes = 1440,
+            maxMinutes = maxMinutes,
             initialMinutes = 25,
             applyLabel = { minutes ->
                 val durLabel = if (minutes < 60) {
@@ -783,6 +802,21 @@ class NfcEntryActivity : Activity() {
             },
             onDismissed = { finish() },
         )
+    }
+
+    /** Minutes allowed for a temporary disable under the profile's break caps (capped to 24h). */
+    private fun tempDisableMaxMinutes(profile: String): Int =
+        TempPauseStore.maxAllowedDurationMinutes(this, profile)
+            .coerceAtMost(MAX_TEMP_DURATION_MINUTES)
+
+    /** Explains why no break duration can be offered (daily count or daily minutes exhausted). */
+    private fun showNoBreakAllowance(profile: String) {
+        val message = if (TempPauseStore.remainingPauses(this, profile) <= 0) {
+            getString(R.string.temp_pause_exhausted_pauses, TempPauseStore.usedCountToday(this, profile))
+        } else {
+            getString(R.string.temp_pause_exhausted_minutes, TempPauseStore.usedMinutesToday(this, profile))
+        }
+        toast(message)
     }
 
     private fun appendScanActionApplied(
@@ -1008,6 +1042,7 @@ class NfcEntryActivity : Activity() {
 
     companion object {
         const val EXTRA_MANAGED_SCAN_RAW_VALUE = "extra_managed_scan_raw_value"
+        private const val MAX_TEMP_DURATION_MINUTES = 1440
     }
 
 }

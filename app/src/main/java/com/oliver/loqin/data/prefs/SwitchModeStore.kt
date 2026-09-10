@@ -350,20 +350,15 @@ object SwitchModeStore {
         val grantedMs = if (isEmergency) {
             durationMs
         } else {
-            TempPauseStore.tryConsumePause(ctx, profile, durationMs)
+            when (val result = TempPauseStore.tryConsumePause(ctx, profile, durationMs)) {
+                is TempPauseStore.PauseResult.Granted -> result.grantedMs
+                else -> {
+                    showTempPauseDenied(ctx, profile, result)
+                    return false
+                }
+            }
         }
 
-        if (grantedMs <= 0L) {
-            AppLogStore.append(ctx, "Profiles", "Temp disable denied reason=pause_caps_exhausted profile=$profile")
-            runCatching {
-                android.widget.Toast.makeText(
-                    ctx,
-                    ctx.getString(R.string.temp_pause_exhausted),
-                    android.widget.Toast.LENGTH_LONG
-                ).show()
-            }
-            return false
-        }
         val until = now + grantedMs
 
         sp.edit {
@@ -394,6 +389,38 @@ object SwitchModeStore {
         BlockingRuntime.stop(ctx)
         ManagedDevicePolicyHelper.syncSelfUninstallBlock(ctx)
         return true
+    }
+
+    /**
+     * Shows the message that matches why a temporary disable was denied, so an
+     * exhausted daily limit is not confused with a too-long single break.
+     */
+    private fun showTempPauseDenied(
+        ctx: Context,
+        profile: String,
+        result: TempPauseStore.PauseResult,
+    ) {
+        val message = when (result) {
+            is TempPauseStore.PauseResult.DailyCountReached ->
+                ctx.getString(R.string.temp_pause_exhausted_pauses, result.used)
+            is TempPauseStore.PauseResult.NoMinutesLeft ->
+                ctx.getString(
+                    R.string.temp_pause_exhausted_minutes,
+                    TempPauseStore.usedMinutesToday(ctx, profile),
+                )
+            is TempPauseStore.PauseResult.ExceedsPerPause ->
+                ctx.getString(R.string.temp_pause_exceeds_limit, result.maxMinutes)
+            is TempPauseStore.PauseResult.ExceedsDailyMinutes ->
+                ctx.getString(R.string.temp_pause_exceeds_limit, result.remainingMinutes)
+            is TempPauseStore.PauseResult.Granted -> return
+        }
+        AppLogStore.append(
+            ctx, "Profiles",
+            "Temp disable denied reason=${result::class.java.simpleName} profile=$profile"
+        )
+        runCatching {
+            android.widget.Toast.makeText(ctx, message, android.widget.Toast.LENGTH_LONG).show()
+        }
     }
 
     /**

@@ -199,25 +199,30 @@ object TempPauseStore {
 
     /**
      * Attempts to consume one pause of [requestedMs] for [profile].
-     * Always tracks usage statistics. Enforces caps if configured.
-     * @return granted milliseconds (clamped to caps), or 0 when denied.
+     * Always tracks usage statistics when granted. Enforces caps if configured.
+     * @return a [PauseResult] describing whether the pause was granted and, when
+     *         denied, the specific reason so callers can show a correct message.
      */
-    fun tryConsumePause(ctx: Context, profile: String, requestedMs: Long): Long {
+    fun tryConsumePause(ctx: Context, profile: String, requestedMs: Long): PauseResult {
         val p = resolveProfile(ctx, profile)
-        if (requestedMs <= 0L) return 0L
+        if (requestedMs <= 0L) return PauseResult.NoMinutesLeft
         val caps = getCaps(ctx, p)
         val hasLimits = hasCaps(ctx, p)
 
         val requestedMinutes = (requestedMs / 60_000L).toInt().coerceAtLeast(1)
         if (hasLimits) {
-            if (remainingPauses(ctx, p) <= 0 || remainingMinutes(ctx, p) <= 0) {
-                return 0L
+            if (remainingPauses(ctx, p) <= 0) {
+                return PauseResult.DailyCountReached(usedCountToday(ctx, p), caps.maxCountPerDay)
+            }
+            val remaining = remainingMinutes(ctx, p)
+            if (remaining <= 0) {
+                return PauseResult.NoMinutesLeft
             }
             if (caps.maxMinutesPerPause > 0 && requestedMinutes > caps.maxMinutesPerPause) {
-                return 0L
+                return PauseResult.ExceedsPerPause(caps.maxMinutesPerPause)
             }
-            if (caps.maxMinutesPerDay > 0 && requestedMinutes > remainingMinutes(ctx, p)) {
-                return 0L
+            if (caps.maxMinutesPerDay > 0 && requestedMinutes > remaining) {
+                return PauseResult.ExceedsDailyMinutes(remaining)
             }
         }
         val minutes = requestedMinutes
@@ -234,6 +239,15 @@ object TempPauseStore {
             "Temp pause consumed profile=$p minutes=$minutes " +
                 "used=${usedCount + 1}/${usedMin + minutes}"
         )
-        return minutes * 60_000L
+        return PauseResult.Granted(minutes * 60_000L)
+    }
+
+    /** Outcome of [tryConsumePause]. */
+    sealed interface PauseResult {
+        data class Granted(val grantedMs: Long) : PauseResult
+        data class ExceedsPerPause(val maxMinutes: Int) : PauseResult
+        data class ExceedsDailyMinutes(val remainingMinutes: Int) : PauseResult
+        data class DailyCountReached(val used: Int, val limit: Int) : PauseResult
+        object NoMinutesLeft : PauseResult
     }
 }

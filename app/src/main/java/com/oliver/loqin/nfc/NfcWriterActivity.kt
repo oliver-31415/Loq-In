@@ -58,6 +58,7 @@ import com.oliver.loqin.data.prefs.AutomationModeStore
 import com.oliver.loqin.data.prefs.BlockingToggleKeys
 import com.oliver.loqin.data.prefs.ProfileStore
 import com.oliver.loqin.data.prefs.SwitchModeStore
+import com.oliver.loqin.data.prefs.TempPauseStore
 import com.oliver.loqin.feature.settings.ToggleOptionsActivity
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.ui.EdgeToEdgeUtils
@@ -522,11 +523,23 @@ class NfcWriterActivity : AppCompatActivity() {
             ?.takeIf { it in 1..1440 }
             ?: 10
 
+        val isTempDisable = ddAction.text?.toString().orEmpty() == getString(R.string.nfc_action_temp_disable)
+        val maxMinutes = if (isTempDisable) {
+            val allowed = tempDisableMaxMinutes()
+            if (allowed <= 0) {
+                showNoBreakAllowance()
+                return
+            }
+            allowed
+        } else {
+            1440
+        }
+
         ClockDurationDialSheet.show(
             activity = this,
             title = getString(R.string.nfc_time_custom_title),
             subtitle = getString(R.string.nfc_time_custom_message),
-            maxMinutes = 1440,
+            maxMinutes = maxMinutes,
             initialMinutes = savedMinutes,
             applyLabel = { minutes ->
                 resources.getQuantityString(R.plurals.nfc_time_custom_label, minutes, minutes)
@@ -542,6 +555,29 @@ class NfcWriterActivity : AppCompatActivity() {
                 updateActionHintForSelection(selectedAction)
             },
         )
+    }
+
+    private fun writeProfileName(): String {
+        val noneLabel = getString(R.string.nfc_profile_none)
+        val selected = ddProfile.text?.toString()?.trim().orEmpty()
+        return if (selected.isNotEmpty() && selected != noneLabel) {
+            selected
+        } else {
+            ProfileStore.getCurrent(this).orEmpty().trim().ifEmpty { "Default" }
+        }
+    }
+
+    private fun tempDisableMaxMinutes(): Int =
+        TempPauseStore.maxAllowedDurationMinutes(this, writeProfileName()).coerceAtMost(1440)
+
+    private fun showNoBreakAllowance() {
+        val profile = writeProfileName()
+        val message = if (TempPauseStore.remainingPauses(this, profile) <= 0) {
+            getString(R.string.temp_pause_exhausted_pauses, TempPauseStore.usedCountToday(this, profile))
+        } else {
+            getString(R.string.temp_pause_exhausted_minutes, TempPauseStore.usedMinutesToday(this, profile))
+        }
+        Toast.makeText(this, message, Toast.LENGTH_LONG).show()
     }
 
     private fun updateTimeVisibilityForAction(selectedActionLabel: String) {
