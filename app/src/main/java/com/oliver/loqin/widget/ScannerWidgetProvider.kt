@@ -71,11 +71,17 @@ class ScannerWidgetProvider : AppWidgetProvider() {
             val minWidth = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)
             val minHeight = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT)
             val showExpandedRow = minWidth >= 260 && minHeight >= 190
-
+            val layoutRes = when {
+                // Wide and short (e.g. 4x1 / 5x1): single-row 1x4 layout.
+                minWidth >= 250 && minHeight < 80 -> R.layout.widget_scanner_row
+                // Short widgets: drop the header, keep the 2x2 grid.
+                minHeight < 110 -> R.layout.widget_scanner_compact
+                else -> R.layout.widget_scanner
+            }
             val accent = AccentColor.getAccentColorInt(context)
             val onSurface = ContextCompat.getColor(context, R.color.foqos_on_surface)
-
-            return RemoteViews(context.packageName, R.layout.widget_scanner).apply {
+            val views = RemoteViews(context.packageName, layoutRes)
+            return views.apply {
                 setImageViewBitmap(R.id.widgetOpenAppIcon, QuickActionIconFactory.createWidgetBitmap(context, R.drawable.apps_24, onSurface))
                 setImageViewBitmap(R.id.widgetOpenQrIcon, QuickActionIconFactory.createWidgetBitmap(context, R.drawable.qr_code_24, onSurface))
                 setImageViewBitmap(R.id.widgetOpenBarcodeIcon, QuickActionIconFactory.createWidgetBitmap(context, R.drawable.barcode_24, onSurface))

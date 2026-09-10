@@ -51,7 +51,7 @@ abstract class BaseLaunchWidgetProvider : AppWidgetProvider() {
                 setContentDescription(R.id.widgetActionRoot, context.getString(labelRes))
                 setImageViewBitmap(
                     R.id.widgetActionIcon,
-                    QuickActionIconFactory.createWidgetBitmap(context, iconRes, onSurface, 32, 28)
+                    QuickActionIconFactory.createWidgetBitmap(context, iconRes, onSurface, 40, 36)
                 )
                 setOnClickPendingIntent(
                     R.id.widgetActionRoot,
@@ -116,7 +116,7 @@ class FocusNowWidgetProvider : AppWidgetProvider() {
                 setContentDescription(R.id.widgetActionRoot, context.getString(R.string.shortcut_focus_now_short))
                 setImageViewBitmap(
                     R.id.widgetActionIcon,
-                    QuickActionIconFactory.createWidgetBitmap(context, R.drawable.play_arrow_24, accent, 32, 28)
+                    QuickActionIconFactory.createWidgetBitmap(context, R.drawable.play_arrow_24, accent, 40, 36)
                 )
                 setOnClickPendingIntent(
                     R.id.widgetActionRoot,

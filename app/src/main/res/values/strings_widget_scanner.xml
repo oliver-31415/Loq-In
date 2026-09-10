@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_scanner_tile_app">App</string>
+    <string name="widget_scanner_tile_qr">QR</string>
+    <string name="widget_scanner_tile_barcode">Barcode</string>
+    <string name="widget_scanner_tile_focus">Focus</string>
+</resources>

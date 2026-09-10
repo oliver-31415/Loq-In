@@ -7,25 +7,13 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:gravity="center_vertical"
-    android:padding="14dp"
+    android:padding="10dp"
     android:background="@drawable/widget_card_bg"
     tools:ignore="NestedWeights">
-
-    <TextView
-        android:id="@+id/widgetTitle"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/widget_scanner_title"
-        android:textColor="@color/foqos_on_surface"
-        android:textSize="14sp"
-        android:textStyle="bold"
-        android:maxLines="1"
-        android:ellipsize="end" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="10dp"
         android:layout_weight="1"
         android:orientation="vertical"
         android:baselineAligned="false"
@@ -34,7 +22,7 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_marginBottom="8dp"
+            android:layout_marginBottom="6dp"
             android:layout_weight="1"
             android:orientation="horizontal"
             android:baselineAligned="false"
@@ -44,11 +32,11 @@
                 android:id="@+id/widgetOpenApp"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_marginEnd="8dp"
+                android:layout_marginEnd="6dp"
                 android:layout_weight="1"
                 android:orientation="vertical"
                 android:gravity="center"
-                android:padding="8dp"
+                android:padding="4dp"
                 android:background="@drawable/scan_tile_bg"
                 android:clickable="true"
                 android:focusable="true">
@@ -63,10 +51,10 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
+                    android:layout_marginTop="3dp"
                     android:text="@string/widget_scanner_open_app"
                     android:textColor="@color/foqos_on_surface"
-                    android:textSize="11sp"
+                    android:textSize="10sp"
                     android:textStyle="bold"
                     android:maxLines="1"
                     android:ellipsize="end" />
@@ -79,7 +67,7 @@
                 android:layout_weight="1"
                 android:orientation="vertical"
                 android:gravity="center"
-                android:padding="8dp"
+                android:padding="4dp"
                 android:background="@drawable/scan_tile_bg"
                 android:clickable="true"
                 android:focusable="true">
@@ -94,10 +82,10 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
+                    android:layout_marginTop="3dp"
                     android:text="@string/dashboard_tile_qr"
                     android:textColor="@color/foqos_on_surface"
-                    android:textSize="11sp"
+                    android:textSize="10sp"
                     android:textStyle="bold"
                     android:maxLines="1"
                     android:ellipsize="end" />
@@ -116,11 +104,11 @@
                 android:id="@+id/widgetOpenBarcode"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_marginEnd="8dp"
+                android:layout_marginEnd="6dp"
                 android:layout_weight="1"
                 android:orientation="vertical"
                 android:gravity="center"
-                android:padding="8dp"
+                android:padding="4dp"
                 android:background="@drawable/scan_tile_bg"
                 android:clickable="true"
                 android:focusable="true">
@@ -135,10 +123,10 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
+                    android:layout_marginTop="3dp"
                     android:text="@string/dashboard_tile_barcode"
                     android:textColor="@color/foqos_on_surface"
-                    android:textSize="11sp"
+                    android:textSize="10sp"
                     android:textStyle="bold"
                     android:maxLines="1"
                     android:ellipsize="end" />
@@ -151,7 +139,7 @@
                 android:layout_weight="1"
                 android:orientation="vertical"
                 android:gravity="center"
-                android:padding="8dp"
+                android:padding="4dp"
                 android:background="@drawable/scan_tile_bg"
                 android:clickable="true"
                 android:focusable="true">
@@ -166,89 +154,14 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
+                    android:layout_marginTop="3dp"
                     android:text="@string/widget_hub_focus_now"
                     android:textColor="@color/foqos_on_surface"
-                    android:textSize="11sp"
+                    android:textSize="10sp"
                     android:textStyle="bold"
                     android:maxLines="1"
                     android:ellipsize="end" />
             </LinearLayout>
-        </LinearLayout>
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/widgetExpandedRow"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:orientation="horizontal"
-        android:gravity="center"
-        android:baselineAligned="false"
-        android:visibility="gone"
-        android:weightSum="2">
-
-        <LinearLayout
-            android:id="@+id/widgetOpenNfcWrite"
-            android:layout_width="0dp"
-            android:layout_height="44dp"
-            android:layout_marginEnd="8dp"
-            android:layout_weight="1"
-            android:orientation="horizontal"
-            android:gravity="center"
-            android:padding="8dp"
-            android:background="@drawable/scan_tile_bg"
-            android:clickable="true"
-            android:focusable="true">
-
-            <ImageView
-                android:id="@+id/widgetOpenNfcWriteIcon"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:contentDescription="@null"
-                android:src="@drawable/widget_nfc_24" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"
-                android:text="@string/widget_hub_nfc"
-                android:textColor="@color/foqos_on_surface"
-                android:textSize="11sp"
-                android:textStyle="bold"
-                android:maxLines="1"
-                android:ellipsize="end" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/widgetOpenBlockedNotifications"
-            android:layout_width="0dp"
-            android:layout_height="44dp"
-            android:layout_weight="1"
-            android:orientation="horizontal"
-            android:gravity="center"
-            android:padding="8dp"
-            android:background="@drawable/scan_tile_bg"
-            android:clickable="true"
-            android:focusable="true">
-
-            <ImageView
-                android:id="@+id/widgetOpenBlockedNotificationsIcon"
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:contentDescription="@null"
-                android:src="@drawable/widget_notifications_24" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"
-                android:text="@string/widget_hub_blocked_notifications"
-                android:textColor="@color/foqos_on_surface"
-                android:textSize="11sp"
-                android:textStyle="bold"
-                android:maxLines="1"
-                android:ellipsize="end" />
         </LinearLayout>
     </LinearLayout>
 </LinearLayout>
