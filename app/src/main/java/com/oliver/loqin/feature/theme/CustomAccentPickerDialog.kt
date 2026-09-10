@@ -77,18 +77,6 @@ object CustomAccentPickerDialog {
             )
             setText(String.format("#%06X", 0xFFFFFF and initial))
         }
-        hexInput.addTextChangedListener(object : TextWatcher {
-            override fun afterTextChanged(s: Editable?) {
-                if (updatingHex) return
-                val parsed = s?.toString()?.trim()?.let { runCatching { it.toColorInt() }.getOrNull() }
-                if (parsed != null) {
-                    selected = parsed
-                    pad.setColor(parsed)
-                }
-            }
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-        })
 
         // Single drag-through spectrum (hue horizontally, white→hue→black vertically)
         val pad = SpectrumPadView(context).apply {
@@ -111,6 +99,18 @@ object CustomAccentPickerDialog {
         }
         root.addView(pad)
         root.addView(hexInput)
+        hexInput.addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(s: Editable?) {
+                if (updatingHex) return
+                val parsed = s?.toString()?.trim()?.let { runCatching { it.toColorInt() }.getOrNull() }
+                if (parsed != null) {
+                    selected = parsed
+                    pad.setColor(parsed)
+                }
+            }
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+        })
 
         val dialog = AlertDialog.Builder(context)
             .setTitle(context.getString(R.string.pref_accent_custom_title))
