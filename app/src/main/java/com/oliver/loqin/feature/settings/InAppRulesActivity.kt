@@ -360,19 +360,7 @@ class InAppRulesActivity : AppCompatActivity() {
             getAppStatus(group.packageName)
         }
 
-        val resolvedTitle = if (isYouTube && enabledYtVariants.isNotEmpty()) {
-            val nonOfficial = enabledYtVariants.filter { it.packageName != "com.google.android.youtube" }
-            val hasOfficial = enabledYtVariants.any { it.packageName == "com.google.android.youtube" }
-            when {
-                nonOfficial.isNotEmpty() && hasOfficial ->
-                    "YouTube (${nonOfficial.joinToString(" & ") { it.label }} & Official)"
-                nonOfficial.isNotEmpty() ->
-                    "YouTube (${nonOfficial.joinToString(" & ") { it.label }})"
-                else -> getString(group.titleRes)
-            }
-        } else {
-            getString(group.titleRes)
-        }
+        val resolvedTitle = getString(group.titleRes)
 
         val resolvedIcon = if (isYouTube && enabledYtVariants.isNotEmpty()) {
             enabledYtVariants.first().icon ?: appIcon(group.packageName)
