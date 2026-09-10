@@ -213,7 +213,7 @@ class SpectrumPadView @JvmOverloads constructor(
         val cx = thumbScreen[0] + spectrumX * width
         val thumbY = thumbScreen[1] + spectrumY * height
         val x = (cx - w / 2f).coerceIn(0f, screenW - w.toFloat())
-        val y = (thumbY - h - 4 * resources.displayMetrics.density).coerceAtLeast(0f)
+        val y = (thumbY - h).coerceAtLeast(0f)
         popup.update(x.toInt(), y.toInt(), w, h)
     }
 
