@@ -54,9 +54,6 @@
     <string name="accent_orange">Orange</string>
     <string name="accent_amber">Amber</string>
     <string name="accent_gray">Gray</string>
-    <string name="color_channel_r">R</string>
-    <string name="color_channel_g">G</string>
-    <string name="color_channel_b">B</string>
 
     <!-- ====================================================== -->
     <!-- QR and barcode sharing -->

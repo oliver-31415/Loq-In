@@ -96,5 +96,7 @@
     <!-- SETTINGS - Blocking and feature preferences -->
     <!-- ====================================================== -->
     <string name="pref_block_notifications_title">Hide blocked app notifications</string>
+    <string name="color_hex_hint">Hex code (e.g. #6BA6E8)</string>
+    <string name="color_hex_invalid">Invalid hex code</string>
 
 </resources>

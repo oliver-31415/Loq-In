@@ -19,7 +19,6 @@
 package com.oliver.loqin.feature.settings
 
 import android.content.Context
-import android.content.res.ColorStateList
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
@@ -29,7 +28,6 @@ import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.View
 import android.widget.FrameLayout
-import android.widget.SeekBar
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -47,6 +45,7 @@ import com.oliver.loqin.ui.EdgeToEdgeUtils
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.dialog.LoqInDialogOption
 import com.oliver.loqin.ui.dialog.showLoqInOptionDialog
+import com.oliver.loqin.ui.dialog.styledDialogEditText
 import com.oliver.loqin.util.LocaleHelper
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.color.MaterialColors
@@ -279,62 +278,10 @@ class AppearanceActivity : AppCompatActivity() {
     }
 
     private fun showCustomColorPicker() {
-        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-        val defaultAccent = AccentColor.getAccentColorInt(this)
-        val defaultHex = String.format("#%06X", 0xFFFFFF and defaultAccent)
-        val initialHex = prefs.getString("pref_accent_custom", defaultHex) ?: defaultHex
-        var color = try { initialHex.toColorInt() } catch (_: IllegalArgumentException) { defaultAccent }
-
-        val view = layoutInflater.inflate(R.layout.dialog_color_picker, FrameLayout(this), false)
-        val preview = view.findViewById<View>(R.id.colorPreview)
-        val sliderR = view.findViewById<SeekBar>(R.id.sliderR)
-        val sliderG = view.findViewById<SeekBar>(R.id.sliderG)
-        val sliderB = view.findViewById<SeekBar>(R.id.sliderB)
-
-        val accentList = ColorStateList.valueOf(defaultAccent)
-        sliderR.thumbTintList = accentList
-        sliderR.progressTintList = accentList
-        sliderG.thumbTintList = accentList
-        sliderG.progressTintList = accentList
-        sliderB.thumbTintList = accentList
-        sliderB.progressTintList = accentList
-
-        fun updatePreviewFromColor() { preview.setBackgroundColor(color) }
-        fun updateColorFromSliders() {
-            color = Color.rgb(sliderR.progress, sliderG.progress, sliderB.progress)
-            updatePreviewFromColor()
+        com.oliver.loqin.feature.theme.CustomAccentPickerDialog.show(this) {
+            updateThemeColorSummary()
+            recreate()
         }
-
-        sliderR.max = 255; sliderG.max = 255; sliderB.max = 255
-        sliderR.progress = Color.red(color)
-        sliderG.progress = Color.green(color)
-        sliderB.progress = Color.blue(color)
-
-        val listener = object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) { updateColorFromSliders() }
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {}
-        }
-        sliderR.setOnSeekBarChangeListener(listener)
-        sliderG.setOnSeekBarChangeListener(listener)
-        sliderB.setOnSeekBarChangeListener(listener)
-        updatePreviewFromColor()
-
-        AlertDialog.Builder(this)
-            .setTitle(getString(R.string.pref_accent_custom_title))
-            .setView(view)
-            .setNegativeButton(getString(R.string.cancel), null)
-            .setPositiveButton(getString(R.string.ok)) { _, _ ->
-                val hex = String.format("#%08X", color)
-                prefs.edit {
-                    putString("pref_accent", "custom")
-                    putString("pref_accent_custom", hex)
-                }
-                updateThemeColorSummary()
-                recreate()
-            }
-            .create()
-            .show()
     }
 
     private fun showLanguageDialog() {

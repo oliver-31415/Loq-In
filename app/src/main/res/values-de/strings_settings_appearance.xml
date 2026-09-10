@@ -93,5 +93,7 @@
     </string-array>
 
     <string name="pref_block_notifications_title">Benachrichtigungen blockierter Apps ausblenden</string>
+    <string name="color_hex_hint">Hex-Code (z. B. #6BA6E8)</string>
+    <string name="color_hex_invalid">Ungültiger Hex-Code</string>
 
 </resources>
