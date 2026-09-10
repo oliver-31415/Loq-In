@@ -63,8 +63,6 @@
     <string name="in_app_status_disabled">Deaktiviert</string>
     <string name="in_app_status_installed">Installiert</string>
     <string name="in_app_rules_facebook">Facebook</string>
-    <string name="in_app_rules_tiktok">TikTok</string>
-    <string name="in_app_rules_for_you">For-You-Feed</string>
     <string name="in_app_rules_empty_installed">Derzeit sind keine unterstützten Apps installiert.</string>
     <string name="in_app_rules_empty_installed_summary">Hier werden nur installierte unterstützte Apps angezeigt. Installiere eine unterstützte App und öffne diesen Screen erneut, um ihre In-App-Bereiche zu verwalten.</string>
 

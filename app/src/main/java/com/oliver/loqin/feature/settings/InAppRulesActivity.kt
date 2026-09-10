@@ -689,7 +689,6 @@ class InAppRulesActivity : AppCompatActivity() {
         "com.twitter.android" -> R.drawable.share_24
         "com.snapchat.android" -> R.drawable.photo_camera_24
         "com.facebook.katana" -> R.drawable.share_24
-        "com.zhiliaoapp.musically" -> R.drawable.widget_play_24
         else -> R.drawable.apps_24
     }
 
@@ -873,10 +872,8 @@ class InAppRulesActivity : AppCompatActivity() {
             "com.instagram.android",
             listOf(
                 Surface(R.string.in_app_surface_reels_label, BlockingToggleKeys.KEY_BLOCK_IG_REELS, "ig:reels", R.string.in_app_status_experimental),
-                Surface(R.string.in_app_surface_explore_label, BlockingToggleKeys.KEY_BLOCK_IG_EXPLORE, "ig:explore", R.string.in_app_status_experimental),
                 Surface(R.string.in_app_surface_search_label, BlockingToggleKeys.KEY_BLOCK_IG_SEARCH, "ig:search", R.string.in_app_status_experimental),
-                Surface(R.string.in_app_surface_stories_label, BlockingToggleKeys.KEY_BLOCK_IG_STORIES, "ig:stories", R.string.in_app_status_experimental),
-                Surface(R.string.in_app_surface_comments_label, BlockingToggleKeys.KEY_BLOCK_IG_COMMENTS, "ig:comments", R.string.in_app_status_experimental)
+                Surface(R.string.in_app_surface_stories_label, BlockingToggleKeys.KEY_BLOCK_IG_STORIES, "ig:stories", R.string.in_app_status_experimental)
             )
         ),
         AppGroup(
@@ -905,11 +902,6 @@ class InAppRulesActivity : AppCompatActivity() {
             listOf(
                 Surface(R.string.in_app_surface_reels_label, BlockingToggleKeys.KEY_BLOCK_FB_REELS, "fb:reels", R.string.in_app_status_experimental)
             )
-        ),
-        AppGroup(
-            R.string.in_app_rules_tiktok,
-            "com.zhiliaoapp.musically",
-            listOf(Surface(R.string.in_app_rules_for_you, null, null, R.string.in_app_status_planned))
         )
     )
 

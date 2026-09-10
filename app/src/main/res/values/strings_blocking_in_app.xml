@@ -63,8 +63,6 @@
     <string name="in_app_status_disabled">Disabled</string>
     <string name="in_app_status_installed">Installed</string>
     <string name="in_app_rules_facebook">Facebook</string>
-    <string name="in_app_rules_tiktok">TikTok</string>
-    <string name="in_app_rules_for_you">For You feed</string>
     <string name="in_app_rules_empty_installed">No supported apps are installed right now.</string>
     <string name="in_app_rules_empty_installed_summary">Only installed supported apps are shown here. Install a supported app and reopen this screen to manage its in-app sections.</string>
 

@@ -96,10 +96,8 @@ object InAppRuleStore {
         ),
         "com.instagram.android" to setOf(
             BlockingToggleKeys.KEY_BLOCK_IG_REELS,
-            BlockingToggleKeys.KEY_BLOCK_IG_EXPLORE,
             BlockingToggleKeys.KEY_BLOCK_IG_SEARCH,
-            BlockingToggleKeys.KEY_BLOCK_IG_STORIES,
-            BlockingToggleKeys.KEY_BLOCK_IG_COMMENTS
+            BlockingToggleKeys.KEY_BLOCK_IG_STORIES
         ),
         "com.facebook.katana" to setOf(
             BlockingToggleKeys.KEY_BLOCK_FB_REELS

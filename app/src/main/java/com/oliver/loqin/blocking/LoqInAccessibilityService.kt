@@ -667,10 +667,8 @@ class LoqInAccessibilityService : AccessibilityService() {
 
             pkg == PACKAGE_INSTAGRAM ->
                 inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_IG_REELS) ||
-                    inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_IG_EXPLORE) ||
                     inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_IG_SEARCH) ||
-                    inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_IG_STORIES) ||
-                    inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_IG_COMMENTS)
+                    inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_IG_STORIES)
 
             pkg == PACKAGE_FACEBOOK || pkg == PACKAGE_FACEBOOK_LITE ->
                 inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_FB_REELS)
@@ -6240,10 +6238,11 @@ class LoqInAccessibilityService : AccessibilityService() {
             val searchHintNow = recentSurfaceHintMatches(pkg, "ig:search", now)
 
             val blockIgReelsEnabled = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_IG_REELS)
-            val blockIgExploreEnabled = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_IG_EXPLORE)
+            // Explore and Comments blocking were removed; kept disabled regardless of stored prefs.
+            val blockIgExploreEnabled = false
             val blockIgSearchEnabled = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_IG_SEARCH)
             val blockIgStoriesEnabled = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_IG_STORIES)
-            val blockIgCommentsEnabled = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_IG_COMMENTS)
+            val blockIgCommentsEnabled = false
 
             // Deterministic Reels signal, Scrolless-style (GPL-3.0): the Reels view pager
             // clips_viewer_view_pager resolves through Android's indexed view-ID lookup and
