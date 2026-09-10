@@ -24,24 +24,20 @@ import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Typeface
-import android.graphics.drawable.GradientDrawable
 import android.nfc.NfcAdapter
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
-import android.text.InputType
 import android.text.SpannableStringBuilder
 import android.text.Spanned
 import android.text.style.StyleSpan
-import android.view.Gravity
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.AutoCompleteTextView
 import android.widget.Button
-import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.ScrollView
@@ -68,6 +64,7 @@ import com.oliver.loqin.ui.EdgeToEdgeUtils
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.showWarnPill
 import com.oliver.loqin.ui.LoqInDropdownAdapter
+import com.oliver.loqin.ui.dialog.ClockDurationDialSheet
 import com.oliver.loqin.ui.dialog.showAccented
 import com.oliver.loqin.util.EditingLockGuard
 import com.oliver.loqin.util.LocaleHelper
@@ -76,7 +73,6 @@ import com.google.android.material.color.MaterialColors
 import com.google.android.material.shape.MaterialShapeDrawable
 import com.google.android.material.shape.ShapeAppearanceModel
 import com.google.android.material.textfield.TextInputLayout
-import java.util.Locale
 import kotlinx.coroutines.launch
 
 class NfcWriterActivity : AppCompatActivity() {
@@ -524,100 +520,29 @@ class NfcWriterActivity : AppCompatActivity() {
         val savedMinutes = prefs.getString("pref_nfc_unlock_minutes", "10")
             ?.toIntOrNull()
             ?.takeIf { it in 1..1440 }
+            ?: 10
 
-        val accent = AccentColor.getAccentColorInt(this)
-        val input = EditText(this).apply {
-            inputType = InputType.TYPE_CLASS_NUMBER
-            hint = getString(R.string.temp_enable_duration_custom_hint)
-            isSingleLine = true
-            savedMinutes?.let { setText(String.format(Locale.ROOT, "%d", it)) }
-            setSelectAllOnFocus(true)
-            backgroundTintList = ColorStateList.valueOf(accent)
-            layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            )
-        }
-
-        fun presetPill(minutes: Int): TextView {
-            return TextView(this).apply {
-                text = getString(R.string.temp_duration_preset_minutes, minutes)
-                textSize = 14f
-                gravity = Gravity.CENTER
-                setTextColor(accent)
-                setPadding(dp(9), dp(6), dp(9), dp(6))
-                background = GradientDrawable().apply {
-                    cornerRadius = dp(18).toFloat()
-                    setColor(Color.TRANSPARENT)
-                    setStroke(dp(1), accent)
-                }
-                setOnClickListener {
-                    input.setText(String.format(Locale.getDefault(), "%d", minutes))
-                    input.setSelection(input.text?.length ?: 0)
-                }
-            }
-        }
-
-        val presetRow = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-        }
-        listOf(5, 10, 15, 30, 60).forEachIndexed { index, minutes ->
-            presetRow.addView(
-                presetPill(minutes),
-                LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
-                    if (index > 0) marginStart = dp(4)
-                }
-            )
-        }
-
-        val container = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(24), 0, dp(24), 0)
-            addView(TextView(this@NfcWriterActivity).apply {
-                text = getString(R.string.nfc_time_custom_message)
-                textSize = 14f
-                setLineSpacing(0f, 1.15f)
-            })
-            addView(TextView(this@NfcWriterActivity).apply {
-                text = getString(R.string.temp_duration_quick_presets)
-                textSize = 12.5f
-                alpha = 0.74f
-                setPadding(0, dp(9), 0, dp(4))
-            })
-            addView(presetRow, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
-            addView(input, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
-                topMargin = dp(8)
-            })
-        }
-
-        val dialog = AlertDialog.Builder(this)
-            .setTitle(R.string.nfc_time_custom_title)
-            .setView(container)
-            .setNegativeButton(R.string.cancel, null)
-            .setPositiveButton(R.string.ok, null)
-            .showAccented()
-
-        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-            val mins = input.text?.toString()?.trim()?.toIntOrNull()
-            if (mins == null || mins !in 1..1440) {
-                input.showWarnPill(R.string.nfc_time_custom_invalid)
-                return@setOnClickListener
-            }
-
-            prefs.edit { putString("pref_nfc_unlock_minutes", mins.toString()) }
-            ddTime.setText(
-                resources.getQuantityString(R.plurals.nfc_time_custom_label, mins, mins),
-                false
-            )
-            val selectedAction = ddAction.text?.toString().orEmpty()
-            updateTimeVisibilityForAction(selectedAction)
-            updateActionHintForSelection(selectedAction)
-            dialog.dismiss()
-        }
+        ClockDurationDialSheet.show(
+            activity = this,
+            title = getString(R.string.nfc_time_custom_title),
+            subtitle = getString(R.string.nfc_time_custom_message),
+            maxMinutes = 1440,
+            initialMinutes = savedMinutes,
+            applyLabel = { minutes ->
+                resources.getQuantityString(R.plurals.nfc_time_custom_label, minutes, minutes)
+            },
+            onPicked = { mins ->
+                prefs.edit { putString("pref_nfc_unlock_minutes", mins.toString()) }
+                ddTime.setText(
+                    resources.getQuantityString(R.plurals.nfc_time_custom_label, mins, mins),
+                    false
+                )
+                val selectedAction = ddAction.text?.toString().orEmpty()
+                updateTimeVisibilityForAction(selectedAction)
+                updateActionHintForSelection(selectedAction)
+            },
+        )
     }
-
-    private fun dp(value: Int): Int = (value * resources.displayMetrics.density + 0.5f).toInt()
 
     private fun updateTimeVisibilityForAction(selectedActionLabel: String) {
         val isTempDisable = selectedActionLabel == getString(R.string.nfc_action_temp_disable)

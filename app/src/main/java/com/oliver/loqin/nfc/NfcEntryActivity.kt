@@ -19,22 +19,12 @@
 package com.oliver.loqin.nfc
 
 import android.app.Activity
-import android.content.res.ColorStateList
-import android.graphics.Color
-import android.graphics.drawable.GradientDrawable
-import android.text.InputType
-import android.util.TypedValue
-import android.view.Gravity
-import android.view.ViewGroup
-import android.widget.EditText
 import android.content.Intent
 import android.net.Uri
 import android.nfc.NdefMessage
 import android.nfc.NfcAdapter
 import android.nfc.tech.Ndef
 import android.os.Bundle
-import android.widget.LinearLayout
-import android.widget.TextView
 import android.widget.Toast
 import androidx.core.content.IntentCompat
 import androidx.core.net.toUri
@@ -55,12 +45,9 @@ import com.oliver.loqin.data.prefs.ProfileStore
 import com.oliver.loqin.data.prefs.SwitchModeStore
 import com.oliver.loqin.data.prefs.TempEnableCountStore
 import com.oliver.loqin.feature.qr.QrScanActivity
-import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.ui.ThemeUtils
-import com.oliver.loqin.ui.dialog.Dialogs
-import com.oliver.loqin.ui.dialog.showAccented
+import com.oliver.loqin.ui.dialog.ClockDurationDialSheet
 import com.oliver.loqin.util.ScanFeedback
-import java.util.Locale
 
 /**
  * NFC/deep-link entry point.
@@ -774,108 +761,28 @@ class NfcEntryActivity : Activity() {
         messageRes: Int,
         applyDuration: (Long) -> Unit
     ) {
-        val accent = AccentColor.getAccentColorInt(this)
-        val input = EditText(this).apply {
-            inputType = InputType.TYPE_CLASS_NUMBER
-            hint = getString(R.string.temp_enable_duration_custom_hint)
-            isSingleLine = true
-            backgroundTintList = ColorStateList.valueOf(accent)
-            layoutParams = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            )
-        }
-
-        fun presetChip(minutes: Long): TextView {
-            return TextView(this).apply {
-                text = getString(R.string.temp_duration_preset_minutes, minutes)
-                textSize = 14f
-                gravity = Gravity.CENTER
-                setTextColor(accent)
-                setPadding(dp(9), dp(6), dp(9), dp(6))
-                background = GradientDrawable().apply {
-                    cornerRadius = dp(18).toFloat()
-                    setColor(Color.TRANSPARENT)
-                    setStroke(dp(1), accent)
+        ClockDurationDialSheet.show(
+            activity = this,
+            title = getString(R.string.temp_enable_duration_custom_title),
+            subtitle = getString(messageRes, label),
+            maxMinutes = 1440,
+            initialMinutes = 25,
+            applyLabel = { minutes ->
+                val durLabel = if (minutes < 60) {
+                    "$minutes min"
+                } else {
+                    val h = minutes / 60
+                    val m = minutes % 60
+                    if (m == 0) "${h}h" else "${h}h ${m}m"
                 }
-                setOnClickListener {
-                    input.setText(String.format(Locale.getDefault(), "%d", minutes))
-                    input.setSelection(input.text?.length ?: 0)
-                }
-            }
-        }
-
-        val presetRow = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-        }
-        listOf(5L, 10L, 15L, 30L, 60L).forEachIndexed { index, minutes ->
-            presetRow.addView(
-                presetChip(minutes),
-                LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
-                    if (index > 0) marginStart = dp(4)
-                }
-            )
-        }
-
-        val inputContainer = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            val horizontalPadding = dp(24)
-            setPadding(horizontalPadding, 0, horizontalPadding, 0)
-            addView(TextView(this@NfcEntryActivity).apply {
-                text = getString(messageRes, label)
-                textSize = 14f
-                setLineSpacing(0f, 1.15f)
-            })
-            addView(TextView(this@NfcEntryActivity).apply {
-                text = getString(R.string.temp_duration_quick_presets)
-                textSize = 12.5f
-                alpha = 0.74f
-                setPadding(0, dp(9), 0, dp(4))
-            })
-            addView(presetRow, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
-            addView(input, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
-                topMargin = dp(8)
-            })
-        }
-
-        val dialog = Dialogs.builder(this)
-            .setTitle(getString(R.string.temp_enable_duration_custom_title))
-            .setView(inputContainer)
-            .setNegativeButton(R.string.cancel) { _, _ -> finish() }
-            .setPositiveButton(R.string.ok, null)
-            .setOnCancelListener { finish() }
-            .showAccented()
-
-        centerTempDurationDialog(dialog)
-
-        dialog.getButton(androidx.appcompat.app.AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-            val selectedMinutes = input.text?.toString()?.trim()?.toLongOrNull()
-            if (selectedMinutes == null || selectedMinutes !in 1L..1440L) {
-                toast(getString(R.string.temp_enable_duration_invalid))
-                return@setOnClickListener
-            }
-
-            applyDuration(selectedMinutes * 60_000L)
-            dialog.dismiss()
-            finish()
-        }
-    }
-
-    private fun dp(value: Int): Int = TypedValue.applyDimension(
-        TypedValue.COMPLEX_UNIT_DIP,
-        value.toFloat(),
-        resources.displayMetrics
-    ).toInt()
-
-    private fun centerTempDurationDialog(dialog: androidx.appcompat.app.AlertDialog) {
-        dialog.window?.let { window ->
-            window.setGravity(Gravity.CENTER)
-            val attrs = window.attributes
-            attrs.gravity = Gravity.CENTER
-            attrs.y = 0
-            window.attributes = attrs
-        }
+                getString(R.string.temp_duration_apply, durLabel)
+            },
+            onPicked = { minutes ->
+                applyDuration(minutes * 60_000L)
+                finish()
+            },
+            onDismissed = { finish() },
+        )
     }
 
     private fun appendScanActionApplied(

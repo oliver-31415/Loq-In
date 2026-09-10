@@ -79,6 +79,7 @@
             android:background="@drawable/bg_roundel_neutral">
 
             <ImageView
+                android:id="@+id/ivClose"
                 android:layout_width="16dp"
                 android:layout_height="16dp"
                 android:layout_gravity="center"

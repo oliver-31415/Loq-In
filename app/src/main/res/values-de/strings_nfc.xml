@@ -93,6 +93,7 @@
     <string name="temp_enable_duration_invalid">Minuten eingeben, max. 24 Std.</string>
     <string name="temp_duration_quick_presets">Schnellauswahl</string>
     <string name="temp_duration_preset_minutes">%1$dm</string>
+    <string name="temp_duration_apply">Für %1$s festlegen</string>
     <string name="nfc_time_5_min">5 Minuten</string>
     <string name="nfc_time_10_min">10 Minuten</string>
     <string name="nfc_time_15_min">15 Minuten</string>

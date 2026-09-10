@@ -131,6 +131,7 @@ import com.oliver.loqin.feature.usage.QuickLimitDialogs
 import com.oliver.loqin.feature.stats.StatsFormat
 import com.oliver.loqin.nfc.NfcWriterActivity
 import com.oliver.loqin.theme.AccentColor
+import com.oliver.loqin.ui.dialog.ClockDurationDialSheet
 import com.oliver.loqin.ui.dialog.Dialogs
 import com.oliver.loqin.ui.dialog.EmergencyPinDialog
 import com.oliver.loqin.ui.dialog.styledDialogEditText
@@ -169,7 +170,6 @@ import java.text.DateFormat
 import com.oliver.loqin.data.prefs.BlockedTimeStore
 import com.oliver.loqin.data.prefs.BlockCountStore
 import com.oliver.loqin.ui.widgets.FoqosHeatmapView
-import com.oliver.loqin.ui.widgets.ClockDurationDialView
 import kotlin.concurrent.thread
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -1646,116 +1646,34 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showClockDialDurationPicker(mode: TempSheetMode, onPicked: (Int) -> Unit) {
-        val accent = AccentColor.getAccentColorInt(this)
-        val surfaceVariant = ContextCompat.getColor(this, R.color.foqos_surface_variant)
-        val onSurface = ContextCompat.getColor(this, R.color.foqos_on_surface)
-        val tint = ColorStateList.valueOf(accent)
-
-        val dialSheet = BottomSheetDialog(this)
-        val parent = findViewById<ViewGroup>(android.R.id.content)
-        val view = layoutInflater.inflate(R.layout.bottom_sheet_temp_clock_dial, parent, false)
-        dialSheet.setContentView(view)
-        dialSheet.prepareExpandedSheet()
-
-        val clockDialView = view.findViewById<ClockDurationDialView>(R.id.clockDialView)
-        val tvDialDuration = view.findViewById<TextView>(R.id.tvDialDuration)
-        val tvDialUnit = view.findViewById<TextView>(R.id.tvDialUnit)
-        val tvDialEndTime = view.findViewById<TextView>(R.id.tvDialEndTime)
-        val btnApplyDuration = view.findViewById<MaterialButton>(R.id.btnApplyDuration)
-        val btnClose = view.findViewById<View>(R.id.btnClose)
-
-        view.findViewById<View>(R.id.roundelBg)?.background = GradientDrawable().apply {
-            shape = GradientDrawable.OVAL
-            setColor(AccentColor.getAccentContainerColorInt(this@MainActivity))
-        }
-        view.findViewById<ImageView>(R.id.ivIcon)?.imageTintList = tint
-
         val maxAllowed = if (mode == TempSheetMode.DISABLE) {
-            val profile = ProfileStore.getCurrent(this@MainActivity).orEmpty().trim().ifEmpty { "Default" }
-            TempPauseStore.maxAllowedDurationMinutes(this@MainActivity, profile)
+            val profile = ProfileStore.getCurrent(this).orEmpty().trim().ifEmpty { "Default" }
+            TempPauseStore.maxAllowedDurationMinutes(this, profile)
         } else {
             180
         }
-        clockDialView.accentColor = accent
-        clockDialView.minMinutes = 0
-        clockDialView.maxMinutes = minOf(180, maxAllowed).coerceAtLeast(0)
-        val initialMinutes = if (clockDialView.maxMinutes == 0) 0 else minOf(25, clockDialView.maxMinutes).coerceAtLeast(1)
-        clockDialView.setDurationMinutes(initialMinutes, animate = false)
-
-        val timeFormat = java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT)
-        fun formatDurationString(minutes: Int): String {
-            return if (minutes < 60) {
-                "$minutes min"
-            } else {
-                val h = minutes / 60
-                val m = minutes % 60
-                if (m == 0) "${h}h" else "${h}h ${m}m"
-            }
-        }
-
-        val onAccent = if (ColorUtils.calculateLuminance(accent) > 0.5) Color.BLACK else Color.WHITE
-        btnApplyDuration.backgroundTintList = ColorStateList.valueOf(accent)
-        btnApplyDuration.setTextColor(onAccent)
-
-        fun updateDialDisplay(minutes: Int) {
-            if (minutes <= 0) {
-                tvDialDuration.text = "0"
-                tvDialUnit.text = getString(R.string.minutes).uppercase()
-                tvDialEndTime.text = getString(R.string.tile_temp_subtitle_choose)
-                btnApplyDuration.isEnabled = false
-                btnApplyDuration.alpha = 0.45f
-                btnApplyDuration.text = getString(R.string.tile_temp_subtitle_choose)
-                return
-            }
-
-            btnApplyDuration.isEnabled = true
-            btnApplyDuration.alpha = 1.0f
-
-            if (minutes < 60) {
-                tvDialDuration.text = "$minutes"
-                tvDialUnit.text = getString(R.string.minutes).uppercase()
-            } else {
-                val h = minutes / 60
-                val m = minutes % 60
-                tvDialDuration.text = if (m == 0) "${h}h" else "${h}h ${m}m"
-                tvDialUnit.text = getString(R.string.tile_temp_title_plain).uppercase()
-            }
-
-            val endTimeMillis = System.currentTimeMillis() + minutes * 60_000L
-            val formattedEndTime = timeFormat.format(java.util.Date(endTimeMillis))
-            tvDialEndTime.text = getString(R.string.dashboard_temp_ends_at, formattedEndTime)
-
-            val durLabel = formatDurationString(minutes)
-            btnApplyDuration.text = if (mode == TempSheetMode.DISABLE) {
-                getString(R.string.dashboard_action_lock_in_duration, durLabel)
-            } else {
-                getString(R.string.dashboard_action_enable_duration, durLabel)
-            }
-        }
-
-        updateDialDisplay(initialMinutes)
-
-        clockDialView.onDurationChanged = { mins ->
-            updateDialDisplay(mins)
-        }
-
-        btnApplyDuration.setOnClickListener {
-            val mins = clockDialView.durationMinutes
-            if (mins > maxAllowed) {
-                btnApplyDuration.showWarnPill(getString(R.string.temp_pause_exceeds_limit, maxAllowed))
-                return@setOnClickListener
-            }
-            if (mins > 0) {
-                dialSheet.dismiss()
-                onPicked(mins)
-            }
-        }
-
-        btnClose.setOnClickListener {
-            dialSheet.dismiss()
-        }
-
-        dialSheet.show()
+        ClockDurationDialSheet.show(
+            activity = this,
+            title = getString(R.string.custom_minutes_title),
+            subtitle = getString(R.string.tile_temp_subtitle_choose),
+            maxMinutes = minOf(180, maxAllowed).coerceAtLeast(0),
+            initialMinutes = 25,
+            applyLabel = { minutes ->
+                val durLabel = if (minutes < 60) {
+                    "$minutes min"
+                } else {
+                    val h = minutes / 60
+                    val m = minutes % 60
+                    if (m == 0) "${h}h" else "${h}h ${m}m"
+                }
+                getString(
+                    if (mode == TempSheetMode.DISABLE) R.string.dashboard_action_lock_in_duration
+                    else R.string.dashboard_action_enable_duration,
+                    durLabel
+                )
+            },
+            onPicked = onPicked,
+        )
     }
 
     private fun showCustomTempMinutesInput(onPicked: (Int) -> Unit) {
