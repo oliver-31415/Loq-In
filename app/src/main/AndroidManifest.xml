@@ -517,6 +517,11 @@
             android:name=".feature.about.PrivacyReportActivity"
             android:exported="false" />
 
+        <!-- Account hub (top-right button on Home) -->
+        <activity
+            android:name=".feature.account.AccountActivity"
+            android:exported="false" />
+
         <!-- Package-added receiver to refresh app lists after installs -->
         <receiver
             android:name=".platform.receiver.apps.PackageAddedReceiver"

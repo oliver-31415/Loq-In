@@ -119,6 +119,7 @@ import com.oliver.loqin.feature.settings.ManageBarcodesActivity
 import com.oliver.loqin.feature.settings.ManageBlockedWebsitesActivity
 import com.oliver.loqin.feature.settings.PermissionsActivity
 import com.oliver.loqin.feature.settings.InAppRulesActivity
+import com.oliver.loqin.feature.account.AccountActivity
 import com.oliver.loqin.feature.settings.SettingsActivity
 import com.oliver.loqin.feature.settings.ToggleOptionsActivity
 import com.oliver.loqin.feature.settings.HomeModeDialogHelper
@@ -5058,6 +5059,10 @@ class MainActivity : AppCompatActivity() {
             }
             R.id.action_settings_gear -> {
                 SettingsActivity.openWithAccessCheck(this)
+                true
+            }
+            R.id.action_info -> {
+                AccountActivity.openWithAccessCheck(this)
                 true
             }
             else -> super.onOptionsItemSelected(item)

@@ -54,11 +54,21 @@
     <!-- Account screen -->
     <!-- ====================================================== -->
     <string name="account_title">Account</string>
+    <string name="loqin_account_locked_title">Open Account?</string>
+    <string name="account_restricted_open_message">Loq In is active. Account can still be viewed, but protection-related options cannot be changed until Loq In is turned off.</string>
+    <string name="account_open_restricted">Open Account</string>
+    <string name="account_section_activity_history">Activity &amp; history</string>
+    <string name="account_section_security_access">Security &amp; access</string>
+    <string name="account_section_setup_data">Setup &amp; data</string>
+    <string name="account_overview_title">Loq In overview</string>
+    <string name="account_overview_summary">Counters, schedules and actions at a glance</string>
+    <string name="account_keys_codes_title">My keys and codes</string>
+    <string name="account_keys_codes_summary">NFC tags, QR and barcode keys</string>
     <string name="account_disclaimer_title">Disclaimer</string>
     <string name="account_disclaimer_summary">What Loq In can and cannot do</string>
     <string name="account_disclaimer_body">Loq In helps you reduce distractions by blocking apps, websites and selected in-app content while protection is enabled. Blocking depends on system permissions (accessibility, usage access) and can be affected by battery optimization, device manufacturer behavior and app updates. Emergency unlock is intentionally limited. Loq In is provided as-is, without warranty; you remain responsible for complying with your device and service terms.</string>
     <string name="settings_account_title">Account</string>
-    <string name="settings_account_summary">Backup, emergency PIN &amp; sync</string>
+    <string name="settings_account_summary">Backup &amp; emergency PIN</string>
     <string name="pref_change_emergency_pin_title">Change emergency PIN</string>
     <string name="pref_change_emergency_pin_summary">Set or change the PIN required for Emergency Unlock</string>
     <string name="settings_backup_title">Backup</string>
