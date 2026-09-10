@@ -115,10 +115,10 @@ class SpectrumPadView @JvmOverloads constructor(
         canvas.drawCircle(cx, cy, radius + thumbPaint.strokeWidth * 0.75f, thumbPaint)
     }
 
-    private fun updateFromTouch(x: Float, y: Float, rawX: Float, rawY: Float) {
+    private fun updateFromTouch(x: Float, y: Float) {
         spectrumX = (x / width).coerceIn(0f, 1f)
         spectrumY = (y / height).coerceIn(0f, 1f)
-        updateMagnifier(rawX, rawY)
+        updateMagnifier()
         onColorPicked?.invoke(spectrumX, spectrumY)
     }
 
@@ -127,11 +127,11 @@ class SpectrumPadView @JvmOverloads constructor(
             android.view.MotionEvent.ACTION_DOWN -> {
                 parent?.requestDisallowInterceptTouchEvent(true)
                 showMagnifier()
-                updateFromTouch(event.x, event.y, event.rawX, event.rawY)
+                updateFromTouch(event.x, event.y)
                 return true
             }
             android.view.MotionEvent.ACTION_MOVE -> {
-                updateFromTouch(event.x, event.y, event.rawX, event.rawY)
+                updateFromTouch(event.x, event.y)
                 return true
             }
             android.view.MotionEvent.ACTION_UP,
@@ -144,74 +144,76 @@ class SpectrumPadView @JvmOverloads constructor(
         return super.onTouchEvent(event)
     }
 
-    // --- Magnifier: floating swatch bubble with a connector stem, just above the finger ---
+    // --- Magnifier: compact swatch pin that rides the thumb with a pointed connector ---
 
     private var magnifierPopup: android.widget.PopupWindow? = null
-    private var magnifierColorGetter: (() -> Int)? = null
+    private val thumbScreen = IntArray(2)
 
     private fun buildMagnifierView(): View {
         val d = resources.displayMetrics.density
         val getter = { currentColor() }
-        magnifierColorGetter = getter
-        val stroke = (3 * d).toInt()
+        val circle = 48 * d
+        val stem = 10 * d
         return object : View(context) {
             override fun onDraw(canvas: Canvas) {
                 val w = width.toFloat()
-                val h = height.toFloat()
-                val r = (w - 2 * stroke) / 2f
-                val cy = r + stroke
-                val color = getter()
-                thumbFillPaint.color = color
+                val cy = circle / 2f
+                val r = circle / 2f - 2.5f * d
+                thumbFillPaint.color = getter()
                 canvas.drawCircle(w / 2f, cy, r, thumbFillPaint)
-                thumbPaint.strokeWidth = stroke.toFloat()
+                thumbPaint.strokeWidth = 2.5f * d
                 thumbPaint.color = Color.WHITE
                 canvas.drawCircle(w / 2f, cy, r, thumbPaint)
-                // connector stem from the bubble down to the picked point
-                thumbPaint.color = Color.WHITE
-                canvas.drawRect(w / 2f - stroke, cy + r - stroke * 0.5f, w / 2f + stroke, h, thumbPaint)
-                thumbPaint.color = 0x66000000
-                canvas.drawRect(w / 2f - stroke, cy + r - stroke * 0.5f, w / 2f + stroke + stroke * 0.5f, h, thumbPaint)
+                // pointed connector down to the thumb
+                val path = android.graphics.Path().apply {
+                    moveTo(w / 2f - 4 * d, cy + r - 0.5f * d)
+                    lineTo(w / 2f + 4 * d, cy + r - 0.5f * d)
+                    lineTo(w / 2f, cy + r + stem)
+                    close()
+                }
+                thumbFillPaint.color = Color.WHITE
+                canvas.drawPath(path, thumbFillPaint)
             }
         }.apply {
-            elevation = 8 * d
+            elevation = 10 * d
             outlineProvider = object : android.view.ViewOutlineProvider() {
                 override fun getOutline(view: View, outline: android.graphics.Outline) {
-                    val r = view.width / 2f
-                    outline.setOval(
-                        (r - r).toInt(), 0, view.width, (2 * r).toInt(),
-                    )
+                    outline.setOval(0, 0, view.width, (circle + 1).toInt())
                 }
             }
-            clipToOutline = false
         }
+    }
+
+    private fun magnifierSize(): IntArray {
+        val d = resources.displayMetrics.density
+        val w = (48 * d).toInt()
+        return intArrayOf(w, w + (10 * d).toInt())
     }
 
     private fun showMagnifier() {
         if (magnifierPopup != null) return
-        val d = resources.displayMetrics.density
-        val w = (60 * d).toInt()
-        val h = w + (14 * d).toInt()
+        val (w, h) = magnifierSize()
         val popup = android.widget.PopupWindow(buildMagnifierView(), w, h).apply {
             isTouchable = false
             isFocusable = false
             isOutsideTouchable = false
-            elevation = 8 * d
+            elevation = 10 * resources.displayMetrics.density
         }
         magnifierPopup = popup
         popup.showAtLocation(this, android.view.Gravity.NO_GRAVITY, 0, 0)
         popup.update(0, 0, w, h)
     }
 
-    private fun updateMagnifier(rawX: Float, rawY: Float) {
-        magnifierColorGetter?.invoke()
+    private fun updateMagnifier() {
         val popup = magnifierPopup ?: return
         popup.contentView.invalidate()
-        val d = resources.displayMetrics.density
-        val w = (60 * d).toInt()
-        val h = w + (14 * d).toInt()
+        val (w, h) = magnifierSize()
+        getLocationOnScreen(thumbScreen)
         val screenW = resources.displayMetrics.widthPixels
-        val x = (rawX - w / 2f).coerceIn(0f, screenW - w.toFloat())
-        val y = rawY - h - 6 * d
+        val cx = thumbScreen[0] + spectrumX * width
+        val thumbY = thumbScreen[1] + spectrumY * height
+        val x = (cx - w / 2f).coerceIn(0f, screenW - w.toFloat())
+        val y = (thumbY - h - 4 * resources.displayMetrics.density).coerceAtLeast(0f)
         popup.update(x.toInt(), y.toInt(), w, h)
     }
 
