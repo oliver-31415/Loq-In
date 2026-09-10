@@ -208,11 +208,12 @@ class SpectrumPadView @JvmOverloads constructor(
         val popup = magnifierPopup ?: return
         popup.contentView.invalidate()
         val (w, h) = magnifierSize()
-        getLocationOnScreen(thumbScreen)
-        val screenW = resources.displayMetrics.widthPixels
+        // PopupWindow coords are relative to this view's WINDOW, not the screen
+        getLocationInWindow(thumbScreen)
+        val windowW = resources.displayMetrics.widthPixels
         val cx = thumbScreen[0] + spectrumX * width
         val thumbY = thumbScreen[1] + spectrumY * height
-        val x = (cx - w / 2f).coerceIn(0f, screenW - w.toFloat())
+        val x = (cx - w / 2f).coerceIn(0f, windowW - w.toFloat())
         val y = (thumbY - h).coerceAtLeast(0f)
         popup.update(x.toInt(), y.toInt(), w, h)
     }
