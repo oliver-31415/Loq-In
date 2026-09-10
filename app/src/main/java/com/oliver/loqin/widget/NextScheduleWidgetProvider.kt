@@ -24,8 +24,9 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.text.format.DateUtils
+import android.os.Bundle
 import android.widget.RemoteViews
+import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import com.oliver.loqin.R
 import com.oliver.loqin.data.prefs.AutomationModeStore
@@ -33,6 +34,7 @@ import com.oliver.loqin.data.prefs.SchedulePlanner
 import com.oliver.loqin.data.prefs.ScheduleStore
 import com.oliver.loqin.feature.entry.QuickActionIconFactory
 import com.oliver.loqin.feature.schedule.SchedulesActivity
+import com.oliver.loqin.feature.theme.AccentColor
 import com.oliver.loqin.util.TimeFormatPrefs
 import java.util.Calendar
 
@@ -50,6 +52,17 @@ class NextScheduleWidgetProvider : AppWidgetProvider() {
         }
     }
 
+    override fun onAppWidgetOptionsChanged(
+        context: Context,
+        appWidgetManager: AppWidgetManager,
+        appWidgetId: Int,
+        newOptions: Bundle?,
+    ) {
+        super.onAppWidgetOptionsChanged(context, appWidgetManager, appWidgetId, newOptions)
+        // Recompute the countdown whenever the launcher resizes the widget.
+        appWidgetManager.updateAppWidget(appWidgetId, buildViews(context, appWidgetId))
+    }
+
     override fun onReceive(context: Context, intent: Intent) {
         super.onReceive(context, intent)
         when (intent.action) {
@@ -61,6 +74,9 @@ class NextScheduleWidgetProvider : AppWidgetProvider() {
     }
 
     companion object {
+        // Schedules starting within this window are highlighted with the accent color.
+        private const val URGENT_WINDOW_MILLIS = 30L * 60L * 1000L
+
         fun refreshAll(context: Context) {
             val manager = AppWidgetManager.getInstance(context)
             val component = ComponentName(context, NextScheduleWidgetProvider::class.java)
@@ -72,11 +88,31 @@ class NextScheduleWidgetProvider : AppWidgetProvider() {
 
         private fun buildViews(context: Context, appWidgetId: Int): RemoteViews {
             val content = buildContent(context)
+            val accent = AccentColor.getAccentColorInt(context)
+            val onSurface = ContextCompat.getColor(context, R.color.foqos_on_surface)
+            val onSurfaceVariant = ContextCompat.getColor(context, R.color.foqos_on_surface_variant)
+            val timeColor = if (content.urgent) accent else onSurface
+            val countdownColor = if (content.urgent) accent else onSurfaceVariant
             return RemoteViews(context.packageName, R.layout.widget_next_schedule).apply {
                 setImageViewBitmap(R.id.widgetNextScheduleIcon, QuickActionIconFactory.createWidgetBitmap(context, R.drawable.schedule_24))
                 setTextViewText(R.id.widgetNextScheduleName, content.name)
                 setTextViewText(R.id.widgetNextScheduleTime, content.time)
+                setTextViewText(R.id.widgetNextScheduleCountdown, content.countdown)
                 setTextViewText(R.id.widgetNextScheduleStatus, content.status)
+                setTextColor(R.id.widgetNextScheduleTime, timeColor)
+                setTextColor(R.id.widgetNextScheduleCountdown, countdownColor)
+                setViewVisibility(
+                    R.id.widgetNextScheduleTime,
+                    if (content.showTime) android.view.View.VISIBLE else android.view.View.GONE
+                )
+                setViewVisibility(
+                    R.id.widgetNextScheduleCountdown,
+                    if (content.countdown != null) android.view.View.VISIBLE else android.view.View.GONE
+                )
+                setViewVisibility(
+                    R.id.widgetNextScheduleEmpty,
+                    if (content.showEmptyState) android.view.View.VISIBLE else android.view.View.GONE
+                )
                 setTextViewText(
                     R.id.widgetNextScheduleBadge,
                     if (findNextBoundary(context) != null) context.getString(R.string.blocking_mode_schedule)
@@ -109,21 +145,39 @@ class NextScheduleWidgetProvider : AppWidgetProvider() {
             if (next == null) {
                 return DisplayContent(
                     name = context.getString(R.string.widget_next_schedule_name),
-                    time = context.getString(R.string.schedules_next_none),
-                    status = context.getString(R.string.widget_next_schedule_open)
+                    time = "",
+                    showTime = false,
+                    showEmptyState = true,
+                    status = context.getString(R.string.widget_glance_empty_schedule_hint)
                 )
             }
 
+            val countdown = formatCountdown(context, next.timeMillis)
+            val urgent = next.timeMillis - System.currentTimeMillis() < URGENT_WINDOW_MILLIS
             return DisplayContent(
                 name = next.label,
                 time = formatTime(context, next.timeMillis),
-                status = DateUtils.getRelativeTimeSpanString(
-                    next.timeMillis,
-                    System.currentTimeMillis(),
-                    DateUtils.MINUTE_IN_MILLIS,
-                    DateUtils.FORMAT_ABBREV_RELATIVE
-                ).toString()
+                countdown = countdown,
+                urgent = urgent,
+                status = context.getString(R.string.widget_next_schedule_open)
             )
+        }
+
+        private fun formatCountdown(context: Context, timeMillis: Long): String {
+            val deltaMinutes = ((timeMillis - System.currentTimeMillis() + 59_999L) / 60_000L).coerceAtLeast(0L)
+            return when {
+                deltaMinutes < 60L -> context.getString(R.string.widget_glance_countdown_minutes, deltaMinutes)
+                deltaMinutes < 48L * 60L -> context.getString(
+                    R.string.widget_glance_countdown_hours_minutes,
+                    deltaMinutes / 60L,
+                    deltaMinutes % 60L
+                )
+                else -> context.getString(
+                    R.string.widget_glance_countdown_days_hours,
+                    deltaMinutes / (24L * 60L),
+                    (deltaMinutes % (24L * 60L)) / 60L
+                )
+            }
         }
 
         private fun formatTime(context: Context, timeMillis: Long): String {
@@ -230,6 +284,10 @@ class NextScheduleWidgetProvider : AppWidgetProvider() {
     private data class DisplayContent(
         val name: String,
         val time: String,
+        val countdown: String? = null,
+        val showTime: Boolean = true,
+        val showEmptyState: Boolean = false,
+        val urgent: Boolean = false,
         val status: String,
     )
 

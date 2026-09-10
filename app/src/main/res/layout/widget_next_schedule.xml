@@ -67,6 +67,32 @@
         android:ellipsize="end" />
 
     <TextView
+        android:id="@+id/widgetNextScheduleCountdown"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:gravity="center"
+        android:textColor="@color/foqos_on_surface_variant"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:maxLines="1"
+        android:ellipsize="end" />
+
+    <TextView
+        android:id="@+id/widgetNextScheduleEmpty"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:gravity="center"
+        android:visibility="gone"
+        android:text="@string/widget_glance_empty_schedule_title"
+        android:textColor="@color/foqos_on_surface"
+        android:textSize="15sp"
+        android:textStyle="bold"
+        android:maxLines="1"
+        android:ellipsize="end" />
+
+    <TextView
         android:id="@+id/widgetNextScheduleStatus"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"

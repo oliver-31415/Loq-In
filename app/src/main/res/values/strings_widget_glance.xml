@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Next schedule widget: empty state -->
+    <string name="widget_glance_empty_schedule_title">No upcoming schedule</string>
+    <string name="widget_glance_empty_schedule_hint">Tap to create a schedule</string>
+
+    <!-- Next schedule widget: countdown -->
+    <string name="widget_glance_countdown_minutes">in %1$d min</string>
+    <string name="widget_glance_countdown_hours_minutes">in %1$dh %2$dm</string>
+    <string name="widget_glance_countdown_days_hours">in %1$dd %2$dh</string>
+
+    <!-- Blocked notifications widget: clear-all action -->
+    <string name="widget_glance_clear_all">Clear all blocked notifications</string>
+
+</resources>
