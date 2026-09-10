@@ -20,7 +20,6 @@ package com.oliver.loqin.feature.theme
 
 import android.content.Context
 import android.graphics.Color
-import android.graphics.PorterDuff
 import android.graphics.drawable.GradientDrawable
 import android.text.Editable
 import android.text.InputFilter
@@ -29,11 +28,7 @@ import android.text.TextWatcher
 import android.view.Gravity
 import android.view.View
 import android.widget.EditText
-import android.widget.FrameLayout
-import android.widget.GridLayout
-import android.widget.ImageView
 import android.widget.LinearLayout
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
@@ -43,7 +38,6 @@ import com.oliver.loqin.R
 import com.oliver.loqin.theme.CustomAccentApplier
 import com.oliver.loqin.ui.dialog.styledDialogEditText
 import com.oliver.loqin.ui.dialog.styleLoqInDialogButtons
-import com.google.android.material.color.MaterialColors
 
 /**
  * Curated-palette custom accent picker: a swatch grid with a selected check,
@@ -52,15 +46,6 @@ import com.google.android.material.color.MaterialColors
  */
 object CustomAccentPickerDialog {
 
-    private val PALETTE = intArrayOf(
-        0xFF6BA6E8.toInt(), 0xFF4C7FE0.toInt(), 0xFF2D5FB8.toInt(), 0xFF8FB8F2.toInt(),
-        0xFF4FB6A8.toInt(), 0xFF2E8B7A.toInt(), 0xFF66BB6A.toInt(), 0xFF43A047.toInt(),
-        0xFF2E7D32.toInt(), 0xFF9CCC65.toInt(), 0xFFF5B942.toInt(), 0xFFE8A212.toInt(),
-        0xFFF19A4D.toInt(), 0xFFE07B39.toInt(), 0xFFD2570F.toInt(), 0xFFE57373.toInt(),
-        0xFFD9534F.toInt(), 0xFFB8392F.toInt(), 0xFFF08BB4.toInt(), 0xFFD9569A.toInt(),
-        0xFF9F7AEA.toInt(), 0xFF8B5CF6.toInt(), 0xFF6D3FC0.toInt(), 0xFFB39DDB.toInt(),
-    )
-
     fun show(context: Context, onApplied: () -> Unit) {
         fun dp(v: Int): Int = (v * context.resources.displayMetrics.density + 0.5f).toInt()
 
@@ -68,9 +53,11 @@ object CustomAccentPickerDialog {
         val defaultAccent = ContextCompat.getColor(context, R.color.accent_default_blue)
         val defaultHex = String.format("#%06X", 0xFFFFFF and defaultAccent)
         val initialHex = prefs.getString("pref_accent_custom", defaultHex) ?: defaultHex
-        var selected = runCatching { initialHex.toColorInt() }.getOrDefault(defaultAccent)
+        val initial = runCatching { initialHex.toColorInt() }.getOrDefault(defaultAccent)
+        val initialHsv = FloatArray(3).also { Color.colorToHSV(initial, it) }
 
-        val onSurface = MaterialColors.getColor(context, com.google.android.material.R.attr.colorOnSurface, Color.BLACK)
+        var selected = initial
+        val hsv = floatArrayOf(initialHsv[0], initialHsv[1], initialHsv[2])
 
         val root = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
@@ -78,15 +65,21 @@ object CustomAccentPickerDialog {
         }
 
         // Live preview: accent dot + the container wash it produces
-        fun previewDot(colorProvider: () -> Int): View = View(context).apply {
+        fun previewDot(): View = View(context).apply {
             background = GradientDrawable().apply {
                 shape = GradientDrawable.OVAL
-                setColor(colorProvider())
+                setColor(selected)
             }
             layoutParams = LinearLayout.LayoutParams(dp(36), dp(36)).apply { marginEnd = dp(10) }
         }
-        val accentDot = previewDot { selected }
-        val containerDot = previewDot { androidx.core.graphics.ColorUtils.setAlphaComponent(selected, 0x2E) }
+        val accentDot = previewDot()
+        val containerDot = View(context).apply {
+            background = GradientDrawable().apply {
+                shape = GradientDrawable.OVAL
+                setColor(androidx.core.graphics.ColorUtils.setAlphaComponent(selected, 0x2E))
+            }
+            layoutParams = LinearLayout.LayoutParams(dp(36), dp(36))
+        }
         val previewRow = LinearLayout(context).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
@@ -96,64 +89,48 @@ object CustomAccentPickerDialog {
         root.addView(previewRow)
 
         fun updatePreview() {
+            selected = Color.HSVToColor(hsv)
             (accentDot.background as GradientDrawable).setColor(selected)
             (containerDot.background as GradientDrawable).setColor(
                 androidx.core.graphics.ColorUtils.setAlphaComponent(selected, 0x2E)
             )
         }
 
-        fun isLight(color: Int): Boolean =
-            (0.299 * Color.red(color) + 0.587 * Color.green(color) + 0.114 * Color.blue(color)) > 186
-
-        fun applySwatchState(swatch: View, check: ImageView, color: Int, selectedNow: Boolean) {
-            (swatch.background as GradientDrawable).apply {
-                setColor(color)
-                setStroke(
-                    if (selectedNow) dp(3) else 0,
-                    if (isLight(color)) onSurface else Color.WHITE,
-                )
-            }
-            check.setColorFilter(if (isLight(color)) onSurface else Color.WHITE, PorterDuff.Mode.SRC_IN)
-            check.visibility = if (selectedNow) View.VISIBLE else View.GONE
-        }
-
-        val grid = GridLayout(context).apply {
-            columnCount = 6
+        // 2D saturation × brightness pad
+        val pad = ColorSvPadView(context).apply {
+            hue = hsv[0]
+            saturation = hsv[1]
+            brightness = hsv[2]
             layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-            ).apply { topMargin = dp(18) }
-        }
-        val entries = mutableListOf<Triple<Int, View, ImageView>>()
-        PALETTE.forEachIndexed { index, color ->
-            val cell = FrameLayout(context).apply {
-                layoutParams = GridLayout.LayoutParams().apply {
-                    width = dp(44); height = dp(44)
-                    columnSpec = GridLayout.spec(index % 6)
-                    rowSpec = GridLayout.spec(index / 6)
-                    setMargins(dp(3), dp(3), dp(3), dp(3))
+                LinearLayout.LayoutParams.MATCH_PARENT, dp(180),
+            ).apply { topMargin = dp(16) }
+            clipToOutline = true
+            outlineProvider = object : android.view.ViewOutlineProvider() {
+                override fun getOutline(view: View, outline: android.graphics.Outline) {
+                    outline.setRoundRect(0, 0, view.width, view.height, dp(16).toFloat())
                 }
             }
-            val swatch = View(context).apply {
-                layoutParams = FrameLayout.LayoutParams(dp(34), dp(34), Gravity.CENTER)
-                background = GradientDrawable().apply { shape = GradientDrawable.OVAL }
-            }
-            val check = ImageView(context).apply {
-                setImageResource(R.drawable.check_circle_24)
-                layoutParams = FrameLayout.LayoutParams(dp(34), dp(34), Gravity.CENTER)
-                visibility = View.GONE
-            }
-            cell.setOnClickListener {
-                selected = color
+            onColorPicked = { s, v ->
+                hsv[1] = s
+                hsv[2] = v
                 updatePreview()
-                entries.forEach { (c, s, ch) -> applySwatchState(s, ch, c, c == color) }
             }
-            cell.addView(swatch)
-            cell.addView(check)
-            entries.add(Triple(color, swatch, check))
-            grid.addView(cell)
         }
-        root.addView(grid)
+        root.addView(pad)
+
+        // Hue bar
+        val hueBar = ColorHueBarView(context).apply {
+            hue = hsv[0]
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, dp(36),
+            ).apply { topMargin = dp(14) }
+            onHuePicked = { h ->
+                hsv[0] = h
+                pad.hue = h
+                updatePreview()
+            }
+        }
+        root.addView(hueBar)
 
         // Hex field for exact input
         val hexInput: EditText = context.styledDialogEditText().apply {
@@ -166,16 +143,21 @@ object CustomAccentPickerDialog {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT,
-            ).apply { topMargin = dp(18) }
-            setText(initialHex)
+            ).apply { topMargin = dp(16) }
+            setText(String.format("#%06X", 0xFFFFFF and initial))
         }
         hexInput.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
                 val parsed = s?.toString()?.trim()?.let { runCatching { it.toColorInt() }.getOrNull() }
                 if (parsed != null) {
-                    selected = parsed
+                    Color.colorToHSV(parsed, hsv)
+                    pad.hue = hsv[0]
+                    pad.saturation = hsv[1]
+                    pad.brightness = hsv[2]
+                    pad.invalidate()
+                    hueBar.hue = hsv[0]
+                    hueBar.invalidate()
                     updatePreview()
-                    entries.forEach { (_, _, ch) -> ch.visibility = View.GONE }
                 }
             }
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -183,19 +165,14 @@ object CustomAccentPickerDialog {
         })
         root.addView(hexInput)
 
-        entries.forEach { (c, s, ch) -> applySwatchState(s, ch, c, c == selected) }
-
         val dialog = AlertDialog.Builder(context)
             .setTitle(context.getString(R.string.pref_accent_custom_title))
             .setView(root)
             .setNegativeButton(context.getString(R.string.cancel), null)
             .setPositiveButton(context.getString(R.string.ok)) { _, _ ->
                 val parsed = hexInput.text.toString().trim().let { runCatching { it.toColorInt() }.getOrNull() }
-                if (parsed == null) {
-                    Toast.makeText(context, context.getString(R.string.color_hex_invalid), Toast.LENGTH_SHORT).show()
-                    return@setPositiveButton
-                }
-                val hex = String.format("#%08X", parsed)
+                val color = parsed ?: Color.HSVToColor(hsv)
+                val hex = String.format("#%08X", color)
                 prefs.edit {
                     putString("pref_accent", "custom")
                     putString("pref_accent_custom", hex)
