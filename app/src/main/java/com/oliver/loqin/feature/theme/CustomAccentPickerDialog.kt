@@ -62,37 +62,6 @@ object CustomAccentPickerDialog {
             setPadding(dp(24), dp(8), dp(24), dp(4))
         }
 
-        // Live preview: accent dot + the container wash it produces
-        fun previewDot(): View = View(context).apply {
-            background = GradientDrawable().apply {
-                shape = GradientDrawable.OVAL
-                setColor(selected)
-            }
-            layoutParams = LinearLayout.LayoutParams(dp(36), dp(36)).apply { marginEnd = dp(10) }
-        }
-        val accentDot = previewDot()
-        val containerDot = View(context).apply {
-            background = GradientDrawable().apply {
-                shape = GradientDrawable.OVAL
-                setColor(androidx.core.graphics.ColorUtils.setAlphaComponent(selected, 0x2E))
-            }
-            layoutParams = LinearLayout.LayoutParams(dp(36), dp(36))
-        }
-        val previewRow = LinearLayout(context).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            addView(accentDot)
-            addView(containerDot)
-        }
-        root.addView(previewRow)
-
-        fun updatePreview() {
-            (accentDot.background as GradientDrawable).setColor(selected)
-            (containerDot.background as GradientDrawable).setColor(
-                androidx.core.graphics.ColorUtils.setAlphaComponent(selected, 0x2E)
-            )
-        }
-
         // Single drag-through spectrum (hue horizontally, white→hue→black vertically)
         val pad = SpectrumPadView(context).apply {
             setColor(initial)
@@ -107,7 +76,6 @@ object CustomAccentPickerDialog {
             }
             onColorPicked = { _, _ ->
                 selected = currentColor()
-                updatePreview()
             }
         }
         root.addView(pad)
@@ -132,7 +100,6 @@ object CustomAccentPickerDialog {
                 if (parsed != null) {
                     pad.setColor(parsed)
                     selected = parsed
-                    updatePreview()
                 }
             }
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}

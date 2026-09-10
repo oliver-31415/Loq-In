@@ -85,8 +85,8 @@ class SpectrumPadView @JvmOverloads constructor(
             rainbowShader = LinearGradient(
                 0f, 0f, width.toFloat(), 0f,
                 intArrayOf(
-                    0xFFFF0000.toInt(), 0xFFFF00FF.toInt(), 0xFF0000FF.toInt(),
-                    0xFF00FFFF.toInt(), 0xFF00FF00.toInt(), 0xFFFFFF00.toInt(), 0xFFFF0000.toInt(),
+                    0xFFFF0000.toInt(), 0xFFFFFF00.toInt(), 0xFF00FF00.toInt(),
+                    0xFF00FFFF.toInt(), 0xFF0000FF.toInt(), 0xFFFF00FF.toInt(), 0xFFFF0000.toInt(),
                 ),
                 null, Shader.TileMode.CLAMP,
             )
@@ -115,23 +115,94 @@ class SpectrumPadView @JvmOverloads constructor(
         canvas.drawCircle(cx, cy, radius + thumbPaint.strokeWidth * 0.75f, thumbPaint)
     }
 
-    private fun updateFromTouch(x: Float, y: Float) {
+    private fun updateFromTouch(x: Float, y: Float, rawX: Float, rawY: Float) {
         spectrumX = (x / width).coerceIn(0f, 1f)
         spectrumY = (y / height).coerceIn(0f, 1f)
+        updateMagnifier(rawX, rawY)
         onColorPicked?.invoke(spectrumX, spectrumY)
     }
 
     override fun onTouchEvent(event: android.view.MotionEvent): Boolean {
         when (event.actionMasked) {
-            android.view.MotionEvent.ACTION_DOWN,
-            android.view.MotionEvent.ACTION_MOVE,
-            android.view.MotionEvent.ACTION_UP,
-            -> {
+            android.view.MotionEvent.ACTION_DOWN -> {
                 parent?.requestDisallowInterceptTouchEvent(true)
-                updateFromTouch(event.x, event.y)
+                showMagnifier()
+                updateFromTouch(event.x, event.y, event.rawX, event.rawY)
+                return true
+            }
+            android.view.MotionEvent.ACTION_MOVE -> {
+                updateFromTouch(event.x, event.y, event.rawX, event.rawY)
+                return true
+            }
+            android.view.MotionEvent.ACTION_UP,
+            android.view.MotionEvent.ACTION_CANCEL,
+            -> {
+                hideMagnifier()
                 return true
             }
         }
         return super.onTouchEvent(event)
+    }
+
+    // --- Magnifier: floating swatch bubble above the finger while dragging ---
+
+    private var magnifierPopup: android.widget.PopupWindow? = null
+    private var magnifierDrawable: android.graphics.drawable.GradientDrawable? = null
+
+    private fun buildMagnifierView(): View {
+        val d = resources.displayMetrics.density
+        val view = View(context)
+        magnifierDrawable = android.graphics.drawable.GradientDrawable().apply {
+            shape = android.graphics.drawable.GradientDrawable.OVAL
+            setColor(currentColor())
+            setStroke((3 * d).toInt(), Color.WHITE)
+        }
+        view.background = magnifierDrawable
+        view.elevation = 8 * d
+        view.outlineProvider = object : android.view.ViewOutlineProvider() {
+            override fun getOutline(view: View, outline: android.graphics.Outline) {
+                outline.setOval(0, 0, view.width, view.height)
+            }
+        }
+        view.clipToOutline = true
+        return view
+    }
+
+    private fun showMagnifier() {
+        if (magnifierPopup != null) return
+        val d = resources.displayMetrics.density
+        val size = (72 * d).toInt()
+        val popup = android.widget.PopupWindow(
+            buildMagnifierView(), size, size,
+        ).apply {
+            isTouchable = false
+            isFocusable = false
+            isOutsideTouchable = false
+            elevation = 8 * d
+        }
+        magnifierPopup = popup
+        popup.showAtLocation(this, android.view.Gravity.NO_GRAVITY, 0, 0)
+        popup.update(0, 0, size, size)
+    }
+
+    private fun updateMagnifier(rawX: Float, rawY: Float) {
+        val popup = magnifierPopup ?: return
+        val d = resources.displayMetrics.density
+        magnifierDrawable?.setColor(currentColor())
+        val size = (72 * d).toInt()
+        val screenW = resources.displayMetrics.widthPixels
+        val x = (rawX - size / 2f).coerceIn(0f, screenW - size.toFloat())
+        val y = rawY - size - 28 * d
+        popup.update(x.toInt(), y.toInt(), size, size)
+    }
+
+    private fun hideMagnifier() {
+        magnifierPopup?.dismiss()
+        magnifierPopup = null
+    }
+
+    override fun onDetachedFromWindow() {
+        hideMagnifier()
+        super.onDetachedFromWindow()
     }
 }
