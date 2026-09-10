@@ -7,7 +7,7 @@ channels, usage statistics, and local file backup/restore — all offline, with 
 Loq In is a fork that continues [Switchly](https://gitlab.com/Saltyy/switchly-public) by
 Saltyy. It is free software licensed under the **GNU General Public License v3.0**.
 
-- Repository: <https://github.com/oliver-31415/loqin>
+- Repository: <https://github.com/oliver-31415/Loq-In>
 
 ---
 

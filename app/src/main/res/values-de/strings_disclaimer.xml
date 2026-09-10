@@ -8,6 +8,6 @@
     <string name="disclaimer_summary">Lizenz, Credits und Quellcode</string>
     <string name="about_section_legal">Rechtliches</string>
     <string name="disclaimer_body">Loq In ist freie Software: Du kannst sie unter den Bedingungen der GNU General Public License, wie von der Free Software Foundation veröffentlicht, weitergeben und/oder verändern, gemäß Version 3 der Lizenz oder (nach deiner Wahl) jeder späteren Version.\n\nCopyright (C) 2026 Loq In Contributors\n\nDieses Programm wird in der Hoffnung weitergegeben, dass es nützlich ist, jedoch OHNE JEDE GEWÄHRLEISTUNG – sogar ohne die implizite Gewährleistung der MARKTFÄHIGKEIT oder der EIGNUNG FÜR EINEN BESTIMMTEN ZWECK. Details findest du in der GNU General Public License.\n\nLoq In basiert auf Switchly von Saltyy (Copyright (C) 2025-2026 Saltyy) und ist ein Fork, der unter der GNU GPL v3 verbreitet wird.\n\nDas Design der App ist von Foqos inspiriert. Teile der Blockier-Logik und des Codes sind aus Scrollless abgeleitet.\n\nQuellcode:</string>
-    <string name="disclaimer_source_code_url">https://github.com/oliver-31415/loqin</string>
+    <string name="disclaimer_source_code_url">https://github.com/oliver-31415/Loq-In</string>
 
 </resources>
