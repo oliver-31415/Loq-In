@@ -263,6 +263,7 @@ class AppearanceActivity : AppCompatActivity() {
             checkedIndex = checked,
             summaries = summaries,
             iconDrawables = values.map { colorPreviewDrawable(accentColorForValue(this, it)) as Drawable? }.toTypedArray(),
+            instantApply = true,
         ) { which, dialog ->
             val selected = values[which]
             if (selected == "custom") {
@@ -327,6 +328,7 @@ class AppearanceActivity : AppCompatActivity() {
         summaries: Array<String>? = null,
         iconRes: Array<Int?>? = null,
         iconDrawables: Array<Drawable?>? = null,
+        instantApply: Boolean = false,
         onSelected: (index: Int, dialog: AlertDialog) -> Unit,
     ) {
         lateinit var dialog: AlertDialog
@@ -342,7 +344,7 @@ class AppearanceActivity : AppCompatActivity() {
                     selected = index == checkedIndex
                 )
             },
-            confirmSelection = true
+            confirmSelection = !instantApply
         ) { which ->
             onSelected(which, dialog)
         }

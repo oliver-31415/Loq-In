@@ -21,74 +21,92 @@ package com.oliver.loqin.feature.theme
 import android.content.Context
 import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.ComposeShader
 import android.graphics.LinearGradient
 import android.graphics.Paint
-import android.graphics.PorterDuff
 import android.graphics.Shader
 import android.util.AttributeSet
 import android.view.View
-import kotlin.math.max
+import androidx.core.graphics.ColorUtils
 
 /**
- * 2D saturation × brightness pad for the custom accent picker. The fill shows
- * every shade of the current hue; dragging the thumb picks a precise color.
+ * Single drag-through color spectrum: the full hue rainbow runs horizontally,
+ * while each column fades white (top) → pure hue (middle) → black (bottom).
+ * One pad, every hue and lightness; the hex field covers exact matches.
  */
-class ColorSvPadView @JvmOverloads constructor(
+class SpectrumPadView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
 ) : View(context, attrs) {
 
-    var hue: Float = 0f
+    /** 0..1, horizontal position → hue (0°..360°). */
+    var spectrumX: Float = 0.58f
         set(value) {
-            field = value.coerceIn(0f, 360f)
-            shadersDirty = true
+            field = value.coerceIn(0f, 1f)
             invalidate()
         }
 
-    var saturation: Float = 0.5f
-    var brightness: Float = 0.5f
+    /** 0..1, vertical position (0 = white top, 0.5 = pure hue, 1 = black). */
+    var spectrumY: Float = 0.25f
+        set(value) {
+            field = value.coerceIn(0f, 1f)
+            invalidate()
+        }
 
-    var onColorPicked: ((saturation: Float, brightness: Float) -> Unit)? = null
+    var onColorPicked: ((x: Float, y: Float) -> Unit)? = null
 
-    private var shadersDirty = true
-    private var blackShader: Shader? = null
-
-    private val basePaint = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val thumbPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        style = Paint.Style.STROKE
-    }
+    private var rainbowShader: Shader? = null
+    private var shadeShader: Shader? = null
+    private val rainbowPaint = Paint()
+    private val shadePaint = Paint()
+    private val thumbPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
     private val thumbFillPaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
-    private fun rebuildShaders(w: Int, h: Int) {
-        val hueColor = Color.HSVToColor(floatArrayOf(hue, 1f, 1f))
-        blackShader = LinearGradient(
-            0f, 0f, 0f, h.toFloat(),
-            Color.TRANSPARENT, Color.BLACK, Shader.TileMode.CLAMP,
-        )
-        // base: white→hue horizontally, then fade to black vertically on top
-        basePaint.shader = ComposeShader(
-            LinearGradient(
-                0f, 0f, w.toFloat(), 0f,
-                Color.WHITE, hueColor, Shader.TileMode.CLAMP,
-            ),
-            blackShader!!,
-            PorterDuff.Mode.MULTIPLY,
-        )
-        shadersDirty = false
+    fun currentColor(): Int {
+        val pure = Color.HSVToColor(floatArrayOf(spectrumX * 360f, 1f, 1f))
+        return if (spectrumY <= 0.5f) {
+            ColorUtils.blendARGB(Color.WHITE, pure, spectrumY * 2f)
+        } else {
+            ColorUtils.blendARGB(pure, Color.BLACK, (spectrumY - 0.5f) * 2f)
+        }
+    }
+
+    /** Approximate inverse: place the thumb near the given color (hex-exact via the hex field). */
+    fun setColor(color: Int) {
+        val hsv = FloatArray(3).also { Color.colorToHSV(color, it) }
+        spectrumX = hsv[0] / 360f
+        // saturation drives the white→hue half, darkness drives the hue→black half
+        spectrumY = if (hsv[2] >= 0.5f) 0.5f * hsv[1] else 0.5f + 0.5f * (1f - hsv[2])
     }
 
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         if (width <= 0 || height <= 0) return
-        if (shadersDirty) rebuildShaders(width, height)
-        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), basePaint)
+        if (rainbowShader == null) {
+            rainbowShader = LinearGradient(
+                0f, 0f, width.toFloat(), 0f,
+                intArrayOf(
+                    0xFFFF0000.toInt(), 0xFFFF00FF.toInt(), 0xFF0000FF.toInt(),
+                    0xFF00FFFF.toInt(), 0xFF00FF00.toInt(), 0xFFFFFF00.toInt(), 0xFFFF0000.toInt(),
+                ),
+                null, Shader.TileMode.CLAMP,
+            )
+            rainbowPaint.shader = rainbowShader
+            canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), rainbowPaint)
+            shadeShader = LinearGradient(
+                0f, 0f, 0f, height.toFloat(),
+                intArrayOf(Color.WHITE, 0x00FFFFFF, Color.BLACK),
+                floatArrayOf(0f, 0.5f, 1f),
+                Shader.TileMode.CLAMP,
+            )
+            shadePaint.shader = shadeShader
+        }
+        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), rainbowPaint)
+        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), shadePaint)
 
-        val cx = saturation * width
-        val cy = (1f - brightness) * height
-        val current = Color.HSVToColor(floatArrayOf(hue, saturation, brightness))
-        val radius = max(10f, resources.displayMetrics.density * 12f)
-        thumbFillPaint.color = current
+        val cx = spectrumX * width
+        val cy = spectrumY * height
+        val radius = resources.displayMetrics.density * 12f
+        thumbFillPaint.color = currentColor()
         canvas.drawCircle(cx, cy, radius, thumbFillPaint)
         thumbPaint.strokeWidth = resources.displayMetrics.density * 3f
         thumbPaint.color = Color.WHITE
@@ -98,10 +116,9 @@ class ColorSvPadView @JvmOverloads constructor(
     }
 
     private fun updateFromTouch(x: Float, y: Float) {
-        saturation = (x / width).coerceIn(0f, 1f)
-        brightness = (1f - y / height).coerceIn(0f, 1f)
-        invalidate()
-        onColorPicked?.invoke(saturation, brightness)
+        spectrumX = (x / width).coerceIn(0f, 1f)
+        spectrumY = (y / height).coerceIn(0f, 1f)
+        onColorPicked?.invoke(spectrumX, spectrumY)
     }
 
     override fun onTouchEvent(event: android.view.MotionEvent): Boolean {
@@ -112,77 +129,6 @@ class ColorSvPadView @JvmOverloads constructor(
             -> {
                 parent?.requestDisallowInterceptTouchEvent(true)
                 updateFromTouch(event.x, event.y)
-                return true
-            }
-        }
-        return super.onTouchEvent(event)
-    }
-}
-
-/**
- * Horizontal hue bar (0–360°) with a draggable thumb. Companion to [ColorSvPadView].
- */
-class ColorHueBarView @JvmOverloads constructor(
-    context: Context,
-    attrs: AttributeSet? = null,
-) : View(context, attrs) {
-
-    var hue: Float = 0f
-        set(value) {
-            field = value.coerceIn(0f, 360f)
-            invalidate()
-        }
-
-    var onHuePicked: ((hue: Float) -> Unit)? = null
-
-    private var barShader: Shader? = null
-    private val barPaint = Paint()
-    private val thumbPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
-    private val thumbFillPaint = Paint(Paint.ANTI_ALIAS_FLAG)
-
-    override fun onDraw(canvas: Canvas) {
-        super.onDraw(canvas)
-        if (width <= 0 || height <= 0) return
-        if (barShader == null) {
-            barShader = LinearGradient(
-                0f, 0f, width.toFloat(), 0f,
-                intArrayOf(
-                    0xFFFF0000.toInt(), 0xFFFF00FF.toInt(), 0xFF0000FF.toInt(),
-                    0xFF00FFFF.toInt(), 0xFF00FF00.toInt(), 0xFFFFFF00.toInt(), 0xFFFF0000.toInt(),
-                ),
-                null, Shader.TileMode.CLAMP,
-            )
-            barPaint.shader = barShader
-        }
-        val barHeight = height * 0.62f
-        val top = (height - barHeight) / 2f
-        val r = barHeight / 2f
-        canvas.drawRoundRect(0f, top, width.toFloat(), top + barHeight, r, r, barPaint)
-
-        val cx = (hue / 360f) * width
-        val cy = height / 2f
-        val radius = barHeight / 2f * 0.9f
-        thumbFillPaint.color = Color.HSVToColor(floatArrayOf(hue, 1f, 1f))
-        canvas.drawCircle(cx, cy, radius, thumbFillPaint)
-        thumbPaint.strokeWidth = resources.displayMetrics.density * 3f
-        thumbPaint.color = Color.WHITE
-        canvas.drawCircle(cx, cy, radius, thumbPaint)
-    }
-
-    private fun updateFromTouch(x: Float) {
-        hue = ((x / width) * 360f).coerceIn(0f, 360f)
-        invalidate()
-        onHuePicked?.invoke(hue)
-    }
-
-    override fun onTouchEvent(event: android.view.MotionEvent): Boolean {
-        when (event.actionMasked) {
-            android.view.MotionEvent.ACTION_DOWN,
-            android.view.MotionEvent.ACTION_MOVE,
-            android.view.MotionEvent.ACTION_UP,
-            -> {
-                parent?.requestDisallowInterceptTouchEvent(true)
-                updateFromTouch(event.x)
                 return true
             }
         }

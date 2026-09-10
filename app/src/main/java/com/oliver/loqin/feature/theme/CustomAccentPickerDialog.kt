@@ -54,10 +54,8 @@ object CustomAccentPickerDialog {
         val defaultHex = String.format("#%06X", 0xFFFFFF and defaultAccent)
         val initialHex = prefs.getString("pref_accent_custom", defaultHex) ?: defaultHex
         val initial = runCatching { initialHex.toColorInt() }.getOrDefault(defaultAccent)
-        val initialHsv = FloatArray(3).also { Color.colorToHSV(initial, it) }
 
         var selected = initial
-        val hsv = floatArrayOf(initialHsv[0], initialHsv[1], initialHsv[2])
 
         val root = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
@@ -89,20 +87,17 @@ object CustomAccentPickerDialog {
         root.addView(previewRow)
 
         fun updatePreview() {
-            selected = Color.HSVToColor(hsv)
             (accentDot.background as GradientDrawable).setColor(selected)
             (containerDot.background as GradientDrawable).setColor(
                 androidx.core.graphics.ColorUtils.setAlphaComponent(selected, 0x2E)
             )
         }
 
-        // 2D saturation × brightness pad
-        val pad = ColorSvPadView(context).apply {
-            hue = hsv[0]
-            saturation = hsv[1]
-            brightness = hsv[2]
+        // Single drag-through spectrum (hue horizontally, white→hue→black vertically)
+        val pad = SpectrumPadView(context).apply {
+            setColor(initial)
             layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, dp(180),
+                LinearLayout.LayoutParams.MATCH_PARENT, dp(200),
             ).apply { topMargin = dp(16) }
             clipToOutline = true
             outlineProvider = object : android.view.ViewOutlineProvider() {
@@ -110,27 +105,12 @@ object CustomAccentPickerDialog {
                     outline.setRoundRect(0, 0, view.width, view.height, dp(16).toFloat())
                 }
             }
-            onColorPicked = { s, v ->
-                hsv[1] = s
-                hsv[2] = v
+            onColorPicked = { _, _ ->
+                selected = currentColor()
                 updatePreview()
             }
         }
         root.addView(pad)
-
-        // Hue bar
-        val hueBar = ColorHueBarView(context).apply {
-            hue = hsv[0]
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, dp(36),
-            ).apply { topMargin = dp(14) }
-            onHuePicked = { h ->
-                hsv[0] = h
-                pad.hue = h
-                updatePreview()
-            }
-        }
-        root.addView(hueBar)
 
         // Hex field for exact input
         val hexInput: EditText = context.styledDialogEditText().apply {
@@ -150,13 +130,8 @@ object CustomAccentPickerDialog {
             override fun afterTextChanged(s: Editable?) {
                 val parsed = s?.toString()?.trim()?.let { runCatching { it.toColorInt() }.getOrNull() }
                 if (parsed != null) {
-                    Color.colorToHSV(parsed, hsv)
-                    pad.hue = hsv[0]
-                    pad.saturation = hsv[1]
-                    pad.brightness = hsv[2]
-                    pad.invalidate()
-                    hueBar.hue = hsv[0]
-                    hueBar.invalidate()
+                    pad.setColor(parsed)
+                    selected = parsed
                     updatePreview()
                 }
             }
@@ -171,7 +146,7 @@ object CustomAccentPickerDialog {
             .setNegativeButton(context.getString(R.string.cancel), null)
             .setPositiveButton(context.getString(R.string.ok)) { _, _ ->
                 val parsed = hexInput.text.toString().trim().let { runCatching { it.toColorInt() }.getOrNull() }
-                val color = parsed ?: Color.HSVToColor(hsv)
+                val color = parsed ?: selected
                 val hex = String.format("#%08X", color)
                 prefs.edit {
                     putString("pref_accent", "custom")
