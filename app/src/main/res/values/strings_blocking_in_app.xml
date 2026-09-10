@@ -53,9 +53,9 @@
     <string name="in_app_surface_spotlight_label">Spotlight</string>
     <string name="in_app_surface_following_label">Following</string>
     <string name="in_app_surface_always_block">Always block</string>
-    <string name="in_app_app_diagnostic_never">v%1$s · not detected yet</string>
-    <string name="in_app_app_diagnostic_detected">v%1$s · detected %2$s</string>
-    <string name="in_app_app_diagnostic_stale">v%1$s · detection may be outdated</string>
+    <string name="in_app_app_diagnostic_never">v%1$s · not seen yet</string>
+    <string name="in_app_app_diagnostic_detected">v%1$s · seen %2$s</string>
+    <string name="in_app_app_diagnostic_stale">v%1$s · may be outdated after an app update</string>
     <string name="in_app_status_supported">Available</string>
     <string name="in_app_status_experimental">Experimental</string>
     <string name="in_app_status_planned">Coming soon</string>
