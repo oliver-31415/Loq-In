@@ -56,11 +56,39 @@ object CustomAccentPickerDialog {
         val initial = runCatching { initialHex.toColorInt() }.getOrDefault(defaultAccent)
 
         var selected = initial
+        var updatingHex = false
 
         val root = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(24), dp(8), dp(24), dp(4))
         }
+
+        // Hex field for exact input
+        val hexInput: EditText = context.styledDialogEditText().apply {
+            hint = context.getString(R.string.color_hex_hint)
+            inputType = InputType.TYPE_CLASS_TEXT or
+                InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS or
+                InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
+            filters = arrayOf(InputFilter.LengthFilter(7))
+            gravity = Gravity.CENTER
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            )
+            setText(String.format("#%06X", 0xFFFFFF and initial))
+        }
+        hexInput.addTextChangedListener(object : TextWatcher {
+            override fun afterTextChanged(s: Editable?) {
+                if (updatingHex) return
+                val parsed = s?.toString()?.trim()?.let { runCatching { it.toColorInt() }.getOrNull() }
+                if (parsed != null) {
+                    selected = parsed
+                    pad.setColor(parsed)
+                }
+            }
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
+        })
 
         // Single drag-through spectrum (hue horizontally, white→hue→black vertically)
         val pad = SpectrumPadView(context).apply {
@@ -76,35 +104,12 @@ object CustomAccentPickerDialog {
             }
             onColorPicked = { _, _ ->
                 selected = currentColor()
+                updatingHex = true
+                hexInput.setText(String.format("#%06X", 0xFFFFFF and selected))
+                updatingHex = false
             }
         }
         root.addView(pad)
-
-        // Hex field for exact input
-        val hexInput: EditText = context.styledDialogEditText().apply {
-            hint = context.getString(R.string.color_hex_hint)
-            inputType = InputType.TYPE_CLASS_TEXT or
-                InputType.TYPE_TEXT_FLAG_CAP_CHARACTERS or
-                InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS
-            filters = arrayOf(InputFilter.LengthFilter(7))
-            gravity = Gravity.CENTER
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-            ).apply { topMargin = dp(16) }
-            setText(String.format("#%06X", 0xFFFFFF and initial))
-        }
-        hexInput.addTextChangedListener(object : TextWatcher {
-            override fun afterTextChanged(s: Editable?) {
-                val parsed = s?.toString()?.trim()?.let { runCatching { it.toColorInt() }.getOrNull() }
-                if (parsed != null) {
-                    pad.setColor(parsed)
-                    selected = parsed
-                }
-            }
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
-        })
         root.addView(hexInput)
 
         val dialog = AlertDialog.Builder(context)

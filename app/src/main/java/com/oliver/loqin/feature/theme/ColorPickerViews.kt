@@ -144,37 +144,54 @@ class SpectrumPadView @JvmOverloads constructor(
         return super.onTouchEvent(event)
     }
 
-    // --- Magnifier: floating swatch bubble above the finger while dragging ---
+    // --- Magnifier: floating swatch bubble with a connector stem, just above the finger ---
 
     private var magnifierPopup: android.widget.PopupWindow? = null
-    private var magnifierDrawable: android.graphics.drawable.GradientDrawable? = null
+    private var magnifierColorGetter: (() -> Int)? = null
 
     private fun buildMagnifierView(): View {
         val d = resources.displayMetrics.density
-        val view = View(context)
-        magnifierDrawable = android.graphics.drawable.GradientDrawable().apply {
-            shape = android.graphics.drawable.GradientDrawable.OVAL
-            setColor(currentColor())
-            setStroke((3 * d).toInt(), Color.WHITE)
-        }
-        view.background = magnifierDrawable
-        view.elevation = 8 * d
-        view.outlineProvider = object : android.view.ViewOutlineProvider() {
-            override fun getOutline(view: View, outline: android.graphics.Outline) {
-                outline.setOval(0, 0, view.width, view.height)
+        val getter = { currentColor() }
+        magnifierColorGetter = getter
+        val stroke = (3 * d).toInt()
+        return object : View(context) {
+            override fun onDraw(canvas: Canvas) {
+                val w = width.toFloat()
+                val h = height.toFloat()
+                val r = (w - 2 * stroke) / 2f
+                val cy = r + stroke
+                val color = getter()
+                thumbFillPaint.color = color
+                canvas.drawCircle(w / 2f, cy, r, thumbFillPaint)
+                thumbPaint.strokeWidth = stroke.toFloat()
+                thumbPaint.color = Color.WHITE
+                canvas.drawCircle(w / 2f, cy, r, thumbPaint)
+                // connector stem from the bubble down to the picked point
+                thumbPaint.color = Color.WHITE
+                canvas.drawRect(w / 2f - stroke, cy + r - stroke * 0.5f, w / 2f + stroke, h, thumbPaint)
+                thumbPaint.color = 0x66000000
+                canvas.drawRect(w / 2f - stroke, cy + r - stroke * 0.5f, w / 2f + stroke + stroke * 0.5f, h, thumbPaint)
             }
+        }.apply {
+            elevation = 8 * d
+            outlineProvider = object : android.view.ViewOutlineProvider() {
+                override fun getOutline(view: View, outline: android.graphics.Outline) {
+                    val r = view.width / 2f
+                    outline.setOval(
+                        (r - r).toInt(), 0, view.width, (2 * r).toInt(),
+                    )
+                }
+            }
+            clipToOutline = false
         }
-        view.clipToOutline = true
-        return view
     }
 
     private fun showMagnifier() {
         if (magnifierPopup != null) return
         val d = resources.displayMetrics.density
-        val size = (72 * d).toInt()
-        val popup = android.widget.PopupWindow(
-            buildMagnifierView(), size, size,
-        ).apply {
+        val w = (60 * d).toInt()
+        val h = w + (14 * d).toInt()
+        val popup = android.widget.PopupWindow(buildMagnifierView(), w, h).apply {
             isTouchable = false
             isFocusable = false
             isOutsideTouchable = false
@@ -182,18 +199,20 @@ class SpectrumPadView @JvmOverloads constructor(
         }
         magnifierPopup = popup
         popup.showAtLocation(this, android.view.Gravity.NO_GRAVITY, 0, 0)
-        popup.update(0, 0, size, size)
+        popup.update(0, 0, w, h)
     }
 
     private fun updateMagnifier(rawX: Float, rawY: Float) {
+        magnifierColorGetter?.invoke()
         val popup = magnifierPopup ?: return
+        popup.contentView.invalidate()
         val d = resources.displayMetrics.density
-        magnifierDrawable?.setColor(currentColor())
-        val size = (72 * d).toInt()
+        val w = (60 * d).toInt()
+        val h = w + (14 * d).toInt()
         val screenW = resources.displayMetrics.widthPixels
-        val x = (rawX - size / 2f).coerceIn(0f, screenW - size.toFloat())
-        val y = rawY - size - 28 * d
-        popup.update(x.toInt(), y.toInt(), size, size)
+        val x = (rawX - w / 2f).coerceIn(0f, screenW - w.toFloat())
+        val y = rawY - h - 6 * d
+        popup.update(x.toInt(), y.toInt(), w, h)
     }
 
     private fun hideMagnifier() {
