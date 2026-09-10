@@ -371,7 +371,7 @@
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
-                            android:contentDescription="@string/account_disclaimer_title"
+                            android:contentDescription="@string/disclaimer_title"
                             android:src="@drawable/description_24"
                             app:tint="?attr/colorPrimary" />
 
@@ -385,7 +385,7 @@
                             <TextView
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:text="@string/account_disclaimer_title"
+                                android:text="@string/disclaimer_title"
                                 android:textSize="15sp"
                                 android:textStyle="bold" />
 
@@ -393,7 +393,7 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
-                                android:text="@string/account_disclaimer_summary"
+                                android:text="@string/disclaimer_summary"
                                 android:textColor="?android:attr/textColorSecondary"
                                 android:textSize="13sp" />
                         </LinearLayout>

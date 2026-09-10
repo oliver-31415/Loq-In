@@ -7,7 +7,7 @@
     <string name="disclaimer_title">Disclaimer</string>
     <string name="disclaimer_summary">License, credits and source code</string>
     <string name="about_section_legal">Legal</string>
-    <string name="disclaimer_body">Loq In is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.\n\nCopyright (C) 2026 Loq In Contributors\n\nThis program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.\n\nLoq In is based on Switchly by Saltyy (Copyright (C) 2025-2026 Saltyy) and is a fork distributed under the GNU GPL v3.\n\nThe app\'s design is inspired by Foqos. Parts of the blocking logic and code are derived from Scrollless.\n\nSource code:</string>
+    <string name="disclaimer_body">Loq In is a fork of Switchly by Saltyy (© 2025–2026 Saltyy). The design is inspired by Foqos, and parts of the blocking logic are based on Scrollless.\n\nCopyright (C) 2026 Loq In Contributors\n\nLoq In is free software, licensed under the GNU General Public License v3: you are free to use, study, share and modify it. It comes with no warranty.\n\nSource code:</string>
     <string name="disclaimer_source_code_url">https://github.com/oliver-31415/Loq-In</string>
 
 </resources>

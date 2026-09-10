@@ -64,9 +64,6 @@
     <string name="account_overview_summary">Counters, schedules and actions at a glance</string>
     <string name="account_keys_codes_title">My keys and codes</string>
     <string name="account_keys_codes_summary">NFC tags, QR and barcode keys</string>
-    <string name="account_disclaimer_title">Disclaimer</string>
-    <string name="account_disclaimer_summary">What Loq In can and cannot do</string>
-    <string name="account_disclaimer_body">Loq In helps you reduce distractions by blocking apps, websites and selected in-app content while protection is enabled. Blocking depends on system permissions (accessibility, usage access) and can be affected by battery optimization, device manufacturer behavior and app updates. Emergency unlock is intentionally limited. Loq In is provided as-is, without warranty; you remain responsible for complying with your device and service terms.</string>
     <string name="settings_account_title">Account</string>
     <string name="settings_account_summary">Backup &amp; emergency PIN</string>
     <string name="pref_change_emergency_pin_title">Change emergency PIN</string>

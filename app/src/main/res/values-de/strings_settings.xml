@@ -64,9 +64,6 @@
     <string name="account_overview_summary">Zähler, Pläne und Aktionen im Überblick</string>
     <string name="account_keys_codes_title">Meine Schlüssel und Codes</string>
     <string name="account_keys_codes_summary">NFC-Tags, QR- und Barcode-Schlüssel</string>
-    <string name="account_disclaimer_title">Haftungsausschluss</string>
-    <string name="account_disclaimer_summary">Was Loq In kann und was nicht</string>
-    <string name="account_disclaimer_body">Loq In hilft dir, Ablenkungen zu reduzieren, indem Apps, Websites und ausgewählte In-App-Inhalte blockiert werden, solange der Schutz aktiv ist. Das Blockieren hängt von Systemberechtigungen (Bedienungshilfen, Nutzungszugriff) ab und kann durch Akkuoptimierung, Herstellerverhalten und App-Updates beeinflusst werden. Die Notfall-Entsperrung ist bewusst begrenzt. Loq In wird ohne Gewähr bereitgestellt; du bist selbst dafür verantwortlich, die Bedingungen deiner Geräte und Dienste einzuhalten.</string>
     <string name="settings_account_title">Konto</string>
     <string name="settings_account_summary">Backup &amp; Notfall-PIN</string>
     <string name="pref_change_emergency_pin_title">Notfall-PIN ändern</string>

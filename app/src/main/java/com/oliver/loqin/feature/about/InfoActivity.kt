@@ -28,8 +28,6 @@ import com.oliver.loqin.feature.support.SupportLogActivity
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.ui.EdgeToEdgeUtils
 import com.oliver.loqin.ui.ThemeUtils
-import com.oliver.loqin.ui.dialog.LoqInInfoRow
-import com.oliver.loqin.ui.dialog.showLoqInInfoDialog
 import com.google.android.material.appbar.MaterialToolbar
 
 /**
@@ -65,15 +63,7 @@ class InfoActivity : AppCompatActivity() {
             startActivity(Intent(this, WhatsNewActivity::class.java))
         }
         findViewById<View>(R.id.cardInfoDisclaimer).setOnClickListener {
-            showLoqInInfoDialog(
-                title = getString(R.string.account_disclaimer_title),
-                rows = listOf(
-                    LoqInInfoRow(
-                        label = "",
-                        value = getString(R.string.account_disclaimer_body)
-                    )
-                )
-            )
+            startActivity(Intent(this, DisclaimerActivity::class.java))
         }
     }
 }
