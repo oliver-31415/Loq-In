@@ -1,20 +1,20 @@
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="200dp"
-    android:height="120dp"
+    android:height="100dp"
     android:viewportWidth="240"
-    android:viewportHeight="144">
-    <!-- Rounded hero card base -->
+    android:viewportHeight="120">
+    <!-- Rounded hero card base (accent_default_blue / foqos_primary) -->
     <path
-        android:pathData="M24,4h192a20,20 0,0 1,20 20v96a20,20 0,0 1,-20 20h-192a20,20 0,0 1,-20 -20v-96a20,20 0,0 1,20 -20z"
+        android:pathData="M24,4h192a20,20 0,0 1,20 20v72a20,20 0,0 1,-20 20h-192a20,20 0,0 1,-20 -20v-72a20,20 0,0 1,20 -20z"
         android:fillColor="#6BA6E8" />
-    <!-- Organic top-right blob highlight -->
+    <!-- Organic top-right blob highlight (accent_default_blue_container tint) -->
     <path
-        android:pathData="M140,4h76a20,20 0,0 1,20 20v50c-20,-10 -50,-20 -96,-70z"
-        android:fillColor="#4034C98A" />
-    <!-- Organic bottom-left blob highlight -->
+        android:pathData="M140,4h76a20,20 0,0 1,20 20v42c-20,-10 -50,-20 -96,-62z"
+        android:fillColor="#59E1EDFB" />
+    <!-- Organic bottom-left blob highlight (accent_default_blue_on_container tint) -->
     <path
-        android:pathData="M4,90c30,-20 70,-10 90,50h-70a20,20 0,0 1,-20 -20z"
-        android:fillColor="#594FD9A0" />
+        android:pathData="M4,70c30,-20 70,-10 90,46h-70a20,20 0,0 1,-20 -20z"
+        android:fillColor="#40133A63" />
     <!-- Security Shield Header Icon -->
     <path
         android:pathData="M24,20L31,17L38,20V26C38,30.5 35,34.7 31,36C27,34.7 24,30.5 24,26V20Z"

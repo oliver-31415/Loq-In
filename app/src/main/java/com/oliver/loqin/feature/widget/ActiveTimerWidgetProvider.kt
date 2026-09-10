@@ -24,7 +24,10 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.res.Resources
 import android.graphics.Color
+import android.os.Build
+import android.os.Bundle
 import android.os.SystemClock
 import android.view.View
 import android.widget.RemoteViews
@@ -45,7 +48,24 @@ class ActiveTimerWidgetProvider : AppWidgetProvider() {
         ids.forEach { id -> updateWidget(context, manager, id) }
     }
 
+    override fun onAppWidgetOptionsChanged(
+        context: Context,
+        manager: AppWidgetManager,
+        id: Int,
+        newOptions: Bundle?,
+    ) {
+        super.onAppWidgetOptionsChanged(context, manager, id, newOptions)
+        updateWidget(context, manager, id)
+    }
+
     companion object {
+        // Fallbacks used when the launcher has not reported a size yet.
+        private const val DEFAULT_WIDTH_DP = 250
+        private const val DEFAULT_HEIGHT_DP = 150
+
+        // Height bucket at which the widget switches to the expanded layout.
+        private const val TALL_LAYOUT_MIN_HEIGHT_DP = 160
+
         fun updateAll(context: Context) {
             val appContext = context.applicationContext
             val manager = AppWidgetManager.getInstance(appContext)
@@ -57,7 +77,22 @@ class ActiveTimerWidgetProvider : AppWidgetProvider() {
         private fun updateWidget(context: Context, manager: AppWidgetManager, id: Int) {
             val enabled = SwitchModeStore.isEnabled(context)
             val durationMs = SwitchModeStore.getActiveDurationMillis(context)
-            val views = RemoteViews(context.packageName, R.layout.widget_active_timer)
+
+            val options = manager.getAppWidgetOptions(id)
+            val density = context.resources.displayMetrics.density
+            val widthDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH)
+                .takeIf { it > 0 } ?: DEFAULT_WIDTH_DP
+            val heightDp = options.getInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT)
+                .takeIf { it > 0 } ?: DEFAULT_HEIGHT_DP
+
+            // Render the hero artwork at the widget's real size so resizing never
+            // stretches the bitmap or distorts its rounded corners.
+            val layoutRes = if (heightDp >= TALL_LAYOUT_MIN_HEIGHT_DP) {
+                R.layout.widget_active_timer_tall
+            } else {
+                R.layout.widget_active_timer
+            }
+            val views = RemoteViews(context.packageName, layoutRes)
 
             val openIntent = Intent(context, MainActivity::class.java).apply {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
@@ -76,7 +111,6 @@ class ActiveTimerWidgetProvider : AppWidgetProvider() {
 
             if (enabled) {
                 val accent = AccentColor.getAccentColorInt(context)
-                val density = context.resources.displayMetrics.density
                 val mode = AutomationModeStore.getMode(context)
                 val iconRes = when (mode) {
                     AutomationModeStore.Mode.MIXED -> R.drawable.security_24
@@ -86,19 +120,20 @@ class ActiveTimerWidgetProvider : AppWidgetProvider() {
                     AutomationModeStore.Mode.SCHEDULE -> R.drawable.schedule_24
                 }
 
-                // Render organic Foqos-style blob artwork matching the live accent
+                // Organic Foqos-style blob artwork at the actual widget size, using the
+                // launcher's corner radius so active and idle states match.
                 val bgBitmap = HeroArtRenderer.renderBitmap(
-                    widthPx = (240 * density).toInt(),
-                    heightPx = (160 * density).toInt(),
+                    widthPx = (widthDp * density).toInt().coerceAtLeast(1),
+                    heightPx = (heightDp * density).toInt().coerceAtLeast(1),
                     accent = accent,
-                    radiusPx = 28f * density,
+                    radiusPx = widgetCornerRadiusPx(context, density),
                 )
                 views.setImageViewBitmap(R.id.widgetActiveTimerBg, bgBitmap)
 
                 // Populate header & badge
                 views.setTextViewText(R.id.widgetTitle, profile)
                 views.setTextColor(R.id.widgetTitle, Color.WHITE)
-                views.setTextViewText(R.id.widgetStatusBadge, context.getString(R.string.state_profile_on_status).uppercase())
+                views.setTextViewText(R.id.widgetStatusBadge, modeLabel(context, mode))
                 views.setTextColor(R.id.widgetStatusBadge, Color.WHITE)
                 views.setInt(R.id.widgetStatusBadge, "setBackgroundResource", R.drawable.widget_status_pill_bg)
 
@@ -129,7 +164,7 @@ class ActiveTimerWidgetProvider : AppWidgetProvider() {
                 val onSurface = ContextCompat.getColor(context, R.color.foqos_on_surface)
                 val onSurfaceVariant = ContextCompat.getColor(context, R.color.foqos_on_surface_variant)
 
-                // Calm neutral card
+                // Calm neutral card (shape drawable, scales to any size)
                 views.setImageViewResource(R.id.widgetActiveTimerBg, R.drawable.hero_profile_bg_idle)
 
                 // Header & badge
@@ -161,5 +196,35 @@ class ActiveTimerWidgetProvider : AppWidgetProvider() {
 
             manager.updateAppWidget(id, views)
         }
+
+        /**
+         * Corner radius used for the active hero bitmap. On API 31+ the launcher
+         * publishes its widget corner radius as a system dimen; fall back to the
+         * same 28dp used by hero_profile_bg_idle.
+         */
+        private fun widgetCornerRadiusPx(context: Context, density: Float): Float {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                try {
+                    val radius = context.resources.getDimension(
+                        android.R.dimen.system_app_widget_background_radius
+                    )
+                    if (radius > 0f) return radius
+                } catch (_: Resources.NotFoundException) {
+                    // Fall through to the legacy default.
+                }
+            }
+            return 28f * density
+        }
+
+        private fun modeLabel(context: Context, mode: AutomationModeStore.Mode): String =
+            context.getString(
+                when (mode) {
+                    AutomationModeStore.Mode.MIXED -> R.string.blocking_mode_mixed
+                    AutomationModeStore.Mode.NFC -> R.string.blocking_mode_nfc
+                    AutomationModeStore.Mode.QR -> R.string.blocking_mode_qr
+                    AutomationModeStore.Mode.BARCODE -> R.string.blocking_mode_barcode
+                    AutomationModeStore.Mode.SCHEDULE -> R.string.blocking_mode_schedule
+                }
+            )
     }
 }
