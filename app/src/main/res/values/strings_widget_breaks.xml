@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_breaks_title">Break</string>
+    <string name="widget_breaks_protection_off">Protection is off</string>
+    <string name="widget_breaks_ends_at_fmt">Ends at %1$s</string>
+    <string name="widget_breaks_end_tile">End break</string>
+    <string name="widget_breaks_5">5 min</string>
+    <string name="widget_breaks_ended_toast">Break ended – Loq In is protecting again.</string>
+</resources>

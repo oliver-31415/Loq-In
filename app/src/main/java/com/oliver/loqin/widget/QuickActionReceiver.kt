@@ -36,17 +36,21 @@ class QuickActionReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
             ACTION_FOCUS_NOW -> handleFocusNow(context)
+            ACTION_PAUSE_LOQIN_5 -> handlePauseLoqIn(context, 5)
             ACTION_PAUSE_LOQIN_15 -> handlePauseLoqIn(context, 15)
             ACTION_PAUSE_LOQIN_30 -> handlePauseLoqIn(context, 30)
             ACTION_PAUSE_LOQIN_60 -> handlePauseLoqIn(context, 60)
+            ACTION_PAUSE_LOQIN_END -> handlePauseLoqInEnd(context)
         }
     }
 
     companion object {
         const val ACTION_FOCUS_NOW = "com.oliver.loqin.action.FOCUS_NOW"
+        const val ACTION_PAUSE_LOQIN_5 = "com.oliver.loqin.action.PAUSE_LOQIN_5"
         const val ACTION_PAUSE_LOQIN_15 = "com.oliver.loqin.action.PAUSE_LOQIN_15"
         const val ACTION_PAUSE_LOQIN_30 = "com.oliver.loqin.action.PAUSE_LOQIN_30"
         const val ACTION_PAUSE_LOQIN_60 = "com.oliver.loqin.action.PAUSE_LOQIN_60"
+        const val ACTION_PAUSE_LOQIN_END = "com.oliver.loqin.action.PAUSE_LOQIN_END"
 
         fun refreshWidgets(context: Context) {
             PauseBlockerWidgetProvider.refreshAll(context)
@@ -132,6 +136,24 @@ class QuickActionReceiver : BroadcastReceiver() {
                 context.resources.getQuantityString(R.plurals.widget_pause_applied_fmt, minutes, minutes),
                 Toast.LENGTH_SHORT
             ).show()
+            refreshWidgets(context)
+            return true
+        }
+
+        // Ends an active break early. Ending a break restores protection, so unlike
+        // starting one it needs no control-mode / NFC gate.
+        fun handlePauseLoqInEnd(context: Context): Boolean {
+            val remaining = SwitchModeStore.getTemporaryRemainingMillis(context)
+            if (remaining <= 0L) {
+                AppLogStore.append(context, "Widget", "action_result action=end_break result=noop reason=no_active_break")
+                refreshWidgets(context)
+                return false
+            }
+
+            SwitchModeStore.cancelTemporaryDisable(context)
+            AppLogStore.append(context, "Profiles", "Manual toggle action=temp_disable_end profile=${ProfileStore.getCurrent(context)}")
+            AppLogStore.append(context, "Widget", "action_result action=end_break result=changed reason=applied")
+            Toast.makeText(context, context.getString(R.string.widget_breaks_ended_toast), Toast.LENGTH_SHORT).show()
             refreshWidgets(context)
             return true
         }

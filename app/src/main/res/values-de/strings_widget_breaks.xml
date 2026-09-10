@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_breaks_title">Pause</string>
+    <string name="widget_breaks_protection_off">Schutz ist aus</string>
+    <string name="widget_breaks_ends_at_fmt">Endet um %1$s</string>
+    <string name="widget_breaks_end_tile">Pause beenden</string>
+    <string name="widget_breaks_5">5 Min</string>
+    <string name="widget_breaks_ended_toast">Pause beendet – Loq In schützt wieder.</string>
+</resources>
