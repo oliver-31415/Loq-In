@@ -6,33 +6,8 @@ channels, usage statistics, and local file backup/restore — all offline, with 
 
 Loq In is a fork that continues [Switchly](https://gitlab.com/Saltyy/switchly-public) by
 Saltyy. It is free software licensed under the **GNU General Public License v3.0**.
-
-- Repository: <https://github.com/oliver-31415/Loq-In>
-
 ---
 
-## Project Structure
-
-Source code root:
-
-```text
-app/src/main/java/com/oliver/loqin
-```
-
-- `blocking` — accessibility and blocking runtime logic
-- `data/prefs` — key-value stores and schedule/profile settings
-- `data/sync` — local file backup/restore runtime
-- `data/statistics` — Room archive for counters, sessions, and Activity History
-- `feature/` — screens and feature-specific UI
-- `nfc` — NFC/deep-link command schema and tag entry handling
-- `platform/receiver` — receivers/services for schedule, Wi-Fi, Bluetooth, location, and system events
-- `security` — app lock and related safety helpers
-- `ui`, `widget`, `util`, `theme` — shared UI, home-screen widgets, helpers
-
-Icons are based on **Material Symbols**:
-[https://fonts.google.com/icons](https://fonts.google.com/icons)
-
----
 
 ## Build
 
