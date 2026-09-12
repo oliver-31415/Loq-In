@@ -5,8 +5,7 @@ apps, websites, and in-app activities are blocked, with schedules, NFC/QR/barcod
 channels, usage statistics, and local file backup/restore — all offline, with no accounts.
 
 Loq In is a fork that continues [Switchly](https://gitlab.com/Saltyy/switchly-public) by
-Saltyy. It is free software licensed under the **GNU General Public License v3.0**.
----
+Saltyy. It is free software licensed under the **GNU General Public License v3.0**
 
 
 ## Build
