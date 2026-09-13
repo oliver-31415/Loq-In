@@ -22,8 +22,6 @@ import android.app.Activity
 import android.app.Application
 import android.content.Context
 import android.os.Bundle
-import androidx.appcompat.app.AppCompatDelegate
-import androidx.preference.PreferenceManager
 import com.oliver.loqin.blocking.BlockingRuntime
 import com.oliver.loqin.data.prefs.SwitchModeStore
 import com.oliver.loqin.data.prefs.UsageStore
@@ -63,13 +61,13 @@ class LoqInApp : Application() {
         registerActivityLifecycleCallbacks(ThemeRefreshCallbacks)
 
         // theme
-        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-
-        when (prefs.getString("pref_theme", "system")) {
-            "light" -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-            "dark"  -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-            else    -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
-        }
+        // Read the same key the Appearance/Settings UI writes (pref_theme_mode),
+        // with a one-time fallback to the pre-2.0 pref_theme key. Reading the
+        // wrong key here reset every explicit dark/light choice back to
+        // FOLLOW_SYSTEM (or a stale legacy value) on each cold start — which
+        // is exactly what happens overnight when Android kills the process,
+        // so users woke up to a light app in the morning.
+        com.oliver.loqin.ui.ThemeUtils.applySavedNightMode(this)
 
         AppLockManager.register(this)
 

@@ -32,7 +32,6 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.graphics.toColorInt
@@ -99,8 +98,7 @@ class AppearanceActivity : AppCompatActivity() {
     }
 
     private fun updateThemeModeSummary() {
-        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-        val current = prefs.getString("pref_theme_mode", "system") ?: "system"
+        val current = ThemeUtils.getSavedThemeMode(this)
         tvThemeModeSummary.text = when (current) {
             "light" -> getString(R.string.pref_theme_mode_light)
             "dark" -> getString(R.string.pref_theme_mode_dark)
@@ -153,7 +151,7 @@ class AppearanceActivity : AppCompatActivity() {
 
     private fun showThemeModeDialog() {
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-        val current = prefs.getString("pref_theme_mode", "system") ?: "system"
+        val current = ThemeUtils.getSavedThemeMode(this)
 
         val entries = arrayOf(
             getString(R.string.pref_theme_mode_system),
@@ -181,14 +179,10 @@ class AppearanceActivity : AppCompatActivity() {
             ),
         ) { which, dialog ->
             val selected = values[which]
-            prefs.edit { putString("pref_theme_mode", selected) }
+            prefs.edit { putString(ThemeUtils.PREF_THEME_MODE, selected) }
             updateThemeModeSummary()
 
-            when (selected) {
-                "light" -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-                "dark" -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-                else -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
-            }
+            ThemeUtils.applyNightMode(selected)
 
             dialog.dismiss()
             recreate()

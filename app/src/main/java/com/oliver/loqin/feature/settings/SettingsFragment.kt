@@ -50,7 +50,6 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.graphics.drawable.DrawableCompat
@@ -753,9 +752,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
     // Appearance summaries
     private fun updateThemeModeSummary(pref: Preference?) {
         pref ?: return
-        val ctx = requireContext()
-        val prefs = PreferenceManager.getDefaultSharedPreferences(ctx)
-        val current = prefs.getString("pref_theme_mode", "system") ?: "system"
+        val current = com.oliver.loqin.ui.ThemeUtils.getSavedThemeMode(requireContext())
 
         val label = when (current) {
             "light" -> getString(R.string.pref_theme_mode_light)
@@ -838,7 +835,7 @@ class SettingsFragment : PreferenceFragmentCompat() {
     private fun showThemeModeDialog() {
         val ctx = requireContext()
         val prefs = PreferenceManager.getDefaultSharedPreferences(ctx)
-        val current = prefs.getString("pref_theme_mode", "system") ?: "system"
+        val current = com.oliver.loqin.ui.ThemeUtils.getSavedThemeMode(ctx)
 
         val entries = arrayOf(
             getString(R.string.pref_theme_mode_system),
@@ -866,14 +863,10 @@ class SettingsFragment : PreferenceFragmentCompat() {
             ),
         ) { which, dialog ->
             val selected = values[which]
-            prefs.edit { putString("pref_theme_mode", selected) }
+            prefs.edit { putString(com.oliver.loqin.ui.ThemeUtils.PREF_THEME_MODE, selected) }
             updateThemeModeSummary(findPreference("pref_theme_mode"))
 
-            when (selected) {
-                "light" -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-                "dark" -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-                else -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
-            }
+            com.oliver.loqin.ui.ThemeUtils.applyNightMode(selected)
 
             dialog.dismiss()
         }

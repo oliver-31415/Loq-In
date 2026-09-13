@@ -18,11 +18,14 @@
 package com.oliver.loqin.ui
 
 import android.app.Activity
+import android.content.Context
 import android.content.res.ColorStateList
 import android.view.View
 import android.view.ViewGroup
 import android.widget.CompoundButton
 import android.widget.ImageView
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.core.content.edit
 import androidx.core.graphics.ColorUtils
 import androidx.preference.PreferenceManager
 import com.oliver.loqin.R
@@ -31,6 +34,45 @@ import com.oliver.loqin.theme.CustomAccentApplier
 import com.oliver.loqin.util.FrameworkApi34Compat
 
 object ThemeUtils {
+
+    /**
+     * Single source of truth for the display-mode preference.
+     *
+     * The UI (Appearance + Settings) stores the choice under [PREF_THEME_MODE].
+     * Very old installs (pre-2.0) stored it under [PREF_THEME_LEGACY]; that key
+     * is only read as a fallback and migrated forward so a stale legacy value
+     * can never override the current choice after a process restart (e.g.
+     * overnight, when Android kills the app and [applySavedNightMode] runs
+     * again on cold start).
+     */
+    const val PREF_THEME_MODE = "pref_theme_mode"
+    const val PREF_THEME_LEGACY = "pref_theme"
+
+    fun getSavedThemeMode(context: Context): String {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(context)
+        prefs.getString(PREF_THEME_MODE, null)?.let { return it }
+        // One-time migration for pre-2.0 installs that only have the legacy key.
+        val legacy = prefs.getString(PREF_THEME_LEGACY, null)
+        if (legacy != null) {
+            runCatching {
+                prefs.edit { putString(PREF_THEME_MODE, legacy) }
+            }
+            return legacy
+        }
+        return "system"
+    }
+
+    fun applyNightMode(mode: String) {
+        when (mode) {
+            "light" -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
+            "dark" -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+            else -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
+        }
+    }
+
+    fun applySavedNightMode(context: Context) {
+        applyNightMode(getSavedThemeMode(context))
+    }
 
     /**
      * Apply the user-selected accent theme variant to the activity before super.onCreate().
