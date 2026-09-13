@@ -39,6 +39,7 @@ import android.text.InputType
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.style.ForegroundColorSpan
+import android.text.style.ImageSpan
 import android.view.DragEvent
 import android.view.HapticFeedbackConstants
 import android.view.LayoutInflater
@@ -404,6 +405,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         setSupportActionBar(toolbar)
+        applyHomeWordmarkTitle(toolbar)
 
         scrollMain = findViewById(R.id.scrollMain)
         // Foqos restyle: toolbar is inline in the scroll (scrolls away like Foqos's title),
@@ -4941,6 +4943,28 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    /**
+     * Replaces the Home toolbar title text with the "loq in" wordmark, keeping the same toolbar
+     * title line height (so the header layout is unchanged) and following the surface text color.
+     */
+    private fun applyHomeWordmarkTitle(toolbar: MaterialToolbar) {
+        val drawable = ContextCompat.getDrawable(this, R.drawable.loqin_wordmark)?.mutate() ?: return
+        val targetHeight = (52f * resources.displayMetrics.density).toInt().coerceAtLeast(1)
+        val targetWidth = (drawable.intrinsicWidth.toFloat() * targetHeight / drawable.intrinsicHeight)
+            .toInt()
+            .coerceAtLeast(1)
+        drawable.setBounds(0, 0, targetWidth, targetHeight)
+        val onSurface = MaterialColors.getColor(
+            this,
+            com.google.android.material.R.attr.colorOnSurface,
+            android.graphics.Color.BLACK,
+        )
+        drawable.setTint(onSurface)
+        val title = SpannableString(" ")
+        title.setSpan(ImageSpan(drawable, ImageSpan.ALIGN_BOTTOM), 0, 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        toolbar.title = title
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
