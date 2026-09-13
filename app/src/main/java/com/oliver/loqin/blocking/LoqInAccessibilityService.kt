@@ -168,8 +168,20 @@ class LoqInAccessibilityService : AccessibilityService() {
     private var lastOpenSessionPkg: String? = null
     private var lastOpenSessionAt: Long = 0L
     private val inAppSurfaceEvidence = InAppSurfaceEvidence()
+    // Package-wide post-block grace. It intentionally suppresses ALL surfaces in a package for a
+    // short window: per-surface grace was evaluated but keeping it package-wide avoids re-entering
+    // an app mid-navigation and re-showing the blocker while the UI is still animating away.
     private val inAppGraceUntilByPkg = HashMap<String, Long>()
+    // Per-surface re-entry guards (belt-and-braces on top of the package grace).
     private val surfaceBlockGuardUntil = HashMap<String, Long>()
+    // Facebook bottom-tab tap hints are tracked separately from the shared single-slot hint so the
+    // Reels auto-hint (which rewrites the shared slot on every detected frame) cannot clobber a
+    // tab tap before the passive probe consumes it.
+    private val fbTabHintKeyByPkg = HashMap<String, String>()
+    private val fbTabHintAtByPkg = HashMap<String, Long>()
+
+    // Cache of compiled Unicode word-boundary patterns, keyed by lowercased needle. Threads
+    // matching runs on every accessibility event; the needle set is small and stable.
 
     private val SURFACE_BLOCK_COOLDOWN_MS = 1_200L
     private val WEBSITE_REDIRECT_FOLLOW_UP_COOLDOWN_MS = 1_800L
@@ -189,6 +201,15 @@ class LoqInAccessibilityService : AccessibilityService() {
     private val BLOCK_SHOWN_COOLDOWN_MS = 800L
     private val SURFACE_CONFIRM_MS = 850L
     private val SURFACE_HINT_TTL_MS = 4_500L
+    // Facebook passive (selected-tab) probes only run on the 1 Hz foreground tick plus sparse
+    // content events, so the 850 ms YouTube/Instagram window would reset the count on every tick
+    // and never reach the required two samples. A slightly wider window keeps the debounce real
+    // without delaying a tap (tap/hint paths use required=1).
+    private val FB_SURFACE_CONFIRM_MS = 1_800L
+    // After tapping any non-Reels Facebook bottom tab the destination page may briefly look like
+    // the Reels viewer (full-screen pager, hidden nav). Suppress the structural Reels check for
+    // this window after such a tap.
+    private var lastFacebookNonReelsTabTapAt: Long = 0L
 
     private val ENFORCEMENT_TICK_CADENCE_MS = 450L
     private val ENFORCEMENT_SNAPCHAT_NAV_MS = 0L
@@ -345,6 +366,51 @@ class LoqInAccessibilityService : AccessibilityService() {
         "edit profile", "profil bearbeiten"
     )
 
+    // Facebook bottom-tab surface labels.
+    // Facebook resource ids are obfuscated and change between releases, and the bottom tab bar is
+    // user-customizable (a tab may not even be present), so detection leans on nav content
+    // descriptions plus band geometry. Labels are matched before the first comma because Facebook
+    // appends locators such as ", Tab" or ", selected".
+    private val FB_MARKETPLACE_LABELS = listOf("marketplace", "marktplatz", "mercado", "marché", "mercatino")
+    private val FB_TAB_SURFACE_KEYS = arrayOf("fb:marketplace")
+    // Ambiguous viewer-ish labels. "send message", "your story" and "view story" also appear on
+    // profiles, pages and search results, so these are only supporting evidence: a block also
+    // requires either a strong label or the structural full-screen viewer check below.
+    private val FB_STORIES_VIEWER_LABELS = listOf(
+        "send message", "nachricht senden", "enviar mensaje", "enviar mensagem",
+        "envoyer un message", "invia messaggio", "invia un messaggio",
+        "reply", "antworten", "responder", "répondre", "rispondi",
+        "your story", "view story",
+        "deine story", "tu historia", "sua história", "ton histoire", "la tua storia"
+    )
+    // Labels that are (near-)unique to the full-screen Stories viewer, across the locales the app
+    // ships. Only these can trigger a Stories block without the structural viewer check.
+    private val FB_STORIES_VIEWER_STRONG_LABELS = listOf(
+        "reply to story", "reply to your story",
+        "add to your story", "add to story",
+        "auf deine story antworten", "deine story antworten", "story antworten",
+        "zu deiner story hinzufügen", "zu deiner geschichte hinzufügen",
+        "responder a la historia", "responder a tu historia",
+        "añadir a tu historia", "agregar a tu historia",
+        "responder ao story", "adicionar ao seu story", "adicionar à sua história",
+        "répondre à la story", "répondre à l'histoire",
+        "ajouter à votre story", "ajouter à ton histoire",
+        "rispondi alla storia", "aggiungi alla tua storia"
+    )
+    // Structural, locale-independent Stories viewer pieces: a full-screen media/overlay node plus a
+    // bottom reply bar. Combined with the absence of the tab shell this keeps non-English viewers
+    // blocking without depending on translated strings.
+    private val FB_STORIES_MEDIA_CLASSES = setOf(
+        "android.view.SurfaceView",
+        "android.view.TextureView",
+        "android.widget.VideoView",
+        "android.widget.ImageView"
+    )
+    private val FB_STORIES_REPLY_CLASSES = setOf(
+        "android.widget.EditText",
+        "android.widget.AutoCompleteTextView"
+    )
+
     // X surface labels
     private val X_HOME_LABELS = listOf("home", "home timeline", "startseite", "for you", "following")
     private val X_HOME_NAV_LABELS = listOf("home", "home timeline", "startseite")
@@ -393,6 +459,9 @@ class LoqInAccessibilityService : AccessibilityService() {
     private val INSTA_REELS_REENTRY_GUARD_MS = 1_800L
     private val INSTA_EXPLORE_REENTRY_GUARD_MS = 2_200L
     private val YT_SHORTS_REENTRY_GUARD_MS = 5_000L
+    // Short package-wide grace for YouTube after a block/dismiss. Long enough to hide the
+    // Home-redirect animation, short enough that re-tapping a blocked tab cannot slip through.
+    private val YT_POST_BLOCK_GRACE_MS = 600L
     private val PIP_KILL_COOLDOWN_MS = 8_000L
 
     private val MAX_NODE_SCAN_COUNT = 120
@@ -661,9 +730,9 @@ class LoqInAccessibilityService : AccessibilityService() {
     private fun packageHasInAppFeaturesEnabled(pkg: String): Boolean {
         return when {
             isYouTubePackage(pkg) ->
-                inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_SHORTS)
-                // NOTE: Temporarily hidden YouTube settings (Subscriptions, You, Mini Player, PiP).
-                // Kept disabled for now; may be added back later.
+                inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_SHORTS) ||
+                    inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_SUBSCRIPTIONS) ||
+                    inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_YOU)
 
             pkg == PACKAGE_INSTAGRAM ->
                 inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_IG_REELS) ||
@@ -671,7 +740,8 @@ class LoqInAccessibilityService : AccessibilityService() {
                     inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_IG_STORIES)
 
             pkg == PACKAGE_FACEBOOK || pkg == PACKAGE_FACEBOOK_LITE ->
-                inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_FB_REELS)
+                inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_FB_REELS) ||
+                    inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_FB_MARKETPLACE)
 
             pkg == PACKAGE_X ->
                 inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_X_HOME) ||
@@ -693,7 +763,8 @@ class LoqInAccessibilityService : AccessibilityService() {
         return when {
             isYouTubePackage(pkg) -> YT_LOW_SIGNAL_LABELS
             pkg == PACKAGE_INSTAGRAM -> IG_LOW_SIGNAL_LABELS
-            pkg == PACKAGE_FACEBOOK || pkg == PACKAGE_FACEBOOK_LITE -> listOf("reels")
+            pkg == PACKAGE_FACEBOOK || pkg == PACKAGE_FACEBOOK_LITE ->
+                listOf("reels", "marketplace", "watch", "gaming", "groups")
             pkg == PACKAGE_X -> X_LOW_SIGNAL_LABELS
             pkg == PACKAGE_SNAPCHAT -> SNAP_LOW_SIGNAL_LABELS
             else -> emptyList()
@@ -1040,9 +1111,9 @@ class LoqInAccessibilityService : AccessibilityService() {
                 (pendingYouTubeHomeRedirectFlags and BlockerActivity.FLAG_YOUTUBE_CLEANUP_SHORTS) != 0
             val cleanupMini =
                 (pendingYouTubeHomeRedirectFlags and BlockerActivity.FLAG_YOUTUBE_CLEANUP_MINI) != 0
-            inAppGraceUntilByPkg[pkg] = ackNow + maxOf(INAPP_POST_BLOCK_GRACE_MS, YT_SHORTS_REENTRY_GUARD_MS)
+            inAppGraceUntilByPkg[pkg] = ackNow + YT_POST_BLOCK_GRACE_MS
             surfaceBlockGuardUntil["$pkg|yt:shorts"] = ackNow + YT_SHORTS_REENTRY_GUARD_MS
-            surfaceBlockGuardUntil["$pkg|yt:subscriptions"] = ackNow + YT_SHORTS_REENTRY_GUARD_MS
+            surfaceBlockGuardUntil["$pkg|yt:subscriptions"] = ackNow + YT_POST_BLOCK_GRACE_MS
             clearSurfaceEvidenceForPackage(pkg)
             clearSurfaceHintForPackage(pkg)
             if (currentSurfacePkg == pkg) {
@@ -1069,6 +1140,9 @@ class LoqInAccessibilityService : AccessibilityService() {
                 handler.postDelayed({ dismissYouTubeMiniPlayer("post_ack_retry_300") }, 300L)
                 handler.postDelayed({ dismissYouTubeMiniPlayer("post_ack_retry_750") }, 750L)
             } else {
+                // Subscriptions/You: do not relaunch on every retry (that spams Home intents during
+                // transitions). The post-redirect verification below launches Home only if the tab
+                // still did not change.
                 redirectYouTubeToHome("post_ack", postAckRoot, allowLaunchFallback = false, closeMiniPlayer = false)
             }
             return
@@ -1079,7 +1153,12 @@ class LoqInAccessibilityService : AccessibilityService() {
             val ackNow = System.currentTimeMillis()
 
             // Prevent immediate re-detection loops while navigating back to app home.
-            inAppGraceUntilByPkg[pkg] = ackNow + INAPP_POST_BLOCK_GRACE_MS
+            // Facebook uses the same grace as other apps: its ack BACK returns to the feed,
+            // which needs a few seconds to settle and reveal the bottom nav again.
+            inAppGraceUntilByPkg[pkg] = ackNow + when {
+                isYouTubePackage(pkg) -> YT_POST_BLOCK_GRACE_MS
+                else -> INAPP_POST_BLOCK_GRACE_MS
+            }
             clearSurfaceEvidenceForPackage(pkg)
             clearSurfaceHintForPackage(pkg)
             if (currentSurfacePkg == pkg) {
@@ -1100,9 +1179,14 @@ class LoqInAccessibilityService : AccessibilityService() {
                 // recur. With the pager gone, no BACK is safe: the feed's back handler ends
                 // the app task, which reads as a crash.
                 val clipsViewerStillOpen = rootNow?.let { hasVisibleInstagramClipsViewer(it, pkg) } == true
+                // A still-open stories viewer needs exactly one BACK to exit back to the feed.
+                // When it already closed itself (auto-advance, or Home selected), no BACK is
+                // safe: the feed's back handler ends the app task, which reads as a crash.
+                val storiesViewerStillOpen = stateNow == "stories"
 
                 effectiveBackCount = when {
                     clipsViewerStillOpen -> 1
+                    storiesViewerStillOpen -> 1
                     stateNow == "home" || homeSelected -> 0
                     stateNow == "reels" || stateNow == "explore" || searchNow -> pendingBackCount.coerceAtMost(2)
                     // Unknown Instagram state (frequent on rapid transitions): keep one conservative in-app back so users cannot stay in blocked viewers.
@@ -2128,7 +2212,14 @@ class LoqInAccessibilityService : AccessibilityService() {
 
         // Short grace period after a surface block to prevent re-detect loops while the app animates away.
         // Snapchat needs a much tighter window: after blocking one story, opening the next story should be checked immediately.
-        val postBlockGraceMs = if (pkg == PACKAGE_SNAPCHAT) SNAP_POST_BLOCK_GRACE_MS else INAPP_POST_BLOCK_GRACE_MS
+        // YouTube bottom-nav surfaces re-enable detection quickly: a long package-wide grace left a
+        // 3.5-5s window where tapping a blocked tab opened it unblocked. Shorts keeps its own
+        // per-surface guard, so a short package grace here does not cause Shorts loops.
+        val postBlockGraceMs = when {
+            pkg == PACKAGE_SNAPCHAT -> SNAP_POST_BLOCK_GRACE_MS
+            isYouTubePackage(pkg) -> YT_POST_BLOCK_GRACE_MS
+            else -> INAPP_POST_BLOCK_GRACE_MS
+        }
         inAppGraceUntilByPkg[pkg] = now + postBlockGraceMs
         clearSurfaceEvidenceForPackage(pkg)
         if (currentSurfacePkg == pkg) {
@@ -2339,6 +2430,8 @@ class LoqInAccessibilityService : AccessibilityService() {
         val isInAppFeaturePkg =
             isYouTubePackage(pkg) ||
                 pkg == PACKAGE_INSTAGRAM ||
+                pkg == PACKAGE_FACEBOOK ||
+                pkg == PACKAGE_FACEBOOK_LITE ||
                 pkg == PACKAGE_X ||
                 pkg == PACKAGE_SNAPCHAT
 
@@ -2913,159 +3006,6 @@ class LoqInAccessibilityService : AccessibilityService() {
         return InAppRuleStore.shouldBlockSurface(this, profile, baseKey)
     }
 
-    private fun isEmbeddedBrowserSurfaceVisible(
-        root: AccessibilityNodeInfo,
-        pkg: String,
-        event: AccessibilityEvent?
-    ): Boolean {
-        if (!isEmbeddedBrowserPackage(pkg)) {
-            return true
-        }
-
-        var webViewFound = false
-        var browserChromeFound = false
-
-        fun inspect(node: AccessibilityNodeInfo) {
-            val className = node.className?.toString().orEmpty()
-            val viewId = node.viewIdResourceName?.lowercase(Locale.getDefault()).orEmpty()
-            val label = node.contentDescription
-                ?.toString()
-                ?.lowercase(Locale.getDefault())
-                .orEmpty()
-
-            if (className.contains("WebView", ignoreCase = true) ||
-                viewId.contains("webview") ||
-                viewId.contains("web_view")
-            ) {
-                webViewFound = true
-            }
-
-            val idLooksBrowserChrome =
-                viewId.contains("browser") ||
-                    viewId.contains("webview") ||
-                    viewId.contains("web_view") ||
-                    viewId.contains("browser_url") ||
-                    viewId.contains("url_bar")
-            val labelLooksBrowserChrome = listOf(
-                "open in browser",
-                "open in chrome",
-                "open externally",
-                "in browser öffnen",
-                "extern öffnen",
-                "browser menu",
-                "browser-menü",
-                "reload page",
-                "seite neu laden"
-            ).any(label::contains)
-
-            if (idLooksBrowserChrome || labelLooksBrowserChrome) {
-                browserChromeFound = true
-            }
-        }
-
-        val source = runCatching { event?.source }.getOrNull()
-        if (source != null) {
-            inspect(source)
-        }
-
-        data class WorkItem(val node: AccessibilityNodeInfo, val depth: Int)
-        val stack = ArrayDeque<WorkItem>()
-        stack.addLast(WorkItem(root, 0))
-        var visited = 0
-
-        while (stack.isNotEmpty() && visited < 140 && !(webViewFound && browserChromeFound)) {
-            val item = stack.removeLast()
-            val current = item.node
-            visited++
-            inspect(current)
-
-            if (item.depth >= 6) {
-                continue
-            }
-            val childCount = runCatching { current.childCount }.getOrDefault(0)
-            for (index in childCount - 1 downTo 0) {
-                if (visited + stack.size >= 160) {
-                    break
-                }
-                val child = runCatching { current.getChild(index) }.getOrNull() ?: continue
-                stack.addLast(WorkItem(child, item.depth + 1))
-            }
-        }
-
-        return webViewFound && browserChromeFound
-    }
-
-    private fun tryExtractDomainFromEmbeddedBrowser(
-        root: AccessibilityNodeInfo,
-        pkg: String,
-        event: AccessibilityEvent?
-    ): String? {
-        tryExtractDomainFromBrowserUrlViews(root, pkg)?.let { return it }
-
-        fun domainCandidate(node: AccessibilityNodeInfo): String? {
-            val viewId = node.viewIdResourceName?.lowercase(Locale.getDefault()).orEmpty()
-            val idLooksLikeUrl =
-                viewId.contains("url") ||
-                    viewId.contains("address") ||
-                    viewId.contains("domain") ||
-                    viewId.contains("omnibox") ||
-                    viewId.contains("location_bar")
-
-            val candidates = sequenceOf(
-                node.text?.toString()?.trim(),
-                node.contentDescription?.toString()?.trim()
-            )
-            for (raw in candidates) {
-                val value = raw.orEmpty()
-                if (value.isBlank()) {
-                    continue
-                }
-                val explicitUrl = value.contains("http://", ignoreCase = true) ||
-                    value.contains("https://", ignoreCase = true) ||
-                    value.contains("www.", ignoreCase = true)
-                if (idLooksLikeUrl || explicitUrl) {
-                    domainFromText(value)?.let { return it }
-                }
-            }
-            return null
-        }
-
-        val source = runCatching { event?.source }.getOrNull()
-        if (source != null) {
-            domainCandidate(source)?.let { return it }
-            val parent = runCatching { source.parent }.getOrNull()
-            if (parent != null) {
-                domainCandidate(parent)?.let { return it }
-            }
-        }
-
-        data class WorkItem(val node: AccessibilityNodeInfo, val depth: Int)
-        val stack = ArrayDeque<WorkItem>()
-        stack.addLast(WorkItem(root, 0))
-        var visited = 0
-
-        while (stack.isNotEmpty() && visited < 160) {
-            val item = stack.removeLast()
-            val current = item.node
-            visited++
-            domainCandidate(current)?.let { return it }
-
-            if (item.depth >= 7) {
-                continue
-            }
-            val childCount = runCatching { current.childCount }.getOrDefault(0)
-            for (index in childCount - 1 downTo 0) {
-                if (visited + stack.size >= 180) {
-                    break
-                }
-                val child = runCatching { current.getChild(index) }.getOrNull() ?: continue
-                stack.addLast(WorkItem(child, item.depth + 1))
-            }
-        }
-
-        return null
-    }
-
     private fun tryExtractDomainFromBrowserUrlViews(root: AccessibilityNodeInfo, pkg: String): String? {
         val ids = browserUrlViewIds(pkg)
         for (id in ids) {
@@ -3307,10 +3247,6 @@ class LoqInAccessibilityService : AccessibilityService() {
     ): Pair<String, Boolean>? {
         if (root == null) {
             return null
-        }
-
-        if (isEmbeddedBrowserPackage(pkg)) {
-            return tryExtractDomainFromEmbeddedBrowser(root, pkg, event)?.let { it to true }
         }
 
         tryExtractDomainFromBrowserUrlViews(root, pkg)?.let { return it to true }
@@ -3729,10 +3665,6 @@ class LoqInAccessibilityService : AccessibilityService() {
             perf.rootMisses++
             return
         }
-        if (isEmbeddedBrowserPackage(pkg) && !isEmbeddedBrowserSurfaceVisible(root, pkg, event)) {
-            browserWebsiteState.clearCurrentFor(pkg)
-            return
-        }
 
         val now = System.currentTimeMillis()
         if (eventLooksLikeBrowserAddressEditing(pkg, event)) {
@@ -3825,14 +3757,6 @@ class LoqInAccessibilityService : AccessibilityService() {
                         throttleMs = 2_000L
                     )
                     return
-                }
-                if (isEmbeddedBrowserPackage(pkg)) {
-                    appendBlockingLog(
-                        category = "website_detect",
-                        key = "web-embedded-no-host|$pkg|${eventTypeLabel(event)}",
-                        message = "pkg=$pkg result=no_host surface=embedded_browser blockEnabled=$blockWebsitesEnabled blockedCount=${blockedDomainsList.size}",
-                        throttleMs = 2_500L
-                    )
                 }
                 if (isFirefoxFamily(pkg)) {
                     appendBlockingLog(
@@ -4775,8 +4699,39 @@ class LoqInAccessibilityService : AccessibilityService() {
         attempt("home_tab_immediate", allowFallbackThisStep = true)
         handler.postDelayed({ attempt("home_tab_retry_120", allowFallbackThisStep = false) }, 120L)
         handler.postDelayed({ attempt("settle_360", allowFallbackThisStep = false) }, 360L)
+        handler.postDelayed({ verifyYouTubeHomeAfterRedirect("$reason:verify_700", targetPkg) }, 700L)
+        handler.postDelayed({ verifyYouTubeHomeAfterRedirect("$reason:verify_1200", targetPkg) }, 1_200L)
         if (closeMiniPlayer) {
             handler.postDelayed({ dismissYouTubeMiniPlayer("$reason:mini_retry_650") }, 650L)
+        }
+    }
+
+    /**
+     * After a redirect attempt, confirm YouTube actually left a blocked surface. The tab-tap
+     * helpers can report success from a stale tree or a dispatched-but-missed tap, leaving the
+     * user on the blocked page ("moved=true" in the log while still on Subscriptions/You).
+     * When a blocked bottom-nav surface is still selected, fall back to an explicit Home launch.
+     */
+    private fun verifyYouTubeHomeAfterRedirect(reason: String, targetPkg: String) {
+        runCatching {
+            val root = youtubeCurrentRoot()
+            val selected = root?.let { detectYouTubeSelectedSurface(it) }
+                ?: resolveYouTubeSurfaceFromEvent(null)
+            val stillBlocked = when (selected) {
+                "yt:subscriptions" -> inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_SUBSCRIPTIONS)
+                "yt:you" -> inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_YOU)
+                "yt:shorts" -> inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_SHORTS)
+                else -> false
+            }
+            appendBlockingLog(
+                category = "yt_home_verify",
+                key = "yt-home-verify|$reason",
+                message = "reason=$reason selected=$selected stillBlocked=$stillBlocked target=$targetPkg",
+                throttleMs = 500L
+            )
+            if (stillBlocked) {
+                launchYouTubeHomeFallback("$reason:verify", targetPkg)
+            }
         }
     }
 
@@ -4831,6 +4786,10 @@ class LoqInAccessibilityService : AccessibilityService() {
         }
         handler.postDelayed({ attempt("retry_250") }, 250L)
         handler.postDelayed({ attempt("retry_700") }, 700L)
+        val pkgForVerify = runCatching { youtubeCurrentRoot()?.packageName?.toString() }
+            .getOrNull()?.takeIf { isYouTubePackage(it) } ?: PACKAGE_YOUTUBE
+        handler.postDelayed({ verifyYouTubeHomeAfterRedirect("$reason:verify_1000", pkgForVerify) }, 1_000L)
+        handler.postDelayed({ verifyYouTubeHomeAfterRedirect("$reason:verify_1700", pkgForVerify) }, 1_700L)
     }
 
     private fun dismissYouTubeMiniPlayer(reason: String, allowFallbackTap: Boolean = false): Boolean {
@@ -5318,9 +5277,10 @@ class LoqInAccessibilityService : AccessibilityService() {
         if (!SwitchModeStore.isEnabled(this)) {
             return false
         }
-        // NOTE: Temporarily hidden YouTube settings (Mini Player, PiP). Only Shorts blocking is active for now.
-        val blockMiniPlayer = false // inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_MINI_PLAYER)
-        val blockPictureInPicture = false // inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_PIP)
+        // Mini player and PiP surfaces were removed as user-facing rules. The floating-player
+        // helper still runs for Shorts-in-PiP cleanup via the blockShorts path below.
+        val blockMiniPlayer = false
+        val blockPictureInPicture = false
         val blockShorts = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_SHORTS)
         if (!blockMiniPlayer && !blockPictureInPicture && !blockShorts) {
             return false
@@ -5660,9 +5620,8 @@ class LoqInAccessibilityService : AccessibilityService() {
         }
 
         val homeBlocked = false
-        // NOTE: Temporarily hidden YouTube settings (Subscriptions, You).
-        val subscriptionsBlocked = false // inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_SUBSCRIPTIONS)
-        val youBlocked = false // inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_YOU)
+        val subscriptionsBlocked = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_SUBSCRIPTIONS)
+        val youBlocked = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_YOU)
 
         val moved = when {
             !homeBlocked && tryNavigateYouTubeToHome(r) -> true
@@ -5722,13 +5681,13 @@ class LoqInAccessibilityService : AccessibilityService() {
         val ytPkg = r.packageName?.toString()?.takeIf { isYouTubePackage(it) } ?: PACKAGE_YOUTUBE
 
         fun isTargetLabel(node: AccessibilityNodeInfo): Boolean {
-            val nodePkg = node.packageName?.toString()?.lowercase(Locale.getDefault()).orEmpty()
+            val nodePkg = node.packageName?.toString()?.lowercase(Locale.ROOT).orEmpty()
             if (nodePkg != ytPkg) {
                 return false
             }
 
-            val t = node.text?.toString()?.lowercase(Locale.getDefault()).orEmpty()
-            val cd = node.contentDescription?.toString()?.lowercase(Locale.getDefault()).orEmpty()
+            val t = node.text?.toString()?.lowercase(Locale.ROOT).orEmpty()
+            val cd = node.contentDescription?.toString()?.lowercase(Locale.ROOT).orEmpty()
             return labels.any { t.contains(it) || cd.contains(it) }
         }
 
@@ -5769,12 +5728,45 @@ class LoqInAccessibilityService : AccessibilityService() {
             return true
         }
 
-        val alreadySelectedNode = findAnyNode(r) { n -> isTargetLabel(n) && n.isSelected && isBottomNavigationNode(n) }
+        val alreadySelectedNode = findAnyNode(r) { n ->
+            isTargetLabel(n) && n.isSelected && n.isVisibleToUser && isBottomNavigationNode(n)
+        }
         if (alreadySelectedNode != null) {
             return true
         }
 
-        return tapScreenAtRatio(fallbackX, fallbackY) || tapScreenAtRatio(fallbackX, 0.86f)
+        // Fallback: tap inside the real bottom-nav bar at the tab's horizontal position.
+        // Fixed screen-height ratios (0.90/0.86) can sit above the nav on tall devices and
+        // land on feed content, which both fails to navigate and reports success (so no
+        // further fallback runs). Anchor to a validated, wide, bottom-of-screen nav container.
+        val displayW = resources.displayMetrics.widthPixels.coerceAtLeast(1)
+        val displayH = resources.displayMetrics.heightPixels.coerceAtLeast(1)
+        val bottomBar = findAnyNode(r) { n ->
+            val np = n.packageName?.toString()?.lowercase(Locale.ROOT).orEmpty()
+            if (np.isNotBlank() && !isYouTubePackage(np)) return@findAnyNode false
+            val vid = n.viewIdResourceName?.lowercase(Locale.ROOT).orEmpty()
+            if (!(vid.contains("pivot") || vid.contains("bottom_bar") || vid.contains("bottom_nav"))) {
+                return@findAnyNode false
+            }
+            val b = Rect()
+            runCatching { n.getBoundsInScreen(b) }.getOrNull()
+            !b.isEmpty &&
+                b.exactCenterY() / displayH.toFloat() >= 0.80f &&
+                b.width() / displayW.toFloat() >= 0.5f
+        }
+        if (bottomBar != null) {
+            val barBounds = Rect()
+            runCatching { bottomBar.getBoundsInScreen(barBounds) }.getOrNull()
+            if (!barBounds.isEmpty) {
+                val x = barBounds.left + barBounds.width() * fallbackX
+                val y = barBounds.exactCenterY().toFloat()
+                if (tapScreenAtPoint(x, y)) {
+                    return true
+                }
+            }
+        }
+
+        return tapScreenAtRatio(fallbackX, 0.965f) || tapScreenAtRatio(fallbackX, fallbackY)
     }
 
     private fun isSnapchatStoryViewer(root: AccessibilityNodeInfo, event: AccessibilityEvent? = null): Boolean {
@@ -5910,12 +5902,8 @@ class LoqInAccessibilityService : AccessibilityService() {
             }
             val blockYtHomeEnabled = false
             val blockYtShortsEnabled = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_SHORTS)
-            // NOTE: Temporarily hidden YouTube settings (Subscriptions, You, Mini Player, PiP).
-            // Kept disabled for now; may be added back later.
-            val blockYtSubscriptionsEnabled = false // inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_SUBSCRIPTIONS)
-            val blockYtYouEnabled = false // inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_YOU)
-            val blockYtMiniPlayerEnabled = false // inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_MINI_PLAYER)
-            val blockYtPipEnabled = false // inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_PIP)
+            val blockYtSubscriptionsEnabled = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_SUBSCRIPTIONS)
+            val blockYtYouEnabled = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_YOU)
 
             val ytTappedSurface = resolveYouTubeSurfaceFromEvent(event, allowFocused = true)
             val ytEnteredAt = appEnteredAtByPkg[pkg] ?: 0L
@@ -5942,9 +5930,6 @@ class LoqInAccessibilityService : AccessibilityService() {
                             hasYouTubeShortsPlayerControl(root) &&
                             hasYouTubeShortsPlayerGeometry(root))
                 } || ytReelContainerNow
-            val ytPipEntryNow = isYouTubePipEntryEvent(event)
-            val ytMiniPlayerNow = isLikelyYouTubeMiniPlayerVisible(root)
-            val ytMiniPlayerGeometryNow = hasYouTubeMiniPlayerGeometry(root)
             val ytShortsGuardActive = surfaceGuardActive(pkg, "yt:shorts", now)
 
             // Delayed YouTube retry probes call this path with a null event after the UI has had time to settle.
@@ -5963,14 +5948,6 @@ class LoqInAccessibilityService : AccessibilityService() {
                 )
             }
 
-            if ((blockYtMiniPlayerEnabled || blockYtPipEnabled) && maybeBlockYouTubeFloatingPlayer(event, "in_app_scan", root)) {
-                return
-            }
-
-            // Null-event probes (1 Hz tick, settled retry) are the only enforcement that runs when
-            // YouTube stops emitting content events while Shorts stays open. Require unambiguous
-            // tree evidence (bottom-nav Shorts selected AND Shorts player heuristics) before
-            // blocking without a fresh event.
             if (event == null && blockYtShortsEnabled &&
                 maybeEnforceYouTubeShortsQuietSessionBlock(pkg, root, now)
             ) {
@@ -5980,15 +5957,10 @@ class LoqInAccessibilityService : AccessibilityService() {
             if (!ytShortsGuardActive && (ytShortsEntryNow || ytShortsPlayerNow)) {
                 rememberSurfaceHint(pkg, "yt:shorts", now)
             }
-            if (ytPipEntryNow) {
-                rememberSurfaceHint(pkg, "yt:pip", now)
-            }
 
             val ytHomeNow = (ytTappedSurface == "yt:home" || ytSelectedSurface == "yt:home") &&
                 !ytShortsEntryNow &&
-                !ytShortsPlayerNow &&
-                !ytMiniPlayerNow &&
-                !ytMiniPlayerGeometryNow
+                !ytShortsPlayerNow
             if (ytHomeNow && !blockYtHomeEnabled) {
                 clearSurfaceEvidence("yt:home", "yt:shorts", "yt:subscriptions", "yt:you")
                 clearSurfaceHintForPackage(pkg)
@@ -6052,7 +6024,14 @@ class LoqInAccessibilityService : AccessibilityService() {
                     if (surfaceKey == "yt:shorts") {
                         dismissYouTubeMiniPlayer("pre_popup_shorts")
                     }
-                    surfaceBlockGuardUntil["$pkg|$surfaceKey"] = now + maxOf(YT_SHORTS_REENTRY_GUARD_MS, INAPP_POST_BLOCK_GRACE_MS)
+                    // Shorts keeps its long re-entry guard; Subscriptions must remain detectable
+                    // so a quick re-tap is blocked instead of slipping through a guard window.
+                    surfaceBlockGuardUntil["$pkg|$surfaceKey"] =
+                        if (surfaceKey == "yt:shorts") {
+                            now + maxOf(YT_SHORTS_REENTRY_GUARD_MS, INAPP_POST_BLOCK_GRACE_MS)
+                        } else {
+                            now + YT_POST_BLOCK_GRACE_MS
+                        }
                 }
 
                 if (hardHomeBlock) {
@@ -6114,10 +6093,12 @@ class LoqInAccessibilityService : AccessibilityService() {
                     label = getString(R.string.in_app_surface_subscriptions_label),
                     hardHomeBlock = false,
                     backCount = 0,
-                    deferNavigationUntilAcknowledge = true,
-                    returnToPackageOnClose = false,
+                    deferNavigationUntilAcknowledge = false,
+                    returnToPackageOnClose = true,
                     forceShow = true,
-                    postAcknowledgeYouTubeHome = true
+                    postAcknowledgeYouTubeHome = true,
+                    postAcknowledgeYouTubeCleanupMini = false,
+                    prePopupYouTubeHome = true
                 )) return
 
             val ytBottomShortsNow =
@@ -6157,41 +6138,64 @@ class LoqInAccessibilityService : AccessibilityService() {
                     surfaceKey = "yt:you",
                     enabled = blockYtYouEnabled,
                     detected = youDetected,
-                    label = getString(R.string.in_app_surface_you_label)
+                    label = getString(R.string.in_app_surface_you_label),
+                    hardHomeBlock = false,
+                    backCount = 0,
+                    deferNavigationUntilAcknowledge = false,
+                    returnToPackageOnClose = true,
+                    forceShow = true,
+                    postAcknowledgeYouTubeHome = true,
+                    postAcknowledgeYouTubeCleanupMini = false,
+                    prePopupYouTubeHome = true
                 )) return
-
-            val ytPipHintNow = recentSurfaceHintMatches(pkg, "yt:pip", now)
-            val ytRealPipNow = ytPipEntryNow || isLikelyYouTubePictureInPicture(root, event)
-            if (blockYtMiniPlayerEnabled && (ytMiniPlayerNow || ytMiniPlayerGeometryNow) && !ytRealPipNow && maybeBlockYouTubeFloatingPlayer(event, "in_app_mini", root)) {
-                return
-            }
-            if (blockYtPipEnabled && (ytPipHintNow || ytRealPipNow)) {
-                if (maybeBlockYouTubeFloatingPlayer(event, "in_app_pip", root, force = true)) {
-                    return
-                }
-            }
-
-            if (blockYtPipEnabled && (ytTappedSurface == "yt:home" || ytSelectedSurface == "yt:home")) {
-                clearSurfaceEvidence("yt:pip")
-            }
         }
 
         if (pkg == PACKAGE_FACEBOOK || pkg == PACKAGE_FACEBOOK_LITE) {
             val blockFbReelsEnabled = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_FB_REELS)
+            // Any tap on a non-Reels bottom tab (including tabs without a rule, e.g. Friends)
+            // starts a short suppression window for the structural Reels check.
+            val fbTappedTabLabel = facebookTappedTabLabel(event)
+            if (fbTappedTabLabel != null && fbTappedTabLabel != "reels") {
+                lastFacebookNonReelsTabTapAt = now
+            }
+            val fbTabTransition = now - lastFacebookNonReelsTabTapAt < 1_200L
+            // The Story and Reels viewers share the full-screen ViewPager + action-bar structure,
+            // so pre-compute story-viewer state and let the Reels path exclude it. Only needed
+            // while the Reels rule is on; otherwise the Stories branch computes it itself.
+            val fbStoriesViewerPrecheck =
+                blockFbReelsEnabled && isFacebookStoriesViewer(root, event)
             if (blockFbReelsEnabled) {
                 val fbGuardActive = surfaceGuardActive(pkg, "fb:reels", now)
                 // Scrolless-style detection: exact composer attachment labels, a selected
                 // "Reels," nav label, or the nested viewer structure (Facebook), and the
                 // video_view ID on Facebook Lite. All are decisive single-screen signals.
+                val fbTappedTabForReels = detectFacebookTappedSurface(event)
+                val fbReelsSignals = if (pkg == PACKAGE_FACEBOOK_LITE) {
+                    null
+                } else if (fbTappedTabForReels != null || fbStoriesViewerPrecheck || fbTabTransition) {
+                    // An explicit tap on a known bottom tab (Marketplace/Watch/Groups/...) must
+                    // never be read as Reels, and neither must a story viewer, which looks
+                    // identical to the Reels viewer for one frame.
+                    null
+                } else {
+                    facebookReelsSignals(root)
+                }
                 val reelsDetected = !fbGuardActive &&
                     if (pkg == PACKAGE_FACEBOOK_LITE) {
                         isFacebookLiteReelsViewer(root, pkg)
                     } else {
-                        isFacebookReelsViewer(root)
+                        fbReelsSignals?.detected == true
                     }
                 if (reelsDetected) {
-                    logInAppSurfaceDetect(pkg, "fb:reels", true, event, "detected=true pkg=$pkg")
-                    rememberSurfaceHint(pkg, "fb:reels", now)
+                    val fbVia = fbReelsSignals?.via ?: "lite"
+                    logInAppSurfaceDetect(pkg, "fb:reels", true, event, "detected=true pkg=$pkg via=$fbVia pager=${fbReelsSignals?.fullScreenPager} actions=${fbReelsSignals?.actionSignal} nav=${fbReelsSignals?.navPresent} homeSel=${fbReelsSignals?.homeSelected} reelsSel=${fbReelsSignals?.reelsSelected} otherTab=${fbReelsSignals?.nonReelsTabSelected} cue=${fbReelsSignals?.viewerCue} truncated=${fbReelsSignals?.scanTruncated}")
+                    // Only transition-like events re-arm the single-sample fast path. Passive
+                    // scroll/content frames re-hinting on every scan kept required=1 alive
+                    // indefinitely on any persistent structural match (e.g. a fullscreen feed
+                    // photo/video with the nav scrolled away), re-blocking every grace window.
+                    if (ytQuickEvent(eventType)) {
+                        rememberSurfaceHint(pkg, "fb:reels", now)
+                    }
                 }
                 val strongCue = recentSurfaceHintMatches(pkg, "fb:reels", now) || ytQuickEvent(eventType)
                 if (!fbGuardActive &&
@@ -6199,8 +6203,12 @@ class LoqInAccessibilityService : AccessibilityService() {
                 ) {
                     currentSurfaceKey = "fb:reels"
                     currentSurfacePkg = pkg
+                    // Same post-block grace as every other app: the ack BACK returns to the
+                    // feed, which needs time to settle and reveal the nav again. The old 600ms
+                    // re-armed while the feed was still animating, so one lingering structural
+                    // match re-blocked continuously ("blocking everything on Facebook").
                     inAppGraceUntilByPkg[pkg] = now + INAPP_POST_BLOCK_GRACE_MS
-                    surfaceBlockGuardUntil["$pkg|fb:reels"] = now + maxOf(INAPP_POST_BLOCK_GRACE_MS, YT_SHORTS_REENTRY_GUARD_MS)
+                    surfaceBlockGuardUntil["$pkg|fb:reels"] = now + INAPP_POST_BLOCK_GRACE_MS
                     softBlockSurface(
                         pkg = pkg,
                         appLabel = safeAppLabel(pkg),
@@ -6212,6 +6220,69 @@ class LoqInAccessibilityService : AccessibilityService() {
                         forceShow = true
                     )
                     return
+                }
+            }
+
+            // Facebook bottom-tab surfaces: Marketplace, Watch, Gaming, Groups, Stories.
+            // Detection is label + navigation-band geometry because Facebook resource ids are
+            // obfuscated and the tab bar is user-customizable (a pinned tab may be absent).
+            // Navigation is intentionally deferred until the user acknowledges the popup: the
+            // ack path then sends postAcknowledgeBackCount=1 BACK, which returns to the
+            // Home/News Feed tab on current builds. (YouTube uses an explicit Home-tab redirect
+            // instead; Facebook has no equivalent stable hook, so BACK is kept.)
+            // A direct tap or a recent tap hint confirms immediately (required=1); a passive
+            // selected-tab probe needs two samples inside FB_SURFACE_CONFIRM_MS so one transient
+            // misparse cannot pop the blocker and cold-start restores still confirm.
+            val anyFbTabRule =
+                inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_FB_MARKETPLACE)
+            if (anyFbTabRule) {
+                val fbTappedSurface = detectFacebookTappedSurface(event)
+                val fbSelectedSurface = if (fbTappedSurface == null) detectFacebookSelectedSurface(root) else null
+                val fbTabSurface = fbTappedSurface ?: fbSelectedSurface
+                val fbTabEnabled = when (fbTabSurface) {
+                    "fb:marketplace" -> inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_FB_MARKETPLACE)
+                    else -> false
+                }
+
+                // Only a positive different-surface detection may drop another tab's evidence.
+                // Clearing on null/unknown frames made the required=2 passive path need two
+                // *consecutive* hits, so one unreadable frame reset an in-progress confirmation.
+                if (fbTabSurface != null) {
+                    for (key in FB_TAB_SURFACE_KEYS) {
+                        if (key != fbTabSurface) clearSurfaceEvidence(key)
+                    }
+                }
+
+                if (fbTabSurface != null && fbTabEnabled && !surfaceGuardActive(pkg, fbTabSurface, now)) {
+                    val fbStrongCue = fbTappedSurface != null ||
+                        recentFbTabHintMatches(pkg, fbTabSurface, now) ||
+                        recentSurfaceHintMatches(pkg, fbTabSurface, now)
+                    val fbTabHit = surfaceConfirmed(
+                        key = fbTabSurface,
+                        detected = true,
+                        required = if (fbStrongCue) 1 else 2,
+                        confirmMs = FB_SURFACE_CONFIRM_MS
+                    )
+                    if (fbTabHit) {
+                        logInAppSurfaceDetect(pkg, fbTabSurface, true, event, "fb_tab tapped=$fbTappedSurface selected=$fbSelectedSurface strongCue=$fbStrongCue")
+                        currentSurfaceKey = fbTabSurface
+                        currentSurfacePkg = pkg
+                        // Match the reels grace below: the ack BACK returns to the feed, which
+                        // needs time to settle before passive scans resume.
+                        inAppGraceUntilByPkg[pkg] = now + INAPP_POST_BLOCK_GRACE_MS
+                        surfaceBlockGuardUntil["$pkg|$fbTabSurface"] = now + INAPP_POST_BLOCK_GRACE_MS
+                        softBlockSurface(
+                            pkg = pkg,
+                            appLabel = safeAppLabel(pkg),
+                            title = getString(R.string.blocking_surface_blocked_title, getString(fbSurfaceLabelRes(fbTabSurface))),
+                            message = surfaceUsageLine(fbTabSurface, 0),
+                            backCount = 1,
+                            deferNavigationUntilAcknowledge = true,
+                            returnToPackageOnClose = false,
+                            forceShow = true
+                        )
+                        return
+                    }
                 }
             }
         }
@@ -6327,7 +6398,17 @@ class LoqInAccessibilityService : AccessibilityService() {
                 val storiesMsg = timedBlockMsg(blockIgStoriesEnabled, "ig:stories", getString(R.string.in_app_surface_stories_label))
                 if (storiesMsg != null) {
                     val appLabel = safeAppLabel(pkg)
-                    softBlockSurface(pkg, appLabel, storiesMsg.first, storiesMsg.second, backCount = 1); return
+                    // Defer the BACK until acknowledge (like Reels): a block-time BACK races the
+                    // stories viewer opening animation, lands underneath on the feed's
+                    // moveTaskToBack handler, and the whole app vanishes. On close, return to
+                    // Instagram instead of the launcher so the user is not dropped out.
+                    softBlockSurface(
+                        pkg, appLabel, storiesMsg.first, storiesMsg.second,
+                        backCount = 1,
+                        deferNavigationUntilAcknowledge = true,
+                        returnToPackageOnClose = true,
+                        closeBeforePopup = true
+                    ); return
                 }
                 return
             }
@@ -6533,7 +6614,15 @@ class LoqInAccessibilityService : AccessibilityService() {
                 val msg = timedBlockMsg(blockIgStoriesEnabled, "ig:stories", getString(R.string.in_app_surface_stories_label))
                 if (msg != null) {
                     val appLabel = safeAppLabel(pkg)
-                    softBlockSurface(pkg, appLabel, msg.first, msg.second, backCount = 1); return
+                    // Same deferred treatment as the fast path above: never BACK while the
+                    // viewer is still animating open, and return to Instagram on close.
+                    softBlockSurface(
+                        pkg, appLabel, msg.first, msg.second,
+                        backCount = 1,
+                        deferNavigationUntilAcknowledge = true,
+                        returnToPackageOnClose = true,
+                        closeBeforePopup = true
+                    ); return
                 }
             }
 
@@ -6795,6 +6884,22 @@ class LoqInAccessibilityService : AccessibilityService() {
         inAppSurfaceEvidence.clearSurfaceHintForPackage(pkg)
     }
 
+    private fun rememberFbTabHint(pkg: String, key: String, now: Long = System.currentTimeMillis()) {
+        fbTabHintKeyByPkg[pkg] = key
+        fbTabHintAtByPkg[pkg] = now
+    }
+
+    private fun recentFbTabHintMatches(pkg: String, key: String, now: Long = System.currentTimeMillis()): Boolean {
+        val hintKey = fbTabHintKeyByPkg[pkg] ?: return false
+        val hintAt = fbTabHintAtByPkg[pkg] ?: return false
+        return hintKey == key && (now - hintAt) <= SURFACE_HINT_TTL_MS
+    }
+
+    private fun clearFbTabHintForPackage(pkg: String) {
+        fbTabHintKeyByPkg.remove(pkg)
+        fbTabHintAtByPkg.remove(pkg)
+    }
+
     private fun logInAppSurfaceDetect(
         pkg: String,
         surfaceKey: String,
@@ -6915,6 +7020,18 @@ class LoqInAccessibilityService : AccessibilityService() {
                     "snap:safe" -> clearSurfaceHintForPackage(pkg)
                 }
             }
+            PACKAGE_FACEBOOK, PACKAGE_FACEBOOK_LITE -> {
+                // Facebook switches bottom tabs inside one activity without a reliable
+                // TYPE_WINDOW_STATE_CHANGED, so the interactive event is the earliest signal we
+                // get. Remember it as a hint; the tab handler treats a hint (or a direct tap) as
+                // a strong cue (required=1) while passive selected-tab probes need two samples.
+                // The dedicated FB slot keeps this from being clobbered by the Reels auto-hint.
+                val tapped = detectFacebookTappedSurface(event)
+                if (tapped != null) {
+                    rememberFbTabHint(pkg, tapped, now)
+                    rememberSurfaceHint(pkg, tapped, now)
+                }
+            }
         }
     }
 
@@ -6931,21 +7048,30 @@ class LoqInAccessibilityService : AccessibilityService() {
     private fun clearSurfaceEvidenceForPackage(pkg: String) {
         clearSurfaceEvidence(*inAppSurfaceEvidence.surfaceKeysForPackage(pkg))
         clearSurfaceHintForPackage(pkg)
+        clearFbTabHintForPackage(pkg)
     }
 
     private fun surfaceGuardActive(pkg: String, surfaceKey: String, now: Long = System.currentTimeMillis()): Boolean {
         return now < (surfaceBlockGuardUntil["$pkg|$surfaceKey"] ?: 0L)
     }
 
-    private fun surfaceConfirmed(key: String, detected: Boolean, required: Int = 2): Boolean {
+    private fun surfaceConfirmed(
+        key: String,
+        detected: Boolean,
+        required: Int = 2,
+        confirmMs: Long = SURFACE_CONFIRM_MS,
+        clearOnMiss: Boolean = true
+    ): Boolean {
         if (!detected) {
-            clearSurfaceEvidence(key)
+            if (clearOnMiss) {
+                clearSurfaceEvidence(key)
+            }
             return false
         }
         return inAppSurfaceEvidence.surfaceConfirmed(
             key = key,
             required = required,
-            confirmMs = SURFACE_CONFIRM_MS,
+            confirmMs = confirmMs,
             now = System.currentTimeMillis()
         )
     }
@@ -7666,21 +7792,51 @@ class LoqInAccessibilityService : AccessibilityService() {
         "FbShortsComposerAttachmentComponentSpec_GIF"
     )
 
+    // First tokens (before the locator comma) of known Facebook bottom-navigation labels. Seeing
+    // one in the bottom band means the tab shell is visible, so the shell-hiding Reels viewer is
+    // not on screen. Used to keep the structural Reels fallback honest when labels are localized.
+    private val FB_KNOWN_NAV_LABELS = setOf(
+        "home", "reels", "friends", "groups", "marketplace", "watch", "gaming",
+        "notifications", "menu", "profile", "pages", "saved", "feeds", "invites"
+    )
+
+    // Labels that belong to the immersive Reels viewer rather than an ordinary Home-feed scroll.
+    // Required alongside the structural pager check so the feed's own pager + per-post action
+    // buttons cannot be mistaken for Reels.
+    private val FB_REELS_VIEWER_CUE_LABELS = listOf(
+        "original audio", "use audio", "remix", "reel", "reels"
+    )
+
     /**
-     * Facebook Reels detection, ported from Scrolless. Facebook exposes different
-     * accessibility trees depending on how a Reel was opened and localizes its labels, so
-     * three independent signals are accepted:
-     * 1. Legacy Reel viewers expose internal composer attachment content descriptions.
-     * 2. A selected navigation label starting with "Reels," (a cheap fast path for locales
-     *    that keep the label, e.g. "Reels, 3 new").
-     * 3. Structural fallback: a large scrollable RecyclerView containing a large
-     *    long-clickable Button containing a large SurfaceView (the video surface).
+     * Facebook Reels detection. Facebook exposes different accessibility trees depending on how a
+     * Reel was opened and localizes its labels, so only decisive signals are accepted:
+     * 1. A Reels composer attachment content description (legacy viewers/composer).
+     * 2. The Reels tab shown as selected, provided Home is not the selected tab.
+     * 3. A structural fallback: a full-screen pager with the Reels action bar, the bottom tab
+     *    shell absent, AND a Reels-viewer cue label. The cue is required because the Home feed's
+     *    own full-screen pager and per-post Like/Share buttons otherwise match whenever the shell
+     *    fails to parse, which produced repeated false "Reels is blocked!" popups on Home.
      */
-    private fun isFacebookReelsViewer(root: AccessibilityNodeInfo): Boolean {
+    /** Which signals drove a Facebook Reels verdict (logged for on-device forensics). */
+    private data class FbReelsSignals(
+        val detected: Boolean,
+        val via: String,
+        val fullScreenPager: Boolean,
+        val actionSignal: Boolean,
+        val navPresent: Boolean,
+        val nonReelsTabSelected: Boolean,
+        val homeSelected: Boolean = false,
+        val reelsSelected: Boolean = false,
+        val viewerCue: Boolean = false,
+        val scanTruncated: Boolean = false
+    )
+
+    private fun facebookReelsSignals(root: AccessibilityNodeInfo): FbReelsSignals {
         val rootBounds = Rect()
-        runCatching { root.getBoundsInScreen(rootBounds) }.getOrNull() ?: return false
+        runCatching { root.getBoundsInScreen(rootBounds) }.getOrNull()
+            ?: return FbReelsSignals(false, "no_root", false, false, false, false)
         if (rootBounds.isEmpty) {
-            return false
+            return FbReelsSignals(false, "empty_root", false, false, false, false)
         }
         val rootW = rootBounds.width().coerceAtLeast(1).toFloat()
         val rootH = rootBounds.height().coerceAtLeast(1).toFloat()
@@ -7701,6 +7857,18 @@ class LoqInAccessibilityService : AccessibilityService() {
         val structural = ArrayList<Structural>(32)
         var nextId = 0
         var visited = 0
+        // When a non-Home bottom tab (Marketplace/Watch/Groups/...) is selected, a full-screen
+        // feed RecyclerView must not be mistaken for the Reels viewer. Facebook's other tab feeds
+        // have the same RV+Button+SurfaceView nesting, which caused "Reels is blocked!" on
+        // Marketplace. Inline Reels opened from Home keeps Home selected, so it still matches.
+        var nonReelsTabSelected = false
+        var homeSelected = false
+        var reelsSelected = false
+        var composerSeen = false
+        var fbNavPresent = false
+        var reelsActionSignal = false
+        var fullScreenViewPager = false
+        var reelsViewerCue = false
         val deadline = SystemClock.uptimeMillis() + 40L
 
         while (queue.isNotEmpty() && visited < 400 && SystemClock.uptimeMillis() < deadline) {
@@ -7710,12 +7878,59 @@ class LoqInAccessibilityService : AccessibilityService() {
             var structuralId: Int? = null
             if (node.isVisibleToUser) {
                 val cd = node.contentDescription?.toString().orEmpty()
-                if (cd.isNotEmpty()) {
+                val nodeText = node.text?.toString().orEmpty()
+                if (cd.isNotEmpty() || nodeText.isNotEmpty()) {
                     if (cd in FB_REELS_COMPOSER_LABELS) {
-                        return true
+                        composerSeen = true
                     }
-                    if (cd.startsWith("Reels,", ignoreCase = true) && node.isSelected) {
-                        return true
+                    // Only the segment before the locator comma is a label ("Reels, 3 new").
+                    val first = cd.lowercase(Locale.ROOT).substringBefore(",").trim()
+                    val firstText = nodeText.lowercase(Locale.ROOT).substringBefore(",").trim()
+                    if (node.isSelected) {
+                        when {
+                            first == "reels" -> reelsSelected = true
+                            first == "home" || firstText == "home" -> homeSelected = true
+                            first.isNotBlank() && first != "home" && (
+                                cd.contains(", tab ", ignoreCase = true) ||
+                                    first in FB_MARKETPLACE_LABELS
+                                ) -> nonReelsTabSelected = true
+                        }
+                    }
+                    if (cd.contains(", tab ", ignoreCase = true)) {
+                        fbNavPresent = true
+                    }
+                    // The bottom tab shell is present when a known navigation label sits in the
+                    // bottom band. This matters for the structural check: if the shell is visible
+                    // the immersive (shell-hiding) Reels viewer cannot be on screen, so a
+                    // full-screen feed pager/video must not be read as Reels.
+                    if ((first in FB_KNOWN_NAV_LABELS || firstText in FB_KNOWN_NAV_LABELS) &&
+                        isNodeInFacebookBottomBand(node, rootBounds)
+                    ) {
+                        fbNavPresent = true
+                    }
+                    val lowerCd = cd.lowercase(Locale.ROOT)
+                    val lowerText = nodeText.lowercase(Locale.ROOT)
+                    if (lowerCd.contains("like button") ||
+                        lowerCd.contains("share button") ||
+                        lowerCd == "comment"
+                    ) {
+                        reelsActionSignal = true
+                    }
+                    if (FB_REELS_VIEWER_CUE_LABELS.any { lowerCd.contains(it) || lowerText.contains(it) }) {
+                        reelsViewerCue = true
+                    }
+                }
+                val vpClassName = node.className?.toString().orEmpty()
+                if (vpClassName == "androidx.viewpager.widget.ViewPager" ||
+                    vpClassName == "androidx.viewpager2.widget.ViewPager2"
+                ) {
+                    val vpBounds = Rect()
+                    runCatching { node.getBoundsInScreen(vpBounds) }.getOrNull()
+                    if (!vpBounds.isEmpty &&
+                        vpBounds.width() / rootW >= 0.9f &&
+                        vpBounds.height() / rootH >= 0.85f
+                    ) {
+                        fullScreenViewPager = true
                     }
                 }
                 val className = node.className?.toString().orEmpty()
@@ -7750,34 +7965,289 @@ class LoqInAccessibilityService : AccessibilityService() {
             }
         }
 
-        if (structural.isEmpty()) {
-            return false
+        // A leftover queue means the node/time budget cut the scan short, so an absent nav is not
+        // trustworthy and the structural fallback must not fire on it.
+        val scanTruncated = queue.isNotEmpty() || visited >= 400 || SystemClock.uptimeMillis() >= deadline
+
+        if (composerSeen) {
+            return FbReelsSignals(true, "composer", fullScreenViewPager, reelsActionSignal, fbNavPresent, nonReelsTabSelected, homeSelected, reelsSelected, reelsViewerCue, scanTruncated)
         }
-        // Related pieces must be nested inside each other (wrapper views in between are fine),
-        // so unrelated large nodes elsewhere on the screen cannot satisfy the rule.
-        val childrenByParent = structural.groupBy { it.parent }
-        fun matches(n: Structural, className: String, wMin: Float, hMin: Float, scrollable: Boolean, longClickable: Boolean): Boolean =
-            n.className == className &&
-                n.widthFraction >= wMin &&
-                n.heightFraction >= hMin &&
-                (!scrollable || n.scrollable) &&
-                (!longClickable || n.longClickable)
-        fun hasDescendant(parentId: Int, pred: (Structural) -> Boolean): Boolean =
-            childrenByParent[parentId].orEmpty().any { child -> pred(child) || hasDescendant(child.id, pred) }
-        return structural.any { rv ->
-            matches(rv, "androidx.recyclerview.widget.RecyclerView", 0.9f, 0.75f, scrollable = true, longClickable = false) &&
-                hasDescendant(rv.id) { btn ->
-                    matches(btn, "android.widget.Button", 0.9f, 0.75f, scrollable = false, longClickable = true) &&
-                        hasDescendant(btn.id) { sv ->
-                            matches(sv, "android.view.SurfaceView", 0.9f, 0.75f, scrollable = false, longClickable = false)
-                        }
-                }
+        // A selected Home tab vetoes Reels: preloaded off-screen pager pages can report a selected
+        // "Reels" nav node while the user is actually on the Home feed.
+        if (nonReelsTabSelected || homeSelected) {
+            return FbReelsSignals(false, "other_tab", fullScreenViewPager, reelsActionSignal, fbNavPresent, nonReelsTabSelected, homeSelected, reelsSelected, reelsViewerCue, scanTruncated)
         }
+        if (reelsSelected) {
+            return FbReelsSignals(true, "selected_tab", fullScreenViewPager, reelsActionSignal, fbNavPresent, nonReelsTabSelected, homeSelected, reelsSelected, reelsViewerCue, scanTruncated)
+        }
+        // Facebook renders the Reels viewer as a full-screen pager with the Like/Comment/Share
+        // action bar AND the bottom navigation hidden. The action signal alone (per-post
+        // Like/Share on the feed) is not enough: a Reels-viewer cue label is also required, and
+        // the scan must have completed so "nav absent" is meaningful.
+        val structuralMatch = fullScreenViewPager && reelsActionSignal && !fbNavPresent && reelsViewerCue && !scanTruncated
+        return FbReelsSignals(
+            structuralMatch,
+            if (structuralMatch) "structural" else "none",
+            fullScreenViewPager, reelsActionSignal, fbNavPresent, nonReelsTabSelected,
+            homeSelected, reelsSelected, reelsViewerCue, scanTruncated
+        )
+    }
+
+    /** True when [node] sits in the bottom ~14% of the app window (Facebook's tab-shell band). */
+    private fun isNodeInFacebookBottomBand(node: AccessibilityNodeInfo, rootBounds: Rect): Boolean {
+        if (rootBounds.width() <= 0 || rootBounds.height() <= 0) return false
+        val b = Rect()
+        runCatching { node.getBoundsInScreen(b) }.getOrNull()
+        if (b.isEmpty) return false
+        val centerY = (b.exactCenterY() - rootBounds.top) / rootBounds.height().toFloat()
+        return centerY >= 0.86f
     }
 
     private fun isFacebookLiteReelsViewer(root: AccessibilityNodeInfo, pkg: String): Boolean {
         val nodes = runCatching { root.findAccessibilityNodeInfosByViewId("$pkg:id/video_view") }.getOrNull().orEmpty()
         return nodes.any { it.isVisibleToUser }
+    }
+
+    /**
+     * Maps a Facebook navigation label to a surface key.
+     * Facebook appends locators to tab content descriptions (e.g. "Reels, 3 new" or
+     * "Marketplace, Tab"), so only the segment before the first comma is matched.
+     */
+    private fun facebookSurfaceKeyForLabel(raw: String): String? {
+        val value = raw.lowercase(Locale.ROOT).substringBefore(",").trim()
+        if (value.isBlank()) return null
+        return when (value) {
+            in FB_MARKETPLACE_LABELS -> "fb:marketplace"
+            else -> null
+        }
+    }
+
+    private fun fbSurfaceLabelRes(surfaceKey: String): Int = when (surfaceKey) {
+        "fb:marketplace" -> R.string.in_app_surface_marketplace_label
+        else -> R.string.in_app_surface_reels_label
+    }
+
+    /**
+     * Window-relative metrics for Facebook navigation-band geometry: [width, height, top].
+     * Geometry must be measured against the app window rather than the physical display, or
+     * split-screen and landscape layouts misclassify the tab bar. Falls back to displayMetrics
+     * when the window bounds are unavailable.
+     */
+    private fun facebookWindowMetrics(root: AccessibilityNodeInfo): IntArray {
+        val rootBounds = Rect()
+        runCatching { root.getBoundsInScreen(rootBounds) }.getOrNull()
+        if (!rootBounds.isEmpty && rootBounds.width() > 0 && rootBounds.height() > 0) {
+            return intArrayOf(rootBounds.width(), rootBounds.height(), rootBounds.top)
+        }
+        return intArrayOf(
+            resources.displayMetrics.widthPixels.coerceAtLeast(1),
+            resources.displayMetrics.heightPixels.coerceAtLeast(1),
+            0
+        )
+    }
+
+    /**
+     * Best-effort detection of a Facebook bottom-tab press. Facebook switches tabs inside a single
+     * activity without a reliable TYPE_WINDOW_STATE_CHANGED, so the click/selected/focus event is
+     * the earliest and cheapest signal. Geometry keeps feed items labelled "Watch" from matching:
+     * only nodes in the top/bottom navigation band count. Visibility is deliberately NOT required
+     * here: during a press/transition the tapped node can momentarily report invisible, and
+     * gating on it dropped genuine taps. Visibility is kept for the passive selected-tab scan.
+     */
+    /**
+     * Returns the label of the Facebook bottom-nav tab involved in a click/select/focus event,
+     * or null when the event is not a nav-tab interaction. Used to suppress the structural Reels
+     * check while a (possibly unconfigured) tab page is loading.
+     */
+    private fun facebookTappedTabLabel(event: AccessibilityEvent?): String? {
+        val type = event?.eventType ?: return null
+        if (type != AccessibilityEvent.TYPE_VIEW_CLICKED &&
+            type != AccessibilityEvent.TYPE_VIEW_SELECTED &&
+            type != AccessibilityEvent.TYPE_VIEW_FOCUSED) return null
+        var node = runCatching { event.source }.getOrNull()
+        var hops = 0
+        while (node != null && hops < 6) {
+            val cd = node.contentDescription?.toString().orEmpty()
+            if (cd.contains(", tab ", ignoreCase = true)) {
+                return cd.substringBefore(",").trim().lowercase(Locale.ROOT)
+            }
+            node = runCatching { node.parent }.getOrNull()
+            hops++
+        }
+        return null
+    }
+
+    private fun detectFacebookTappedSurface(event: AccessibilityEvent?): String? {
+        val type = event?.eventType ?: return null
+        if (type != AccessibilityEvent.TYPE_VIEW_CLICKED &&
+            type != AccessibilityEvent.TYPE_VIEW_SELECTED &&
+            type != AccessibilityEvent.TYPE_VIEW_FOCUSED) return null
+
+        var current = runCatching { event.source }.getOrNull()
+        val activeRoot = runCatching { rootInActiveWindow }.getOrNull()
+        val activeRootPkg = activeRoot?.packageName?.toString()?.lowercase(Locale.ROOT).orEmpty()
+        val metrics = if (activeRoot != null &&
+            (activeRootPkg == PACKAGE_FACEBOOK || activeRootPkg == PACKAGE_FACEBOOK_LITE)
+        ) {
+            facebookWindowMetrics(activeRoot)
+        } else {
+            intArrayOf(
+                resources.displayMetrics.widthPixels.coerceAtLeast(1),
+                resources.displayMetrics.heightPixels.coerceAtLeast(1),
+                0
+            )
+        }
+        val width = metrics[0].coerceAtLeast(1)
+        val height = metrics[1].coerceAtLeast(1)
+        val top = metrics[2]
+        val bounds = Rect()
+        var hops = 0
+        while (current != null && hops < 5) {
+            val nodePkg = current.packageName?.toString()?.lowercase(Locale.ROOT).orEmpty()
+            if (nodePkg.isBlank() || nodePkg == PACKAGE_FACEBOOK || nodePkg == PACKAGE_FACEBOOK_LITE) {
+                runCatching { current.getBoundsInScreen(bounds) }.getOrNull()
+                if (!bounds.isEmpty) {
+                    val centerY = (bounds.exactCenterY() - top) / height.toFloat()
+                    val widthRatio = bounds.width() / width.toFloat()
+                    val heightRatio = bounds.height() / height.toFloat()
+                    val navBand = centerY <= 0.22f || centerY >= 0.78f
+                    val smallEnough = widthRatio <= 0.44f && heightRatio <= 0.20f
+                    if (navBand && smallEnough) {
+                        val text = current.text?.toString().orEmpty()
+                        val desc = current.contentDescription?.toString().orEmpty()
+                        facebookSurfaceKeyForLabel(text)?.let { return it }
+                        facebookSurfaceKeyForLabel(desc)?.let { return it }
+                    }
+                }
+            }
+            current = runCatching { current.parent }.getOrNull()
+            hops++
+        }
+        return null
+    }
+
+    /**
+     * Shared scan for a selected/checked navigation node inside the window-relative top/bottom
+     * band. Requiring [AccessibilityNodeInfo.isVisibleToUser] avoids matching off-screen
+     * pre-rendered tabs that some Facebook builds keep in the tree.
+     */
+    private fun findFacebookSelectedNavNode(root: AccessibilityNodeInfo): AccessibilityNodeInfo? {
+        val metrics = facebookWindowMetrics(root)
+        val width = metrics[0].coerceAtLeast(1)
+        val height = metrics[1].coerceAtLeast(1)
+        val top = metrics[2]
+        val bounds = Rect()
+        return findAnyNode(root) { node ->
+            if (!node.isSelected && !node.isCheckedCompat()) return@findAnyNode false
+            if (!node.isVisibleToUser) return@findAnyNode false
+            val nodePkg = node.packageName?.toString()?.lowercase(Locale.ROOT).orEmpty()
+            if (nodePkg.isNotBlank() &&
+                nodePkg != PACKAGE_FACEBOOK &&
+                nodePkg != PACKAGE_FACEBOOK_LITE) return@findAnyNode false
+            runCatching { node.getBoundsInScreen(bounds) }.getOrNull() ?: return@findAnyNode false
+            if (bounds.isEmpty) return@findAnyNode false
+            val centerY = (bounds.exactCenterY() - top) / height.toFloat()
+            if (centerY > 0.22f && centerY < 0.78f) return@findAnyNode false
+            val widthRatio = bounds.width() / width.toFloat()
+            val heightRatio = bounds.height() / height.toFloat()
+            widthRatio <= 0.44f && heightRatio <= 0.20f
+        }
+    }
+
+    /** Fallback: a selected/checked navigation node in the top/bottom band. */
+    private fun detectFacebookSelectedSurface(root: AccessibilityNodeInfo): String? {
+        val found = findFacebookSelectedNavNode(root) ?: return null
+        val text = found.text?.toString().orEmpty()
+        val desc = found.contentDescription?.toString().orEmpty()
+        return facebookSurfaceKeyForLabel(text) ?: facebookSurfaceKeyForLabel(desc)
+    }
+
+    /** True when any selected node sits in the top/bottom navigation band (feed tab shell). */
+    private fun hasFacebookNavBandSelection(root: AccessibilityNodeInfo): Boolean =
+        findFacebookSelectedNavNode(root) != null
+
+    /**
+     * Facebook Stories is usually a full-screen viewer opened from the feed rather than a pinned
+     * tab, so it is treated separately. A block is allowed when EITHER:
+     *  - a label that is (near-)unique to the viewer is present (translated for the shipped
+     *    locales), OR
+     *  - a generic reply/send-message label is present AND the locale-independent structure of a
+     *    full-screen viewer (full-screen media/overlay + bottom reply bar) is detected.
+     * The tab shell must be absent in both cases: the feed/profile keeps a selected bottom tab,
+     * the viewer replaces it. The block stays default-off, and non-English viewers are covered by
+     * the structural path instead of failing open.
+     */
+    private fun isFacebookStoriesViewer(root: AccessibilityNodeInfo, event: AccessibilityEvent? = null): Boolean {
+        // Decisive, locale-independent signal: the Story viewer runs in its own activity
+        // (e.g. com.facebook.stories.viewer.activity.StoryViewerActivity), which the
+        // window-state event reports as its class name. The viewer's a11y tree otherwise looks
+        // identical to the Reels viewer (full-screen pager + action bar + hidden nav).
+        val eventClassName = event?.className?.toString().orEmpty()
+        if (eventClassName.contains("story", ignoreCase = true)) {
+            return true
+        }
+        // The viewer is full-screen: the bottom navigation shell is replaced by the story UI.
+        if (hasFacebookNavBandSelection(root)) {
+            return false
+        }
+        val strongSignal = nodeTextMatches(root, FB_STORIES_VIEWER_STRONG_LABELS) ||
+            eventTextMatches(event, FB_STORIES_VIEWER_STRONG_LABELS)
+        if (strongSignal) {
+            return true
+        }
+        val genericSignal = nodeTextMatches(root, FB_STORIES_VIEWER_LABELS) ||
+            eventTextMatches(event, FB_STORIES_VIEWER_LABELS)
+        if (!genericSignal) {
+            return false
+        }
+        if (!hasFacebookStoriesViewerStructure(root)) {
+            return false
+        }
+        // The Reels full-screen viewer also has media plus a bottom input row; never
+        // misclassify it as Stories.
+        return !facebookReelsSignals(root).detected
+    }
+
+    /**
+     * Locale-independent full-screen Stories viewer shape: a full-screen media/overlay node and a
+     * bottom reply input. Geometry is window-relative via [facebookWindowMetrics]; a large photo
+     * lightbox can also match this shape, so callers must additionally require a viewer-ish label.
+     */
+    private fun hasFacebookStoriesViewerStructure(root: AccessibilityNodeInfo): Boolean {
+        val metrics = facebookWindowMetrics(root)
+        val width = metrics[0].coerceAtLeast(1)
+        val height = metrics[1].coerceAtLeast(1)
+        val top = metrics[2]
+        val bounds = Rect()
+        var hasMedia = false
+        var hasReplyBar = false
+        findAnyNode(root, maxNodes = 400, timeBudgetMs = 40L) { node ->
+            if (!node.isVisibleToUser) return@findAnyNode false
+            runCatching { node.getBoundsInScreen(bounds) }.getOrNull() ?: return@findAnyNode false
+            if (bounds.isEmpty) return@findAnyNode false
+            val widthRatio = bounds.width() / width.toFloat()
+            val heightRatio = bounds.height() / height.toFloat()
+            val centerY = (bounds.exactCenterY() - top) / height.toFloat()
+            val className = node.className?.toString().orEmpty()
+            if (!hasMedia &&
+                className in FB_STORIES_MEDIA_CLASSES &&
+                widthRatio >= 0.85f &&
+                heightRatio >= 0.55f &&
+                (bounds.top - top) <= (height * 0.15f).toInt()
+            ) {
+                hasMedia = true
+            }
+            if (!hasReplyBar &&
+                className in FB_STORIES_REPLY_CLASSES &&
+                centerY >= 0.80f &&
+                widthRatio >= 0.40f &&
+                heightRatio <= 0.22f
+            ) {
+                hasReplyBar = true
+            }
+            hasMedia && hasReplyBar
+        }
+        return hasMedia && hasReplyBar
     }
 
     private fun isYouTubeHomeFeedShortsPlayer(root: AccessibilityNodeInfo, event: AccessibilityEvent? = null): Boolean {

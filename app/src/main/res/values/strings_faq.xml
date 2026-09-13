@@ -46,7 +46,7 @@
     <string name="faq_q_block_allow_modes">What is Block selected vs. Allow selected?</string>
     <string name="faq_a_block_allow_modes">Block selected blocks the items you choose. Allow selected reverses the behavior: selected items stay available while other supported items in that list are blocked. Use it when you want a strict allowlist.</string>
     <string name="faq_q_in_app_supported_apps">Which apps are supported by In-app rules?</string>
-    <string name="faq_a_in_app_supported_apps">Supported In-app rule cards currently include YouTube, Instagram, X, Snapchat, and Facebook. Only installed supported apps are shown. YouTube currently supports Shorts; Instagram and X rules are experimental, Snapchat rules are available, and Facebook can appear as experimental when installed.</string>
+    <string name="faq_a_in_app_supported_apps">Supported In-app rule cards currently include YouTube, Instagram, X, Snapchat, and Facebook. Only installed supported apps are shown. YouTube supports Shorts, Subscriptions, and You; Instagram and X rules are experimental, Snapchat rules are available, and Facebook can appear as experimental when installed.</string>
     <string name="faq_q_website_rule_modes">How do the two Website rule modes work?</string>
     <string name="faq_a_website_rule_modes">Website rules apply per profile. Block selected blocks enabled domains. Allow selected keeps enabled domains available and blocks other detected websites. Paused domains stay visible but are ignored.</string>
     <string name="faq_q_blocked_notifications">Blocked notifications – what is stored</string>

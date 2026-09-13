@@ -26,11 +26,8 @@ internal fun isBraveFamily(pkg: String): Boolean =
         pkg == "com.brave.browser_beta" ||
         pkg == "com.brave.browser_nightly"
 
-internal fun isEmbeddedBrowserPackage(pkg: String): Boolean =
-    pkg == "com.facebook.orca"
-
 internal fun supportsWebsiteRulesPackage(pkg: String): Boolean =
-    isBrowserPackage(pkg) || isEmbeddedBrowserPackage(pkg)
+    isBrowserPackage(pkg)
 
 internal fun isBrowserPackage(pkg: String): Boolean {
     return pkg == "com.android.chrome" ||
@@ -176,16 +173,6 @@ internal fun browserUrlViewIds(pkg: String): List<String> {
             listOf(
                 "com.chrome.dev:id/url_bar",
                 "com.android.chrome:id/url_bar"
-            )
-
-        "com.facebook.orca" ->
-            listOf(
-                "com.facebook.orca:id/url_bar",
-                "com.facebook.orca:id/browser_url",
-                "com.facebook.orca:id/browser_url_text",
-                "com.facebook.orca:id/browser_chrome_url",
-                "com.facebook.orca:id/webview_url",
-                "com.facebook.orca:id/landing_page_url"
             )
 
         else -> emptyList()
