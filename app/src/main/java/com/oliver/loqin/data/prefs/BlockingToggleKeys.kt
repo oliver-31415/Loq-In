@@ -39,6 +39,7 @@ object BlockingToggleKeys {
 
     // Facebook
     const val KEY_BLOCK_FB_REELS = "block_fb_reels"
+    const val KEY_BLOCK_FB_MARKETPLACE = "block_fb_marketplace"
 
     // X/Twitter
     const val KEY_BLOCK_X_HOME = "block_x_home"
@@ -70,14 +71,13 @@ object BlockingToggleKeys {
         KEY_BLOCK_YT_SHORTS,
         KEY_BLOCK_YT_SUBSCRIPTIONS,
         KEY_BLOCK_YT_YOU,
-        KEY_BLOCK_YT_MINI_PLAYER,
-        KEY_BLOCK_YT_PIP,
 
         KEY_BLOCK_IG_REELS,
         KEY_BLOCK_IG_SEARCH,
         KEY_BLOCK_IG_STORIES,
 
         KEY_BLOCK_FB_REELS,
+        KEY_BLOCK_FB_MARKETPLACE,
 
         KEY_BLOCK_X_HOME,
         KEY_BLOCK_X_SEARCH,

@@ -40,12 +40,14 @@
     <string name="in_app_surface_subscriptions_label">Subscriptions</string>
     <string name="in_app_surface_you_label">You</string>
     <string name="in_app_surface_reels_label">Reels</string>
+    <string name="in_app_surface_marketplace_label">Marketplace</string>
+    <string name="in_app_surface_watch_label">Watch</string>
+    <string name="in_app_surface_gaming_label">Gaming</string>
+    <string name="in_app_surface_groups_label">Groups</string>
     <string name="in_app_surface_explore_label">Explore</string>
     <string name="in_app_surface_search_label">Search</string>
     <string name="in_app_surface_stories_label">Stories</string>
     <string name="in_app_surface_comments_label">Comments</string>
-    <string name="in_app_surface_mini_player_label">Mini player</string>
-    <string name="in_app_surface_pip_label">Picture-in-picture</string>
     <string name="in_app_surface_home_label">Home</string>
     <string name="in_app_surface_grok_label">Grok</string>
     <string name="in_app_surface_notifications_label">Notifications</string>
