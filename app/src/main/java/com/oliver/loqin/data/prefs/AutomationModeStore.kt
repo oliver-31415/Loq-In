@@ -102,7 +102,19 @@ object AutomationModeStore {
 
     fun setMode(context: Context, mode: Mode) {
         val supportedMode = if (isModeSupported(context, mode)) mode else Mode.MIXED
-        prefs(context).edit(commit = true) { putString(KEY_AUTOMATION_MODE, supportedMode.raw) }
+        val previousMode = getMode(context)
+        prefs(context).edit(commit = true) {
+            putString(KEY_AUTOMATION_MODE, supportedMode.raw)
+            // A single-channel mode means "only this channel can change protection".
+            // Manual controls are mode-independent by design, so leaving them on would
+            // silently keep the Home button/Quick Settings tile able to disable Loq In and
+            // contradict the selected mode. Turn them off only on a real switch into a
+            // single mode, so opening the settings screen never overwrites a deliberate
+            // re-enable (setMode is also called with the current mode on screen load).
+            if (supportedMode != Mode.MIXED && previousMode != supportedMode) {
+                putBoolean(KEY_MIXED_ALLOW_BUTTON, false)
+            }
+        }
     }
 
     fun isMixedMode(context: Context): Boolean = getMode(context) == Mode.MIXED

@@ -655,6 +655,11 @@ open class ToggleOptionsActivity : AppCompatActivity() {
             switchModeMixed.isChecked = appliedMode == AutomationModeStore.Mode.MIXED
             ignoreControlModeListener = false
 
+            // Entering a single mode auto-disables manual controls; mirror that in the switch.
+            ignoreMixedChannelListener = true
+            switchMixedAllowButton.isChecked = AutomationModeStore.isMixedAllowButton(ctx)
+            ignoreMixedChannelListener = false
+
             val showMixedOnly = appliedMode == AutomationModeStore.Mode.MIXED
             val isNfc = appliedMode == AutomationModeStore.Mode.NFC
             val showControlMethods = activeSectionFilter == null || activeSectionFilter == SECTION_BLOCKING
