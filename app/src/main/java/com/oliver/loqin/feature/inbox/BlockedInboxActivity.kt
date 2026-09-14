@@ -113,8 +113,6 @@ class BlockedInboxActivity : AppCompatActivity() {
             onDelete = { position -> visibleItems.getOrNull(position)?.let(::confirmDeleteSingle) }
         )
 
-        findViewById<View>(R.id.btnFilter)?.setOnClickListener { showFilterMenuDialog() }
-
         load()
     }
 
@@ -337,6 +335,7 @@ class BlockedInboxActivity : AppCompatActivity() {
 
     override fun onPrepareOptionsMenu(menu: Menu): Boolean {
         val readOnly = isReadOnly()
+        menu.findItem(R.id.action_filter)?.isVisible = !selectionMode
         menu.findItem(R.id.action_cancel_select)?.isVisible = selectionMode && !readOnly
         menu.findItem(R.id.action_delete)?.isVisible = !readOnly
         // In selection mode, delete action is "Delete selected". Outside, it enters selection mode.
@@ -361,6 +360,10 @@ class BlockedInboxActivity : AppCompatActivity() {
 
             R.id.action_cancel_select -> {
                 exitSelectionMode(); true
+            }
+
+            R.id.action_filter -> {
+                showFilterMenuDialog(); true
             }
 
             R.id.action_delete -> {

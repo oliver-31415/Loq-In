@@ -104,17 +104,4 @@
             android:paddingBottom="96dp"
             android:clipToPadding="false" />
     </LinearLayout>
-
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/btnFilter"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="96dp"
-        android:contentDescription="@string/blocked_inbox_filter"
-        app:layout_anchor="@id/recyclerInbox"
-        app:layout_anchorGravity="bottom|end"
-        app:backgroundTint="?attr/colorPrimary"
-        app:srcCompat="@drawable/tune_24"
-        app:tint="?attr/colorOnPrimary" />
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

@@ -10,6 +10,12 @@
         app:showAsAction="ifRoom" />
 
     <item
+        android:id="@+id/action_filter"
+        android:icon="@drawable/tune_24"
+        android:title="@string/blocked_inbox_filter"
+        app:showAsAction="ifRoom" />
+
+    <item
         android:id="@+id/action_delete"
         android:icon="@drawable/delete_24"
         android:title="@string/delete"

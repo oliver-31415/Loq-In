@@ -149,12 +149,10 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         b.toolbar.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
         b.btnStatsInfo.setOnClickListener { showStatisticsInfo() }
+        b.btnStatsSortFilter.setOnClickListener { showSortFilterMenu(it) }
         val accent = AccentColor.getAccentColorInt(this)
-        b.fabSortFilter.imageTintList = ColorStateList.valueOf(readableOnColor(accent))
-        // Explicit FAB background + empty-state icon tint: framework/Material
-        // theme indirection can resolve these to the base green at night
-        // instead of the live accent.
-        b.fabSortFilter.backgroundTintList = ColorStateList.valueOf(accent)
+        // Empty-state icon tint: framework/Material theme indirection can resolve
+        // to the base green at night instead of the live accent.
         b.webPlaceholder.compoundDrawableTintList = ColorStateList.valueOf(accent)
 
         // Keep system bars dark for readability (matches Stats/Schedules).
@@ -254,10 +252,6 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
         }
 
         applyAccentUi()
-
-        b.fabSortFilter.setOnClickListener { v ->
-            showSortFilterMenu(v)
-        }
 
         refresh()
 
@@ -391,6 +385,7 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
         val navTint = if (MaterialColors.isColorLight(bg)) Color.BLACK else Color.WHITE
         b.toolbar.navigationIcon?.mutate()?.setTint(navTint)
         b.btnStatsInfo.imageTintList = ColorStateList.valueOf(navTint)
+        b.btnStatsSortFilter.imageTintList = ColorStateList.valueOf(navTint)
         // Keep labels neutral (text-colored). Accent stays on toggles + progress bars.
         b.btnOpenSettings.backgroundTintList = accentTint
         b.totalTime.setTextColor(accent)

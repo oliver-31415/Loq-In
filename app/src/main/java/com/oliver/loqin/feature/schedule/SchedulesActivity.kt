@@ -441,7 +441,6 @@ class SchedulesActivity : AppCompatActivity() {
             rippleColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 0x26))
         }
 
-        findViewById<View>(R.id.fabAdd).setOnClickListener(addScheduleClick)
         findViewById<View>(R.id.btnEmptyAddSchedule).setOnClickListener(addScheduleClick)
 
         refreshList()
@@ -464,6 +463,8 @@ class SchedulesActivity : AppCompatActivity() {
     override fun onPrepareOptionsMenu(menu: Menu): Boolean {
         val canInteract = canEditSchedules()
         val hasItems = adapter.itemCount > 0
+        menu.findItem(R.id.action_add)?.isVisible = canInteract && !isSelectionMode
+        menu.findItem(R.id.action_info)?.isVisible = !isSelectionMode
         menu.findItem(R.id.action_select)?.isVisible = canInteract && !isSelectionMode && hasItems
         menu.findItem(R.id.action_cancel_selection)?.isVisible = canInteract && isSelectionMode
         menu.findItem(R.id.action_delete_selected)?.isVisible = canInteract && isSelectionMode
@@ -506,6 +507,14 @@ class SchedulesActivity : AppCompatActivity() {
                 showScheduleActionInfoDialog()
                 true
             }
+            R.id.action_add -> {
+                if (denyScheduleEditWithPopover()) {
+                    true
+                } else {
+                    showNewScheduleTypeDialog()
+                    true
+                }
+            }
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -518,15 +527,6 @@ class SchedulesActivity : AppCompatActivity() {
     private fun updateMenuState() {
         invalidateOptionsMenu()
         val canInteract = canEditSchedules()
-        findViewById<View>(R.id.fabAdd)?.apply {
-            (this as? com.google.android.material.floatingactionbutton.FloatingActionButton)?.backgroundTintList =
-                ColorStateList.valueOf(AccentColor.getAccentColorInt(this@SchedulesActivity))
-            visibility = if (isSelectionMode) View.GONE else View.VISIBLE
-            // Stay tappable (dimmed) so locked taps warn via popover instead of doing nothing.
-            isEnabled = true
-            isClickable = true
-            alpha = if (canInteract) 1f else 0.45f
-        }
         findViewById<View>(R.id.btnEmptyAddSchedule)?.apply {
             isEnabled = true
             isClickable = true

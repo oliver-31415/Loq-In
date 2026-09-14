@@ -22,6 +22,17 @@
             app:title="@string/statistics_usage_title">
 
             <ImageButton
+                android:id="@+id/btnStatsSortFilter"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="end|center_vertical"
+                android:padding="12dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/stats_sort_filter"
+                android:src="@drawable/tune_24"
+                app:tint="@android:color/white" />
+
+            <ImageButton
                 android:id="@+id/btnStatsInfo"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
@@ -264,16 +275,4 @@
                 tools:text="@string/usage_websites_no_data" />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
-
-    <!-- Sort/Filter (always visible bottom-right, above BottomNav) -->
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fabSortFilter"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="96dp"
-        android:layout_gravity="bottom|end"
-        android:contentDescription="@string/stats_sort_filter"
-        app:srcCompat="@drawable/tune_24"
-        app:useCompatPadding="true" />
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

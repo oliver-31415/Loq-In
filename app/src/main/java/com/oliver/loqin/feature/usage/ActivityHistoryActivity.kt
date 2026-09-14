@@ -69,7 +69,6 @@ import com.google.android.material.card.MaterialCardView
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.shape.MaterialShapeDrawable
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import java.text.DateFormat
@@ -119,12 +118,22 @@ class ActivityHistoryActivity : AppCompatActivity() {
                 icon?.mutate()?.setTint(toolbarIconColor())
                 setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
             }
+            menu.add(Menu.NONE, MENU_SORT_FILTER, Menu.NONE, R.string.stats_sort_filter).apply {
+                setIcon(R.drawable.tune_24)
+                icon?.mutate()?.setTint(toolbarIconColor())
+                setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS)
+            }
             setOnMenuItemClickListener { item ->
-                if (item.itemId == MENU_INFO) {
-                    showInfoDialog()
-                    true
-                } else {
-                    false
+                when (item.itemId) {
+                    MENU_INFO -> {
+                        showInfoDialog()
+                        true
+                    }
+                    MENU_SORT_FILTER -> {
+                        showSortFilterDialog()
+                        true
+                    }
+                    else -> false
                 }
             }
         }
@@ -176,23 +185,6 @@ class ActivityHistoryActivity : AppCompatActivity() {
             CoordinatorLayout.LayoutParams.MATCH_PARENT,
             CoordinatorLayout.LayoutParams.MATCH_PARENT
         ))
-
-        coordinator.addView(FloatingActionButton(this).apply {
-            setImageResource(R.drawable.tune_24)
-            val accent = AccentColor.getAccentColorInt(this@ActivityHistoryActivity)
-            backgroundTintList = ColorStateList.valueOf(accent)
-            imageTintList = ColorStateList.valueOf(if (MaterialColors.isColorLight(accent)) Color.BLACK else Color.WHITE)
-            contentDescription = getString(R.string.stats_sort_filter)
-            setOnClickListener { showSortFilterDialog() }
-            useCompatPadding = true
-        }, CoordinatorLayout.LayoutParams(
-            CoordinatorLayout.LayoutParams.WRAP_CONTENT,
-            CoordinatorLayout.LayoutParams.WRAP_CONTENT
-        ).apply {
-            gravity = Gravity.BOTTOM or Gravity.END
-            marginEnd = dp(16)
-            bottomMargin = dp(96)
-        })
 
         setContentView(coordinator)
         EdgeToEdgeUtils.setupClassic(activity = this, toolbar = toolbar)
@@ -986,6 +978,7 @@ class ActivityHistoryActivity : AppCompatActivity() {
 
     companion object {
         private const val MENU_INFO = 1
+        private const val MENU_SORT_FILTER = 2
         private const val DAY_MILLIS = 24L * 60L * 60L * 1000L
 
         fun intent(context: Context): Intent = Intent(context, ActivityHistoryActivity::class.java)
