@@ -85,12 +85,12 @@
     <string name="schedules_health_last_exec_compact">Letzte Zeitplan-Ausführung: %1$s</string>
     <string name="schedules_insights_title">Zeitplan-Übersicht</string>
     <string name="schedules_insights_overlap_title">Zeitplan-Überschneidung</string>
-    <string name="schedules_insights_overlap_body_fmt">Überschneidet sich mit „%1$s“. Der später passende Zeitplan kann das aktive Profil überschreiben.</string>
+    <string name="schedules_insights_overlap_body_fmt">Überschneidet sich mit „%1$s“. Bei Überschneidung gewinnt der weiter oben stehende Zeitplan.</string>
     <string name="schedules_insight_active_tag_fmt">Aktive Range: %1$s · %2$s · %3$s-%4$s</string>
     <string name="schedules_insight_timeline_item_fmt">%1$s - %2$s „%3$s“ (%4$s)</string>
     <string name="schedules_overlap_warning_title">Zeitplan überschneidet sich</string>
-    <string name="schedules_overlap_warning_message_fmt">Das überschneidet sich mit „%1$s“. Der spätere Zeitplan kann das aktive Profil überschreiben.\n\nTrotzdem speichern?</string>
-    <string name="schedules_overlap_enabled_message_fmt">Überschneidet sich mit „%1$s“. Wenn beide Zeitpläne passen, nutzt Loq In die Zeitplan-Priorität und protokolliert die Entscheidung.</string>
+    <string name="schedules_overlap_warning_message_fmt">Das überschneidet sich mit „%1$s“. Bei Überschneidung gewinnt der weiter oben stehende Zeitplan.\n\nTrotzdem speichern?</string>
+    <string name="schedules_overlap_enabled_message_fmt">Überschneidet sich mit „%1$s“. Wenn beide Zeitpläne passen, gewinnt der weiter oben stehende und Loq In protokolliert die Entscheidung.</string>
     <string name="schedules_overlap_warning_save">Trotzdem speichern</string>
     <string name="schedules_dialog_nfc_lock_hint">NFC-Sperre aktiv: Diese Aktion kann den Loq In-Status erst nach dem Entsperren per NFC/QR ändern.</string>
     <string name="schedules_nfc_lock_add_dialog_hint">NFC-Sperre ist aktiv. Derzeit werden nur Aktionen angezeigt, die Loq In nicht deaktivieren.</string>
@@ -167,7 +167,7 @@
     <string name="schedules_action_info_toggle_body">Wechselt Loq In je nach aktuellem Zustand zwischen ein und aus.</string>
     <string name="schedules_action_info_enable_disable_body">Schaltet Loq In zur Startzeit ein und zur Endzeit wieder aus.</string>
     <string name="schedules_action_info_disable_enable_body">Schaltet Loq In zur Startzeit aus und zur Endzeit wieder ein.</string>
-    <string name="schedules_action_info_tip">Tipp: Wenn sich Zeitpläne überschneiden, nutzt Loq In die folgende Priorität und protokolliert die Entscheidung.</string>
+    <string name="schedules_action_info_tip">Tipp: Bei Überschneidung gewinnt der weiter oben stehende Zeitplan und Loq In protokolliert die Entscheidung. Zum Sortieren am Griff ziehen.</string>
 
     <!-- ====================================================== -->
     <!-- Schedule days and groups -->
@@ -244,7 +244,15 @@
     <string name="schedules_error_bt_required">Bitte gib einen Bluetooth-Gerätenamen ein.</string>
     <string name="schedules_error_location_required">Bitte wähle zuerst einen Standort aus.</string>
 
-    <string name="schedules_priority_info_body">Priorität bei Überschneidungen:\n1. Manuelle/NFC-Übersteuerung\n2. Notfall-Entsperrung\n3. Temporäre Aktionen\n4. Standort-Zeitpläne\n5. WLAN-/Bluetooth-Zeitpläne\n6. Zeit-Zeitpläne\n\nWenn mehrere Zeitpläne passen, protokolliert Loq In den Konflikt und wendet den Gewinner an, statt ihn still zu verstecken.</string>
+    <string name="schedules_priority_info_body">Priorität bei Überschneidungen:\n1. Manuelle/NFC-Übersteuerung\n2. Notfall-Entsperrung\n3. Temporäre Aktionen\n4. Deine Reihenfolge unten (oben gewinnt)\n\nZum Sortieren am Griff ziehen. Wenn mehrere Zeitpläne passen, protokolliert Loq In den Konflikt und wendet den obersten passenden Zeitplan an.</string>
+
+    <!-- ====================================================== -->
+    <!-- Schedule priority order -->
+    <!-- ====================================================== -->
+    <string name="schedules_priority_badge_desc">Zeitplan-Prioritätsrang</string>
+    <string name="schedules_priority_badge_fmt">#%1$d</string>
+    <string name="schedules_reorder_handle_desc">Zum Sortieren der Priorität ziehen</string>
+    <string name="schedules_priority_hint">Oberster Zeitplan gewinnt bei Überschneidung — zum Sortieren ziehen</string>
 
     <!-- ====================================================== -->
     <!-- Entry point/dialog -->

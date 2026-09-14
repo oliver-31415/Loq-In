@@ -442,11 +442,11 @@ class ScheduleReceiver : BroadcastReceiver() {
         if (matches.size > 1) {
             val overwritten = matches
                 .filter { it.id != target.id }
-                .joinToString(separator = ",") { "#${it.id}:${ScheduleInsights.scheduleDisplayName(it)}" }
+                .joinToString(separator = ",") { "#${it.id}:${ScheduleInsights.scheduleDisplayName(it)}:p${it.priority}" }
             AppLogStore.append(
                 ctx,
                 "Schedule",
-                "schedule_conflict active=#${target.id}:${ScheduleInsights.scheduleDisplayName(target)} overwritten=$overwritten"
+                "schedule_conflict active=#${target.id}:${ScheduleInsights.scheduleDisplayName(target)}:p${target.priority} overwritten=$overwritten"
             )
         }
         val source = when {
@@ -946,10 +946,15 @@ class ScheduleReceiver : BroadcastReceiver() {
         matches: List<ScheduleStore.Schedule>,
         nowMin: Int
     ): ScheduleStore.Schedule {
-        return matches.maxWithOrNull(
-            compareBy<ScheduleStore.Schedule> { scheduleSourcePriority(it) }
-                .thenBy { activeStartSortKey(it, nowMin) }
-                .thenBy { actionPriority(it.action) }
+        // User-defined priority wins first (lower Schedule.priority = shown higher in the list).
+        // Previous implicit rules (source > start time > one-shot vs range) are kept
+        // as deterministic tie-breakers when priorities are equal (e.g. legacy data).
+        return matches.minWithOrNull(
+            compareBy<ScheduleStore.Schedule> { it.priority }
+                .thenByDescending { scheduleSourcePriority(it) }
+                .thenByDescending { activeStartSortKey(it, nowMin) }
+                .thenByDescending { actionPriority(it.action) }
+                .thenBy { it.id }
         ) ?: matches.first()
     }
 
