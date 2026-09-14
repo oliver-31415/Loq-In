@@ -124,6 +124,10 @@
         <item quantity="one">%1$d unavailable app entry was removed. Tap Save to keep the cleanup.</item>
         <item quantity="other">%1$d unavailable app entries were removed. Tap Save to keep the cleanup.</item>
     </plurals>
+    <plurals name="app_picker_saved_notice">
+        <item quantity="one">Saved %1$d app.</item>
+        <item quantity="other">Saved %1$d apps.</item>
+    </plurals>
 
     <!-- ====================================================== -->
     <!-- App rules info and allow mode warnings -->
@@ -144,6 +148,23 @@
     <string name="app_picker_in_app_rules_chip">In-app</string>
     <string name="app_picker_in_app_rules_pinned_hint">Remove in-app rules first.</string>
     <string name="app_picker_in_app_rules_pinned_toast">Remove in-app rules first.</string>
+    <string name="app_picker_in_app_rules_active_hint">Whole-app blocking plus active in-app rules.</string>
+    <string name="app_picker_in_app_rules_stays_on_toast">In-app rules stay on.</string>
+    <string name="app_picker_in_app_rules_open">Open in-app rules</string>
+    <string name="app_picker_website_rules_open">Open website rules</string>
+    <string name="app_picker_tile_selected_desc">%1$s, selected</string>
+    <string name="app_picker_tile_unselected_desc">%1$s, not selected</string>
+
+    <!-- ====================================================== -->
+    <!-- Category filter chips -->
+    <!-- ====================================================== -->
+    <string name="app_picker_category_all">All</string>
+    <string name="app_picker_category_social">Social</string>
+    <string name="app_picker_category_media">Media</string>
+    <string name="app_picker_category_games">Games</string>
+    <string name="app_picker_category_browsers">Browsers</string>
+    <string name="app_picker_category_shop_pay">Shop &amp; Pay</string>
+    <string name="app_picker_category_other">Other</string>
 
     <!-- ====================================================== -->
     <!-- Picker row action menu -->

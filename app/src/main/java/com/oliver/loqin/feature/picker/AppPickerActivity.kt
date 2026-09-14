@@ -32,6 +32,7 @@ import android.text.InputType
 import android.text.TextWatcher
 import android.view.inputmethod.EditorInfo
 import android.view.View
+import android.view.ViewGroup
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
@@ -43,7 +44,10 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.core.graphics.ColorUtils
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.oliver.loqin.R
 import com.oliver.loqin.blocking.BlockingRuntime
@@ -77,6 +81,8 @@ import com.oliver.loqin.util.ProtectionEditPolicy
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
+import com.google.android.material.chip.Chip
+import com.google.android.material.chip.ChipGroup
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.snackbar.Snackbar
@@ -91,11 +97,15 @@ class AppPickerActivity : AppCompatActivity() {
     }
 
     private lateinit var adapter: AppListAdapter
+    private lateinit var rvApps: RecyclerView
     private var currentProfile: String? = null
     private var currentRuleMode: String = ProfileRuleModeStore.MODE_BLOCK_SELECTED
     private var autoBlockNewAppsCheckbox: CheckBox? = null
     private var originalManagedPackages: Set<String> = emptySet()
     private var allowLockedProfileStrictEdits: Boolean = false
+    private var bulkBar: View? = null
+    private var searchQuery: String = ""
+    private var activeCategory: AppCategory? = null
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(LocaleHelper.wrapContext(newBase))
@@ -167,7 +177,15 @@ class AppPickerActivity : AppCompatActivity() {
             findViewById<View>(viewId)?.apply {
                 isEnabled = true
                 isClickable = true
-                alpha = if (readOnly) 0.45f else 1f
+                // Select-all only adds, so it stays fully enabled while locked in
+                // block mode (tightening allowed); Clear always removes, so it dims.
+                val dimmed = if (viewId == R.id.btnSelectAll) {
+                    readOnly && (currentRuleMode == ProfileRuleModeStore.MODE_ALLOW_SELECTED ||
+                        !canTightenCurrentProfile())
+                } else {
+                    readOnly
+                }
+                alpha = if (dimmed) 0.45f else 1f
             }
         }
         findViewById<View>(R.id.btnSave)?.apply {
@@ -195,17 +213,17 @@ class AppPickerActivity : AppCompatActivity() {
         val toolbarIconColor = toolbarForegroundColor()
         toolbar.navigationIcon?.mutate()?.setTint(toolbarIconColor)
 
-        val rvApps = findViewById<RecyclerView>(R.id.rvApps)
+        rvApps = findViewById(R.id.rvApps)
         val searchBox = findViewById<TextInputLayout>(R.id.searchBox)
         val etSearch = findViewById<TextInputEditText>(R.id.etSearch)
         val btnSelectAll = findViewById<MaterialButton>(R.id.btnSelectAll)
         val btnClearAll = findViewById<MaterialButton>(R.id.btnClearAll)
         val btnSave = findViewById<Button>(R.id.btnSave)
+        bulkBar = findViewById(R.id.bulkBar)
         val cbAutoBlockNewApps = findViewById<CheckBox>(R.id.cbAutoBlockNewApps)
         val toggleProfileRuleMode = findViewById<MaterialButtonToggleGroup>(R.id.toggleProfileRuleMode)
         val btnBlockSelectedMode = findViewById<MaterialButton>(R.id.btnBlockSelectedMode)
         val btnAllowSelectedMode = findViewById<MaterialButton>(R.id.btnAllowSelectedMode)
-        val tvProfileRuleModeSummary = findViewById<TextView>(R.id.tvProfileRuleModeSummary)
         findViewById<ImageButton>(R.id.btnAppRulesInfo).apply {
             imageTintList = ColorStateList.valueOf(toolbarIconColor)
             setColorFilter(toolbarIconColor)
@@ -217,9 +235,7 @@ class AppPickerActivity : AppCompatActivity() {
         }
         autoBlockNewAppsCheckbox = cbAutoBlockNewApps
 
-
-
-        rvApps.layoutManager = LinearLayoutManager(this)
+        rvApps.layoutManager = GridLayoutManager(this, 3)
 
         val requestedProfile = intent.getStringExtra(EXTRA_PROFILE_NAME)?.trim().orEmpty()
         val requestedProfileExists = requestedProfile.isNotBlank() && ProfileStore.getProfiles(this).contains(requestedProfile)
@@ -233,7 +249,6 @@ class AppPickerActivity : AppCompatActivity() {
             toggleProfileRuleMode,
             btnBlockSelectedMode,
             btnAllowSelectedMode,
-            tvProfileRuleModeSummary,
             cbAutoBlockNewApps,
             toolbar,
             btnSelectAll,
@@ -268,9 +283,6 @@ class AppPickerActivity : AppCompatActivity() {
             },
             onWebsiteRulesClicked = { app -> openWebsiteRulesFromPicker(app) },
             onInAppRulesClicked = { app -> openInAppRulesFromPicker(app) },
-            onRowActionsClicked = { app, hasWebsiteRules, hasInAppRules ->
-                showPickerRowActions(app, hasWebsiteRules, hasInAppRules)
-            },
             onProtectedSelectionRequested = { app, onAllowed ->
                 ensureAppCanBeManaged(app, onAllowed)
             },
@@ -282,9 +294,22 @@ class AppPickerActivity : AppCompatActivity() {
 
         btnSave.backgroundTintList = AccentColor.getActiveColor(this)
         btnSave.setTextColor(ContextCompat.getColor(this, R.color.font_white))
+        // This screen never applied edge-to-edge insets, so lift Save above the
+        // navigation/gesture bar with a bottom margin (padding would just stretch
+        // the button instead of moving it).
+        val saveInitialMargin =
+            (btnSave.layoutParams as? ViewGroup.MarginLayoutParams)?.bottomMargin ?: 0
+        ViewCompat.setOnApplyWindowInsetsListener(btnSave) { v, insets ->
+            val nav = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
+            val gest = insets.getInsets(WindowInsetsCompat.Type.systemGestures()).bottom
+            (v.layoutParams as? ViewGroup.MarginLayoutParams)?.let {
+                it.bottomMargin = maxOf(saveInitialMargin, nav, gest)
+                v.layoutParams = it
+            }
+            insets
+        }
         searchBox.boxStrokeColor = AccentColor.getAccentColorInt(this)
         searchBox.hintTextColor = AccentColor.getActiveColor(this)
-        etSearch.backgroundTintList = AccentColor.getActiveColor(this)
 
         setupAutoBlockNewAppsCheckbox(cbAutoBlockNewApps)
         setupBulkButtons(btnSelectAll, btnClearAll, btnSave)
@@ -321,9 +346,6 @@ class AppPickerActivity : AppCompatActivity() {
                     },
                     onWebsiteRulesClicked = { app -> openWebsiteRulesFromPicker(app) },
                     onInAppRulesClicked = { app -> openInAppRulesFromPicker(app) },
-                    onRowActionsClicked = { app, hasWebsiteRules, hasInAppRules ->
-                        showPickerRowActions(app, hasWebsiteRules, hasInAppRules)
-                    },
                     onProtectedSelectionRequested = { app, onAllowed ->
                         ensureAppCanBeManaged(app, onAllowed)
                     },
@@ -334,6 +356,7 @@ class AppPickerActivity : AppCompatActivity() {
                 rvApps.adapter = adapter
 
                 setupSearch(etSearch)
+                setupCategoryChips(load.entries)
                 setupSaveButton(btnSave)
                 syncReadOnlyUi()
 
@@ -398,7 +421,6 @@ class AppPickerActivity : AppCompatActivity() {
 
         val installedByPackage = installed.associateBy { it.packageName }
         val selectedNotInLauncher = mutableListOf<AppEntry>()
-        val unavailable = mutableListOf<AppEntry>()
         val packageListLooksIncomplete = installed.size < 50 &&
             packagesToResolve.size >= 50 &&
             packagesToResolve.size > installed.size
@@ -421,21 +443,21 @@ class AppPickerActivity : AppCompatActivity() {
                         packageName = pkg,
                         label = pkg,
                         isAvailable = true,
-                        blockSafety = AppBlockSafety.resolve(context, pkg)
-                    )
-                } else {
-                    unavailable += AppEntry(
-                        packageName = pkg,
-                        label = context.getString(R.string.unavailable_app_label),
-                        isAvailable = false
+                        blockSafety = AppBlockSafety.resolve(context, pkg),
+                        appCategory = AppCategory.categoryFor(pkg, ApplicationInfo.CATEGORY_UNDEFINED)
                     )
                 }
+                // Otherwise the package is genuinely not installed: it is intentionally
+                // left out of the picker list (its stored configuration is kept, so it
+                // applies again if the app is reinstalled). This also avoids ghost rows
+                // for packages that only look configured through shared rule keys
+                // (e.g. Facebook Lite shares Facebook's in-app rule keys).
             }
 
-        val entries = (unavailable + selectedNotInLauncher + installed)
+        val entries = (selectedNotInLauncher + installed)
             .distinctBy { it.packageName }
 
-        return PickerLoadResult(entries = entries, unavailableCount = unavailable.size)
+        return PickerLoadResult(entries = entries, unavailableCount = 0)
     }
 
     private fun loadSupportedInAppApps(context: Context): List<AppEntry> {
@@ -468,7 +490,8 @@ class AppPickerActivity : AppCompatActivity() {
             byPackage[pkg] = AppEntry(
                 label = label,
                 packageName = pkg,
-                blockSafety = AppBlockSafety.resolve(context, pkg)
+                blockSafety = AppBlockSafety.resolve(context, pkg),
+                appCategory = AppCategory.categoryFor(pkg, ai.category)
             )
         }
 
@@ -493,7 +516,8 @@ class AppPickerActivity : AppCompatActivity() {
             label = label,
             packageName = packageName,
             isAvailable = true,
-            blockSafety = AppBlockSafety.resolve(context, packageName)
+            blockSafety = AppBlockSafety.resolve(context, packageName),
+            appCategory = AppCategory.categoryFor(packageName, ai.category)
         )
     }
 
@@ -509,7 +533,6 @@ class AppPickerActivity : AppCompatActivity() {
         toggleProfileRuleMode: MaterialButtonToggleGroup,
         btnBlockSelectedMode: MaterialButton,
         btnAllowSelectedMode: MaterialButton,
-        tvProfileRuleModeSummary: TextView,
         cbAutoBlockNewApps: CheckBox,
         toolbar: MaterialToolbar,
         btnSelectAll: MaterialButton,
@@ -552,7 +575,6 @@ class AppPickerActivity : AppCompatActivity() {
                     toggleProfileRuleMode,
                     btnBlockSelectedMode,
                     btnAllowSelectedMode,
-                    tvProfileRuleModeSummary,
                     cbAutoBlockNewApps,
                     toolbar,
                     btnSelectAll,
@@ -594,54 +616,11 @@ class AppPickerActivity : AppCompatActivity() {
             toggleProfileRuleMode,
             btnBlockSelectedMode,
             btnAllowSelectedMode,
-            tvProfileRuleModeSummary,
             cbAutoBlockNewApps,
             toolbar,
             btnSelectAll,
             btnClearAll
         )
-    }
-
-    private fun showPickerRowActions(app: AppEntry, hasWebsiteRules: Boolean, hasInAppRules: Boolean) {
-        val actions = mutableListOf<Pair<LoqInDialogOption, () -> Unit>>()
-
-        if (hasWebsiteRules) {
-            actions += LoqInDialogOption(
-                title = getString(R.string.app_picker_row_action_website_rules),
-                summary = getString(R.string.app_picker_row_action_website_rules_summary),
-                iconRes = R.drawable.language_24
-            ) to { openWebsiteRulesFromPicker(app) }
-        }
-
-        if (hasInAppRules) {
-            actions += LoqInDialogOption(
-                title = getString(R.string.app_picker_row_action_in_app_rules),
-                summary = getString(R.string.app_picker_row_action_in_app_rules_summary),
-                iconRes = R.drawable.tune_24
-            ) to { openInAppRulesFromPicker(app) }
-        }
-
-        actions += LoqInDialogOption(
-            title = getString(R.string.app_picker_row_action_app_limits),
-            summary = getString(R.string.app_picker_row_action_app_limits_summary),
-            iconRes = R.drawable.schedule_24
-        ) to {
-            QuickLimitDialogs.showForApp(
-                activity = this,
-                pkg = app.packageName,
-                label = app.label
-            ) {
-                adapter.notifyPkgChanged(app.packageName)
-            }
-        }
-
-        showLoqInOptionDialog(
-            title = app.label,
-            options = actions.map { it.first },
-            showCancelButton = false
-        ) { index ->
-            actions.getOrNull(index)?.second?.invoke()
-        }
     }
 
     private fun openWebsiteRulesFromPicker(app: AppEntry) {
@@ -663,7 +642,6 @@ class AppPickerActivity : AppCompatActivity() {
         toggleProfileRuleMode: MaterialButtonToggleGroup,
         btnBlockSelectedMode: MaterialButton,
         btnAllowSelectedMode: MaterialButton,
-        tvProfileRuleModeSummary: TextView,
         cbAutoBlockNewApps: CheckBox,
         toolbar: MaterialToolbar,
         btnSelectAll: MaterialButton,
@@ -680,7 +658,6 @@ class AppPickerActivity : AppCompatActivity() {
             R.string.app_rules_profile_subtitle,
             currentProfile?.takeIf { it.isNotBlank() } ?: getString(R.string.profile_label_default)
         )
-        tvProfileRuleModeSummary.setText(if (isAllow) R.string.profile_rule_mode_allow_summary else R.string.profile_rule_mode_block_summary)
         btnSelectAll.setText(if (isAllow) R.string.app_picker_select_all_allow else R.string.app_picker_select_all)
         btnClearAll.setText(if (isAllow) R.string.app_picker_clear_all_allow else R.string.app_picker_clear_all)
         SegmentedToggleUi.apply(
@@ -719,7 +696,8 @@ class AppPickerActivity : AppCompatActivity() {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun afterTextChanged(s: Editable?) {}
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                adapter.filter(s?.toString())
+                searchQuery = s?.toString().orEmpty()
+                applyListFilter()
             }
         })
 
@@ -731,6 +709,88 @@ class AppPickerActivity : AppCompatActivity() {
                 false
             }
         }
+    }
+
+    private fun applyListFilter() {
+        if (!::adapter.isInitialized) return
+        adapter.filter(searchQuery, activeCategory)
+        rvApps.scrollToPosition(0)
+        updateBulkBarVisibility()
+    }
+
+    private fun updateBulkBarVisibility() {
+        // Bulk actions only make sense against a narrowed list: show them while
+        // a search query or a category chip filter is active.
+        val filtering = searchQuery.isNotBlank() || activeCategory != null
+        bulkBar?.visibility = if (filtering) View.VISIBLE else View.GONE
+    }
+
+    private fun categoryLabel(category: AppCategory): String = when (category) {
+        AppCategory.SOCIAL -> getString(R.string.app_picker_category_social)
+        AppCategory.MEDIA -> getString(R.string.app_picker_category_media)
+        AppCategory.GAMES -> getString(R.string.app_picker_category_games)
+        AppCategory.BROWSERS -> getString(R.string.app_picker_category_browsers)
+        AppCategory.SHOP_PAY -> getString(R.string.app_picker_category_shop_pay)
+        AppCategory.OTHER -> getString(R.string.app_picker_category_other)
+    }
+
+    private fun setupCategoryChips(entries: List<AppEntry>) {
+        val group = findViewById<ChipGroup>(R.id.chipCategories) ?: return
+        group.removeAllViews()
+        val present = entries.map { it.appCategory }.distinct()
+            .sortedBy { it.ordinal }
+
+        if (activeCategory != null && activeCategory !in present) {
+            activeCategory = null
+        }
+
+        fun refreshChecks() {
+            val accent = AccentColor.getAccentColorInt(this)
+            val density = resources.displayMetrics.density
+            for (i in 0 until group.childCount) {
+                val chip = group.getChildAt(i) as? Chip ?: continue
+                val selected = (chip.tag as? AppCategory) == activeCategory ||
+                    (chip.tag == null && activeCategory == null)
+                // Highlight manually: chip internal checked visuals proved unreliable.
+                chip.isChecked = selected
+                chip.chipBackgroundColor = ColorStateList.valueOf(
+                    if (selected) ColorUtils.setAlphaComponent(accent, 0x2E)
+                    else Color.TRANSPARENT
+                )
+                chip.chipStrokeColor = ColorStateList.valueOf(
+                    if (selected) accent
+                    else ContextCompat.getColor(this, R.color.foqos_outline_variant)
+                )
+                chip.chipStrokeWidth = 1f * density
+            }
+        }
+
+        fun addChip(label: String, category: AppCategory?) {
+            val chip = Chip(
+                this,
+                null,
+                com.google.android.material.R.style.Widget_Material3_Chip_Suggestion
+            ).apply {
+                text = label
+                isClickable = true
+                isFocusable = true
+                tag = category
+                id = View.generateViewId()
+                setOnClickListener {
+                    activeCategory = tag as? AppCategory
+                    refreshChecks()
+                    applyListFilter()
+                }
+            }
+            group.addView(chip)
+        }
+
+        addChip(getString(R.string.app_picker_category_all), null)
+        present.forEach { category ->
+            addChip(categoryLabel(category), category)
+        }
+        refreshChecks()
+        updateBulkBarVisibility()
     }
 
     private fun setupAutoBlockNewAppsCheckbox(cbAutoBlockNewApps: CheckBox) {
@@ -757,7 +817,15 @@ class AppPickerActivity : AppCompatActivity() {
 
     private fun setupBulkButtons(btnSelectAll: MaterialButton, btnClearAll: MaterialButton, btnSave: Button) {
         btnSelectAll.setOnClickListener {
-            if (!ensureLoqInDisabledForAppRules()) return@setOnClickListener
+            // Select-all only ever adds; while locked that is allowed in block mode
+            // (tightening), but never removals — and never in allow mode, where
+            // selecting means allowing (loosening).
+            val isAllow = currentRuleMode == ProfileRuleModeStore.MODE_ALLOW_SELECTED
+            if (EditingLockGuard.isLocked(this) && (isAllow || !canTightenCurrentProfile())) {
+                findViewById<View>(android.R.id.content)
+                    .showWarnPill(R.string.toast_disable_loqin_to_edit_blocked_apps)
+                return@setOnClickListener
+            }
             val skipped = adapter.selectAllVisible()
             val activeProfile = currentProfile
             if (!activeProfile.isNullOrBlank() && currentRuleMode != ProfileRuleModeStore.MODE_ALLOW_SELECTED) {
@@ -871,6 +939,7 @@ class AppPickerActivity : AppCompatActivity() {
                 allowInactiveProfile = allowLockedProfileStrictEdits,
             )
         ) {
+            EditingLockGuard.showLockedDialog(this, R.string.rules_tighten_only_active_message)
             syncReadOnlyUi()
             return
         }
@@ -880,7 +949,20 @@ class AppPickerActivity : AppCompatActivity() {
             ProfileStore.setBlockedForProfile(this, profile, managed)
         }
         BlockingRuntime.ensureRunning(this)
-        finish()
+        // Stay open so the save result is visible: re-baseline the dirty check and confirm.
+        // NOTE: re-apply the sanitized saved set directly instead of re-reading the
+        // profile store, whose read filters would untick explicitly blocked apps that
+        // only carry in-app rules.
+        originalManagedPackages = managed
+        adapter.replaceManagedPackages(managed)
+        showPickerNotice(
+            findViewById(R.id.btnSave) ?: findViewById(android.R.id.content),
+            resources.getQuantityString(
+                R.plurals.app_picker_saved_notice,
+                managed.size,
+                managed.size
+            )
+        )
     }
 
     private fun ensureAppCanBeManaged(app: AppEntry, onAllowed: () -> Unit) {
@@ -1042,4 +1124,5 @@ class AppPickerActivity : AppCompatActivity() {
             Color.BLACK
         }
     }
+
 }

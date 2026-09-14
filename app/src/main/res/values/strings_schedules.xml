@@ -85,12 +85,12 @@
     <string name="schedules_health_last_exec_compact">Last schedule execution: %1$s</string>
     <string name="schedules_insights_title">Schedule insights</string>
     <string name="schedules_insights_overlap_title">Schedule overlap warning</string>
-    <string name="schedules_insights_overlap_body_fmt">This overlaps with “%1$s”. The later matching schedule may override the active profile.</string>
+    <string name="schedules_insights_overlap_body_fmt">This overlaps with “%1$s”. The schedule higher in your list wins when both match.</string>
     <string name="schedules_insight_active_tag_fmt">Active range: %1$s · %2$s · %3$s-%4$s</string>
     <string name="schedules_insight_timeline_item_fmt">%1$s - %2$s “%3$s” (%4$s)</string>
     <string name="schedules_overlap_warning_title">Overlapping schedule</string>
-    <string name="schedules_overlap_warning_message_fmt">This overlaps with “%1$s”. The later schedule may override the active profile.\n\nSave anyway?</string>
-    <string name="schedules_overlap_enabled_message_fmt">This overlaps with “%1$s”. If both schedules match, Loq In uses schedule priority and logs the decision.</string>
+    <string name="schedules_overlap_warning_message_fmt">This overlaps with “%1$s”. The schedule higher in your list wins when both match.\n\nSave anyway?</string>
+    <string name="schedules_overlap_enabled_message_fmt">This overlaps with “%1$s”. If both schedules match, Loq In applies the one higher in your list and logs the decision.</string>
     <string name="schedules_overlap_warning_save">Save anyway</string>
     <string name="schedules_dialog_nfc_lock_hint">NFC lock active: this action cannot change the Loq In state until you unlock with NFC/QR.</string>
     <string name="schedules_nfc_lock_add_dialog_hint">NFC lock is active. Only actions that do not disable Loq In are shown right now.</string>
@@ -167,7 +167,7 @@
     <string name="schedules_action_info_toggle_body">Flips the current state. If Loq In is enabled it disables it, and if it is disabled it enables it.</string>
     <string name="schedules_action_info_enable_disable_body">Enables Loq In for the selected time range, then disables it again at the end.</string>
     <string name="schedules_action_info_disable_enable_body">Disables Loq In for the selected time range, then enables it again at the end.</string>
-    <string name="schedules_action_info_tip">Tip: If schedules overlap, Loq In uses the priority below and logs the decision. Make sure battery/background permissions are allowed so schedule checks can run reliably.</string>
+    <string name="schedules_action_info_tip">Tip: If schedules overlap, the one higher in your list wins and Loq In logs the decision. Drag the handle to reorder. Make sure battery/background permissions are allowed so schedule checks can run reliably.</string>
 
     <!-- ====================================================== -->
     <!-- Schedule days and groups -->
@@ -244,7 +244,15 @@
     <string name="schedules_error_bt_required">Please enter a Bluetooth device name.</string>
     <string name="schedules_error_location_required">Please choose a location first.</string>
 
-    <string name="schedules_priority_info_body">Priority when actions overlap:\n1. Manual/NFC override\n2. Emergency unlock\n3. Temporary actions\n4. Location schedules\n5. Wi-Fi/Bluetooth schedules\n6. Time schedules\n\nIf multiple schedules match, Loq In logs the conflict and applies the winning schedule instead of silently hiding it.</string>
+    <string name="schedules_priority_info_body">Priority when actions overlap:\n1. Manual/NFC override\n2. Emergency unlock\n3. Temporary actions\n4. Your schedule order below (top wins)\n\nDrag the handle to reorder. If multiple schedules match, Loq In logs the conflict and applies the topmost matching schedule.</string>
+
+    <!-- ====================================================== -->
+    <!-- Schedule priority order -->
+    <!-- ====================================================== -->
+    <string name="schedules_priority_badge_desc">Schedule priority rank</string>
+    <string name="schedules_priority_badge_fmt">#%1$d</string>
+    <string name="schedules_reorder_handle_desc">Drag to reorder schedule priority</string>
+    <string name="schedules_priority_hint">Top schedule wins on overlap — drag to reorder</string>
 
     <!-- ====================================================== -->
     <!-- Entry point/dialog -->

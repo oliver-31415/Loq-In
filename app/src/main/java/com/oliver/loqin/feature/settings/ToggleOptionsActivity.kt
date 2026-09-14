@@ -75,6 +75,7 @@ import com.oliver.loqin.ui.dialog.styleLoqInDialogButtons
 import com.oliver.loqin.ui.dialog.EmergencyPinDialog
 import com.oliver.loqin.util.LocaleHelper
 import com.oliver.loqin.util.PersistentStatusNotifier
+import com.oliver.loqin.util.EditingLockGuard
 import com.oliver.loqin.util.LoqInAppAccessGuard
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
@@ -177,6 +178,7 @@ open class ToggleOptionsActivity : AppCompatActivity() {
         // Switches (Protection)
         val switchBlockNotifications = findViewById<SwitchMaterial>(R.id.switchBlockNotifications)
         val switchSessionMissedNotifications = findViewById<SwitchMaterial>(R.id.switchSessionMissedNotifications)
+        val switchLockWarnings = findViewById<SwitchMaterial>(R.id.switchLockWarnings)
         val switchAutostart = findViewById<SwitchMaterial>(R.id.switchAutostart)
 
         // Switches (UI & Info)
@@ -223,6 +225,7 @@ open class ToggleOptionsActivity : AppCompatActivity() {
 
         val rowBlockNotifs = findViewById<View>(R.id.rowBlockNotifications)
         val rowSessionMissedNotifications = findViewById<View>(R.id.rowSessionMissedNotifications)
+        val rowLockWarnings = findViewById<View>(R.id.rowLockWarnings)
         val rowAutostart = findViewById<View>(R.id.rowAutostart)
 
         val rowEmergency = findViewById<View>(R.id.rowEmergency)
@@ -466,6 +469,7 @@ open class ToggleOptionsActivity : AppCompatActivity() {
             switchMixedAllowNfcTagWriting,
             switchBlockNotifications,
             switchSessionMissedNotifications,
+            switchLockWarnings,
             switchAutostart,
             switchEmergency,
             switchShowQuickActions,
@@ -496,6 +500,7 @@ open class ToggleOptionsActivity : AppCompatActivity() {
 
         switchBlockNotifications.isChecked = NotificationBlockStore.isEnabled(ctx)
         switchSessionMissedNotifications.isChecked = SessionMissedNotificationsStore.isFeatureEnabled(ctx)
+        switchLockWarnings.isChecked = !EditingLockGuard.isSuppressed(ctx)
 
         fun syncSessionMissedState(blockNotifsEnabled: Boolean) {
             rowSessionMissedNotifications.alpha = if (blockNotifsEnabled) 1f else 0.5f
@@ -935,6 +940,7 @@ open class ToggleOptionsActivity : AppCompatActivity() {
                 switchSessionMissedNotifications.toggle()
             }
         }
+        rowLockWarnings.setOnClickListener { switchLockWarnings.toggle() }
         rowAutostart.setOnClickListener {
             if (canEditActiveAccess()) switchAutostart.toggle()
         }
@@ -1095,6 +1101,11 @@ open class ToggleOptionsActivity : AppCompatActivity() {
         // Session missed notifications
         switchSessionMissedNotifications.setOnCheckedChangeListener { _, isChecked ->
             SessionMissedNotificationsStore.setFeatureEnabled(ctx, isChecked)
+        }
+
+        // Protection warning dialogs while Loq In is active
+        switchLockWarnings.setOnCheckedChangeListener { _, isChecked ->
+            EditingLockGuard.setSuppressed(ctx, !isChecked)
         }
 
         // Block notifications

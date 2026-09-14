@@ -38,6 +38,7 @@ import com.oliver.loqin.ui.MainActivity
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.dialog.showAccented
 import com.oliver.loqin.util.ActivityTransitionCompat
+import com.oliver.loqin.util.EditingLockGuard
 import com.oliver.loqin.util.LocaleHelper
 import com.oliver.loqin.util.LoqInAppAccessGuard
 import com.google.android.material.appbar.MaterialToolbar
@@ -112,11 +113,21 @@ class RulesHubActivity : AppCompatActivity() {
                 )
                 return true
             }
+            if (EditingLockGuard.isSuppressed(source)) {
+                ActivityTransitionCompat.switchWithoutAnimation(
+                    activity = source,
+                    intent = Intent(source, RulesHubActivity::class.java),
+                    finishCurrent = finishSourceAfterOpen,
+                )
+                return false
+            }
 
-            AlertDialog.Builder(source)
+            val builder = AlertDialog.Builder(source)
                 .setTitle(R.string.loqin_rules_locked_title)
                 .setMessage(R.string.rules_restricted_open_message)
-                .setPositiveButton(R.string.rules_open_restricted) { _, _ ->
+            val persistChoice = EditingLockGuard.addDontShowAgain(builder, source)
+            builder.setPositiveButton(R.string.rules_open_restricted) { _, _ ->
+                    persistChoice()
                     ActivityTransitionCompat.switchWithoutAnimation(
                         activity = source,
                         intent = Intent(source, RulesHubActivity::class.java),

@@ -1723,15 +1723,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun openRulesDestination(intent: Intent) {
-        if (!EditingLockGuard.isLocked(this)) {
+        if (!EditingLockGuard.isLocked(this) || EditingLockGuard.isSuppressed(this)) {
             startActivity(intent)
             return
         }
 
-        AlertDialog.Builder(this)
+        val builder = AlertDialog.Builder(this)
             .setTitle(R.string.loqin_rules_locked_title)
             .setMessage(R.string.rules_restricted_open_message)
-            .setPositiveButton(R.string.rules_open_restricted) { _, _ ->
+        val persistChoice = EditingLockGuard.addDontShowAgain(builder, this)
+        builder.setPositiveButton(R.string.rules_open_restricted) { _, _ ->
+                persistChoice()
                 startActivity(intent)
             }
             .setNegativeButton(R.string.cancel, null)
@@ -1995,7 +1997,10 @@ class MainActivity : AppCompatActivity() {
         nameView?.setOnClickListener { renameAction() }
         view.findViewById<View>(R.id.rowSheetApps).setOnClickListener {
             sheet.dismiss()
-            openAppPickerIfUnlocked()
+            val intent = Intent(this, AppPickerActivity::class.java).apply {
+                putExtra(AppPickerActivity.EXTRA_PROFILE_NAME, profile)
+            }
+            openRulesDestination(intent)
         }
         view.findViewById<View>(R.id.rowSheetWebsites).setOnClickListener {
             sheet.dismiss()

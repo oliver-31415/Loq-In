@@ -99,10 +99,41 @@ object ScheduleStore {
         val locationRadiusMeters: Int = 250,
         val locationTrigger: LocationTrigger? = null,
         val locationCooldownMinutes: Int = 15,
-        val action: Action = Action.ENABLE
+        val action: Action = Action.ENABLE,
+        // User-defined priority: lower value = higher priority (shown first, wins on overlap).
+        // List order in storage is kept in priority order; this field makes the rank
+        // explicit so filtering/re-sorting elsewhere cannot silently change the winner.
+        val priority: Int = 0
     ) {
         fun isLocationSchedule(): Boolean =
             locationLat != null && locationLng != null && locationTrigger != null
+    }
+
+    /** Priority order: lower [Schedule.priority] first, stable by id. */
+    fun sortedByPriority(list: List<Schedule>): List<Schedule> =
+        list.sortedWith(compareBy<Schedule> { it.priority }.thenBy { it.id })
+
+    /** Reassign compact priorities 0..n-1 following the given order. */
+    fun withCompactPriorities(ordered: List<Schedule>): List<Schedule> =
+        ordered.mapIndexed { index, s -> if (s.priority == index) s else s.copy(priority = index) }
+
+    /**
+     * Move one schedule to a new position within priority order.
+     * [ordered] must already be in priority order (see [sortedByPriority]).
+     */
+    fun moveToPosition(
+        ordered: List<Schedule>,
+        scheduleId: Int,
+        toPosition: Int
+    ): List<Schedule> {
+        val fromIndex = ordered.indexOfFirst { it.id == scheduleId }
+        if (fromIndex < 0) return ordered
+        val clampedTo = toPosition.coerceIn(0, ordered.size - 1)
+        if (fromIndex == clampedTo) return withCompactPriorities(ordered)
+        val mutable = ordered.toMutableList()
+        val item = mutable.removeAt(fromIndex)
+        mutable.add(clampedTo, item)
+        return withCompactPriorities(mutable)
     }
 
     fun todayYmd(): Int {
@@ -166,7 +197,9 @@ object ScheduleStore {
                 locationRadiusMeters = o.optInt("locationRadiusMeters", 250).coerceIn(50, 1000),
                 locationTrigger = locationTrigger,
                 locationCooldownMinutes = o.optInt("locationCooldownMinutes", 15).coerceAtLeast(0),
-                action = action
+                action = action,
+                // Legacy installs have no "priority" key: keep storage order as priority order.
+                priority = if (o.has("priority")) o.optInt("priority", i) else i
             )
         }
 
@@ -233,6 +266,7 @@ object ScheduleStore {
             o.put("locationTrigger", s.locationTrigger?.name ?: "")
             o.put("locationCooldownMinutes", s.locationCooldownMinutes)
             o.put("action", s.action.name)
+            o.put("priority", s.priority)
             arr.put(o)
         }
 

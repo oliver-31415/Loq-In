@@ -47,7 +47,14 @@ fun Snackbar.applyLoqInStyle(): Snackbar {
     // Warm paper in light mode, warm charcoal in dark mode (matches foqos tokens).
     val surface = if (night) 0xFF232320.toInt() else 0xFFF0EFEA.toInt()
     val onSurface = if (night) 0xFFF2F1EC.toInt() else 0xFF1B1B18.toInt()
-    view.setBackgroundColor(surface)
+    // Rounded bar everywhere: setBackgroundColor would flatten the Material shape
+    // into a sharp rectangle, which is why notices looked square.
+    val density = ctx.resources.displayMetrics.density
+    view.background = GradientDrawable().apply {
+        shape = GradientDrawable.RECTANGLE
+        cornerRadius = 16f * density
+        setColor(surface)
+    }
     view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)?.apply {
         setTextColor(onSurface)
         maxLines = 3

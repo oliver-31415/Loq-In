@@ -24,6 +24,7 @@
     <string name="website_rule_mode_block_summary">Selected enabled websites are blocked while this profile is active.</string>
     <string name="website_rule_mode_allow_summary">Selected enabled websites are allowed. Other websites are blocked while this profile is active.</string>
     <string name="blocked_websites_add_title">Add website</string>
+    <string name="search_websites">Search websites</string>
 
     <!-- ====================================================== -->
     <!-- Rule editor -->
