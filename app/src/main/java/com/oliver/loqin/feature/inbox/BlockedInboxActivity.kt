@@ -18,7 +18,6 @@
 
 package com.oliver.loqin.feature.inbox
 
-import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.os.Bundle
@@ -48,16 +47,16 @@ import com.oliver.loqin.theme.CustomAccentApplier
 import com.oliver.loqin.ui.EdgeToEdgeUtils
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.showWarnPillOnContent
+import com.oliver.loqin.ui.LoqInDropdownAdapter
 import com.oliver.loqin.ui.attachEditDeleteSwipe
 import com.oliver.loqin.ui.updateSelectionSubtitle
 import com.oliver.loqin.ui.dialog.showDestructiveAccented
 import com.oliver.loqin.ui.dialog.styleLoqInDialogButtons
 import com.oliver.loqin.widget.BlockedNotificationsWidgetProvider
 import com.google.android.material.appbar.MaterialToolbar
-import com.google.android.material.chip.Chip
-import com.google.android.material.chip.ChipGroup
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import java.text.DateFormat
 import java.util.Date
 
@@ -196,7 +195,7 @@ class BlockedInboxActivity : AppCompatActivity() {
         empty.visibility = if (visibleItems.isEmpty()) View.VISIBLE else View.GONE
 
         toolbar.updateSelectionSubtitle(selectionMode, selectedKeys.size, null)
-        renderFilterChips()
+        renderFilterDropdowns()
         invalidateOptionsMenu()
     }
 
@@ -349,72 +348,46 @@ class BlockedInboxActivity : AppCompatActivity() {
     }
 
     /**
-     * Inline app filter + sort at the top of the list. Replaces the old dialog:
-     * the filter is now always visible and one tap away instead of buried in a menu.
+     * Inline app filter + sort. Uses the same outlined dropdown component as the
+     * rest of the app, always visible above the list instead of a dialog.
      */
-    private fun renderFilterChips() {
-        val group = findViewById<ChipGroup>(R.id.filterChipGroup) ?: return
-        group.removeAllViews()
+    private fun renderFilterDropdowns() {
+        val appDropdown = findViewById<MaterialAutoCompleteTextView>(R.id.dropdownFilterApp) ?: return
+        val sortDropdown = findViewById<MaterialAutoCompleteTextView>(R.id.dropdownSort) ?: return
 
         val pkgs = allItems.map { it.pkg }.distinct().sortedBy { appLabel(it).lowercase() }
-
-        group.addView(filterChip(getString(R.string.blocked_inbox_filter_all_apps), appFilter == null) {
-            setAppFilter(null)
-        })
+        val appLabels = mutableListOf(getString(R.string.blocked_inbox_filter_all_apps))
+        val appValues = mutableListOf<String?>(null)
         pkgs.forEach { pkg ->
-            group.addView(filterChip(appLabel(pkg), appFilter == pkg) { setAppFilter(pkg) })
+            appLabels += appLabel(pkg)
+            appValues += pkg
         }
+        val appIndex = appValues.indexOf(appFilter).takeIf { it >= 0 } ?: 0
 
-        // Sort toggle lives at the end of the same row so both controls are in one place.
-        group.addView(
-            filterChip(
-                getString(
-                    if (sortNewestFirst) R.string.blocked_inbox_sort_newest
-                    else R.string.blocked_inbox_sort_oldest
-                ),
-                selected = false,
-            ) {
-                sortNewestFirst = !sortNewestFirst
-                prefs.edit { putBoolean(KEY_SORT_NEWEST, sortNewestFirst) }
-                applyFilterSort()
+        appDropdown.setAdapter(LoqInDropdownAdapter(this, appLabels))
+        appDropdown.setText(appLabels[appIndex], false)
+        appDropdown.setOnItemClickListener { _, _, position, _ ->
+            val pkg = appValues.getOrNull(position)
+            appFilter = pkg
+            prefs.edit {
+                if (pkg.isNullOrBlank()) remove(KEY_APP_FILTER) else putString(KEY_APP_FILTER, pkg)
             }
-        )
-    }
-
-    private fun filterChip(label: String, selected: Boolean, onClick: () -> Unit): Chip {
-        val accent = AccentColor.getAccentColorInt(this)
-        val onSurfaceVariant = MaterialColors.getColor(
-            this,
-            com.google.android.material.R.attr.colorOnSurfaceVariant,
-            Color.GRAY,
-        )
-        return Chip(this).apply {
-            text = label
-            isCheckable = true
-            isChecked = selected
-            isClickable = true
-            maxLines = 1
-            ellipsize = android.text.TextUtils.TruncateAt.END
-            minHeight = dp(40)
-            chipStrokeWidth = dp(1).toFloat()
-            chipStrokeColor = ColorStateList.valueOf(accent)
-            chipBackgroundColor = ColorStateList.valueOf(
-                ColorUtils.setAlphaComponent(accent, if (selected) 0x24 else 0x00)
-            )
-            setTextColor(if (selected) accent else onSurfaceVariant)
-            checkedIcon = null
-            setOnClickListener {
-                onClick()
-                applyFilterSort()
-            }
+            applyFilterSort()
         }
-    }
+        appDropdown.setOnClickListener { appDropdown.showDropDown() }
 
-    private fun setAppFilter(pkg: String?) {
-        appFilter = pkg
-        prefs.edit {
-            if (pkg.isNullOrBlank()) remove(KEY_APP_FILTER) else putString(KEY_APP_FILTER, pkg)
+        val sortLabels = listOf(
+            getString(R.string.blocked_inbox_sort_newest),
+            getString(R.string.blocked_inbox_sort_oldest)
+        )
+        sortDropdown.setAdapter(LoqInDropdownAdapter(this, sortLabels))
+        sortDropdown.setText(sortLabels[if (sortNewestFirst) 0 else 1], false)
+        sortDropdown.setOnItemClickListener { _, _, position, _ ->
+            sortNewestFirst = position == 0
+            prefs.edit { putBoolean(KEY_SORT_NEWEST, sortNewestFirst) }
+            applyFilterSort()
         }
+        sortDropdown.setOnClickListener { sortDropdown.showDropDown() }
     }
 
     private fun confirmClearAll() {
