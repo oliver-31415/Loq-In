@@ -2607,7 +2607,7 @@ class MainActivity : AppCompatActivity() {
                     suppressSwitchListener = true
                     switch.isChecked = !checked
                     suppressSwitchListener = false
-                    snackRoot().showWarnPill(R.string.mixed_channels_locked_while_loqin_enabled)
+                    EditingLockGuard.showLockedDialog(ctx, R.string.mixed_channels_locked_while_loqin_enabled)
                     return@setOnCheckedChangeListener
                 }
                 setter(checked)
@@ -2736,7 +2736,7 @@ class MainActivity : AppCompatActivity() {
             // Changing the control mode is a protection-sensitive edit: it must go through the
             // same lock as the Settings screen so it cannot be swapped while protection is active.
             if (LoqInAppAccessGuard.isControlSettingsLocked(ctx)) {
-                snackRoot().showWarnPill(R.string.mode_switch_requires_loqin_disabled)
+                EditingLockGuard.showLockedDialog(ctx, R.string.mode_switch_requires_loqin_disabled)
                 return
             }
             current = mode
