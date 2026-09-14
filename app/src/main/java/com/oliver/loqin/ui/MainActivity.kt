@@ -147,6 +147,7 @@ import com.oliver.loqin.ui.LoqInDropdownAdapter
 import com.oliver.loqin.util.ActivityTransitionCompat
 import com.oliver.loqin.util.EditingLockGuard
 import com.oliver.loqin.util.LocaleHelper
+import com.oliver.loqin.util.LoqInAppAccessGuard
 import com.oliver.loqin.util.PlayStoreUpdatePrompt
 import com.oliver.loqin.util.ProtectionStatusNotifier
 import com.oliver.loqin.util.BatteryOptimizationCompat
@@ -2592,9 +2593,21 @@ class MainActivity : AppCompatActivity() {
                     ),
                 )
             }
+            var suppressSwitchListener = false
             switch.setOnCheckedChangeListener { _, checked ->
+                if (suppressSwitchListener) return@setOnCheckedChangeListener
                 if (checked && !supported) {
+                    suppressSwitchListener = true
                     switch.isChecked = false
+                    suppressSwitchListener = false
+                    return@setOnCheckedChangeListener
+                }
+                // Mixed-channel toggles are protection-sensitive too; keep them locked while active.
+                if (LoqInAppAccessGuard.isControlSettingsLocked(ctx)) {
+                    suppressSwitchListener = true
+                    switch.isChecked = !checked
+                    suppressSwitchListener = false
+                    snackRoot().showWarnPill(R.string.mixed_channels_locked_while_loqin_enabled)
                     return@setOnCheckedChangeListener
                 }
                 setter(checked)
@@ -2719,6 +2732,13 @@ class MainActivity : AppCompatActivity() {
         )
 
         fun selectMode(mode: AutomationModeStore.Mode) {
+            if (mode == current) return
+            // Changing the control mode is a protection-sensitive edit: it must go through the
+            // same lock as the Settings screen so it cannot be swapped while protection is active.
+            if (LoqInAppAccessGuard.isControlSettingsLocked(ctx)) {
+                snackRoot().showWarnPill(R.string.mode_switch_requires_loqin_disabled)
+                return
+            }
             current = mode
             AutomationModeStore.setMode(ctx, mode)
             setHero(mode)
