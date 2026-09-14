@@ -124,6 +124,10 @@
         <item quantity="one">%1$d nicht verfügbarer App-Eintrag wurde entfernt. Tippe auf Speichern, um die Bereinigung zu behalten.</item>
         <item quantity="other">%1$d nicht verfügbare App-Einträge wurden entfernt. Tippe auf Speichern, um die Bereinigung zu behalten.</item>
     </plurals>
+    <plurals name="app_picker_saved_notice">
+        <item quantity="one">%1$d App gespeichert.</item>
+        <item quantity="other">%1$d Apps gespeichert.</item>
+    </plurals>
 
     <!-- ====================================================== -->
     <!-- App rules info and allow mode warnings -->
@@ -144,6 +148,23 @@
     <string name="app_picker_in_app_rules_chip">In-App</string>
     <string name="app_picker_in_app_rules_pinned_hint">Entferne zuerst die In-App-Regeln.</string>
     <string name="app_picker_in_app_rules_pinned_toast">Entferne zuerst die In-App-Regeln.</string>
+    <string name="app_picker_in_app_rules_active_hint">Ganz-App-Blockierung plus aktive In-App-Regeln.</string>
+    <string name="app_picker_in_app_rules_stays_on_toast">In-App-Regeln bleiben aktiv.</string>
+    <string name="app_picker_in_app_rules_open">In-App-Regeln öffnen</string>
+    <string name="app_picker_website_rules_open">Website-Regeln öffnen</string>
+    <string name="app_picker_tile_selected_desc">%1$s, ausgewählt</string>
+    <string name="app_picker_tile_unselected_desc">%1$s, nicht ausgewählt</string>
+
+    <!-- ====================================================== -->
+    <!-- Category filter chips -->
+    <!-- ====================================================== -->
+    <string name="app_picker_category_all">Alle</string>
+    <string name="app_picker_category_social">Social</string>
+    <string name="app_picker_category_media">Medien</string>
+    <string name="app_picker_category_games">Spiele</string>
+    <string name="app_picker_category_browsers">Browser</string>
+    <string name="app_picker_category_shop_pay">Shop &amp; Pay</string>
+    <string name="app_picker_category_other">Sonstige</string>
 
     <!-- ====================================================== -->
     <!-- Picker row action menu -->

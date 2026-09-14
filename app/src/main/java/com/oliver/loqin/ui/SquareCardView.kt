@@ -16,18 +16,23 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.oliver.loqin.feature.picker
+package com.oliver.loqin.ui
 
-import com.oliver.loqin.util.AppBlockSafety
-import java.util.Locale
+import android.content.Context
+import android.util.AttributeSet
+import com.google.android.material.card.MaterialCardView
 
-data class AppEntry(
-    val packageName: String,
-    val label: String,
-    val isAvailable: Boolean = true,
-    val blockSafety: AppBlockSafety.Info = AppBlockSafety.Info(),
-    val appCategory: AppCategory = AppCategory.OTHER
-) {
-    val pkgLower: String = packageName.lowercase(Locale.getDefault())
-    val labelLower: String = label.lowercase(Locale.getDefault())
+/**
+ * Card that always measures square (height follows width), for grid tiles
+ * like the app picker where every cell must be a true square.
+ */
+class SquareCardView @JvmOverloads constructor(
+    context: Context,
+    attrs: AttributeSet? = null,
+    defStyleAttr: Int = 0
+) : MaterialCardView(context, attrs, defStyleAttr) {
+
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        super.onMeasure(widthMeasureSpec, widthMeasureSpec)
+    }
 }

@@ -78,8 +78,10 @@ import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import android.view.MotionEvent
 import com.oliver.loqin.BuildConfig
 import com.oliver.loqin.R
 import com.oliver.loqin.blocking.BlockingRuntime
@@ -165,6 +167,7 @@ class SchedulesActivity : AppCompatActivity() {
     )
 
     private lateinit var adapter: ScheduleAdapter
+    private var priorityDragHelper: ItemTouchHelper? = null
     private lateinit var toolbar: MaterialToolbar
     private lateinit var emptyState: View
     private lateinit var cardScheduleHealth: View
@@ -405,6 +408,7 @@ class SchedulesActivity : AppCompatActivity() {
             },
             onTest = { schedule -> showScheduleTest(schedule) },
             getTargetProfile = { targetProfile },
+            onStartDrag = { holder -> priorityDragHelper?.startDrag(holder) },
         )
         recycler.adapter = adapter
         recycler.attachEditDeleteSwipe(
@@ -418,6 +422,9 @@ class SchedulesActivity : AppCompatActivity() {
                 adapter.itemAt(position)?.let(::confirmDeleteSchedule)
             }
         )
+        priorityDragHelper = ItemTouchHelper(priorityDragCallback(recycler)).apply {
+            attachToRecyclerView(recycler)
+        }
 
         val addScheduleClick = View.OnClickListener {
             if (denyScheduleEditWithPopover()) {
@@ -987,7 +994,8 @@ class SchedulesActivity : AppCompatActivity() {
 
     private fun refreshList() {
         val list = ScheduleStore.getAll(this).filter { matchesTargetProfile(it) }
-        val sorted = list.sortedWith(scheduleDisplayComparator())
+        // Display order IS priority order: top item wins on overlap.
+        val sorted = ScheduleStore.sortedByPriority(list)
         val readOnlyNow = !canEditSchedules()
         val readOnlyChanged = isScheduleUiReadOnly != readOnlyNow
         isScheduleUiReadOnly = readOnlyNow
@@ -1009,29 +1017,71 @@ class SchedulesActivity : AppCompatActivity() {
         updateScheduleHealthBanner()
     }
 
-    private fun scheduleDisplayComparator(): Comparator<ScheduleStore.Schedule> {
-        return compareBy<ScheduleStore.Schedule>(
-            { it.startMinutes.coerceAtLeast(0) },
-            { if (it.type == ScheduleStore.Type.ONE_TIME) 0 else 1 },
-            { if (it.type == ScheduleStore.Type.ONE_TIME) it.startDate else Int.MAX_VALUE },
-            { if (it.type == ScheduleStore.Type.WEEKLY) weeklySortKey(it.daysMask) else Int.MAX_VALUE },
-            { it.title.lowercase() },
-            { it.id }
-        )
-    }
+    private fun priorityDragCallback(recycler: RecyclerView) =
+        object : ItemTouchHelper.SimpleCallback(
+            ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0
+        ) {
+            private var reordered = false
 
-    private fun weeklySortKey(daysMask: Int): Int {
-        val order = listOf(
-            Days.MON,
-            Days.TUE,
-            Days.WED,
-            Days.THU,
-            Days.FRI,
-            Days.SAT,
-            Days.SUN,
-        )
-        return order.indexOfFirst { daysMask and it != 0 }
-            .takeIf { it >= 0 } ?: Int.MAX_VALUE
+            override fun isLongPressDragEnabled(): Boolean = false
+
+            override fun getDragDirs(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder
+            ): Int {
+                if (isSelectionMode || !canEditSchedules()) return 0
+                return super.getDragDirs(recyclerView, viewHolder)
+            }
+
+            override fun onMove(
+                recyclerView: RecyclerView,
+                viewHolder: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ): Boolean {
+                val from = viewHolder.bindingAdapterPosition
+                val to = target.bindingAdapterPosition
+                if (from == RecyclerView.NO_POSITION || to == RecyclerView.NO_POSITION) return false
+                val current = adapter.currentList.toMutableList()
+                if (from !in current.indices || to !in current.indices) return false
+                val item = current.removeAt(from)
+                current.add(to, item)
+                adapter.submitList(current)
+                reordered = true
+                return true
+            }
+
+            override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) = Unit
+
+            override fun clearView(recyclerView: RecyclerView, viewHolder: RecyclerView.ViewHolder) {
+                super.clearView(recyclerView, viewHolder)
+                if (!reordered) return
+                reordered = false
+                persistPriorityOrder(adapter.currentList.toList())
+            }
+        }
+
+    private fun persistPriorityOrder(displayedInNewOrder: List<ScheduleStore.Schedule>) {
+        if (!canEditSchedules() || displayedInNewOrder.isEmpty()) return
+        val all = ScheduleStore.getAll(this)
+        val newGlobal: List<ScheduleStore.Schedule> = if (targetProfile == null) {
+            ScheduleStore.withCompactPriorities(displayedInNewOrder)
+        } else {
+            // Filtered view (opened for one profile): keep non-visible items in place,
+            // only re-apply the relative order of the visible ones.
+            val orderQueue = ArrayDeque(displayedInNewOrder.map { it.id })
+            val globalSorted = ScheduleStore.sortedByPriority(all)
+            val visibleIds = displayedInNewOrder.map { it.id }.toSet()
+            val byId = all.associateBy { it.id }
+            val merged = globalSorted.map { s ->
+                if (s.id in visibleIds) byId.getValue(orderQueue.removeFirst()) else s
+            }
+            ScheduleStore.withCompactPriorities(merged)
+        }
+        ScheduleStore.saveAll(this, ScheduleStore.sortedByPriority(newGlobal))
+        LocationTriggerMonitor.syncAsync(this)
+        SchedulePlanner.updateNextAlarm(this)
+        SchedulePlanner.notifyNextChanged(this)
+        refreshList()
     }
 
     private fun canScheduleExactAlarms(): Boolean {
@@ -3299,7 +3349,9 @@ class SchedulesActivity : AppCompatActivity() {
             val btnPos = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
             val btnNeg = dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
             btnPos.setText(if (existing == null) R.string.create else R.string.save)
-            btnPos.setTextColor(accent)
+            // NOTE: do not override btnPos text color here — styleLoqInDialogButtons()
+            // already sets readable on-accent text on the filled accent background.
+            // Setting it to accent would make the label invisible (same as background).
             btnNeg.setTextColor(accent)
             tintSwitchCompat(switch247)
         tintSwitchCompat(switchAllDay)
@@ -3501,14 +3553,22 @@ class SchedulesActivity : AppCompatActivity() {
                     locationRadiusMeters = if (kind == Kind.LOCATION) selectedRadiusMeters() else 250,
                     locationTrigger = if (kind == Kind.LOCATION) locationTrigger else null,
                     locationCooldownMinutes = if (kind == Kind.LOCATION) selectedCooldownMinutes else 15,
-                    action = action
+                    action = action,
+                    priority = existing?.priority ?: 0
                 )
 
                 val oldList = ScheduleStore.getAll(this@SchedulesActivity)
-                val newList = if (existing == null) {
-                    oldList + newSchedule
+                val newScheduleWithPriority = if (existing == null) {
+                    val maxPriority = oldList.maxOfOrNull { it.priority } ?: -1
+                    newSchedule.copy(priority = maxPriority + 1)
                 } else {
-                    oldList.map { if (it.id == existing.id) newSchedule else it }
+                    // Keep the edited schedule's existing rank.
+                    newSchedule.copy(priority = existing.priority)
+                }
+                val newList = if (existing == null) {
+                    oldList + newScheduleWithPriority
+                } else {
+                    oldList.map { if (it.id == existing.id) newScheduleWithPriority else it }
                 }
 
                 fun persistSchedule() {
@@ -3522,10 +3582,10 @@ class SchedulesActivity : AppCompatActivity() {
                 }
 
                 val overlap = ScheduleInsights.detectOverlaps(newList).firstOrNull {
-                    it.first.id == newSchedule.id || it.second.id == newSchedule.id
+                    it.first.id == newScheduleWithPriority.id || it.second.id == newScheduleWithPriority.id
                 }
                 if (overlap != null) {
-                    val other = if (overlap.first.id == newSchedule.id) overlap.second else overlap.first
+                    val other = if (overlap.first.id == newScheduleWithPriority.id) overlap.second else overlap.first
                     AlertDialog.Builder(this@SchedulesActivity)
                         .setTitle(R.string.schedules_overlap_warning_title)
                         .setMessage(
@@ -3804,6 +3864,7 @@ private class ScheduleAdapter(
     private val onEdit: (ScheduleStore.Schedule) -> Unit,
     private val onTest: (ScheduleStore.Schedule) -> Unit,
     private val getTargetProfile: () -> String?,
+    private val onStartDrag: (RecyclerView.ViewHolder) -> Unit,
 ) : androidx.recyclerview.widget.ListAdapter<ScheduleStore.Schedule, ScheduleViewHolder>(DIFF) {
 
     fun itemAt(position: Int): ScheduleStore.Schedule? = currentList.getOrNull(position)
@@ -3822,11 +3883,12 @@ private class ScheduleAdapter(
             onEdit,
             onTest,
             getTargetProfile,
+            onStartDrag,
         )
     }
 
     override fun onBindViewHolder(holder: ScheduleViewHolder, position: Int) {
-        holder.bind(getItem(position))
+        holder.bind(getItem(position), position + 1)
     }
 
     companion object {
@@ -3856,6 +3918,7 @@ private class ScheduleViewHolder(
     private val onEdit: (ScheduleStore.Schedule) -> Unit,
     private val onTest: (ScheduleStore.Schedule) -> Unit,
     private val getTargetProfile: () -> String?,
+    private val onStartDrag: (RecyclerView.ViewHolder) -> Unit,
 ) : RecyclerView.ViewHolder(itemView) {
 
     private val kindIcon = itemView.findViewById<ImageView>(R.id.imgKind)
@@ -3864,6 +3927,8 @@ private class ScheduleViewHolder(
     private val note = itemView.findViewById<TextView>(R.id.textNote)
     private val switchEnabled = itemView.findViewById<SwitchCompat>(R.id.switchEnabled)
     private val btnTest = itemView.findViewById<ImageButton>(R.id.btnTestScheduleInfo)
+    private val btnDragHandle = itemView.findViewById<ImageButton>(R.id.btnDragHandle)
+    private val textPriority = itemView.findViewById<TextView>(R.id.textPriority)
     private val checkSelect =
         itemView.findViewById<com.google.android.material.checkbox.MaterialCheckBox>(R.id.checkSelect)
     private val cardRoot = itemView.findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardRoot)
@@ -3926,6 +3991,13 @@ private class ScheduleViewHolder(
             current?.let(onTest)
         }
 
+        btnDragHandle.setOnTouchListener { _, event ->
+            if (event.actionMasked == MotionEvent.ACTION_DOWN && !isSelectionMode() && canInteract()) {
+                onStartDrag(this)
+            }
+            false
+        }
+
         cardRoot.setOnLongClickListener {
             val s = current ?: return@setOnLongClickListener true
             if (!isSelectionMode() && canInteract()) {
@@ -3946,10 +4018,17 @@ private class ScheduleViewHolder(
         return String.format(Locale.getDefault(), "%02d:%02d", h, mm)
     }
 
-    fun bind(s: ScheduleStore.Schedule) {
+    fun bind(s: ScheduleStore.Schedule, rank: Int) {
         current = s
 
         val canInteractNow = canInteract()
+        val selecting = isSelectionMode()
+
+        textPriority.text = itemView.context.getString(R.string.schedules_priority_badge_fmt, rank)
+        textPriority.alpha = if (s.enabled) 1f else 0.5f
+        btnDragHandle.visibility = if (selecting) View.GONE else View.VISIBLE
+        btnDragHandle.isEnabled = canInteractNow
+        btnDragHandle.alpha = if (canInteractNow) 0.6f else 0.3f
 
         binding = true
         switchEnabled.isChecked = s.enabled
@@ -3959,7 +4038,6 @@ private class ScheduleViewHolder(
         tintEnabledSwitch()
         binding = false
 
-        val selecting = isSelectionMode()
         val selected = selecting && isSelected(s.id)
         checkSelect.visibility = if (selecting) View.VISIBLE else View.GONE
         checkSelect.isChecked = selected
