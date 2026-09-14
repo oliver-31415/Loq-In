@@ -102,16 +102,14 @@ object AutomationModeStore {
 
     fun setMode(context: Context, mode: Mode) {
         val supportedMode = if (isModeSupported(context, mode)) mode else Mode.MIXED
-        val previousMode = getMode(context)
         prefs(context).edit(commit = true) {
             putString(KEY_AUTOMATION_MODE, supportedMode.raw)
             // A single-channel mode means "only this channel can change protection".
-            // Manual controls are mode-independent by design, so leaving them on would
-            // silently keep the Home button/Quick Settings tile able to disable Loq In and
-            // contradict the selected mode. Turn them off only on a real switch into a
-            // single mode, so opening the settings screen never overwrites a deliberate
-            // re-enable (setMode is also called with the current mode on screen load).
-            if (supportedMode != Mode.MIXED && previousMode != supportedMode) {
+            // Manual full control belongs to Mixed mode, so normalize the stored pref off
+            // whenever a single mode is set. This also repairs devices that were already in
+            // a single mode before the manual-controls preference existed. Mixed mode is
+            // never touched, so a deliberate re-enable there is preserved.
+            if (supportedMode != Mode.MIXED) {
                 putBoolean(KEY_MIXED_ALLOW_BUTTON, false)
             }
         }
@@ -284,10 +282,16 @@ object AutomationModeStore {
 
     /**
      * Manual dashboard button/Quick Settings tile full-control channel.
-     * This is intentionally mode-independent: when enabled, manual controls can turn LoqIn on and off regardless of the selected control mode.
+     *
+     * Manual full control belongs to Mixed mode. In a single-channel mode only that
+     * channel may change protection, so the manual button/tile must not be able to
+     * disable Loq In regardless of the stored manual-controls preference. Enforcing
+     * this here (rather than only when a mode is selected) also covers devices that
+     * were already in a single mode before the manual-controls preference existed.
      * The older key name is kept for migration compatibility.
      */
     fun isButtonAllowed(context: Context): Boolean {
+        if (getMode(context) != Mode.MIXED) return false
         return isMixedAllowButton(context)
     }
 
