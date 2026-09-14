@@ -24,6 +24,7 @@
     <string name="website_rule_mode_block_summary">Ausgewählte aktivierte Websites werden blockiert, solange dieses Profil aktiv ist.</string>
     <string name="website_rule_mode_allow_summary">Ausgewählte aktivierte Websites sind erlaubt. Andere Websites werden blockiert, solange dieses Profil aktiv ist.</string>
     <string name="blocked_websites_add_title">Website hinzufügen</string>
+    <string name="search_websites">Websites suchen</string>
 
     <!-- ====================================================== -->
     <!-- Rule editor -->

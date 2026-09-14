@@ -68,7 +68,6 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.checkbox.MaterialCheckBox
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.launch
@@ -98,12 +97,12 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
     private fun syncEditingLockUi() {
         val locked = EditingLockGuard.isLocked(this)
         val canAdd = canAddBlockedWebsite()
-        findViewById<FloatingActionButton>(R.id.fabAdd)?.apply {
-            backgroundTintList = ColorStateList.valueOf(AccentColor.getAccentColorInt(this@ManageBlockedWebsitesActivity))
+        findViewById<MaterialButton>(R.id.btnAddWebsite)?.apply {
             // Stay tappable (dimmed) so locked taps warn via popover instead of doing nothing.
             isEnabled = true
             isClickable = true
             alpha = if (canAdd && !isSelectionMode) 1f else 0.45f
+            iconTint = ColorStateList.valueOf(AccentColor.getAccentColorInt(this@ManageBlockedWebsitesActivity))
         }
         val accent = AccentColor.getAccentColorInt(this)
         findViewById<View>(R.id.btnEmptyAddWebsite)?.apply {
@@ -141,6 +140,8 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
     private lateinit var emptyBody: TextView
     private lateinit var adapter: DomainRuleAdapter
     private lateinit var toolbar: MaterialToolbar
+    private var searchQuery: String = ""
+    private var allRules: List<DomainRule> = emptyList()
 
     private var isSelectionMode: Boolean = false
     private val selectedDomains = linkedSetOf<String>()
@@ -173,9 +174,6 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
                 updatingModeUi = false
             }
         }
-        findViewById<TextView>(R.id.tvWebsiteRuleModeSummary)?.text = getString(
-            if (allow) R.string.website_rule_mode_allow_summary else R.string.website_rule_mode_block_summary
-        )
         applyWebsiteRuleModeButtonStyle()
     }
 
@@ -297,7 +295,7 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         setupWebsiteRuleMode()
         syncRuleModeUi()
 
-        findViewById<FloatingActionButton>(R.id.fabAdd).setOnClickListener {
+        findViewById<MaterialButton>(R.id.btnAddWebsite).setOnClickListener {
             if (!canAddBlockedWebsite()) {
                 denyWebsiteEditWithPopover()
                 return@setOnClickListener
@@ -310,6 +308,26 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
             showAddDialog()
+        }
+
+        val etSearch = findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etSearch)
+        etSearch.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun afterTextChanged(s: android.text.Editable?) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                searchQuery = s?.toString().orEmpty()
+                applyListFilter()
+            }
+        })
+        etSearch.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH ||
+                actionId == android.view.inputmethod.EditorInfo.IME_ACTION_DONE
+            ) {
+                etSearch.clearFocus()
+                true
+            } else {
+                false
+            }
         }
 
         lifecycleScope.launch {
@@ -349,8 +367,8 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
             )
         }
 
-        adapter.submit(rules)
-        emptyCard?.visibility = if (rules.isEmpty()) View.VISIBLE else View.GONE
+        allRules = rules
+        applyListFilter()
 
         // Keep selection consistent.
         selectedDomains.retainAll(rules.map { it.domain }.toSet())
@@ -360,6 +378,19 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
             adapter.notifyItemRangeChanged(0, adapter.itemCount)
             updateMenuState()
         }
+    }
+
+    private fun applyListFilter() {
+        if (!::adapter.isInitialized) return
+        val q = searchQuery.trim().lowercase()
+        val displayed = if (q.isBlank()) {
+            allRules
+        } else {
+            allRules.filter { it.domain.lowercase().contains(q) }
+        }
+        adapter.submit(displayed)
+        emptyCard?.visibility =
+            if (allRules.isEmpty() || (displayed.isEmpty() && q.isBlank())) View.VISIBLE else View.GONE
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
@@ -413,7 +444,7 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
 
     private fun updateMenuState() {
         invalidateOptionsMenu()
-        findViewById<FloatingActionButton>(R.id.fabAdd)?.visibility = if (isSelectionMode) View.GONE else View.VISIBLE
+        findViewById<MaterialButton>(R.id.btnAddWebsite)?.visibility = if (isSelectionMode) View.GONE else View.VISIBLE
         toolbar.updateSelectionSubtitle(
             selectionMode = isSelectionMode,
             selectedCount = selectedDomains.size,

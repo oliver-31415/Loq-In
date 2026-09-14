@@ -252,12 +252,13 @@ class AppListAdapter(
 
         private fun updateTileState(selected: Boolean) {
             val ctx = itemView.context
-            cardRoot.strokeWidth = dp(1f)
             if (selected) {
                 val accent = AccentColor.getAccentColorInt(ctx)
-                cardRoot.strokeColor = ColorUtils.setAlphaComponent(accent, 0x88)
-                cardRoot.setCardBackgroundColor(ColorUtils.setAlphaComponent(accent, 0x14))
+                cardRoot.strokeWidth = dp(2f)
+                cardRoot.strokeColor = accent
+                cardRoot.setCardBackgroundColor(ColorUtils.setAlphaComponent(accent, 0x30))
             } else {
+                cardRoot.strokeWidth = dp(1f)
                 cardRoot.setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.foqos_surface))
                 cardRoot.strokeColor = ContextCompat.getColor(ctx, R.color.foqos_outline_variant)
             }

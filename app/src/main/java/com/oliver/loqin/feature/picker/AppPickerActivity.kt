@@ -45,6 +45,8 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.oliver.loqin.R
@@ -175,7 +177,15 @@ class AppPickerActivity : AppCompatActivity() {
             findViewById<View>(viewId)?.apply {
                 isEnabled = true
                 isClickable = true
-                alpha = if (readOnly) 0.45f else 1f
+                // Select-all only adds, so it stays fully enabled while locked in
+                // block mode (tightening allowed); Clear always removes, so it dims.
+                val dimmed = if (viewId == R.id.btnSelectAll) {
+                    readOnly && (currentRuleMode == ProfileRuleModeStore.MODE_ALLOW_SELECTED ||
+                        !canTightenCurrentProfile())
+                } else {
+                    readOnly
+                }
+                alpha = if (dimmed) 0.45f else 1f
             }
         }
         findViewById<View>(R.id.btnSave)?.apply {
@@ -284,6 +294,20 @@ class AppPickerActivity : AppCompatActivity() {
 
         btnSave.backgroundTintList = AccentColor.getActiveColor(this)
         btnSave.setTextColor(ContextCompat.getColor(this, R.color.font_white))
+        // This screen never applied edge-to-edge insets, so lift Save above the
+        // navigation/gesture bar with a bottom margin (padding would just stretch
+        // the button instead of moving it).
+        val saveInitialMargin =
+            (btnSave.layoutParams as? ViewGroup.MarginLayoutParams)?.bottomMargin ?: 0
+        ViewCompat.setOnApplyWindowInsetsListener(btnSave) { v, insets ->
+            val nav = insets.getInsets(WindowInsetsCompat.Type.navigationBars()).bottom
+            val gest = insets.getInsets(WindowInsetsCompat.Type.systemGestures()).bottom
+            (v.layoutParams as? ViewGroup.MarginLayoutParams)?.let {
+                it.bottomMargin = maxOf(saveInitialMargin, nav, gest)
+                v.layoutParams = it
+            }
+            insets
+        }
         searchBox.boxStrokeColor = AccentColor.getAccentColorInt(this)
         searchBox.hintTextColor = AccentColor.getActiveColor(this)
 
@@ -793,7 +817,15 @@ class AppPickerActivity : AppCompatActivity() {
 
     private fun setupBulkButtons(btnSelectAll: MaterialButton, btnClearAll: MaterialButton, btnSave: Button) {
         btnSelectAll.setOnClickListener {
-            if (!ensureLoqInDisabledForAppRules()) return@setOnClickListener
+            // Select-all only ever adds; while locked that is allowed in block mode
+            // (tightening), but never removals — and never in allow mode, where
+            // selecting means allowing (loosening).
+            val isAllow = currentRuleMode == ProfileRuleModeStore.MODE_ALLOW_SELECTED
+            if (EditingLockGuard.isLocked(this) && (isAllow || !canTightenCurrentProfile())) {
+                findViewById<View>(android.R.id.content)
+                    .showWarnPill(R.string.toast_disable_loqin_to_edit_blocked_apps)
+                return@setOnClickListener
+            }
             val skipped = adapter.selectAllVisible()
             val activeProfile = currentProfile
             if (!activeProfile.isNullOrBlank() && currentRuleMode != ProfileRuleModeStore.MODE_ALLOW_SELECTED) {
