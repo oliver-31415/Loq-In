@@ -2593,26 +2593,6 @@ class MainActivity : AppCompatActivity() {
                     ),
                 )
             }
-            var suppressSwitchListener = false
-            switch.setOnCheckedChangeListener { _, checked ->
-                if (suppressSwitchListener) return@setOnCheckedChangeListener
-                if (checked && !supported) {
-                    suppressSwitchListener = true
-                    switch.isChecked = false
-                    suppressSwitchListener = false
-                    return@setOnCheckedChangeListener
-                }
-                // Mixed-channel toggles are protection-sensitive too; keep them locked while active.
-                if (LoqInAppAccessGuard.isControlSettingsLocked(ctx)) {
-                    suppressSwitchListener = true
-                    switch.isChecked = !checked
-                    suppressSwitchListener = false
-                    EditingLockGuard.showLockedDialog(ctx, R.string.mixed_channels_locked_while_loqin_enabled)
-                    return@setOnCheckedChangeListener
-                }
-                setter(checked)
-                onChanged?.invoke(checked)
-            }
             val row = LinearLayout(ctx).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = android.view.Gravity.CENTER_VERTICAL
@@ -2625,6 +2605,27 @@ class MainActivity : AppCompatActivity() {
                     marginStart = if (indent) homeDp(14f) else 0
                 }
                 setOnClickListener { switch.toggle() }
+            }
+            var suppressSwitchListener = false
+            switch.setOnCheckedChangeListener { _, checked ->
+                if (suppressSwitchListener) return@setOnCheckedChangeListener
+                if (checked && !supported) {
+                    suppressSwitchListener = true
+                    switch.isChecked = false
+                    suppressSwitchListener = false
+                    return@setOnCheckedChangeListener
+                }
+                // Mixed-channel toggles are protection-sensitive too; keep them locked while active.
+                // Anchor the warning to the sheet row: the activity content view is behind the sheet.
+                if (LoqInAppAccessGuard.isControlSettingsLocked(ctx)) {
+                    suppressSwitchListener = true
+                    switch.isChecked = !checked
+                    suppressSwitchListener = false
+                    row.showWarnPill(R.string.mixed_channels_locked_while_loqin_enabled)
+                    return@setOnCheckedChangeListener
+                }
+                setter(checked)
+                onChanged?.invoke(checked)
             }
             row.addView(FrameLayout(ctx).apply {
                 background = roundelBg()
@@ -2731,12 +2732,13 @@ class MainActivity : AppCompatActivity() {
             onEdit = ::editBarcode,
         )
 
-        fun selectMode(mode: AutomationModeStore.Mode) {
+        fun selectMode(mode: AutomationModeStore.Mode, anchor: View? = null) {
             if (mode == current) return
             // Changing the control mode is a protection-sensitive edit: it must go through the
             // same lock as the Settings screen so it cannot be swapped while protection is active.
             if (LoqInAppAccessGuard.isControlSettingsLocked(ctx)) {
-                EditingLockGuard.showLockedDialog(ctx, R.string.mode_switch_requires_loqin_disabled)
+                // Anchor the warning inside the sheet; the activity content view is behind it.
+                (anchor ?: list).showWarnPill(R.string.mode_switch_requires_loqin_disabled)
                 return
             }
             current = mode
@@ -2748,7 +2750,7 @@ class MainActivity : AppCompatActivity() {
             applyMixedChannelsVisibility()
         }
 
-        mixedRow.setOnClickListener { selectMode(AutomationModeStore.Mode.MIXED) }
+        mixedRow.setOnClickListener { selectMode(AutomationModeStore.Mode.MIXED, mixedRow) }
         list.addView(mixedRow)
         list.addView(mixedChannelsHeader)
         list.addView(mixedSubmenu)
@@ -2808,7 +2810,7 @@ class MainActivity : AppCompatActivity() {
                 if (!AutomationModeStore.isModeSupported(ctx, spec.mode)) {
                     return@setOnClickListener
                 }
-                selectMode(spec.mode)
+                selectMode(spec.mode, row)
             }
             list.addView(row)
         }
