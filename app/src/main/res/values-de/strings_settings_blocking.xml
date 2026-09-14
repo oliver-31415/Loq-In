@@ -60,6 +60,9 @@
     <string name="mode_blocked_nfc_action">NFC-Aktionen sind durch den aktuellen Steuerungsmodus deaktiviert.</string>
     <string name="mode_blocked_qr_action">QR-Aktionen sind durch den aktuellen Steuerungsmodus deaktiviert.</string>
     <string name="mode_blocked_barcode_action">Barcode-Aktionen sind durch den aktuellen Steuerungsmodus deaktiviert.</string>
+    <string name="control_mode_blocked_guidance_title">Steuerungsmethode blockiert diese Aktion</string>
+    <string name="control_mode_blocked_guidance_message">%1$s\n\nÖffne die Steuerungsmodi, um zu sehen, welche Aktionen erlaubt sind. Wenn Loq In aktiv ist, deaktiviere es zuerst mit einer der Methoden, die dein aktueller Modus bereits erlaubt, bevor du die Schutzsteuerung änderst.</string>
+    <string name="control_mode_blocked_open_controls">Steuerungseinstellungen</string>
     <string name="mode_blocked_tile_action">Die Schnelleinstellungen-Steuerung ist im aktuellen Modus nicht verfügbar.</string>
     <string name="mode_blocked_button_action">Manuelle Buttons sind durch den aktuellen Steuerungsmodus deaktiviert.</string>
     <string name="mode_blocked_button_disable_enable_only">Manuelle Buttons können Loq In hier nur einschalten. Zum Ausschalten nutze die erlaubte Steuerungsmethode.</string>

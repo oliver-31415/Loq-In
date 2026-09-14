@@ -60,6 +60,9 @@
     <string name="mode_blocked_nfc_action">NFC actions are disabled by current control mode.</string>
     <string name="mode_blocked_qr_action">QR actions are disabled by current control mode.</string>
     <string name="mode_blocked_barcode_action">Barcode actions are disabled by current control mode.</string>
+    <string name="control_mode_blocked_guidance_title">Control method blocks this action</string>
+    <string name="control_mode_blocked_guidance_message">%1$s\n\nOpen Control modes to review which actions are allowed. If Loq In is active, disable it first with one of the methods your current mode already allows before changing protection controls.</string>
+    <string name="control_mode_blocked_open_controls">Control settings</string>
     <string name="mode_blocked_tile_action">Quick Settings control is unavailable in the current mode.</string>
     <string name="mode_blocked_button_action">Manual buttons are disabled by the current control mode.</string>
     <string name="mode_blocked_button_disable_enable_only">Manual buttons can only enable Loq In right now. Use your allowed control method to disable it.</string>

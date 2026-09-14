@@ -45,6 +45,7 @@ import com.oliver.loqin.R
 import com.oliver.loqin.data.prefs.AutomationModeStore
 import com.oliver.loqin.data.prefs.ProfileStore
 import com.oliver.loqin.databinding.ActivityQrGenerateBinding
+import com.oliver.loqin.feature.settings.ControlModeGuidance
 import com.oliver.loqin.nfc.NfcSchema
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.ui.ThemeUtils
@@ -127,8 +128,12 @@ class QrGenerateActivity : AppCompatActivity() {
 
         val forceAllow = intent.getBooleanExtra(EXTRA_FORCE_ALLOW, false)
         if (!forceAllow && !AutomationModeStore.shouldShowQrTools(this)) {
-            findViewById<View>(android.R.id.content).showWarnPill(R.string.mode_blocked_qr_action)
-            finish()
+            ControlModeGuidance.show(
+                activity = this,
+                source = "QR",
+                blockedMessageRes = R.string.mode_blocked_qr_action,
+                finishOnDismiss = true,
+            )
             return
         }
 

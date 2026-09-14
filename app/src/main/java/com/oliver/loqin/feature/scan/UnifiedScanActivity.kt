@@ -39,6 +39,7 @@ import com.oliver.loqin.data.prefs.AutomationModeStore
 import com.oliver.loqin.data.prefs.BarcodeScanCountStore
 import com.oliver.loqin.data.prefs.QrScanCountStore
 import com.oliver.loqin.data.prefs.ScanCodeStore
+import com.oliver.loqin.feature.settings.ControlModeGuidance
 import com.oliver.loqin.nfc.InternalScanDispatchGuard
 import com.oliver.loqin.nfc.NfcEntryActivity
 import com.oliver.loqin.util.ScanFeedback
@@ -91,7 +92,7 @@ class UnifiedScanActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         if (!canOpenScanner()) {
-            finish()
+            showControlModeBlockedAndFinish()
             return
         }
 
@@ -121,15 +122,23 @@ class UnifiedScanActivity : AppCompatActivity() {
             ScanMode.AUTO -> qrAllowed || barcodeAllowed
             ScanMode.QR_ONLY -> qrAllowed
             ScanMode.BARCODE_ONLY -> barcodeAllowed
-        }.also { allowed ->
-            if (!allowed) {
-                val message = when (scanMode) {
-                    ScanMode.BARCODE_ONLY -> getString(R.string.mode_blocked_barcode_action)
-                    else -> getString(R.string.mode_blocked_qr_action)
-                }
-                ScanFeedback.error(this, "Scanner", "control_mode_blocked", message)
-            }
         }
+    }
+
+    private fun showControlModeBlockedAndFinish(kind: ScanCodeStore.Kind? = null) {
+        val messageRes = when (kind ?: when (scanMode) {
+            ScanMode.BARCODE_ONLY -> ScanCodeStore.Kind.BARCODE
+            else -> ScanCodeStore.Kind.QR
+        }) {
+            ScanCodeStore.Kind.BARCODE -> R.string.mode_blocked_barcode_action
+            ScanCodeStore.Kind.QR -> R.string.mode_blocked_qr_action
+        }
+        ControlModeGuidance.show(
+            activity = this,
+            source = "Scanner",
+            blockedMessageRes = messageRes,
+            finishOnDismiss = true,
+        )
     }
 
     private fun startCamera() {
@@ -280,13 +289,7 @@ class UnifiedScanActivity : AppCompatActivity() {
         }
 
         if (!allowDirectOpen() && !kindAllowedByCurrentControlMode(kind)) {
-            val message = if (kind == ScanCodeStore.Kind.QR) {
-                getString(R.string.mode_blocked_qr_action)
-            } else {
-                getString(R.string.mode_blocked_barcode_action)
-            }
-            ScanFeedback.error(this, kind.raw, "control_mode_blocked", message)
-            finish()
+            showControlModeBlockedAndFinish(kind)
             return
         }
 
