@@ -759,6 +759,25 @@ fun Context.showLoqInOptionDialog(
 )
 
 /**
+ * Applies LoqIn's dialog text/checkbox colors to a checkbox embedded in a dialog.
+ *
+ * Dialogs are built with the activity context, which is pinned to a light theme,
+ * while the dialog surface follows the live day/night configuration. Without an
+ * explicit color the checkbox label resolves to dark text and becomes invisible
+ * on the dark dialog surface (see EditingLockGuard for the same fix).
+ */
+fun CheckBox.styleForDialog(context: Context) {
+    val night = (context.resources.configuration.uiMode and
+        android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+        android.content.res.Configuration.UI_MODE_NIGHT_YES
+    setTextColor(if (night) 0xFFF2F1EC.toInt() else 0xFF1B1B18.toInt())
+    CompoundButtonCompat.setButtonTintList(
+        this,
+        CustomAccentApplier.buildCheckableTint(context, AccentColor.getAccentColorInt(context))
+    )
+}
+
+/**
  * Apply LoqIn's *one* consistent dialog button style everywhere.
  * Design rules (matches the Google/Account popups look):
  * - Positive action: filled with current accent, readable on-accent text (black/white)

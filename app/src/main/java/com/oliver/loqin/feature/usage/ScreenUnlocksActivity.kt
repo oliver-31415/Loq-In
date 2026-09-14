@@ -20,7 +20,6 @@ package com.oliver.loqin.feature.usage
 
 import android.content.Context
 import android.content.Intent
-import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Bundle
@@ -52,6 +51,7 @@ import com.oliver.loqin.ui.LoqInDropdownAdapter
 import com.oliver.loqin.ui.ToolbarIconAction
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.dialog.showAccented
+import com.oliver.loqin.ui.dialog.styleForDialog
 import com.oliver.loqin.util.LocaleHelper
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.appbar.MaterialToolbar
@@ -263,7 +263,7 @@ class ScreenUnlocksActivity : AppCompatActivity() {
         hideShort.text = getString(R.string.screen_unlocks_filter_short)
         hideShort.isChecked = hideVeryShortUnlocks
         hideShort.visibility = View.VISIBLE
-        hideShort.buttonTintList = ColorStateList.valueOf(AccentColor.getAccentColorInt(this))
+        hideShort.styleForDialog(this)
 
         MaterialAlertDialogBuilder(this)
             .setTitle(R.string.screen_unlocks_sort_filter_title)

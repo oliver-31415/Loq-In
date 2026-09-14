@@ -52,6 +52,7 @@ import com.oliver.loqin.ui.LoqInDropdownAdapter
 import com.oliver.loqin.ui.ToolbarIconAction
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.dialog.showAccented
+import com.oliver.loqin.ui.dialog.styleForDialog
 import com.oliver.loqin.util.LocaleHelper
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.appbar.MaterialToolbar
@@ -270,7 +271,7 @@ class AppLaunchesActivity : AppCompatActivity() {
         hideSingle.text = getString(R.string.app_launches_filter_single)
         hideSingle.isChecked = hideSingleLaunchApps
         hideSingle.visibility = View.VISIBLE
-        hideSingle.buttonTintList = ColorStateList.valueOf(AccentColor.getAccentColorInt(this))
+        hideSingle.styleForDialog(this)
 
         MaterialAlertDialogBuilder(this)
             .setTitle(R.string.app_launches_sort_filter_title)
