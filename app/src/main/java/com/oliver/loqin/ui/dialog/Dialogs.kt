@@ -810,12 +810,12 @@ fun AlertDialog.styleLoqInDialogButtons() {
 
     fun dp(v: Int): Int = (v * context.resources.displayMetrics.density).toInt()
 
-    // Plain message dialogs share one body look. Size and line spacing come from
-    // TextAppearance.LoqIn.DialogBody via the dialog theme so the message is measured
-    // correctly on first layout; only the color is enforced here.
+    // Plain message dialogs share one body look. Size, line spacing and wrapping come
+    // from TextAppearance.LoqIn.DialogBody via the dialog theme so the message is
+    // measured correctly on first layout. Only set the color here: color does not
+    // affect measurement, so it cannot move the centered dialog after it appears.
     findViewById<TextView>(android.R.id.message)?.apply {
         setTextColor(ColorUtils.setAlphaComponent(onSurface, 0xDE))
-        maxLines = Int.MAX_VALUE
     }
 
     fun styleCommon(b: Button) {

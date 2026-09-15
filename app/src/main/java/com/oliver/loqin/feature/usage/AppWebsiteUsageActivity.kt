@@ -475,10 +475,6 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
         button.minimumHeight = dp(40)
         button.insetTop = 0
         button.insetBottom = 0
-        button.cornerRadius = dp(4)
-        button.shapeAppearanceModel = button.shapeAppearanceModel.toBuilder()
-            .setAllCornerSizes(dp(4).toFloat())
-            .build()
         button.iconPadding = 0
         if (custom) {
             button.iconGravity = MaterialButton.ICON_GRAVITY_TEXT_START
@@ -551,31 +547,15 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
     }
 
     private fun syncRangeChipUi(activeChipId: Int) {
-        val activeBg = AccentColor.getAccentColorInt(this)
-        val activeText = if (MaterialColors.isColorLight(activeBg)) Color.BLACK else Color.WHITE
-        val inactiveBg = MaterialColors.getColor(this, com.google.android.material.R.attr.colorSurfaceVariant, 0)
-        val inactiveText = MaterialColors.getColor(this, com.google.android.material.R.attr.colorOnSurface, 0)
-        val outline = MaterialColors.getColor(this, com.google.android.material.R.attr.colorOutline, inactiveText)
-
         b.chipGroupRange.check(activeChipId)
         val buttons = listOf(b.chipToday, b.chipWeek, b.chipMonth, b.chipYear, b.chipCustom)
         buttons.forEach { button ->
-            val active = button.id == activeChipId
-            button.isChecked = active
+            button.isChecked = button.id == activeChipId
             button.isCheckable = true
-            button.isActivated = active
-            button.backgroundTintList = ColorStateList.valueOf(if (active) activeBg else inactiveBg)
-            button.shapeAppearanceModel = button.shapeAppearanceModel.toBuilder()
-                .setAllCornerSizes(dp(4).toFloat())
-                .build()
-            button.setTextColor(if (active) activeText else inactiveText)
-            button.iconTint = ColorStateList.valueOf(if (active) activeText else inactiveText)
-            button.strokeColor = ColorStateList.valueOf(if (active) activeBg else outline)
-            button.strokeWidth = resources.displayMetrics.density.toInt().coerceAtLeast(1)
-            button.rippleColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(activeBg, 0x35))
-            button.jumpDrawablesToCurrentState()
-            button.refreshDrawableState()
+            button.isActivated = button.id == activeChipId
         }
+        // Same segmented pill language as Screen unlocks / Activity history.
+        SegmentedToggleUi.apply(this, buttons, activeChipId)
         updateCustomRangeSummary()
     }
 
