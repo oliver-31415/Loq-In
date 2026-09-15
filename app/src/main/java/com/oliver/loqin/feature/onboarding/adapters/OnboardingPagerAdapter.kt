@@ -1514,132 +1514,20 @@ class OnboardingPagerAdapter(
             onClick: (() -> Unit)?,
             fixedHeightDp: Float? = null
         ) {
-            val density = itemView.resources.displayMetrics.density
-            fun dp(value: Float): Int = (value * density).toInt()
-
-            val surface = ContextCompat.getColor(activity, R.color.foqos_surface)
-            val onSurface = MaterialColors.getColor(itemView, com.google.android.material.R.attr.colorOnSurface)
-            val outline = ContextCompat.getColor(activity, R.color.foqos_outline_variant)
-            val softAccent = ColorUtils.setAlphaComponent(accent, 18)
-
-            val hasInfo = !info.isNullOrBlank()
-            val hasStatus = !status.isNullOrBlank()
-            val rowMinHeight = fixedHeightDp?.let { dp(it) } ?: when {
-                hasInfo && hasStatus -> dp(100f)
-                hasInfo -> dp(88f)
-                else -> dp(76f)
-            }
-
-            val card = MaterialCardView(activity).apply {
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply { topMargin = dp(8f) }
-                minimumHeight = rowMinHeight
-                radius = dp(16f).toFloat()
-                cardElevation = 0f
-                strokeWidth = dp(1f)
-                strokeColor = if (highlighted) ColorUtils.setAlphaComponent(accent, 150) else outline
-                setCardBackgroundColor(if (highlighted) softAccent else surface)
-                isClickable = clickable
-                isFocusable = clickable
-                if (clickable) setOnClickListener { onClick?.invoke() }
-            }
-
-            val row = LinearLayout(activity).apply {
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                )
-                minimumHeight = rowMinHeight
-                orientation = LinearLayout.HORIZONTAL
-                gravity = android.view.Gravity.CENTER_VERTICAL
-                setPadding(dp(16f), dp(10f), dp(12f), dp(10f))
-            }
-
-            if (iconRes != null) {
-                val iconBg = GradientDrawable().apply {
-                    shape = GradientDrawable.RECTANGLE
-                    cornerRadius = dp(14f).toFloat()
-                    setColor(if (highlighted) ColorUtils.setAlphaComponent(accent, 38) else softAccent)
-                }
-                val leadingIcon = ImageView(activity).apply {
-                    layoutParams = LinearLayout.LayoutParams(dp(38f), dp(38f)).apply { marginEnd = dp(13f) }
-                    background = iconBg
-                    setPadding(dp(8f), dp(8f), dp(8f), dp(8f))
-                    setImageResource(iconRes)
-                    imageTintList = ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, if (highlighted) 255 else 225))
-                    contentDescription = null
-                }
-                row.addView(leadingIcon)
-            }
-
-            val texts = LinearLayout(activity).apply {
-                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-                orientation = LinearLayout.VERTICAL
-                gravity = android.view.Gravity.CENTER_VERTICAL
-            }
-
-            val titleView = TextView(activity).apply {
-                text = title
-                textSize = 14.8f
-                typeface = android.graphics.Typeface.DEFAULT_BOLD
-                setTextColor(onSurface)
-                // Onboarding copy must remain fully readable on narrow screens and with larger font scaling.
-                // The row/card uses wrap_content and the page itself scrolls, so truncating here only hides guidance.
-                maxLines = Int.MAX_VALUE
-                ellipsize = null
-                includeFontPadding = false
-            }
-            texts.addView(titleView)
-
-            if (hasInfo) {
-                val infoView = TextView(activity).apply {
-                    text = info
-                    textSize = 12.4f
-                    alpha = 0.78f
-                    setTextColor(onSurface)
-                    setPadding(0, dp(5f), 0, 0)
-                    maxLines = Int.MAX_VALUE
-                    ellipsize = null
-                    includeFontPadding = false
-                }
-                texts.addView(infoView)
-            }
-
-            if (hasStatus) {
-                val statusView = TextView(activity).apply {
-                    text = status
-                    textSize = 12.2f
-                    typeface = android.graphics.Typeface.DEFAULT_BOLD
-                    setTextColor(if (highlighted) accent else ColorUtils.setAlphaComponent(onSurface, 185))
-                    setPadding(0, dp(7f), 0, 0)
-                    maxLines = Int.MAX_VALUE
-                    ellipsize = null
-                    includeFontPadding = false
-                }
-                texts.addView(statusView)
-            }
-
-            row.addView(texts)
-
-            if (clickable) {
-                val trailingIcon = ImageView(activity).apply {
-                    layoutParams = LinearLayout.LayoutParams(dp(22f), dp(22f)).apply { marginStart = dp(12f) }
-                    if (highlighted) {
-                        setImageResource(R.drawable.check_circle_24)
-                        imageTintList = ColorStateList.valueOf(accent)
-                    } else {
-                        setImageResource(R.drawable.keyboard_arrow_right_24)
-                        imageTintList = ColorStateList.valueOf(ColorUtils.setAlphaComponent(onSurface, 130))
-                    }
-                    contentDescription = null
-                }
-                row.addView(trailingIcon)
-            }
-
-            card.addView(row)
-            detailsContainer.addView(card)
+            // Shared with the Permissions screen so both render the same component.
+            val holder = com.oliver.loqin.ui.SetupCardRow.build(
+                activity,
+                com.oliver.loqin.ui.SetupCardRow.Spec(
+                    title = title,
+                    iconRes = iconRes,
+                    info = info,
+                    status = status,
+                    statusOk = highlighted,
+                    onClick = if (clickable) onClick else null,
+                    minHeightDp = fixedHeightDp,
+                ),
+            )
+            detailsContainer.addView(holder.card)
         }
 
         private fun openNotificationsSetup(activity: Activity) {

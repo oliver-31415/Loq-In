@@ -28,13 +28,11 @@ import android.graphics.Typeface
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
-import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
 import android.widget.ScrollView
-import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.appcompat.widget.Toolbar
@@ -59,9 +57,9 @@ import com.oliver.loqin.feature.usage.UsageStatsRepo
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.theme.CustomAccentApplier
 import com.oliver.loqin.ui.EdgeToEdgeUtils
+import com.oliver.loqin.ui.SetupCardRow
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.showWarnPillOnContent
-import com.oliver.loqin.ui.dialog.showAccented
 import com.oliver.loqin.ui.dialog.LoqInInfoRow
 import com.oliver.loqin.ui.dialog.showLoqInInfoDialog
 import com.oliver.loqin.util.BatteryOptimizationRequest
@@ -71,18 +69,18 @@ import com.oliver.loqin.util.LocaleHelper
 import com.oliver.loqin.util.NfcLaunchAccessCompat
 import com.oliver.loqin.util.PermissionSetupChecks
 import com.google.android.material.appbar.MaterialToolbar
-import com.google.android.material.button.MaterialButton
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 /**
  * Permissions overview screen.
- * Shows the current status of all required permissions/settings and provides:
- * - "Open" buttons to jump into the relevant system settings
- * - "Request" buttons for runtime permissions (only when missing)
- * - "Why" dialogs explaining why each permission is needed
+ *
+ * Redesigned to use the same setup-card component as onboarding ([SetupCardRow]):
+ * a section header followed by full-width cards, each with a status line and a
+ * trailing check (satisfied) or chevron. Tapping a card requests the runtime
+ * permission when missing, otherwise opens the relevant system settings. Long
+ * explanations live behind the per-card info affordance.
  */
 class PermissionsActivity : AppCompatActivity() {
 
@@ -94,50 +92,27 @@ class PermissionsActivity : AppCompatActivity() {
         MISSING
     }
 
+    private val cards = mutableListOf<SetupCardRow.Holder>()
+
+    private lateinit var accessibilityCard: SetupCardRow.Holder
+    private lateinit var usageAccessCard: SetupCardRow.Holder
+    private lateinit var notificationsCard: SetupCardRow.Holder
+    private lateinit var notificationAccessCard: SetupCardRow.Holder
+    private lateinit var locationCard: SetupCardRow.Holder
+    private lateinit var bluetoothCard: SetupCardRow.Holder
+    private lateinit var exactAlarmsCard: SetupCardRow.Holder
+    private lateinit var nfcCard: SetupCardRow.Holder
+    private lateinit var batteryCard: SetupCardRow.Holder
+    private lateinit var autostartCard: SetupCardRow.Holder
+
     private lateinit var permissionStatusButton: AppCompatTextView
 
     private var lastMissingPermissionCount: Int = 0
     private var lastHasAccessibilityMismatch: Boolean = false
 
-    private lateinit var tvNotificationsStatus: TextView
-    private lateinit var tvNotificationAccessStatus: TextView
-    private lateinit var tvAccessibilityStatus: TextView
-    private lateinit var tvUsageAccessStatus: TextView
-    private lateinit var tvLocationStatus: TextView
-    private lateinit var tvBluetoothStatus: TextView
-    private lateinit var tvBatteryStatus: TextView
-    private lateinit var tvExactAlarmsStatus: TextView
-    private lateinit var tvNfcStatus: TextView
-
-    private lateinit var btnWhyNotifications: View
-    private lateinit var btnWhyNotificationAccess: View
-    private lateinit var btnWhyAccessibility: View
-    private lateinit var btnWhyUsageAccess: View
-    private lateinit var btnWhyLocation: View
-    private lateinit var btnWhyBluetooth: View
-    private lateinit var btnWhyBattery: View
-    private lateinit var btnWhyAutostart: View
-    private lateinit var btnWhyExactAlarms: View
-    private lateinit var btnWhyNfc: View
-
-    private lateinit var btnOpenNotifications: MaterialButton
-    private lateinit var btnOpenNotificationAccess: MaterialButton
-    private lateinit var btnOpenAccessibility: MaterialButton
-    private lateinit var btnOpenUsageAccess: MaterialButton
-    private lateinit var btnOpenLocation: MaterialButton
-    private lateinit var btnReqLocation: MaterialButton
-    private lateinit var btnReqBluetooth: MaterialButton
-    private lateinit var btnOpenBluetooth: MaterialButton
-    private lateinit var btnReqBattery: MaterialButton
-    private lateinit var btnOpenBattery: MaterialButton
-    private lateinit var btnOpenAutostart: MaterialButton
-    private lateinit var btnOpenExactAlarms: MaterialButton
-    private lateinit var btnOpenNfc: MaterialButton
-
     private var continueLocationFlowAfterBackground = false
 
     private lateinit var groupAutostart: View
-    private lateinit var tvAutostartHint: TextView
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(LocaleHelper.wrapContext(newBase))
@@ -160,188 +135,9 @@ class PermissionsActivity : AppCompatActivity() {
 
         setupPermissionStatusAction(toolbar)
 
-        tvNotificationsStatus = findViewById(R.id.tvNotificationsStatus)
-        tvNotificationAccessStatus = findViewById(R.id.tvNotificationAccessStatus)
-        tvAccessibilityStatus = findViewById(R.id.tvAccessibilityStatus)
-        tvUsageAccessStatus = findViewById(R.id.tvUsageAccessStatus)
-        tvLocationStatus = findViewById(R.id.tvLocationStatus)
-        tvBluetoothStatus = findViewById(R.id.tvBluetoothStatus)
-        tvBatteryStatus = findViewById(R.id.tvBatteryStatus)
-        tvExactAlarmsStatus = findViewById(R.id.tvExactAlarmsStatus)
-        tvNfcStatus = findViewById(R.id.tvNfcStatus)
-
-        btnWhyNotifications = findViewById(R.id.btnWhyNotifications)
-        btnWhyNotificationAccess = findViewById(R.id.btnWhyNotificationAccess)
-        btnWhyAccessibility = findViewById(R.id.btnWhyAccessibility)
-        btnWhyUsageAccess = findViewById(R.id.btnWhyUsageAccess)
-        btnWhyLocation = findViewById(R.id.btnWhyLocation)
-        btnWhyBluetooth = findViewById(R.id.btnWhyBluetooth)
-        btnWhyBattery = findViewById(R.id.btnWhyBattery)
-        btnWhyAutostart = findViewById(R.id.btnWhyAutostart)
-        btnWhyExactAlarms = findViewById(R.id.btnWhyExactAlarms)
-        btnWhyNfc = findViewById(R.id.btnWhyNfc)
-
-        btnOpenNotifications = findViewById(R.id.btnOpenNotifications)
-        btnOpenNotificationAccess = findViewById(R.id.btnOpenNotificationAccess)
-        btnOpenAccessibility = findViewById(R.id.btnOpenAccessibility)
-        btnOpenUsageAccess = findViewById(R.id.btnOpenUsageAccess)
-        btnOpenLocation = findViewById(R.id.btnOpenLocation)
-        btnReqLocation = findViewById(R.id.btnReqLocation)
-        btnReqBluetooth = findViewById(R.id.btnReqBluetooth)
-        btnOpenBluetooth = findViewById(R.id.btnOpenBluetooth)
-        btnReqBattery = findViewById(R.id.btnReqBattery)
-        btnOpenBattery = findViewById(R.id.btnOpenBattery)
-        btnOpenAutostart = findViewById(R.id.btnOpenAutostart)
-        btnOpenExactAlarms = findViewById(R.id.btnOpenExactAlarms)
-        btnOpenNfc = findViewById(R.id.btnOpenNfc)
-
         groupAutostart = findViewById(R.id.groupAutostart)
-        tvAutostartHint = findViewById(R.id.tvAutostartHint)
 
-        // OPEN buttons
-        btnOpenNotifications.setOnClickListener {
-            openOrRequestNotifications()
-        }
-
-        btnOpenNotificationAccess.setOnClickListener {
-            if (!safeStart(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))) {
-                openAppDetails()
-            }
-        }
-
-        btnOpenAccessibility.setOnClickListener {
-            AccessibilityDisclosure.openSettingsWithDisclosure(this)
-        }
-
-        btnOpenUsageAccess.setOnClickListener {
-            safeStart(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
-        }
-
-        btnOpenLocation.setOnClickListener {
-            openLocationSettingsForApp()
-        }
-
-        btnOpenBluetooth.setOnClickListener {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !hasBluetoothPermission()) {
-                requestBluetoothPermissionIfMissing()
-            } else {
-                openBluetoothSettingsOrAppDetails()
-            }
-        }
-
-        btnOpenBattery.setOnClickListener {
-            openBatteryOptimizationSettingsPages()
-        }
-
-        btnOpenAutostart.setOnClickListener {
-            startActivity(
-                FaqActivity.intent(
-                    context = this,
-                    category = FaqActivity.CATEGORY_BACKGROUND_ACCESS,
-                    questionResId = if (isVivoOrIqooDevice()) {
-                        R.string.faq_q_vivo_iqoo_background
-                    } else {
-                        R.string.faq_q_device_background_steps
-                    }
-                )
-            )
-        }
-
-        btnOpenExactAlarms.setOnClickListener {
-            openExactAlarmSettings()
-        }
-
-        btnOpenNfc.setOnClickListener {
-            openNfcSettings()
-        }
-
-        btnReqLocation.setOnClickListener {
-            requestLocationFlow()
-        }
-
-        btnReqBluetooth.setOnClickListener {
-            requestBluetoothPermissionIfMissing()
-        }
-
-        btnReqBattery.setOnClickListener {
-            requestIgnoreBatteryOptimizationsSystemPopup()
-        }
-
-        btnWhyNotifications.setOnClickListener {
-            showWhyDialog(
-                getString(R.string.permissions_notifications_title),
-                getString(R.string.permissions_notifications_desc)
-            )
-        }
-
-        btnWhyNotificationAccess.setOnClickListener {
-            showWhyDialog(
-                getString(R.string.permissions_notification_access_title),
-                getString(R.string.permissions_notification_access_desc)
-            )
-        }
-
-        btnWhyAccessibility.setOnClickListener {
-            showWhyDialog(
-                getString(R.string.permissions_accessibility_title),
-                getString(
-                    if (AdvancedProtectionCompat.isEnabled(this)) {
-                        R.string.permissions_accessibility_desc_advanced_protection
-                    } else {
-                        R.string.permissions_accessibility_desc
-                    }
-                )
-            )
-        }
-
-        btnWhyUsageAccess.setOnClickListener {
-            showWhyDialog(
-                getString(R.string.permissions_usage_access_title),
-                getString(R.string.permissions_usage_access_desc)
-            )
-        }
-
-        btnWhyLocation.setOnClickListener {
-            showWhyDialog(
-                getString(R.string.permissions_location_title),
-                getString(R.string.permissions_location_desc)
-            )
-        }
-
-        btnWhyBluetooth.setOnClickListener {
-            showWhyDialog(
-                getString(R.string.permissions_bluetooth_title),
-                getString(R.string.permissions_bluetooth_desc)
-            )
-        }
-
-        btnWhyBattery.setOnClickListener {
-            showWhyDialog(
-                getString(R.string.permissions_battery_title),
-                getString(R.string.permissions_battery_desc) + "\n\n" + getString(R.string.permissions_battery_oem_note)
-            )
-        }
-
-        btnWhyAutostart.setOnClickListener {
-            showWhyDialog(
-                getString(R.string.permissions_autostart_title),
-                getString(R.string.permissions_autostart_desc)
-            )
-        }
-
-        btnWhyExactAlarms.setOnClickListener {
-            showWhyDialog(
-                getString(R.string.permissions_exact_alarms_title),
-                getString(R.string.permissions_exact_alarms_summary) + "\n\n" + getString(R.string.permissions_exact_alarms_note)
-            )
-        }
-
-        btnWhyNfc.setOnClickListener {
-            showWhyDialog(
-                getString(R.string.permissions_nfc_title),
-                getString(R.string.permissions_nfc_desc)
-            )
-        }
+        buildCards()
 
         updateUi()
         focusRequestedSection()
@@ -351,6 +147,180 @@ class PermissionsActivity : AppCompatActivity() {
                 AccessibilityDisclosure.openSettingsWithDisclosure(this, forceShow = true)
             }
         }
+    }
+
+    private fun buildCards() {
+        val core = findViewById<LinearLayout>(R.id.cardsCore)
+        val notifications = findViewById<LinearLayout>(R.id.cardsNotifications)
+        val triggers = findViewById<LinearLayout>(R.id.cardsTriggers)
+        val battery = findViewById<LinearLayout>(R.id.cardsBattery)
+        val autostart = findViewById<LinearLayout>(R.id.cardsAutostart)
+
+        accessibilityCard = addCard(
+            core,
+            iconRes = R.drawable.security_24,
+            titleRes = R.string.permissions_accessibility_title,
+            whyTitleRes = R.string.permissions_accessibility_title,
+            whyMessageProvider = {
+                getString(
+                    if (AdvancedProtectionCompat.isEnabled(this)) {
+                        R.string.permissions_accessibility_desc_advanced_protection
+                    } else {
+                        R.string.permissions_accessibility_desc
+                    }
+                )
+            },
+            onClick = { AccessibilityDisclosure.openSettingsWithDisclosure(this) },
+        )
+
+        usageAccessCard = addCard(
+            core,
+            iconRes = R.drawable.bar_chart_24,
+            titleRes = R.string.permissions_usage_access_title,
+            whyTitleRes = R.string.permissions_usage_access_title,
+            whyMessageRes = R.string.permissions_usage_access_desc,
+            onClick = { safeStart(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)) },
+        )
+
+        notificationsCard = addCard(
+            notifications,
+            iconRes = R.drawable.notifications_24,
+            titleRes = R.string.permissions_notifications_title,
+            whyTitleRes = R.string.permissions_notifications_title,
+            whyMessageRes = R.string.permissions_notifications_desc,
+            onClick = { openOrRequestNotifications() },
+        )
+
+        notificationAccessCard = addCard(
+            notifications,
+            iconRes = R.drawable.security_24,
+            titleRes = R.string.permissions_notification_access_title,
+            whyTitleRes = R.string.permissions_notification_access_title,
+            whyMessageRes = R.string.permissions_notification_access_desc,
+            onClick = {
+                if (!safeStart(Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))) {
+                    openAppDetails()
+                }
+            },
+        )
+
+        exactAlarmsCard = addCard(
+            triggers,
+            iconRes = R.drawable.alarm_24,
+            titleRes = R.string.permissions_exact_alarms_title,
+            whyTitleRes = R.string.permissions_exact_alarms_title,
+            whyMessageProvider = {
+                getString(R.string.permissions_exact_alarms_summary) + "\n\n" +
+                    getString(R.string.permissions_exact_alarms_note)
+            },
+            onClick = { openExactAlarmSettings() },
+        )
+
+        nfcCard = addCard(
+            triggers,
+            iconRes = R.drawable.nfc_24,
+            titleRes = R.string.permissions_nfc_title,
+            whyTitleRes = R.string.permissions_nfc_title,
+            whyMessageRes = R.string.permissions_nfc_desc,
+            onClick = { openNfcSettings() },
+        )
+
+        locationCard = addCard(
+            triggers,
+            iconRes = R.drawable.location_on_24,
+            titleRes = R.string.permissions_location_title,
+            whyTitleRes = R.string.permissions_location_title,
+            whyMessageRes = R.string.permissions_location_desc,
+            onClick = {
+                // One tap: request what is missing; if we already have everything, open settings.
+                if (getLocationStateForWifi() == LocationState.OK) {
+                    openLocationSettingsForApp()
+                } else {
+                    requestLocationFlow()
+                }
+            },
+        )
+
+        bluetoothCard = addCard(
+            triggers,
+            iconRes = R.drawable.bluetooth_24,
+            titleRes = R.string.permissions_bluetooth_title,
+            whyTitleRes = R.string.permissions_bluetooth_title,
+            whyMessageRes = R.string.permissions_bluetooth_desc,
+            onClick = {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !hasBluetoothPermission()) {
+                    requestBluetoothPermissionIfMissing()
+                } else {
+                    openBluetoothSettingsOrAppDetails()
+                }
+            },
+        )
+
+        batteryCard = addCard(
+            battery,
+            iconRes = R.drawable.battery_24,
+            titleRes = R.string.permissions_battery_title,
+            whyTitleRes = R.string.permissions_battery_title,
+            whyMessageProvider = {
+                getString(R.string.permissions_battery_desc) + "\n\n" +
+                    getString(R.string.permissions_battery_oem_note)
+            },
+            onClick = {
+                if (!isBatteryOptimizationEffectivelyOk()) {
+                    requestIgnoreBatteryOptimizationsSystemPopup()
+                } else {
+                    openBatteryOptimizationSettingsPages()
+                }
+            },
+        )
+
+        autostartCard = addCard(
+            autostart,
+            iconRes = R.drawable.battery_24,
+            titleRes = R.string.permissions_autostart_title,
+            whyTitleRes = R.string.permissions_autostart_title,
+            whyMessageRes = R.string.permissions_autostart_desc,
+            onClick = {
+                startActivity(
+                    FaqActivity.intent(
+                        context = this,
+                        category = FaqActivity.CATEGORY_BACKGROUND_ACCESS,
+                        questionResId = if (isVivoOrIqooDevice()) {
+                            R.string.faq_q_vivo_iqoo_background
+                        } else {
+                            R.string.faq_q_device_background_steps
+                        }
+                    )
+                )
+            },
+        )
+    }
+
+    private fun addCard(
+        container: LinearLayout,
+        iconRes: Int,
+        titleRes: Int,
+        whyTitleRes: Int,
+        whyMessageRes: Int? = null,
+        whyMessageProvider: (() -> String)? = null,
+        onClick: () -> Unit,
+    ): SetupCardRow.Holder {
+        val holder = SetupCardRow.build(
+            this,
+            SetupCardRow.Spec(
+                title = getString(titleRes),
+                iconRes = iconRes,
+                onClick = onClick,
+                onInfoClick = {
+                    val message = whyMessageProvider?.invoke() ?: getString(whyMessageRes!!)
+                    showWhyDialog(getString(whyTitleRes), message)
+                },
+                infoContentDescription = getString(R.string.permissions_why_dialog_header),
+            ),
+        )
+        container.addView(holder.card)
+        cards += holder
+        return holder
     }
 
     override fun onResume() {
@@ -409,104 +379,120 @@ class PermissionsActivity : AppCompatActivity() {
         val exactAlarmsRelevant = hasEnabledSchedules && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
 
         val permissionsLocked = SwitchModeStore.isEnabled(this) && SwitchModeStore.isNfcRequiredForDisable(this)
-        val nfcState = NfcLaunchAccessCompat.state(this)
         val nfcRelevant = AutomationModeStore.isNfcAllowed(this) ||
             runCatching { NfcUidPairingStore.getPairedUidsHex(this).isNotEmpty() }.getOrDefault(false)
-        val nfcMissing = nfcRelevant && nfcState in setOf(
+        val nfcMissing = nfcRelevant && NfcLaunchAccessCompat.state(this) in setOf(
             NfcLaunchAccessCompat.State.NOT_ALLOWED,
             NfcLaunchAccessCompat.State.NFC_DISABLED
         )
 
-        applyStatus(tvNotificationsStatus, notificationsOk)
-        applyStatus(tvNotificationAccessStatus, notificationAccessGranted)
-        applyAccessibilityStatus(
-            view = tvAccessibilityStatus,
+        val enabledText = getString(R.string.permissions_status_enabled)
+        val disabledText = getString(R.string.permissions_status_disabled)
+
+        // Accessibility (special multi-state status).
+        val accStatus = accessibilityStatusText(
             runtimeActive = accessibilityRuntime,
             enabledInSettings = accessibilityDirect,
             advancedProtectionEnabled = advancedProtectionEnabled,
             usageAccessEnabled = usageAccessOk,
             fallbackRunning = fallbackRunning,
         )
-        applyStatus(tvUsageAccessStatus, usageAccessOk)
+        accessibilityCard.setState(accStatus.text, ok = accessibilityRuntime, error = accStatus.error)
 
-        btnOpenNotifications.text =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !postNotifGranted) {
-                getString(R.string.permissions_btn_allow)
-            } else {
-                getString(R.string.permissions_btn_open)
-            }
+        usageAccessCard.setState(if (usageAccessOk) enabledText else disabledText, ok = usageAccessOk, error = !usageAccessOk)
 
-        applyLocationStatus(locationState)
-        applyStatus(tvBluetoothStatus, btGranted)
+        notificationsCard.setState(
+            if (notificationsOk) enabledText else disabledText,
+            ok = notificationsOk,
+            error = !notificationsOk,
+        )
 
-        applyBatteryStatus(tvBatteryStatus, batteryOk)
-        applyExactAlarmsStatus(tvExactAlarmsStatus, exactAlarmsOk)
-        applyNfcStatus(tvNfcStatus)
+        notificationAccessCard.setState(
+            if (notificationAccessGranted) enabledText else disabledText,
+            ok = notificationAccessGranted,
+            error = notificationBlockingEnabled && !notificationAccessGranted,
+        )
 
-        // Location request button
-        btnReqLocation.visibility = if (locationOk) View.GONE else View.VISIBLE
-        btnReqLocation.text = when (locationState) {
-            LocationState.MISSING -> getString(R.string.permissions_btn_set_permission)
-            LocationState.APPROX_ONLY -> getString(R.string.permissions_btn_enable_precise)
-            LocationState.BACKGROUND_MISSING -> getString(R.string.permissions_btn_enable_all_the_time)
-            LocationState.NEARBY_WIFI_MISSING -> getString(R.string.permissions_btn_set_permission)
-            LocationState.OK -> getString(R.string.permissions_status_enabled)
-        }
+        // Exact alarms
+        exactAlarmsCard.setState(
+            getString(
+                if (exactAlarmsOk) R.string.permissions_exact_alarms_allowed
+                else R.string.permissions_exact_alarms_not_allowed
+            ),
+            ok = exactAlarmsOk,
+            error = !exactAlarmsOk,
+        )
 
-        btnOpenLocation.visibility = View.VISIBLE
-
-        // Bluetooth request button
-        btnReqBluetooth.visibility = if (btGranted || Build.VERSION.SDK_INT < Build.VERSION_CODES.S) View.GONE else View.VISIBLE
-        btnReqBluetooth.text = getString(R.string.permissions_btn_set_permission)
-        btnOpenBluetooth.visibility = View.VISIBLE
-
-        // Battery request button
-        btnReqBattery.visibility = if (!batteryOk) View.VISIBLE else View.GONE
-        btnOpenBattery.visibility = View.VISIBLE
-
-        // Exact alarms button
-        btnOpenExactAlarms.visibility =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) View.VISIBLE else View.GONE
-        btnOpenExactAlarms.isEnabled = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-        btnOpenExactAlarms.alpha = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) 1f else 0.55f
+        // NFC
         val nfcSupported = AutomationModeStore.isNfcSupported(this)
-        btnOpenNfc.visibility = View.VISIBLE
-        btnOpenNfc.isEnabled = nfcSupported
-        btnOpenNfc.alpha = if (nfcSupported) 1f else 0.55f
+        when {
+            !nfcSupported -> nfcCard.setState(getString(R.string.mode_not_supported_on_device), ok = false)
+            else -> when (NfcLaunchAccessCompat.state(this)) {
+                NfcLaunchAccessCompat.State.ALLOWED ->
+                    nfcCard.setState(enabledText, ok = true)
+                NfcLaunchAccessCompat.State.NOT_ALLOWED ->
+                    nfcCard.setState(getString(R.string.permissions_nfc_status_not_allowed), ok = false, error = true)
+                NfcLaunchAccessCompat.State.NFC_DISABLED ->
+                    nfcCard.setState(getString(R.string.permissions_nfc_status_system_disabled), ok = false, error = true)
+                NfcLaunchAccessCompat.State.UNKNOWN ->
+                    nfcCard.setState(getString(R.string.permissions_nfc_status_manual), ok = false)
+            }
+        }
+        nfcCard.setLocked(false)
+
+        // Location
+        val locationStatus = when (locationState) {
+            LocationState.OK -> null to false
+            LocationState.MISSING -> disabledText to true
+            LocationState.APPROX_ONLY -> getString(R.string.permissions_status_location_approx) to true
+            LocationState.BACKGROUND_MISSING -> getString(R.string.permissions_status_location_background_missing) to true
+            LocationState.NEARBY_WIFI_MISSING -> getString(R.string.permissions_status_nearby_wifi_missing) to true
+        }
+        locationCard.setState(
+            locationStatus.first ?: enabledText,
+            ok = locationOk,
+            error = locationStatus.second,
+        )
+
+        bluetoothCard.setState(if (btGranted) enabledText else disabledText, ok = btGranted, error = !btGranted)
+
+        // Battery
+        batteryCard.setState(
+            when {
+                batteryOk && isBatteryOptimizationUserConfirmedMaxAvailable() ->
+                    getString(R.string.permissions_battery_highest_available)
+                batteryOk -> getString(R.string.permissions_battery_allowed)
+                else -> getString(R.string.permissions_battery_not_allowed)
+            },
+            ok = batteryOk,
+            error = !batteryOk,
+        )
 
         // OEM autostart
         val showOem = isLikelyAggressiveOem()
         groupAutostart.visibility = if (showOem) View.VISIBLE else View.GONE
-        tvAutostartHint.visibility = if (showOem) View.VISIBLE else View.GONE
-        tvAutostartHint.setText(
-            when {
-                OemAccessibilityKeepAlive.isLikelyAccessibilityDisabledByOem(this) ->
-                    R.string.permissions_autostart_desc_vivo_accessibility_disabled
-                isVivoOrIqooDevice() -> R.string.permissions_autostart_desc_vivo
-                else -> R.string.permissions_autostart_desc
-            }
-        )
-        btnOpenAutostart.visibility = if (showOem) View.VISIBLE else View.GONE
+        if (showOem) {
+            autostartCard.setState(
+                when {
+                    OemAccessibilityKeepAlive.isLikelyAccessibilityDisabledByOem(this) ->
+                        getString(R.string.permissions_autostart_desc_vivo_accessibility_disabled)
+                    isVivoOrIqooDevice() -> getString(R.string.permissions_autostart_desc_vivo)
+                    else -> getString(R.string.permissions_autostart_desc)
+                },
+                ok = false,
+            )
+            autostartCard.setLocked(permissionsLocked)
+        }
 
-        applyProtectedButtonState(btnOpenAccessibility, permissionsLocked && accessibilityEnabled)
-        applyProtectedButtonState(btnOpenUsageAccess, permissionsLocked && usageAccessOk)
-        applyProtectedButtonState(
-            btnOpenNotificationAccess,
-            permissionsLocked && notificationAccessGranted
-        )
-        applyProtectedButtonState(btnOpenNotifications, permissionsLocked && notificationsOk)
-        applyProtectedButtonState(btnOpenLocation, permissionsLocked && locationOk)
-        applyProtectedButtonState(btnOpenBluetooth, permissionsLocked && btGranted)
-        applyProtectedButtonState(btnOpenBattery, permissionsLocked && batteryOk)
-        applyProtectedButtonState(btnOpenAutostart, permissionsLocked)
-        applyProtectedButtonState(btnOpenExactAlarms, permissionsLocked && exactAlarmsOk)
-
-        btnOpenNotifications.text =
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !postNotifGranted) {
-                getString(R.string.permissions_btn_allow)
-            } else {
-                getString(R.string.permissions_btn_open)
-            }
+        // Locked-while-armed: dim the cards whose settings must not change while protection is on.
+        accessibilityCard.setLocked(permissionsLocked && accessibilityEnabled)
+        usageAccessCard.setLocked(permissionsLocked && usageAccessOk)
+        notificationsCard.setLocked(permissionsLocked && notificationsOk)
+        notificationAccessCard.setLocked(permissionsLocked && notificationAccessGranted)
+        locationCard.setLocked(permissionsLocked && locationOk)
+        bluetoothCard.setLocked(permissionsLocked && btGranted)
+        exactAlarmsCard.setLocked(permissionsLocked && exactAlarmsOk)
+        batteryCard.setLocked(permissionsLocked && batteryOk)
 
         val missingCount = listOf(
             (!accessibilityEnabled),
@@ -534,6 +520,35 @@ class PermissionsActivity : AppCompatActivity() {
         }
     }
 
+    private data class StatusText(val text: String, val error: Boolean)
+
+    private fun accessibilityStatusText(
+        runtimeActive: Boolean,
+        enabledInSettings: Boolean,
+        advancedProtectionEnabled: Boolean,
+        usageAccessEnabled: Boolean,
+        fallbackRunning: Boolean,
+    ): StatusText = when {
+        runtimeActive -> StatusText(getString(R.string.permissions_status_enabled), false)
+        advancedProtectionEnabled && usageAccessEnabled && SwitchModeStore.isEnabled(this) -> StatusText(
+            getString(
+                if (fallbackRunning) {
+                    R.string.permissions_status_advanced_protection_fallback_active
+                } else {
+                    R.string.permissions_status_advanced_protection_fallback_starting
+                }
+            ),
+            false,
+        )
+        advancedProtectionEnabled ->
+            StatusText(getString(R.string.permissions_status_advanced_protection), true)
+        enabledInSettings ->
+            StatusText(getString(R.string.permissions_status_not_connected), true)
+        OemAccessibilityKeepAlive.isLikelyAccessibilityDisabledByOem(this) ->
+            StatusText(getString(R.string.permissions_status_oem_accessibility_disabled), true)
+        else -> StatusText(getString(R.string.permissions_status_disabled), true)
+    }
+
     private fun refreshStickyAccessibilityMismatch(mismatchNow: Boolean): Boolean {
         val prefs = getSharedPreferences(PREFS_PERMISSION_HEALTH, MODE_PRIVATE)
         val wasSticky = prefs.getBoolean(KEY_STICKY_ACCESSIBILITY_MISMATCH, false)
@@ -544,12 +559,6 @@ class PermissionsActivity : AppCompatActivity() {
             if (wasSticky) prefs.edit { putBoolean(KEY_STICKY_ACCESSIBILITY_MISMATCH, false) }
             false
         }
-    }
-
-    private fun applyProtectedButtonState(button: MaterialButton, locked: Boolean) {
-        button.isEnabled = !locked
-        button.isClickable = !locked
-        button.alpha = if (locked) 0.55f else 1f
     }
 
     private fun updateBanner(missingCount: Int, stickyAccessibilityMismatch: Boolean) {
@@ -620,129 +629,6 @@ class PermissionsActivity : AppCompatActivity() {
         )
     }
 
-    private fun accentOkColor(): Int =
-        com.google.android.material.color.MaterialColors.getColor(
-            this, androidx.appcompat.R.attr.colorPrimary,
-            com.oliver.loqin.theme.AccentColor.getAccentColorInt(this))
-
-    private fun applyStatus(view: TextView, enabled: Boolean) {
-        val ok = com.google.android.material.color.MaterialColors.getColor(
-            view, androidx.appcompat.R.attr.colorPrimary,
-            com.oliver.loqin.theme.AccentColor.getAccentColorInt(this))
-        val red = ContextCompat.getColor(this, R.color.status_error)
-
-        view.text = getString(
-            if (enabled) R.string.permissions_status_enabled
-            else R.string.permissions_status_disabled
-        )
-        view.setTextColor(if (enabled) ok else red)
-    }
-
-    private fun applyAccessibilityStatus(
-        view: TextView,
-        runtimeActive: Boolean,
-        enabledInSettings: Boolean,
-        advancedProtectionEnabled: Boolean,
-        usageAccessEnabled: Boolean,
-        fallbackRunning: Boolean,
-    ) {
-        when {
-            runtimeActive -> applyStatus(view, true)
-            advancedProtectionEnabled && usageAccessEnabled && SwitchModeStore.isEnabled(this) -> {
-                view.text = getString(
-                    if (fallbackRunning) {
-                        R.string.permissions_status_advanced_protection_fallback_active
-                    } else {
-                        R.string.permissions_status_advanced_protection_fallback_starting
-                    }
-                )
-                view.setTextColor(AccentColor.getAccentColorInt(this))
-            }
-            advancedProtectionEnabled -> {
-                view.text = getString(R.string.permissions_status_advanced_protection)
-                view.setTextColor(ContextCompat.getColor(this, R.color.status_error))
-            }
-            enabledInSettings -> {
-                view.text = getString(R.string.permissions_status_not_connected)
-                view.setTextColor(ContextCompat.getColor(this, R.color.status_error))
-            }
-            OemAccessibilityKeepAlive.isLikelyAccessibilityDisabledByOem(this) -> {
-                view.text = getString(R.string.permissions_status_oem_accessibility_disabled)
-                view.setTextColor(ContextCompat.getColor(this, R.color.status_error))
-            }
-            else -> applyStatus(view, false)
-        }
-    }
-
-    private fun applyBatteryStatus(view: TextView, enabled: Boolean) {
-        val red = ContextCompat.getColor(this, R.color.status_error)
-
-        val manuallyConfirmed = isBatteryOptimizationUserConfirmedMaxAvailable()
-        view.text = when {
-            enabled && manuallyConfirmed -> getString(R.string.permissions_battery_highest_available)
-            enabled -> getString(R.string.permissions_battery_allowed)
-            else -> getString(R.string.permissions_battery_not_allowed)
-        }
-        view.setTextColor(if (enabled) accentOkColor() else red)
-    }
-
-    private fun applyExactAlarmsStatus(view: TextView, enabled: Boolean) {
-        val red = ContextCompat.getColor(this, R.color.status_error)
-
-        view.text = getString(
-            if (enabled) R.string.permissions_exact_alarms_allowed
-            else R.string.permissions_exact_alarms_not_allowed
-        )
-        view.setTextColor(if (enabled) accentOkColor() else red)
-    }
-
-    private fun applyNfcStatus(view: TextView) {
-        if (!AutomationModeStore.isNfcSupported(this)) {
-            view.text = getString(R.string.mode_not_supported_on_device)
-            view.setTextColor(ContextCompat.getColor(this, R.color.status_neutral))
-            return
-        }
-        when (NfcLaunchAccessCompat.state(this)) {
-            NfcLaunchAccessCompat.State.ALLOWED -> applyStatus(view, true)
-            NfcLaunchAccessCompat.State.NOT_ALLOWED -> {
-                view.text = getString(R.string.permissions_nfc_status_not_allowed)
-                view.setTextColor(ContextCompat.getColor(this, R.color.status_error))
-            }
-            NfcLaunchAccessCompat.State.NFC_DISABLED -> {
-                view.text = getString(R.string.permissions_nfc_status_system_disabled)
-                view.setTextColor(ContextCompat.getColor(this, R.color.status_error))
-            }
-            NfcLaunchAccessCompat.State.UNKNOWN -> {
-                view.text = getString(R.string.permissions_nfc_status_manual)
-                view.setTextColor(AccentColor.getAccentColorInt(this))
-            }
-        }
-    }
-
-    private fun applyLocationStatus(state: LocationState) {
-        when (state) {
-            LocationState.OK -> applyStatus(tvLocationStatus, true)
-            LocationState.MISSING -> applyStatus(tvLocationStatus, false)
-            LocationState.APPROX_ONLY -> {
-                val red = ContextCompat.getColor(this, R.color.status_error)
-                tvLocationStatus.text = getString(R.string.permissions_status_location_approx)
-                tvLocationStatus.setTextColor(red)
-            }
-
-            LocationState.BACKGROUND_MISSING -> {
-                val red = ContextCompat.getColor(this, R.color.status_error)
-                tvLocationStatus.text = getString(R.string.permissions_status_location_background_missing)
-                tvLocationStatus.setTextColor(red)
-            }
-
-            LocationState.NEARBY_WIFI_MISSING -> {
-                val red = ContextCompat.getColor(this, R.color.status_error)
-                tvLocationStatus.text = getString(R.string.permissions_status_nearby_wifi_missing)
-                tvLocationStatus.setTextColor(red)
-            }
-        }
-    }
-
     // LOCATION
     private fun hasCoarseLocationPermission(): Boolean {
         return PermissionSetupChecks.hasCoarseLocation(this)
@@ -766,11 +652,7 @@ class PermissionsActivity : AppCompatActivity() {
         val coarse = hasCoarseLocationPermission()
 
         if (!fine) {
-            return if (coarse) {
-                LocationState.APPROX_ONLY
-            } else {
-                LocationState.MISSING
-            }
+            return if (coarse) LocationState.APPROX_ONLY else LocationState.MISSING
         }
 
         // For best reliability, especially when Wi‑Fi triggers run in the background, guide users to "Allow all the time" (ACCESS_BACKGROUND_LOCATION).
@@ -790,7 +672,6 @@ class PermissionsActivity : AppCompatActivity() {
      * 3) (Optional, Android 13+) Request NEARBY_WIFI_DEVICES
      */
     private fun requestLocationFlow() {
-        // 1) Precise location
         if (!hasFineLocationPermission()) {
             requestPermissions(
                 arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION),
@@ -799,13 +680,11 @@ class PermissionsActivity : AppCompatActivity() {
             return
         }
 
-        // 2) Background location (Android 10+)
         if (!hasBackgroundLocationPermission()) {
             requestBackgroundLocationFlow()
             return
         }
 
-        // Optional Android 13+ permission for some Wi‑Fi access paths
         if (Build.VERSION.SDK_INT >= 33) {
             if (!PermissionSetupChecks.hasNearbyWifiDevices(this)) {
                 requestPermissions(
@@ -1145,11 +1024,7 @@ class PermissionsActivity : AppCompatActivity() {
     private fun toolbarForegroundColor(): Int {
         val night = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
             Configuration.UI_MODE_NIGHT_YES
-        return if (night) {
-            Color.WHITE
-        } else {
-            Color.BLACK
-        }
+        return if (night) Color.WHITE else Color.BLACK
     }
 
     companion object {
@@ -1163,9 +1038,6 @@ class PermissionsActivity : AppCompatActivity() {
 
         private const val PREFS_PERMISSION_HEALTH = "permissions_health"
         private const val KEY_STICKY_ACCESSIBILITY_MISMATCH = "sticky_accessibility_mismatch"
-
-        private const val PREFS_SCHEDULE_HEALTH = "loqin_schedule_health"
-        private const val KEY_BATTERY_OPTIMIZATION_CONFIRMED_MAX_AVAILABLE = "battery_optimization_confirmed_max_available"
 
         const val EXTRA_FROM_ONBOARDING = "extra_from_onboarding"
         const val EXTRA_SHOW_ACCESSIBILITY_DISCLOSURE = "extra_show_accessibility_disclosure"
