@@ -99,14 +99,4 @@
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
     </FrameLayout>
-
-    <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fabAdd"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="96dp"
-        android:layout_gravity="bottom|end"
-        android:contentDescription="@string/paired_tags_add_fab_desc"
-        app:srcCompat="@drawable/add_24" />
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

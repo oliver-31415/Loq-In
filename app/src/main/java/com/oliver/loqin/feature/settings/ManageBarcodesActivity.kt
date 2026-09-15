@@ -65,7 +65,6 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.android.material.textfield.TextInputEditText
 import java.text.NumberFormat
@@ -82,7 +81,6 @@ class ManageBarcodesActivity : AppCompatActivity() {
     private lateinit var empty: View
     private lateinit var adapter: CodeAdapter
     private lateinit var toolbar: MaterialToolbar
-    private var fabAdd: FloatingActionButton? = null
     private val selectedRawValues: MutableSet<String> = linkedSetOf()
     private var selectionMode: Boolean = false
     private var contentInitialized: Boolean = false
@@ -184,10 +182,6 @@ class ManageBarcodesActivity : AppCompatActivity() {
             }
         )
 
-        fabAdd = findViewById<FloatingActionButton>(R.id.fabAdd)
-        fabAdd?.setOnClickListener {
-            if (!selectionMode) showAddChoiceDialog()
-        }
         findViewById<View>(R.id.btnEmptyAddBarcode)?.setOnClickListener { showAddChoiceDialog() }
         contentInitialized = true
     }
@@ -207,8 +201,8 @@ class ManageBarcodesActivity : AppCompatActivity() {
     }
 
     override fun onPrepareOptionsMenu(menu: Menu): Boolean {
-        fabAdd?.isVisible = !selectionMode
-        menu.findItem(R.id.action_info)?.isVisible = true
+        menu.findItem(R.id.action_add)?.isVisible = !selectionMode
+        menu.findItem(R.id.action_info)?.isVisible = !selectionMode
         menu.findItem(R.id.action_cancel_select)?.isVisible = selectionMode
         menu.findItem(R.id.action_select)?.isVisible = !selectionMode && adapter.itemCount > 0
         menu.findItem(R.id.action_delete_selected)?.isVisible = selectionMode
@@ -229,6 +223,10 @@ class ManageBarcodesActivity : AppCompatActivity() {
             }
             R.id.action_info -> {
                 showBarcodeInfoDialog()
+                true
+            }
+            R.id.action_add -> {
+                if (!selectionMode) showAddChoiceDialog()
                 true
             }
             R.id.action_cancel_select -> {

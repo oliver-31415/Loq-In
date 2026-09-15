@@ -26,6 +26,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.oliver.loqin.R
 import com.oliver.loqin.data.prefs.AutomationModeStore
 import com.oliver.loqin.data.prefs.ScanCodeStore
+import com.oliver.loqin.feature.settings.ControlModeGuidance
 import com.oliver.loqin.nfc.InternalScanDispatchGuard
 import com.oliver.loqin.nfc.NfcEntryActivity
 import com.oliver.loqin.nfc.NfcSchema
@@ -51,8 +52,12 @@ class ExternalQrActionActivity : AppCompatActivity() {
         }
 
         if (!AutomationModeStore.isQrAllowed(this)) {
-            Toast.makeText(this, R.string.mode_blocked_qr_action, Toast.LENGTH_SHORT).show()
-            finish()
+            ControlModeGuidance.show(
+                activity = this,
+                source = "QR",
+                blockedMessageRes = R.string.mode_blocked_qr_action,
+                finishOnDismiss = true,
+            )
             return
         }
 

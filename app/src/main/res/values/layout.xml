@@ -163,6 +163,22 @@
         <item name="android:textColor">?attr/colorOnSurface</item>
     </style>
 
+    <!--
+      Alert dialog body copy. Applied through the dialog theme so the message is
+      already measured with these metrics on its first layout. Setting them from a
+      show listener (as styleLoqInDialogButtons used to) changes the message height
+      after the dialog is centered, which makes it shift down a little on open.
+    -->
+    <style name="TextAppearance.LoqIn.DialogBody" parent="MaterialAlertDialog.Material3.Body.Text">
+        <item name="android:textSize">14sp</item>
+        <item name="android:lineSpacingExtra">2dp</item>
+        <item name="android:lineSpacingMultiplier">1.06</item>
+    </style>
+
+    <style name="ThemeOverlay.LoqIn.MaterialAlertDialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="materialAlertDialogBodyTextStyle">@style/TextAppearance.LoqIn.DialogBody</item>
+    </style>
+
     <!-- Standard buttons -->
     <!-- Expressive pill shape via full corner radius -->
     <style name="LoqIn.Button" parent="Widget.Material3.Button">

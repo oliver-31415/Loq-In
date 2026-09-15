@@ -49,18 +49,18 @@ import com.oliver.loqin.feature.stats.StatsFormat
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.ui.EdgeToEdgeUtils
 import com.oliver.loqin.ui.LoqInDropdownAdapter
+import com.oliver.loqin.ui.ToolbarIconAction
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.dialog.showAccented
+import com.oliver.loqin.ui.dialog.styleForDialog
 import com.oliver.loqin.util.LocaleHelper
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.card.MaterialCardView
-import com.google.android.material.color.MaterialColors
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import java.text.DateFormat
 import java.util.Calendar
@@ -122,6 +122,12 @@ class AppLaunchesActivity : AppCompatActivity() {
             setBackgroundColor(AccentColor.getToolbarColor(this@AppLaunchesActivity))
         }
         UsageInfoAction.attach(this, toolbar, R.string.app_launches_info_title, R.string.app_launches_info_body)
+        ToolbarIconAction.attach(
+            activity = this,
+            toolbar = toolbar,
+            iconRes = R.drawable.tune_24,
+            titleRes = R.string.app_launches_sort_filter_title,
+        ) { showSortFilterDialog() }
         root.addView(AppBarLayout(this).apply {
             fitsSystemWindows = true
             addView(toolbar, AppBarLayout.LayoutParams(
@@ -144,22 +150,6 @@ class AppLaunchesActivity : AppCompatActivity() {
             CoordinatorLayout.LayoutParams.MATCH_PARENT,
             CoordinatorLayout.LayoutParams.MATCH_PARENT
         ))
-        coordinator.addView(FloatingActionButton(this).apply {
-            setImageResource(R.drawable.tune_24)
-            val accent = AccentColor.getAccentColorInt(this@AppLaunchesActivity)
-            backgroundTintList = ColorStateList.valueOf(accent)
-            imageTintList = ColorStateList.valueOf(if (MaterialColors.isColorLight(accent)) Color.BLACK else Color.WHITE)
-            contentDescription = getString(R.string.app_launches_sort_filter_title)
-            setOnClickListener { showSortFilterDialog() }
-            useCompatPadding = true
-        }, CoordinatorLayout.LayoutParams(
-            CoordinatorLayout.LayoutParams.WRAP_CONTENT,
-            CoordinatorLayout.LayoutParams.WRAP_CONTENT
-        ).apply {
-            gravity = Gravity.BOTTOM or Gravity.END
-            marginEnd = dp(16)
-            bottomMargin = dp(96)
-        })
         setContentView(coordinator)
         EdgeToEdgeUtils.setupClassic(activity = this, toolbar = toolbar)
         updateScopeSubtitle()
@@ -281,7 +271,7 @@ class AppLaunchesActivity : AppCompatActivity() {
         hideSingle.text = getString(R.string.app_launches_filter_single)
         hideSingle.isChecked = hideSingleLaunchApps
         hideSingle.visibility = View.VISIBLE
-        hideSingle.buttonTintList = ColorStateList.valueOf(AccentColor.getAccentColorInt(this))
+        hideSingle.styleForDialog(this)
 
         MaterialAlertDialogBuilder(this)
             .setTitle(R.string.app_launches_sort_filter_title)

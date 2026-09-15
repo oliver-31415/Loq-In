@@ -134,6 +134,8 @@ class PermissionsActivity : AppCompatActivity() {
     private lateinit var btnOpenExactAlarms: MaterialButton
     private lateinit var btnOpenNfc: MaterialButton
 
+    private var continueLocationFlowAfterBackground = false
+
     private lateinit var groupAutostart: View
     private lateinit var tvAutostartHint: TextView
 
@@ -356,6 +358,12 @@ class PermissionsActivity : AppCompatActivity() {
         CustomAccentApplier.applyIfNeeded(this)
         ExactAlarmPermissionSync.syncAndReschedule(this, reason = "permissions_resume")
         updateUi()
+        if (continueLocationFlowAfterBackground && hasBackgroundLocationPermission()) {
+            continueLocationFlowAfterBackground = false
+            window.decorView.postDelayed({
+                if (!isFinishing && !isDestroyed) requestLocationFlow()
+            }, 220L)
+        }
         lifecycleScope.launch {
             delay(350)
             updateUi()
@@ -819,6 +827,7 @@ class PermissionsActivity : AppCompatActivity() {
 
         // Android 10: we can still request it directly.
         if (Build.VERSION.SDK_INT == Build.VERSION_CODES.Q) {
+            continueLocationFlowAfterBackground = true
             requestPermissions(
                 arrayOf(ACCESS_BACKGROUND_LOCATION_PERMISSION),
                 REQ_LOC_BACKGROUND
@@ -828,7 +837,9 @@ class PermissionsActivity : AppCompatActivity() {
 
         // Android 11+: requesting ACCESS_BACKGROUND_LOCATION will usually open the system permission controller where the user can switch to
         // "Allow all the time" for Location.
-        // On some devices/ROMs this may still not show the exact location page, so we keep a settings fallback in onRequestPermissionsResult.
+        // On some devices/ROMs this may still not show the exact location page.
+        // Keep the flow armed while Android sends the user through Settings so returning with "Allow all the time" can continue directly to the remaining Nearby Wi-Fi grant.
+        continueLocationFlowAfterBackground = true
         requestPermissions(
             arrayOf(ACCESS_BACKGROUND_LOCATION_PERMISSION),
             REQ_LOC_BACKGROUND
@@ -853,7 +864,16 @@ class PermissionsActivity : AppCompatActivity() {
                 }
             }
 
-            REQ_LOC_BACKGROUND -> updateUi()
+            REQ_LOC_BACKGROUND -> {
+                if (hasBackgroundLocationPermission()) {
+                    continueLocationFlowAfterBackground = false
+                    requestLocationFlow()
+                } else {
+                    // Some Android 11+ permission controllers return before the user finishes the Settings step.
+                    // Keep the flow armed; onResume will continue once the permission actually becomes "Allow all the time".
+                    updateUi()
+                }
+            }
 
             REQ_NEARBY_WIFI,
             REQ_BT,

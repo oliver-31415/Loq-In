@@ -34,6 +34,9 @@ object NfcDiagnosticsStore {
         val lastFailureReason: String,
         val lastWriteAtMillis: Long,
         val lastWriteResult: String,
+        val ignoredTagCount: Int,
+        val lastIgnoredAtMillis: Long,
+        val lastIgnoredReason: String,
     )
 
     private const val PREFS = "loqin_prefs"
@@ -47,6 +50,9 @@ object NfcDiagnosticsStore {
     private const val KEY_LAST_FAILURE = "nfc_diag_last_failure"
     private const val KEY_LAST_WRITE_AT = "nfc_diag_last_write_at"
     private const val KEY_LAST_WRITE_RESULT = "nfc_diag_last_write_result"
+    private const val KEY_IGNORED_COUNT = "nfc_diag_ignored_count"
+    private const val KEY_LAST_IGNORED_AT = "nfc_diag_last_ignored_at"
+    private const val KEY_LAST_IGNORED_REASON = "nfc_diag_last_ignored_reason"
 
     private fun prefs(context: Context) =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -95,6 +101,20 @@ object NfcDiagnosticsStore {
         }
     }
 
+    fun recordIgnoredTag(
+        context: Context,
+        reason: String,
+    ) {
+        val sp = prefs(context)
+        sp.edit {
+            putInt(KEY_IGNORED_COUNT, sp.getInt(KEY_IGNORED_COUNT, 0) + 1)
+            putLong(KEY_LAST_IGNORED_AT, System.currentTimeMillis())
+            putString(KEY_LAST_IGNORED_REASON, reason.take(160))
+            remove(KEY_LAST_FAILURE)
+        }
+        DiagnosticsTimelineStore.record(context, "NFC", "Ignored unrelated/unpaired tag", reason)
+    }
+
     fun recordWriteResult(
         context: Context,
         result: String,
@@ -118,6 +138,9 @@ object NfcDiagnosticsStore {
             lastFailureReason = sp.getString(KEY_LAST_FAILURE, null).orEmpty(),
             lastWriteAtMillis = readLongCompat(sp.all[KEY_LAST_WRITE_AT]),
             lastWriteResult = sp.getString(KEY_LAST_WRITE_RESULT, null).orEmpty(),
+            ignoredTagCount = sp.getInt(KEY_IGNORED_COUNT, 0),
+            lastIgnoredAtMillis = readLongCompat(sp.all[KEY_LAST_IGNORED_AT]),
+            lastIgnoredReason = sp.getString(KEY_LAST_IGNORED_REASON, null).orEmpty(),
         )
     }
 

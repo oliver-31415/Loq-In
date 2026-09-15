@@ -18,7 +18,6 @@
 
 package com.oliver.loqin.feature.inbox
 
-import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.os.Bundle
@@ -55,8 +54,6 @@ import com.oliver.loqin.ui.dialog.showDestructiveAccented
 import com.oliver.loqin.ui.dialog.styleLoqInDialogButtons
 import com.oliver.loqin.widget.BlockedNotificationsWidgetProvider
 import com.google.android.material.appbar.MaterialToolbar
-import com.google.android.material.chip.Chip
-import com.google.android.material.chip.ChipGroup
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
@@ -113,9 +110,28 @@ class BlockedInboxActivity : AppCompatActivity() {
             onDelete = { position -> visibleItems.getOrNull(position)?.let(::confirmDeleteSingle) }
         )
 
-        findViewById<View>(R.id.btnFilter)?.setOnClickListener { showFilterMenuDialog() }
-
+        setupSessionMissedSwitch()
         load()
+    }
+
+    /**
+     * The "show missed notifications after a session" setting used to live in the
+     * overflow menu where it was easy to miss. Surface it as a visible switch at
+     * the top of the inbox.
+     */
+    private fun setupSessionMissedSwitch() {
+        val switch = findViewById<com.google.android.material.switchmaterial.SwitchMaterial>(R.id.switchSessionMissed)
+            ?: return
+        switch.isChecked = SessionMissedNotificationsStore.isFeatureEnabled(this)
+        switch.setOnCheckedChangeListener { _, checked ->
+            SessionMissedNotificationsStore.setFeatureEnabled(this, checked)
+            val msg = if (checked) {
+                R.string.pref_show_session_missed_notifications_title
+            } else {
+                R.string.session_missed_notifications_disabled_hint
+            }
+            showWarnPillOnContent(msg)
+        }
     }
 
     override fun onResume() {
@@ -179,7 +195,7 @@ class BlockedInboxActivity : AppCompatActivity() {
         empty.visibility = if (visibleItems.isEmpty()) View.VISIBLE else View.GONE
 
         toolbar.updateSelectionSubtitle(selectionMode, selectedKeys.size, null)
-        renderActiveFilterTags()
+        renderFilterDropdowns()
         invalidateOptionsMenu()
     }
 
@@ -199,7 +215,6 @@ class BlockedInboxActivity : AppCompatActivity() {
         selectionMode = false
         selectedKeys.clear()
         toolbar.updateSelectionSubtitle(false, 0, null)
-        renderActiveFilterTags()
         invalidateOptionsMenu()
         recycler.adapter?.let { it.notifyItemRangeChanged(0, it.itemCount) }
     }
@@ -212,53 +227,6 @@ class BlockedInboxActivity : AppCompatActivity() {
         // keep subtitle useful in selection mode
         if (selectionMode) {
             toolbar.updateSelectionSubtitle(true, selectedKeys.size)
-        }
-    }
-
-    private fun renderActiveFilterTags() {
-        val scroll = findViewById<View>(R.id.activeFilterScroll) ?: return
-        val group = findViewById<ChipGroup>(R.id.activeFilterChipGroup) ?: return
-        group.removeAllViews()
-
-        appFilter?.takeIf { it.isNotBlank() }?.let { pkg ->
-            group.addView(activeFilterChip(getString(R.string.blocked_inbox_filter_tag_fmt, appLabel(pkg))) {
-                appFilter = null
-                prefs.edit { remove(KEY_APP_FILTER) }
-                applyFilterSort()
-            })
-        }
-
-        if (!sortNewestFirst) {
-            group.addView(activeFilterChip(getString(R.string.blocked_inbox_sort_oldest)) {
-                sortNewestFirst = true
-                prefs.edit { putBoolean(KEY_SORT_NEWEST, true) }
-                applyFilterSort()
-            })
-        }
-
-        scroll.isVisible = group.isNotEmpty()
-    }
-
-    private fun activeFilterChip(label: String, onClear: () -> Unit): Chip {
-        val accent = AccentColor.getAccentColorInt(this)
-        val onSurface = MaterialColors.getColor(this, com.google.android.material.R.attr.colorOnSurface, Color.WHITE)
-        return Chip(this).apply {
-            text = label
-            maxLines = 1
-            ellipsize = android.text.TextUtils.TruncateAt.END
-            minHeight = dp(44)
-            minimumHeight = dp(44)
-            isSingleLine = true
-            isCheckable = false
-            isCloseIconVisible = true
-            closeIconTint = ColorStateList.valueOf(onSurface)
-            chipStrokeWidth = dp(1).toFloat()
-            chipStrokeColor = ColorStateList.valueOf(accent)
-            chipBackgroundColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 0x16))
-            textSize = 13f
-            setTextColor(onSurface)
-            setOnClickListener { showFilterMenuDialog() }
-            setOnCloseIconClickListener { onClear() }
         }
     }
 
@@ -343,9 +311,6 @@ class BlockedInboxActivity : AppCompatActivity() {
         menu.findItem(R.id.action_delete)?.title =
             if (selectionMode) getString(R.string.delete) else getString(R.string.select)
         menu.findItem(R.id.action_clear_all)?.isVisible = !readOnly && !selectionMode && allItems.isNotEmpty()
-        val recapItem = menu.findItem(R.id.action_session_missed_notifications)
-        recapItem?.isVisible = !selectionMode
-        recapItem?.isChecked = SessionMissedNotificationsStore.isFeatureEnabled(this)
         return super.onPrepareOptionsMenu(menu)
     }
 
@@ -374,19 +339,6 @@ class BlockedInboxActivity : AppCompatActivity() {
                 }
             }
 
-            R.id.action_session_missed_notifications -> {
-                val next = !item.isChecked
-                item.isChecked = next
-                SessionMissedNotificationsStore.setFeatureEnabled(this, next)
-                val msg = if (next) {
-                    R.string.pref_show_session_missed_notifications_title
-                } else {
-                    R.string.session_missed_notifications_disabled_hint
-                }
-                showWarnPillOnContent(msg)
-                true
-            }
-
             R.id.action_clear_all -> {
                 confirmClearAll(); true
             }
@@ -395,7 +347,14 @@ class BlockedInboxActivity : AppCompatActivity() {
         }
     }
 
-    private fun showFilterMenuDialog() {
+    /**
+     * Inline app filter + sort. Uses the same outlined dropdown component as the
+     * rest of the app, always visible above the list instead of a dialog.
+     */
+    private fun renderFilterDropdowns() {
+        val appDropdown = findViewById<MaterialAutoCompleteTextView>(R.id.dropdownFilterApp) ?: return
+        val sortDropdown = findViewById<MaterialAutoCompleteTextView>(R.id.dropdownSort) ?: return
+
         val pkgs = allItems.map { it.pkg }.distinct().sortedBy { appLabel(it).lowercase() }
         val appLabels = mutableListOf(getString(R.string.blocked_inbox_filter_all_apps))
         val appValues = mutableListOf<String?>(null)
@@ -403,65 +362,32 @@ class BlockedInboxActivity : AppCompatActivity() {
             appLabels += appLabel(pkg)
             appValues += pkg
         }
-
-        val root = layoutInflater.inflate(R.layout.dialog_statistics_dropdown_sort_filter, FrameLayout(this), false)
-        val filterLabel = root.findViewById<TextView>(R.id.tvStatsDropdownPrimaryLabel)
-        val sortLabel = root.findViewById<TextView>(R.id.tvStatsDropdownSortLabel)
-        val appDropdown = root.findViewById<MaterialAutoCompleteTextView>(R.id.dropdownStatsPrimary)
-        val sortDropdown = root.findViewById<MaterialAutoCompleteTextView>(R.id.dropdownStatsSort)
-        val extraFilter = root.findViewById<View>(R.id.cbStatsExtraFilter)
-
-        filterLabel.text = getString(R.string.blocked_inbox_filter_app)
-        sortLabel.text = getString(R.string.blocked_inbox_sort_title)
-        extraFilter.visibility = View.GONE
-
-        var selectedAppFilter = appFilter
         val appIndex = appValues.indexOf(appFilter).takeIf { it >= 0 } ?: 0
+
         appDropdown.setAdapter(LoqInDropdownAdapter(this, appLabels))
         appDropdown.setText(appLabels[appIndex], false)
         appDropdown.setOnItemClickListener { _, _, position, _ ->
-            selectedAppFilter = appValues.getOrNull(position)
+            val pkg = appValues.getOrNull(position)
+            appFilter = pkg
+            prefs.edit {
+                if (pkg.isNullOrBlank()) remove(KEY_APP_FILTER) else putString(KEY_APP_FILTER, pkg)
+            }
+            applyFilterSort()
         }
         appDropdown.setOnClickListener { appDropdown.showDropDown() }
 
-        val sortOptions = listOf(
-            true to getString(R.string.blocked_inbox_sort_newest),
-            false to getString(R.string.blocked_inbox_sort_oldest)
+        val sortLabels = listOf(
+            getString(R.string.blocked_inbox_sort_newest),
+            getString(R.string.blocked_inbox_sort_oldest)
         )
-        var selectedSortNewest = sortNewestFirst
-        sortDropdown.setAdapter(LoqInDropdownAdapter(this, sortOptions.map { it.second }))
-        sortDropdown.setText(sortOptions.first { it.first == sortNewestFirst }.second, false)
+        sortDropdown.setAdapter(LoqInDropdownAdapter(this, sortLabels))
+        sortDropdown.setText(sortLabels[if (sortNewestFirst) 0 else 1], false)
         sortDropdown.setOnItemClickListener { _, _, position, _ ->
-            selectedSortNewest = sortOptions.getOrElse(position) { sortOptions.first() }.first
+            sortNewestFirst = position == 0
+            prefs.edit { putBoolean(KEY_SORT_NEWEST, sortNewestFirst) }
+            applyFilterSort()
         }
         sortDropdown.setOnClickListener { sortDropdown.showDropDown() }
-
-        val dialog = MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.blocked_inbox_filter_menu_title)
-            .setView(root)
-            .setNegativeButton(R.string.cancel, null)
-            .setNeutralButton(R.string.blocked_inbox_clear_filters) { _, _ ->
-                appFilter = null
-                sortNewestFirst = true
-                prefs.edit {
-                    remove(KEY_APP_FILTER)
-                    putBoolean(KEY_SORT_NEWEST, true)
-                }
-                applyFilterSort()
-            }
-            .setPositiveButton(R.string.blocked_inbox_apply_filters) { _, _ ->
-                appFilter = selectedAppFilter
-                sortNewestFirst = selectedSortNewest
-                prefs.edit {
-                    val v = appFilter
-                    if (v.isNullOrBlank()) remove(KEY_APP_FILTER) else putString(KEY_APP_FILTER, v)
-                    putBoolean(KEY_SORT_NEWEST, sortNewestFirst)
-                }
-                applyFilterSort()
-            }
-            .create()
-        dialog.setOnShowListener { dialog.styleLoqInDialogButtons() }
-        dialog.show()
     }
 
     private fun confirmClearAll() {

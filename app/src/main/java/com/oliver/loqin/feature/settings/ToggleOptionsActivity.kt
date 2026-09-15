@@ -70,6 +70,7 @@ import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.applyLoqInStyle
 import com.oliver.loqin.ui.showWarnPill
 import com.oliver.loqin.ui.dialog.LoqInDialogOption
+import com.oliver.loqin.ui.dialog.applyLoqInDialogCorners
 import com.oliver.loqin.ui.dialog.showLoqInOptionDialog
 import com.oliver.loqin.ui.dialog.styleLoqInDialogButtons
 import com.oliver.loqin.ui.dialog.EmergencyPinDialog
@@ -146,6 +147,7 @@ open class ToggleOptionsActivity : AppCompatActivity() {
                 .setMessage(R.string.toggle_locked_nfc_howto)
                 .setPositiveButton(R.string.ok, null)
                 .create()
+            dialog.applyLoqInDialogCorners()
             dialog.setOnShowListener { dialog.styleLoqInDialogButtons() }
             dialog.show()
         }
@@ -654,6 +656,11 @@ open class ToggleOptionsActivity : AppCompatActivity() {
             switchModeBarcode.isChecked = appliedMode == AutomationModeStore.Mode.BARCODE
             switchModeMixed.isChecked = appliedMode == AutomationModeStore.Mode.MIXED
             ignoreControlModeListener = false
+
+            // Entering a single mode auto-disables manual controls; mirror that in the switch.
+            ignoreMixedChannelListener = true
+            switchMixedAllowButton.isChecked = AutomationModeStore.isMixedAllowButton(ctx)
+            ignoreMixedChannelListener = false
 
             val showMixedOnly = appliedMode == AutomationModeStore.Mode.MIXED
             val isNfc = appliedMode == AutomationModeStore.Mode.NFC
@@ -1444,6 +1451,9 @@ open class ToggleOptionsActivity : AppCompatActivity() {
             .setMessage(message)
             .setPositiveButton(R.string.ok, null)
             .create()
+        // Apply the corner background before show: doing it from the show listener
+        // re-measures the centered dialog and makes it shift down as it opens.
+        dialog.applyLoqInDialogCorners()
         dialog.setOnShowListener { dialog.styleLoqInDialogButtons() }
         dialog.show()
     }

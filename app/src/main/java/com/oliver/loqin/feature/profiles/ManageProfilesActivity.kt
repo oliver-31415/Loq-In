@@ -50,6 +50,7 @@ import com.oliver.loqin.feature.picker.AppPickerActivity
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.ui.EdgeToEdgeUtils
 import com.oliver.loqin.ui.ThemeUtils
+import com.oliver.loqin.ui.ToolbarIconAction
 import com.oliver.loqin.ui.attachEditDeleteSwipe
 import com.oliver.loqin.ui.showLoqInStatus
 import com.oliver.loqin.ui.dialog.showDestructiveAccented
@@ -61,7 +62,6 @@ import com.oliver.loqin.util.EditingLockGuard
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.launch
@@ -81,12 +81,6 @@ class ManageProfilesActivity : AppCompatActivity() {
         findViewById<View>(R.id.cardProfilesLimitedEditing)?.visibility = if (locked) View.VISIBLE else View.GONE
         findViewById<MaterialToolbar>(R.id.toolbar)?.subtitle =
             if (locked) getString(R.string.profile_limited_edit_title) else null
-        findViewById<FloatingActionButton>(R.id.fabAdd)?.apply {
-            // Creating another inactive profile does not weaken the profile currently enforcing protection.
-            isEnabled = true
-            isClickable = true
-            alpha = 1f
-        }
         list.alpha = 1f
         if (::adapter.isInitialized && adapter.itemCount > 0) {
             adapter.notifyItemRangeChanged(0, adapter.itemCount)
@@ -112,9 +106,13 @@ class ManageProfilesActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         toolbar.setNavigationOnClickListener { finish() }
         toolbar.setBackgroundColor(AccentColor.getToolbarColor(this))
+        ToolbarIconAction.attach(
+            activity = this,
+            toolbar = toolbar,
+            iconRes = R.drawable.add_24,
+            titleRes = R.string.add_profile,
+        ) { showAddProfileSheet() }
 
-        val fabAdd = findViewById<FloatingActionButton>(R.id.fabAdd)
-        fabAdd.backgroundTintList = AccentColor.getActiveColor(this)
         findViewById<View>(R.id.cardProfilesLimitedEditing)?.setOnClickListener {
             EditingLockGuard.showLockedDialog(this, R.string.edit_locked_manage_profiles)
         }
@@ -128,10 +126,6 @@ class ManageProfilesActivity : AppCompatActivity() {
             onEdit = { position -> adapter.itemAt(position)?.let(::showRenameProfileSheet) },
             onDelete = { position -> adapter.itemAt(position)?.let(::deleteProfile) }
         )
-
-        findViewById<FloatingActionButton>(R.id.fabAdd).setOnClickListener {
-            showAddProfileSheet()
-        }
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {

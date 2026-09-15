@@ -38,6 +38,7 @@ import com.oliver.loqin.R
 import com.oliver.loqin.data.prefs.AutomationModeStore
 import com.oliver.loqin.data.prefs.QrScanCountStore
 import com.oliver.loqin.data.prefs.ScanCodeStore
+import com.oliver.loqin.feature.settings.ControlModeGuidance
 import com.oliver.loqin.nfc.InternalScanDispatchGuard
 import com.oliver.loqin.nfc.NfcEntryActivity
 import com.oliver.loqin.util.ScanFeedback
@@ -80,7 +81,12 @@ class QrScanActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         if (!canOpenScanner()) {
-            finish()
+            ControlModeGuidance.show(
+                activity = this,
+                source = "QR",
+                blockedMessageRes = R.string.mode_blocked_qr_action,
+                finishOnDismiss = true,
+            )
             return
         }
 
@@ -103,7 +109,6 @@ class QrScanActivity : AppCompatActivity() {
             return true
         }
         if (!allowDirectOpen() && !AutomationModeStore.isQrAllowed(this)) {
-            ScanFeedback.error(this, "QR", "control_mode_blocked", getString(R.string.mode_blocked_qr_action))
             return false
         }
         return true
@@ -187,8 +192,12 @@ class QrScanActivity : AppCompatActivity() {
         }
 
         if (!allowDirectOpen() && !AutomationModeStore.isQrAllowed(this)) {
-            ScanFeedback.error(this, "QR", "control_mode_blocked", getString(R.string.mode_blocked_qr_action))
-            finish()
+            ControlModeGuidance.show(
+                activity = this,
+                source = "QR",
+                blockedMessageRes = R.string.mode_blocked_qr_action,
+                finishOnDismiss = true,
+            )
             return
         }
 

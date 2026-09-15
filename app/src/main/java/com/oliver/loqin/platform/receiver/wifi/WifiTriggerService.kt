@@ -221,19 +221,19 @@ class WifiTriggerService : Service() {
 
         val notif = buildNotification()
 
-        // Try a few startForeground variants. Some Android builds are picky about service type handling.
+        // Promote immediately using ServiceCompat, matching the platform FGS contract.
+        // Keep one legacy fallback for OEMs that reject the explicit location type despite a valid manifest/permission setup.
         val ok = runCatching {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                startForeground(NOTIF_ID, notif, ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION)
-            } else {
-                startForeground(NOTIF_ID, notif)
-            }
-        }.recoverCatching {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                startForeground(NOTIF_ID, notif, 0)
-            } else {
-                startForeground(NOTIF_ID, notif)
-            }
+            ServiceCompat.startForeground(
+                this,
+                NOTIF_ID,
+                notif,
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
+                } else {
+                    0
+                }
+            )
         }.recoverCatching {
             startForeground(NOTIF_ID, notif)
         }.isSuccess

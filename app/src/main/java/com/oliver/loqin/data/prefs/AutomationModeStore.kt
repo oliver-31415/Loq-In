@@ -102,7 +102,17 @@ object AutomationModeStore {
 
     fun setMode(context: Context, mode: Mode) {
         val supportedMode = if (isModeSupported(context, mode)) mode else Mode.MIXED
-        prefs(context).edit(commit = true) { putString(KEY_AUTOMATION_MODE, supportedMode.raw) }
+        prefs(context).edit(commit = true) {
+            putString(KEY_AUTOMATION_MODE, supportedMode.raw)
+            // A single-channel mode means "only this channel can change protection".
+            // Manual full control belongs to Mixed mode, so normalize the stored pref off
+            // whenever a single mode is set. This also repairs devices that were already in
+            // a single mode before the manual-controls preference existed. Mixed mode is
+            // never touched, so a deliberate re-enable there is preserved.
+            if (supportedMode != Mode.MIXED) {
+                putBoolean(KEY_MIXED_ALLOW_BUTTON, false)
+            }
+        }
     }
 
     fun isMixedMode(context: Context): Boolean = getMode(context) == Mode.MIXED
@@ -272,10 +282,16 @@ object AutomationModeStore {
 
     /**
      * Manual dashboard button/Quick Settings tile full-control channel.
-     * This is intentionally mode-independent: when enabled, manual controls can turn LoqIn on and off regardless of the selected control mode.
+     *
+     * Manual full control belongs to Mixed mode. In a single-channel mode only that
+     * channel may change protection, so the manual button/tile must not be able to
+     * disable Loq In regardless of the stored manual-controls preference. Enforcing
+     * this here (rather than only when a mode is selected) also covers devices that
+     * were already in a single mode before the manual-controls preference existed.
      * The older key name is kept for migration compatibility.
      */
     fun isButtonAllowed(context: Context): Boolean {
+        if (getMode(context) != Mode.MIXED) return false
         return isMixedAllowButton(context)
     }
 

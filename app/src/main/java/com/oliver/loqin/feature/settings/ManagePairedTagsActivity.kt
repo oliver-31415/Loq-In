@@ -65,7 +65,6 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import java.util.Locale
 
@@ -102,7 +101,6 @@ class ManagePairedTagsActivity : AppCompatActivity() {
     }
 
     private lateinit var adapter: TagAdapter
-    private var fabAdd: FloatingActionButton? = null
 
     private val pairWritableLauncher =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -223,10 +221,6 @@ class ManagePairedTagsActivity : AppCompatActivity() {
             }
         )
 
-        fabAdd = findViewById(R.id.fabAdd)
-        fabAdd?.setOnClickListener {
-            if (!selectionMode) showAddDialog()
-        }
         findViewById<View>(R.id.btnEmptyAddTag)?.setOnClickListener { showAddDialog() }
     }
 
@@ -628,8 +622,8 @@ class ManagePairedTagsActivity : AppCompatActivity() {
     }
 
     override fun onPrepareOptionsMenu(menu: Menu): Boolean {
-        fabAdd?.isVisible = !selectionMode
-        menu.findItem(R.id.action_info)?.isVisible = true
+        menu.findItem(R.id.action_add)?.isVisible = !selectionMode
+        menu.findItem(R.id.action_info)?.isVisible = !selectionMode
         menu.findItem(R.id.action_cancel_select)?.isVisible = selectionMode
         menu.findItem(R.id.action_select)?.isVisible = !selectionMode && adapter.itemCount > 0
         menu.findItem(R.id.action_delete_selected)?.isVisible = selectionMode
@@ -653,6 +647,10 @@ class ManagePairedTagsActivity : AppCompatActivity() {
 
             R.id.action_info -> {
                 showPairedTagsInfoDialog(); true
+            }
+
+            R.id.action_add -> {
+                if (!selectionMode) showAddDialog(); true
             }
 
             R.id.action_select -> {

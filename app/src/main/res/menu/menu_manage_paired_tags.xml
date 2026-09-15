@@ -10,6 +10,13 @@
         app:showAsAction="ifRoom" />
 
     <item
+        android:id="@+id/action_add"
+        android:icon="@drawable/add_24"
+        android:orderInCategory="15"
+        android:title="@string/paired_tags_add_title"
+        app:showAsAction="always" />
+
+    <item
         android:id="@+id/action_cancel_select"
         android:icon="@drawable/close_24"
         android:orderInCategory="20"

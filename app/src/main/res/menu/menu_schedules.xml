@@ -10,6 +10,13 @@
         app:showAsAction="ifRoom" />
 
     <item
+        android:id="@+id/action_add"
+        android:icon="@drawable/add_24"
+        android:orderInCategory="15"
+        android:title="@string/schedules_add"
+        app:showAsAction="always" />
+
+    <item
         android:id="@+id/action_cancel_selection"
         android:icon="@drawable/close_24"
         android:orderInCategory="20"

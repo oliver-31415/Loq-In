@@ -149,7 +149,8 @@ dependencies {
     add("implementation", "com.google.guava:guava:33.5.0-android")
 
     // Barcode scanning and QR generation
-    add("implementation", "com.google.android.gms:play-services-mlkit-barcode-scanning:18.3.1")
+    // Bundled ML Kit model so scanning works without Google Play Services (offline build).
+    add("implementation", "com.google.mlkit:barcode-scanning:17.3.0")
     add("implementation", "com.google.zxing:core:3.5.4")
 }
 

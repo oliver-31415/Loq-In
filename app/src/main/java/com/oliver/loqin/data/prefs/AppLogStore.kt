@@ -64,6 +64,7 @@ object AppLogStore {
         val body = entryBody(tag, message, error)
         val entry = "${timestamp()} $body"
         ActivityHistoryLogStore.append(context, entry, tag, message)
+        runCatching { DiagnosticsTimelineStore.record(context, tag, message) }
 
         val prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val current = prefs.getString(KEY_LINES, null)

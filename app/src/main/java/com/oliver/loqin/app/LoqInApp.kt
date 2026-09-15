@@ -38,6 +38,7 @@ import com.oliver.loqin.util.AdvancedProtectionCompat
 import com.oliver.loqin.util.FrameworkApi34Compat
 import com.oliver.loqin.util.ManagedDevicePolicyHelper
 import com.oliver.loqin.util.PersistentStatusNotifier
+import com.oliver.loqin.util.SettingsSchemaMigration
 import java.util.concurrent.Executors
 
 class LoqInApp : Application() {
@@ -53,6 +54,9 @@ class LoqInApp : Application() {
         // Install the API-34 compatibility shield before any activity is created.
         // It is a no-op on conforming Android framework builds.
         FrameworkApi34Compat.installActivityCrashShield(this)
+
+        // Establish the versioned settings schema marker before any feature reads preferences.
+        runCatching { SettingsSchemaMigration.ensureCurrent(this) }
 
         // language
         LocaleHelper.setLanguage(this, LocaleHelper.getSavedLanguage(this))

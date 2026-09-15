@@ -182,6 +182,7 @@ fun Context.showLoqInInfoDialog(
             .setPositiveButton(positiveText, null)
             .create()
         dialog.applyLoqInDialogWidth(0.90f)
+        dialog.applyLoqInDialogCorners()
         dialog.setOnShowListener {
             dialog.styleLoqInDialogButtons()
         }
@@ -243,6 +244,7 @@ fun Context.showLoqInInfoDialog(
         .setPositiveButton(positiveText, null)
         .create()
     dialog.applyLoqInDialogWidth(0.90f)
+    dialog.applyLoqInDialogCorners()
     dialog.setOnShowListener {
         dialog.styleLoqInDialogButtons()
     }
@@ -262,6 +264,9 @@ fun AlertDialog.styleLoqInDestructivePositiveButton() {
 
 fun MaterialAlertDialogBuilder.showDestructiveAccented(): AlertDialog {
     val dlg = this.create()
+    // Apply corners before show(): changing the window background after the first
+    // layout re-measures the centered dialog and makes it jump.
+    dlg.applyLoqInDialogCorners()
     dlg.setOnShowListener { dlg.styleLoqInDestructivePositiveButton() }
     dlg.show()
     return dlg
@@ -269,6 +274,7 @@ fun MaterialAlertDialogBuilder.showDestructiveAccented(): AlertDialog {
 
 fun AlertDialog.Builder.showDestructiveAccented(): AlertDialog {
     val dlg = this.create()
+    dlg.applyLoqInDialogCorners()
     dlg.setOnShowListener { dlg.styleLoqInDestructivePositiveButton() }
     dlg.show()
     return dlg
@@ -277,6 +283,7 @@ fun AlertDialog.Builder.showDestructiveAccented(): AlertDialog {
 // Show a Material dialog and enforce custom accent colors at runtime (CUSTOM accent mode), including list check indicators (radio/checkbox) which often fall back to OEM green.
 fun MaterialAlertDialogBuilder.showAccented(): AlertDialog {
     val dlg = this.create()
+    dlg.applyLoqInDialogCorners()
     dlg.setOnShowListener {
         dlg.styleLoqInDialogButtons()
     }
@@ -287,6 +294,7 @@ fun MaterialAlertDialogBuilder.showAccented(): AlertDialog {
 // Show an AppCompat dialog and enforce custom accent colors at runtime (CUSTOM accent mode).
 fun AlertDialog.Builder.showAccented(): AlertDialog {
     val dlg = this.create()
+    dlg.applyLoqInDialogCorners()
     dlg.setOnShowListener {
         dlg.styleLoqInDialogButtons()
     }
@@ -469,6 +477,11 @@ private fun Context.showLoqInOptionDialogInternal(
     }
     dialog = builder.create()
     dialog.window?.setLayout((resources.displayMetrics.widthPixels * widthFraction).toInt(), ViewGroup.LayoutParams.WRAP_CONTENT)
+    // Apply the Loq In corners/insets BEFORE the dialog is shown. Doing it inside the
+    // show listener would change the window background after the first layout, and
+    // because the dialog is centered that reshuffles its height and makes it appear
+    // high and then jump to its final position.
+    runCatching { dialog.applyLoqInDialogCorners() }
 
     dialog.setOnShowListener {
         dialog.styleLoqInDialogButtons()
@@ -729,6 +742,7 @@ fun Context.showLoqInMultiChoiceDialog(
         dialog.dismiss()
     }
     dialog.window?.setLayout((resources.displayMetrics.widthPixels * widthFraction).toInt(), ViewGroup.LayoutParams.WRAP_CONTENT)
+    dialog.applyLoqInDialogCorners()
     dialog.setOnShowListener {
         if (!forceHorizontalButtons) {
             if (options.any { it.destructive }) dialog.styleLoqInDestructivePositiveButton() else dialog.styleLoqInDialogButtons()
@@ -759,6 +773,25 @@ fun Context.showLoqInOptionDialog(
 )
 
 /**
+ * Applies LoqIn's dialog text/checkbox colors to a checkbox embedded in a dialog.
+ *
+ * Dialogs are built with the activity context, which is pinned to a light theme,
+ * while the dialog surface follows the live day/night configuration. Without an
+ * explicit color the checkbox label resolves to dark text and becomes invisible
+ * on the dark dialog surface (see EditingLockGuard for the same fix).
+ */
+fun CheckBox.styleForDialog(context: Context) {
+    val night = (context.resources.configuration.uiMode and
+        android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+        android.content.res.Configuration.UI_MODE_NIGHT_YES
+    setTextColor(if (night) 0xFFF2F1EC.toInt() else 0xFF1B1B18.toInt())
+    CompoundButtonCompat.setButtonTintList(
+        this,
+        CustomAccentApplier.buildCheckableTint(context, AccentColor.getAccentColorInt(context))
+    )
+}
+
+/**
  * Apply LoqIn's *one* consistent dialog button style everywhere.
  * Design rules (matches the Google/Account popups look):
  * - Positive action: filled with current accent, readable on-accent text (black/white)
@@ -777,12 +810,12 @@ fun AlertDialog.styleLoqInDialogButtons() {
 
     fun dp(v: Int): Int = (v * context.resources.displayMetrics.density).toInt()
 
-    // Plain message dialogs should still feel like the same component as the richer LoqIn diagnostic dialogs, especially with longer German copy on smaller displays.
+    // Plain message dialogs share one body look. Size, line spacing and wrapping come
+    // from TextAppearance.LoqIn.DialogBody via the dialog theme so the message is
+    // measured correctly on first layout. Only set the color here: color does not
+    // affect measurement, so it cannot move the centered dialog after it appears.
     findViewById<TextView>(android.R.id.message)?.apply {
         setTextColor(ColorUtils.setAlphaComponent(onSurface, 0xDE))
-        setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
-        setLineSpacing(dp(2).toFloat(), 1.06f)
-        maxLines = Int.MAX_VALUE
     }
 
     fun styleCommon(b: Button) {
@@ -847,6 +880,12 @@ fun AlertDialog.styleLoqInDialogButtons() {
 }
 
 fun AlertDialog.applyLoqInDialogCorners(radiusDp: Float = 24f) {
+    // Idempotent: styling may run both before show() and again from the show listener.
+    // Re-setting the background after layout would re-measure the centered dialog and
+    // make it jump, so only apply once per window.
+    val w = window ?: return
+    if (cornersApplied.contains(w)) return
+    cornersApplied.add(w)
     val r = radiusDp * context.resources.displayMetrics.density + 0.5f
     val surface = MaterialColors.getColor(context, com.google.android.material.R.attr.colorSurface, Color.BLACK)
     val bg = android.graphics.drawable.GradientDrawable().apply {
@@ -855,8 +894,12 @@ fun AlertDialog.applyLoqInDialogCorners(radiusDp: Float = 24f) {
     }
     val insetH = (12 * context.resources.displayMetrics.density + 0.5f).toInt()
     val insetV = (16 * context.resources.displayMetrics.density + 0.5f).toInt()
-    window?.setBackgroundDrawable(android.graphics.drawable.InsetDrawable(bg, insetH, insetV, insetH, insetV))
+    w.setBackgroundDrawable(android.graphics.drawable.InsetDrawable(bg, insetH, insetV, insetH, insetV))
 }
+
+private val cornersApplied = java.util.Collections.newSetFromMap(
+    java.util.WeakHashMap<android.view.Window, Boolean>()
+)
 
 fun AlertDialog.applyLoqInDialogWidth(widthFraction: Float = 0.94f) {
     val targetWidth = (context.resources.displayMetrics.widthPixels * widthFraction).toInt()
@@ -928,6 +971,7 @@ fun Context.showLoqInFormDialog(
         .setView(content)
         .create()
     dialog.applyLoqInDialogWidth(widthFraction)
+    dialog.applyLoqInDialogCorners()
     dialog.setOnShowListener {
         runCatching { CustomAccentApplier.applyToDialog(dialog) }
         styleLoqInFormButtons(

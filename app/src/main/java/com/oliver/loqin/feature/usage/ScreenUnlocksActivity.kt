@@ -20,7 +20,6 @@ package com.oliver.loqin.feature.usage
 
 import android.content.Context
 import android.content.Intent
-import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Bundle
@@ -49,8 +48,10 @@ import com.oliver.loqin.feature.stats.StatsFormat
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.ui.EdgeToEdgeUtils
 import com.oliver.loqin.ui.LoqInDropdownAdapter
+import com.oliver.loqin.ui.ToolbarIconAction
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.dialog.showAccented
+import com.oliver.loqin.ui.dialog.styleForDialog
 import com.oliver.loqin.util.LocaleHelper
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.appbar.MaterialToolbar
@@ -61,7 +62,6 @@ import com.google.android.material.divider.MaterialDivider
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import java.text.DateFormat
 import java.util.Calendar
@@ -117,6 +117,12 @@ class ScreenUnlocksActivity : AppCompatActivity() {
             setBackgroundColor(AccentColor.getToolbarColor(this@ScreenUnlocksActivity))
         }
         UsageInfoAction.attach(this, toolbar, R.string.screen_unlocks_info_title, R.string.screen_unlocks_info_body)
+        ToolbarIconAction.attach(
+            activity = this,
+            toolbar = toolbar,
+            iconRes = R.drawable.tune_24,
+            titleRes = R.string.screen_unlocks_sort_filter_title,
+        ) { showSortFilterDialog() }
         root.addView(AppBarLayout(this).apply {
             fitsSystemWindows = true
             addView(toolbar, AppBarLayout.LayoutParams(
@@ -139,22 +145,6 @@ class ScreenUnlocksActivity : AppCompatActivity() {
             CoordinatorLayout.LayoutParams.MATCH_PARENT,
             CoordinatorLayout.LayoutParams.MATCH_PARENT
         ))
-        coordinator.addView(FloatingActionButton(this).apply {
-            setImageResource(R.drawable.tune_24)
-            val accent = AccentColor.getAccentColorInt(this@ScreenUnlocksActivity)
-            backgroundTintList = ColorStateList.valueOf(accent)
-            imageTintList = ColorStateList.valueOf(if (MaterialColors.isColorLight(accent)) Color.BLACK else Color.WHITE)
-            contentDescription = getString(R.string.screen_unlocks_sort_filter_title)
-            setOnClickListener { showSortFilterDialog() }
-            useCompatPadding = true
-        }, CoordinatorLayout.LayoutParams(
-            CoordinatorLayout.LayoutParams.WRAP_CONTENT,
-            CoordinatorLayout.LayoutParams.WRAP_CONTENT
-        ).apply {
-            gravity = Gravity.BOTTOM or Gravity.END
-            marginEnd = dp(16)
-            bottomMargin = dp(96)
-        })
         setContentView(coordinator)
         EdgeToEdgeUtils.setupClassic(activity = this, toolbar = toolbar)
         updateScopeSubtitle()
@@ -273,7 +263,7 @@ class ScreenUnlocksActivity : AppCompatActivity() {
         hideShort.text = getString(R.string.screen_unlocks_filter_short)
         hideShort.isChecked = hideVeryShortUnlocks
         hideShort.visibility = View.VISIBLE
-        hideShort.buttonTintList = ColorStateList.valueOf(AccentColor.getAccentColorInt(this))
+        hideShort.styleForDialog(this)
 
         MaterialAlertDialogBuilder(this)
             .setTitle(R.string.screen_unlocks_sort_filter_title)

@@ -46,6 +46,7 @@ import com.oliver.loqin.data.prefs.SwitchModeStore
 import com.oliver.loqin.data.prefs.TempEnableCountStore
 import com.oliver.loqin.data.prefs.TempPauseStore
 import com.oliver.loqin.feature.qr.QrScanActivity
+import com.oliver.loqin.feature.settings.ControlModeGuidance
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.dialog.ClockDurationDialSheet
 import com.oliver.loqin.util.ScanFeedback
@@ -64,7 +65,7 @@ class NfcEntryActivity : Activity() {
         handleIncomingIntent(intent)
     }
 
-    override fun onNewIntent(intent: Intent?) {
+    override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
         handleIncomingIntent(intent)
@@ -126,21 +127,25 @@ class NfcEntryActivity : Activity() {
             return
         }
 
-        // Respect user-selected control mode.
-        if (fromNfc && !AutomationModeStore.isNfcAllowed(this)) {
-            NfcDiagnosticsStore.recordFailure(this, "nfc_channel_disabled")
-            ScanFeedback.error(this, "NFC", "control_mode_blocked", getString(R.string.mode_blocked_nfc_action))
-            finish()
-            return
-        }
+        // QR/barcode are trusted internal scans, so their control-mode gate can run immediately.
+        // NFC is different: Android may dispatch unrelated contactless cards and other tags to this activity.
+        // Resolve a real Loq In action or paired UID first so those foreign tags stay silent instead of producing a misleading control-mode warning.
         if (fromBarcode && !AutomationModeStore.isBarcodeAllowed(this)) {
-            ScanFeedback.error(this, "Barcode", "control_mode_blocked", getString(R.string.mode_blocked_barcode_action))
-            finish()
+            ControlModeGuidance.show(
+                activity = this,
+                source = "Barcode",
+                blockedMessageRes = R.string.mode_blocked_barcode_action,
+                finishOnDismiss = true,
+            )
             return
         }
         if (fromQr && !AutomationModeStore.isQrAllowed(this)) {
-            ScanFeedback.error(this, "QR", "control_mode_blocked", getString(R.string.mode_blocked_qr_action))
-            finish()
+            ControlModeGuidance.show(
+                activity = this,
+                source = "QR",
+                blockedMessageRes = R.string.mode_blocked_qr_action,
+                finishOnDismiss = true,
+            )
             return
         }
 
@@ -169,6 +174,16 @@ class NfcEntryActivity : Activity() {
                 if (pairedUidsEnabled && pairedUids.isNotEmpty() && seenUid.isNotBlank() &&
                     pairedUids.any { it.equals(seenUid, ignoreCase = true) } &&
                     NfcUidPairingStore.supportsUidOnlyAction(this, seenUid)) {
+                    if (!AutomationModeStore.isNfcAllowed(this)) {
+                        NfcDiagnosticsStore.recordFailure(this, "nfc_channel_disabled")
+                        ControlModeGuidance.show(
+                            activity = this,
+                            source = "NFC",
+                            blockedMessageRes = R.string.mode_blocked_nfc_action,
+                            finishOnDismiss = true,
+                        )
+                        return
+                    }
                     NfcScanCountStore.incrementToday(this)
                     val finishAfterHandling = handlePairedUidAction(tag, seenUid)
                     if (finishAfterHandling) {
@@ -184,8 +199,8 @@ class NfcEntryActivity : Activity() {
                     pairedUids.none { it.equals(seenUid, ignoreCase = true) } -> "no_loqin_action_uid_not_paired"
                     else -> "no_loqin_action_uid_action_disabled"
                 }
-                NfcDiagnosticsStore.recordFailure(this, reason)
-                ScanFeedback.error(this, "NFC", "not_linked", getString(R.string.scan_error_nfc_not_linked))
+                NfcDiagnosticsStore.recordIgnoredTag(this, reason)
+                AppLogStore.append(this, "NFC", "Ignored unrelated/unpaired NFC tag: $reason")
                 finish()
                 return
             }
@@ -210,6 +225,18 @@ class NfcEntryActivity : Activity() {
         }
 
         if (fromNfc) {
+            // At this point NFC has been positively identified as a Loq In action.
+            // Only now should the selected control mode be allowed to reject it with user-visible feedback.
+            if (!AutomationModeStore.isNfcAllowed(this)) {
+                NfcDiagnosticsStore.recordFailure(this, "nfc_channel_disabled")
+                ControlModeGuidance.show(
+                    activity = this,
+                    source = "NFC",
+                    blockedMessageRes = R.string.mode_blocked_nfc_action,
+                    finishOnDismiss = true,
+                )
+                return
+            }
             NfcScanCountStore.incrementToday(this)
         }
 

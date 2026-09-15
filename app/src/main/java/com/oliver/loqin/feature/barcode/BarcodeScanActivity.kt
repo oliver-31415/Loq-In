@@ -38,6 +38,7 @@ import com.oliver.loqin.R
 import com.oliver.loqin.data.prefs.AutomationModeStore
 import com.oliver.loqin.data.prefs.BarcodeScanCountStore
 import com.oliver.loqin.data.prefs.ScanCodeStore
+import com.oliver.loqin.feature.settings.ControlModeGuidance
 import com.oliver.loqin.nfc.InternalScanDispatchGuard
 import com.oliver.loqin.nfc.NfcEntryActivity
 import com.oliver.loqin.util.ScanFeedback
@@ -93,7 +94,12 @@ class BarcodeScanActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
 
         if (!canOpenScanner()) {
-            finish()
+            ControlModeGuidance.show(
+                activity = this,
+                source = "Barcode",
+                blockedMessageRes = R.string.mode_blocked_barcode_action,
+                finishOnDismiss = true,
+            )
             return
         }
 
@@ -116,7 +122,6 @@ class BarcodeScanActivity : AppCompatActivity() {
             return true
         }
         if (!allowDirectOpen() && !AutomationModeStore.isBarcodeAllowed(this)) {
-            ScanFeedback.error(this, "Barcode", "control_mode_blocked", getString(R.string.mode_blocked_barcode_action))
             return false
         }
         return true
@@ -216,8 +221,12 @@ class BarcodeScanActivity : AppCompatActivity() {
         }
 
         if (!allowDirectOpen() && !AutomationModeStore.isBarcodeAllowed(this)) {
-            ScanFeedback.error(this, "Barcode", "control_mode_blocked", getString(R.string.mode_blocked_barcode_action))
-            finish()
+            ControlModeGuidance.show(
+                activity = this,
+                source = "Barcode",
+                blockedMessageRes = R.string.mode_blocked_barcode_action,
+                finishOnDismiss = true,
+            )
             return
         }
 
