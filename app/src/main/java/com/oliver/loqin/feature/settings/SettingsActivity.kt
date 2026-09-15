@@ -65,6 +65,7 @@ import com.oliver.loqin.ui.dialog.EmergencyPinDialog
 import com.oliver.loqin.util.LocaleHelper
 import com.oliver.loqin.util.ActivityTransitionCompat
 import com.oliver.loqin.util.LoqInAppAccessGuard
+import com.oliver.loqin.util.EditingLockGuard
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -725,11 +726,21 @@ class SettingsActivity : AppCompatActivity() {
                 )
                 return true
             }
+            if (EditingLockGuard.isSuppressed(source)) {
+                ActivityTransitionCompat.switchWithoutAnimation(
+                    activity = source,
+                    intent = Intent(source, SettingsActivity::class.java),
+                    finishCurrent = finishSourceAfterOpen,
+                )
+                return false
+            }
 
-            AlertDialog.Builder(source)
+            val builder = AlertDialog.Builder(source)
                 .setTitle(R.string.loqin_settings_locked_title)
                 .setMessage(R.string.settings_restricted_open_message)
-                .setPositiveButton(R.string.settings_open_restricted) { _, _ ->
+            val persistChoice = EditingLockGuard.addDontShowAgain(builder, source)
+            builder.setPositiveButton(R.string.settings_open_restricted) { _, _ ->
+                    persistChoice()
                     ActivityTransitionCompat.switchWithoutAnimation(
                         activity = source,
                         intent = Intent(source, SettingsActivity::class.java),

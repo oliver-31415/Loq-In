@@ -121,11 +121,21 @@ class AccountActivity : AppCompatActivity() {
                 )
                 return true
             }
+            if (EditingLockGuard.isSuppressed(source)) {
+                ActivityTransitionCompat.switchWithoutAnimation(
+                    activity = source,
+                    intent = Intent(source, AccountActivity::class.java),
+                    finishCurrent = finishSourceAfterOpen,
+                )
+                return false
+            }
 
-            AlertDialog.Builder(source)
+            val builder = AlertDialog.Builder(source)
                 .setTitle(R.string.loqin_account_locked_title)
                 .setMessage(R.string.account_restricted_open_message)
-                .setPositiveButton(R.string.account_open_restricted) { _, _ ->
+            val persistChoice = EditingLockGuard.addDontShowAgain(builder, source)
+            builder.setPositiveButton(R.string.account_open_restricted) { _, _ ->
+                    persistChoice()
                     ActivityTransitionCompat.switchWithoutAnimation(
                         activity = source,
                         intent = Intent(source, AccountActivity::class.java),
