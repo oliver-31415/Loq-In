@@ -160,6 +160,8 @@ class PermissionsActivity : AppCompatActivity() {
             core,
             iconRes = R.drawable.security_24,
             titleRes = R.string.permissions_accessibility_title,
+            summaryRes = R.string.permissions_summary_accessibility,
+            required = true,
             whyTitleRes = R.string.permissions_accessibility_title,
             whyMessageProvider = {
                 getString(
@@ -177,6 +179,8 @@ class PermissionsActivity : AppCompatActivity() {
             core,
             iconRes = R.drawable.bar_chart_24,
             titleRes = R.string.permissions_usage_access_title,
+            summaryRes = R.string.permissions_summary_usage_access,
+            required = true,
             whyTitleRes = R.string.permissions_usage_access_title,
             whyMessageRes = R.string.permissions_usage_access_desc,
             onClick = { safeStart(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)) },
@@ -186,6 +190,7 @@ class PermissionsActivity : AppCompatActivity() {
             notifications,
             iconRes = R.drawable.notifications_24,
             titleRes = R.string.permissions_notifications_title,
+            summaryRes = R.string.permissions_summary_notifications,
             whyTitleRes = R.string.permissions_notifications_title,
             whyMessageRes = R.string.permissions_notifications_desc,
             onClick = { openOrRequestNotifications() },
@@ -195,6 +200,7 @@ class PermissionsActivity : AppCompatActivity() {
             notifications,
             iconRes = R.drawable.security_24,
             titleRes = R.string.permissions_notification_access_title,
+            summaryRes = R.string.permissions_summary_notification_access,
             whyTitleRes = R.string.permissions_notification_access_title,
             whyMessageRes = R.string.permissions_notification_access_desc,
             onClick = {
@@ -208,6 +214,7 @@ class PermissionsActivity : AppCompatActivity() {
             triggers,
             iconRes = R.drawable.alarm_24,
             titleRes = R.string.permissions_exact_alarms_title,
+            summaryRes = R.string.permissions_summary_exact_alarms,
             whyTitleRes = R.string.permissions_exact_alarms_title,
             whyMessageProvider = {
                 getString(R.string.permissions_exact_alarms_summary) + "\n\n" +
@@ -220,6 +227,7 @@ class PermissionsActivity : AppCompatActivity() {
             triggers,
             iconRes = R.drawable.nfc_24,
             titleRes = R.string.permissions_nfc_title,
+            summaryRes = R.string.permissions_summary_nfc,
             whyTitleRes = R.string.permissions_nfc_title,
             whyMessageRes = R.string.permissions_nfc_desc,
             onClick = { openNfcSettings() },
@@ -229,6 +237,7 @@ class PermissionsActivity : AppCompatActivity() {
             triggers,
             iconRes = R.drawable.location_on_24,
             titleRes = R.string.permissions_location_title,
+            summaryRes = R.string.permissions_summary_location,
             whyTitleRes = R.string.permissions_location_title,
             whyMessageRes = R.string.permissions_location_desc,
             onClick = {
@@ -245,6 +254,7 @@ class PermissionsActivity : AppCompatActivity() {
             triggers,
             iconRes = R.drawable.bluetooth_24,
             titleRes = R.string.permissions_bluetooth_title,
+            summaryRes = R.string.permissions_summary_bluetooth,
             whyTitleRes = R.string.permissions_bluetooth_title,
             whyMessageRes = R.string.permissions_bluetooth_desc,
             onClick = {
@@ -260,6 +270,7 @@ class PermissionsActivity : AppCompatActivity() {
             battery,
             iconRes = R.drawable.battery_24,
             titleRes = R.string.permissions_battery_title,
+            summaryRes = R.string.permissions_summary_battery,
             whyTitleRes = R.string.permissions_battery_title,
             whyMessageProvider = {
                 getString(R.string.permissions_battery_desc) + "\n\n" +
@@ -278,6 +289,7 @@ class PermissionsActivity : AppCompatActivity() {
             autostart,
             iconRes = R.drawable.battery_24,
             titleRes = R.string.permissions_autostart_title,
+            summaryRes = R.string.permissions_summary_autostart,
             whyTitleRes = R.string.permissions_autostart_title,
             whyMessageRes = R.string.permissions_autostart_desc,
             onClick = {
@@ -300,9 +312,11 @@ class PermissionsActivity : AppCompatActivity() {
         container: LinearLayout,
         iconRes: Int,
         titleRes: Int,
+        summaryRes: Int,
         whyTitleRes: Int,
         whyMessageRes: Int? = null,
         whyMessageProvider: (() -> String)? = null,
+        required: Boolean = false,
         onClick: () -> Unit,
     ): SetupCardRow.Holder {
         val holder = SetupCardRow.build(
@@ -310,6 +324,7 @@ class PermissionsActivity : AppCompatActivity() {
             SetupCardRow.Spec(
                 title = getString(titleRes),
                 iconRes = iconRes,
+                info = getString(summaryRes),
                 onClick = onClick,
                 onInfoClick = {
                     val message = whyMessageProvider?.invoke() ?: getString(whyMessageRes!!)
@@ -318,6 +333,7 @@ class PermissionsActivity : AppCompatActivity() {
                 infoContentDescription = getString(R.string.permissions_why_dialog_header),
             ),
         )
+        holder.card.tag = required
         container.addView(holder.card)
         cards += holder
         return holder
@@ -386,8 +402,17 @@ class PermissionsActivity : AppCompatActivity() {
             NfcLaunchAccessCompat.State.NFC_DISABLED
         )
 
-        val enabledText = getString(R.string.permissions_status_enabled)
-        val disabledText = getString(R.string.permissions_status_disabled)
+        val readyText = getString(R.string.permissions_status_ready)
+        val setupText = getString(R.string.permissions_status_setup_needed)
+        val requiredBadge = getString(R.string.permissions_badge_required)
+
+        // Matches onboarding: "Ready" when satisfied, otherwise "Setup needed" (plus
+        // "· Required" for the two core permissions).
+        fun status(ok: Boolean, required: Boolean = false): String = when {
+            ok -> readyText
+            required -> "$setupText · $requiredBadge"
+            else -> setupText
+        }
 
         // Accessibility (special multi-state status).
         val accStatus = accessibilityStatusText(
@@ -399,29 +424,14 @@ class PermissionsActivity : AppCompatActivity() {
         )
         accessibilityCard.setState(accStatus.text, ok = accessibilityRuntime, error = accStatus.error)
 
-        usageAccessCard.setState(if (usageAccessOk) enabledText else disabledText, ok = usageAccessOk, error = !usageAccessOk)
+        usageAccessCard.setState(status(usageAccessOk, required = true), ok = usageAccessOk)
 
-        notificationsCard.setState(
-            if (notificationsOk) enabledText else disabledText,
-            ok = notificationsOk,
-            error = !notificationsOk,
-        )
+        notificationsCard.setState(status(notificationsOk), ok = notificationsOk)
 
-        notificationAccessCard.setState(
-            if (notificationAccessGranted) enabledText else disabledText,
-            ok = notificationAccessGranted,
-            error = notificationBlockingEnabled && !notificationAccessGranted,
-        )
+        notificationAccessCard.setState(status(notificationAccessGranted), ok = notificationAccessGranted)
 
         // Exact alarms
-        exactAlarmsCard.setState(
-            getString(
-                if (exactAlarmsOk) R.string.permissions_exact_alarms_allowed
-                else R.string.permissions_exact_alarms_not_allowed
-            ),
-            ok = exactAlarmsOk,
-            error = !exactAlarmsOk,
-        )
+        exactAlarmsCard.setState(status(exactAlarmsOk), ok = exactAlarmsOk)
 
         // NFC
         val nfcSupported = AutomationModeStore.isNfcSupported(this)
@@ -429,43 +439,38 @@ class PermissionsActivity : AppCompatActivity() {
             !nfcSupported -> nfcCard.setState(getString(R.string.mode_not_supported_on_device), ok = false)
             else -> when (NfcLaunchAccessCompat.state(this)) {
                 NfcLaunchAccessCompat.State.ALLOWED ->
-                    nfcCard.setState(enabledText, ok = true)
+                    nfcCard.setState(readyText, ok = true)
                 NfcLaunchAccessCompat.State.NOT_ALLOWED ->
-                    nfcCard.setState(getString(R.string.permissions_nfc_status_not_allowed), ok = false, error = true)
+                    nfcCard.setState(getString(R.string.permissions_nfc_status_not_allowed), ok = false)
                 NfcLaunchAccessCompat.State.NFC_DISABLED ->
-                    nfcCard.setState(getString(R.string.permissions_nfc_status_system_disabled), ok = false, error = true)
+                    nfcCard.setState(getString(R.string.permissions_nfc_status_system_disabled), ok = false)
                 NfcLaunchAccessCompat.State.UNKNOWN ->
                     nfcCard.setState(getString(R.string.permissions_nfc_status_manual), ok = false)
             }
         }
         nfcCard.setLocked(false)
 
-        // Location
+        // Location (more specific statuses than plain Ready/Setup needed).
         val locationStatus = when (locationState) {
-            LocationState.OK -> null to false
-            LocationState.MISSING -> disabledText to true
-            LocationState.APPROX_ONLY -> getString(R.string.permissions_status_location_approx) to true
-            LocationState.BACKGROUND_MISSING -> getString(R.string.permissions_status_location_background_missing) to true
-            LocationState.NEARBY_WIFI_MISSING -> getString(R.string.permissions_status_nearby_wifi_missing) to true
+            LocationState.OK -> readyText
+            LocationState.MISSING -> setupText
+            LocationState.APPROX_ONLY -> getString(R.string.permissions_status_location_approx)
+            LocationState.BACKGROUND_MISSING -> getString(R.string.permissions_status_location_background_missing)
+            LocationState.NEARBY_WIFI_MISSING -> getString(R.string.permissions_status_nearby_wifi_missing)
         }
-        locationCard.setState(
-            locationStatus.first ?: enabledText,
-            ok = locationOk,
-            error = locationStatus.second,
-        )
+        locationCard.setState(locationStatus, ok = locationOk)
 
-        bluetoothCard.setState(if (btGranted) enabledText else disabledText, ok = btGranted, error = !btGranted)
+        bluetoothCard.setState(status(btGranted), ok = btGranted)
 
         // Battery
         batteryCard.setState(
             when {
                 batteryOk && isBatteryOptimizationUserConfirmedMaxAvailable() ->
                     getString(R.string.permissions_battery_highest_available)
-                batteryOk -> getString(R.string.permissions_battery_allowed)
+                batteryOk -> readyText
                 else -> getString(R.string.permissions_battery_not_allowed)
             },
             ok = batteryOk,
-            error = !batteryOk,
         )
 
         // OEM autostart

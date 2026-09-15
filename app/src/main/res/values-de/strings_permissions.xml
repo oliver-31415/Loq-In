@@ -12,10 +12,25 @@
     <string name="permissions_toolbar_issues">Probleme</string>
     <string name="permissions_status_enabled">Aktiviert</string>
     <string name="permissions_status_disabled">Deaktiviert</string>
+    <string name="permissions_status_ready">Bereit</string>
+    <string name="permissions_status_setup_needed">Einrichtung nötig</string>
+    <string name="permissions_badge_required">Erforderlich</string>
     <string name="permissions_status_not_connected">Aktiviert, nicht verbunden</string>
     <string name="permissions_status_location_approx">Ungefähr (Präzise erforderlich)</string>
     <string name="permissions_status_location_background_missing">Nur während der App-Nutzung (WLAN evtl. weniger zuverlässig; standortbasierte Zeitpläne brauchen „Immer erlauben“)</string>
     <string name="permissions_status_nearby_wifi_missing">Berechtigung für WLAN-Geräte in der Nähe fehlt</string>
+
+    <!-- Kurze Zusammenfassungen je Einrichtungskarte (wie im Onboarding). -->
+    <string name="permissions_summary_accessibility">Erforderlich für App- und Website-Blockierung.</string>
+    <string name="permissions_summary_usage_access">Ermöglicht Nutzungsstatistiken und App-Limits.</string>
+    <string name="permissions_summary_notifications">Für Benachrichtigungsblockierung und Erinnerungen.</string>
+    <string name="permissions_summary_notification_access">Ermöglicht Loq In, blockierte Benachrichtigungen auszublenden.</string>
+    <string name="permissions_summary_exact_alarms">Hilft, Zeitpläne pünktlich auszuführen.</string>
+    <string name="permissions_summary_nfc">Nötig, um Loq In per NFC-Tag zu starten.</string>
+    <string name="permissions_summary_location">Nötig für WLAN- und Standort-Zeitpläne.</string>
+    <string name="permissions_summary_bluetooth">Nötig für Bluetooth-Zeitpläne.</string>
+    <string name="permissions_summary_battery">Hilft, dass Loq In im Hintergrund zuverlässig bleibt.</string>
+    <string name="permissions_summary_autostart">Ermöglicht Loq In, auf diesem Gerät weiterzulaufen.</string>
 
     <!-- ====================================================== -->
     <!-- Core permissions -->
