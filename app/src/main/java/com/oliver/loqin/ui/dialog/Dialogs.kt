@@ -469,6 +469,11 @@ private fun Context.showLoqInOptionDialogInternal(
     }
     dialog = builder.create()
     dialog.window?.setLayout((resources.displayMetrics.widthPixels * widthFraction).toInt(), ViewGroup.LayoutParams.WRAP_CONTENT)
+    // Apply the Loq In corners/insets BEFORE the dialog is shown. Doing it inside the
+    // show listener would change the window background after the first layout, and
+    // because the dialog is centered that reshuffles its height and makes it appear
+    // high and then jump to its final position.
+    runCatching { dialog.applyLoqInDialogCorners() }
 
     dialog.setOnShowListener {
         dialog.styleLoqInDialogButtons()
@@ -866,6 +871,12 @@ fun AlertDialog.styleLoqInDialogButtons() {
 }
 
 fun AlertDialog.applyLoqInDialogCorners(radiusDp: Float = 24f) {
+    // Idempotent: styling may run both before show() and again from the show listener.
+    // Re-setting the background after layout would re-measure the centered dialog and
+    // make it jump, so only apply once per window.
+    val w = window ?: return
+    if (cornersApplied.contains(w)) return
+    cornersApplied.add(w)
     val r = radiusDp * context.resources.displayMetrics.density + 0.5f
     val surface = MaterialColors.getColor(context, com.google.android.material.R.attr.colorSurface, Color.BLACK)
     val bg = android.graphics.drawable.GradientDrawable().apply {
@@ -874,8 +885,12 @@ fun AlertDialog.applyLoqInDialogCorners(radiusDp: Float = 24f) {
     }
     val insetH = (12 * context.resources.displayMetrics.density + 0.5f).toInt()
     val insetV = (16 * context.resources.displayMetrics.density + 0.5f).toInt()
-    window?.setBackgroundDrawable(android.graphics.drawable.InsetDrawable(bg, insetH, insetV, insetH, insetV))
+    w.setBackgroundDrawable(android.graphics.drawable.InsetDrawable(bg, insetH, insetV, insetH, insetV))
 }
+
+private val cornersApplied = java.util.Collections.newSetFromMap(
+    java.util.WeakHashMap<android.view.Window, Boolean>()
+)
 
 fun AlertDialog.applyLoqInDialogWidth(widthFraction: Float = 0.94f) {
     val targetWidth = (context.resources.displayMetrics.widthPixels * widthFraction).toInt()
