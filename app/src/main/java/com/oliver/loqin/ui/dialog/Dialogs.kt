@@ -810,11 +810,11 @@ fun AlertDialog.styleLoqInDialogButtons() {
 
     fun dp(v: Int): Int = (v * context.resources.displayMetrics.density).toInt()
 
-    // Plain message dialogs should still feel like the same component as the richer LoqIn diagnostic dialogs, especially with longer German copy on smaller displays.
+    // Plain message dialogs share one body look. Size and line spacing come from
+    // TextAppearance.LoqIn.DialogBody via the dialog theme so the message is measured
+    // correctly on first layout; only the color is enforced here.
     findViewById<TextView>(android.R.id.message)?.apply {
         setTextColor(ColorUtils.setAlphaComponent(onSurface, 0xDE))
-        setTextSize(TypedValue.COMPLEX_UNIT_SP, 14f)
-        setLineSpacing(dp(2).toFloat(), 1.06f)
         maxLines = Int.MAX_VALUE
     }
 

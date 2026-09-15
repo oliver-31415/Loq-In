@@ -166,7 +166,7 @@
         <item name="linearProgressIndicatorStyle">@style/Widget.Material3.LinearProgressIndicator</item>
         <item name="listPopupWindowStyle">@style/Widget.Material3.PopupMenu.ListPopupWindow</item>
         <item name="loadingIndicatorStyle">@style/Widget.Material3.LoadingIndicator</item>
-        <item name="materialAlertDialogTheme">@style/ThemeOverlay.Material3.MaterialAlertDialog</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.LoqIn.MaterialAlertDialog</item>
         <item name="materialButtonElevatedStyle">@style/Widget.Material3.Button.ElevatedButton</item>
         <item name="materialButtonGroupStyle">@style/Widget.Material3.MaterialButtonGroup</item>
         <item name="materialButtonOutlinedStyle">@style/Widget.Material3.Button.OutlinedButton</item>
