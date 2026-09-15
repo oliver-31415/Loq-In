@@ -182,6 +182,7 @@ fun Context.showLoqInInfoDialog(
             .setPositiveButton(positiveText, null)
             .create()
         dialog.applyLoqInDialogWidth(0.90f)
+        dialog.applyLoqInDialogCorners()
         dialog.setOnShowListener {
             dialog.styleLoqInDialogButtons()
         }
@@ -243,6 +244,7 @@ fun Context.showLoqInInfoDialog(
         .setPositiveButton(positiveText, null)
         .create()
     dialog.applyLoqInDialogWidth(0.90f)
+    dialog.applyLoqInDialogCorners()
     dialog.setOnShowListener {
         dialog.styleLoqInDialogButtons()
     }
@@ -262,6 +264,9 @@ fun AlertDialog.styleLoqInDestructivePositiveButton() {
 
 fun MaterialAlertDialogBuilder.showDestructiveAccented(): AlertDialog {
     val dlg = this.create()
+    // Apply corners before show(): changing the window background after the first
+    // layout re-measures the centered dialog and makes it jump.
+    dlg.applyLoqInDialogCorners()
     dlg.setOnShowListener { dlg.styleLoqInDestructivePositiveButton() }
     dlg.show()
     return dlg
@@ -269,6 +274,7 @@ fun MaterialAlertDialogBuilder.showDestructiveAccented(): AlertDialog {
 
 fun AlertDialog.Builder.showDestructiveAccented(): AlertDialog {
     val dlg = this.create()
+    dlg.applyLoqInDialogCorners()
     dlg.setOnShowListener { dlg.styleLoqInDestructivePositiveButton() }
     dlg.show()
     return dlg
@@ -277,6 +283,7 @@ fun AlertDialog.Builder.showDestructiveAccented(): AlertDialog {
 // Show a Material dialog and enforce custom accent colors at runtime (CUSTOM accent mode), including list check indicators (radio/checkbox) which often fall back to OEM green.
 fun MaterialAlertDialogBuilder.showAccented(): AlertDialog {
     val dlg = this.create()
+    dlg.applyLoqInDialogCorners()
     dlg.setOnShowListener {
         dlg.styleLoqInDialogButtons()
     }
@@ -287,6 +294,7 @@ fun MaterialAlertDialogBuilder.showAccented(): AlertDialog {
 // Show an AppCompat dialog and enforce custom accent colors at runtime (CUSTOM accent mode).
 fun AlertDialog.Builder.showAccented(): AlertDialog {
     val dlg = this.create()
+    dlg.applyLoqInDialogCorners()
     dlg.setOnShowListener {
         dlg.styleLoqInDialogButtons()
     }
@@ -734,6 +742,7 @@ fun Context.showLoqInMultiChoiceDialog(
         dialog.dismiss()
     }
     dialog.window?.setLayout((resources.displayMetrics.widthPixels * widthFraction).toInt(), ViewGroup.LayoutParams.WRAP_CONTENT)
+    dialog.applyLoqInDialogCorners()
     dialog.setOnShowListener {
         if (!forceHorizontalButtons) {
             if (options.any { it.destructive }) dialog.styleLoqInDestructivePositiveButton() else dialog.styleLoqInDialogButtons()
@@ -962,6 +971,7 @@ fun Context.showLoqInFormDialog(
         .setView(content)
         .create()
     dialog.applyLoqInDialogWidth(widthFraction)
+    dialog.applyLoqInDialogCorners()
     dialog.setOnShowListener {
         runCatching { CustomAccentApplier.applyToDialog(dialog) }
         styleLoqInFormButtons(
