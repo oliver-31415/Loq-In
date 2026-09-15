@@ -31,6 +31,8 @@ import com.oliver.loqin.theme.AccentColor
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.color.MaterialColors
+import com.google.android.material.shape.AbsoluteCornerSize
+import com.google.android.material.shape.ShapeAppearanceModel
 
 // Keeps two-option segmented controls visually consistent across LoqIn with modern capsule design.
 object SegmentedToggleUi {
@@ -68,6 +70,18 @@ object SegmentedToggleUi {
             parent.background = trackBg
             val p = dp(context, 3)
             parent.setPadding(p, p, p, p)
+
+            // MaterialButtonGroup owns its children's corner shapes and rewrites them on
+            // the first onMeasure/onLayout via updateChildShapes(). Styling only the child
+            // buttons therefore shows square corners for the first frame and the correct
+            // radius afterwards. Give the group the shape + inner corner size so the shape
+            // it applies to children is already correct the first time it measures.
+            val cornerPx = dp(context, 13).toFloat()
+            val absoluteCorner = AbsoluteCornerSize(cornerPx)
+            parent.shapeAppearance = ShapeAppearanceModel.builder()
+                .setAllCornerSizes(cornerPx)
+                .build()
+            parent.innerCornerSize = absoluteCorner
         }
 
         val buttonCornerRadius = dp(context, 13)
@@ -83,9 +97,8 @@ object SegmentedToggleUi {
             button.insetBottom = 0
             button.isAllCaps = false
             button.cornerRadius = buttonCornerRadius
-            button.shapeAppearanceModel = button.shapeAppearanceModel.toBuilder()
-                .setAllCornerSizes(buttonCornerRadius.toFloat())
-                .build()
+            // Corner geometry is owned by the MaterialButtonToggleGroup (see above);
+            // setting it per-button here would be overwritten on the next measure.
             button.isActivated = selected
 
             // Ensure clean icons for block/allow mode buttons if applicable
