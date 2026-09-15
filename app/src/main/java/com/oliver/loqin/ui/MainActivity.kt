@@ -143,6 +143,7 @@ import com.oliver.loqin.ui.dialog.showLoqInInputDialog
 import com.oliver.loqin.ui.dialog.styleLoqInDialogButtons
 import com.oliver.loqin.ui.dialog.LoqInDialogOption
 import com.oliver.loqin.ui.dialog.showLoqInOptionDialog
+import com.oliver.loqin.ui.prepareExpanded
 import com.oliver.loqin.ui.LoqInDropdownAdapter
 import com.oliver.loqin.util.ActivityTransitionCompat
 import com.oliver.loqin.util.EditingLockGuard
@@ -156,7 +157,6 @@ import com.oliver.loqin.util.getIntCompat
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.bottomsheet.BottomSheetDialog
-import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.checkbox.MaterialCheckBox
@@ -1242,30 +1242,6 @@ class MainActivity : AppCompatActivity() {
         val runAction: () -> Unit
     )
 
-    /**
-     * Styles a bottom sheet and opens it already expanded. Configuring the
-     * behavior before show avoids the appear-then-glide jump that moves taps
-     * onto a moving target.
-     */
-    private fun BottomSheetDialog.prepareExpandedSheet() {
-        findViewById<FrameLayout>(com.google.android.material.R.id.design_bottom_sheet)?.let { bs ->
-            val topRadius = 24 * resources.displayMetrics.density + 0.5f
-            bs.background = GradientDrawable().apply {
-                cornerRadii = floatArrayOf(
-                    topRadius, topRadius,
-                    topRadius, topRadius,
-                    0f, 0f,
-                    0f, 0f
-                )
-                setColor(ContextCompat.getColor(this@MainActivity, R.color.foqos_surface))
-            }
-            BottomSheetBehavior.from(bs).apply {
-                skipCollapsed = true
-                state = BottomSheetBehavior.STATE_EXPANDED
-            }
-        }
-    }
-
     private fun showTempToggleSheet(): Boolean {
         val enabledNow = SwitchModeStore.isEnabled(this)
         val tempDisableRemaining = SwitchModeStore.getTemporaryRemainingMillis(this)
@@ -1318,7 +1294,7 @@ class MainActivity : AppCompatActivity() {
         val parent = findViewById<ViewGroup>(android.R.id.content)
         val view = layoutInflater.inflate(R.layout.bottom_sheet_temp_toggle, parent, false)
         sheet.setContentView(view)
-        sheet.prepareExpandedSheet()
+        sheet.prepareExpanded()
 
         val ivIcon = view.findViewById<ImageView>(R.id.ivIcon)
         val tvTitle = view.findViewById<TextView>(R.id.tvTitle)
@@ -1939,6 +1915,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         sheet.setContentView(list)
+        sheet.prepareExpanded()
         sheet.show()
     }
 
@@ -1949,7 +1926,7 @@ class MainActivity : AppCompatActivity() {
         val sheet = BottomSheetDialog(this)
         val view = layoutInflater.inflate(R.layout.sheet_profile_edit, null)
         sheet.setContentView(view)
-        sheet.behavior.peekHeight = resources.displayMetrics.heightPixels / 2
+        sheet.prepareExpanded()
 
         // Row icons + green labels follow the live accent (?attr/colorPrimary would fall
         // back to the compile-time green since Home never applies an accent theme variant).
@@ -2818,6 +2795,7 @@ class MainActivity : AppCompatActivity() {
         applyMixedChannelsVisibility()
 
         sheet.setContentView(list)
+        sheet.prepareExpanded()
         sheet.show()
     }
 
@@ -5059,7 +5037,7 @@ class MainActivity : AppCompatActivity() {
         val parent = findViewById<ViewGroup>(android.R.id.content)
         val view = layoutInflater.inflate(R.layout.bottom_sheet_session_missed_notifications, parent, false)
         sheet.setContentView(view)
-        sheet.prepareExpandedSheet()
+        sheet.prepareExpanded()
 
         val count = events.size
         val subtitleText = if (count == 1) {

@@ -138,6 +138,27 @@
         <item name="android:taskToBackExitAnimation">@anim/loqin_no_animation</item>
     </style>
 
+    <!--
+      Bottom sheets animate themselves via BottomSheetBehavior. The Material theme
+      additionally applies a window enter/exit animation (m3_bottom_sheet_slide_in,
+      a 20% translate + fade with an emphasized curve). Running both at once makes
+      the sheet rise, overshoot and then slide again, and the moving surface can
+      shift out from under an in-progress tap. Suppress the window animation and
+      let the behavior own the motion.
+    -->
+    <style name="Animation.LoqIn.None.Dialog" parent="@android:style/Animation.Dialog">
+        <item name="android:windowEnterAnimation">@anim/loqin_no_animation</item>
+        <item name="android:windowExitAnimation">@anim/loqin_no_animation</item>
+    </style>
+
+    <style name="ThemeOverlay.LoqIn.BottomSheetDialog" parent="ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="android:windowAnimationStyle">@style/Animation.LoqIn.None.Dialog</item>
+        <!-- The Material edge-to-edge callback mutates padding and the status-bar
+             appearance on every slide frame, which shows up as jitter. Sheets apply
+             their own insets, so keep this off. -->
+        <item name="enableEdgeToEdge">false</item>
+    </style>
+
     <!-- =========================
          COMPONENT STYLES: Toolbar/buttons/cards/chips
          ========================= -->

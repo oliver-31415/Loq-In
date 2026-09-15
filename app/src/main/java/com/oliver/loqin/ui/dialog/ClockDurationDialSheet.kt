@@ -26,16 +26,15 @@ import android.graphics.drawable.GradientDrawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
-import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
 import com.oliver.loqin.R
 import com.oliver.loqin.theme.AccentColor
+import com.oliver.loqin.ui.prepareExpanded
 import com.oliver.loqin.ui.widgets.ClockDurationDialView
 import java.text.DateFormat
 import java.util.Date
@@ -66,7 +65,7 @@ object ClockDurationDialSheet {
         val view = LayoutInflater.from(activity)
             .inflate(R.layout.bottom_sheet_temp_clock_dial, parent, false)
         sheet.setContentView(view)
-        prepareExpandedSheet(activity, sheet)
+        sheet.prepareExpanded()
 
         val clockDialView = view.findViewById<ClockDurationDialView>(R.id.clockDialView)
         val tvTitle = view.findViewById<TextView>(R.id.tvTitle)
@@ -167,22 +166,4 @@ object ClockDurationDialSheet {
         sheet.show()
     }
 
-    private fun prepareExpandedSheet(activity: Activity, dialog: BottomSheetDialog) {
-        dialog.findViewById<FrameLayout>(com.google.android.material.R.id.design_bottom_sheet)?.let { bs ->
-            val topRadius = 24 * activity.resources.displayMetrics.density + 0.5f
-            bs.background = GradientDrawable().apply {
-                cornerRadii = floatArrayOf(
-                    topRadius, topRadius,
-                    topRadius, topRadius,
-                    0f, 0f,
-                    0f, 0f
-                )
-                setColor(ContextCompat.getColor(activity, R.color.foqos_surface))
-            }
-            BottomSheetBehavior.from(bs).apply {
-                skipCollapsed = true
-                state = BottomSheetBehavior.STATE_EXPANDED
-            }
-        }
-    }
 }
