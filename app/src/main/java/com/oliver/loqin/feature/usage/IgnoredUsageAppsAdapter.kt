@@ -18,40 +18,47 @@
 
 package com.oliver.loqin.feature.usage
 
-import android.content.res.ColorStateList
-import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
-import android.graphics.drawable.GradientDrawable
-import androidx.core.content.ContextCompat
-import androidx.core.graphics.ColorUtils
 import com.oliver.loqin.R
+import com.oliver.loqin.feature.picker.AppIconCache
 import com.oliver.loqin.theme.AccentColor
 import com.google.android.material.card.MaterialCardView
-import com.google.android.material.checkbox.MaterialCheckBox
-import com.google.android.material.color.MaterialColors
 import java.util.Locale
+
+enum class HiddenAppFilter {
+    ALL,
+    SUGGESTED,
+    HIDDEN,
+}
 
 data class IgnoredUsageAppItem(
     val packageName: String,
     val label: String,
-    val icon: Drawable?,
     val suggested: Boolean,
 )
 
+/**
+ * Grid adapter for Hidden apps. Renders the same square tile component as the
+ * App rules screen so both pickers look and behave consistently.
+ */
 class IgnoredUsageAppsAdapter(
     initialSelection: Set<String>,
     private val onSelectionChanged: (Set<String>) -> Unit,
 ) : ListAdapter<IgnoredUsageAppItem, IgnoredUsageAppsAdapter.ViewHolder>(DIFF) {
+
     private var allItems: List<IgnoredUsageAppItem> = emptyList()
     private var query: String = ""
+    private var filter: HiddenAppFilter = HiddenAppFilter.ALL
     private val selectedPackages = initialSelection.toMutableSet()
 
     init {
@@ -67,6 +74,13 @@ class IgnoredUsageAppsAdapter(
         query = value.orEmpty().trim().lowercase(Locale.getDefault())
         applyFilter()
     }
+
+    fun setFilter(value: HiddenAppFilter) {
+        filter = value
+        applyFilter()
+    }
+
+    fun visibleCount(): Int = currentList.size
 
     fun selectedPackages(): Set<String> = selectedPackages.toSet()
 
@@ -84,11 +98,31 @@ class IgnoredUsageAppsAdapter(
         onSelectionChanged(selectedPackages())
     }
 
+    /** Selects every currently visible (filtered) app. */
+    fun selectAllVisible() {
+        currentList.forEachIndexed { index, item ->
+            if (selectedPackages.add(item.packageName)) {
+                notifyItemChanged(index, PAYLOAD_SELECTION)
+            }
+        }
+        onSelectionChanged(selectedPackages())
+    }
+
+    /** Clears the hidden state for every currently visible (filtered) app. */
+    fun clearAllVisible() {
+        currentList.forEachIndexed { index, item ->
+            if (selectedPackages.remove(item.packageName)) {
+                notifyItemChanged(index, PAYLOAD_SELECTION)
+            }
+        }
+        onSelectionChanged(selectedPackages())
+    }
+
     override fun getItemId(position: Int): Long = getItem(position).packageName.hashCode().toLong()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.row_ignored_usage_app, parent, false)
+            .inflate(R.layout.grid_hidden_app_tile, parent, false)
         return ViewHolder(view)
     }
 
@@ -105,91 +139,96 @@ class IgnoredUsageAppsAdapter(
     }
 
     private fun applyFilter() {
-        val visible = if (query.isBlank()) {
-            allItems
-        } else {
-            allItems.filter { item ->
+        val visible = allItems.filter { item ->
+            val matchesQuery = query.isBlank() ||
                 item.label.lowercase(Locale.getDefault()).contains(query) ||
-                    item.packageName.lowercase(Locale.getDefault()).contains(query)
+                item.packageName.lowercase(Locale.getDefault()).contains(query)
+            val matchesFilter = when (filter) {
+                HiddenAppFilter.ALL -> true
+                HiddenAppFilter.SUGGESTED -> item.suggested
+                HiddenAppFilter.HIDDEN -> item.packageName in selectedPackages
             }
+            matchesQuery && matchesFilter
         }
         submitList(visible)
     }
 
     inner class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        private val card: MaterialCardView = view.findViewById(R.id.cardIgnoredUsageApp)
-        private val icon: ImageView = view.findViewById(R.id.ivIgnoredUsageAppIcon)
-        private val name: TextView = view.findViewById(R.id.tvIgnoredUsageAppName)
-        private val packageName: TextView = view.findViewById(R.id.tvIgnoredUsageAppPackage)
-        private val suggested: TextView = view.findViewById(R.id.tvIgnoredUsageSuggested)
-        private val checkBox: MaterialCheckBox = view.findViewById(R.id.cbIgnoredUsageApp)
+        private val cardRoot: MaterialCardView = view.findViewById(R.id.rowRoot)
+        private val ivAppIcon: ImageView = view.findViewById(R.id.ivAppIcon)
+        private val tvLabel: TextView = view.findViewById(R.id.tvLabel)
+        private val tvSuggested: TextView = view.findViewById(R.id.tvSuggested)
+        private val ivChecked: ImageView = view.findViewById(R.id.ivChecked)
 
         fun bind(item: IgnoredUsageAppItem) {
-            icon.setImageDrawable(item.icon)
-            name.text = item.label
-            packageName.text = item.packageName
-            suggested.isVisible = item.suggested
+            val ctx = itemView.context
+
+            val iconPackage = item.packageName
+            ivAppIcon.tag = iconPackage
+            val cachedIcon = AppIconCache.getCached(ctx, iconPackage)
+            if (cachedIcon != null) {
+                ivAppIcon.setImageDrawable(cachedIcon)
+            } else {
+                ivAppIcon.setImageDrawable(AppIconCache.placeholder(ctx))
+                AppIconCache.load(ctx, iconPackage) { icon ->
+                    if (ivAppIcon.tag == iconPackage) {
+                        ivAppIcon.setImageDrawable(icon)
+                    }
+                }
+            }
+
+            tvLabel.text = item.label
+            tvSuggested.isVisible = item.suggested
+            tvSuggested.text = ctx.getString(R.string.ignored_usage_apps_suggested)
             if (item.suggested) {
-                val ctx = suggested.context
                 val accent = AccentColor.getAccentColorInt(ctx)
-                val chipBg = GradientDrawable().apply {
-                    shape = GradientDrawable.RECTANGLE
+                tvSuggested.background = android.graphics.drawable.GradientDrawable().apply {
+                    shape = android.graphics.drawable.GradientDrawable.RECTANGLE
                     cornerRadius = dp(999).toFloat()
                     setColor(ColorUtils.setAlphaComponent(accent, 0x24))
                 }
-                suggested.background = chipBg
-                suggested.setTextColor(accent)
+                tvSuggested.setTextColor(accent)
             } else {
-                suggested.background = null
+                tvSuggested.background = null
             }
 
             bindSelection(item.packageName in selectedPackages)
 
-            val toggle = {
-                val isNowChecked = item.packageName !in selectedPackages
-                if (isNowChecked) {
-                    selectedPackages += item.packageName
-                } else {
-                    selectedPackages -= item.packageName
-                }
-                checkBox.isChecked = isNowChecked
-                updateCardState(isNowChecked)
-                onSelectionChanged(selectedPackages())
-            }
-            card.setOnClickListener { toggle() }
-            checkBox.setOnClickListener { toggle() }
+            cardRoot.setOnClickListener { toggle(item) }
         }
 
         fun bindSelection(selected: Boolean) {
-            checkBox.setOnCheckedChangeListener(null)
-            checkBox.setUseMaterialThemeColors(false)
-            val accent = AccentColor.getAccentColorInt(checkBox.context)
-            val unchecked = MaterialColors.getColor(
-                checkBox.context,
-                com.google.android.material.R.attr.colorOutline,
-                checkBox.resources.getColor(R.color.foqos_outline_variant, checkBox.context.theme),
-            )
-            checkBox.buttonTintList = ColorStateList(
-                arrayOf(
-                    intArrayOf(android.R.attr.state_checked),
-                    intArrayOf(),
-                ),
-                intArrayOf(accent, unchecked),
-            )
-            checkBox.isChecked = selected
-            updateCardState(selected)
+            updateTileState(selected)
         }
 
-        private fun updateCardState(selected: Boolean) {
-            val ctx = card.context
-            val accent = AccentColor.getAccentColorInt(ctx)
-            card.strokeWidth = dp(1)
-            if (selected) {
-                card.strokeColor = ColorUtils.setAlphaComponent(accent, 0x88)
-                card.setCardBackgroundColor(ColorUtils.setAlphaComponent(accent, 0x14))
+        private fun toggle(item: IgnoredUsageAppItem) {
+            val isNowHidden = item.packageName !in selectedPackages
+            if (isNowHidden) {
+                selectedPackages += item.packageName
             } else {
-                card.strokeColor = ContextCompat.getColor(ctx, R.color.foqos_outline_variant)
-                card.setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.foqos_surface))
+                selectedPackages -= item.packageName
+            }
+            updateTileState(isNowHidden)
+            onSelectionChanged(selectedPackages())
+        }
+
+        private fun updateTileState(selected: Boolean) {
+            val ctx = itemView.context
+            if (selected) {
+                val accent = AccentColor.getAccentColorInt(ctx)
+                cardRoot.strokeWidth = dp(2)
+                cardRoot.strokeColor = accent
+                cardRoot.setCardBackgroundColor(ColorUtils.setAlphaComponent(accent, 0x30))
+            } else {
+                cardRoot.strokeWidth = dp(1)
+                cardRoot.setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.foqos_surface))
+                cardRoot.strokeColor = ContextCompat.getColor(ctx, R.color.foqos_outline_variant)
+            }
+            ivChecked.visibility = if (selected) View.VISIBLE else View.GONE
+            cardRoot.contentDescription = if (selected) {
+                ctx.getString(R.string.hidden_apps_tile_selected_desc, tvLabel.text)
+            } else {
+                ctx.getString(R.string.hidden_apps_tile_unselected_desc, tvLabel.text)
             }
         }
 

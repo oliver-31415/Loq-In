@@ -395,6 +395,15 @@
         <item quantity="one">%d App ausgeblendet</item>
         <item quantity="other">%d Apps ausgeblendet</item>
     </plurals>
+    <!-- Hidden apps grid filter -->
+    <string name="hidden_apps_filter_all">Alle Apps</string>
+    <string name="hidden_apps_filter_suggested">Vorgeschlagen</string>
+    <string name="hidden_apps_filter_hidden">Ausgeblendet</string>
+    <string name="hidden_apps_tile_selected_desc">%1$s, ausgeblendet. Doppeltippen zum Einblenden.</string>
+    <string name="hidden_apps_tile_unselected_desc">%1$s, sichtbar. Doppeltippen zum Ausblenden.</string>
+    <string name="hidden_apps_select_all">Alle auswählen</string>
+    <string name="hidden_apps_clear_all">Alle zurücksetzen</string>
+    <string name="hidden_apps_saved_notice">Ausgeblendete Apps gespeichert</string>
 
     <!-- ====================================================== -->
     <!-- Usage support -->
