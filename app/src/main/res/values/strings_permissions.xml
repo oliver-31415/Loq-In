@@ -22,7 +22,7 @@
 
     <!-- Short one-line summaries shown on each setup card (mirrors onboarding). -->
     <string name="permissions_summary_accessibility">Required for core app and website blocking.</string>
-    <string name="permissions_summary_usage_access">Powers screen-time statistics and daily app limits.</string>
+    <string name="permissions_summary_usage_access">Powers screen-time stats and app limits.</string>
     <string name="permissions_summary_notifications">Needed for notification blocking and reminders.</string>
     <string name="permissions_summary_notification_access">Lets Loq In hide blocked notifications.</string>
     <string name="permissions_summary_exact_alarms">Helps timed schedules run on time.</string>

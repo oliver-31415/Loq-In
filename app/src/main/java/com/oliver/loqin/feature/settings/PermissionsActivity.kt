@@ -551,7 +551,12 @@ class PermissionsActivity : AppCompatActivity() {
             StatusText(getString(R.string.permissions_status_not_connected), true)
         OemAccessibilityKeepAlive.isLikelyAccessibilityDisabledByOem(this) ->
             StatusText(getString(R.string.permissions_status_oem_accessibility_disabled), true)
-        else -> StatusText(getString(R.string.permissions_status_disabled), true)
+        // Simply not set up yet: use onboarding's neutral "Setup needed · Required"
+        // wording rather than a red "Disabled", which reads like a failure.
+        else -> StatusText(
+            "${getString(R.string.permissions_status_setup_needed)} · ${getString(R.string.permissions_badge_required)}",
+            false,
+        )
     }
 
     private fun refreshStickyAccessibilityMismatch(mismatchNow: Boolean): Boolean {
