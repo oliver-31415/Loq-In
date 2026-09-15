@@ -19,17 +19,12 @@
 package com.oliver.loqin.feature.settings
 
 import android.content.Context
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
-import android.graphics.Typeface
 import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.View
-import android.widget.FrameLayout
+import android.widget.ImageView
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
@@ -38,24 +33,52 @@ import androidx.core.content.edit
 import androidx.core.graphics.toColorInt
 import androidx.preference.PreferenceManager
 import com.oliver.loqin.R
-import com.oliver.loqin.util.TimeFormatPrefs
+import com.oliver.loqin.feature.theme.CustomAccentPickerDialog
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.theme.CustomAccentApplier
 import com.oliver.loqin.ui.EdgeToEdgeUtils
+import com.oliver.loqin.ui.SegmentedToggleUi
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.dialog.LoqInDialogOption
 import com.oliver.loqin.ui.dialog.showLoqInOptionDialog
-import com.oliver.loqin.ui.dialog.styledDialogEditText
 import com.oliver.loqin.util.LocaleHelper
+import com.oliver.loqin.util.TimeFormatPrefs
 import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.color.MaterialColors
 
+/**
+ * Appearance.
+ *
+ * Choice settings use the same segmented bar as the insights range selector
+ * (a single track with the active option highlighted). Theme colour opens the
+ * existing colour overlay from a row that previews the current accent.
+ */
 class AppearanceActivity : AppCompatActivity() {
+
+    private lateinit var toggleThemeMode: MaterialButtonToggleGroup
+    private lateinit var toggleTimeFormat: MaterialButtonToggleGroup
+    private lateinit var toggleLanguage: MaterialButtonToggleGroup
 
     private lateinit var tvThemeModeSummary: TextView
     private lateinit var tvTimeFormatSummary: TextView
     private lateinit var tvThemeColorSummary: TextView
     private lateinit var tvLanguageSummary: TextView
+
+    private lateinit var accentPreviewDot: View
+
+    private val prefs by lazy { PreferenceManager.getDefaultSharedPreferences(this) }
+
+    private val themeModeValues = listOf("system", "light", "dark")
+    private val themeModeButtonIds = listOf(R.id.btnThemeSystem, R.id.btnThemeLight, R.id.btnThemeDark)
+
+    private val timeFormatValues = listOf("system", "24h", "12h")
+    private val timeFormatButtonIds = listOf(R.id.btnTimeAutomatic, R.id.btnTime24, R.id.btnTime12)
+
+    private val languageValues = listOf("system", "en", "de")
+    private val languageButtonIds =
+        listOf(R.id.btnLanguageSystem, R.id.btnLanguageEnglish, R.id.btnLanguageGerman)
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(LocaleHelper.wrapContext(newBase))
@@ -73,16 +96,22 @@ class AppearanceActivity : AppCompatActivity() {
         toolbar.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
         toolbar.title = getString(R.string.settings_theme_title)
 
+        toggleThemeMode = findViewById(R.id.toggleThemeMode)
+        toggleTimeFormat = findViewById(R.id.toggleTimeFormat)
+        toggleLanguage = findViewById(R.id.toggleLanguage)
+
         tvThemeModeSummary = findViewById(R.id.tvThemeModeSummary)
         tvTimeFormatSummary = findViewById(R.id.tvTimeFormatSummary)
         tvThemeColorSummary = findViewById(R.id.tvThemeColorSummary)
         tvLanguageSummary = findViewById(R.id.tvLanguageSummary)
 
-        findViewById<View>(R.id.rowThemeMode).setOnClickListener { showThemeModeDialog() }
-        findViewById<View>(R.id.rowTimeFormat).setOnClickListener { showTimeFormatDialog() }
-        findViewById<View>(R.id.rowThemeColor).setOnClickListener { showThemeColorDialog() }
-        findViewById<View>(R.id.rowLanguage).setOnClickListener { showLanguageDialog() }
+        accentPreviewDot = findViewById(R.id.accentPreviewDot)
 
+        findViewById<View>(R.id.rowThemeColor).setOnClickListener { showThemeColorDialog() }
+
+        setupThemeMode()
+        setupTimeFormat()
+        setupLanguage()
         updateAllSummaries()
     }
 
@@ -91,146 +120,80 @@ class AppearanceActivity : AppCompatActivity() {
         updateAllSummaries()
     }
 
-    private fun updateAllSummaries() {
-        updateThemeModeSummary()
-        updateTimeFormatSummary()
-        updateThemeColorSummary()
-        updateLanguageSummary()
-    }
+    // ---------------------------------------------------------------------
+    // Segmented settings
+    // ---------------------------------------------------------------------
 
-    private fun updateThemeModeSummary() {
-        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-        val current = prefs.getString("pref_theme_mode", "system") ?: "system"
-        tvThemeModeSummary.text = when (current) {
-            "light" -> getString(R.string.pref_theme_mode_light)
-            "dark" -> getString(R.string.pref_theme_mode_dark)
-            else -> getString(R.string.pref_theme_mode_system)
-        }
-    }
-
-    private fun updateTimeFormatSummary() {
-        tvTimeFormatSummary.text = when (TimeFormatPrefs.getMode(this)) {
-            "12h" -> getString(R.string.pref_time_format_12h)
-            "24h" -> getString(R.string.pref_time_format_24h)
-            else -> getString(R.string.pref_time_format_system)
-        }
-    }
-
-    private fun updateThemeColorSummary() {
-        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-        val current = prefs.getString("pref_accent", "default") ?: "default"
-
-        if (current == "custom") {
-            val hex = prefs.getString("pref_accent_custom", "").orEmpty()
-            tvThemeColorSummary.text = if (hex.isNotBlank()) {
-                getString(R.string.pref_theme_color_custom_fmt, hex)
-            } else {
-                getString(R.string.pref_accent_custom_title)
-            }
-            return
-        }
-
-        val entries = resources.getStringArray(R.array.pref_accent_entries)
-        val values = resources.getStringArray(R.array.pref_accent_values)
-        val label = values.indexOf(current).let { i -> if (i in entries.indices) entries[i] else entries.firstOrNull() }
-            ?: ""
-        tvThemeColorSummary.text = label
-    }
-
-    private fun updateLanguageSummary() {
-        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-        val current = prefs.getString("pref_language", "system") ?: "system"
-
-        val entries = resources.getStringArray(R.array.pref_language_entries)
-        val values = resources.getStringArray(R.array.pref_language_values)
-
-        val label = values.indexOf(current).let { idx ->
-            if (idx in entries.indices) entries[idx] else entries.firstOrNull()
-        } ?: ""
-
-        tvLanguageSummary.text = label
-    }
-
-    private fun showThemeModeDialog() {
-        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-        val current = prefs.getString("pref_theme_mode", "system") ?: "system"
-
-        val entries = arrayOf(
-            getString(R.string.pref_theme_mode_system),
-            getString(R.string.pref_theme_mode_light),
-            getString(R.string.pref_theme_mode_dark)
-        )
-        val values = arrayOf("system", "light", "dark")
-        val checked = values.indexOf(current).coerceAtLeast(0)
-
-        val summaries = arrayOf(
-            getString(R.string.pref_theme_mode_system_summary),
-            getString(R.string.pref_theme_mode_light_summary),
-            getString(R.string.pref_theme_mode_dark_summary)
-        )
-
-        showSingleSelectCheckboxDialog(
-            title = getString(R.string.pref_theme_mode_title),
-            entries = entries,
-            checkedIndex = checked,
-            summaries = summaries,
-            iconRes = arrayOf(
-                R.drawable.tune_24,
-                R.drawable.light_mode_24,
-                R.drawable.dark_mode_24
-            ),
-        ) { which, dialog ->
-            val selected = values[which]
-            prefs.edit { putString("pref_theme_mode", selected) }
-            updateThemeModeSummary()
-
-            when (selected) {
-                "light" -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
-                "dark" -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
-                else -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
-            }
-
-            dialog.dismiss()
+    private fun setupThemeMode() {
+        applySegmented(toggleThemeMode, themeModeButtonIds, currentThemeMode())
+        toggleThemeMode.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (!isChecked) return@addOnButtonCheckedListener
+            val value = valueFor(themeModeButtonIds, themeModeValues, checkedId) ?: return@addOnButtonCheckedListener
+            if (value == currentThemeMode()) return@addOnButtonCheckedListener
+            prefs.edit { putString(KEY_THEME_MODE, value) }
+            AppCompatDelegate.setDefaultNightMode(
+                when (value) {
+                    "light" -> AppCompatDelegate.MODE_NIGHT_NO
+                    "dark" -> AppCompatDelegate.MODE_NIGHT_YES
+                    else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+                }
+            )
             recreate()
         }
     }
 
-    private fun showTimeFormatDialog() {
-        val current = TimeFormatPrefs.getMode(this)
-        val entries = arrayOf(
-            getString(R.string.pref_time_format_system),
-            getString(R.string.pref_time_format_24h),
-            getString(R.string.pref_time_format_12h)
-        )
-        val values = arrayOf("system", "24h", "12h")
-        val checked = values.indexOf(current).coerceAtLeast(0)
-
-        val summaries = arrayOf(
-            getString(R.string.pref_time_format_system_summary),
-            getString(R.string.pref_time_format_24h_summary),
-            getString(R.string.pref_time_format_12h_summary)
-        )
-
-        showSingleSelectCheckboxDialog(
-            title = getString(R.string.pref_time_format_title),
-            entries = entries,
-            checkedIndex = checked,
-            summaries = summaries,
-            iconDrawables = arrayOf(
-                badgeDrawable("AUTO"),
-                badgeDrawable("24"),
-                badgeDrawable("12")
-            ),
-        ) { which, dialog ->
-            TimeFormatPrefs.setMode(this, values[which])
+    private fun setupTimeFormat() {
+        applySegmented(toggleTimeFormat, timeFormatButtonIds, TimeFormatPrefs.getMode(this))
+        toggleTimeFormat.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (!isChecked) return@addOnButtonCheckedListener
+            val value = valueFor(timeFormatButtonIds, timeFormatValues, checkedId) ?: return@addOnButtonCheckedListener
+            TimeFormatPrefs.setMode(this, value)
+            applySegmented(toggleTimeFormat, timeFormatButtonIds, value)
             updateTimeFormatSummary()
-            dialog.dismiss()
         }
     }
 
+    private fun setupLanguage() {
+        applySegmented(toggleLanguage, languageButtonIds, currentLanguage())
+        toggleLanguage.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (!isChecked) return@addOnButtonCheckedListener
+            val value = valueFor(languageButtonIds, languageValues, checkedId) ?: return@addOnButtonCheckedListener
+            if (value == currentLanguage()) return@addOnButtonCheckedListener
+            prefs.edit { putString(KEY_LANGUAGE, value) }
+            LocaleHelper.setLanguage(application, value)
+            recreate()
+        }
+    }
+
+    private fun applySegmented(toggle: MaterialButtonToggleGroup, buttonIds: List<Int>, value: String) {
+        val index = valuesIndex(buttonIds, value)
+        val selectedId = buttonIds.getOrElse(index) { buttonIds.first() }
+        toggle.check(selectedId)
+        val buttons = buttonIds.mapNotNull { toggle.findViewById<MaterialButton>(it) }
+        SegmentedToggleUi.apply(this, buttons, selectedId)
+    }
+
+    private fun valuesIndex(buttonIds: List<Int>, value: String): Int {
+        val values = when (buttonIds) {
+            themeModeButtonIds -> themeModeValues
+            timeFormatButtonIds -> timeFormatValues
+            languageButtonIds -> languageValues
+            else -> emptyList()
+        }
+        return values.indexOf(value)
+    }
+
+    private fun valueFor(buttonIds: List<Int>, values: List<String>, checkedId: Int): String? {
+        val index = buttonIds.indexOf(checkedId)
+        return values.getOrNull(index)
+    }
+
+    // ---------------------------------------------------------------------
+    // Colour overlay
+    // ---------------------------------------------------------------------
+
     private fun showThemeColorDialog() {
-        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-        val current = prefs.getString("pref_accent", "default") ?: "default"
+        val current = currentAccent()
 
         val allEntries = resources.getStringArray(R.array.pref_accent_entries)
         val allValues = resources.getStringArray(R.array.pref_accent_values)
@@ -240,29 +203,12 @@ class AppearanceActivity : AppCompatActivity() {
 
         val checked = values.indexOf(current).let { idx -> if (idx >= 0) idx else 0 }
 
-        val summaries = values.map { value ->
-            when (value) {
-                "default" -> getString(R.string.pref_accent_default_summary)
-                "blue" -> getString(R.string.pref_accent_blue_summary)
-                "orange" -> getString(R.string.pref_accent_orange_summary)
-                "purple" -> getString(R.string.pref_accent_purple_summary)
-                "pink" -> getString(R.string.pref_accent_pink_summary)
-                "teal" -> getString(R.string.pref_accent_teal_summary)
-                "red" -> getString(R.string.pref_accent_red_summary)
-                "amber" -> getString(R.string.pref_accent_amber_summary)
-                "gray" -> getString(R.string.pref_accent_gray_summary)
-                "custom" -> getString(R.string.pref_accent_custom_summary)
-                else -> getString(R.string.pref_theme_color_summary)
-            }
-        }.toTypedArray()
-
         showSingleSelectCheckboxDialog(
             title = getString(R.string.pref_theme_color_title),
             dialogSubtitle = getString(R.string.pref_theme_color_summary),
             entries = entries,
             checkedIndex = checked,
-            summaries = summaries,
-            iconDrawables = values.map { colorPreviewDrawable(accentColorForValue(this, it)) as Drawable? }.toTypedArray(),
+            iconDrawables = values.map { colorPreviewDrawable(accentColorForValue(it)) as Drawable? }.toTypedArray(),
             instantApply = true,
         ) { which, dialog ->
             val selected = values[which]
@@ -270,7 +216,7 @@ class AppearanceActivity : AppCompatActivity() {
                 dialog.dismiss()
                 showCustomColorPicker()
             } else {
-                prefs.edit { putString("pref_accent", selected) }
+                prefs.edit { putString(KEY_ACCENT, selected) }
                 updateThemeColorSummary()
                 dialog.dismiss()
                 recreate()
@@ -279,44 +225,9 @@ class AppearanceActivity : AppCompatActivity() {
     }
 
     private fun showCustomColorPicker() {
-        com.oliver.loqin.feature.theme.CustomAccentPickerDialog.show(this) {
+        CustomAccentPickerDialog.show(this) {
             updateThemeColorSummary()
             recreate()
-        }
-    }
-
-    private fun showLanguageDialog() {
-        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
-        val current = prefs.getString("pref_language", "system") ?: "system"
-
-        val entries = resources.getStringArray(R.array.pref_language_entries)
-        val values = resources.getStringArray(R.array.pref_language_values)
-
-        val checked = values.indexOf(current).let { idx -> if (idx >= 0) idx else 0 }
-
-        val summaries = arrayOf(
-            getString(R.string.pref_language_system_summary),
-            getString(R.string.pref_language_en_summary),
-            getString(R.string.pref_language_de_summary)
-        )
-
-        showSingleSelectCheckboxDialog(
-            title = getString(R.string.pref_language_title),
-            entries = entries,
-            checkedIndex = checked,
-            summaries = summaries,
-            iconDrawables = arrayOf(
-                badgeDrawable("AUTO"),
-                badgeDrawable("EN"),
-                badgeDrawable("DE")
-            ),
-        ) { which, dialog ->
-            val selected = values[which]
-            prefs.edit { putString("pref_language", selected) }
-            LocaleHelper.setLanguage(application, selected)
-            updateLanguageSummary()
-            recreate()
-            dialog.dismiss()
         }
     }
 
@@ -350,92 +261,108 @@ class AppearanceActivity : AppCompatActivity() {
         }
     }
 
+    // ---------------------------------------------------------------------
+    // Values and summaries
+    // ---------------------------------------------------------------------
+
+    private fun currentThemeMode(): String = prefs.getString(KEY_THEME_MODE, "system") ?: "system"
+
+    private fun currentAccent(): String = prefs.getString(KEY_ACCENT, "default") ?: "default"
+
+    private fun currentLanguage(): String = prefs.getString(KEY_LANGUAGE, "system") ?: "system"
+
+    private fun updateAllSummaries() {
+        updateThemeModeSummary()
+        updateTimeFormatSummary()
+        updateThemeColorSummary()
+        updateLanguageSummary()
+    }
+
+    private fun updateThemeModeSummary() {
+        tvThemeModeSummary.text = getString(
+            when (currentThemeMode()) {
+                "light" -> R.string.pref_theme_mode_light_summary
+                "dark" -> R.string.pref_theme_mode_dark_summary
+                else -> R.string.pref_theme_mode_system_summary
+            }
+        )
+    }
+
+    private fun updateTimeFormatSummary() {
+        tvTimeFormatSummary.text = getString(
+            when (TimeFormatPrefs.getMode(this)) {
+                "12h" -> R.string.pref_time_format_12h_summary
+                "24h" -> R.string.pref_time_format_24h_summary
+                else -> R.string.pref_time_format_system_summary
+            }
+        )
+    }
+
+    private fun updateThemeColorSummary() {
+        val current = currentAccent()
+        tvThemeColorSummary.text = when (current) {
+            "custom" -> {
+                val hex = prefs.getString(KEY_ACCENT_CUSTOM, "").orEmpty()
+                if (hex.isNotBlank()) getString(R.string.pref_theme_color_custom_fmt, hex)
+                else getString(R.string.pref_accent_custom_title)
+            }
+            else -> {
+                val entries = resources.getStringArray(R.array.pref_accent_entries)
+                val values = resources.getStringArray(R.array.pref_accent_values)
+                entries.getOrNull(values.indexOf(current)) ?: entries.firstOrNull().orEmpty()
+            }
+        }
+        accentPreviewDot.background = colorPreviewDrawable(accentColorForValue(current))
+    }
+
+    private fun updateLanguageSummary() {
+        tvLanguageSummary.text = getString(
+            when (currentLanguage()) {
+                "en" -> R.string.pref_language_en_summary
+                "de" -> R.string.pref_language_de_summary
+                else -> R.string.pref_language_system_summary
+            }
+        )
+    }
+
+    // ---------------------------------------------------------------------
+    // Drawables and colours
+    // ---------------------------------------------------------------------
+
     private fun colorPreviewDrawable(color: Int): Drawable {
         val outline = MaterialColors.getColor(this, com.google.android.material.R.attr.colorOutline, 0x33000000)
         return GradientDrawable().apply {
             shape = GradientDrawable.OVAL
             setColor(color)
             setStroke(dp(2), outline)
-            setSize(dp(28), dp(28))
+            setSize(dp(24), dp(24))
         }
     }
 
-    private fun badgeDrawable(text: String): Drawable {
-        val accent = getCurrentAccentColor(this)
-        val onAccent = if (androidx.core.graphics.ColorUtils.calculateContrast(Color.BLACK, accent) >=
-            androidx.core.graphics.ColorUtils.calculateContrast(Color.WHITE, accent)
-        ) Color.BLACK else Color.WHITE
-        return TextBadgeDrawable(text, accent, onAccent)
-    }
-
-    private fun accentColorForValue(ctx: Context, value: String): Int {
-        val prefs = PreferenceManager.getDefaultSharedPreferences(ctx)
+    private fun accentColorForValue(value: String): Int {
         return when (value) {
-            "blue" -> ContextCompat.getColor(ctx, R.color.accent_blue)
-            "orange" -> ContextCompat.getColor(ctx, R.color.accent_orange)
-            "purple" -> ContextCompat.getColor(ctx, R.color.accent_purple)
-            "pink" -> ContextCompat.getColor(ctx, R.color.accent_pink)
-            "teal" -> ContextCompat.getColor(ctx, R.color.accent_teal)
-            "red" -> ContextCompat.getColor(ctx, R.color.accent_red)
-            "amber" -> ContextCompat.getColor(ctx, R.color.accent_amber)
-            "gray" -> ContextCompat.getColor(ctx, R.color.accent_gray)
+            "blue" -> ContextCompat.getColor(this, R.color.accent_blue)
+            "orange" -> ContextCompat.getColor(this, R.color.accent_orange)
+            "purple" -> ContextCompat.getColor(this, R.color.accent_purple)
+            "pink" -> ContextCompat.getColor(this, R.color.accent_pink)
+            "teal" -> ContextCompat.getColor(this, R.color.accent_teal)
+            "red" -> ContextCompat.getColor(this, R.color.accent_red)
+            "amber" -> ContextCompat.getColor(this, R.color.accent_amber)
+            "gray" -> ContextCompat.getColor(this, R.color.accent_gray)
             "custom" -> runCatching {
-                (prefs.getString("pref_accent_custom", "#6BA6E8") ?: "#6BA6E8").toColorInt()
-            }.getOrDefault(ContextCompat.getColor(ctx, R.color.accent_default_blue))
-            else -> ContextCompat.getColor(ctx, R.color.accent_default_blue)
-        }
-    }
-
-    private fun getCurrentAccentColor(context: Context): Int {
-        val prefs = PreferenceManager.getDefaultSharedPreferences(context)
-        val key = prefs.getString("pref_accent", "default") ?: "default"
-        return if (key == "custom") {
-            val hex = prefs.getString("pref_accent_custom", "#6BA6E8") ?: "#6BA6E8"
-            try { hex.toColorInt() } catch (_: IllegalArgumentException) { AccentColor.getAccentColorInt(context) }
-        } else {
-            AccentColor.getAccentColorInt(context)
+                (prefs.getString(KEY_ACCENT_CUSTOM, "#6BA6E8") ?: "#6BA6E8").toColorInt()
+            }.getOrDefault(ContextCompat.getColor(this, R.color.accent_default_blue))
+            else -> ContextCompat.getColor(this, R.color.accent_default_blue)
         }
     }
 
     private fun dp(value: Int): Int =
         (value * resources.displayMetrics.density + 0.5f).toInt()
 
-    private class TextBadgeDrawable(
-        private val text: String,
-        private val backgroundColor: Int,
-        private val foregroundColor: Int
-    ) : Drawable() {
-        private val bgPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.FILL
-            color = backgroundColor
-        }
-        private val textPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.FILL
-            color = foregroundColor
-            textAlign = Paint.Align.CENTER
-            typeface = Typeface.DEFAULT_BOLD
-        }
-
-        override fun draw(canvas: Canvas) {
-            val b = bounds
-            val radius = b.width().coerceAtMost(b.height()) / 2f
-            canvas.drawCircle(b.exactCenterX(), b.exactCenterY(), radius, bgPaint)
-            textPaint.textSize = b.height() * if (text.length > 2) 0.28f else 0.42f
-            val y = b.exactCenterY() - (textPaint.descent() + textPaint.ascent()) / 2f
-            canvas.drawText(text, b.exactCenterX(), y, textPaint)
-        }
-
-        override fun setAlpha(alpha: Int) {
-            bgPaint.alpha = alpha
-            textPaint.alpha = alpha
-        }
-
-        override fun setColorFilter(colorFilter: android.graphics.ColorFilter?) {
-            bgPaint.colorFilter = colorFilter
-            textPaint.colorFilter = colorFilter
-        }
-
-        @Deprecated("Deprecated in Java")
-        override fun getOpacity(): Int = android.graphics.PixelFormat.TRANSLUCENT
+    private companion object {
+        const val KEY_THEME_MODE = "pref_theme_mode"
+        const val KEY_ACCENT = "pref_accent"
+        const val KEY_ACCENT_CUSTOM = "pref_accent_custom"
+        const val KEY_LANGUAGE = "pref_language"
     }
 }

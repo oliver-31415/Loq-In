@@ -106,6 +106,8 @@
     <!-- ====================================================== -->
     <!-- Feature access -->
     <!-- ====================================================== -->
+    <string name="feature_access_section_active">Access while active</string>
+    <string name="feature_access_section_nfc">NFC tags &amp; pairing</string>
     <string name="pref_require_nfc_unlock_title">Require NFC to disable Loq In</string>
     <string name="pref_require_nfc_unlock_summary">When on, only an allowed NFC action tag or QR fallback can disable Loq In.</string>
     <string name="toggle_locked_nfc_hint">Locked because “Require NFC to disable Loq In” is active.</string>

@@ -106,6 +106,8 @@
     <!-- ====================================================== -->
     <!-- Feature access -->
     <!-- ====================================================== -->
+    <string name="feature_access_section_active">Zugriff während aktiv</string>
+    <string name="feature_access_section_nfc">NFC-Tags &amp; Kopplung</string>
     <string name="pref_require_nfc_unlock_title">NFC zum Deaktivieren von Loq In erforderlich</string>
     <string name="pref_require_nfc_unlock_summary">Wenn aktiv, kann nur ein erlaubtes NFC-Aktionstag oder QR-Fallback Loq In deaktivieren.</string>
     <string name="toggle_locked_nfc_hint">Gesperrt, weil „NFC zum Deaktivieren von Loq In erforderlich“ aktiv ist.</string>

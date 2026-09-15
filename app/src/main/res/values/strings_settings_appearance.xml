@@ -16,6 +16,7 @@
     <string name="pref_theme_mode_light">Light</string>
     <string name="pref_theme_mode_dark">Dark</string>
     <string name="pref_theme_mode_system">Follow system</string>
+    <string name="pref_theme_mode_system_short">System</string>
     <string name="pref_theme_mode_system_summary">Follow your Android light/dark setting.</string>
     <string name="pref_theme_mode_light_summary">Use the light Loq In theme.</string>
     <string name="pref_theme_mode_dark_summary">Use the dark Loq In theme.</string>
@@ -26,6 +27,7 @@
     <string name="pref_time_format_title">Time format</string>
     <string name="pref_time_format_summary">Choose how times are shown in schedules</string>
     <string name="pref_time_format_system">Automatic</string>
+    <string name="pref_time_format_system_short">Auto</string>
     <string name="pref_time_format_24h">24-hour</string>
     <string name="pref_time_format_12h">12-hour</string>
     <string name="pref_time_format_system_summary">Use the device default time format.</string>
@@ -72,6 +74,8 @@
     </string-array>
 
     <string name="pref_language_title">Language</string>
+    <string name="pref_language_english">English</string>
+    <string name="pref_language_german">German</string>
 
     <!-- ====================================================== -->
     <!-- Language -->

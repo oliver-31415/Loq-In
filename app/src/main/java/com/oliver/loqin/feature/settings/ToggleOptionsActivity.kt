@@ -28,6 +28,7 @@ import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageButton
@@ -94,6 +95,7 @@ open class ToggleOptionsActivity : AppCompatActivity() {
     private lateinit var btnNfcLockedHowTo: ImageButton
     private val accentSwitches = mutableListOf<SwitchMaterial>()
     private val detailButtons = mutableListOf<ImageButton>()
+    private val shortcutBadges = mutableMapOf<Int, ImageView>()
     private var ignoreControlModeListener = false
     private var ignoreMixedChannelListener = false
     private var updatingUi = false
@@ -219,6 +221,10 @@ open class ToggleOptionsActivity : AppCompatActivity() {
         val dividerAfterMixedAllowQr = findViewById<View>(R.id.dividerAfterMixedAllowQr)
         val dividerAfterMixedAllowBarcode = findViewById<View>(R.id.dividerAfterMixedAllowBarcode)
         val dividerAfterMixedAllowProfileSwitching = findViewById<View>(R.id.dividerAfterMixedAllowProfileSwitching)
+
+        // Quick Settings tiles and widgets render as a grid of square tiles
+        // (same component as the app grids), built before they are wired up.
+        buildDisplayGrids()
 
         val rowRequireNfcUnlock = findViewById<View>(R.id.rowRequireNfcUnlock)
         val rowQuickTile = findViewById<View>(R.id.rowQuickTile)
@@ -1498,41 +1504,92 @@ open class ToggleOptionsActivity : AppCompatActivity() {
     private fun isQuickSettingsTileMarkedAdded(key: String): Boolean =
         PreferenceManager.getDefaultSharedPreferences(this).getBoolean(key, false)
 
+    private data class ShortcutTile(
+        val rootId: Int,
+        val iconRes: Int,
+        val labelRes: Int,
+        val badge: Boolean = false,
+    )
+
+    private fun buildDisplayGrids() {
+        shortcutBadges.clear()
+        fillShortcutGrid(
+            containerId = R.id.cardDisplayTileControls,
+            tiles = listOf(
+                ShortcutTile(R.id.rowQuickTile, R.drawable.dashboard_24, R.string.pref_qs_tile_title, badge = true),
+                ShortcutTile(R.id.rowQrQuickTile, R.drawable.qr_code_24, R.string.pref_qr_qs_tile_title, badge = true),
+                ShortcutTile(R.id.rowBarcodeQuickTile, R.drawable.barcode_24, R.string.pref_barcode_qs_tile_title, badge = true),
+            )
+        )
+        fillShortcutGrid(
+            containerId = R.id.cardDisplayWidgetControls,
+            tiles = listOf(
+                ShortcutTile(R.id.rowWidgetBarcode, R.drawable.barcode_24, R.string.pref_widget_barcode_title),
+                ShortcutTile(R.id.rowWidgetQr, R.drawable.qr_code_24, R.string.pref_widget_qr_title),
+                ShortcutTile(R.id.rowWidgetNextSchedule, R.drawable.schedule_24, R.string.pref_widget_next_schedule_title),
+                ShortcutTile(R.id.rowWidgetActiveTimer, R.drawable.schedule_24, R.string.pref_widget_active_timer_title),
+                ShortcutTile(R.id.rowWidgetBlockedNotifications, R.drawable.notifications_24, R.string.pref_widget_blocked_notifications_title),
+            )
+        )
+    }
+
+    private fun fillShortcutGrid(containerId: Int, tiles: List<ShortcutTile>) {
+        val container = findViewById<LinearLayout>(containerId) ?: return
+        container.removeAllViews()
+        val columns = 3
+        val spacing = dp(4)
+        val inflater = LayoutInflater.from(this)
+        tiles.chunked(columns).forEach { chunk ->
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            }
+            chunk.forEach { spec ->
+                val tile = inflater.inflate(R.layout.grid_shortcut_tile, row, false)
+                tile.id = spec.rootId
+                tile.findViewById<ImageView>(R.id.ivTileIcon).setImageResource(spec.iconRes)
+                tile.findViewById<TextView>(R.id.tvTileLabel).setText(spec.labelRes)
+                if (spec.badge) {
+                    shortcutBadges[spec.rootId] = tile.findViewById(R.id.ivTileBadge)
+                }
+                tile.layoutParams = LinearLayout.LayoutParams(
+                    0,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    1f
+                ).apply { setMargins(spacing, spacing, spacing, spacing) }
+                row.addView(tile)
+            }
+            repeat(columns - chunk.size) {
+                row.addView(View(this).apply {
+                    layoutParams = LinearLayout.LayoutParams(0, 0, 1f)
+                })
+            }
+            container.addView(row)
+        }
+    }
+
     private fun refreshQuickSettingsTileRows() {
         updateQuickSettingsTileRow(
             rowId = R.id.rowQuickTile,
-            summaryId = R.id.tvQuickTileSummary,
-            chevronId = R.id.ivQuickTileChevron,
             addedKey = KEY_QS_TILE_REQUESTED,
-            defaultSummary = R.string.pref_qs_tile_summary,
             supported = true
         )
         updateQuickSettingsTileRow(
             rowId = R.id.rowQrQuickTile,
-            summaryId = R.id.tvQrQuickTileSummary,
-            chevronId = R.id.ivQrQuickTileChevron,
             addedKey = KEY_QR_QS_TILE_REQUESTED,
-            defaultSummary = R.string.pref_qr_qs_tile_summary,
             supported = AutomationModeStore.isCameraSupported(this)
         )
         updateQuickSettingsTileRow(
             rowId = R.id.rowBarcodeQuickTile,
-            summaryId = R.id.tvBarcodeQuickTileSummary,
-            chevronId = R.id.ivBarcodeQuickTileChevron,
             addedKey = KEY_BARCODE_QS_TILE_REQUESTED,
-            defaultSummary = R.string.pref_barcode_qs_tile_summary,
             supported = AutomationModeStore.isCameraSupported(this)
         )
     }
 
-    private fun updateQuickSettingsTileRow(
-        rowId: Int,
-        summaryId: Int,
-        chevronId: Int,
-        addedKey: String,
-        defaultSummary: Int,
-        supported: Boolean
-    ) {
+    private fun updateQuickSettingsTileRow(rowId: Int, addedKey: String, supported: Boolean) {
         val added = isQuickSettingsTileMarkedAdded(addedKey)
         findViewById<View>(rowId)?.apply {
             // Stay tappable (dimmed): taps explain the state via pill instead of doing nothing.
@@ -1540,14 +1597,8 @@ open class ToggleOptionsActivity : AppCompatActivity() {
             isClickable = true
             alpha = if (!supported || added) 0.52f else 1f
         }
-        findViewById<TextView>(summaryId)?.setText(
-            when {
-                !supported -> R.string.mode_not_supported_on_device
-                added -> R.string.pref_qs_tile_already_added
-                else -> defaultSummary
-            }
-        )
-        findViewById<ImageView>(chevronId)?.apply {
+        // Badge shows the added state (check) or that tapping opens the system add flow.
+        shortcutBadges[rowId]?.apply {
             visibility = if (supported) View.VISIBLE else View.GONE
             setImageResource(
                 if (added) R.drawable.check_circle_24
@@ -1862,21 +1913,6 @@ open class ToggleOptionsActivity : AppCompatActivity() {
             R.id.rowAutoPairOnWrite,
             R.id.rowQuickTile,
             R.id.rowQrQuickTile,
-            R.id.rowBarcodeQuickTile
-        )
-        setDividerAfter(
-            R.id.dividerAfterQuickTile,
-            R.id.rowQuickTile,
-            R.id.rowQrQuickTile,
-            R.id.rowBarcodeQuickTile
-        )
-        setDividerAfter(
-            R.id.dividerAfterQrQuickTile,
-            R.id.rowQrQuickTile,
-            R.id.rowBarcodeQuickTile
-        )
-        setDividerAfter(
-            R.id.dividerAfterBarcodeQuickTile,
             R.id.rowBarcodeQuickTile
         )
     }
