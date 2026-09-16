@@ -52,6 +52,18 @@ object LastBlockReasonStore {
             val age = System.currentTimeMillis() - timeMillis
             return timeMillis > 0L && age in 0..maxAgeMs
         }
+
+        fun userFacingSummary(): String? {
+            val reason = rule.ifBlank { source }
+            if (reason.isBlank() && profile.isBlank()) {
+                return null
+            }
+            return when {
+                reason.isBlank() -> profile
+                profile.isBlank() -> reason
+                else -> "$reason • $profile"
+            }
+        }
     }
 
     fun mark(

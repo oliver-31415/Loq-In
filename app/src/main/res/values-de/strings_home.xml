@@ -167,6 +167,7 @@
     <string name="block_reason_info_title">Why was this blocked?</string>
     <string name="block_reason_info_button_desc">Show why this was blocked</string>
     <string name="block_reason_info_empty">No recent block reason is available.</string>
+    <string name="block_reason_summary_fmt">Blocked by: %1$s</string>
     <string name="block_reason_field_profile">Profile</string>
     <string name="block_reason_field_rule">Rule</string>
     <string name="block_reason_field_mode">Mode</string>
