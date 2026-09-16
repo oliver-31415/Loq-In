@@ -68,6 +68,7 @@ import com.oliver.loqin.feature.onboarding.adapters.OnboardingPagerAdapter
 import com.oliver.loqin.feature.faq.FaqActivity
 import com.oliver.loqin.feature.settings.AppLockSettingsActivity
 import com.oliver.loqin.feature.settings.BlockingFeaturesActivity
+import com.oliver.loqin.feature.settings.ControlModesActivity
 import com.oliver.loqin.feature.settings.HomeModeDialogHelper
 import com.oliver.loqin.feature.picker.AppPickerActivity
 import com.oliver.loqin.feature.schedule.SchedulesActivity
@@ -1057,15 +1058,13 @@ class OnboardingActivity : ComponentActivity() {
             ),
             level = OnboardingPage.Level.RECOMMENDED,
             actionLabel = getString(R.string.onb_controls_action),
-            action = { act ->
-                act.getSharedPreferences(PREFS, MODE_PRIVATE).edit {
-                    putBoolean(KEY_CONTROLS_VISITED, true)
-                }
-                act.startActivity(
-                    Intent(act, ToggleOptionsActivity::class.java)
-                        .putExtra(ToggleOptionsActivity.EXTRA_VIEW_SECTION, ToggleOptionsActivity.SECTION_BLOCKING)
-                )
-            },
+                action = { act ->
+                    act.getSharedPreferences(PREFS, MODE_PRIVATE).edit {
+                        putBoolean(KEY_CONTROLS_VISITED, true)
+                    }
+                    // Same modern picker as the Home hero badge, as a full page.
+                    act.startActivity(Intent(act, ControlModesActivity::class.java))
+                },
             completionCheck = { ctx -> hasVisitedControlSetup(ctx) },
             completedLabel = getString(R.string.onb_controls_selected),
             keepActionEnabledWhenCompleted = true

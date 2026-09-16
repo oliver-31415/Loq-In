@@ -12,6 +12,7 @@
     <string name="toggle_options_display_title">Widgets &amp; Shortcuts</string>
     <string name="toggle_group_manage_blocking_modes">Kontrollmodi</string>
     <string name="settings_blocking_modes_summary">Wähle, wie Loq In aktiviert oder deaktiviert wird.</string>
+    <string name="control_modes_profile_subtitle">Steuermodi für: %1$s</string>
     <string name="toggle_group_manage_other_blocking_features">Funktionszugriff</string>
     <string name="settings_blocking_features_summary">Zugriff bei aktivem Schutz, Benachrichtigungen &amp; Zusammenfassung sowie Status.</string>
 
