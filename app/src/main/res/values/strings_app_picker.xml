@@ -111,8 +111,9 @@
     <!-- ====================================================== -->
     <!-- Settings lockout requirements -->
     <!-- ====================================================== -->
-    <string name="app_picker_settings_requirements_title">Emergency Unlock required</string>
-    <string name="app_picker_settings_requirements_message">To block Settings, advanced protection must be enabled and Emergency Unlock with an Emergency PIN must already be configured.</string>
+    <string name="app_picker_settings_requirements_title">Protection setup required</string>
+    <string name="app_picker_settings_requirements_message">To block Settings, uninstall protection with Device Admin must be active and Emergency Unlock with an Emergency PIN must already be configured.</string>
+    <string name="app_picker_settings_requirements_setup_action">Set up protection</string>
     <string name="app_picker_settings_second_warning_title">Are you absolutely sure?</string>
     <string name="app_picker_settings_second_warning_message">Blocking Settings can make your phone harder to recover if another issue occurs. This option is intended for advanced users only.</string>
     <string name="app_picker_settings_temporarily_allowed">Settings temporarily allowed to prevent a lockout.</string>

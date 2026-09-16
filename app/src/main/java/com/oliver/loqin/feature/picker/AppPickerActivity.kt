@@ -58,6 +58,7 @@ import com.oliver.loqin.data.prefs.InAppRuleStore
 import com.oliver.loqin.data.prefs.ProfileRuleModeStore
 import com.oliver.loqin.data.prefs.SessionLimitStore
 import com.oliver.loqin.data.prefs.UsageLimitStore
+import com.oliver.loqin.feature.settings.AppLockSettingsActivity
 import com.oliver.loqin.feature.settings.ManageBlockedWebsitesActivity
 import com.oliver.loqin.feature.settings.InAppRulesActivity
 import com.oliver.loqin.feature.usage.QuickLimitDialogs
@@ -983,7 +984,9 @@ class AppPickerActivity : AppCompatActivity() {
                             .setTitle(R.string.app_picker_settings_requirements_title)
                             .setMessage(R.string.app_picker_settings_requirements_message)
                             .setNegativeButton(android.R.string.cancel, null)
-                            .setPositiveButton(android.R.string.ok) { _, _ -> }
+                            .setPositiveButton(R.string.app_picker_settings_requirements_setup_action) { _, _ ->
+                                startActivity(Intent(this, AppLockSettingsActivity::class.java))
+                            }
                             .showAccented()
                         return
                     }

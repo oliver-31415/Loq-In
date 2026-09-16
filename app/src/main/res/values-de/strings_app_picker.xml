@@ -111,8 +111,9 @@
     <!-- ====================================================== -->
     <!-- Settings lockout requirements -->
     <!-- ====================================================== -->
-    <string name="app_picker_settings_requirements_title">Notfall-Entsperrung erforderlich</string>
-    <string name="app_picker_settings_requirements_message">Um Einstellungen zu blockieren, muss der erweiterte Schutz aktiviert sein und die Notfall-Entsperrung mit Notfall-PIN bereits eingerichtet sein.</string>
+    <string name="app_picker_settings_requirements_title">Schutz-Einrichtung erforderlich</string>
+    <string name="app_picker_settings_requirements_message">Um Einstellungen zu blockieren, muss der Deinstallationsschutz mit Geräte-Admin aktiv sein und die Notfall-Entsperrung mit Notfall-PIN bereits eingerichtet sein.</string>
+    <string name="app_picker_settings_requirements_setup_action">Schutz einrichten</string>
     <string name="app_picker_settings_second_warning_title">Bist du dir ganz sicher?</string>
     <string name="app_picker_settings_second_warning_message">Das Blockieren von Einstellungen kann die Wiederherstellung deines Telefons erschweren, falls ein weiteres Problem auftritt. Diese Option ist nur für fortgeschrittene Nutzer gedacht.</string>
     <string name="app_picker_settings_temporarily_allowed">Einstellungen wurden vorübergehend erlaubt, um eine Sperrschleife zu verhindern.</string>
