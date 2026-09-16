@@ -20,11 +20,10 @@ package com.oliver.loqin.feature.usage
 
 import android.content.Context
 import android.content.Intent
-import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Bundle
-import android.view.Gravity
+import android.view.LayoutInflater
 import android.view.View
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -32,12 +31,12 @@ import android.widget.ScrollView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.core.graphics.ColorUtils
 import androidx.core.view.setPadding
 import com.oliver.loqin.R
 import com.oliver.loqin.data.prefs.ActiveDurationStore
 import com.oliver.loqin.data.prefs.AppLaunchCountStore
 import com.oliver.loqin.data.prefs.BarcodeScanCountStore
+import com.oliver.loqin.data.prefs.BlockCategoryCountStore
 import com.oliver.loqin.data.prefs.BlockCountStore
 import com.oliver.loqin.data.prefs.EmergencyUnlockCountStore
 import com.oliver.loqin.data.prefs.LimitHitCountStore
@@ -56,12 +55,18 @@ import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
-import com.google.android.material.card.MaterialCardView
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.text.NumberFormat
 import java.util.Calendar
 
+/**
+ * Loq In Stats: counters for scans, protection activity, actions and schedules.
+ *
+ * Rendered as square tiles (same card language as the widgets and app blocking
+ * grids) grouped under flat section headers, with the insights-style range
+ * selector at the top.
+ */
 class LoqInOverviewActivity : AppCompatActivity() {
 
     private enum class Range {
@@ -72,12 +77,18 @@ class LoqInOverviewActivity : AppCompatActivity() {
         OVERALL,
     }
 
+    private data class Stat(
+        val iconRes: Int,
+        val labelRes: Int,
+        val valueText: String,
+        val onClick: (() -> Unit)? = null,
+    )
+
     private lateinit var toolbar: MaterialToolbar
     private lateinit var rangeGroup: MaterialButtonToggleGroup
-    private lateinit var scansCardContent: LinearLayout
-    private lateinit var activityCardContent: LinearLayout
-    private lateinit var actionsCardContent: LinearLayout
-    private lateinit var schedulesCardContent: LinearLayout
+    private lateinit var scansGrid: LinearLayout
+    private lateinit var activityGrid: LinearLayout
+    private lateinit var actionsGrid: LinearLayout
 
     private val rangeButtons: MutableMap<Range, MaterialButton> = linkedMapOf()
     private var selectedRange: Range = Range.TODAY
@@ -152,7 +163,7 @@ class LoqInOverviewActivity : AppCompatActivity() {
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply {
-                bottomMargin = dp(16)
+                bottomMargin = dp(14)
             }
         }
         addRangeButton(Range.TODAY, R.string.stats_range_today)
@@ -162,35 +173,21 @@ class LoqInOverviewActivity : AppCompatActivity() {
         addRangeButton(Range.OVERALL, R.string.loqin_overview_range_overall)
         content.addView(rangeGroup)
 
-        content.addView(sectionTitle(R.string.loqin_overview_section_scans))
-        val scansCard = statsCard().also { card ->
-            scansCardContent = card.getChildAt(0) as LinearLayout
-        }
-        content.addView(scansCard, sectionCardLayoutParams())
+        content.addView(sectionTitle(R.string.loqin_overview_section_activity))
+        activityGrid = newStatGrid()
+        content.addView(activityGrid)
 
-        content.addView(sectionTitle(R.string.loqin_overview_section_activity).apply {
-            (layoutParams as? LinearLayout.LayoutParams)?.topMargin = dp(22)
+        content.addView(sectionTitle(R.string.loqin_overview_section_scans).apply {
+            (layoutParams as? LinearLayout.LayoutParams)?.topMargin = dp(20)
         })
-        val activityCard = statsCard().also { card ->
-            activityCardContent = card.getChildAt(0) as LinearLayout
-        }
-        content.addView(activityCard, sectionCardLayoutParams())
+        scansGrid = newStatGrid()
+        content.addView(scansGrid)
 
         content.addView(sectionTitle(R.string.loqin_overview_section_actions).apply {
-            (layoutParams as? LinearLayout.LayoutParams)?.topMargin = dp(22)
+            (layoutParams as? LinearLayout.LayoutParams)?.topMargin = dp(20)
         })
-        val actionsCard = statsCard().also { card ->
-            actionsCardContent = card.getChildAt(0) as LinearLayout
-        }
-        content.addView(actionsCard, sectionCardLayoutParams())
-
-        content.addView(sectionTitle(R.string.loqin_overview_section_schedules).apply {
-            (layoutParams as? LinearLayout.LayoutParams)?.topMargin = dp(22)
-        })
-        val schedulesCard = statsCard().also { card ->
-            schedulesCardContent = card.getChildAt(0) as LinearLayout
-        }
-        content.addView(schedulesCard, sectionCardLayoutParams())
+        actionsGrid = newStatGrid()
+        content.addView(actionsGrid)
 
         content.addView(TextView(this).apply {
             text = getString(R.string.loqin_overview_storage_note)
@@ -275,150 +272,217 @@ class LoqInOverviewActivity : AppCompatActivity() {
         )
     }
 
+    // ---------------------------------------------------------------------
+    // Tiles
+    // ---------------------------------------------------------------------
+
+    private fun newStatGrid(): LinearLayout = LinearLayout(this).apply {
+        orientation = LinearLayout.VERTICAL
+        layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ).apply { topMargin = dp(8) }
+    }
+
+    private fun fillStatGrid(grid: LinearLayout, stats: List<Stat>) {
+        grid.removeAllViews()
+        val columns = 3
+        val spacing = dp(4)
+        val inflater = LayoutInflater.from(this)
+        stats.chunked(columns).forEach { chunk ->
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                )
+            }
+            chunk.forEach { stat ->
+                val tile = inflater.inflate(R.layout.grid_stat_tile, row, false)
+                tile.findViewById<ImageView>(R.id.ivStatIcon).setImageResource(stat.iconRes)
+                tile.findViewById<TextView>(R.id.tvStatValue).text = stat.valueText
+                tile.findViewById<TextView>(R.id.tvStatLabel).setText(stat.labelRes)
+                if (stat.onClick != null) {
+                    tile.isClickable = true
+                    tile.isFocusable = true
+                    tile.setOnClickListener { stat.onClick.invoke() }
+                } else {
+                    tile.isClickable = false
+                    tile.isFocusable = false
+                }
+                tile.layoutParams = LinearLayout.LayoutParams(
+                    0,
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    1f
+                ).apply { setMargins(spacing, spacing, spacing, spacing) }
+                row.addView(tile)
+            }
+            repeat(columns - chunk.size) {
+                row.addView(View(this).apply {
+                    layoutParams = LinearLayout.LayoutParams(0, 0, 1f)
+                })
+            }
+            grid.addView(row)
+        }
+    }
+
+    // ---------------------------------------------------------------------
+    // Data
+    // ---------------------------------------------------------------------
+
     private fun refresh() {
-        scansCardContent.removeAllViews()
-        addStatRow(
-            parent = scansCardContent,
-            iconRes = R.drawable.nfc_24,
-            labelRes = R.string.loqin_overview_nfc_scans,
-            value = countForRange(
-                today = { NfcScanCountStore.getToday(this) },
-                week = { NfcScanCountStore.getForLastNDays(this, 7) },
-                month = { year, month -> NfcScanCountStore.getForMonth(this, year, month) },
-                year = { year -> NfcScanCountStore.getForYear(this, year) },
-                overall = { NfcScanCountStore.getOverall(this) }
+        val integer = NumberFormat.getIntegerInstance()
+
+        fillStatGrid(
+            scansGrid,
+            listOf(
+                Stat(
+                    R.drawable.nfc_24,
+                    R.string.loqin_overview_nfc_scans,
+                    integer.format(
+                        countForRange(
+                            today = { NfcScanCountStore.getToday(this) },
+                            week = { NfcScanCountStore.getForLastNDays(this, 7) },
+                            month = { year, month -> NfcScanCountStore.getForMonth(this, year, month) },
+                            year = { year -> NfcScanCountStore.getForYear(this, year) },
+                            overall = { NfcScanCountStore.getOverall(this) }
+                        )
+                    )
+                ),
+                Stat(
+                    R.drawable.qr_code_24,
+                    R.string.loqin_overview_qr_scans,
+                    integer.format(
+                        countForRange(
+                            today = { QrScanCountStore.getToday(this) },
+                            week = { QrScanCountStore.getForLastNDays(this, 7) },
+                            month = { year, month -> QrScanCountStore.getForMonth(this, year, month) },
+                            year = { year -> QrScanCountStore.getForYear(this, year) },
+                            overall = { QrScanCountStore.getOverall(this) }
+                        )
+                    )
+                ),
+                Stat(
+                    R.drawable.barcode_24,
+                    R.string.loqin_overview_barcode_scans,
+                    integer.format(
+                        countForRange(
+                            today = { BarcodeScanCountStore.getToday(this) },
+                            week = { BarcodeScanCountStore.getForLastNDays(this, 7) },
+                            month = { year, month -> BarcodeScanCountStore.getForMonth(this, year, month) },
+                            year = { year -> BarcodeScanCountStore.getForYear(this, year) },
+                            overall = { BarcodeScanCountStore.getOverall(this) }
+                        )
+                    )
+                ),
             )
-        )
-        addStatRow(
-            parent = scansCardContent,
-            iconRes = R.drawable.qr_code_24,
-            labelRes = R.string.loqin_overview_qr_scans,
-            value = countForRange(
-                today = { QrScanCountStore.getToday(this) },
-                week = { QrScanCountStore.getForLastNDays(this, 7) },
-                month = { year, month -> QrScanCountStore.getForMonth(this, year, month) },
-                year = { year -> QrScanCountStore.getForYear(this, year) },
-                overall = { QrScanCountStore.getOverall(this) }
-            )
-        )
-        addStatRow(
-            parent = scansCardContent,
-            iconRes = R.drawable.barcode_24,
-            labelRes = R.string.loqin_overview_barcode_scans,
-            value = countForRange(
-                today = { BarcodeScanCountStore.getToday(this) },
-                week = { BarcodeScanCountStore.getForLastNDays(this, 7) },
-                month = { year, month -> BarcodeScanCountStore.getForMonth(this, year, month) },
-                year = { year -> BarcodeScanCountStore.getForYear(this, year) },
-                overall = { BarcodeScanCountStore.getOverall(this) }
-            ),
-            last = true
         )
 
-        activityCardContent.removeAllViews()
-        addStatRow(
-            parent = activityCardContent,
-            iconRes = R.drawable.timer_24,
-            labelRes = R.string.loqin_overview_active_time,
-            valueText = StatsFormat.prettyMsWithSeconds(activeTimeForRange()),
-            onClick = { startActivity(ActiveTimeActivity.intent(this)) }
-        )
-        addStatRow(
-            parent = activityCardContent,
-            iconRes = R.drawable.apps_24,
-            labelRes = R.string.loqin_overview_app_launches,
-            value = visibleAppLaunchesForRange()
-        )
-        addStatRow(
-            parent = activityCardContent,
-            iconRes = R.drawable.security_24,
-            labelRes = R.string.loqin_overview_blocks,
-            value = countForRange(
-                today = { BlockCountStore.getTotalToday(this) },
-                week = { BlockCountStore.getTotalForLastNDays(this, 7) },
-                month = { year, month -> BlockCountStore.getTotalForMonth(this, year, month) },
-                year = { year -> BlockCountStore.getTotalForYear(this, year) },
-                overall = { BlockCountStore.getTotalOverall(this) }
+        fillStatGrid(
+            activityGrid,
+            listOf(
+                Stat(
+                    R.drawable.layers_24,
+                    R.string.loqin_overview_in_app_blocks,
+                    integer.format(blockCategoryCount(BlockCategoryCountStore.Category.IN_APP))
+                ),
+                Stat(
+                    R.drawable.language_24,
+                    R.string.loqin_overview_website_blocks,
+                    integer.format(blockCategoryCount(BlockCategoryCountStore.Category.WEBSITE))
+                ),
+                Stat(
+                    R.drawable.security_24,
+                    R.string.loqin_overview_app_blocks,
+                    integer.format(blockCategoryCount(BlockCategoryCountStore.Category.APP))
+                ),
+                Stat(
+                    R.drawable.timer_24,
+                    R.string.loqin_overview_active_time,
+                    StatsFormat.prettyMsWithSeconds(activeTimeForRange()),
+                    onClick = { startActivity(ActiveTimeActivity.intent(this)) }
+                ),
+                Stat(
+                    R.drawable.apps_24,
+                    R.string.loqin_overview_app_launches,
+                    integer.format(visibleAppLaunchesForRange())
+                ),
+                Stat(
+                    R.drawable.bar_chart_24,
+                    R.string.loqin_overview_limits_reached,
+                    integer.format(
+                        countForRange(
+                            today = { LimitHitCountStore.getToday(this) },
+                            week = { LimitHitCountStore.getForLastNDays(this, 7) },
+                            month = { year, month -> LimitHitCountStore.getForMonth(this, year, month) },
+                            year = { year -> LimitHitCountStore.getForYear(this, year) },
+                            overall = { LimitHitCountStore.getOverall(this) }
+                        )
+                    )
+                ),
             )
-        )
-        addStatRow(
-            parent = activityCardContent,
-            iconRes = R.drawable.bar_chart_24,
-            labelRes = R.string.loqin_overview_limits_reached,
-            value = countForRange(
-                today = { LimitHitCountStore.getToday(this) },
-                week = { LimitHitCountStore.getForLastNDays(this, 7) },
-                month = { year, month -> LimitHitCountStore.getForMonth(this, year, month) },
-                year = { year -> LimitHitCountStore.getForYear(this, year) },
-                overall = { LimitHitCountStore.getOverall(this) }
-            ),
-            last = true
         )
 
-        actionsCardContent.removeAllViews()
-        addStatRow(
-            parent = actionsCardContent,
-            iconRes = R.drawable.toggle_on_24,
-            labelRes = R.string.loqin_overview_enabled,
-            value = actionCount(LoqInActionCountStore.Action.ENABLE)
-        )
-        addStatRow(
-            parent = actionsCardContent,
-            iconRes = R.drawable.toggle_off_24,
-            labelRes = R.string.loqin_overview_disabled,
-            value = actionCount(LoqInActionCountStore.Action.DISABLE)
-        )
-        addStatRow(
-            parent = actionsCardContent,
-            iconRes = R.drawable.play_arrow_24,
-            labelRes = R.string.loqin_overview_temporary_enables,
-            value = countForRange(
-                today = { TempEnableCountStore.getToday(this) },
-                week = { TempEnableCountStore.getForLastNDays(this, 7) },
-                month = { year, month -> TempEnableCountStore.getForMonth(this, year, month) },
-                year = { year -> TempEnableCountStore.getForYear(this, year) },
-                overall = { TempEnableCountStore.getOverall(this) }
+        fillStatGrid(
+            actionsGrid,
+            listOf(
+                Stat(
+                    R.drawable.toggle_on_24,
+                    R.string.loqin_overview_enabled,
+                    integer.format(actionCount(LoqInActionCountStore.Action.ENABLE))
+                ),
+                Stat(
+                    R.drawable.toggle_off_24,
+                    R.string.loqin_overview_disabled,
+                    integer.format(actionCount(LoqInActionCountStore.Action.DISABLE))
+                ),
+                Stat(
+                    R.drawable.play_arrow_24,
+                    R.string.loqin_overview_temporary_enables,
+                    integer.format(
+                        countForRange(
+                            today = { TempEnableCountStore.getToday(this) },
+                            week = { TempEnableCountStore.getForLastNDays(this, 7) },
+                            month = { year, month -> TempEnableCountStore.getForMonth(this, year, month) },
+                            year = { year -> TempEnableCountStore.getForYear(this, year) },
+                            overall = { TempEnableCountStore.getOverall(this) }
+                        )
+                    )
+                ),
+                Stat(
+                    R.drawable.lock_open_24,
+                    R.string.loqin_overview_emergency_unlocks,
+                    integer.format(
+                        countForRange(
+                            today = { EmergencyUnlockCountStore.getToday(this) },
+                            week = { EmergencyUnlockCountStore.getForLastNDays(this, 7) },
+                            month = { year, month -> EmergencyUnlockCountStore.getForMonth(this, year, month) },
+                            year = { year -> EmergencyUnlockCountStore.getForYear(this, year) },
+                            overall = { EmergencyUnlockCountStore.getOverall(this) }
+                        )
+                    )
+                ),
+                Stat(
+                    R.drawable.toggle_on_24,
+                    R.string.loqin_overview_schedule_enables,
+                    integer.format(actionCount(LoqInActionCountStore.Action.SCHEDULE_ENABLE))
+                ),
+                Stat(
+                    R.drawable.toggle_off_24,
+                    R.string.loqin_overview_schedule_disables,
+                    integer.format(actionCount(LoqInActionCountStore.Action.SCHEDULE_DISABLE))
+                ),
             )
         )
-        addStatRow(
-            parent = actionsCardContent,
-            iconRes = R.drawable.lock_open_24,
-            labelRes = R.string.loqin_overview_emergency_unlocks,
-            value = countForRange(
-                today = { EmergencyUnlockCountStore.getToday(this) },
-                week = { EmergencyUnlockCountStore.getForLastNDays(this, 7) },
-                month = { year, month -> EmergencyUnlockCountStore.getForMonth(this, year, month) },
-                year = { year -> EmergencyUnlockCountStore.getForYear(this, year) },
-                overall = { EmergencyUnlockCountStore.getOverall(this) }
-            ),
-            last = true
-        )
+    }
 
-        schedulesCardContent.removeAllViews()
-        addStatRow(
-            parent = schedulesCardContent,
-            iconRes = R.drawable.schedule_24,
-            labelRes = R.string.loqin_overview_schedules_executed,
-            value = countForRange(
-                today = { ScheduleExecutionCountStore.getToday(this) },
-                week = { ScheduleExecutionCountStore.getForLastNDays(this, 7) },
-                month = { year, month -> ScheduleExecutionCountStore.getForMonth(this, year, month) },
-                year = { year -> ScheduleExecutionCountStore.getForYear(this, year) },
-                overall = { ScheduleExecutionCountStore.getOverall(this) }
-            )
-        )
-        addStatRow(
-            parent = schedulesCardContent,
-            iconRes = R.drawable.toggle_on_24,
-            labelRes = R.string.loqin_overview_schedule_enables,
-            value = actionCount(LoqInActionCountStore.Action.SCHEDULE_ENABLE)
-        )
-        addStatRow(
-            parent = schedulesCardContent,
-            iconRes = R.drawable.toggle_off_24,
-            labelRes = R.string.loqin_overview_schedule_disables,
-            value = actionCount(LoqInActionCountStore.Action.SCHEDULE_DISABLE),
-            last = true
+    private fun blockCategoryCount(category: BlockCategoryCountStore.Category): Int {
+        return countForRange(
+            today = { BlockCategoryCountStore.getToday(this, category) },
+            week = { BlockCategoryCountStore.getForLastNDays(this, category, 7) },
+            month = { year, month -> BlockCategoryCountStore.getForMonth(this, category, year, month) },
+            year = { year -> BlockCategoryCountStore.getForYear(this, category, year) },
+            overall = { BlockCategoryCountStore.getOverall(this, category) }
         )
     }
 
@@ -503,119 +567,6 @@ class LoqInOverviewActivity : AppCompatActivity() {
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
             )
-        }
-    }
-
-    private fun statsCard(): MaterialCardView {
-        val content = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-        }
-        return MaterialCardView(this).apply {
-            radius = dp(20).toFloat()
-            cardElevation = dp(1).toFloat()
-            useCompatPadding = true
-            setCardBackgroundColor(
-                ContextCompat.getColor(this@LoqInOverviewActivity, R.color.foqos_surface)
-            )
-            strokeColor = ContextCompat.getColor(
-                this@LoqInOverviewActivity,
-                R.color.foqos_outline_variant
-            )
-            strokeWidth = dp(1)
-            addView(content)
-        }
-    }
-
-    private fun sectionCardLayoutParams(): LinearLayout.LayoutParams {
-        return LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        ).apply {
-            topMargin = dp(10)
-        }
-    }
-
-    private fun addStatRow(
-        parent: LinearLayout,
-        iconRes: Int,
-        labelRes: Int,
-        value: Int,
-        last: Boolean = false,
-    ) {
-        addStatRow(
-            parent = parent,
-            iconRes = iconRes,
-            labelRes = labelRes,
-            valueText = NumberFormat.getIntegerInstance().format(value),
-            last = last
-        )
-    }
-
-    private fun addStatRow(
-        parent: LinearLayout,
-        iconRes: Int,
-        labelRes: Int,
-        valueText: String,
-        last: Boolean = false,
-        onClick: (() -> Unit)? = null,
-    ) {
-        val row = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            minimumHeight = dp(58)
-            setPadding(dp(16), dp(12), dp(16), dp(12))
-            if (onClick != null) {
-                isClickable = true
-                isFocusable = true
-                foreground = com.google.android.material.color.MaterialColors.getColor(
-                    this@LoqInOverviewActivity,
-                    com.google.android.material.R.attr.colorOnSurface,
-                    android.graphics.Color.TRANSPARENT
-                ).let { rippleColor ->
-                    android.content.res.ColorStateList.valueOf(rippleColor)
-                        .let { android.graphics.drawable.RippleDrawable(it, null, null) }
-                }
-                setOnClickListener { onClick() }
-            }
-        }
-        row.addView(ImageView(this).apply {
-            setImageResource(iconRes)
-            imageTintList = ColorStateList.valueOf(AccentColor.getAccentColorInt(this@LoqInOverviewActivity))
-            contentDescription = null
-        }, LinearLayout.LayoutParams(dp(22), dp(22)))
-        row.addView(TextView(this).apply {
-            text = getString(labelRes)
-            textSize = 15f
-            setTextColor(
-                MaterialColors.getColor(
-                    this@LoqInOverviewActivity,
-                    com.google.android.material.R.attr.colorOnSurface,
-                    Color.WHITE
-                )
-            )
-        }, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
-            marginStart = dp(14)
-        })
-        row.addView(TextView(this).apply {
-            text = valueText
-            textSize = 17f
-            typeface = Typeface.DEFAULT_BOLD
-            setTextColor(AccentColor.getAccentColorInt(this@LoqInOverviewActivity))
-        })
-        parent.addView(row)
-
-        if (!last) {
-            parent.addView(View(this).apply {
-                setBackgroundColor(
-                    ContextCompat.getColor(this@LoqInOverviewActivity, R.color.foqos_outline_variant)
-                )
-            }, LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                dp(1)
-            ).apply {
-                marginStart = dp(52)
-                marginEnd = dp(16)
-            })
         }
     }
 

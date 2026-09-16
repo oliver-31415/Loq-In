@@ -46,6 +46,7 @@ import com.oliver.loqin.data.prefs.AppLogStore
 import com.oliver.loqin.data.prefs.AttemptLimitStore
 import com.oliver.loqin.data.prefs.AutomationModeStore
 import com.oliver.loqin.data.prefs.BlockAttemptStore
+import com.oliver.loqin.data.prefs.BlockCategoryCountStore
 import com.oliver.loqin.data.prefs.BlockCountStore
 import com.oliver.loqin.data.prefs.BlockedTimeStore
 import com.oliver.loqin.data.prefs.BlockingToggleKeys
@@ -2164,6 +2165,7 @@ class LoqInAccessibilityService : AccessibilityService() {
         postAcknowledgeYouTubeClose: Boolean = false,
         postAcknowledgeYouTubeCleanupShorts: Boolean = false,
         postAcknowledgeYouTubeCleanupMini: Boolean = true,
+        blockCategory: BlockCategoryCountStore.Category = BlockCategoryCountStore.Category.IN_APP,
         prePopupPhoneHome: Boolean = false,
         prePopupYouTubeHome: Boolean = false,
         prePopupYouTubeCloseShorts: Boolean = false,
@@ -2243,6 +2245,7 @@ class LoqInAccessibilityService : AccessibilityService() {
         lastBlockShownAt[pkg] = now
         lastGlobalBlockTs = now
         BlockCountStore.incrementToday(this, pkg)
+        BlockCategoryCountStore.incrementToday(this, blockCategory)
         perf.blocksShown++
 
         if (!deferNavigationUntilAcknowledge) {
@@ -2391,6 +2394,7 @@ class LoqInAccessibilityService : AccessibilityService() {
         lastBlockShownAt[pkg] = now
         lastGlobalBlockTs = now
         BlockCountStore.incrementToday(this, pkg)
+        BlockCategoryCountStore.incrementToday(this, BlockCategoryCountStore.Category.IN_APP)
         perf.blocksShown++
 
         if (isYouTubePackage(pkg)) {
@@ -2529,6 +2533,7 @@ class LoqInAccessibilityService : AccessibilityService() {
         lastBlockShownAt[pkg] = now
         lastGlobalBlockTs = now
         BlockCountStore.incrementToday(this, pkg)
+        BlockCategoryCountStore.incrementToday(this, BlockCategoryCountStore.Category.APP)
         perf.blocksShown++
 
         appendBlockingLog(
@@ -2900,6 +2905,7 @@ class LoqInAccessibilityService : AccessibilityService() {
         if (countAsBlock) {
             lastBlockShownAt[pkg] = now
             lastGlobalBlockTs = now
+            BlockCategoryCountStore.incrementToday(this, BlockCategoryCountStore.Category.APP)
             BlockCountStore.incrementToday(this, pkg)
             perf.blocksShown++
         }
@@ -3886,7 +3892,8 @@ class LoqInAccessibilityService : AccessibilityService() {
             msg,
             backCount = if (redirected) 0 else 1,
             deferNavigationUntilAcknowledge = !redirected,
-            returnToPackageOnClose = true
+            returnToPackageOnClose = true,
+            blockCategory = BlockCategoryCountStore.Category.WEBSITE
         )
     }
 
@@ -4075,7 +4082,8 @@ class LoqInAccessibilityService : AccessibilityService() {
                     message,
                     backCount = 0,
                     deferNavigationUntilAcknowledge = false,
-                    returnToPackageOnClose = true
+                    returnToPackageOnClose = true,
+                    blockCategory = BlockCategoryCountStore.Category.WEBSITE
                 )
             }
         }

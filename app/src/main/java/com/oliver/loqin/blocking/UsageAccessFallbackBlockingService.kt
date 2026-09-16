@@ -35,6 +35,7 @@ import androidx.core.app.NotificationCompat
 import com.oliver.loqin.R
 import com.oliver.loqin.data.prefs.AppLogStore
 import com.oliver.loqin.data.prefs.BlockAttemptStore
+import com.oliver.loqin.data.prefs.BlockCategoryCountStore
 import com.oliver.loqin.data.prefs.BlockCountStore
 import com.oliver.loqin.data.prefs.EmergencyBypassStore
 import com.oliver.loqin.data.prefs.IgnoredUsageAppsStore
@@ -248,6 +249,7 @@ class UsageAccessFallbackBlockingService : Service() {
 
         countedVisibleEventKey = eventKey
         BlockCountStore.incrementToday(this, pkg)
+        BlockCategoryCountStore.incrementToday(this, BlockCategoryCountStore.Category.APP)
         BlockingRuntime.markBlockShown(
             this,
             pkg,
