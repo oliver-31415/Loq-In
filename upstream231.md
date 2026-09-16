@@ -28,9 +28,9 @@ Upstream source paths are under `app/src/main/java/at/saltyy/switchly/...`; our 
 
 | Date | Step | Branch | State | Notes |
 |------|------|--------|-------|-------|
-| 2026-09-16 | W1.1 A1 | `feature/upstream-w1-safety` | Implemented (uncommitted) | See "W1.1 implementation + test evidence" below |
-| 2026-09-16 | W1.2 A7 | `feature/upstream-w1-safety` | Implemented (uncommitted) | See "W1.2 implementation + test evidence" below |
-| 2026-09-17 | W1.3 C3 | `feature/upstream-w1-safety` | Implemented (uncommitted) | See "W1.3 implementation + test evidence" below |
+| 2026-09-16 | W1.1 A1 | `feature/upstream-w1-safety` | Done — `3916a71` | See "W1.1 implementation + test evidence" below |
+| 2026-09-16 | W1.2 A7 | `feature/upstream-w1-safety` | Done — `ab14bb5` | See "W1.2 implementation + test evidence" below |
+| 2026-09-17 | W1.3 C3 | `feature/upstream-w1-safety` | Done — `71280c1` | See "W1.3 implementation + test evidence" below |
 
 ### W1.1 implementation + test evidence (2026-09-16)
 
