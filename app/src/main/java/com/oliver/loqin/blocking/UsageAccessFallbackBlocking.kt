@@ -20,6 +20,8 @@ package com.oliver.loqin.blocking
 
 import android.content.Context
 import android.content.Intent
+import android.os.Handler
+import android.os.Looper
 import android.os.SystemClock
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
@@ -30,6 +32,8 @@ import com.oliver.loqin.data.prefs.ProfileStore
 import com.oliver.loqin.data.prefs.SwitchModeStore
 import com.oliver.loqin.feature.usage.UsageStatsRepo
 import com.oliver.loqin.util.AdvancedProtectionCompat
+import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Coordinates LoqIn's limited UsageEvents-based app-blocking fallback.
@@ -42,6 +46,12 @@ object UsageAccessFallbackBlocking {
     private const val KEY_RUNNING = "running"
     private const val KEY_LAST_HEARTBEAT_ELAPSED = "last_heartbeat_elapsed"
     private const val HEARTBEAT_STALE_MS = 5_000L
+
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private val syncExecutor = Executors.newSingleThreadExecutor { runnable ->
+        Thread(runnable, "LoqInUsageFallbackSync").apply { isDaemon = true }
+    }
+    private val syncGeneration = AtomicLong(0L)
 
     fun shouldRun(context: Context): Boolean {
         val ctx = context.applicationContext
@@ -67,21 +77,44 @@ object UsageAccessFallbackBlocking {
 
     fun sync(context: Context) {
         val ctx = context.applicationContext
-        val serviceIntent = Intent(ctx, UsageAccessFallbackBlockingService::class.java)
-        if (shouldRun(ctx)) {
-            runCatching { ContextCompat.startForegroundService(ctx, serviceIntent) }
-                .onFailure { error ->
-                    AppLogStore.append(
-                        ctx,
-                        "Blocking",
-                        "limited_usage_fallback start failed reason=${error.javaClass.simpleName}: ${error.message.orEmpty()}"
-                    )
+        val generation = syncGeneration.incrementAndGet()
+
+        // Eligibility is evaluated off the main thread, then the actual start/stop is enqueued on the main queue.
+        // This avoids starting the foreground-service deadline while another lifecycle callback (notably AccessibilityService.onDestroy) still occupies main.
+        runCatching {
+            syncExecutor.execute {
+                val shouldRunNow = runCatching { shouldRun(ctx) }.getOrDefault(false)
+                mainHandler.post {
+                    if (generation != syncGeneration.get()) {
+                        return@post
+                    }
+                    val serviceIntent = Intent(ctx, UsageAccessFallbackBlockingService::class.java)
+                    if (shouldRunNow) {
+                        // A healthy service already receives its own poll/heartbeat.
+                        // Avoid redundant startForegroundService() requests during event storms or app startup.
+                        if (isRunning(ctx)) {
+                            return@post
+                        }
+                        runCatching { ContextCompat.startForegroundService(ctx, serviceIntent) }
+                            .onFailure { error ->
+                                AppLogStore.append(
+                                    ctx,
+                                    "Blocking",
+                                    "limited_usage_fallback start failed reason=${error.javaClass.simpleName}: ${error.message.orEmpty()}"
+                                )
+                            }
+                    } else {
+                        runCatching { ctx.stopService(serviceIntent) }
+                        markStopped(ctx)
+                    }
                 }
-        } else {
-            runCatching {
-                ctx.stopService(serviceIntent)
             }
-            markStopped(ctx)
+        }.onFailure { error ->
+            AppLogStore.append(
+                ctx,
+                "Blocking",
+                "limited_usage_fallback sync scheduling failed reason=${error.javaClass.simpleName}: ${error.message.orEmpty()}"
+            )
         }
     }
 
