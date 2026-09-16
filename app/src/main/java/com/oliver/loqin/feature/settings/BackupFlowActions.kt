@@ -28,7 +28,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
+import androidx.activity.ComponentActivity
 import androidx.core.content.edit
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
@@ -68,7 +68,7 @@ import java.util.Locale
  * Owns its activity-result launchers: instantiate as an activity property
  * (before onCreate finishes) so registration happens before STARTED.
  */
-class BackupFlowActions(private val activity: AppCompatActivity) {
+class BackupFlowActions(private val activity: ComponentActivity) {
 
     /** Invoked after a successful backup so the host can refresh its own summaries. */
     var onLibraryChanged: (() -> Unit)? = null

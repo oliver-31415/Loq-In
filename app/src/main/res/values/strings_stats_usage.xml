@@ -395,6 +395,15 @@
         <item quantity="one">%d app hidden</item>
         <item quantity="other">%d apps hidden</item>
     </plurals>
+    <!-- Hidden apps grid filter -->
+    <string name="hidden_apps_filter_all">All apps</string>
+    <string name="hidden_apps_filter_suggested">Suggested</string>
+    <string name="hidden_apps_filter_hidden">Hidden</string>
+    <string name="hidden_apps_tile_selected_desc">%1$s, hidden. Double tap to unhide.</string>
+    <string name="hidden_apps_tile_unselected_desc">%1$s, visible. Double tap to hide.</string>
+    <string name="hidden_apps_select_all">Select all</string>
+    <string name="hidden_apps_clear_all">Clear all</string>
+    <string name="hidden_apps_saved_notice">Hidden apps saved</string>
 
     <!-- ====================================================== -->
     <!-- Usage support -->

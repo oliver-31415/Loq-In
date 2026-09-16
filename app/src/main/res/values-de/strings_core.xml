@@ -42,4 +42,10 @@
         <item quantity="other">%1$d ausgewählt</item>
     </plurals>
 
+    <string name="pin_length_inline">4 bis 8 Ziffern</string>
+    <string name="pin_continue">Weiter</string>
+    <string name="pin_label_new">Neue PIN</string>
+    <string name="pin_label_confirm">PIN erneut eingeben</string>
+    <string name="pin_mismatch">PINs stimmen nicht überein. Versuche es erneut.</string>
+
 </resources>

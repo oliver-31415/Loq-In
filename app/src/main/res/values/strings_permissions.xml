@@ -12,10 +12,25 @@
     <string name="permissions_toolbar_issues">Issues</string>
     <string name="permissions_status_enabled">Enabled</string>
     <string name="permissions_status_disabled">Disabled</string>
+    <string name="permissions_status_ready">Ready</string>
+    <string name="permissions_status_setup_needed">Setup needed</string>
+    <string name="permissions_badge_required">Required</string>
     <string name="permissions_status_not_connected">Enabled, not connected</string>
     <string name="permissions_status_location_approx">Approximate (Precise required)</string>
     <string name="permissions_status_location_background_missing">Only while app is in use (Wi-Fi may be less reliable; location schedules need “Allow all the time”)</string>
     <string name="permissions_status_nearby_wifi_missing">Nearby Wi-Fi devices permission missing</string>
+
+    <!-- Short one-line summaries shown on each setup card (mirrors onboarding). -->
+    <string name="permissions_summary_accessibility">Required for core app and website blocking.</string>
+    <string name="permissions_summary_usage_access">Powers screen-time stats and app limits.</string>
+    <string name="permissions_summary_notifications">Needed for notification blocking and reminders.</string>
+    <string name="permissions_summary_notification_access">Lets Loq In hide blocked notifications.</string>
+    <string name="permissions_summary_exact_alarms">Helps timed schedules run on time.</string>
+    <string name="permissions_summary_nfc">Needed to launch Loq In with NFC tags.</string>
+    <string name="permissions_summary_location">Needed for Wi-Fi and location schedules.</string>
+    <string name="permissions_summary_bluetooth">Needed for Bluetooth schedules.</string>
+    <string name="permissions_summary_battery">Helps Loq In stay reliable in the background.</string>
+    <string name="permissions_summary_autostart">Allows Loq In to keep running on this device.</string>
 
     <!-- ====================================================== -->
     <!-- Core permissions -->

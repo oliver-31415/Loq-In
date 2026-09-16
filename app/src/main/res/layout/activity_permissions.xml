@@ -1,13 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Permissions & Reliability.
+
+    Layout mirrors the onboarding setup pages: a scrolling column of full-width
+    setup cards grouped under flat section headers. The cards themselves are built
+    in code via SetupCardRow so this screen and onboarding share one component.
+    Section containers keep stable ids because deep links (EXTRA_FOCUS_SECTION /
+    EXTRA_FOCUS_TARGET) and the "issues" toolbar action scroll to them.
+-->
 <androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:ignore="TooManyViews">
+    android:layout_height="match_parent">
 
-    <!-- Topbar -->
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -23,15 +29,15 @@
             app:title="@string/pref_permissions_title" />
     </com.google.android.material.appbar.AppBarLayout>
 
-    <!-- Content -->
     <ScrollView
         android:id="@+id/permissionsScroll"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:clipToPadding="false"
         android:paddingStart="16dp"
-        android:paddingTop="16dp"
+        android:paddingTop="12dp"
         android:paddingEnd="16dp"
-        android:paddingBottom="24dp"
+        android:paddingBottom="28dp"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
@@ -40,817 +46,92 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- SECTION: Core -->
+            <!-- Core -->
             <TextView
                 android:id="@+id/sectionCore"
-                android:textAppearance="?attr/textAppearanceTitleMedium"
+                style="@style/LoqIn.SectionHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
+                android:layout_marginTop="6dp"
+                android:layout_marginBottom="2dp"
                 android:text="@string/permissions_section_core" />
 
-            <com.google.android.material.card.MaterialCardView
+            <LinearLayout
+                android:id="@+id/cardsCore"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="1dp"
-                app:cardUseCompatPadding="true">
+                android:orientation="vertical" />
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="6dp">
-
-                    <!-- Accessibility Service -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="12dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical">
-
-                            <ImageView
-                                android:layout_width="22dp"
-                                android:layout_height="22dp"
-                                android:contentDescription="@null"
-                                android:src="@drawable/security_24"
-                                app:tint="?attr/colorPrimary" />
-
-                            <Space
-                                android:layout_width="12dp"
-                                android:layout_height="1dp" />
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:orientation="vertical">
-
-                                <TextView
-                                    android:textAppearance="?attr/textAppearanceBodyLarge"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="@string/permissions_accessibility_title" />
-
-                                <TextView
-                                    android:id="@+id/tvAccessibilityStatus"
-                                    android:textAppearance="?attr/textAppearanceBodyMedium"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="2dp"
-                                    android:text="@string/permissions_status_disabled" />
-                            </LinearLayout>
-
-                            <androidx.appcompat.widget.AppCompatImageButton
-                                android:id="@+id/btnWhyAccessibility"
-                                android:layout_width="44dp"
-                                android:layout_height="44dp"
-                                android:padding="10dp"
-                                android:background="?attr/selectableItemBackgroundBorderless"
-                                android:contentDescription="@string/info"
-                                android:src="@drawable/info_24"
-                                app:tint="?attr/colorPrimary" />
-                        </LinearLayout>
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnOpenAccessibility"
-                            style="@style/LoqIn.OutlinedButton"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="10dp"
-                            android:text="@string/permissions_btn_open" />
-                    </LinearLayout>
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="?attr/colorOnSurface"
-                        android:alpha="0.12" />
-
-                    <!-- Usage access -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="12dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical">
-
-                            <ImageView
-                                android:layout_width="22dp"
-                                android:layout_height="22dp"
-                                android:contentDescription="@null"
-                                android:src="@drawable/bar_chart_24"
-                                app:tint="?attr/colorPrimary" />
-
-                            <Space
-                                android:layout_width="12dp"
-                                android:layout_height="1dp" />
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:orientation="vertical">
-
-                                <TextView
-                                    android:textAppearance="?attr/textAppearanceBodyLarge"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="@string/permissions_usage_access_title" />
-
-                                <TextView
-                                    android:id="@+id/tvUsageAccessStatus"
-                                    android:textAppearance="?attr/textAppearanceBodyMedium"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="2dp"
-                                    android:text="@string/permissions_status_disabled" />
-                            </LinearLayout>
-
-                            <androidx.appcompat.widget.AppCompatImageButton
-                                android:id="@+id/btnWhyUsageAccess"
-                                android:layout_width="44dp"
-                                android:layout_height="44dp"
-                                android:padding="10dp"
-                                android:background="?attr/selectableItemBackgroundBorderless"
-                                android:contentDescription="@string/info"
-                                android:src="@drawable/info_24"
-                                app:tint="?attr/colorPrimary" />
-                        </LinearLayout>
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnOpenUsageAccess"
-                            style="@style/LoqIn.OutlinedButton"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="10dp"
-                            android:text="@string/permissions_btn_open" />
-                    </LinearLayout>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- SECTION: Notifications -->
+            <!-- Notifications -->
             <TextView
                 android:id="@+id/sectionNotifications"
-                android:textAppearance="?attr/textAppearanceTitleMedium"
+                style="@style/LoqIn.SectionHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
-                android:layout_marginBottom="8dp"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="2dp"
                 android:text="@string/permissions_section_notifications" />
 
-            <com.google.android.material.card.MaterialCardView
+            <LinearLayout
+                android:id="@+id/cardsNotifications"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="1dp"
-                app:cardUseCompatPadding="true">
+                android:orientation="vertical" />
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="6dp">
-
-                    <!-- Notifications -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="12dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical">
-
-                            <ImageView
-                                android:layout_width="22dp"
-                                android:layout_height="22dp"
-                                android:contentDescription="@null"
-                                android:src="@drawable/notifications_24"
-                                app:tint="?attr/colorPrimary" />
-
-                            <Space
-                                android:layout_width="12dp"
-                                android:layout_height="1dp" />
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:orientation="vertical">
-
-                                <TextView
-                                    android:textAppearance="?attr/textAppearanceBodyLarge"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="@string/permissions_notifications_title" />
-
-                                <TextView
-                                    android:id="@+id/tvNotificationsStatus"
-                                    android:textAppearance="?attr/textAppearanceBodyMedium"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="2dp"
-                                    android:text="@string/permissions_status_disabled" />
-                            </LinearLayout>
-
-                            <androidx.appcompat.widget.AppCompatImageButton
-                                android:id="@+id/btnWhyNotifications"
-                                android:layout_width="44dp"
-                                android:layout_height="44dp"
-                                android:padding="10dp"
-                                android:background="?attr/selectableItemBackgroundBorderless"
-                                android:contentDescription="@string/info"
-                                android:src="@drawable/info_24"
-                                app:tint="?attr/colorPrimary" />
-                        </LinearLayout>
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnOpenNotifications"
-                            style="@style/LoqIn.OutlinedButton"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="10dp"
-                            android:text="@string/permissions_btn_open" />
-                    </LinearLayout>
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="?attr/colorOnSurface"
-                        android:alpha="0.12" />
-
-                    <!-- Notification access -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="12dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical">
-
-                            <ImageView
-                                android:layout_width="22dp"
-                                android:layout_height="22dp"
-                                android:contentDescription="@null"
-                                android:src="@drawable/security_24"
-                                app:tint="?attr/colorPrimary" />
-
-                            <Space
-                                android:layout_width="12dp"
-                                android:layout_height="1dp" />
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:orientation="vertical">
-
-                                <TextView
-                                    android:textAppearance="?attr/textAppearanceBodyLarge"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="@string/permissions_notification_access_title" />
-
-                                <TextView
-                                    android:id="@+id/tvNotificationAccessStatus"
-                                    android:textAppearance="?attr/textAppearanceBodyMedium"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="2dp"
-                                    android:text="@string/permissions_status_disabled" />
-                            </LinearLayout>
-
-                            <androidx.appcompat.widget.AppCompatImageButton
-                                android:id="@+id/btnWhyNotificationAccess"
-                                android:layout_width="44dp"
-                                android:layout_height="44dp"
-                                android:padding="10dp"
-                                android:background="?attr/selectableItemBackgroundBorderless"
-                                android:contentDescription="@string/info"
-                                android:src="@drawable/info_24"
-                                app:tint="?attr/colorPrimary" />
-                        </LinearLayout>
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnOpenNotificationAccess"
-                            style="@style/LoqIn.OutlinedButton"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="10dp"
-                            android:text="@string/permissions_btn_open" />
-                    </LinearLayout>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- SECTION: Extra triggers -->
+            <!-- Schedule triggers -->
             <TextView
                 android:id="@+id/sectionTriggers"
-                android:textAppearance="?attr/textAppearanceTitleMedium"
+                style="@style/LoqIn.SectionHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
-                android:layout_marginBottom="8dp"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="2dp"
                 android:text="@string/permissions_section_triggers" />
 
-            <com.google.android.material.card.MaterialCardView
+            <LinearLayout
+                android:id="@+id/cardsTriggers"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="1dp"
-                app:cardUseCompatPadding="true">
+                android:orientation="vertical" />
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="6dp">
-
-                    <!-- Exact alarms -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="12dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical">
-
-                            <ImageView
-                                android:layout_width="22dp"
-                                android:layout_height="22dp"
-                                android:contentDescription="@null"
-                                android:src="@drawable/alarm_24"
-                                app:tint="?attr/colorPrimary" />
-
-                            <Space
-                                android:layout_width="12dp"
-                                android:layout_height="1dp" />
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:orientation="vertical">
-
-                                <TextView
-                                    android:textAppearance="?attr/textAppearanceBodyLarge"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="@string/permissions_exact_alarms_title" />
-
-                                <TextView
-                                    android:id="@+id/tvExactAlarmsStatus"
-                                    android:textAppearance="?attr/textAppearanceBodyMedium"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="2dp"
-                                    android:text="@string/permissions_exact_alarms_not_allowed" />
-                            </LinearLayout>
-
-                            <androidx.appcompat.widget.AppCompatImageButton
-                                android:id="@+id/btnWhyExactAlarms"
-                                android:layout_width="44dp"
-                                android:layout_height="44dp"
-                                android:padding="10dp"
-                                android:background="?attr/selectableItemBackgroundBorderless"
-                                android:contentDescription="@string/info"
-                                android:src="@drawable/info_24"
-                                app:tint="?attr/colorPrimary" />
-                        </LinearLayout>
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnOpenExactAlarms"
-                            style="@style/LoqIn.OutlinedButton"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="10dp"
-                            android:text="@string/permissions_btn_open" />
-                    </LinearLayout>
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="?attr/colorOnSurface"
-                        android:alpha="0.12" />
-
-                    <!-- NFC launch access -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="12dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical">
-
-                            <ImageView
-                                android:layout_width="22dp"
-                                android:layout_height="22dp"
-                                android:contentDescription="@null"
-                                android:src="@drawable/nfc_24"
-                                app:tint="?attr/colorPrimary" />
-
-                            <Space
-                                android:layout_width="12dp"
-                                android:layout_height="1dp" />
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:orientation="vertical">
-
-                                <TextView
-                                    android:textAppearance="?attr/textAppearanceBodyLarge"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="@string/permissions_nfc_title" />
-
-                                <TextView
-                                    android:id="@+id/tvNfcStatus"
-                                    android:textAppearance="?attr/textAppearanceBodyMedium"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="2dp"
-                                    android:text="@string/permissions_nfc_status_manual" />
-                            </LinearLayout>
-
-                            <androidx.appcompat.widget.AppCompatImageButton
-                                android:id="@+id/btnWhyNfc"
-                                android:layout_width="44dp"
-                                android:layout_height="44dp"
-                                android:padding="10dp"
-                                android:background="?attr/selectableItemBackgroundBorderless"
-                                android:contentDescription="@string/info"
-                                android:src="@drawable/info_24"
-                                app:tint="?attr/colorPrimary" />
-                        </LinearLayout>
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnOpenNfc"
-                            style="@style/LoqIn.OutlinedButton"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="10dp"
-                            android:text="@string/permissions_btn_open" />
-                    </LinearLayout>
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="?attr/colorOnSurface"
-                        android:alpha="0.12" />
-
-                    <!-- Location -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="12dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical">
-
-                            <ImageView
-                                android:layout_width="22dp"
-                                android:layout_height="22dp"
-                                android:contentDescription="@null"
-                                android:src="@drawable/location_on_24"
-                                app:tint="?attr/colorPrimary" />
-
-                            <Space
-                                android:layout_width="12dp"
-                                android:layout_height="1dp" />
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:orientation="vertical">
-
-                                <TextView
-                                    android:textAppearance="?attr/textAppearanceBodyLarge"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="@string/permissions_location_title" />
-
-                                <TextView
-                                    android:id="@+id/tvLocationStatus"
-                                    android:textAppearance="?attr/textAppearanceBodyMedium"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="2dp"
-                                    android:text="@string/permissions_status_disabled" />
-                            </LinearLayout>
-
-                            <androidx.appcompat.widget.AppCompatImageButton
-                                android:id="@+id/btnWhyLocation"
-                                android:layout_width="44dp"
-                                android:layout_height="44dp"
-                                android:padding="10dp"
-                                android:background="?attr/selectableItemBackgroundBorderless"
-                                android:contentDescription="@string/info"
-                                android:src="@drawable/info_24"
-                                app:tint="?attr/colorPrimary" />
-                        </LinearLayout>
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnReqLocation"
-                            style="@style/LoqIn.OutlinedButton"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="10dp"
-                            android:text="@string/permissions_btn_request" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnOpenLocation"
-                            style="@style/LoqIn.OutlinedButton"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:text="@string/permissions_btn_open" />
-                    </LinearLayout>
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="?attr/colorOnSurface"
-                        android:alpha="0.12" />
-
-                    <!-- Bluetooth -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="12dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical">
-
-                            <ImageView
-                                android:layout_width="22dp"
-                                android:layout_height="22dp"
-                                android:contentDescription="@null"
-                                android:src="@drawable/bluetooth_24"
-                                app:tint="?attr/colorPrimary" />
-
-                            <Space
-                                android:layout_width="12dp"
-                                android:layout_height="1dp" />
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:orientation="vertical">
-
-                                <TextView
-                                    android:textAppearance="?attr/textAppearanceBodyLarge"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="@string/permissions_bluetooth_title" />
-
-                                <TextView
-                                    android:id="@+id/tvBluetoothStatus"
-                                    android:textAppearance="?attr/textAppearanceBodyMedium"
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="2dp"
-                                    android:text="@string/permissions_status_disabled" />
-                            </LinearLayout>
-
-                            <androidx.appcompat.widget.AppCompatImageButton
-                                android:id="@+id/btnWhyBluetooth"
-                                android:layout_width="44dp"
-                                android:layout_height="44dp"
-                                android:padding="10dp"
-                                android:background="?attr/selectableItemBackgroundBorderless"
-                                android:contentDescription="@string/info"
-                                android:src="@drawable/info_24"
-                                app:tint="?attr/colorPrimary" />
-                        </LinearLayout>
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnReqBluetooth"
-                            style="@style/LoqIn.OutlinedButton"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="10dp"
-                            android:text="@string/permissions_btn_request" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnOpenBluetooth"
-                            style="@style/LoqIn.OutlinedButton"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="8dp"
-                            android:text="@string/permissions_btn_open" />
-                    </LinearLayout>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- SECTION: Battery and background -->
+            <!-- Battery & background -->
             <TextView
                 android:id="@+id/sectionBattery"
-                android:textAppearance="?attr/textAppearanceTitleMedium"
+                style="@style/LoqIn.SectionHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
-                android:layout_marginBottom="8dp"
+                android:layout_marginTop="20dp"
+                android:layout_marginBottom="2dp"
                 android:text="@string/permissions_section_battery" />
 
-            <com.google.android.material.card.MaterialCardView
+            <LinearLayout
+                android:id="@+id/cardsBattery"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="16dp"
-                app:cardElevation="1dp"
-                app:cardUseCompatPadding="true">
+                android:orientation="vertical" />
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="18dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical">
-
-                        <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:contentDescription="@null"
-                            android:src="@drawable/battery_24"
-                            app:tint="?attr/colorPrimary" />
-
-                        <Space
-                            android:layout_width="12dp"
-                            android:layout_height="1dp" />
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:textAppearance="?attr/textAppearanceBodyLarge"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/permissions_battery_title" />
-
-                            <TextView
-                                android:id="@+id/tvBatteryStatus"
-                                android:textAppearance="?attr/textAppearanceBodyMedium"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:text="@string/permissions_status_disabled" />
-                        </LinearLayout>
-
-                        <androidx.appcompat.widget.AppCompatImageButton
-                            android:id="@+id/btnWhyBattery"
-                            android:layout_width="44dp"
-                            android:layout_height="44dp"
-                            android:padding="10dp"
-                            android:background="?attr/selectableItemBackgroundBorderless"
-                            android:contentDescription="@string/info"
-                            android:src="@drawable/info_24"
-                            app:tint="?attr/colorPrimary" />
-                    </LinearLayout>
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnReqBattery"
-                        style="@style/LoqIn.OutlinedButton"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:text="@string/permissions_btn_allow" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnOpenBattery"
-                        style="@style/LoqIn.OutlinedButton"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="@string/permissions_btn_open" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <!-- OEM Autostart -->
+            <!-- OEM autostart / background restrictions (only shown on aggressive OEMs) -->
             <LinearLayout
                 android:id="@+id/groupAutostart"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
                 android:orientation="vertical"
                 android:visibility="gone">
 
                 <TextView
-                    android:textAppearance="?attr/textAppearanceTitleMedium"
+                    android:id="@+id/sectionAutostart"
+                    style="@style/LoqIn.SectionHeader"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginBottom="8dp"
+                    android:layout_marginTop="20dp"
+                    android:layout_marginBottom="2dp"
                     android:text="@string/permissions_section_oem" />
 
-                <com.google.android.material.card.MaterialCardView
+                <LinearLayout
+                    android:id="@+id/cardsAutostart"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    app:cardCornerRadius="16dp"
-                    app:cardElevation="1dp"
-                    app:cardUseCompatPadding="true">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="12dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="horizontal"
-                            android:gravity="center_vertical">
-
-                            <ImageView
-                                android:layout_width="22dp"
-                                android:layout_height="22dp"
-                                android:contentDescription="@null"
-                                android:src="@drawable/battery_24"
-                                app:tint="?attr/colorPrimary" />
-
-                            <Space
-                                android:layout_width="12dp"
-                                android:layout_height="1dp" />
-
-                            <TextView
-                                android:textAppearance="?attr/textAppearanceBodyLarge"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:text="@string/permissions_autostart_title" />
-
-                            <androidx.appcompat.widget.AppCompatImageButton
-                                android:id="@+id/btnWhyAutostart"
-                                android:layout_width="44dp"
-                                android:layout_height="44dp"
-                                android:padding="10dp"
-                                android:background="?attr/selectableItemBackgroundBorderless"
-                                android:contentDescription="@string/info"
-                                android:src="@drawable/info_24"
-                                app:tint="?attr/colorPrimary" />
-                        </LinearLayout>
-
-                        <TextView
-                            android:id="@+id/tvAutostartHint"
-                            android:textAppearance="?attr/textAppearanceBodyMedium"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:text="@string/permissions_autostart_desc" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnOpenAutostart"
-                            style="@style/LoqIn.OutlinedButton"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="10dp"
-                            android:text="@string/permissions_btn_view_device_guide" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
+                    android:orientation="vertical" />
             </LinearLayout>
         </LinearLayout>
     </ScrollView>

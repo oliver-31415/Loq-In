@@ -34,6 +34,9 @@ object AppLockStore {
 
     fun hasPin(ctx: Context): Boolean = !prefs(ctx).getString(KEY_PIN, null).isNullOrBlank()
 
+    /** Length of the stored PIN, or 0 when none is set. Used to size the entered digit boxes. */
+    fun pinLength(ctx: Context): Int = prefs(ctx).getString(KEY_PIN, null)?.trim()?.length ?: 0
+
     fun isEnabled(ctx: Context): Boolean = prefs(ctx).getBoolean(KEY_ENABLED, false) && hasPin(ctx)
 
     fun setEnabled(ctx: Context, enabled: Boolean) {
@@ -45,6 +48,15 @@ object AppLockStore {
     fun setPin(ctx: Context, pin: String) {
         prefs(ctx).edit(commit = true) {
             putString(KEY_PIN, pin.trim())
+        }
+    }
+
+    /** Removes the saved PIN and disables App lock (which requires a PIN). */
+    fun clearPin(ctx: Context) {
+        prefs(ctx).edit(commit = true) {
+            remove(KEY_PIN)
+            putBoolean(KEY_ENABLED, false)
+            putBoolean(KEY_BIOMETRIC, false)
         }
     }
 

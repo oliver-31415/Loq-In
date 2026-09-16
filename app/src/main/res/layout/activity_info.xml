@@ -36,6 +36,13 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <!-- App & device -->
+            <TextView
+                style="@style/LoqIn.SectionHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/info_section_app" />
+
             <com.google.android.material.card.MaterialCardView
                 style="@style/LoqIn.Card"
                 android:layout_width="match_parent"
@@ -162,12 +169,27 @@
                             android:src="@drawable/keyboard_arrow_right_24"
                             app:tint="?android:attr/textColorSecondary" />
                     </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
-                    <com.google.android.material.divider.MaterialDivider
-                        style="@style/LoqIn.Divider"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        app:dividerInsetStart="54dp" />
+            <!-- Help -->
+            <TextView
+                style="@style/LoqIn.SectionHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@string/info_section_help" />
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/LoqIn.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
 
                     <!-- FAQ -->
                     <LinearLayout
@@ -345,12 +367,27 @@
                             android:src="@drawable/keyboard_arrow_right_24"
                             app:tint="?android:attr/textColorSecondary" />
                     </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
-                    <com.google.android.material.divider.MaterialDivider
-                        style="@style/LoqIn.Divider"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        app:dividerInsetStart="54dp" />
+            <!-- Legal -->
+            <TextView
+                style="@style/LoqIn.SectionHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@string/info_section_legal" />
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/LoqIn.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
 
                     <!-- Disclaimer -->
                     <LinearLayout
@@ -406,7 +443,6 @@
                             android:src="@drawable/keyboard_arrow_right_24"
                             app:tint="?android:attr/textColorSecondary" />
                     </LinearLayout>
-
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

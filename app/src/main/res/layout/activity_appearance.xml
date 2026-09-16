@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Appearance.
+
+    Choice settings use segmented bars (the same MaterialButtonToggleGroup +
+    SegmentedToggleUi treatment as the insights range selector): a single
+    track with the selected option highlighted. The accent colour is picked
+    from an exposed dropdown menu.
+-->
 <androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -47,59 +55,91 @@
                     android:layout_height="wrap_content"
                     android:orientation="vertical">
 
-                    <!-- Theme mode (Display mode) -->
+                    <!-- Display mode -->
                     <LinearLayout
-                        android:id="@+id/rowThemeMode"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:minHeight="52dp"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
+                        android:orientation="vertical"
                         android:paddingStart="16dp"
-                        android:paddingTop="12dp"
+                        android:paddingTop="14dp"
                         android:paddingEnd="16dp"
-                        android:paddingBottom="12dp"
-                        android:background="?attr/selectableItemBackground"
-                        android:clickable="true"
-                        android:focusable="true">
-
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:contentDescription="@string/pref_theme_mode_title"
-                            android:src="@drawable/toggle_on_24"
-                            app:tint="?attr/colorPrimary" />
+                        android:paddingBottom="14dp">
 
                         <LinearLayout
-                            android:layout_width="0dp"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="14dp"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
 
-                            <TextView
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:text="@string/pref_theme_mode_title"
-                                android:textSize="15sp"
-                                android:textStyle="bold" />
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:contentDescription="@null"
+                                android:src="@drawable/toggle_on_24"
+                                app:tint="?attr/colorPrimary" />
 
-                            <TextView
-                                android:id="@+id/tvThemeModeSummary"
-                                android:layout_width="match_parent"
+                            <LinearLayout
+                                android:layout_width="0dp"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:textColor="?android:attr/textColorSecondary"
-                                android:textSize="13sp" />
+                                android:layout_marginStart="14dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/pref_theme_mode_title"
+                                    android:textSize="15sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:id="@+id/tvThemeModeSummary"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:textColor="?android:attr/textColorSecondary"
+                                    android:textSize="13sp" />
+                            </LinearLayout>
                         </LinearLayout>
 
-                        <ImageView
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:alpha="0.7"
-                            android:contentDescription="@string/open"
-                            android:src="@drawable/keyboard_arrow_right_24"
-                            app:tint="?android:attr/textColorSecondary" />
+                        <com.google.android.material.button.MaterialButtonToggleGroup
+                            android:id="@+id/toggleThemeMode"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            app:selectionRequired="true"
+                            app:singleSelection="true">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnThemeSystem"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:maxLines="1"
+                                android:text="@string/pref_theme_mode_system_short"
+                                android:textAllCaps="false"
+                                app:cornerRadius="4dp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnThemeLight"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:maxLines="1"
+                                android:text="@string/pref_theme_mode_light"
+                                android:textAllCaps="false"
+                                app:cornerRadius="4dp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnThemeDark"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:maxLines="1"
+                                android:text="@string/pref_theme_mode_dark"
+                                android:textAllCaps="false"
+                                app:cornerRadius="4dp" />
+                        </com.google.android.material.button.MaterialButtonToggleGroup>
                     </LinearLayout>
 
                     <com.google.android.material.divider.MaterialDivider
@@ -110,57 +150,89 @@
 
                     <!-- Time format -->
                     <LinearLayout
-                        android:id="@+id/rowTimeFormat"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:minHeight="52dp"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
+                        android:orientation="vertical"
                         android:paddingStart="16dp"
-                        android:paddingTop="12dp"
+                        android:paddingTop="14dp"
                         android:paddingEnd="16dp"
-                        android:paddingBottom="12dp"
-                        android:background="?attr/selectableItemBackground"
-                        android:clickable="true"
-                        android:focusable="true">
-
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:contentDescription="@string/pref_time_format_title"
-                            android:src="@drawable/schedule_24"
-                            app:tint="?attr/colorPrimary" />
+                        android:paddingBottom="14dp">
 
                         <LinearLayout
-                            android:layout_width="0dp"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="14dp"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
 
-                            <TextView
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:text="@string/pref_time_format_title"
-                                android:textSize="15sp"
-                                android:textStyle="bold" />
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:contentDescription="@null"
+                                android:src="@drawable/schedule_24"
+                                app:tint="?attr/colorPrimary" />
 
-                            <TextView
-                                android:id="@+id/tvTimeFormatSummary"
-                                android:layout_width="match_parent"
+                            <LinearLayout
+                                android:layout_width="0dp"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:textColor="?android:attr/textColorSecondary"
-                                android:textSize="13sp" />
+                                android:layout_marginStart="14dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/pref_time_format_title"
+                                    android:textSize="15sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:id="@+id/tvTimeFormatSummary"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:textColor="?android:attr/textColorSecondary"
+                                    android:textSize="13sp" />
+                            </LinearLayout>
                         </LinearLayout>
 
-                        <ImageView
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:alpha="0.7"
-                            android:contentDescription="@string/open"
-                            android:src="@drawable/keyboard_arrow_right_24"
-                            app:tint="?android:attr/textColorSecondary" />
+                        <com.google.android.material.button.MaterialButtonToggleGroup
+                            android:id="@+id/toggleTimeFormat"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            app:selectionRequired="true"
+                            app:singleSelection="true">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnTimeAutomatic"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:maxLines="1"
+                                android:text="@string/pref_time_format_system_short"
+                                android:textAllCaps="false"
+                                app:cornerRadius="4dp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnTime24"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:maxLines="1"
+                                android:text="@string/pref_time_format_24h"
+                                android:textAllCaps="false"
+                                app:cornerRadius="4dp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnTime12"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:maxLines="1"
+                                android:text="@string/pref_time_format_12h"
+                                android:textAllCaps="false"
+                                app:cornerRadius="4dp" />
+                        </com.google.android.material.button.MaterialButtonToggleGroup>
                     </LinearLayout>
 
                     <com.google.android.material.divider.MaterialDivider
@@ -169,18 +241,18 @@
                         android:layout_height="wrap_content"
                         app:dividerInsetStart="54dp" />
 
-                    <!-- Accent color -->
+                    <!-- Theme color: tapping the row opens the colour overlay -->
                     <LinearLayout
                         android:id="@+id/rowThemeColor"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:minHeight="52dp"
+                        android:minHeight="56dp"
                         android:orientation="horizontal"
                         android:gravity="center_vertical"
                         android:paddingStart="16dp"
-                        android:paddingTop="12dp"
+                        android:paddingTop="14dp"
                         android:paddingEnd="16dp"
-                        android:paddingBottom="12dp"
+                        android:paddingBottom="14dp"
                         android:background="?attr/selectableItemBackground"
                         android:clickable="true"
                         android:focusable="true">
@@ -188,7 +260,7 @@
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
-                            android:contentDescription="@string/pref_theme_color_title"
+                            android:contentDescription="@null"
                             android:src="@drawable/palette_24"
                             app:tint="?attr/colorPrimary" />
 
@@ -215,9 +287,16 @@
                                 android:textSize="13sp" />
                         </LinearLayout>
 
+                        <View
+                            android:id="@+id/accentPreviewDot"
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:layout_marginStart="8dp" />
+
                         <ImageView
                             android:layout_width="18dp"
                             android:layout_height="18dp"
+                            android:layout_marginStart="10dp"
                             android:alpha="0.7"
                             android:contentDescription="@string/open"
                             android:src="@drawable/keyboard_arrow_right_24"
@@ -232,57 +311,89 @@
 
                     <!-- Language -->
                     <LinearLayout
-                        android:id="@+id/rowLanguage"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:minHeight="52dp"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
+                        android:orientation="vertical"
                         android:paddingStart="16dp"
-                        android:paddingTop="12dp"
+                        android:paddingTop="14dp"
                         android:paddingEnd="16dp"
-                        android:paddingBottom="12dp"
-                        android:background="?attr/selectableItemBackground"
-                        android:clickable="true"
-                        android:focusable="true">
-
-                        <ImageView
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:contentDescription="@string/pref_language_title"
-                            android:src="@drawable/translate_24"
-                            app:tint="?attr/colorPrimary" />
+                        android:paddingBottom="14dp">
 
                         <LinearLayout
-                            android:layout_width="0dp"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="14dp"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
+                            android:gravity="center_vertical"
+                            android:orientation="horizontal">
 
-                            <TextView
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:text="@string/pref_language_title"
-                                android:textSize="15sp"
-                                android:textStyle="bold" />
+                            <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:contentDescription="@null"
+                                android:src="@drawable/translate_24"
+                                app:tint="?attr/colorPrimary" />
 
-                            <TextView
-                                android:id="@+id/tvLanguageSummary"
-                                android:layout_width="match_parent"
+                            <LinearLayout
+                                android:layout_width="0dp"
                                 android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:textColor="?android:attr/textColorSecondary"
-                                android:textSize="13sp" />
+                                android:layout_marginStart="14dp"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                                <TextView
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:text="@string/pref_language_title"
+                                    android:textSize="15sp"
+                                    android:textStyle="bold" />
+
+                                <TextView
+                                    android:id="@+id/tvLanguageSummary"
+                                    android:layout_width="match_parent"
+                                    android:layout_height="wrap_content"
+                                    android:layout_marginTop="2dp"
+                                    android:textColor="?android:attr/textColorSecondary"
+                                    android:textSize="13sp" />
+                            </LinearLayout>
                         </LinearLayout>
 
-                        <ImageView
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:alpha="0.7"
-                            android:contentDescription="@string/open"
-                            android:src="@drawable/keyboard_arrow_right_24"
-                            app:tint="?android:attr/textColorSecondary" />
+                        <com.google.android.material.button.MaterialButtonToggleGroup
+                            android:id="@+id/toggleLanguage"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            app:selectionRequired="true"
+                            app:singleSelection="true">
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnLanguageSystem"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:maxLines="1"
+                                android:text="@string/pref_theme_mode_system_short"
+                                android:textAllCaps="false"
+                                app:cornerRadius="4dp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnLanguageEnglish"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:maxLines="1"
+                                android:text="@string/pref_language_english"
+                                android:textAllCaps="false"
+                                app:cornerRadius="4dp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnLanguageGerman"
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:maxLines="1"
+                                android:text="@string/pref_language_german"
+                                android:textAllCaps="false"
+                                app:cornerRadius="4dp" />
+                        </com.google.android.material.button.MaterialButtonToggleGroup>
                     </LinearLayout>
 
                 </LinearLayout>

@@ -55,6 +55,9 @@ fun Snackbar.applyLoqInStyle(): Snackbar {
         cornerRadius = 16f * density
         setColor(surface)
     }
+    // Material tints the snackbar root with colorSurfaceInverse; leaving that tint
+    // set would recolor our drawable (dark) while the text keeps the day color.
+    view.backgroundTintList = null
     view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)?.apply {
         setTextColor(onSurface)
         maxLines = 3
@@ -102,6 +105,9 @@ fun View.showWarnPill(
     }
     lastWarnPill = Snackbar.make(this, message, Snackbar.LENGTH_LONG).apply {
         view.background = pill
+        // Clear Material's inverse-surface background tint so the pill keeps the
+        // day/night color chosen above instead of being tinted dark.
+        view.backgroundTintList = null
         view.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)?.apply {
             setTextColor(onSurface)
             maxLines = 4

@@ -50,4 +50,10 @@
         <item quantity="other">%1$d selected</item>
     </plurals>
 
+    <string name="pin_length_inline">4 to 8 digits</string>
+    <string name="pin_continue">Continue</string>
+    <string name="pin_label_new">New PIN</string>
+    <string name="pin_label_confirm">Re-enter PIN</string>
+    <string name="pin_mismatch">PINs don\'t match. Try again.</string>
+
 </resources>

@@ -23,14 +23,9 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.text.InputType
 import android.view.View
-import android.widget.EditText
-import android.widget.FrameLayout
 import android.widget.TextView
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
@@ -44,8 +39,8 @@ import com.oliver.loqin.theme.CustomAccentApplier
 import com.oliver.loqin.ui.EdgeToEdgeUtils
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.showWarnPill
-import com.oliver.loqin.ui.dialog.styleLoqInDialogButtons
 import com.oliver.loqin.ui.dialog.EmergencyPinDialog
+import com.oliver.loqin.ui.dialog.PinEntryDialog
 import com.oliver.loqin.util.LocaleHelper
 import com.oliver.loqin.util.ManagedDevicePolicyHelper
 import com.google.android.material.appbar.MaterialToolbar
@@ -296,43 +291,15 @@ class AppLockSettingsActivity : AppCompatActivity() {
     }
 
     private fun showPinConfirmationForProtectionDisable() {
-        val input = EditText(this).apply {
-            inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD
-            hint = getString(R.string.app_lock_pin_hint_enter)
-            backgroundTintList = AccentColor.getActiveColor(this@AppLockSettingsActivity)
-        }
-        val container = FrameLayout(this).apply {
-            val margin = (24 * resources.displayMetrics.density).toInt()
-            setPadding(margin, 0, margin, 0)
-            addView(
-                input,
-                FrameLayout.LayoutParams(
-                    FrameLayout.LayoutParams.MATCH_PARENT,
-                    FrameLayout.LayoutParams.WRAP_CONTENT
-                )
-            )
-        }
-        val dialog = AlertDialog.Builder(this)
-            .setTitle(getString(R.string.app_lock_uninstall_disable_auth_title))
-            .setMessage(getString(R.string.app_lock_uninstall_disable_auth_message))
-            .setView(container)
-            .setPositiveButton(getString(R.string.app_lock_uninstall_disable_action), null)
-            .setNegativeButton(getString(R.string.cancel), null)
-            .create()
-
-        dialog.setOnShowListener {
-            dialog.styleLoqInDialogButtons()
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                if (!AppLockStore.matchesPin(this, input.text?.toString().orEmpty())) {
-                    input.showWarnPill(R.string.app_lock_pin_incorrect)
-                    return@setOnClickListener
-                }
-                dialog.dismiss()
-                completeDisableStrictProtection()
-            }
-        }
-        dialog.setOnDismissListener { refreshUi() }
-        dialog.show()
+        PinEntryDialog.showVerify(
+            activity = this,
+            titleRes = R.string.app_lock_enter_current_pin_title,
+            subtitleRes = R.string.app_lock_enter_current_pin_message,
+            incorrectRes = R.string.app_lock_pin_incorrect,
+            verifyLength = AppLockStore.pinLength(this),
+            validator = { AppLockStore.matchesPin(this, it) },
+            onCancel = { refreshUi() },
+        ) { completeDisableStrictProtection() }
     }
 
     private fun completeDisableStrictProtection() {
@@ -362,54 +329,56 @@ class AppLockSettingsActivity : AppCompatActivity() {
         enableAfter: Boolean = false,
         enableUninstallProtectionAfter: Boolean = false,
     ) {
-        val input = EditText(this).apply {
-            inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD
-            hint = getString(R.string.app_lock_pin_hint_new)
-            backgroundTintList = AccentColor.getActiveColor(this@AppLockSettingsActivity)
-        }
-
-        val container = FrameLayout(this).apply {
-            val margin = (24 * resources.displayMetrics.density).toInt()
-            setPadding(margin, 0, margin, 0)
-            addView(input, FrameLayout.LayoutParams(
-                FrameLayout.LayoutParams.MATCH_PARENT,
-                FrameLayout.LayoutParams.WRAP_CONTENT
-            ))
-        }
-
-        val dialog = AlertDialog.Builder(this)
-            .setTitle(getString(R.string.app_lock_pin_title))
-            .setMessage(getString(R.string.app_lock_pin_message))
-            .setView(container)
-            .setPositiveButton(getString(R.string.save), null)
-            .setNegativeButton(getString(R.string.cancel), null)
-            .create()
-
-        dialog.setOnShowListener {
-            dialog.styleLoqInDialogButtons()
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                val pin = input.text?.toString()?.trim().orEmpty()
-                if (pin.length < 4) {
-                    input.showWarnPill(R.string.app_lock_pin_too_short)
-                    return@setOnClickListener
-                }
+        fun createNewPin(titleRes: Int, allowRemove: Boolean) {
+            PinEntryDialog.showCreate(
+                activity = this,
+                titleRes = titleRes,
+                subtitleRes = R.string.app_lock_pin_message,
+                tooShortRes = R.string.app_lock_pin_too_short,
+                mismatchRes = R.string.pin_mismatch,
+                onRemove = if (allowRemove) {
+                    {
+                        AppLockStore.clearPin(this)
+                        findViewById<View>(android.R.id.content)
+                            .showWarnPill(R.string.app_lock_pin_removed)
+                        refreshUi()
+                    }
+                } else {
+                    null
+                },
+            ) { pin ->
                 AppLockStore.setPin(this, pin)
                 if (enableAfter) {
                     AppLockStore.setEnabled(this, true)
                 }
-                input.showWarnPill(R.string.app_lock_pin_set)
-                dialog.dismiss()
+                findViewById<View>(android.R.id.content).showWarnPill(R.string.app_lock_pin_set)
                 refreshUi()
                 if (enableUninstallProtectionAfter) {
                     enableStrictProtection()
                 }
             }
         }
-        dialog.show()
+
+        if (AppLockStore.hasPin(this)) {
+            // Changing: confirm the current PIN, then the new-PIN page also
+            // offers "Remove PIN".
+            PinEntryDialog.showVerify(
+                activity = this,
+                titleRes = R.string.app_lock_enter_current_pin_title,
+                subtitleRes = R.string.app_lock_enter_current_pin_message,
+                incorrectRes = R.string.app_lock_pin_incorrect,
+                verifyLength = AppLockStore.pinLength(this),
+                validator = { AppLockStore.matchesPin(this, it) },
+            ) { createNewPin(R.string.app_lock_enter_new_pin_title, allowRemove = true) }
+        } else {
+            createNewPin(R.string.app_lock_set_pin_title, allowRemove = false)
+        }
     }
 
     private fun showEmergencyPinDialog() {
-        EmergencyPinDialog.showSetPin(this)
+        // Confirms the current PIN first when one exists; the new-PIN page also
+        // offers "Remove PIN".
+        EmergencyPinDialog.showChangePinFlow(this)
     }
 
     private fun isBiometricAvailable(): Boolean {

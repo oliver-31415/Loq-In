@@ -6,6 +6,8 @@
     <!-- ====================================================== -->
     <string name="keys_codes_title">Keys &amp; codes</string>
     <string name="keys_codes_section">NFC, QR, and barcode controls</string>
+    <string name="keys_codes_section_nfc">NFC tags</string>
+    <string name="keys_codes_section_codes">QR &amp; barcodes</string>
     <string name="keys_codes_write_nfc_title">Write NFC tag</string>
     <string name="keys_codes_write_nfc_summary">Write enable, disable, temporary, and other actions to writable NFC tags</string>
     <string name="keys_codes_paired_tags_title">Manage paired tags</string>

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Stable ids for the programmatically-built shortcut tiles on the
+    Widgets & shortcuts screen. The tiles are inflated from
+    grid_shortcut_tile.xml, so their root ids need to be declared here.
+-->
+<resources>
+    <item name="rowQuickTile" type="id" />
+    <item name="rowQrQuickTile" type="id" />
+    <item name="rowBarcodeQuickTile" type="id" />
+
+    <item name="rowWidgetBarcode" type="id" />
+    <item name="rowWidgetQr" type="id" />
+    <item name="rowWidgetNextSchedule" type="id" />
+    <item name="rowWidgetActiveTimer" type="id" />
+    <item name="rowWidgetBlockedNotifications" type="id" />
+</resources>

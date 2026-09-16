@@ -12,6 +12,7 @@
     <string name="toggle_options_display_title">Widgets &amp; shortcuts</string>
     <string name="toggle_group_manage_blocking_modes">Control modes</string>
     <string name="settings_blocking_modes_summary">Choose how Loq In is enabled or disabled.</string>
+    <string name="control_modes_profile_subtitle">Control modes for: %1$s</string>
     <string name="toggle_group_manage_other_blocking_features">Feature access</string>
     <string name="settings_blocking_features_summary">Control access while active, notification blocking &amp; recap, and status.</string>
 
@@ -106,6 +107,8 @@
     <!-- ====================================================== -->
     <!-- Feature access -->
     <!-- ====================================================== -->
+    <string name="feature_access_section_active">Access while active</string>
+    <string name="feature_access_section_nfc">NFC tags &amp; pairing</string>
     <string name="pref_require_nfc_unlock_title">Require NFC to disable Loq In</string>
     <string name="pref_require_nfc_unlock_summary">When on, only an allowed NFC action tag or QR fallback can disable Loq In.</string>
     <string name="toggle_locked_nfc_hint">Locked because “Require NFC to disable Loq In” is active.</string>
@@ -188,6 +191,7 @@
     <string name="emergency_disabled_message_controls">Emergency unlock is currently off. You can enable it in Loq In controls.</string>
     <string name="emergency_open_controls_action">Open Loq In controls</string>
     <string name="emergency_pin_changed">Emergency PIN updated.</string>
+    <string name="emergency_pin_removed">Emergency PIN removed.</string>
 
     <!-- ====================================================== -->
     <!-- Home display -->

@@ -32,14 +32,14 @@
     <!-- Data sharing -->
     <!-- ====================================================== -->
     <string name="privacy_report_sharing_title">Data sharing</string>
-    <string name="privacy_report_sharing_compact">Local by default; online services depend on the APK variant</string>
-    <string name="privacy_report_sharing_summary">Loq In’s blocking engine does not automatically upload profile names, app/website rules, blocked-notification contents, or detailed usage history. These can leave the device when you explicitly use cloud backup, send a support report, or export/share data.</string>
+    <string name="privacy_report_sharing_compact">Stored locally; data leaves the device only when you export or share it</string>
+    <string name="privacy_report_sharing_summary">Loq In’s blocking engine does not automatically upload profile names, app/website rules, blocked-notification contents, or detailed usage history. These can leave the device when you explicitly create a local backup file, send a support report, or export/share data.</string>
 
     <!-- ====================================================== -->
     <!-- Backup -->
     <!-- ====================================================== -->
-    <string name="privacy_report_backup_title">Backup</string>
-    <string name="privacy_report_backup_compact">Current selection: %1$s</string>
+    <string name="privacy_report_backup_title">Local backup</string>
+    <string name="privacy_report_backup_compact">Backup file includes: %1$s</string>
     <string name="privacy_report_backup_summary">Preset: %1$s\n\nIncluded categories:\n%2$s</string>
 
     <!-- ====================================================== -->

@@ -131,6 +131,7 @@ fun Context.showLoqInInputDialog(
     // Width (and soft-input mode) must be set before show: changing the window
     // size in OnShow lays out twice and makes the dialog visibly jump.
     dialog.applyLoqInDialogWidth(0.90f)
+    dialog.applyLoqInDialogCorners()
     dialog.window?.setSoftInputMode(
         android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE
     )

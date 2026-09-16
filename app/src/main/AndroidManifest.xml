@@ -346,6 +346,12 @@
             android:exported="false"
             android:parentActivityName=".feature.settings.SettingsActivity" />
 
+        <!-- Control modes page (shared blocking-mode picker design) -->
+        <activity
+            android:name=".feature.settings.ControlModesActivity"
+            android:exported="false"
+            android:parentActivityName=".feature.settings.SettingsActivity" />
+
         <!-- Blocked notification inbox -->
         <activity
             android:name=".feature.inbox.BlockedInboxActivity"

@@ -12,6 +12,7 @@
     <string name="toggle_options_display_title">Widgets &amp; Shortcuts</string>
     <string name="toggle_group_manage_blocking_modes">Kontrollmodi</string>
     <string name="settings_blocking_modes_summary">Wähle, wie Loq In aktiviert oder deaktiviert wird.</string>
+    <string name="control_modes_profile_subtitle">Steuermodi für: %1$s</string>
     <string name="toggle_group_manage_other_blocking_features">Funktionszugriff</string>
     <string name="settings_blocking_features_summary">Zugriff bei aktivem Schutz, Benachrichtigungen &amp; Zusammenfassung sowie Status.</string>
 
@@ -106,6 +107,8 @@
     <!-- ====================================================== -->
     <!-- Feature access -->
     <!-- ====================================================== -->
+    <string name="feature_access_section_active">Zugriff während aktiv</string>
+    <string name="feature_access_section_nfc">NFC-Tags &amp; Kopplung</string>
     <string name="pref_require_nfc_unlock_title">NFC zum Deaktivieren von Loq In erforderlich</string>
     <string name="pref_require_nfc_unlock_summary">Wenn aktiv, kann nur ein erlaubtes NFC-Aktionstag oder QR-Fallback Loq In deaktivieren.</string>
     <string name="toggle_locked_nfc_hint">Gesperrt, weil „NFC zum Deaktivieren von Loq In erforderlich“ aktiv ist.</string>
@@ -188,6 +191,7 @@
     <string name="emergency_disabled_message_controls">Die Notfall-Entsperrung ist derzeit aus. Du kannst sie in der Blockier-Steuerung aktivieren.</string>
     <string name="emergency_open_controls_action">Blockier-Steuerung öffnen</string>
     <string name="emergency_pin_changed">Notfall-PIN aktualisiert.</string>
+    <string name="emergency_pin_removed">Notfall-PIN entfernt.</string>
 
     <!-- ====================================================== -->
     <!-- Home display -->

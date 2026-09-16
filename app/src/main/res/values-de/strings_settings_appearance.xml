@@ -16,6 +16,7 @@
     <string name="pref_theme_mode_light">Hell</string>
     <string name="pref_theme_mode_dark">Dunkel</string>
     <string name="pref_theme_mode_system">Systemeinstellung folgen</string>
+    <string name="pref_theme_mode_system_short">System</string>
     <string name="pref_theme_mode_system_summary">Folgt der Hell-/Dunkel-Einstellung von Android.</string>
     <string name="pref_theme_mode_light_summary">Verwendet das helle Loq In-Design.</string>
     <string name="pref_theme_mode_dark_summary">Verwendet das dunkle Loq In-Design.</string>
@@ -26,6 +27,7 @@
     <string name="pref_time_format_title">Zeitformat</string>
     <string name="pref_time_format_summary">Lege fest, wie Zeiten in Zeitplänen angezeigt werden</string>
     <string name="pref_time_format_system">Automatisch</string>
+    <string name="pref_time_format_system_short">Auto</string>
     <string name="pref_time_format_24h">24-Stunden</string>
     <string name="pref_time_format_12h">12-Stunden</string>
     <string name="pref_time_format_system_summary">Verwendet das Standard-Zeitformat des Geräts.</string>
@@ -72,6 +74,8 @@
     </string-array>
 
     <string name="pref_language_title">Sprache</string>
+    <string name="pref_language_english">Englisch</string>
+    <string name="pref_language_german">Deutsch</string>
 
     <!-- ====================================================== -->
     <!-- Language -->

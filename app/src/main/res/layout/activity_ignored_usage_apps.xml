@@ -1,19 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
-    <!-- Topbar -->
+    <!-- Pinned topbar: its own static bar, never scrolls. Kept out of the
+         collapsing AppBarLayout below because AppBarLayout ends its collapse
+         range at the first static child. -->
     <com.google.android.material.appbar.AppBarLayout
-        android:id="@+id/appBar"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:fitsSystemWindows="true"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        android:fitsSystemWindows="true">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
@@ -21,119 +20,229 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:minHeight="?attr/actionBarSize"
-            app:title="@string/ignored_usage_apps_title" />
+            app:navigationIcon="@drawable/keyboard_arrow_left_24"
+            app:title="@string/ignored_usage_apps_title">
+
+            <ImageButton
+                android:id="@+id/btnHiddenAppsInfo"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                android:layout_gravity="end|center_vertical"
+                android:padding="12dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="@string/ignored_usage_apps_info"
+                android:src="@drawable/info_24"
+                app:tint="?attr/colorOnSurface" />
+        </com.google.android.material.appbar.MaterialToolbar>
     </com.google.android.material.appbar.AppBarLayout>
 
-    <!-- Content -->
-    <com.google.android.material.button.MaterialButtonToggleGroup
-        android:id="@+id/toggleHiddenAppsSection"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="14dp"
-        android:layout_marginEnd="16dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/appBar"
-        app:selectionRequired="true"
-        app:singleSelection="true">
+    <androidx.coordinatorlayout.widget.CoordinatorLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
 
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnHiddenAppPickers"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:minHeight="48dp"
-            android:text="@string/hidden_apps_tab_pickers"
-            android:maxLines="1"
-            app:cornerRadius="14dp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnHiddenUsageInsights"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:minHeight="48dp"
-            android:text="@string/hidden_apps_tab_usage"
-            android:maxLines="1"
-            app:cornerRadius="14dp" />
-    </com.google.android.material.button.MaterialButtonToggleGroup>
-
-    <TextView
-        android:id="@+id/tvSectionDescription"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="16dp"
-        android:textColor="?android:attr/textColorSecondary"
-        android:textSize="12.5sp"
-        android:lineSpacingExtra="2dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/toggleHiddenAppsSection" />
-
-    <com.google.android.material.textfield.TextInputLayout
-        android:id="@+id/searchBox"
-        style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="10dp"
-        android:layout_marginEnd="16dp"
-        android:hint="@string/ignored_usage_apps_search_hint"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvSectionDescription"
-        app:endIconMode="clear_text"
-        app:startIconDrawable="@drawable/apps_24">
-
-        <com.google.android.material.textfield.TextInputEditText
-            android:id="@+id/etSearch"
+        <!-- Collapsing header: the section card is the FIRST child so it gets a
+             real collapse range and scrolls 1:1; search + chips + count have no
+             flags so they pin beneath it. -->
+        <com.google.android.material.appbar.AppBarLayout
+            android:id="@+id/appBarLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:inputType="text"
-            android:imeOptions="actionDone" />
-    </com.google.android.material.textfield.TextInputLayout>
+            app:liftOnScroll="false">
 
-    <TextView
-        android:id="@+id/tvIgnoredCount"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="16dp"
-        android:textColor="?android:attr/textColorSecondary"
-        android:textSize="13sp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/searchBox" />
+            <!-- Section options: scrolls away with the grid -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardHiddenSection"
+                style="@style/LoqIn.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginEnd="12dp"
+                android:layout_marginBottom="8dp"
+                app:cardUseCompatPadding="false"
+                app:layout_scrollFlags="scroll">
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvIgnoredUsageApps"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="16dp"
-        android:paddingBottom="10dp"
-        android:clipToPadding="false"
-        app:layout_constraintBottom_toTopOf="@id/btnSaveIgnoredApps"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvIgnoredCount" />
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="8dp">
 
+                    <com.google.android.material.button.MaterialButtonToggleGroup
+                        android:id="@+id/toggleHiddenAppsSection"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        app:selectionRequired="true"
+                        app:singleSelection="true">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnHiddenAppPickers"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:minHeight="42dp"
+                            android:maxLines="2"
+                            android:text="@string/hidden_apps_tab_pickers"
+                            android:textSize="12sp"
+                            app:cornerRadius="16dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnHiddenUsageInsights"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:minHeight="42dp"
+                            android:maxLines="2"
+                            android:text="@string/hidden_apps_tab_usage"
+                            android:textSize="12sp"
+                            app:cornerRadius="16dp" />
+                    </com.google.android.material.button.MaterialButtonToggleGroup>
+
+                    <TextView
+                        android:id="@+id/tvSectionDescription"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:textColor="?android:attr/textColorSecondary"
+                        android:textSize="12sp"
+                        android:lineSpacingExtra="2dp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- Sticky filters: no scroll flags, so search + chips + count pin
+                 below the toolbar once the section card scrolls away -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:paddingStart="12dp"
+                android:paddingEnd="12dp"
+                android:paddingBottom="4dp">
+
+                <com.google.android.material.textfield.TextInputLayout
+                    android:id="@+id/searchBox"
+                    style="@style/Widget.MaterialComponents.TextInputLayout.FilledBox"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    app:boxStrokeWidth="0dp"
+                    app:boxStrokeWidthFocused="0dp"
+                    app:boxCornerRadiusTopStart="24dp"
+                    app:boxCornerRadiusTopEnd="24dp"
+                    app:boxCornerRadiusBottomStart="24dp"
+                    app:boxCornerRadiusBottomEnd="24dp"
+                    app:endIconMode="clear_text">
+
+                    <com.google.android.material.textfield.TextInputEditText
+                        android:id="@+id/etSearch"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:hint="@string/ignored_usage_apps_search_hint"
+                        android:inputType="text"
+                        android:imeOptions="actionSearch" />
+                </com.google.android.material.textfield.TextInputLayout>
+
+                <!-- Suggested / All / Hidden filter chips -->
+                <HorizontalScrollView
+                    android:id="@+id/filterScroll"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:scrollbars="none">
+
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/chipFilters"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        app:singleSelection="false" />
+                </HorizontalScrollView>
+
+                <!-- Bulk actions: only while a search or filter is active -->
+                <LinearLayout
+                    android:id="@+id/bulkBar"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:orientation="horizontal"
+                    android:visibility="gone">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnSelectAll"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:maxLines="1"
+                        android:minHeight="40dp"
+                        android:text="@string/hidden_apps_select_all"
+                        android:textSize="12sp"
+                        app:cornerRadius="14dp"
+                        app:icon="@drawable/check_circle_24"
+                        app:iconGravity="textStart"
+                        app:strokeWidth="0dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnClearAll"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_marginStart="8dp"
+                        android:layout_weight="1"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:maxLines="1"
+                        android:minHeight="40dp"
+                        android:text="@string/hidden_apps_clear_all"
+                        android:textSize="12sp"
+                        app:cornerRadius="14dp"
+                        app:icon="@drawable/close_24"
+                        app:iconGravity="textStart"
+                        app:strokeWidth="0dp" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tvIgnoredCount"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:textColor="?android:attr/textColorSecondary"
+                    android:textSize="13sp" />
+            </LinearLayout>
+        </com.google.android.material.appbar.AppBarLayout>
+
+        <!-- Content -->
+        <LinearLayout
+            android:id="@+id/content"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:orientation="vertical"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:paddingBottom="8dp"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rvIgnoredUsageApps"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:paddingBottom="24dp"
+                android:clipToPadding="false" />
+        </LinearLayout>
+    </androidx.coordinatorlayout.widget.CoordinatorLayout>
+
+    <!-- Pinned bottom action: outside the scrolling container so it can never
+         scroll away with the grid -->
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnSaveIgnoredApps"
-        style="@style/LoqIn.PrimaryButton"
-        android:layout_width="0dp"
+        style="@style/LoqIn.Button"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        android:layout_marginTop="8dp"
-        android:layout_marginEnd="16dp"
-        android:layout_marginBottom="16dp"
-        android:text="@string/save"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent" />
-</androidx.constraintlayout.widget.ConstraintLayout>
+        android:layout_marginStart="12dp"
+        android:layout_marginTop="6dp"
+        android:layout_marginEnd="12dp"
+        android:layout_marginBottom="4dp"
+        android:text="@string/save" />
+</LinearLayout>

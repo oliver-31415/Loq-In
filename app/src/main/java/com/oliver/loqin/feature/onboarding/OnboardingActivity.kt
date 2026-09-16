@@ -67,7 +67,9 @@ import com.oliver.loqin.data.prefs.SwitchModeStore
 import com.oliver.loqin.feature.onboarding.adapters.OnboardingPagerAdapter
 import com.oliver.loqin.feature.faq.FaqActivity
 import com.oliver.loqin.feature.settings.AppLockSettingsActivity
+import com.oliver.loqin.feature.settings.BackupFlowActions
 import com.oliver.loqin.feature.settings.BlockingFeaturesActivity
+import com.oliver.loqin.feature.settings.ControlModesActivity
 import com.oliver.loqin.feature.settings.HomeModeDialogHelper
 import com.oliver.loqin.feature.picker.AppPickerActivity
 import com.oliver.loqin.feature.schedule.SchedulesActivity
@@ -147,8 +149,12 @@ class OnboardingActivity : ComponentActivity() {
     private lateinit var btnSkip: MaterialButton
     private lateinit var btnHeaderBack: ImageButton
     private lateinit var btnHeaderSkip: MaterialButton
+    private lateinit var btnHeaderRestore: MaterialButton
     private lateinit var btnOptionalSetup: MaterialButton
     private lateinit var buttonSpacer: View
+
+    /** Local file restore, offered on the first onboarding page. */
+    private val backupFlows = BackupFlowActions(this)
 
     private val permissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -192,6 +198,7 @@ class OnboardingActivity : ComponentActivity() {
         btnSkip = findViewById(R.id.btn_skip)
         btnHeaderBack = findViewById(R.id.btnHeaderBack)
         btnHeaderSkip = findViewById(R.id.btnHeaderSkip)
+        btnHeaderRestore = findViewById(R.id.btnHeaderRestore)
         btnOptionalSetup = findViewById(R.id.btn_optional_setup)
         buttonSpacer = findViewById(R.id.onboardingButtonSpacer)
 
@@ -245,6 +252,7 @@ class OnboardingActivity : ComponentActivity() {
         }
         btnSkip.setOnClickListener { onSkipClicked() }
         btnHeaderSkip.setOnClickListener { onSkipClicked() }
+        btnHeaderRestore.setOnClickListener { backupFlows.fileRestore() }
         btnHeaderBack.setOnClickListener {
             val position = currentPageIndex()
             if (position > 0) {
@@ -574,6 +582,7 @@ class OnboardingActivity : ComponentActivity() {
         val finishesOnboarding = isReviewPage || isLastOptionalPage || pos == pages.lastIndex
 
         btnHeaderBack.visibility = if (pos > 0) View.VISIBLE else View.INVISIBLE
+        btnHeaderRestore.visibility = if (pos == 0) View.VISIBLE else View.GONE
         btnHeaderSkip.visibility = when {
             isReviewPage || isLastOptionalPage || pos == pages.lastIndex -> View.GONE
             else -> View.VISIBLE
@@ -1057,15 +1066,13 @@ class OnboardingActivity : ComponentActivity() {
             ),
             level = OnboardingPage.Level.RECOMMENDED,
             actionLabel = getString(R.string.onb_controls_action),
-            action = { act ->
-                act.getSharedPreferences(PREFS, MODE_PRIVATE).edit {
-                    putBoolean(KEY_CONTROLS_VISITED, true)
-                }
-                act.startActivity(
-                    Intent(act, ToggleOptionsActivity::class.java)
-                        .putExtra(ToggleOptionsActivity.EXTRA_VIEW_SECTION, ToggleOptionsActivity.SECTION_BLOCKING)
-                )
-            },
+                action = { act ->
+                    act.getSharedPreferences(PREFS, MODE_PRIVATE).edit {
+                        putBoolean(KEY_CONTROLS_VISITED, true)
+                    }
+                    // Same modern picker as the Home hero badge, as a full page.
+                    act.startActivity(Intent(act, ControlModesActivity::class.java))
+                },
             completionCheck = { ctx -> hasVisitedControlSetup(ctx) },
             completedLabel = getString(R.string.onb_controls_selected),
             keepActionEnabledWhenCompleted = true

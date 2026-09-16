@@ -34,6 +34,22 @@
         android:paddingEnd="12dp"
         android:paddingBottom="4dp">
 
+        <!-- First page: restore an existing local backup instead of continuing setup. -->
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnHeaderRestore"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:insetLeft="0dp"
+            android:insetRight="0dp"
+            android:minWidth="0dp"
+            android:text="@string/onb_restore_from_file"
+            android:textColor="@color/foqos_on_surface_variant"
+            android:textSize="14sp"
+            android:textStyle="bold"
+            android:textAllCaps="false"
+            android:visibility="gone" />
+
         <ImageButton
             android:id="@+id/btnHeaderBack"
             android:layout_width="44dp"

@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Quick Settings / widget shortcut tile. Mirrors grid_app_tile.xml (App rules)
+    so the Widgets & shortcuts grid reads as the same square-card component:
+    square card, accent icon, bold label and an optional top-right badge.
+-->
+<com.oliver.loqin.ui.SquareCardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/tileRoot"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:foreground="?attr/selectableItemBackground"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardBackgroundColor="@color/foqos_surface"
+    app:cardCornerRadius="18dp"
+    app:cardElevation="1dp"
+    app:cardUseCompatPadding="false"
+    app:strokeColor="@color/foqos_outline_variant"
+    app:strokeWidth="1dp">
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="8dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <ImageView
+                android:id="@+id/ivTileIcon"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:contentDescription="@null"
+                app:tint="?attr/colorPrimary" />
+
+            <TextView
+                android:id="@+id/tvTileLabel"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:ellipsize="end"
+                android:gravity="center"
+                android:maxLines="2"
+                android:textColor="?android:attr/textColorPrimary"
+                android:textSize="11sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <ImageView
+            android:id="@+id/ivTileBadge"
+            android:layout_width="22dp"
+            android:layout_height="22dp"
+            android:layout_gravity="top|end"
+            android:contentDescription="@null"
+            android:src="@drawable/check_circle_24"
+            android:visibility="gone"
+            app:tint="?attr/colorPrimary" />
+    </FrameLayout>
+</com.oliver.loqin.ui.SquareCardView>

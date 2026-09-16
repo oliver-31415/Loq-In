@@ -17,8 +17,13 @@
     <string name="app_lock_change_pin_title">Change app PIN</string>
     <string name="app_lock_change_pin_summary">Update the PIN used for app access and uninstall-protection changes.</string>
     <string name="app_lock_pin_set">App PIN saved.</string>
+    <string name="app_lock_pin_removed">App PIN removed.</string>
+    <string name="pin_action_remove">Remove PIN</string>
     <string name="app_lock_pin_hint_new">New PIN (min. 4 digits)</string>
     <string name="app_lock_pin_hint_enter">Enter app PIN</string>
+    <string name="app_lock_enter_current_pin_title">Enter current app PIN</string>
+    <string name="app_lock_enter_current_pin_message">Confirm your current app PIN to continue.</string>
+    <string name="app_lock_enter_new_pin_title">Enter new app PIN</string>
     <string name="app_lock_pin_title">Loq In PIN</string>
     <string name="app_lock_pin_message">This PIN can protect Loq In app access and changes to uninstall protection.</string>
     <string name="app_lock_pin_incorrect">Incorrect PIN.</string>
