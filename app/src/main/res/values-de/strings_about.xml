@@ -4,6 +4,9 @@
     <!-- ====================================================== -->
     <!-- About screen cards -->
     <!-- ====================================================== -->
+    <string name="info_section_app">App &amp; Gerät</string>
+    <string name="info_section_help">Hilfe &amp; Updates</string>
+    <string name="info_section_legal">Rechtliches</string>
     <string name="about_app_info_title">App-Info</string>
     <string name="about_app_info_summary">Version, Build und Installationsdetails</string>
     <string name="about_device_info_title">Geräteinfo</string>

@@ -32,14 +32,14 @@
     <!-- Data sharing -->
     <!-- ====================================================== -->
     <string name="privacy_report_sharing_title">Datenweitergabe</string>
-    <string name="privacy_report_sharing_compact">Standardmäßig lokal; Online-Dienste hängen von der APK-Variante ab</string>
-    <string name="privacy_report_sharing_summary">Loq Ins Schutzsystem lädt Profilnamen, App-/Website-Regeln, Inhalte blockierter Benachrichtigungen oder detaillierte Nutzungsverläufe nicht automatisch hoch. Diese Daten können das Gerät verlassen, wenn du bewusst Cloud-Sicherung, Supportbericht oder Datenexport verwendest.</string>
+    <string name="privacy_report_sharing_compact">Lokal gespeichert; Daten verlassen das Gerät nur, wenn du sie exportierst oder teilst</string>
+    <string name="privacy_report_sharing_summary">Loq Ins Schutzsystem lädt Profilnamen, App-/Website-Regeln, Inhalte blockierter Benachrichtigungen oder detaillierte Nutzungsverläufe nicht automatisch hoch. Diese Daten können das Gerät verlassen, wenn du bewusst eine lokale Sicherungsdatei erstellst, einen Supportbericht sendest oder Daten exportierst/teilst.</string>
 
     <!-- ====================================================== -->
     <!-- Backup -->
     <!-- ====================================================== -->
-    <string name="privacy_report_backup_title">Backup</string>
-    <string name="privacy_report_backup_compact">Aktuelle Auswahl: %1$s</string>
+    <string name="privacy_report_backup_title">Lokale Sicherung</string>
+    <string name="privacy_report_backup_compact">Sicherungsdatei enthält: %1$s</string>
     <string name="privacy_report_backup_summary">Auswahl: %1$s\n\nEnthaltene Kategorien:\n%2$s</string>
 
     <!-- ====================================================== -->

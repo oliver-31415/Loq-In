@@ -202,6 +202,9 @@ class SchedulesActivity : AppCompatActivity() {
 
     private var pendingAfterLocationGrant: (() -> Unit)? = null
     private var pendingAfterFineLocationGrant: (() -> Unit)? = null
+
+    /** The open add/edit schedule dialog, so in-dialog messages are not shown behind it. */
+    private var scheduleDialog: AlertDialog? = null
     private var pendingAfterBluetoothGrant: (() -> Unit)? = null
 
     private var pendingMapPickerCallback: ((ResolvedLocation) -> Unit)? = null
@@ -1753,7 +1756,10 @@ class SchedulesActivity : AppCompatActivity() {
     }
 
     private fun showSnack(msgRes: Int) {
-        val root = findViewById<View?>(android.R.id.content)
+        // While the add/edit schedule dialog is open, anchor the message to that
+        // window; using the activity content view renders it behind the dialog.
+        val root = scheduleDialog?.takeIf { it.isShowing }?.window?.decorView
+            ?: findViewById<View?>(android.R.id.content)
         if (root != null) Snackbar.make(root, msgRes, Snackbar.LENGTH_LONG).applyLoqInStyle().show()
         else Toast.makeText(this, getString(msgRes), Toast.LENGTH_LONG).show()
     }
@@ -3344,6 +3350,8 @@ class SchedulesActivity : AppCompatActivity() {
             .create()
 
         dialog.applyLoqInDialogWidth(0.94f)
+        scheduleDialog = dialog
+        dialog.setOnDismissListener { scheduleDialog = null }
         dialog.setOnShowListener {
             dialog.styleLoqInDialogButtons()
             val btnPos = dialog.getButton(AlertDialog.BUTTON_POSITIVE)

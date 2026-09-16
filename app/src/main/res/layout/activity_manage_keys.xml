@@ -38,11 +38,13 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <!-- NFC tags -->
             <TextView
+                android:id="@+id/headerKeysNfc"
                 style="@style/LoqIn.SectionHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/keys_codes_section" />
+                android:text="@string/keys_codes_section_nfc" />
 
             <com.google.android.material.card.MaterialCardView
                 style="@style/LoqIn.Card"
@@ -180,13 +182,28 @@
                             android:src="@drawable/keyboard_arrow_right_24"
                             app:tint="?android:attr/textColorSecondary" />
                     </LinearLayout>
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
-                    <com.google.android.material.divider.MaterialDivider
-                        android:id="@+id/dividerPairedTags"
-                        style="@style/LoqIn.Divider"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        app:dividerInsetStart="54dp" />
+            <!-- QR and barcodes -->
+            <TextView
+                android:id="@+id/headerKeysCodes"
+                style="@style/LoqIn.SectionHeader"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:text="@string/keys_codes_section_codes" />
+
+            <com.google.android.material.card.MaterialCardView
+                style="@style/LoqIn.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical">
 
                     <!-- Generate QR -->
                     <LinearLayout

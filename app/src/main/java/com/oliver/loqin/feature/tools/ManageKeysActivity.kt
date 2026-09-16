@@ -139,8 +139,11 @@ class ManageKeysActivity : AppCompatActivity() {
         findViewById<View>(R.id.cardGenerateQr).visibility = if (showQr) View.VISIBLE else View.GONE
         findViewById<View>(R.id.cardManageBarcodes).visibility = if (showBarcode) View.VISIBLE else View.GONE
         findViewById<View>(R.id.dividerWriteNfc)?.visibility = if (showNfc) View.VISIBLE else View.GONE
-        findViewById<View>(R.id.dividerPairedTags)?.visibility = if (showNfc && (showQr || showBarcode)) View.VISIBLE else View.GONE
         findViewById<View>(R.id.dividerGenerateQr)?.visibility = if (showQr && showBarcode) View.VISIBLE else View.GONE
+        // Section headers follow their group.
+        findViewById<View>(R.id.headerKeysNfc)?.visibility = if (showNfc) View.VISIBLE else View.GONE
+        findViewById<View>(R.id.headerKeysCodes)?.visibility =
+            if (showQr || showBarcode) View.VISIBLE else View.GONE
     }
 
     private fun setupCards() {

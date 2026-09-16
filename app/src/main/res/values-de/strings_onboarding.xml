@@ -15,6 +15,7 @@
     <string name="onb_continue">Weiter</string>
     <string name="onb_back">Zurück</string>
     <string name="onb_skip">Überspringen</string>
+    <string name="onb_restore_from_file">Aus Datei wiederherstellen</string>
     <string name="onb_open">Öffnen</string>
     <string name="onb_permissions_action">Nächste Einstellung öffnen</string>
 
@@ -22,7 +23,7 @@
         <!-- Streamlined Step 1: Profiles -->
     <string name="onb_profiles_title">Erstelle dein erstes Profil</string>
     <string name="onb_profiles_desc">Loq In fasst alle deine Regeln in Profilen zusammen. Jedes Profil hat eigene blockierte Apps, Websites und Aktivierungsmethoden.</string>
-    <string name="onb_profiles_point_create">Tippe jederzeit oben auf dem Startbildschirm auf den Profilnamen, um Profile zu erstellen, umzubenennen oder zu wechseln.</string>
+    <string name="onb_profiles_point_create">Tippe jederzeit auf dem Startbildschirm auf den Profilnamen, um es zu bearbeiten.</string>
     <string name="onb_profiles_point_rules">Verschiedene Regeln für unterschiedliche Routinen: Richte Profile für Arbeit, Lernen oder Schlaf ein.</string>
     <string name="onb_profiles_point_default">Wir starten mit deinem aktiven Profil: %1$s.</string>
     <string name="onb_profiles_action">Profil umbenennen</string>

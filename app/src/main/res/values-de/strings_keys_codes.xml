@@ -6,6 +6,8 @@
     <!-- ====================================================== -->
     <string name="keys_codes_title">Schlüssel &amp; Codes</string>
     <string name="keys_codes_section">NFC-, QR- und Barcode-Steuerung</string>
+    <string name="keys_codes_section_nfc">NFC-Tags</string>
+    <string name="keys_codes_section_codes">QR &amp; Barcodes</string>
     <string name="keys_codes_write_nfc_title">NFC-Tag schreiben</string>
     <string name="keys_codes_write_nfc_summary">Beschreibbare NFC-Tags für Aktivieren, Deaktivieren, Einstellungs-Entsperrung und andere Aktionen beschreiben</string>
     <string name="keys_codes_paired_tags_title">Gepaarte Tags verwalten</string>

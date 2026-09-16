@@ -117,13 +117,6 @@ class PrivacyReportActivity : TilesInfoActivity() {
                 subtitle = getString(R.string.privacy_report_not_stored_compact),
                 sectionTitle = getString(R.string.privacy_report_section_privacy),
                 iconRes = R.drawable.lock_24,
-                onClick = {
-                    showInfo(
-                        R.string.privacy_report_not_stored_title,
-                        getString(R.string.privacy_report_not_stored_summary)
-                    )
-                },
-                showOpenButton = true,
                 enableLongPressCopy = false
             ),
             Tile(
@@ -131,13 +124,6 @@ class PrivacyReportActivity : TilesInfoActivity() {
                 subtitle = getString(R.string.privacy_report_sharing_compact),
                 sectionTitle = getString(R.string.privacy_report_section_privacy),
                 iconRes = R.drawable.security_24,
-                onClick = {
-                    showInfo(
-                        R.string.privacy_report_sharing_title,
-                        getString(R.string.privacy_report_sharing_summary)
-                    )
-                },
-                showOpenButton = true,
                 enableLongPressCopy = false
             ),
             Tile(
@@ -147,27 +133,7 @@ class PrivacyReportActivity : TilesInfoActivity() {
                     selection.displaySummary()
                 ),
                 sectionTitle = getString(R.string.privacy_report_section_privacy),
-                iconRes = R.drawable.cloud_24,
-                onClick = {
-                    showInfo(
-                        R.string.privacy_report_backup_title,
-                        getString(
-                            R.string.privacy_report_backup_summary,
-                            selection.displaySummary(),
-                            selection.includedNames()
-                        )
-                    )
-                },
-                showOpenButton = true,
-                enableLongPressCopy = false
-            ),
-            Tile(
-                title = getString(R.string.privacy_report_export_report_title),
-                subtitle = getString(R.string.privacy_report_export_report_summary),
-                sectionTitle = getString(R.string.privacy_report_section_actions),
-                iconRes = R.drawable.content_copy_24,
-                onClick = { sharePrivacyReport() },
-                showOpenButton = true,
+                iconRes = R.drawable.folder_24,
                 enableLongPressCopy = false
             ),
             Tile(
@@ -183,13 +149,21 @@ class PrivacyReportActivity : TilesInfoActivity() {
                 enableLongPressCopy = false
             ),
             Tile(
+                title = getString(R.string.privacy_report_export_report_title),
+                subtitle = getString(R.string.privacy_report_export_report_summary),
+                sectionTitle = getString(R.string.privacy_report_section_actions),
+                iconRes = R.drawable.content_copy_24,
+                onClick = { sharePrivacyReport() },
+                showOpenButton = true,
+                enableLongPressCopy = false
+            ),
+            Tile(
                 title = getString(R.string.privacy_report_delete_title),
                 subtitle = getString(R.string.privacy_report_delete_summary),
                 sectionTitle = getString(R.string.privacy_report_section_actions),
                 iconRes = R.drawable.delete_24,
                 onClick = { confirmDeleteAllData() },
-                subtitleColorRes = R.color.status_error,
-                subtitleAlpha = 1f,
+                destructive = true,
                 enableLongPressCopy = false
             )
         )
@@ -225,14 +199,6 @@ class PrivacyReportActivity : TilesInfoActivity() {
             localData.blockedNotifications,
             localData.diagnosticLogs
         )
-    }
-
-    private fun showInfo(titleRes: Int, message: String) {
-        MaterialAlertDialogBuilder(this)
-            .setTitle(titleRes)
-            .setMessage(message)
-            .setPositiveButton(R.string.ok, null)
-            .showAccented()
     }
 
     private fun createPrivacyReport(): String {

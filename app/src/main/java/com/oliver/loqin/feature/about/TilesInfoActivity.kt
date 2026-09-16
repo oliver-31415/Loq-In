@@ -64,7 +64,9 @@ abstract class TilesInfoActivity : AppCompatActivity() {
         @param:ColorRes @field:ColorRes val subtitleColorRes: Int? = null,
         @param:androidx.annotation.ColorInt @field:androidx.annotation.ColorInt val subtitleColorInt: Int? = null,
         val subtitleAlpha: Float? = null,
-        val tintIcon: Boolean = true
+        val tintIcon: Boolean = true,
+        /** Renders the whole row in the error color (title, subtitle, icon). */
+        val destructive: Boolean = false
     )
 
     private lateinit var toolbar: MaterialToolbar
@@ -181,7 +183,10 @@ abstract class TilesInfoActivity : AppCompatActivity() {
         val copyButton = row.findViewById<ImageButton>(R.id.btnCopy)
         val clickAction = tile.onClick
 
-        val accentTint = ColorStateList.valueOf(AccentColor.getAccentColorInt(this))
+        val errorColor = ContextCompat.getColor(this, R.color.status_error)
+        val accentTint = ColorStateList.valueOf(
+            if (tile.destructive) errorColor else AccentColor.getAccentColorInt(this)
+        )
         tile.iconRes?.let { iconRes ->
             iconView.visibility = View.VISIBLE
             iconView.setImageResource(iconRes)
@@ -192,7 +197,15 @@ abstract class TilesInfoActivity : AppCompatActivity() {
 
         titleView.text = tile.title
         subtitleView.text = tile.subtitle
-        val resolvedSubtitleColor = tile.subtitleColorInt ?: tile.subtitleColorRes?.let { ContextCompat.getColor(this, it) }
+        if (tile.destructive) {
+            titleView.setTextColor(errorColor)
+        }
+        val resolvedSubtitleColor = when {
+            tile.destructive -> errorColor
+            tile.subtitleColorInt != null -> tile.subtitleColorInt
+            tile.subtitleColorRes != null -> ContextCompat.getColor(this, tile.subtitleColorRes)
+            else -> null
+        }
         resolvedSubtitleColor?.let { subtitleView.setTextColor(it) }
         subtitleView.alpha = tile.subtitleAlpha ?: if (resolvedSubtitleColor != null) 1f else 0.72f
 
