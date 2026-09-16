@@ -190,6 +190,7 @@
     <string name="emergency_disabled_message_controls">Die Notfall-Entsperrung ist derzeit aus. Du kannst sie in der Blockier-Steuerung aktivieren.</string>
     <string name="emergency_open_controls_action">Blockier-Steuerung öffnen</string>
     <string name="emergency_pin_changed">Notfall-PIN aktualisiert.</string>
+    <string name="emergency_pin_removed">Notfall-PIN entfernt.</string>
 
     <!-- ====================================================== -->
     <!-- Home display -->

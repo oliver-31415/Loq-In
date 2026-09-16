@@ -49,6 +49,7 @@ import com.oliver.loqin.data.prefs.TempEnableCountStore
 import com.oliver.loqin.feature.stats.StatsFormat
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.ui.EdgeToEdgeUtils
+import com.oliver.loqin.ui.SegmentedToggleUi
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.dialog.showAccented
 import com.google.android.material.appbar.AppBarLayout
@@ -266,45 +267,12 @@ class LoqInOverviewActivity : AppCompatActivity() {
     }
 
     private fun syncRangeButtonUi() {
-        val activeBackground = AccentColor.getAccentColorInt(this)
-        val activeText = if (MaterialColors.isColorLight(activeBackground)) {
-            Color.BLACK
-        } else {
-            Color.WHITE
-        }
-        val inactiveBackground = MaterialColors.getColor(
+        // Match the insights range selector's segmented-bar style exactly.
+        SegmentedToggleUi.apply(
             this,
-            com.google.android.material.R.attr.colorSurfaceVariant,
-            Color.TRANSPARENT
+            rangeButtons.values.toList(),
+            rangeButtons.getValue(selectedRange).id,
         )
-        val inactiveText = MaterialColors.getColor(
-            this,
-            com.google.android.material.R.attr.colorOnSurface,
-            Color.WHITE
-        )
-        val outline = MaterialColors.getColor(
-            this,
-            com.google.android.material.R.attr.colorOutline,
-            inactiveText
-        )
-
-        for ((range, button) in rangeButtons) {
-            val active = range == selectedRange
-            button.isChecked = active
-            button.isActivated = active
-            button.backgroundTintList = ColorStateList.valueOf(
-                if (active) activeBackground else inactiveBackground
-            )
-            button.setTextColor(if (active) activeText else inactiveText)
-            button.strokeColor = ColorStateList.valueOf(
-                if (active) activeBackground else outline
-            )
-            button.strokeWidth = resources.displayMetrics.density.toInt().coerceAtLeast(1)
-            button.rippleColor = ColorStateList.valueOf(
-                ColorUtils.setAlphaComponent(activeBackground, 0x35)
-            )
-            button.jumpDrawablesToCurrentState()
-        }
     }
 
     private fun refresh() {

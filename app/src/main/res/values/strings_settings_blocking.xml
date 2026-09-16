@@ -190,6 +190,7 @@
     <string name="emergency_disabled_message_controls">Emergency unlock is currently off. You can enable it in Loq In controls.</string>
     <string name="emergency_open_controls_action">Open Loq In controls</string>
     <string name="emergency_pin_changed">Emergency PIN updated.</string>
+    <string name="emergency_pin_removed">Emergency PIN removed.</string>
 
     <!-- ====================================================== -->
     <!-- Home display -->

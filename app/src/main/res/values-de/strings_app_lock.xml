@@ -17,8 +17,13 @@
     <string name="app_lock_change_pin_title">App-PIN ändern</string>
     <string name="app_lock_change_pin_summary">Ändere die PIN für App-Zugriff und Änderungen am Deinstallationsschutz.</string>
     <string name="app_lock_pin_set">App-PIN gespeichert.</string>
+    <string name="app_lock_pin_removed">App-PIN entfernt.</string>
+    <string name="pin_action_remove">PIN entfernen</string>
     <string name="app_lock_pin_hint_new">Neue PIN (mind. 4 Ziffern)</string>
     <string name="app_lock_pin_hint_enter">App-PIN eingeben</string>
+    <string name="app_lock_enter_current_pin_title">Aktuelle App-PIN eingeben</string>
+    <string name="app_lock_enter_current_pin_message">Bestätige deine aktuelle App-PIN, um fortzufahren.</string>
+    <string name="app_lock_enter_new_pin_title">Neue App-PIN eingeben</string>
     <string name="app_lock_pin_title">Loq In-PIN</string>
     <string name="app_lock_pin_message">Diese PIN kann den Loq In-App-Zugriff und Änderungen am Deinstallationsschutz schützen.</string>
     <string name="app_lock_pin_incorrect">Falsche PIN.</string>

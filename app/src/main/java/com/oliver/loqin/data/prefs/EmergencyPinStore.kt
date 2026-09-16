@@ -54,6 +54,13 @@ object EmergencyPinStore {
         prefs(ctx).edit(commit = true) { putString(KEY_EMERGENCY_PIN, pin.trim()) }
     }
 
+    fun removePin(ctx: Context) {
+        prefs(ctx).edit(commit = true) {
+            remove(KEY_EMERGENCY_PIN)
+            legacyKeys.forEach { key -> remove(key) }
+        }
+    }
+
     fun matchesPin(ctx: Context, enteredPin: String): Boolean {
         val expected = getPin(ctx).orEmpty()
         return expected.isNotBlank() && expected == enteredPin.trim()

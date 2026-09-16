@@ -19,6 +19,7 @@
 package com.oliver.loqin.feature.settings
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.ComponentName
 import android.appwidget.AppWidgetManager
@@ -105,6 +106,7 @@ open class ToggleOptionsActivity : AppCompatActivity() {
         super.attachBaseContext(LocaleHelper.wrapContext(newBase))
     }
 
+    @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         ThemeUtils.applyAccentTheme(this)
         super.onCreate(savedInstanceState)

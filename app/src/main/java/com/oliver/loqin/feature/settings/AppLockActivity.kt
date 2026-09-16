@@ -20,37 +20,35 @@ package com.oliver.loqin.feature.settings
 
 import android.content.Context
 import android.os.Bundle
-import android.text.InputType
-import android.widget.Button
-import android.widget.EditText
-import android.widget.TextView
-import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricManager
 import androidx.biometric.BiometricPrompt
 import androidx.core.content.ContextCompat
-import androidx.core.view.isVisible
 import com.oliver.loqin.R
 import com.oliver.loqin.data.prefs.AppLogStore
 import com.oliver.loqin.security.AppLockManager
 import com.oliver.loqin.security.AppLockStore
 import com.oliver.loqin.theme.CustomAccentApplier
 import com.oliver.loqin.ui.ThemeUtils
-import com.oliver.loqin.ui.showWarnPillOnContent
+import com.oliver.loqin.ui.dialog.PinEntryDialog
 import com.oliver.loqin.util.ActivityTransitionCompat
 import com.oliver.loqin.util.LocaleHelper
 
+/**
+ * App-lock challenge shown when a protected screen (or Loq In itself) is opened.
+ * Presents the shared [PinEntryDialog] verify flow so it looks and behaves like
+ * every other dialog in the app, with biometrics offered as an extra action.
+ */
 class AppLockActivity : AppCompatActivity() {
+
+    private var pinDialog: AlertDialog? = null
+    private var unlocked = false
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(LocaleHelper.wrapContext(newBase))
     }
-
-    private lateinit var etPin: EditText
-    private lateinit var btnUnlock: Button
-    private lateinit var btnBiometric: Button
-    private var unlocked = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         ThemeUtils.applyAccentTheme(this)
@@ -68,51 +66,48 @@ class AppLockActivity : AppCompatActivity() {
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (!unlocked) {
+                if (unlocked) {
+                    finish()
+                } else {
                     AppLockManager.clearPromptFlag()
                     finishAffinity()
-                } else {
-                    finish()
                 }
             }
         })
 
-        findViewById<TextView>(R.id.tvTitle).text = getString(R.string.app_lock_unlock_title)
-        findViewById<TextView>(R.id.tvSubtitle).text = getString(R.string.app_lock_unlock_message)
-        etPin = findViewById<EditText>(R.id.etPin).apply {
-            inputType = InputType.TYPE_CLASS_NUMBER or InputType.TYPE_NUMBER_VARIATION_PASSWORD
-        }
-        btnUnlock = findViewById<Button>(R.id.btnUnlock)
-        btnBiometric = findViewById<Button>(R.id.btnBiometric)
+        val offerBiometric = AppLockStore.isBiometricEnabled(this) && isBiometricAvailable()
 
-        btnUnlock.setOnClickListener {
-            val pin = etPin.text?.toString().orEmpty()
-            if (AppLockStore.matchesPin(this, pin)) {
-                unlockSuccess()
-            } else {
-                AppLogStore.append(this, "AppLock", "Unlock failed reason=pin_mismatch")
-                showWarnPillOnContent(R.string.app_lock_pin_incorrect)
-            }
-        }
+        pinDialog = PinEntryDialog.showVerify(
+            activity = this,
+            titleRes = R.string.app_lock_pin_hint_enter,
+            subtitleRes = R.string.app_lock_unlock_message,
+            incorrectRes = R.string.app_lock_pin_incorrect,
+            verifyLength = AppLockStore.pinLength(this),
+            validator = { AppLockStore.matchesPin(this, it) },
+            neutralButtonRes = if (offerBiometric) R.string.app_lock_biometric_button else null,
+            neutralAction = if (offerBiometric) ({ promptBiometric() }) else null,
+            onCancel = {
+                if (!unlocked) {
+                    AppLockManager.clearPromptFlag()
+                    finishAffinity()
+                }
+            },
+        ) { unlockSuccess() }
 
-        val biometricAvailable = isBiometricAvailable()
-        btnBiometric.isVisible = AppLockStore.isBiometricEnabled(this) && biometricAvailable
-        btnBiometric.setOnClickListener { promptBiometric() }
-
-        if (btnBiometric.isVisible && savedInstanceState == null) {
-            btnBiometric.post { promptBiometric() }
+        if (offerBiometric && savedInstanceState == null) {
+            pinDialog?.window?.decorView?.post { promptBiometric() }
         }
     }
 
     private fun isBiometricAvailable(): Boolean {
-        val authenticators = BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.BIOMETRIC_WEAK
+        val authenticators = BiometricManager.Authenticators.BIOMETRIC_STRONG or
+            BiometricManager.Authenticators.BIOMETRIC_WEAK
         return BiometricManager.from(this).canAuthenticate(authenticators) == BiometricManager.BIOMETRIC_SUCCESS
     }
 
     private fun promptBiometric() {
         if (!isBiometricAvailable()) {
             AppLogStore.append(this, "AppLock", "Unlock failed reason=biometric_unavailable")
-            showWarnPillOnContent(R.string.app_lock_biometric_not_available)
             return
         }
 
@@ -121,6 +116,8 @@ class AppLockActivity : AppCompatActivity() {
             ContextCompat.getMainExecutor(this),
             object : BiometricPrompt.AuthenticationCallback() {
                 override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                    unlocked = true
+                    pinDialog?.dismiss()
                     unlockSuccess()
                 }
             }
