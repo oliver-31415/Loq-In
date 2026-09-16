@@ -25,6 +25,7 @@ import androidx.appcompat.app.AlertDialog
 import com.oliver.loqin.R
 import com.oliver.loqin.data.prefs.EmergencyPinStore
 import com.oliver.loqin.ui.showWarnPill
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
 /**
  * Emergency Unlock PIN flows, built on the shared [PinEntryDialog] so the look
@@ -36,7 +37,9 @@ object EmergencyPinDialog {
     /** Verify the current emergency PIN (e.g. before changing it or unlocking). */
     fun showEnterPin(
         activity: Activity,
-        onSuccess: () -> Unit
+        onSuccess: () -> Unit,
+        @StringRes neutralButtonRes: Int? = null,
+        neutralAction: (() -> Unit)? = null,
     ): AlertDialog {
         val storedPin = EmergencyPinStore.getPin(activity).orEmpty().trim()
         return PinEntryDialog.showVerify(
@@ -46,6 +49,8 @@ object EmergencyPinDialog {
             incorrectRes = R.string.emergency_pin_incorrect,
             verifyLength = storedPin.length,
             validator = { EmergencyPinStore.matchesPin(activity, it) },
+            neutralButtonRes = neutralButtonRes,
+            neutralAction = neutralAction,
         ) { onSuccess() }
     }
 
@@ -65,6 +70,7 @@ object EmergencyPinDialog {
         @StringRes titleRes: Int,
         onRemove: (() -> Unit)?,
         onSuccess: () -> Unit,
+        resetWithoutCurrentPin: Boolean = false,
     ): AlertDialog = PinEntryDialog.showCreate(
         activity = activity,
         titleRes = titleRes,
@@ -73,36 +79,83 @@ object EmergencyPinDialog {
         mismatchRes = R.string.pin_mismatch,
         onRemove = onRemove,
     ) { pin ->
-        EmergencyPinStore.setPin(activity, pin)
-        activity.findViewById<View>(android.R.id.content)
-            .showWarnPill(R.string.emergency_pin_changed)
+        val saved = if (resetWithoutCurrentPin) {
+            EmergencyPinStore.resetPinWhenFullyDisabled(activity, pin)
+        } else {
+            EmergencyPinStore.setPin(activity, pin)
+            true
+        }
+        val content = activity.findViewById<View>(android.R.id.content)
+        if (!saved) {
+            content.showWarnPill(R.string.emergency_pin_reset_requires_disabled)
+            return@showCreate
+        }
+        content.showWarnPill(
+            if (resetWithoutCurrentPin) R.string.emergency_pin_reset_done else R.string.emergency_pin_changed
+        )
         onSuccess()
     }
 
     /**
      * Change flow: confirm the current PIN first; the new-PIN page also offers
-     * "Remove PIN".
+     * "Remove PIN". While protection is fully off, a "Reset PIN" action skips
+     * the current-PIN step for users who forgot it.
      */
     fun showChangePinFlow(
         activity: Activity,
         onComplete: () -> Unit = {}
     ) {
         if (EmergencyPinStore.hasPin(activity)) {
-            showEnterPin(activity) {
-                showCreatePin(
-                    activity = activity,
-                    titleRes = R.string.pref_change_emergency_pin_title,
-                    onRemove = {
-                        EmergencyPinStore.removePin(activity)
-                        activity.findViewById<View>(android.R.id.content)
-                            .showWarnPill(R.string.emergency_pin_removed)
-                        onComplete()
-                    },
-                    onSuccess = onComplete,
-                )
-            }
+            val canReset = EmergencyPinStore.canResetWithoutCurrentPin(activity)
+            showEnterPin(
+                activity = activity,
+                onSuccess = {
+                    showCreatePin(
+                        activity = activity,
+                        titleRes = R.string.pref_change_emergency_pin_title,
+                        onRemove = {
+                            EmergencyPinStore.removePin(activity)
+                            activity.findViewById<View>(android.R.id.content)
+                                .showWarnPill(R.string.emergency_pin_removed)
+                            onComplete()
+                        },
+                        onSuccess = onComplete,
+                    )
+                },
+                neutralButtonRes = if (canReset) R.string.emergency_pin_reset_action else null,
+                neutralAction = if (canReset) {
+                    { showResetConfirmation(activity, onComplete) }
+                } else {
+                    null
+                },
+            )
         } else {
             showSetPin(activity, onComplete)
         }
+    }
+
+    private fun showResetConfirmation(
+        activity: Activity,
+        onComplete: () -> Unit,
+    ) {
+        if (!EmergencyPinStore.canResetWithoutCurrentPin(activity)) {
+            activity.findViewById<View>(android.R.id.content)
+                .showWarnPill(R.string.emergency_pin_reset_requires_disabled)
+            return
+        }
+        MaterialAlertDialogBuilder(activity)
+            .setTitle(R.string.emergency_pin_reset_title)
+            .setMessage(R.string.emergency_pin_reset_message)
+            .setNegativeButton(android.R.string.cancel, null)
+            .setPositiveButton(R.string.emergency_pin_reset_action) { _, _ ->
+                showCreatePin(
+                    activity = activity,
+                    titleRes = R.string.emergency_pin_title,
+                    onRemove = null,
+                    onSuccess = onComplete,
+                    resetWithoutCurrentPin = true,
+                )
+            }
+            .showAccented()
     }
 }

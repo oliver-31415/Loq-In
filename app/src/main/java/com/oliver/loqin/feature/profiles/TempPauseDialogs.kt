@@ -137,9 +137,7 @@ object TempPauseDialogs {
                 }
 
                 if (EmergencyPinStore.hasPin(activity)) {
-                    EmergencyPinDialog.showEnterPin(activity) {
-                        doReset()
-                    }
+                    EmergencyPinDialog.showEnterPin(activity, onSuccess = { doReset() })
                 } else {
                     EmergencyPinDialog.showSetPin(activity) {
                         doReset()
