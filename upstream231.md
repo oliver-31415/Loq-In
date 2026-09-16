@@ -31,6 +31,7 @@ Upstream source paths are under `app/src/main/java/at/saltyy/switchly/...`; our 
 | 2026-09-16 | W1.1 A1 | `feature/upstream-w1-safety` | Done — `3916a71` | See "W1.1 implementation + test evidence" below |
 | 2026-09-16 | W1.2 A7 | `feature/upstream-w1-safety` | Done — `ab14bb5` | See "W1.2 implementation + test evidence" below |
 | 2026-09-17 | W1.3 C3 | `feature/upstream-w1-safety` | Done — `71280c1` | See "W1.3 implementation + test evidence" below |
+| 2026-09-17 | W1.4 A6 | `feature/upstream-w1-safety` | Done — `f768d95` | See "W1.4 implementation + test evidence" below |
 
 ### W1.1 implementation + test evidence (2026-09-16)
 
@@ -92,6 +93,23 @@ Emulator test evidence (AVD `HolyPixel`, Android 36, x86_64):
 - Old PIN rejected: entering `1234` in the verify dialog did not proceed; entering `4321` closed the dialog and opened the change flow (still requires the current PIN first).
 - Negative case: with `emergency_bypass_paused=true`, `emergency_bypass_paused_remaining_ms=600000` and today's `emergency_last_used_epoch_day`, the current-PIN dialog shows only `Cancel` — no `Reset PIN`.
 - Protection enabled: the Feature access screen is locked by `LoqInAppAccessGuard` (warn pill), so the change flow is unreachable while protection is active; `canResetWithoutCurrentPin` is a second layer.
+
+### W1.4 implementation + test evidence (2026-09-17)
+
+Changed files:
+- `app/src/main/java/com/oliver/loqin/blocking/UsageAccessFallbackBlocking.kt` — `sync()` now evaluates `shouldRun` on a single-thread daemon executor, posts the start/stop decision to the main looper, drops stale requests via a generation counter, skips `startForegroundService` when `isRunning()` (fresh heartbeat), and logs scheduling failures. This avoids opening the FGS deadline while another lifecycle callback (e.g. `AccessibilityService.onDestroy`) still occupies main.
+- `app/src/main/java/com/oliver/loqin/blocking/UsageAccessFallbackBlockingService.kt` — `onCreate` promotes to foreground **before** constructing `UsageEventsForegroundResolver`/`PowerManager`/`KeyguardManager`; `createChannelAndPromote` uses `ServiceCompat.startForeground(...)` with `FOREGROUND_SERVICE_TYPE_SPECIAL_USE` on API 34+.
+
+Emulator test evidence (AVD `HolyPixel`, Android 36, x86_64):
+- Enabled Android Advanced Protection Mode with `adb shell cmd advanced_protection set-protection-enabled true`, granted Usage Access (`appops set … android:get_usage_stats allow`), disabled Accessibility, kept protection on with Settings blocked.
+- Fallback started and enforced: `limited_usage_fallback created mode=basic_app_only`; launching system Settings showed the blocker.
+- When Accessibility was re-enabled, the fallback stopped: `limited_usage_fallback destroyed`.
+- Stress toggling Accessibility off/on: no `FATAL`, no `ForegroundServiceDidNotStartInTimeException`; the fallback service started/stopped cleanly.
+- Expected platform behavior observed: when Accessibility is disabled while the app is in the background, the start is denied by Android (`ForegroundServiceStartNotAllowedException`) and now logged as `limited_usage_fallback start failed … mAllowStartForeground false`. Previous code already swallowed this; it is not a regression, and the start succeeds when the app is foregrounded again.
+
+Testing notes (W1.4):
+- Android Advanced Protection Mode can be toggled on the emulator with `adb shell cmd advanced_protection set-protection-enabled true|false` (remember to turn it back off afterwards).
+- The fallback only runs when all of: advanced protection on, Accessibility unavailable, protection enabled, profile has effective blocked apps, Usage Access granted.
 
 Testing notes (W1.3):
 - The PIN dialogs use a custom digit UI, so `adb shell input text` only works when the dialog has focus (it auto-focuses when freshly shown). If input stops registering, re-tap the digit boxes area and type again.
@@ -275,7 +293,8 @@ Branch `feature/upstream-w1-safety` off `feature/upstream-work`. Merge back per 
 - **Risks:** `setPin` is called from the verified create flow only, so cleanup is safe.
 - **Done when:** functions exist, no unverified reset path, manual flow works.
 
-### W1.4 A6 — Usage Access fallback start/stop hardening
+### W1.4 A6 — Usage Access fallback start/stop hardening — **DONE 2026-09-17**
+> Implemented on `feature/upstream-w1-safety` (`f768d95`), emulator-verified with Advanced Protection Mode enabled. See the progress log for evidence.
 - **Goal:** stop the fallback service from being started on the main thread during event storms / service teardown, and promote the FGS before touching system services.
 - **Depends:** none.
 - **Files:**
