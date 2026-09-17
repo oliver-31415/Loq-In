@@ -611,6 +611,11 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
 
         etDomain.setText(initialDomain)
         etDomain.isEnabled = allowDomainEdit
+        tilDomain.helperText = if (allowDomainEdit && !isAllowMode()) {
+            getString(R.string.website_rule_path_hint)
+        } else {
+            null
+        }
 
         val modeAlways = getString(if (isAllowMode()) R.string.rule_allowed_always else R.string.rule_block_always)
         val modeLimit = getString(R.string.rule_daily_limit)
@@ -665,6 +670,10 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
                 val normalized = DomainBlockStore.normalize(domainRaw)
                 if (normalized.isNullOrBlank()) {
                     tilDomain.error = getString(R.string.domain_required)
+                    return@setOnClickListener
+                }
+                if (isAllowMode() && DomainBlockStore.isPathRule(normalized)) {
+                    tilDomain.error = getString(R.string.website_rule_path_allow_mode_error)
                     return@setOnClickListener
                 }
                 tilDomain.error = null

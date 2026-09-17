@@ -3120,23 +3120,24 @@ class LoqInAccessibilityService : AccessibilityService() {
         return InAppRuleStore.shouldBlockSurface(this, profile, baseKey)
     }
 
-    private fun tryExtractDomainFromBrowserUrlViews(root: AccessibilityNodeInfo, pkg: String): String? {
+    private fun tryExtractDomainFromBrowserUrlViews(root: AccessibilityNodeInfo, pkg: String): String? =
+        tryExtractWebsiteTargetFromBrowserUrlViews(root, pkg)?.let { DomainBlockStore.hostPart(it) }
+
+    /** Full target (host + path) from the browser's URL view, used by path rules. */
+    private fun tryExtractWebsiteTargetFromBrowserUrlViews(root: AccessibilityNodeInfo, pkg: String): String? {
         val ids = browserUrlViewIds(pkg)
         for (id in ids) {
             val nodes = runCatching { root.findAccessibilityNodeInfosByViewId(id) }.getOrNull() ?: emptyList()
-            try {
-                for (node in nodes) {
-                    val candidates = sequenceOf(
-                        node.text?.toString(),
-                        node.contentDescription?.toString()
-                    )
-                    for (raw in candidates) {
-                        val value = raw?.trim().orEmpty()
-                        if (value.isBlank()) continue
-                        domainFromText(value)?.let { return it }
-                    }
+            for (node in nodes) {
+                val candidates = sequenceOf(
+                    node.text?.toString(),
+                    node.contentDescription?.toString()
+                )
+                for (raw in candidates) {
+                    val value = raw?.trim().orEmpty()
+                    if (value.isBlank()) continue
+                    websiteTargetFromText(value)?.let { return it }
                 }
-            } finally {
             }
         }
         return null
@@ -3396,26 +3397,30 @@ class LoqInAccessibilityService : AccessibilityService() {
         return candidate?.let { text -> domainFromText(text)?.let { it to true } }
     }
 
-    private fun domainFromText(raw: String): String? {
-        val s0 = raw.trim()
-        if (s0.isBlank()) {
-            return null
-        }
+    private fun domainFromText(raw: String): String? =
+        websiteTargetFromText(raw)?.let { DomainBlockStore.hostPart(it) }
 
-        val token = s0.split(" ", "›", "·", "|", "—", " ")
+    private fun websiteTargetFromText(raw: String): String? {
+        val s0 = raw.trim()
+        if (s0.isBlank()) return null
+
+        val token = s0.split(" ", "›", "·", "|", "—", " ")
             .firstOrNull { it.contains(".") } ?: s0
         val s = token.trim()
 
-        val rx = Regex("(?i)(?:https?://)?([a-z0-9.-]+\\.[a-z]{2,})(?::\\d+)?")
-        val m = rx.find(s)
-        val host = m?.groupValues?.getOrNull(1)
-        if (!host.isNullOrBlank()) {
-            return DomainBlockStore.normalize(host)
+        // Detected browser targets intentionally exclude queries; a stored ? is the rule wildcard.
+        val rx = Regex("(?i)(?:https?://)?([a-z0-9.-]+\\.[a-z]{2,})(?::\\d+)?(/[^\\s?#]*)?")
+        val match = rx.find(s)
+        if (match != null) {
+            val host = match.groupValues.getOrNull(1).orEmpty()
+            val path = match.groupValues.getOrNull(2).orEmpty()
+            DomainBlockStore.normalize(host + path)?.let { return it }
         }
 
         val withScheme = if (s.startsWith("http://") || s.startsWith("https://")) s else "https://$s"
-        val parsed = runCatching { withScheme.toUri().host }.getOrNull() ?: return null
-        return DomainBlockStore.normalize(parsed)
+        val uri = runCatching { withScheme.toUri() }.getOrNull() ?: return null
+        val host = uri.host ?: return null
+        return DomainBlockStore.normalize(host + uri.encodedPath.orEmpty())
     }
 
     private fun isFirefoxAddressBarInputEvent(pkg: String, event: AccessibilityEvent?): Boolean {
@@ -3935,7 +3940,10 @@ class LoqInAccessibilityService : AccessibilityService() {
             return
         }
 
-        val hardBlocked = DomainBlockStore.shouldBlockHost(this, host)
+        val websiteTarget = tryExtractWebsiteTargetFromBrowserUrlViews(root, pkg)
+            ?.takeIf { DomainBlockStore.hostPart(it) == host }
+            ?: host
+        val hardBlocked = DomainBlockStore.shouldBlockHost(this, websiteTarget)
 
         val limitMin = if (DomainBlockStore.isRuleEnabledForHost(this, host)) {
             DomainLimitStore.getLimitMinutes(this, host)
@@ -3981,7 +3989,7 @@ class LoqInAccessibilityService : AccessibilityService() {
                 getString(R.string.block_reason_mode_website_block_selected)
             },
             source = getString(R.string.block_reason_source_website),
-            matched = host,
+            matched = websiteTarget,
             result = getString(R.string.block_reason_result_blocked)
         )
 
@@ -4073,7 +4081,10 @@ class LoqInAccessibilityService : AccessibilityService() {
             ?: browserWebsiteState.currentTrackedDomain(pkg, System.currentTimeMillis(), isFirefox = true)
             ?: return
 
-        val hardBlocked = DomainBlockStore.shouldBlockHost(this, visibleHost)
+        val visibleTarget = tryExtractWebsiteTargetFromBrowserUrlViews(root, pkg)
+            ?.takeIf { DomainBlockStore.hostPart(it) == visibleHost }
+            ?: visibleHost
+        val hardBlocked = DomainBlockStore.shouldBlockHost(this, visibleTarget)
         val limitMin = if (DomainBlockStore.isRuleEnabledForHost(this, visibleHost)) {
             DomainLimitStore.getLimitMinutes(this, visibleHost)
         } else {
@@ -4154,7 +4165,10 @@ class LoqInAccessibilityService : AccessibilityService() {
             ?: tryExtractDomainFromBrowser(root, pkg, null)?.first
             ?: return
 
-        val stillBlocked = DomainBlockStore.shouldBlockHost(this, visibleHost)
+        val visibleTarget = tryExtractWebsiteTargetFromBrowserUrlViews(root, pkg)
+            ?.takeIf { DomainBlockStore.hostPart(it) == visibleHost }
+            ?: visibleHost
+        val stillBlocked = DomainBlockStore.shouldBlockHost(this, visibleTarget)
         val limitMin = if (DomainBlockStore.isRuleEnabledForHost(this, visibleHost)) {
             DomainLimitStore.getLimitMinutes(this, visibleHost)
         } else {

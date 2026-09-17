@@ -32,6 +32,8 @@
     <string name="add_website_rule_title">Website-Regel hinzufügen</string>
     <string name="domain_rule_hint_example">example.com</string>
     <string name="domain_required">Bitte gib eine Domain ein.</string>
+    <string name="website_rule_path_hint">Du kannst einen Pfad angeben, z. B. youtube.com/shorts/*</string>
+    <string name="website_rule_path_allow_mode_error">Pfad-Regeln funktionieren nur im Modus „Ausgewählte blockieren“.</string>
     <string name="rule_type">Regeltyp</string>
     <string name="rule_block_always">Immer blockieren</string>
     <string name="rule_daily_limit">Tägliches Limit</string>
