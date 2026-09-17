@@ -174,6 +174,17 @@ object QuickLimitDialogs {
         val currentAttempts = AttemptLimitStore.getLimitAttempts(activity, profile, pkg)
         val currentPerVisit = SessionLimitStore.getLimitMinutes(activity, profile, pkg)
 
+        // Whole-app blocking is independent of limits: an app can be fully blocked
+        // (selected with no limits) or restricted (selected with a limit).
+        val allowMode = ProfileRuleModeStore.isAllowMode(activity, profile)
+        val fullyBlocked = if (allowMode) {
+            pkg in ProfileStore.getLaunchablePackages(activity) &&
+                pkg !in ProfileStore.getAllowedForProfile(activity, profile) &&
+                !AppBlockSafety.isAllowModeEssential(activity, pkg)
+        } else {
+            pkg in ProfileStore.getBlockedForProfile(activity, profile)
+        }
+
         tvTitle.text = label
         tvSubtitle.text = activity.getString(R.string.profile_active_fmt, profile)
         runCatching {
@@ -211,10 +222,10 @@ object QuickLimitDialogs {
                 )
         }
 
-        // Disabled sections keep their layout but dim and become non-interactive, so the dialog
-        // stays stable while making the active limits obvious.
+        // Disabled sections collapse to their header row so the whole dialog fits without
+        // scrolling; enabling a switch reveals its controls.
         fun setSectionEnabled(container: View, enabled: Boolean) {
-            container.alpha = if (enabled) 1f else 0.45f
+            container.visibility = if (enabled) View.VISIBLE else View.GONE
             fun apply(view: View) {
                 view.isEnabled = enabled
                 if (view is android.view.ViewGroup) {
@@ -263,7 +274,10 @@ object QuickLimitDialogs {
             val (time, opens, visit) = effectiveValues()
             tvSentence.text = when {
                 time <= 0 && opens <= 0 && visit <= 0 ->
-                    activity.getString(R.string.app_limit_sentence_none)
+                    activity.getString(
+                        if (fullyBlocked) R.string.app_limit_sentence_fully_blocked
+                        else R.string.app_limit_sentence_none
+                    )
                 time > 0 -> buildString {
                     append(activity.getString(R.string.app_limit_sentence_time_fmt, time))
                     if (opens > 0) append(activity.getString(R.string.app_limit_sentence_split_fmt, opens))
@@ -297,16 +311,18 @@ object QuickLimitDialogs {
                 return 0
             }
             val raw = field.text?.toString()?.trim().orEmpty()
+            // Blank means "no limit for this section": the editor stays open while typing
+            // and only applies the removal on save.
             if (raw.isBlank()) {
-                layout.error = activity.getString(R.string.app_limit_error_required)
-                return null
+                layout.error = null
+                return 0
             }
             val value = raw.toIntOrNull()
             if (value == null) {
                 layout.error = activity.getString(R.string.app_limit_error_not_number)
                 return null
             }
-            if (value !in 1..max) {
+            if (value < 0 || value > max) {
                 layout.error = rangeError
                 return null
             }
@@ -351,29 +367,9 @@ object QuickLimitDialogs {
             refreshSaveState()
         }
 
-        // Clearing a field switches its limit off instead of leaving a stale
-        // number behind an off toggle (or an error behind an on toggle).
-        etTime.addTextChangedListener {
-            if (swTime.isChecked && etTime.text?.toString()?.trim().isNullOrEmpty()) {
-                swTime.isChecked = false
-            } else {
-                refreshAll()
-            }
-        }
-        etAttempts.addTextChangedListener {
-            if (swOpens.isChecked && etAttempts.text?.toString()?.trim().isNullOrEmpty()) {
-                swOpens.isChecked = false
-            } else {
-                refreshAll()
-            }
-        }
-        etPerVisit.addTextChangedListener {
-            if (swVisit.isChecked && etPerVisit.text?.toString()?.trim().isNullOrEmpty()) {
-                swVisit.isChecked = false
-            } else {
-                refreshAll()
-            }
-        }
+        etTime.addTextChangedListener { tilTime.error = null; refreshAll() }
+        etAttempts.addTextChangedListener { tilAttempts.error = null; refreshAll() }
+        etPerVisit.addTextChangedListener { tilPerVisit.error = null; refreshAll() }
 
         fun setTimeValue(value: Int) {
             etTime.setText(fmtInt(value))
@@ -505,7 +501,6 @@ object QuickLimitDialogs {
         }
 
         val dlg = Dialogs.builder(activity)
-            .setTitle(activity.getString(R.string.edit_limits))
             .setView(v)
             .create()
 

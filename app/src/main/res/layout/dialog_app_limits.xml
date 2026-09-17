@@ -24,8 +24,8 @@
 
             <ImageView
                 android:id="@+id/ivAppLimitIcon"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
+                android:layout_width="38dp"
+                android:layout_height="38dp"
                 android:layout_marginEnd="12dp"
                 android:contentDescription="@null" />
 
@@ -72,8 +72,8 @@
                 android:id="@+id/tvAppLimitSentence"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:paddingHorizontal="14dp"
-                android:paddingVertical="13dp"
+                android:paddingHorizontal="12dp"
+                android:paddingVertical="10dp"
                 android:textColor="@color/foqos_on_surface"
                 android:textSize="13.5sp" />
         </com.google.android.material.card.MaterialCardView>
@@ -92,9 +92,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:paddingHorizontal="14dp"
-                android:paddingTop="12dp"
-                android:paddingBottom="14dp">
+                android:paddingHorizontal="12dp"
+                android:paddingTop="10dp"
+                android:paddingBottom="12dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -103,8 +103,8 @@
                     android:orientation="horizontal">
 
                     <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
                         android:layout_marginEnd="10dp"
                         android:contentDescription="@null"
                         android:src="@drawable/schedule_24"
@@ -154,8 +154,8 @@
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnTimeMinus"
                             style="@style/Widget.Material3.Button.TonalButton"
-                            android:layout_width="46dp"
-                            android:layout_height="46dp"
+                            android:layout_width="42dp"
+                            android:layout_height="42dp"
                             android:insetTop="0dp"
                             android:insetBottom="0dp"
                             android:minWidth="0dp"
@@ -190,8 +190,8 @@
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnTimePlus"
                             style="@style/Widget.Material3.Button.TonalButton"
-                            android:layout_width="46dp"
-                            android:layout_height="46dp"
+                            android:layout_width="42dp"
+                            android:layout_height="42dp"
                             android:insetTop="0dp"
                             android:insetBottom="0dp"
                             android:minWidth="0dp"
@@ -215,12 +215,12 @@
                             android:id="@+id/pillTime15"
                             style="@style/Widget.Material3.Button.TonalButton"
                             android:layout_width="0dp"
-                            android:layout_height="34dp"
+                            android:layout_height="32dp"
                             android:layout_marginEnd="4dp"
                             android:layout_weight="1"
                             android:insetTop="0dp"
                             android:insetBottom="0dp"
-                            android:minHeight="34dp"
+                            android:minHeight="32dp"
                             android:text="@string/app_limit_pill_15m"
                             android:textColor="@color/foqos_on_surface"
                             android:textSize="12sp"
@@ -232,12 +232,12 @@
                             android:id="@+id/pillTime30"
                             style="@style/Widget.Material3.Button.TonalButton"
                             android:layout_width="0dp"
-                            android:layout_height="34dp"
+                            android:layout_height="32dp"
                             android:layout_marginHorizontal="2dp"
                             android:layout_weight="1"
                             android:insetTop="0dp"
                             android:insetBottom="0dp"
-                            android:minHeight="34dp"
+                            android:minHeight="32dp"
                             android:text="@string/app_limit_pill_30m"
                             android:textColor="@color/foqos_on_surface"
                             android:textSize="12sp"
@@ -249,12 +249,12 @@
                             android:id="@+id/pillTime60"
                             style="@style/Widget.Material3.Button.TonalButton"
                             android:layout_width="0dp"
-                            android:layout_height="34dp"
+                            android:layout_height="32dp"
                             android:layout_marginHorizontal="2dp"
                             android:layout_weight="1"
                             android:insetTop="0dp"
                             android:insetBottom="0dp"
-                            android:minHeight="34dp"
+                            android:minHeight="32dp"
                             android:text="@string/app_limit_pill_1h"
                             android:textColor="@color/foqos_on_surface"
                             android:textSize="12sp"
@@ -266,12 +266,12 @@
                             android:id="@+id/pillTime120"
                             style="@style/Widget.Material3.Button.TonalButton"
                             android:layout_width="0dp"
-                            android:layout_height="34dp"
+                            android:layout_height="32dp"
                             android:layout_marginStart="4dp"
                             android:layout_weight="1"
                             android:insetTop="0dp"
                             android:insetBottom="0dp"
-                            android:minHeight="34dp"
+                            android:minHeight="32dp"
                             android:text="@string/app_limit_pill_2h"
                             android:textColor="@color/foqos_on_surface"
                             android:textSize="12sp"
@@ -297,9 +297,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:paddingHorizontal="14dp"
-                android:paddingTop="12dp"
-                android:paddingBottom="14dp">
+                android:paddingHorizontal="12dp"
+                android:paddingTop="10dp"
+                android:paddingBottom="12dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -308,8 +308,8 @@
                     android:orientation="horizontal">
 
                     <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
                         android:layout_marginEnd="10dp"
                         android:contentDescription="@null"
                         android:src="@drawable/open_in_new_24"
@@ -354,8 +354,8 @@
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnOpensMinus"
                         style="@style/Widget.Material3.Button.TonalButton"
-                        android:layout_width="46dp"
-                        android:layout_height="46dp"
+                        android:layout_width="42dp"
+                        android:layout_height="42dp"
                         android:insetTop="0dp"
                         android:insetBottom="0dp"
                         android:minWidth="0dp"
@@ -390,8 +390,8 @@
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnOpensPlus"
                         style="@style/Widget.Material3.Button.TonalButton"
-                        android:layout_width="46dp"
-                        android:layout_height="46dp"
+                        android:layout_width="42dp"
+                        android:layout_height="42dp"
                         android:insetTop="0dp"
                         android:insetBottom="0dp"
                         android:minWidth="0dp"
@@ -421,9 +421,9 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:paddingHorizontal="14dp"
-                android:paddingTop="12dp"
-                android:paddingBottom="14dp">
+                android:paddingHorizontal="12dp"
+                android:paddingTop="10dp"
+                android:paddingBottom="12dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -432,8 +432,8 @@
                     android:orientation="horizontal">
 
                     <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
                         android:layout_marginEnd="10dp"
                         android:contentDescription="@null"
                         android:src="@drawable/timer_24"
@@ -483,8 +483,8 @@
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnVisitMinus"
                             style="@style/Widget.Material3.Button.TonalButton"
-                            android:layout_width="46dp"
-                            android:layout_height="46dp"
+                            android:layout_width="42dp"
+                            android:layout_height="42dp"
                             android:insetTop="0dp"
                             android:insetBottom="0dp"
                             android:minWidth="0dp"
@@ -519,8 +519,8 @@
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnVisitPlus"
                             style="@style/Widget.Material3.Button.TonalButton"
-                            android:layout_width="46dp"
-                            android:layout_height="46dp"
+                            android:layout_width="42dp"
+                            android:layout_height="42dp"
                             android:insetTop="0dp"
                             android:insetBottom="0dp"
                             android:minWidth="0dp"

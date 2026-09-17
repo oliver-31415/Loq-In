@@ -130,9 +130,10 @@ object TempPauseDialogs {
                 )
         }
 
-        // Disabled sections keep their layout but dim and become non-interactive.
+        // Disabled sections collapse to their header row so the whole dialog fits without
+        // scrolling; enabling a switch reveals its controls.
         fun setSectionEnabled(container: View, enabled: Boolean) {
-            container.alpha = if (enabled) 1f else 0.45f
+            container.visibility = if (enabled) View.VISIBLE else View.GONE
             fun apply(view: View) {
                 view.isEnabled = enabled
                 if (view is android.view.ViewGroup) {
@@ -337,7 +338,6 @@ object TempPauseDialogs {
         btnSave.backgroundTintList = AccentColor.getActiveColor(activity)
 
         val dialog = Dialogs.builder(activity)
-            .setTitle(activity.getString(R.string.temp_pause_title))
             .setView(content)
             .create()
 

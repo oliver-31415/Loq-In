@@ -76,6 +76,7 @@
     <string name="app_limit_remove_confirm_title">Limits entfernen?</string>
     <string name="app_limit_remove_confirm_message">Dadurch werden alle Limits für %1$s gelöscht und die heutigen Zähler zurückgesetzt.</string>
     <string name="app_limit_sentence_none">Keine Limits festgelegt. Diese App kann ohne Einschränkungen geöffnet werden.</string>
+    <string name="app_limit_sentence_fully_blocked">Diese App ist im aktuellen Profil vollständig blockiert. Füge ein Limit hinzu, um eine eingeschränkte Nutzung zu erlauben.</string>
     <string name="app_limit_sentence_time_fmt">Bis zu %1$d Min./Tag erlaubt</string>
     <string name="app_limit_sentence_split_fmt">\u0020\u00b7 aufgeteilt auf höchstens %1$d Öffnungen</string>
     <string name="app_limit_sentence_visit_fmt">\u0020\u00b7 max. %1$d Min. pro Besuch</string>

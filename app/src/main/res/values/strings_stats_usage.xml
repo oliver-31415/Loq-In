@@ -76,6 +76,7 @@
     <string name="app_limit_remove_confirm_title">Remove limits?</string>
     <string name="app_limit_remove_confirm_message">This clears all limits for %1$s and resets today’s counters.</string>
     <string name="app_limit_sentence_none">No limits set. This app can be opened without restrictions.</string>
+    <string name="app_limit_sentence_fully_blocked">This app is fully blocked by this profile. Add a limit to allow restricted use.</string>
     <string name="app_limit_sentence_time_fmt">Allow up to %1$d min/day</string>
     <string name="app_limit_sentence_split_fmt">\u0020\u00b7 split across at most %1$d opens</string>
     <string name="app_limit_sentence_visit_fmt">\u0020\u00b7 max %1$d min per visit</string>
