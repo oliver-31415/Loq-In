@@ -1675,39 +1675,56 @@ class LoqInAccessibilityService : AccessibilityService() {
      * Default behavior stays per day/profile. If a limit is configured as "per active session", the runtime-scoped session counter is used instead.
      */
     private fun getEnforcedLimitUsageMs(profile: String, pkg: String): Long {
-        return if (UsageLimitResetStore.isSessionMode(this, profile, pkg)) {
-            sessionLimitUsageMsByKey[limitSessionKey(profile, pkg)] ?: 0L
-        } else {
-            ProfileUsageStore.getUsageMsToday(this, profile, pkg)
+        if (!UsageLimitResetStore.isSessionMode(this, profile, pkg)) {
+            return ProfileUsageStore.getUsageMsToday(this, profile, pkg)
         }
+
+        val key = limitSessionKey(profile, pkg)
+        sessionLimitUsageMsByKey[key]?.let { return it }
+
+        // Restore the current generation after service/process recreation or after switching away from and back to this profile.
+        // Stale generations are rejected by the store itself.
+        val persisted = UsageLimitSessionRuntimeStore.get(this, profile, pkg)
+        val restored = persisted?.usedMs?.coerceAtLeast(0L) ?: 0L
+        sessionLimitUsageMsByKey[key] = restored
+        if (persisted?.reached == true) {
+            sessionLimitReachedKeys.add(key)
+        }
+        return restored
     }
 
     private fun ensureActiveLimitSession(profile: String, now: Long) {
         val generation = SwitchModeStore.getLimitSessionGeneration(this)
-        if (activeLimitSessionProfile == profile && activeLimitSessionGeneration == generation && activeLimitSessionStartedAt > 0L) {
+        if (activeLimitSessionGeneration == generation && activeLimitSessionStartedAt > 0L) {
+            activeLimitSessionProfile = profile
             return
         }
+
+        // Only wipe in-memory counters when a new generation was actually observed while this service instance was alive.
+        // The generation advances only for a genuine new LoqIn session, not for profile changes, screen locks, temporary pauses or service recreation.
+        if (activeLimitSessionGeneration >= 0L && activeLimitSessionGeneration != generation) {
+            sessionLimitUsageMsByKey.clear()
+            sessionLimitReachedKeys.clear()
+        }
+
         activeLimitSessionProfile = profile
         activeLimitSessionGeneration = generation
-        activeLimitSessionStartedAt = now
-        sessionLimitUsageMsByKey.clear()
-        sessionLimitReachedKeys.clear()
-        UsageLimitSessionRuntimeStore.clearAll(this)
+        activeLimitSessionStartedAt = SwitchModeStore.getLimitSessionStartedAt(this)
+            .takeIf { it > 0L }
+            ?: now
         appendBlockingLog(
             category = "limit_session",
-            key = "limit-session-start|$profile|$generation",
+            key = "limit-session-active|$generation",
             message = "profile=$profile generation=$generation startedAt=$activeLimitSessionStartedAt",
             throttleMs = 1_500L
         )
     }
 
     private fun clearActiveLimitSession() {
+        // This only clears the currently active profile pointer.
+        // Keep the observed generation and in-memory counters so screen lock, Temporary Disable and Emergency Unlock cannot reset the allowance.
+        // If a genuine new LoqIn session starts, ensureActiveLimitSession() sees the generation change and clears the old counters before tracking resumes.
         activeLimitSessionProfile = null
-        activeLimitSessionGeneration = -1L
-        activeLimitSessionStartedAt = 0L
-        sessionLimitUsageMsByKey.clear()
-        sessionLimitReachedKeys.clear()
-        UsageLimitSessionRuntimeStore.clearAll(this)
     }
 
     private fun ensurePerVisitSession(profile: String, pkg: String, now: Long) {
@@ -1736,12 +1753,17 @@ class LoqInAccessibilityService : AccessibilityService() {
         if (limitMinutes <= 0) {
             return
         }
+        val generation = activeLimitSessionGeneration.takeIf { it >= 0L }
+            ?: SwitchModeStore.getLimitSessionGeneration(this)
+        val startedAt = activeLimitSessionStartedAt.takeIf { it > 0L }
+            ?: SwitchModeStore.getLimitSessionStartedAt(this).takeIf { it > 0L }
+            ?: System.currentTimeMillis()
         UsageLimitSessionRuntimeStore.update(
             context = this,
             profile = profile,
             pkg = pkg,
-            generation = activeLimitSessionGeneration.takeIf { it >= 0L } ?: SwitchModeStore.getLimitSessionGeneration(this),
-            startedAt = activeLimitSessionStartedAt,
+            generation = generation,
+            startedAt = startedAt,
             usedMs = usedMs,
             limitMs = limitMinutes.toLong() * 60_000L,
             reached = reached
