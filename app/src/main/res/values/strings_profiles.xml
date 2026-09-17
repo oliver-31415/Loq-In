@@ -63,6 +63,20 @@
     <string name="temp_pause_field_per_pause">Max minutes per break (0 = unlimited)</string>
     <string name="temp_pause_field_per_day">Max break minutes per day (0 = unlimited)</string>
     <string name="temp_pause_zero_hint">0 means unlimited.</string>
+    <string name="temp_pause_header_subtitle">Choose how often and how long you can pause protection.</string>
+    <string name="temp_pause_section_count">Breaks per day</string>
+    <string name="temp_pause_section_count_subtitle">How many breaks you can take per day</string>
+    <string name="temp_pause_section_length">Length per break</string>
+    <string name="temp_pause_section_length_subtitle">Longest single break</string>
+    <string name="temp_pause_section_total">Daily break time</string>
+    <string name="temp_pause_section_total_subtitle">Total break minutes across the day</string>
+    <string name="temp_pause_hint_count">Breaks per day</string>
+    <string name="temp_pause_hint_per_break">Max per break</string>
+    <string name="temp_pause_hint_per_day">Max per day</string>
+    <string name="temp_pause_unit_breaks">breaks</string>
+    <string name="temp_pause_unit_minutes">min</string>
+    <string name="temp_pause_error_count_fmt">Must be between 1 and %1$d breaks</string>
+    <string name="temp_pause_error_minutes_fmt">Must be between 1 and %1$d minutes</string>
     <string name="temp_pause_reset_today">Reset today</string>
     <string name="temp_pause_error_range_fmt">Must be between 0 and %1$d</string>
     <string name="temp_pause_exhausted">No breaks left today for this profile</string>

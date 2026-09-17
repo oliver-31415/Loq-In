@@ -63,6 +63,20 @@
     <string name="temp_pause_field_per_pause">Max. Minuten pro Pause (0 = unbegrenzt)</string>
     <string name="temp_pause_field_per_day">Max. Pausenminuten pro Tag (0 = unbegrenzt)</string>
     <string name="temp_pause_zero_hint">0 bedeutet unbegrenzt.</string>
+    <string name="temp_pause_header_subtitle">Lege fest, wie oft und wie lange du den Schutz pausieren kannst.</string>
+    <string name="temp_pause_section_count">Pausen pro Tag</string>
+    <string name="temp_pause_section_count_subtitle">Wie viele Pausen du pro Tag nehmen kannst</string>
+    <string name="temp_pause_section_length">Länge pro Pause</string>
+    <string name="temp_pause_section_length_subtitle">Längste einzelne Pause</string>
+    <string name="temp_pause_section_total">Tägliche Pausenzeit</string>
+    <string name="temp_pause_section_total_subtitle">Gesamte Pausenminuten pro Tag</string>
+    <string name="temp_pause_hint_count">Pausen pro Tag</string>
+    <string name="temp_pause_hint_per_break">Max. pro Pause</string>
+    <string name="temp_pause_hint_per_day">Max. pro Tag</string>
+    <string name="temp_pause_unit_breaks">Pausen</string>
+    <string name="temp_pause_unit_minutes">Min.</string>
+    <string name="temp_pause_error_count_fmt">Muss zwischen 1 und %1$d Pausen liegen</string>
+    <string name="temp_pause_error_minutes_fmt">Muss zwischen 1 und %1$d Minuten liegen</string>
     <string name="temp_pause_reset_today">Heute zurücksetzen</string>
     <string name="temp_pause_error_range_fmt">Muss zwischen 0 und %1$d liegen</string>
     <string name="temp_pause_exhausted">Keine Pausen mehr heute für dieses Profil</string>
