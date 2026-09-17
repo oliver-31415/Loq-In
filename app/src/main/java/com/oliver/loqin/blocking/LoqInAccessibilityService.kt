@@ -3129,6 +3129,10 @@ class LoqInAccessibilityService : AccessibilityService() {
         for (id in ids) {
             val nodes = runCatching { root.findAccessibilityNodeInfosByViewId(id) }.getOrNull() ?: emptyList()
             for (node in nodes) {
+                // Firefox keeps the previous page's URL view in the accessibility tree on internal
+                // screens (History, Bookmarks, Settings, home). Only a URL bar that is actually
+                // displayed may be treated as the page the user is on.
+                if (!runCatching { node.isVisibleToUser }.getOrDefault(false)) continue
                 val candidates = sequenceOf(
                     node.text?.toString(),
                     node.contentDescription?.toString()
@@ -3147,16 +3151,13 @@ class LoqInAccessibilityService : AccessibilityService() {
         val ids = browserUrlViewIds(pkg)
         for (id in ids) {
             val nodes = runCatching { root.findAccessibilityNodeInfosByViewId(id) }.getOrNull() ?: emptyList()
-            val copy = try {
-                val best = nodes.firstOrNull {
-                    !it.text?.toString().isNullOrBlank() ||
-                        !it.contentDescription?.toString().isNullOrBlank()
-                } ?: nodes.firstOrNull()
-                best?.let { it }
-            } finally {
-            }
-            if (copy != null) {
-                return copy
+            val visibleNodes = nodes.filter { runCatching { it.isVisibleToUser }.getOrDefault(false) }
+            val best = visibleNodes.firstOrNull {
+                !it.text?.toString().isNullOrBlank() ||
+                    !it.contentDescription?.toString().isNullOrBlank()
+            } ?: visibleNodes.firstOrNull()
+            if (best != null) {
+                return best
             }
         }
 
@@ -3164,6 +3165,11 @@ class LoqInAccessibilityService : AccessibilityService() {
         if (pkg.startsWith("org.mozilla.")) {
             return findAnyNode(root) { node ->
                 val vid = node.viewIdResourceName?.lowercase(Locale.getDefault()).orEmpty()
+                // Internal screens (History, Bookmarks, Settings, home) can keep a stale URL-bar node
+                // in the tree; only visibly displayed toolbar nodes count.
+                if (!runCatching { node.isVisibleToUser }.getOrDefault(false)) {
+                    return@findAnyNode false
+                }
                 // The address-bar edit field and its autocomplete list contain typed/suggested URLs.
                 // They must never be treated as the page the user is actually on.
                 if (vid.contains("edit") || vid.contains("autocomplete") || vid.contains("suggestion")) {
@@ -3700,7 +3706,9 @@ class LoqInAccessibilityService : AccessibilityService() {
                 val isEdit = current.isEditable || cls.contains("EditText", ignoreCase = true)
                 val editingNow = current.isFocused || current.isAccessibilityFocused
 
-                if (candidate != null && looksLikeUrl && (idHints || isEdit) && !editingNow) {
+                if (candidate != null && looksLikeUrl && (idHints || isEdit) && !editingNow &&
+                    runCatching { current.isVisibleToUser }.getOrDefault(false)
+                ) {
                     return candidate
                 }
 
@@ -3873,7 +3881,26 @@ class LoqInAccessibilityService : AccessibilityService() {
             } else {
                 null
             }
-        val host = hostSignal?.first ?: inferredFirefoxHost
+        // Firefox surfaces other than the address bar (home screen, top sites, history, bookmarks,
+        // article bodies, recommendations) routinely contain URLs and domain names. Only a trusted
+        // address-bar signal may drive enforcement; text-derived signals are ignored completely.
+        // The pending/cached fallbacks below still cover the honest case where the URL bar signal
+        // existed earlier and the build emits sparse events afterwards.
+        val firefoxUntrustedSignal = isFirefoxFamily(pkg) &&
+            (hostSignal?.second == false || (hostSignal == null && inferredFirefoxHost != null))
+        if (firefoxUntrustedSignal) {
+            val ignoredHost = hostSignal?.first ?: inferredFirefoxHost
+            appendBlockingLog(
+                category = "website_skip",
+                key = "web-firefox-untrusted|$pkg|${ignoredHost ?: "-"}",
+                message = "pkg=$pkg host=${sanitizeWebsiteSignal(ignoredHost)} reason=firefox_text_signal action=ignored event=${eventTypeLabel(event)}",
+                throttleMs = 2_000L
+            )
+            browserWebsiteState.resetCandidate()
+            return
+        }
+
+        val host = hostSignal?.first
             ?: run {
                 if (isFirefoxFamily(pkg) && (loadedFirefoxPageEvent || !recentEditing)) {
                     browserWebsiteState.currentPendingDomain(pkg, now)?.let { pendingHost ->
