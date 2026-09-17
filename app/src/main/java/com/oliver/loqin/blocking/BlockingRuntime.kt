@@ -19,6 +19,7 @@
 package com.oliver.loqin.blocking
 
 import android.content.Context
+import android.content.Intent
 import android.os.SystemClock
 import androidx.core.content.edit
 import com.oliver.loqin.data.prefs.AppLogStore
@@ -33,6 +34,17 @@ import com.oliver.loqin.util.PermissionUtils
  * Website and in-app protection remain Accessibility-only.
  */
 object BlockingRuntime {
+
+    /** App-internal signal: website rules changed, so the running service should re-check the visible page. */
+    const val ACTION_WEBSITE_RULES_CHANGED = "com.oliver.loqin.action.WEBSITE_RULES_CHANGED"
+
+    fun notifyWebsiteRulesChanged(context: Context) {
+        runCatching {
+            context.applicationContext.sendBroadcast(
+                Intent(ACTION_WEBSITE_RULES_CHANGED).setPackage(context.packageName)
+            )
+        }
+    }
 
     private const val PREFS_RUNTIME = "loqin_runtime"
     private const val KEY_A11Y_CONNECTED = "a11y_connected"

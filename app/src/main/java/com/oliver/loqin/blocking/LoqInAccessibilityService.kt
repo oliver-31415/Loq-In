@@ -23,7 +23,10 @@ import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.AccessibilityServiceInfo
 import android.accessibilityservice.GestureDescription
 import android.app.KeyguardManager
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.graphics.Path
 import android.graphics.Rect
 import android.os.Build
@@ -37,6 +40,7 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.net.toUri
 import com.oliver.loqin.R
@@ -130,6 +134,17 @@ class LoqInAccessibilityService : AccessibilityService() {
     // Browser state cache for website blocking + per-domain website stats
     private val browserWebsiteState = BrowserWebsiteState()
     private val pendingWebsiteCandidateProbeHostByPkg = HashMap<String, String>()
+    // Last full host+path seen per browser, reused when the URL bar only exposes the host for a moment.
+    private val lastWebsiteTargetByPkg = HashMap<String, String>()
+    private val lastWebsiteTargetAtByPkg = HashMap<String, Long>()
+    private val lastPathRuleRetryAtByPkg = HashMap<String, Long>()
+
+    private var websiteRulesReceiverRegistered = false
+    private val websiteRulesChangedReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            recheckWebsiteRulesNow()
+        }
+    }
     private val lastDiagnosticLogAtByKey = HashMap<String, Long>()
 
     // In-app surface tracking for usage + limits (Shorts/Reels/Explore)
@@ -464,6 +479,12 @@ class LoqInAccessibilityService : AccessibilityService() {
     private val INAPP_POST_BLOCK_GRACE_MS = 3_500L
     private val SNAP_POST_BLOCK_GRACE_MS = 450L
     private val YT_MINI_PLAYER_CLEANUP_GRACE_MS = 650L
+
+    // Website path rules: the URL bar can briefly expose only the host, so keep the last full target
+    // and re-probe shortly when an enabled path rule exists for the current host.
+    private val WEBSITE_TARGET_TTL_MS = 90_000L
+    private val PATH_RULE_RETRY_DELAYS_MS = longArrayOf(450L, 1_100L)
+    private val PATH_RULE_RETRY_THROTTLE_MS = 2_000L
     private val INSTA_REELS_REENTRY_GUARD_MS = 1_800L
     private val INSTA_EXPLORE_REENTRY_GUARD_MS = 2_200L
     private val YT_SHORTS_REENTRY_GUARD_MS = 5_000L
@@ -986,6 +1007,18 @@ class LoqInAccessibilityService : AccessibilityService() {
         pm = getSystemService(POWER_SERVICE) as PowerManager
         km = getSystemService(KeyguardManager::class.java)
 
+        if (!websiteRulesReceiverRegistered) {
+            runCatching {
+                ContextCompat.registerReceiver(
+                    this,
+                    websiteRulesChangedReceiver,
+                    IntentFilter(BlockingRuntime.ACTION_WEBSITE_RULES_CHANGED),
+                    ContextCompat.RECEIVER_NOT_EXPORTED,
+                )
+                websiteRulesReceiverRegistered = true
+            }
+        }
+
         // Listen to transitions AND content/text events (needed for in-app surfaces + URLs).
         serviceInfo = AccessibilityServiceInfo().apply {
             eventTypes =
@@ -1070,6 +1103,10 @@ class LoqInAccessibilityService : AccessibilityService() {
     }
 
     override fun onDestroy() {
+        if (websiteRulesReceiverRegistered) {
+            websiteRulesReceiverRegistered = false
+            runCatching { unregisterReceiver(websiteRulesChangedReceiver) }
+        }
         handler.removeCallbacks(tick)
         usageWorkerThread?.quitSafely()
         usageWorkerThread = null
@@ -3940,10 +3977,45 @@ class LoqInAccessibilityService : AccessibilityService() {
             return
         }
 
-        val websiteTarget = tryExtractWebsiteTargetFromBrowserUrlViews(root, pkg)
+        val freshTarget = tryExtractWebsiteTargetFromBrowserUrlViews(root, pkg)
             ?.takeIf { DomainBlockStore.hostPart(it) == host }
-            ?: host
+        val freshHasPath = freshTarget != null && DomainBlockStore.pathPart(freshTarget) != null
+        if (freshHasPath && freshTarget != null) {
+            lastWebsiteTargetByPkg[pkg] = freshTarget
+            lastWebsiteTargetAtByPkg[pkg] = now
+        }
+        val rememberedTarget = lastWebsiteTargetByPkg[pkg]
+            ?.takeIf { now - (lastWebsiteTargetAtByPkg[pkg] ?: 0L) <= WEBSITE_TARGET_TTL_MS }
+            ?.takeIf { DomainBlockStore.hostPart(it) == host }
+        val websiteTarget = when {
+            freshHasPath && freshTarget != null -> freshTarget
+            rememberedTarget != null -> rememberedTarget
+            freshTarget != null -> freshTarget
+            else -> host
+        }
+        appendBlockingLog(
+            category = "website_target",
+            key = "web-target|$pkg|$host",
+            message = "pkg=$pkg host=${sanitizeWebsiteSignal(host)} fresh=${sanitizeWebsiteSignal(freshTarget)} remembered=${sanitizeWebsiteSignal(rememberedTarget)} used=${sanitizeWebsiteSignal(websiteTarget)}",
+            throttleMs = 2_000L
+        )
         val hardBlocked = DomainBlockStore.shouldBlockHost(this, websiteTarget)
+
+        // The URL bar sometimes commits before the path is exposed. When a path rule exists for this
+        // host but no path is visible yet, re-probe briefly so the rule still catches the page.
+        if (DomainBlockStore.pathPart(websiteTarget) == null &&
+            hasPathRuleForHost(host) &&
+            now - (lastPathRuleRetryAtByPkg[pkg] ?: 0L) >= PATH_RULE_RETRY_THROTTLE_MS
+        ) {
+            lastPathRuleRetryAtByPkg[pkg] = now
+            PATH_RULE_RETRY_DELAYS_MS.forEach { delayMs ->
+                handler.postDelayed({
+                    if (!SwitchModeStore.isEnabled(this)) return@postDelayed
+                    if (currentTopPkg != pkg) return@postDelayed
+                    runCatching { maybeBlockWebsite(pkg, null) }
+                }, delayMs)
+            }
+        }
 
         val limitMin = if (DomainBlockStore.isRuleEnabledForHost(this, host)) {
             DomainLimitStore.getLimitMinutes(this, host)
@@ -4011,6 +4083,29 @@ class LoqInAccessibilityService : AccessibilityService() {
             returnToPackageOnClose = true,
             blockCategory = BlockCategoryCountStore.Category.WEBSITE
         )
+    }
+
+    private fun hasPathRuleForHost(host: String): Boolean {
+        val profile = getCurrentProfileCached(System.currentTimeMillis()) ?: return false
+        if (WebsiteRuleModeStore.isAllowMode(this, profile)) {
+            return false
+        }
+        return DomainBlockStore.getDomainsForProfile(this, profile)
+            .any { DomainBlockStore.isPathRule(it) && DomainBlockStore.hostPart(it) == host }
+    }
+
+    /** Re-checks the page that is already visible, e.g. right after a website rule was edited. */
+    private fun recheckWebsiteRulesNow() {
+        val pkg = currentTopPkg?.takeIf { it.isNotBlank() && it != packageName }
+            ?: runCatching { rootInActiveWindow?.packageName?.toString() }.getOrNull()
+                ?.takeIf { it.isNotBlank() && it != packageName }
+            ?: return
+        if (!supportsWebsiteRulesPackage(pkg)) {
+            return
+        }
+        handler.post {
+            runCatching { maybeBlockWebsite(pkg, null) }
+        }
     }
 
     private fun scheduleStableWebsiteCandidateProbe(pkg: String, host: String) {
