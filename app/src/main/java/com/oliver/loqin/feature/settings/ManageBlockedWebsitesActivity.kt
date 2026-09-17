@@ -204,7 +204,6 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
             if (mode == WebsiteRuleModeStore.getMode(this, currentProfile())) return@addOnButtonCheckedListener
             fun applyMode() {
                 WebsiteRuleModeStore.setMode(this, currentProfile(), mode)
-                BlockingRuntime.notifyWebsiteRulesChanged(this)
                 syncRuleModeUi()
                 refreshList()
             }
@@ -536,7 +535,6 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         val profile = currentProfile()
         DomainBlockStore.removeDomainForProfile(this, profile, domain)
         DomainLimitStore.clearForProfile(this, profile, domain)
-        BlockingRuntime.notifyWebsiteRulesChanged(this)
         refreshList()
     }
 
@@ -545,7 +543,6 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
             return
         }
         DomainBlockStore.setDomainEnabledForProfile(this, currentProfile(), domain, enabled)
-        BlockingRuntime.notifyWebsiteRulesChanged(this)
         refreshList()
     }
 
@@ -715,7 +712,6 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
                 }
 
                 BlockingRuntime.ensureRunning(this@ManageBlockedWebsitesActivity)
-                BlockingRuntime.notifyWebsiteRulesChanged(this@ManageBlockedWebsitesActivity)
                 refreshList()
                 dlg.dismiss()
             }
