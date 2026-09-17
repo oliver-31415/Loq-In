@@ -125,6 +125,7 @@
                             android:textStyle="bold" />
 
                         <TextView
+                            android:id="@+id/tvAppLimitTimeSubtitle"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/app_limit_time_subtitle"
@@ -288,42 +289,53 @@
                         android:textColor="@color/foqos_on_surface_variant"
                         android:textSize="12.5sp" />
 
-                    <com.google.android.material.button.MaterialButtonToggleGroup
-                        android:id="@+id/toggleAppLimitReset"
+                    <FrameLayout
+                        android:id="@+id/containerAppLimitReset"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        app:selectionRequired="true"
-                        app:singleSelection="true">
+                        android:background="@drawable/bg_segmented_track"
+                        android:padding="3dp">
 
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnAppLimitResetDaily"
-                            style="@style/Widget.Material3.Button.OutlinedButton"
-                            android:layout_width="0dp"
-                            android:layout_height="36dp"
-                            android:layout_weight="1"
-                            android:minHeight="36dp"
-                            android:insetTop="0dp"
-                            android:insetBottom="0dp"
-                            android:text="@string/app_limit_reset_daily"
-                            android:textSize="12sp"
-                            app:cornerRadius="12dp"
-                            app:strokeWidth="1dp" />
+                        <com.google.android.material.button.MaterialButtonToggleGroup
+                            android:id="@+id/toggleAppLimitReset"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:background="@android:color/transparent"
+                            app:selectionRequired="true"
+                            app:singleSelection="true">
 
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnAppLimitResetProtection"
-                            style="@style/Widget.Material3.Button.OutlinedButton"
-                            android:layout_width="0dp"
-                            android:layout_height="36dp"
-                            android:layout_weight="1"
-                            android:minHeight="36dp"
-                            android:insetTop="0dp"
-                            android:insetBottom="0dp"
-                            android:text="@string/app_limit_reset_protection"
-                            android:textSize="12sp"
-                            app:cornerRadius="12dp"
-                            app:strokeWidth="1dp" />
-                    </com.google.android.material.button.MaterialButtonToggleGroup>
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnAppLimitResetDaily"
+                                style="@style/Widget.Material3.Button.TextButton"
+                                android:layout_width="0dp"
+                                android:layout_height="34dp"
+                                android:layout_margin="1dp"
+                                android:layout_weight="1"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:minHeight="34dp"
+                                android:text="@string/app_limit_reset_daily"
+                                android:textSize="12sp"
+                                app:cornerRadius="11dp"
+                                app:strokeWidth="0dp" />
+
+                            <com.google.android.material.button.MaterialButton
+                                android:id="@+id/btnAppLimitResetProtection"
+                                style="@style/Widget.Material3.Button.TextButton"
+                                android:layout_width="0dp"
+                                android:layout_height="34dp"
+                                android:layout_margin="1dp"
+                                android:layout_weight="1"
+                                android:insetTop="0dp"
+                                android:insetBottom="0dp"
+                                android:minHeight="34dp"
+                                android:text="@string/app_limit_reset_protection"
+                                android:textSize="12sp"
+                                app:cornerRadius="11dp"
+                                app:strokeWidth="0dp" />
+                        </com.google.android.material.button.MaterialButtonToggleGroup>
+                    </FrameLayout>
 
                     <TextView
                         android:id="@+id/tvAppLimitResetHint"

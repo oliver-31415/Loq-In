@@ -153,6 +153,7 @@ object QuickLimitDialogs {
         val ivIcon = v.findViewById<android.widget.ImageView>(R.id.ivAppLimitIcon)
         val tvTitle = v.findViewById<TextView>(R.id.tvAppLimitTitle)
         val tvSubtitle = v.findViewById<TextView>(R.id.tvAppLimitSubtitle)
+        val tvTimeSubtitle = v.findViewById<TextView>(R.id.tvAppLimitTimeSubtitle)
         val tvSentence = v.findViewById<TextView>(R.id.tvAppLimitSentence)
         val swTime = v.findViewById<androidx.appcompat.widget.SwitchCompat>(R.id.swAppLimitTime)
         val swOpens = v.findViewById<androidx.appcompat.widget.SwitchCompat>(R.id.swAppLimitOpens)
@@ -230,23 +231,27 @@ object QuickLimitDialogs {
 
         fun styleResetToggle() {
             val dailySelected = toggleReset.checkedButtonId == R.id.btnAppLimitResetDaily
-            val strokePx = (1f * activity.resources.displayMetrics.density + 0.5f).toInt()
             listOf(btnResetDaily to dailySelected, btnResetProtection to !dailySelected).forEach { (button, selected) ->
                 button.isAllCaps = false
                 if (selected) {
                     button.backgroundTintList = AccentColor.getActiveColor(activity)
                     button.setTextColor(onAccent)
-                    button.strokeWidth = 0
                 } else {
                     button.backgroundTintList = ColorStateList.valueOf(android.graphics.Color.TRANSPARENT)
                     button.setTextColor(accent)
-                    button.strokeWidth = strokePx
-                    button.strokeColor = accentList
                 }
             }
             tvResetHint.setText(
                 if (dailySelected) R.string.app_limit_reset_hint_daily
                 else R.string.app_limit_reset_hint_protection
+            )
+            tvTimeSubtitle.setText(
+                if (dailySelected) R.string.app_limit_time_subtitle
+                else R.string.app_limit_time_subtitle_session
+            )
+            tilTime.hint = activity.getString(
+                if (dailySelected) R.string.app_limit_time_hint
+                else R.string.app_limit_time_hint_session
             )
         }
 
@@ -331,7 +336,9 @@ object QuickLimitDialogs {
             }
             if (time > 0 && visit > time) {
                 tvVisitWarning.text = activity.getString(
-                    R.string.app_limit_visit_exceeds_daily_fmt, visit, time
+                    if (sessionResetMode) R.string.app_limit_visit_exceeds_session_fmt
+                    else R.string.app_limit_visit_exceeds_daily_fmt,
+                    visit, time
                 )
                 tvVisitWarning.visibility = View.VISIBLE
             } else {
