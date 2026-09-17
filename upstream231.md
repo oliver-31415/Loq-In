@@ -42,6 +42,8 @@ Upstream source paths are under `app/src/main/java/at/saltyy/switchly/...`; our 
 | 2026-09-17 | Change-count save notices | `feature/upstream-w2` | Done — `b2cfffa` | App rules + Hidden apps report changed apps, not totals |
 | 2026-09-17 | W2.2 A5 | `feature/upstream-w2` | Done — `a8d8ec4` | Session limits survive pause/lock/profile switch; two branches still need a manual check |
 | 2026-09-17 | Refill mode in limit editor | `feature/upstream-w2` | Done — `f827463` | Exposes Daily / Protection restart; renames "Single session cap" |
+| 2026-09-17 | Refill control polish | `feature/upstream-w2` | Done — `52ee896` | Segmented track + session wording everywhere in the editor |
+| 2026-09-17 | **WS2 complete** | `feature/upstream-w2` | A4 + A5 done | Remaining WS2 follow-ups: manual pause/off-on checks on a real device |
 
 ### W1.1 implementation + test evidence (2026-09-16)
 
@@ -352,6 +354,13 @@ Owner request: the redesigned editor dropped the reset-mode picker, so "Session"
 - `QuickLimitDialogs` reads `UsageLimitResetStore.getMode`, styles the toggle with the accent, updates the live summary (`Allow up to 60 min per protection session` vs `…min/day`), and persists the choice through `UsageLimitResetStore.setMode` on save (clears it when the daily limit is removed).
 - Renamed the third section to **Max per visit** ("Longest single visit") to stop colliding with the reset-mode wording. New EN/DE strings for the toggle and hint.
 - Emulator-verified: daily default selected with the midnight hint; a seeded Session limit loads as `Protection restart` with the session hint and the session summary; Save keeps `usage_limit_reset=session`. Both labels fit the button width after shortening `On protection restart` → `Protection restart`.
+
+### Refill control polish (2026-09-17, `52ee896`)
+
+Owner feedback: the dialog still said "per day" in places when Protection restart was selected, and the toggle looked unpolished.
+- The Screen time subtitle and the value-field hint now follow the selection: "Total minutes per day" / "Daily limit" ↔ "Total minutes per protection session" / "Limit per session"; the visit-vs-limit warning also switches to a session variant.
+- The control is now a segmented track (`bg_segmented_track.xml`, `foqos_surface` rounded 14 dp) with inset, fully rounded buttons: the selected option is accent-filled with on-accent text, the other is transparent with accent text (no more outline seam).
+- Emulator-verified with a seeded session limit: summary `Allow up to 60 min per protection session`, subtitle/hint session wording, and the new segmented look.
 
 ### W2.2 A5 — Session limit reset semantics (2026-09-17, `a8d8ec4`)
 
