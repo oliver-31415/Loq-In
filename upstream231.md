@@ -35,6 +35,8 @@ Upstream source paths are under `app/src/main/java/at/saltyy/switchly/...`; our 
 | 2026-09-17 | W1 merge | → `feature/upstream-work` | Done — `abc4051` | Fast-forward; WS1 complete |
 | 2026-09-17 | W2.1 A4 | `feature/upstream-w2` | Done — `d10ceac` | Per-visit limits now enforced; unit tests added |
 | 2026-09-17 | Limit editor redesign | `feature/upstream-w2` | Done — `fb01e65` | Not upstream work; owner request |
+| 2026-09-17 | Picker tile limit overflow fix | `feature/upstream-w2` | Done — `05cddac` | Not upstream work; owner request |
+| 2026-09-17 | Breaks editor redesign | `feature/upstream-w2` | Done — `1b0b64a` | Not upstream work; owner request; uses caps + usage + clear |
 
 ### W1.1 implementation + test evidence (2026-09-16)
 
@@ -321,6 +323,22 @@ Branch `feature/upstream-w1-safety` off `feature/upstream-work`. Merge back per 
 ## W2 — Limits
 
 Branch `feature/upstream-w2-limits` off `feature/upstream-work` (after W1 merged).
+
+### Picker tile limit summary fix (2026-09-17, `05cddac`)
+
+Owner report: on apps with several limits the summary under the app name no longer fit inside the picker tile.
+- `grid_app_tile.xml`: `tvSub` now allows 2 lines, icon 44 → 42 dp (label margins unchanged).
+- `AppListAdapter`: the tile now uses compact labels (`%d min/day`, `%d min/visit`, `%d opens/day`) instead of the long "Daily limit: …"/"Session limit: …" strings used by other screens; `%d min/session` was already compact.
+- Verified on the emulator: Chrome with time + visit + opens shows `60 min/day · 15 min/visit · 5 opens/day` across two lines inside the tile.
+
+### Breaks editor redesign (2026-09-17, `1b0b64a`)
+
+Owner request: give the "Breaks" (temporary pause) editor the same design as the app limit editor, including usage today and clearing usage.
+- `dialog_temp_pause.xml` rebuilt with the card language: summary card (live caps sentence + "Used today: …"), and three cards — Breaks per day / Length per break / Daily break time — each with icon, titles, accent switch, stepper and a centred field with `breaks`/`min` suffix.
+- `TempPauseDialogs.show` rewritten: switches replace the old "0 = unlimited" text fields (off = unlimited), defaults 2/15/30 when enabled, steppers ±1/±5/±15, same accent tinting/switches/summary tinting as the limit editor, and validation keeps 1..100 breaks / 1..1440 minutes.
+- "Reset today" is now a red text button in the bottom action row; the existing emergency-PIN verification and the lock warning are preserved. The button hides when usage is 0 and the usage line refreshes after a reset.
+- Locked state unchanged at the entry point: `MainActivity` still dims the Breaks row and shows the lock pill while protection is active.
+- Verified on the emulator: defaults (2/15/30) saved to `loqin_temp_pause.xml`; seeding 2 breaks / 24 min showed `Used today: 2 breaks · 24 min`; the reset flow through the emergency PIN cleared both counters and the profile sheet summary refreshed.
 
 ### W2.1 A4 — Enforce Minutes per visit (SessionLimitStore) — **DONE 2026-09-17** (`d10ceac`)
 > Implemented and emulator-verified. Test infrastructure from W0.1 was added along with it (`testImplementation junit`, `BlockDecisionTest`); `./gradlew :app:testDebugUnitTest` passes. See "W2.1 implementation + test evidence" in the progress log.
