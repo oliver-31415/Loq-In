@@ -39,6 +39,7 @@ Upstream source paths are under `app/src/main/java/at/saltyy/switchly/...`; our 
 | 2026-09-17 | Breaks editor redesign | `feature/upstream-w2` | Done — `1b0b64a` | Not upstream work; owner request; uses caps + usage + clear |
 | 2026-09-17 | Compact limit dialogs + blank/blocked fixes | `feature/upstream-w2` | Done — `62440bd` | No-scroll, blank saves as no limit, fully-blocked sentence |
 | 2026-09-17 | Limited badge in picker | `feature/upstream-w2` | Done — `6bf74c6` | Restricted apps no longer look fully blocked |
+| 2026-09-17 | Change-count save notices | `feature/upstream-w2` | Done — `b2cfffa` | App rules + Hidden apps report changed apps, not totals |
 
 ### W1.1 implementation + test evidence (2026-09-16)
 
@@ -333,6 +334,14 @@ Owner feedback after trying the redesigned dialogs on a phone:
 - **Blank fields:** text watchers no longer flip the switch off when the box is cleared, so a section stays open while typing. On save, a blank field means "no limit for that section" (applies as 0 and collapses on the next open). Verified on the emulator: clearing the Daily limit field kept Screen time expanded, Save removed `usage_limit_min__…` and the reopened editor showed the section collapsed.
 - **Fully blocked apps:** the editor summary now reads "This app is fully blocked by this profile. Add a limit to allow restricted use." when the app is selected with no limits, instead of claiming it can be opened without restrictions. Works for block mode and allow mode (allow mode: listed but not allowed and not essential).
 - **Restricted apps in the picker:** a selected app that also has limits now shows the timer icon + "Limited" instead of the check circle (accessibility description "%1$s, limited"), so restricted apps no longer look fully blocked. The Home blocked-apps list already distinguishes them: rule text shows the limits, and the status chip only appears when the app is actually blocked ("Limit reached", "Open limit reached", "Blocked by profile").
+
+### Change-count save notices (2026-09-17, `b2cfffa`)
+
+Owner request: saving should report how many apps actually changed, not the total number of selected apps, in both the App rules picker and the Hidden apps page.
+- `AppPickerActivity.saveManagedApps`: counts the symmetric difference between the pre-edit baseline (`originalManagedPackages`) and the saved set, then re-baselines. The notice is now "Saved %d change(s)."; saving without changes shows "No changes to save.".
+- `IgnoredUsageAppsActivity`: keeps the initial usage/app-picker selections, counts the symmetric difference across both lists on save, re-baselines, and shows the same notice pattern (new `hidden_apps_saved_notice` plurals).
+- New shared string `save_no_changes`; `app_picker_saved_notice` plurals reworded to changes (EN + DE).
+- Verified on the emulator: picker reported `Saved 2 changes.` then `No changes to save.`, and a single toggle reported `Saved 1 change.`; Hidden apps reported `Saved 1 change.` then `No changes to save.`.
 
 ### Picker tile limit summary fix (2026-09-17, `05cddac`)
 
