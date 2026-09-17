@@ -48,6 +48,7 @@ Upstream source paths are under `app/src/main/java/at/saltyy/switchly/...`; our 
 | 2026-09-17 | Path-rule robustness | `feature/upstream-w2` | **Reverted** — `005b5a8` | Owner report: the change broke Firefox |
 | 2026-09-17 | Firefox autocomplete false-block fix | `feature/upstream-w2` | Done — `b34ad98` | Root cause of the "broken Firefox" report |
 | 2026-09-17 | Firefox internal-screen false blocks | `feature/upstream-w2` | Done — `67e5b09` | Verified side by side against upstream Switchly 2.2.9 on the emulator |
+| 2026-09-18 | Firefox path rules + Chrome redirect research | `feature/upstream-w2` | Done | Firefox path rules verified working; Chrome NTP not reachable, about:blank stays |
 
 ### W1.1 implementation + test evidence (2026-09-16)
 
@@ -423,7 +424,19 @@ Owner report: `abc.net.au/news/*` did not block a news article on a real device.
   - New `recheckWebsiteRulesNow` receiver (`BlockingRuntime.ACTION_WEBSITE_RULES_CHANGED`, app-internal): adding, removing, enabling or disabling a rule, or changing the rule mode, makes the running service re-check the visible browser page. `ManageBlockedWebsitesActivity` fires the signal, `BlockingRuntime.notifyWebsiteRulesChanged` sends it.
   - Added a throttled `[website_target]` diagnostic log (host / fresh / remembered / used target) to make future path-rule reports debuggable.
 - Emulator verification: `abc.net.au/` allowed; same-tab navigation to `abc.net.au/news/…` blocked; fresh navigation to a matching article blocked and to `example.com/allowed/page` allowed.
-- Caveat for users: path rules need a browser that exposes the path to accessibility. Chrome/Brave work; Firefox/Samsung Internet fall back to host-only, so path rules cannot match there.
+- Caveat for users: path rules need a browser that exposes the path to accessibility. **Firefox works** (see update below); Samsung Internet is untested.
+
+### Firefox path rules + Chrome redirect research (2026-09-18)
+
+Owner asked how upstream blocks without a blank page and whether Firefox supports path rules. Both questions were answered by testing on the emulator (Firefox 125.3.0, Chrome, rule `example.com/blocked/*`):
+
+- **Firefox path rules work.** Firefox's `mozac_browser_toolbar_url_view` accessibility text exposes the full path and query (e.g. `google.com/search?q=test&sei=…`), and `tryExtractWebsiteTargetFromBrowserUrlViews` reads it.
+  - `https://example.com/allowed/page` → detected `host=example.com matched=false` → allowed.
+  - `https://example.com/blocked/test` → **blocked**, and the stored reason shows `matched=example.com/blocked/test`.
+  - The earlier "Firefox falls back to host-only" note was a guess from before Firefox was available on the emulator; it is corrected here.
+- **Chrome redirect / blank page.** There is no public way for another app to open Chrome's New Tab Page: `chrome-native://newtab` and `chrome://newtab` are unresolvable from an external `ACTION_VIEW` intent, and Chrome ignores `about:home` (the intent resolves but the page does not change). `about:blank` is the only reliable safe target for Chrome, and that is what upstream and our build already use. The blocker dialog is shown over it, so the user sees the block reason instead of the blank page; pressing OK reveals the cleared blank tab.
+  - Firefox cannot resolve `about:blank` or `about:home` from an external intent at all, so `redirected=false` there and the existing single-BACK fallback runs (no blank page in Firefox).
+  - The remaining alternative for Chrome would be to skip the redirect and use the single-BACK fallback like Firefox, which pops the blocked tab but can exit Chrome entirely when it was the last tab. Kept upstream's redirect behaviour. No code change was made.
 
 ### W2.2 A5 — Session limit reset semantics (2026-09-17, `a8d8ec4`)
 
