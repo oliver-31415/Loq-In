@@ -41,6 +41,7 @@ Upstream source paths are under `app/src/main/java/at/saltyy/switchly/...`; our 
 | 2026-09-17 | Limited badge in picker | `feature/upstream-w2` | Done — `6bf74c6` | Restricted apps no longer look fully blocked |
 | 2026-09-17 | Change-count save notices | `feature/upstream-w2` | Done — `b2cfffa` | App rules + Hidden apps report changed apps, not totals |
 | 2026-09-17 | W2.2 A5 | `feature/upstream-w2` | Done — `a8d8ec4` | Session limits survive pause/lock/profile switch; two branches still need a manual check |
+| 2026-09-17 | Refill mode in limit editor | `feature/upstream-w2` | Done — `f827463` | Exposes Daily / Protection restart; renames "Single session cap" |
 
 ### W1.1 implementation + test evidence (2026-09-16)
 
@@ -343,6 +344,14 @@ Owner request: saving should report how many apps actually changed, not the tota
 - `IgnoredUsageAppsActivity`: keeps the initial usage/app-picker selections, counts the symmetric difference across both lists on save, re-baselines, and shows the same notice pattern (new `hidden_apps_saved_notice` plurals).
 - New shared string `save_no_changes`; `app_picker_saved_notice` plurals reworded to changes (EN + DE).
 - Verified on the emulator: picker reported `Saved 2 changes.` then `No changes to save.`, and a single toggle reported `Saved 1 change.`; Hidden apps reported `Saved 1 change.` then `No changes to save.`.
+
+### Refill mode in the app limit editor (2026-09-17, `f827463`)
+
+Owner request: the redesigned editor dropped the reset-mode picker, so "Session" limits (A5) were unreachable for new users.
+- Screen time card now has a **Refills** segmented control (`Every day` / `Protection restart`) inside the collapsible controls, shown only when the daily limit is on; a hint line explains the selected rule.
+- `QuickLimitDialogs` reads `UsageLimitResetStore.getMode`, styles the toggle with the accent, updates the live summary (`Allow up to 60 min per protection session` vs `…min/day`), and persists the choice through `UsageLimitResetStore.setMode` on save (clears it when the daily limit is removed).
+- Renamed the third section to **Max per visit** ("Longest single visit") to stop colliding with the reset-mode wording. New EN/DE strings for the toggle and hint.
+- Emulator-verified: daily default selected with the midnight hint; a seeded Session limit loads as `Protection restart` with the session hint and the session summary; Save keeps `usage_limit_reset=session`. Both labels fit the button width after shortening `On protection restart` → `Protection restart`.
 
 ### W2.2 A5 — Session limit reset semantics (2026-09-17, `a8d8ec4`)
 
