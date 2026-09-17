@@ -32,6 +32,9 @@ Upstream source paths are under `app/src/main/java/at/saltyy/switchly/...`; our 
 | 2026-09-16 | W1.2 A7 | `feature/upstream-w1-safety` | Done — `ab14bb5` | See "W1.2 implementation + test evidence" below |
 | 2026-09-17 | W1.3 C3 | `feature/upstream-w1-safety` | Done — `71280c1` | See "W1.3 implementation + test evidence" below |
 | 2026-09-17 | W1.4 A6 | `feature/upstream-w1-safety` | Done — `f768d95` | See "W1.4 implementation + test evidence" below |
+| 2026-09-17 | W1 merge | → `feature/upstream-work` | Done — `abc4051` | Fast-forward; WS1 complete |
+| 2026-09-17 | W2.1 A4 | `feature/upstream-w2` | Done — `d10ceac` | Per-visit limits now enforced; unit tests added |
+| 2026-09-17 | Limit editor redesign | `feature/upstream-w2` | Done — `fb01e65` | Not upstream work; owner request |
 
 ### W1.1 implementation + test evidence (2026-09-16)
 
@@ -319,7 +322,38 @@ Branch `feature/upstream-w1-safety` off `feature/upstream-work`. Merge back per 
 
 Branch `feature/upstream-w2-limits` off `feature/upstream-work` (after W1 merged).
 
-### W2.1 A4 — Enforce Minutes per visit (SessionLimitStore)
+### W2.1 A4 — Enforce Minutes per visit (SessionLimitStore) — **DONE 2026-09-17** (`d10ceac`)
+> Implemented and emulator-verified. Test infrastructure from W0.1 was added along with it (`testImplementation junit`, `BlockDecisionTest`); `./gradlew :app:testDebugUnitTest` passes. See "W2.1 implementation + test evidence" in the progress log.
+> Out-of-plan addition by owner request: the app limit editor dialog was redesigned (`fb01e65`, see below).
+
+### W2.1 implementation + test evidence (2026-09-17)
+
+Changed files:
+- `app/src/main/java/com/oliver/loqin/blocking/BlockDecision.kt` — `perVisitLimitMinutes`/`perVisitUsageMs` inputs; a per-visit-limited app counts as limited (never hard-blocked); blocks with `immediate = true` once the visit is exhausted.
+- `app/src/main/java/com/oliver/loqin/blocking/LoqInAccessibilityService.kt` — cached `SessionLimitStore` reader (`getSessionLimitCached` + cache invalidation on profile change), per-visit session state (`activePerVisitProfile/Pkg/StartedAt`), `ensurePerVisitSession` / `clearPerVisitSession` / `getPerVisitUsageMs`, wiring in `usageTick` (cleared on screen-off/keyguard/protection-off/bypass/no-profile/temp-allow; started per observed foreground package), an enforcement check before the daily-limit path, and per-visit fields in the decision call site, logs, `hardBlocked`/`managed` math and the block-reason `when`.
+- `app/src/main/res/values/strings_home.xml` + `values-de/…` — `block_reason_rule_per_visit_limit`.
+- `app/build.gradle.kts` — `testImplementation junit:junit:4.13.2`.
+- new `app/src/test/java/com/oliver/loqin/blocking/BlockDecisionTest.kt` — 11 cases covering hard blocks, daily limits, attempts, per-visit, combinations, force and allow-mode.
+
+Emulator test evidence (AVD `HolyPixel`, Android 36, x86_64):
+- Seeded `session_limit_min__Default__com.android.chrome = 1` while the app was dead; launched Chrome with accessibility enabled.
+- After ~61 s of Chrome foreground the blocker appeared: `App blocked | Chrome | … | Blocked by: Minutes per visit limit • Default`.
+- Dismissing the blocker returned to the launcher and re-opening Chrome started a fresh visit (not blocked immediately); the visit expired again after ~60 s (log: `app_per_visit_limit_reached … perVisitMin=1 usageMs=60890/60958 limitMs=60000`).
+- Screen lock/unlock also started a fresh visit (re-opening Chrome was not blocked).
+- Unit tests: `./gradlew :app:testDebugUnitTest` passes.
+
+Testing notes (W2.1):
+- Per-visit enforcement is wall-clock from the first foreground tick; it is independent of the daily-limit "Session" reset mode (A5) and never persists across processes.
+- The visit resets whenever another package (including the launcher after blocker dismissal) is observed as foreground, so blocker → home → app is a new visit.
+
+### Limit editor dialog redesign (2026-09-17, `fb01e65`)
+
+Owner request: make the app limit editor (`dialog_app_limits.xml`, opened from picker tiles / usage screens) match the rest of the app.
+- Each limit is now a rounded `foqos_surface_variant` card (Screen time / App opens / Single session cap) with its icon, title, subtitle and switch; controls dim and disable when the section is off instead of sitting half-visible.
+- Text fields use accent stroke/hint, centred values and unit suffixes (`min`, `opens`); quick time pills keep their place inside the Screen time card.
+- The live summary card is tinted with the active accent (`ColorUtils.compositeColors`), and the sentence now uses the app's `·` separators (also fixed the lost leading space by using `\u0020` escapes).
+- Switches use `CustomAccentApplier.tintSwitch`; "Remove limits" moved into the bottom action row (left, red) next to Cancel / Save limits.
+- Verified on the emulator: disabled sections dim, enabling Screen time defaults to 60 min and updates the sentence, Save persists (`usage_limit_min__Default__com.android.chrome = 60`) and the picker tile shows `Daily limit: 60 min/day · Session limit: 1 min`.
 - **Goal:** the "minutes per visit" value users can already set must actually block. It currently does nothing.
 - **Depends:** none, but land before W2.2 (both touch limit enforcement).
 - **Files:**
