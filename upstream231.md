@@ -47,6 +47,7 @@ Upstream source paths are under `app/src/main/java/at/saltyy/switchly/...`; our 
 | 2026-09-17 | W3.1–W3.3 A3 | `feature/upstream-w2` | Done — `a6ef23f` | Website path rules with wildcards; store + service + UI |
 | 2026-09-17 | Path-rule robustness | `feature/upstream-w2` | **Reverted** — `005b5a8` | Owner report: the change broke Firefox |
 | 2026-09-17 | Firefox autocomplete false-block fix | `feature/upstream-w2` | Done — `b34ad98` | Root cause of the "broken Firefox" report |
+| 2026-09-17 | Firefox internal-screen false blocks | `feature/upstream-w2` | Done — `67e5b09` | Verified side by side against upstream Switchly 2.2.9 on the emulator |
 
 ### W1.1 implementation + test evidence (2026-09-16)
 
@@ -390,6 +391,25 @@ Root cause of the owner's "Firefox is broken/blocked" report (confirmed by insta
   - Pressing Enter to actually load Instagram → **blocked** (`Website is blocked!`, log `host=instagram.com hardBlocked=true`).
   - Loading a non-blocked site (`example.com`) → detected (`trusted=true`) and not blocked.
 - Note: the previously reverted robustness commit (`01ef0b6`) was not the cause; it stays reverted.
+
+### Firefox internal-screen false blocks (2026-09-18, `67e5b09`)
+
+Owner follow-up after still seeing blocks while Firefox was not on a blocked page ("recommended websites taken as open websites"). Because upstream Switchly does not have this problem, upstream 2.2.9 was **built from source (`at.saltyy.switchly`, offline flavor) and run on the same emulator** with the same Firefox 125.3.0 and the same `example.com` rule, side by side with our build:
+
+| Scenario (rule `example.com`) | Upstream 2.2.9 | Our build before the fix | Our build after the fix |
+| --- | --- | --- | --- |
+| Firefox home with "Example Domain" in Recently visited | no block (`website_detect result=no_host`, repeated probes) | blocked | no block (probes log `no_host`) |
+| History screen listing `https://example.com/` | no block (`result=no_host`) | blocked (`trusted=true`, stale URL view) | no block (`result=no_host`) |
+| Address bar focused, typing `exa` with the `example.com` suggestion | guarded (`address_editing`) | fixed by `b34ad98` | no block (`website_skip reason=address_editing editingNow=true`) |
+| Enter/navigate to `example.com` | blocked | blocked | blocked (`trusted=true`) |
+| Chrome navigation to `example.com` | blocked | blocked | blocked (`trusted=true`, redirected) |
+
+Root cause of the remaining false positives: on internal Firefox screens (home, History, Bookmarks, Settings) the accessibility tree still contains the **previous page's URL view nodes** and the screens themselves contain domains/URLs as tiles, list rows and page text. Our extraction treated those as trusted current-page signals.
+- `LoqInAccessibilityService` changes:
+  - `tryExtractDomainFromBrowserUrlViews`, `findBrowserUrlNode` (id lookup and the Firefox toolbar fallback) and `findEditableUrlText` now require `isVisibleToUser`, so stale/hidden toolbar nodes on internal screens are ignored.
+  - New guard in `maybeBlockWebsite`: for Firefox, only a trusted address-bar signal may drive enforcement. Untrusted signals (`hostSignal.second == false` from `firefoxEventDomainSignal`) and text inference hits are logged as `web-firefox-untrusted` and dropped; the pending/cached fallbacks are intentionally not used in that state, because they would resurrect a stale host on internal screens. Real navigation still blocks via the trusted URL-bar signal (verified above).
+- Upstream comparison notes (for future divergence checks): upstream's `tryExtractDomainFromBrowserUrlViews` has no visibility check, but its text inference does not reach the internal-screen items within its node budget on Firefox 125.x, so it returns `no_host` there. Its `firefoxDomainAliases` also matches bare brand substrings, which is why upstream is not a safe model for text matching; our stricter domain-shaped alias matching stays.
+
 
 ### Path-rule robustness (2026-09-17, `01ef0b6`) — **REVERTED in `005b5a8`**
 
