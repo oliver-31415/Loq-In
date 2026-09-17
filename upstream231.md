@@ -46,6 +46,7 @@ Upstream source paths are under `app/src/main/java/at/saltyy/switchly/...`; our 
 | 2026-09-17 | **WS2 complete** | `feature/upstream-w2` | A4 + A5 done | Remaining WS2 follow-ups: manual pause/off-on checks on a real device |
 | 2026-09-17 | W3.1–W3.3 A3 | `feature/upstream-w2` | Done — `a6ef23f` | Website path rules with wildcards; store + service + UI |
 | 2026-09-17 | Path-rule robustness | `feature/upstream-w2` | **Reverted** — `005b5a8` | Owner report: the change broke Firefox |
+| 2026-09-17 | Firefox autocomplete false-block fix | `feature/upstream-w2` | Done — `b34ad98` | Root cause of the "broken Firefox" report |
 
 ### W1.1 implementation + test evidence (2026-09-16)
 
@@ -376,6 +377,19 @@ Verification:
 - Unit tests (`DomainBlockStoreTest`, 8 tests) cover host normalization, path preservation/truncation, host/path parts, subdomain matching, path globs (`*`, `?`) and the bare-host/path-rule mismatch. `./gradlew :app:testDebugUnitTest` passes.
 - Emulator: seeded `example.com/blocked/*`; Chrome blocked on `example.com/blocked/test` (reason "Website is blocked!"), while `example.com/allowed/page` opened normally. UI: the rule list renders `example.com/blocked/*`, adding `youtube.com/shorts/*` via the dialog works with the path helper visible, and in Allow-selected mode the dialog shows "Path rules only work in Block selected mode.".
 - Still manual: Firefox host-only fallback and the backup export/import round trip (rules are plain strings, so risk is low).
+
+### Firefox autocomplete false-block fix (2026-09-17, `b34ad98`)
+
+Root cause of the owner's "Firefox is broken/blocked" report (confirmed by installing real Firefox 125.3.0 on the emulator and reproducing):
+- On Firefox's new-tab/address-bar edit state, the **address bar's edit field holds the autocomplete suggestion** (e.g. `instagram.com`), and it is focused. Our Firefox detection parsed that suggestion as the current page and hard-blocked it, so opening a new tab or typing while a blocked site was suggested looked like Firefox itself was blocked.
+- Fixes in `LoqInAccessibilityService`:
+  - Firefox address-bar editing is now detected **before any URL extraction** (`isFirefoxAddressBarActive`): explicit edit-view ids (`mozac_browser_toolbar_edit_url_view`), or a focused editable node inside the toolbar container (covers Firefox's id drift, e.g. `mozac_browser_toolbar_container` in 125.x).
+  - The Firefox URL-node fallback no longer accepts toolbar nodes whose id contains `edit` / `autocomplete` / `suggestion`, so typed or suggested URLs can never become the "current page".
+- Emulator verification with Firefox 125.3.0 and an `instagram.com` rule:
+  - Tapping the address bar and typing `insta` → edit view shows the `instagram.com` suggestion, focused → **no block** (previously blocked).
+  - Pressing Enter to actually load Instagram → **blocked** (`Website is blocked!`, log `host=instagram.com hardBlocked=true`).
+  - Loading a non-blocked site (`example.com`) → detected (`trusted=true`) and not blocked.
+- Note: the previously reverted robustness commit (`01ef0b6`) was not the cause; it stays reverted.
 
 ### Path-rule robustness (2026-09-17, `01ef0b6`) — **REVERTED in `005b5a8`**
 
