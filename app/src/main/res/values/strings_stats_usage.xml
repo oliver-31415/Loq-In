@@ -9,6 +9,9 @@
     <string name="daily_limit_label">Daily limit: %1$d min/day</string>
     <string name="daily_limit_10">Daily limit: 10 min</string>
     <string name="attempt_limit_label">Open limit: %1$d/day</string>
+    <string name="limit_tile_daily_fmt">%1$d min/day</string>
+    <string name="limit_tile_visit_fmt">%1$d min/visit</string>
+    <string name="limit_tile_attempts_fmt">%1$d opens/day</string>
     <plurals name="daily_attempt_limit_value_format">
         <item quantity="one">%1$d open/day</item>
         <item quantity="other">%1$d opens/day</item>

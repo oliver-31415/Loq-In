@@ -310,21 +310,22 @@ class AppListAdapter(
             viewLimitDot.visibility = if (hasLimit) View.VISIBLE else View.GONE
             if (hasLimit) {
                 tvSub.visibility = View.VISIBLE
+                // Compact tile labels: long "Daily limit: …" style labels overflow the square tile.
                 tvSub.text = buildString {
                     if (hasDailyLimit) {
                         val resetMode = profile?.let { UsageLimitResetStore.getMode(ctx, it, item.packageName) }
                         append(ctx.getString(
-                            if (resetMode == UsageLimitResetStore.MODE_SESSION) R.string.session_reset_limit_value_format else R.string.daily_limit_label,
+                            if (resetMode == UsageLimitResetStore.MODE_SESSION) R.string.session_reset_limit_value_format else R.string.limit_tile_daily_fmt,
                             limitMin
                         ))
                     }
                     if (hasSessionLimit) {
                         if (isNotEmpty()) append(" · ")
-                        append(ctx.getString(R.string.session_limit_label, sessionLimitMin))
+                        append(ctx.getString(R.string.limit_tile_visit_fmt, sessionLimitMin))
                     }
                     if (hasAttemptLimit) {
                         if (isNotEmpty()) append(" · ")
-                        append(ctx.getString(R.string.attempt_limit_label, attemptLimit))
+                        append(ctx.getString(R.string.limit_tile_attempts_fmt, attemptLimit))
                     }
                 }
             } else {
