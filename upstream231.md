@@ -45,7 +45,7 @@ Upstream source paths are under `app/src/main/java/at/saltyy/switchly/...`; our 
 | 2026-09-17 | Refill control polish | `feature/upstream-w2` | Done — `52ee896` | Segmented track + session wording everywhere in the editor |
 | 2026-09-17 | **WS2 complete** | `feature/upstream-w2` | A4 + A5 done | Remaining WS2 follow-ups: manual pause/off-on checks on a real device |
 | 2026-09-17 | W3.1–W3.3 A3 | `feature/upstream-w2` | Done — `a6ef23f` | Website path rules with wildcards; store + service + UI |
-| 2026-09-17 | Path-rule robustness | `feature/upstream-w2` | Done — `01ef0b6` | Owner report: `abc.net.au/news/*` missed an article |
+| 2026-09-17 | Path-rule robustness | `feature/upstream-w2` | **Reverted** — `005b5a8` | Owner report: the change broke Firefox |
 
 ### W1.1 implementation + test evidence (2026-09-16)
 
@@ -377,7 +377,9 @@ Verification:
 - Emulator: seeded `example.com/blocked/*`; Chrome blocked on `example.com/blocked/test` (reason "Website is blocked!"), while `example.com/allowed/page` opened normally. UI: the rule list renders `example.com/blocked/*`, adding `youtube.com/shorts/*` via the dialog works with the path helper visible, and in Allow-selected mode the dialog shows "Path rules only work in Block selected mode.".
 - Still manual: Firefox host-only fallback and the backup export/import round trip (rules are plain strings, so risk is low).
 
-### Path-rule robustness (2026-09-17, `01ef0b6`)
+### Path-rule robustness (2026-09-17, `01ef0b6`) — **REVERTED in `005b5a8`**
+
+> **Owner reported that this change broke Firefox on their device and asked for a revert.** The commit was reverted in full (`005b5a8`); path rules from `a6ef23f` remain, but the remember/retry/broadcast behaviour is gone. The likely culprit is the null-event retry probes interacting with the Firefox address-editing/domain state, but this is unconfirmed because Firefox is not installed on the emulator. If path rules are revisited, keep Firefox on the existing host-only path and avoid null-event probes for `isFirefoxFamily` packages.
 
 Owner report: `abc.net.au/news/*` did not block a news article on a real device.
 - Investigation on the emulator: the rule itself works (article blocked, home page allowed), but the first decision after a page load could see a host-only URL (the URL bar sometimes commits before the path) and a same-host navigation does not restart the candidate cycle — so the path rule could be missed.
