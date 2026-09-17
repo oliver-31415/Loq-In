@@ -3164,6 +3164,11 @@ class LoqInAccessibilityService : AccessibilityService() {
         if (pkg.startsWith("org.mozilla.")) {
             return findAnyNode(root) { node ->
                 val vid = node.viewIdResourceName?.lowercase(Locale.getDefault()).orEmpty()
+                // The address-bar edit field and its autocomplete list contain typed/suggested URLs.
+                // They must never be treated as the page the user is actually on.
+                if (vid.contains("edit") || vid.contains("autocomplete") || vid.contains("suggestion")) {
+                    return@findAnyNode false
+                }
                 if (!(vid.contains("mozac") || vid.contains("toolbar") || vid.contains("url") || vid.contains("origin"))) {
                     return@findAnyNode false
                 }
@@ -3234,6 +3239,14 @@ class LoqInAccessibilityService : AccessibilityService() {
         pkg: String,
         event: AccessibilityEvent?
     ): Boolean {
+        // Firefox versions expose the address bar as an explicit edit view (or a focused EditText
+        // inside the toolbar container). Check that before anything else so autocomplete text is
+        // never parsed as the current page.
+        if (isFirefoxFamily(pkg) && isFirefoxAddressBarActive(root, pkg)) {
+            browserWebsiteState.noteAddressEditing(pkg)
+            return true
+        }
+
         val node = findBrowserUrlNode(root, pkg) ?: return false
         try {
             if (isFirefoxFamily(pkg)) {
@@ -3364,12 +3377,15 @@ class LoqInAccessibilityService : AccessibilityService() {
             return null
         }
 
-        tryExtractDomainFromBrowserUrlViews(root, pkg)?.let { return it to true }
-
+        // Firefox's address bar (especially on the new-tab screen) shows autocomplete suggestions as
+        // the edit field's text. Detect that state before any URL extraction so a suggestion can
+        // never be mistaken for the current page.
         val firefoxEditing = isFirefoxFamily(pkg) && isBrowserAddressEditing(root, pkg, event)
         if (firefoxEditing) {
             return null
         }
+
+        tryExtractDomainFromBrowserUrlViews(root, pkg)?.let { return it to true }
         if (event != null && browserWebsiteState.addressEditingRecently(pkg)) {
             return null
         }
@@ -3617,6 +3633,41 @@ class LoqInAccessibilityService : AccessibilityService() {
         }
 
         return null
+    }
+
+    private fun isFirefoxAddressBarActive(root: AccessibilityNodeInfo, pkg: String): Boolean {
+        if (nodeHasViewId(root, firefoxEditingViewIds(pkg))) {
+            return true
+        }
+        // ID drift across Firefox versions: look for a focused editable node inside the toolbar.
+        val toolbarIds = listOf(
+            "$pkg:id/mozac_browser_toolbar_container",
+            "$pkg:id/mozac_browser_toolbar",
+            "$pkg:id/toolbar",
+        )
+        return toolbarIds.any { id ->
+            runCatching {
+                root.findAccessibilityNodeInfosByViewId(id).orEmpty().any { toolbar ->
+                    nodeHasFocusedEditable(toolbar, 0)
+                }
+            }.getOrDefault(false)
+        }
+    }
+
+    private fun nodeHasFocusedEditable(node: AccessibilityNodeInfo, depth: Int): Boolean {
+        if (depth > 6) return false
+        return runCatching {
+            if (node.isFocused &&
+                (node.isEditable || node.className?.toString().orEmpty().contains("EditText", ignoreCase = true))
+            ) {
+                return true
+            }
+            for (index in 0 until node.childCount) {
+                val child = node.getChild(index) ?: continue
+                if (nodeHasFocusedEditable(child, depth + 1)) return true
+            }
+            false
+        }.getOrDefault(false)
     }
 
     private fun findEditableUrlText(node: AccessibilityNodeInfo): String? {
