@@ -45,6 +45,7 @@ Upstream source paths are under `app/src/main/java/at/saltyy/switchly/...`; our 
 | 2026-09-17 | Refill control polish | `feature/upstream-w2` | Done — `52ee896` | Segmented track + session wording everywhere in the editor |
 | 2026-09-17 | **WS2 complete** | `feature/upstream-w2` | A4 + A5 done | Remaining WS2 follow-ups: manual pause/off-on checks on a real device |
 | 2026-09-17 | W3.1–W3.3 A3 | `feature/upstream-w2` | Done — `a6ef23f` | Website path rules with wildcards; store + service + UI |
+| 2026-09-17 | Path-rule robustness | `feature/upstream-w2` | Done — `01ef0b6` | Owner report: `abc.net.au/news/*` missed an article |
 
 ### W1.1 implementation + test evidence (2026-09-16)
 
@@ -375,6 +376,18 @@ Verification:
 - Unit tests (`DomainBlockStoreTest`, 8 tests) cover host normalization, path preservation/truncation, host/path parts, subdomain matching, path globs (`*`, `?`) and the bare-host/path-rule mismatch. `./gradlew :app:testDebugUnitTest` passes.
 - Emulator: seeded `example.com/blocked/*`; Chrome blocked on `example.com/blocked/test` (reason "Website is blocked!"), while `example.com/allowed/page` opened normally. UI: the rule list renders `example.com/blocked/*`, adding `youtube.com/shorts/*` via the dialog works with the path helper visible, and in Allow-selected mode the dialog shows "Path rules only work in Block selected mode.".
 - Still manual: Firefox host-only fallback and the backup export/import round trip (rules are plain strings, so risk is low).
+
+### Path-rule robustness (2026-09-17, `01ef0b6`)
+
+Owner report: `abc.net.au/news/*` did not block a news article on a real device.
+- Investigation on the emulator: the rule itself works (article blocked, home page allowed), but the first decision after a page load could see a host-only URL (the URL bar sometimes commits before the path) and a same-host navigation does not restart the candidate cycle — so the path rule could be missed.
+- Fixes in `LoqInAccessibilityService`:
+  - Remember the last full host+path per browser (`WEBSITE_TARGET_TTL_MS` 90 s) and reuse it when the fresh extraction has no path, so a late/missing path still matches.
+  - When an enabled path rule exists for the detected host but the current target has no path, schedule two short re-probes (450 ms / 1.1 s, throttled to 2 s) that re-run the website check for that package.
+  - New `recheckWebsiteRulesNow` receiver (`BlockingRuntime.ACTION_WEBSITE_RULES_CHANGED`, app-internal): adding, removing, enabling or disabling a rule, or changing the rule mode, makes the running service re-check the visible browser page. `ManageBlockedWebsitesActivity` fires the signal, `BlockingRuntime.notifyWebsiteRulesChanged` sends it.
+  - Added a throttled `[website_target]` diagnostic log (host / fresh / remembered / used target) to make future path-rule reports debuggable.
+- Emulator verification: `abc.net.au/` allowed; same-tab navigation to `abc.net.au/news/…` blocked; fresh navigation to a matching article blocked and to `example.com/allowed/page` allowed.
+- Caveat for users: path rules need a browser that exposes the path to accessibility. Chrome/Brave work; Firefox/Samsung Internet fall back to host-only, so path rules cannot match there.
 
 ### W2.2 A5 — Session limit reset semantics (2026-09-17, `a8d8ec4`)
 
