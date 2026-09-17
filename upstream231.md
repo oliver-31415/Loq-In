@@ -37,6 +37,8 @@ Upstream source paths are under `app/src/main/java/at/saltyy/switchly/...`; our 
 | 2026-09-17 | Limit editor redesign | `feature/upstream-w2` | Done — `fb01e65` | Not upstream work; owner request |
 | 2026-09-17 | Picker tile limit overflow fix | `feature/upstream-w2` | Done — `05cddac` | Not upstream work; owner request |
 | 2026-09-17 | Breaks editor redesign | `feature/upstream-w2` | Done — `1b0b64a` | Not upstream work; owner request; uses caps + usage + clear |
+| 2026-09-17 | Compact limit dialogs + blank/blocked fixes | `feature/upstream-w2` | Done — `62440bd` | No-scroll, blank saves as no limit, fully-blocked sentence |
+| 2026-09-17 | Limited badge in picker | `feature/upstream-w2` | Done — `6bf74c6` | Restricted apps no longer look fully blocked |
 
 ### W1.1 implementation + test evidence (2026-09-16)
 
@@ -323,6 +325,14 @@ Branch `feature/upstream-w1-safety` off `feature/upstream-work`. Merge back per 
 ## W2 — Limits
 
 Branch `feature/upstream-w2-limits` off `feature/upstream-work` (after W1 merged).
+
+### Limit dialog fit, blank fields and blocked/limited states (2026-09-17, `62440bd`, `6bf74c6`)
+
+Owner feedback after trying the redesigned dialogs on a phone:
+- **Fitting on one page:** inactive sections now collapse to their header row instead of showing dimmed empty controls, the redundant `AlertDialog` title was dropped (the custom app header is the title), and paddings/steppers/pills were compacted in both the app limit editor and the breaks editor. Header sizes reduced (icon 38 dp, section icons 20 dp, steppers 42 dp, pills 32 dp). Verified on the Pixel: the editor opens fully visible and fits with all three sections enabled.
+- **Blank fields:** text watchers no longer flip the switch off when the box is cleared, so a section stays open while typing. On save, a blank field means "no limit for that section" (applies as 0 and collapses on the next open). Verified on the emulator: clearing the Daily limit field kept Screen time expanded, Save removed `usage_limit_min__…` and the reopened editor showed the section collapsed.
+- **Fully blocked apps:** the editor summary now reads "This app is fully blocked by this profile. Add a limit to allow restricted use." when the app is selected with no limits, instead of claiming it can be opened without restrictions. Works for block mode and allow mode (allow mode: listed but not allowed and not essential).
+- **Restricted apps in the picker:** a selected app that also has limits now shows the timer icon + "Limited" instead of the check circle (accessibility description "%1$s, limited"), so restricted apps no longer look fully blocked. The Home blocked-apps list already distinguishes them: rule text shows the limits, and the status chip only appears when the app is actually blocked ("Limit reached", "Open limit reached", "Blocked by profile").
 
 ### Picker tile limit summary fix (2026-09-17, `05cddac`)
 
