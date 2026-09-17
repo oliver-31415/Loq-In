@@ -154,6 +154,9 @@
     <string name="app_picker_in_app_rules_open">In-App-Regeln öffnen</string>
     <string name="app_picker_website_rules_open">Website-Regeln öffnen</string>
     <string name="app_picker_tile_selected_desc">%1$s, ausgewählt</string>
+    <string name="app_picker_tile_limited_desc">%1$s, eingeschränkt</string>
+    <string name="app_picker_limited_badge">Eingeschränkt</string>
+    <string name="app_picker_blocked_badge">Blockiert</string>
     <string name="app_picker_tile_unselected_desc">%1$s, nicht ausgewählt</string>
 
     <!-- ====================================================== -->

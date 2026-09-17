@@ -246,6 +246,7 @@ class AppListAdapter(
 
         private var current: AppEntry? = null
         private var currentSelected = false
+        private var currentHasLimit = false
 
         private fun dp(value: Float): Int =
             (value * itemView.resources.displayMetrics.density).toInt()
@@ -263,6 +264,16 @@ class AppListAdapter(
                 cardRoot.strokeColor = ContextCompat.getColor(ctx, R.color.foqos_outline_variant)
             }
             ivChecked.visibility = if (selected) View.VISIBLE else View.GONE
+            if (selected) {
+                // Selected + limits is a restricted app, not a fully blocked one.
+                val limited = currentHasLimit
+                ivChecked.setImageResource(if (limited) R.drawable.timer_24 else R.drawable.check_circle_24)
+                ivChecked.contentDescription = if (limited) {
+                    ctx.getString(R.string.app_picker_limited_badge)
+                } else {
+                    ctx.getString(R.string.app_picker_blocked_badge)
+                }
+            }
         }
 
         fun bind(item: AppEntry) {
@@ -306,6 +317,7 @@ class AppListAdapter(
             val hasSessionLimit = sessionLimitMin > 0
             val hasAttemptLimit = attemptLimit > 0
             val hasLimit = hasDailyLimit || hasSessionLimit || hasAttemptLimit
+            currentHasLimit = hasLimit
 
             viewLimitDot.visibility = if (hasLimit) View.VISIBLE else View.GONE
             if (hasLimit) {
@@ -344,10 +356,10 @@ class AppListAdapter(
             ivAppIcon.alpha = if (dimmed) 0.45f else 1f
             tvLabel.alpha = if (dimmed) 0.55f else 1f
             updateTileState(currentSelected)
-            cardRoot.contentDescription = if (currentSelected) {
-                ctx.getString(R.string.app_picker_tile_selected_desc, item.label)
-            } else {
-                ctx.getString(R.string.app_picker_tile_unselected_desc, item.label)
+            cardRoot.contentDescription = when {
+                currentSelected && hasLimit -> ctx.getString(R.string.app_picker_tile_limited_desc, item.label)
+                currentSelected -> ctx.getString(R.string.app_picker_tile_selected_desc, item.label)
+                else -> ctx.getString(R.string.app_picker_tile_unselected_desc, item.label)
             }
 
             fun onTileToggle() {
