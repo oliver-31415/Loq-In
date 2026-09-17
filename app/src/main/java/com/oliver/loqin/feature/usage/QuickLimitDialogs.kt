@@ -51,6 +51,7 @@ import com.oliver.loqin.ui.dialog.applyLoqInDialogWidth
 import com.oliver.loqin.util.AppBlockSafety
 import com.oliver.loqin.util.EditingLockGuard
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
@@ -166,6 +167,10 @@ object QuickLimitDialogs {
         val rowTimeControls = v.findViewById<View>(R.id.rowLimitTimeControls)
         val rowOpensControls = v.findViewById<View>(R.id.rowLimitOpensControls)
         val rowVisitControls = v.findViewById<View>(R.id.rowLimitVisitControls)
+        val toggleReset = v.findViewById<MaterialButtonToggleGroup>(R.id.toggleAppLimitReset)
+        val btnResetDaily = v.findViewById<MaterialButton>(R.id.btnAppLimitResetDaily)
+        val btnResetProtection = v.findViewById<MaterialButton>(R.id.btnAppLimitResetProtection)
+        val tvResetHint = v.findViewById<TextView>(R.id.tvAppLimitResetHint)
         val btnClear = v.findViewById<MaterialButton>(R.id.btnAppLimitClear)
         val btnCancel = v.findViewById<MaterialButton>(R.id.btnAppLimitCancel)
         val btnSave = v.findViewById<MaterialButton>(R.id.btnAppLimitSave)
@@ -211,6 +216,40 @@ object QuickLimitDialogs {
             til.defaultHintTextColor = accentList
         }
         listOf(swTime, swOpens, swVisit).forEach { CustomAccentApplier.tintSwitch(it) }
+
+        var sessionResetMode =
+            UsageLimitResetStore.getMode(activity, profile, pkg) == UsageLimitResetStore.MODE_SESSION
+        val onAccent = if (androidx.core.graphics.ColorUtils.calculateLuminance(accent) > 0.5) {
+            android.graphics.Color.BLACK
+        } else {
+            android.graphics.Color.WHITE
+        }
+        toggleReset.check(
+            if (sessionResetMode) R.id.btnAppLimitResetProtection else R.id.btnAppLimitResetDaily
+        )
+
+        fun styleResetToggle() {
+            val dailySelected = toggleReset.checkedButtonId == R.id.btnAppLimitResetDaily
+            val strokePx = (1f * activity.resources.displayMetrics.density + 0.5f).toInt()
+            listOf(btnResetDaily to dailySelected, btnResetProtection to !dailySelected).forEach { (button, selected) ->
+                button.isAllCaps = false
+                if (selected) {
+                    button.backgroundTintList = AccentColor.getActiveColor(activity)
+                    button.setTextColor(onAccent)
+                    button.strokeWidth = 0
+                } else {
+                    button.backgroundTintList = ColorStateList.valueOf(android.graphics.Color.TRANSPARENT)
+                    button.setTextColor(accent)
+                    button.strokeWidth = strokePx
+                    button.strokeColor = accentList
+                }
+            }
+            tvResetHint.setText(
+                if (dailySelected) R.string.app_limit_reset_hint_daily
+                else R.string.app_limit_reset_hint_protection
+            )
+        }
+
         runCatching {
             val surfaceVariant = androidx.core.content.ContextCompat.getColor(activity, R.color.foqos_surface_variant)
             v.findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardAppLimitSummary)
@@ -251,11 +290,6 @@ object QuickLimitDialogs {
             if (currentTime > 0 || currentAttempts > 0 || currentPerVisit > 0) View.VISIBLE
             else View.GONE
 
-        val onAccent = if (androidx.core.graphics.ColorUtils.calculateLuminance(accent) > 0.5) {
-            android.graphics.Color.BLACK
-        } else {
-            android.graphics.Color.WHITE
-        }
         btnSave.setTextColor(onAccent)
         btnSave.isAllCaps = false
         btnSave.backgroundTintList = AccentColor.getActiveColor(activity)
@@ -279,7 +313,13 @@ object QuickLimitDialogs {
                         else R.string.app_limit_sentence_none
                     )
                 time > 0 -> buildString {
-                    append(activity.getString(R.string.app_limit_sentence_time_fmt, time))
+                    append(
+                        activity.getString(
+                            if (sessionResetMode) R.string.app_limit_sentence_time_session_fmt
+                            else R.string.app_limit_sentence_time_fmt,
+                            time
+                        )
+                    )
                     if (opens > 0) append(activity.getString(R.string.app_limit_sentence_split_fmt, opens))
                     if (visit > 0) append(activity.getString(R.string.app_limit_sentence_visit_fmt, visit))
                 }
@@ -403,9 +443,17 @@ object QuickLimitDialogs {
             refreshAll()
         }
 
+        toggleReset.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (!isChecked) return@addOnButtonCheckedListener
+            sessionResetMode = checkedId == R.id.btnAppLimitResetProtection
+            styleResetToggle()
+            refreshAll()
+        }
+
         setSectionEnabled(rowTimeControls, swTime.isChecked)
         setSectionEnabled(rowOpensControls, swOpens.isChecked)
         setSectionEnabled(rowVisitControls, swVisit.isChecked)
+        styleResetToggle()
 
         fun stepTime(delta: Int) {
             if (!swTime.isChecked && delta <= 0) return
@@ -483,9 +531,14 @@ object QuickLimitDialogs {
             AttemptLimitStore.setLimitAttempts(activity, profile, pkg, attempts)
 
             LimitReachedStore.clearToday(activity, pkg)
-            // No reset-mode choice in the UI: keep whatever cadence is stored
-            // (per-day default), only cleaning up when the time limit is removed.
-            if (timeMinutes <= 0) {
+            if (timeMinutes > 0) {
+                UsageLimitResetStore.setMode(
+                    activity,
+                    profile,
+                    pkg,
+                    if (sessionResetMode) UsageLimitResetStore.MODE_SESSION else UsageLimitResetStore.MODE_DAY
+                )
+            } else {
                 UsageLimitResetStore.clearMode(activity, profile, pkg)
                 UsageStore.setUsageMsToday(activity, pkg, 0L)
             }
