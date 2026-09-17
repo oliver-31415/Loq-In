@@ -40,6 +40,7 @@ Upstream source paths are under `app/src/main/java/at/saltyy/switchly/...`; our 
 | 2026-09-17 | Compact limit dialogs + blank/blocked fixes | `feature/upstream-w2` | Done — `62440bd` | No-scroll, blank saves as no limit, fully-blocked sentence |
 | 2026-09-17 | Limited badge in picker | `feature/upstream-w2` | Done — `6bf74c6` | Restricted apps no longer look fully blocked |
 | 2026-09-17 | Change-count save notices | `feature/upstream-w2` | Done — `b2cfffa` | App rules + Hidden apps report changed apps, not totals |
+| 2026-09-17 | W2.2 A5 | `feature/upstream-w2` | Done — `a8d8ec4` | Session limits survive pause/lock/profile switch; two branches still need a manual check |
 
 ### W1.1 implementation + test evidence (2026-09-16)
 
@@ -343,6 +344,20 @@ Owner request: saving should report how many apps actually changed, not the tota
 - New shared string `save_no_changes`; `app_picker_saved_notice` plurals reworded to changes (EN + DE).
 - Verified on the emulator: picker reported `Saved 2 changes.` then `No changes to save.`, and a single toggle reported `Saved 1 change.`; Hidden apps reported `Saved 1 change.` then `No changes to save.`.
 
+### W2.2 A5 — Session limit reset semantics (2026-09-17, `a8d8ec4`)
+
+Owner-approved upstream port; the highest-risk change in the plan.
+- `SwitchModeStore`: added `KEY_LIMIT_SESSION_STARTED_AT` + `getLimitSessionStartedAt`; `bumpLimitSessionGeneration` replaced by `startNewLimitSession` (also records `startedAt`) and `ensureLimitSessionStartedAt` (called from `ensureInit`); a new generation starts **only** when the base protection flag transitions false → true in `setEnabled`, `setEnabledBySchedule` and `setTemporarilyEnabled`; the other seven effective-state changes (temp pause, temp enable, clear/cancel temp, schedule/profile changes) no longer bump it. Added the "Protection enabled/disabled" timeline record (D1 hook).
+- `LoqInAccessibilityService`: `ensureActiveLimitSession` now keeps the observed generation/startedAt and only wipes counters when a *new* generation is observed while the service is alive (startedAt comes from the store); `clearActiveLimitSession` only clears the profile pointer; `getEnforcedLimitUsageMs` restores session counters from `UsageLimitSessionRuntimeStore` after service/process recreation (stale generations rejected by the store); `publishSessionLimitState` falls back to the stored `startedAt`.
+
+Emulator evidence (AVD `HolyPixel`, Android 36, x86_64) — Chrome with a 1-minute Session-mode daily limit:
+- Baseline: blocked after ~61 s (`Blocked by: Daily time limit • Default`); runtime store holds generation 1 with `used_ms ≈ 60789`, `reached=true`.
+- Screen lock/unlock: still blocked (allowance survived; previously it reset).
+- Accessibility service/process restart: still blocked (restored from `UsageLimitSessionRuntimeStore`).
+- Full device reboot: still blocked (generation + runtime store persisted).
+- Profile switch away to a second profile (Chrome unblocked there) and back: still blocked on Default.
+- Not verified on-device (emulator input stopped delivering taps to the app, and QS tile injection was ignored): the generation bump on protection off→on (the reset) and the temporary-pause resume path. Both mirror upstream exactly; **manual check recommended**: disable protection, re-enable, confirm the Session limit starts a fresh allowance, and pause/resume to confirm the allowance is kept.
+
 ### Picker tile limit summary fix (2026-09-17, `05cddac`)
 
 Owner report: on apps with several limits the summary under the app name no longer fit inside the picker tile.
@@ -423,7 +438,8 @@ Owner request: make the app limit editor (`dialog_app_limits.xml`, opened from p
   - Do not mark per-visit as `LimitReachedStore` — Home/Stats uses `UsageLimitSessionRuntimeStore` for overall session state; per-visit state is deliberately ephemeral.
 - **Done when:** per-visit blocks, resets as specified, tests pass, no hard-block regressions.
 
-### W2.2 A5 — Overall "Session" limit reset semantics
+### W2.2 A5 — Overall "Session" limit reset semantics — **DONE 2026-09-17** (`a8d8ec4`)
+> Implemented and mostly emulator-verified; see the progress log entry "W2.2 A5 — Session limit reset semantics" for evidence and the two branches that still need a manual check.
 - **Goal:** an overall limit configured with reset mode = Session must survive profile switches, temporary pauses, screen locks and service/process recreation, and reset only when a genuinely new protection session starts (base protection off → on).
 - **Depends:** W2.1 (do not conflict).
 - **Files:**
