@@ -34,6 +34,8 @@ internal fun resolveAppBlockDecision(
     attemptLimit: Int,
     opensExceeded: Boolean,
     effectiveUsageMsToday: Long,
+    perVisitLimitMinutes: Int = 0,
+    perVisitUsageMs: Long = 0L,
     lockActive: Boolean,
     highRisk: Boolean,
     force: Boolean,
@@ -42,7 +44,7 @@ internal fun resolveAppBlockDecision(
     allowModeListed: Boolean = false
 ): AppBlockDecision {
     val selected = isManagedPackage(pkg, blockedPackages)
-    val hasLimit = limitMinutes > 0 || attemptLimit > 0
+    val hasLimit = limitMinutes > 0 || attemptLimit > 0 || perVisitLimitMinutes > 0
 
     // In blocklist mode, selected apps are hard-blocked unless they have a limit.
     // In allow-selected mode, the picker list is the boundary:
@@ -73,7 +75,9 @@ internal fun resolveAppBlockDecision(
     // Force is used for immediate re-checks after foreground corrections, schedule ticks, or other reliability probes.
     // It must not turn a limited app into a block before the configured daily usage limit is actually reached.
     val timeLimitReached = limitMinutes > 0 && effectiveUsageMsToday >= limitMinutes * 60_000L
-    val shouldBlockNow = hardBlocked || opensExceeded || timeLimitReached
+    val perVisitLimitReached =
+        perVisitLimitMinutes > 0 && perVisitUsageMs >= perVisitLimitMinutes * 60_000L
+    val shouldBlockNow = hardBlocked || opensExceeded || timeLimitReached || perVisitLimitReached
     if (!shouldBlockNow) {
         return AppBlockDecision.Allow
     }
@@ -82,6 +86,6 @@ internal fun resolveAppBlockDecision(
         shouldBlock = true,
         // Once a daily time limit is reached, treat it like an immediate block too.
         // This keeps the time-limit path aligned with direct/attempt blocking and improves  blocker Activity launch reliability on OEM devices that are sensitive to delayed launches.
-        immediate = hardBlocked || opensExceeded || timeLimitReached || force
+        immediate = hardBlocked || opensExceeded || timeLimitReached || perVisitLimitReached || force
     )
 }

@@ -178,6 +178,7 @@
     <string name="block_reason_rule_allow_selected">Allow selected mode</string>
     <string name="block_reason_rule_daily_time_limit">Daily time limit</string>
     <string name="block_reason_rule_open_limit">Daily open limit</string>
+    <string name="block_reason_rule_per_visit_limit">Minutes per visit limit</string>
     <string name="block_reason_rule_strict_lock">Strict/NFC lock protection</string>
     <string name="block_reason_rule_blocked_apps">Blocked app list</string>
     <string name="block_reason_rule_website_rule">Website rule</string>

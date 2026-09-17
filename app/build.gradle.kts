@@ -152,6 +152,9 @@ dependencies {
     // Bundled ML Kit model so scanning works without Google Play Services (offline build).
     add("implementation", "com.google.mlkit:barcode-scanning:17.3.0")
     add("implementation", "com.google.zxing:core:3.5.4")
+
+    // JVM unit tests for pure blocking logic (BlockDecision, domain matching).
+    add("testImplementation", "junit:junit:4.13.2")
 }
 
 // Fix for duplicated classes: com.intellij:annotations vs org.jetbrains:annotations.

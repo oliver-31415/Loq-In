@@ -64,6 +64,7 @@ import com.oliver.loqin.data.prefs.ProfileRuleModeStore
 import com.oliver.loqin.data.prefs.WebsiteRuleModeStore
 import com.oliver.loqin.data.prefs.ProfileUsageStore
 import com.oliver.loqin.data.prefs.ScheduleStore
+import com.oliver.loqin.data.prefs.SessionLimitStore
 import com.oliver.loqin.data.prefs.SurfaceUsageStore
 import com.oliver.loqin.data.prefs.SwitchModeStore
 import com.oliver.loqin.data.prefs.TempAllowStore
@@ -158,6 +159,12 @@ class LoqInAccessibilityService : AccessibilityService() {
     private var activeLimitSessionStartedAt: Long = 0L
     private val sessionLimitUsageMsByKey = HashMap<String, Long>()
     private val sessionLimitReachedKeys = HashSet<String>()
+
+    // Minutes-per-visit session. Independent of the daily-limit session above: it resets on app
+    // re-entry, screen off, protection pause/bypass and temp-allow, and it is never persisted.
+    private var activePerVisitProfile: String? = null
+    private var activePerVisitPkg: String? = null
+    private var activePerVisitStartedAt: Long = 0L
 
     // Debounce block/attempt stats + blocker UI launches.
     private val lastAttemptAt = HashMap<String, Long>()
@@ -490,6 +497,10 @@ class LoqInAccessibilityService : AccessibilityService() {
     private var cachedUsageLimitProfile: String? = null
     private val cachedUsageLimitByPkg = HashMap<String, Int>()
 
+    private var cachedSessionLimitAt: Long = 0L
+    private var cachedSessionLimitProfile: String? = null
+    private val cachedSessionLimitByPkg = HashMap<String, Int>()
+
     private var cachedAttemptLimitAt: Long = 0L
     private var cachedAttemptLimitProfile: String? = null
     private val cachedAttemptLimitByPkg = HashMap<String, Int>()
@@ -585,6 +596,10 @@ class LoqInAccessibilityService : AccessibilityService() {
             cachedUsageLimitAt = 0L
             cachedUsageLimitByPkg.clear()
 
+            cachedSessionLimitProfile = null
+            cachedSessionLimitAt = 0L
+            cachedSessionLimitByPkg.clear()
+
             cachedAttemptLimitProfile = null
             cachedAttemptLimitAt = 0L
             cachedAttemptLimitByPkg.clear()
@@ -635,6 +650,23 @@ class LoqInAccessibilityService : AccessibilityService() {
         }
         return cachedUsageLimitByPkg.getOrPut(pkg) {
             UsageLimitStore.getLimitMinutes(this, profile, pkg)
+        }
+    }
+
+    private fun getSessionLimitCached(profile: String, pkg: String, now: Long = System.currentTimeMillis()): Int {
+        if (AppBlockSafety.isAlwaysExcluded(this, pkg)) {
+            return 0
+        }
+        val fresh =
+            cachedSessionLimitProfile == profile &&
+                (now - cachedSessionLimitAt) <= POLICY_CACHE_TTL_MS
+        if (!fresh) {
+            cachedSessionLimitProfile = profile
+            cachedSessionLimitAt = now
+            cachedSessionLimitByPkg.clear()
+        }
+        return cachedSessionLimitByPkg.getOrPut(pkg) {
+            SessionLimitStore.getLimitMinutes(this, profile, pkg)
         }
     }
 
@@ -1491,29 +1523,36 @@ class LoqInAccessibilityService : AccessibilityService() {
         // Only count usage while LoqIn is enabled and screen is interactive.
         if (!pm.isInteractive) {
             clearActiveLimitSession()
+            clearPerVisitSession()
             return
         }
         if (km?.isKeyguardLocked == true) {
             clearActiveLimitSession()
+            clearPerVisitSession()
             return
         }
         if (!SwitchModeStore.isEnabled(this)) {
             clearActiveLimitSession()
+            clearPerVisitSession()
             return
         }
         if (EmergencyBypassStore.isActive(this)) {
             clearActiveLimitSession()
+            clearPerVisitSession()
             return
         }
 
         val nowForCache = now
         val profile = getCurrentProfileCached(nowForCache)?.takeIf { it.isNotBlank() } ?: run {
             clearActiveLimitSession()
+            clearPerVisitSession()
             return
         }
         ensureActiveLimitSession(profile, nowForCache)
+        ensurePerVisitSession(profile, pkg, nowForCache)
 
         if (TempAllowStore.isAllowed(this, pkg)) {
+            clearPerVisitSession()
             return
         }
 
@@ -1564,8 +1603,29 @@ class LoqInAccessibilityService : AccessibilityService() {
         // Usage limits should work even if the app isn't in the "blocked apps" list.
         // (Users can set a daily limit without hard-blocking the app.)
         val limitMin = getUsageLimitCached(safeProfile, pkg, nowForCache)
-        if (limitMin <= 0) {
+        val perVisitLimitMin = getSessionLimitCached(safeProfile, pkg, nowForCache)
+        if (limitMin <= 0 && perVisitLimitMin <= 0) {
             return // hard block -> handled by event driven blocker
+        }
+
+        // Minutes per visit are wall-clock from app entry and independent of the daily limit.
+        if (perVisitLimitMin > 0) {
+            val perVisitUsedMs = getPerVisitUsageMs(safeProfile, pkg, nowForCache)
+            val perVisitLimitMs = perVisitLimitMin * 60_000L
+            if (perVisitUsedMs >= perVisitLimitMs) {
+                appendBlockingLog(
+                    category = "app_per_visit_limit_reached",
+                    key = "app-per-visit-limit-reached|$safeProfile|$pkg",
+                    message = "profile=$safeProfile pkg=$pkg perVisitMin=$perVisitLimitMin usageMs=$perVisitUsedMs limitMs=$perVisitLimitMs",
+                    throttleMs = 2_000L
+                )
+                maybeBlockNow(pkg, force = true)
+                return
+            }
+        }
+
+        if (limitMin <= 0) {
+            return
         }
 
         // Enforce app limits using usage accumulated while the current profile is active.
@@ -1648,6 +1708,26 @@ class LoqInAccessibilityService : AccessibilityService() {
         sessionLimitUsageMsByKey.clear()
         sessionLimitReachedKeys.clear()
         UsageLimitSessionRuntimeStore.clearAll(this)
+    }
+
+    private fun ensurePerVisitSession(profile: String, pkg: String, now: Long) {
+        if (activePerVisitProfile == profile && activePerVisitPkg == pkg && activePerVisitStartedAt > 0L) {
+            return
+        }
+        activePerVisitProfile = profile
+        activePerVisitPkg = pkg
+        activePerVisitStartedAt = now
+    }
+
+    private fun clearPerVisitSession() {
+        activePerVisitProfile = null
+        activePerVisitPkg = null
+        activePerVisitStartedAt = 0L
+    }
+
+    private fun getPerVisitUsageMs(profile: String, pkg: String, now: Long): Long {
+        ensurePerVisitSession(profile, pkg, now)
+        return (now - activePerVisitStartedAt).coerceAtLeast(0L)
     }
 
     private fun limitSessionKey(profile: String, pkg: String): String = "$profile|$pkg"
@@ -1982,10 +2062,13 @@ class LoqInAccessibilityService : AccessibilityService() {
         val essentialAllowed = allowMode && AppBlockSafety.isAllowModeEssential(this, pkg)
         val lockActive = SwitchModeStore.isNfcRequiredForDisable(this)
         val limitMin = getUsageLimitCached(profile, pkg, nowForCache)
+        val perVisitLimitMin = getSessionLimitCached(profile, pkg, nowForCache)
         val attemptLimit = getAttemptLimitCached(profile, pkg, nowForCache)
 
         val opensExceeded = attemptLimit > 0 && OpenCountStore.getToday(this, profile, pkg) > attemptLimit
         val effectiveUsageMsToday = getEnforcedLimitUsageMs(profile, pkg)
+        val perVisitUsageMs =
+            if (perVisitLimitMin > 0) getPerVisitUsageMs(profile, pkg, nowForCache) else 0L
         val decision = resolveAppBlockDecision(
             pkg = pkg,
             blockedPackages = blocked,
@@ -1993,6 +2076,8 @@ class LoqInAccessibilityService : AccessibilityService() {
             attemptLimit = attemptLimit,
             opensExceeded = opensExceeded,
             effectiveUsageMsToday = effectiveUsageMsToday,
+            perVisitLimitMinutes = perVisitLimitMin,
+            perVisitUsageMs = perVisitUsageMs,
             lockActive = lockActive,
             highRisk = isHighRiskBlockTarget(this, pkg),
             force = force,
@@ -2001,33 +2086,34 @@ class LoqInAccessibilityService : AccessibilityService() {
             allowModeListed = allowModeListed
         )
 
-        if (limitMin > 0 || attemptLimit > 0) {
+        if (limitMin > 0 || attemptLimit > 0 || perVisitLimitMin > 0) {
             val limitMs = limitMin * 60_000L
-            val hardBlocked = if (allowMode) allowModeListed && !isManagedPackage(pkg, blocked) && limitMin <= 0 && attemptLimit <= 0 && !essentialAllowed else isManagedPackage(pkg, blocked) && limitMin <= 0 && attemptLimit <= 0
+            val hardBlocked = if (allowMode) allowModeListed && !isManagedPackage(pkg, blocked) && limitMin <= 0 && attemptLimit <= 0 && perVisitLimitMin <= 0 && !essentialAllowed else isManagedPackage(pkg, blocked) && limitMin <= 0 && attemptLimit <= 0 && perVisitLimitMin <= 0
             appendBlockingLog(
                 category = "app_limit_decision",
                 key = "app-limit-decision|$profile|$pkg",
-                message = "profile=$profile mode=${if (allowMode) "allow" else "block"} pkg=$pkg hardBlocked=$hardBlocked allowModeListed=$allowModeListed essentialAllowed=$essentialAllowed limitMin=$limitMin limitUsageMs=$effectiveUsageMsToday globalUsageMs=${getEffectiveUsageMsToday(pkg, System.currentTimeMillis())} limitMs=$limitMs attemptLimit=$attemptLimit opensExceeded=$opensExceeded force=$force shouldBlock=${decision.shouldBlock}",
+                message = "profile=$profile mode=${if (allowMode) "allow" else "block"} pkg=$pkg hardBlocked=$hardBlocked allowModeListed=$allowModeListed essentialAllowed=$essentialAllowed limitMin=$limitMin limitUsageMs=$effectiveUsageMsToday globalUsageMs=${getEffectiveUsageMsToday(pkg, System.currentTimeMillis())} limitMs=$limitMs attemptLimit=$attemptLimit opensExceeded=$opensExceeded perVisitLimitMin=$perVisitLimitMin perVisitUsageMs=$perVisitUsageMs force=$force shouldBlock=${decision.shouldBlock}",
                 throttleMs = 2_000L
             )
         }
 
         if (!decision.shouldBlock) {
-            val hardBlocked = if (allowMode) allowModeListed && !isManagedPackage(pkg, blocked) && limitMin <= 0 && attemptLimit <= 0 && !essentialAllowed else isManagedPackage(pkg, blocked) && limitMin <= 0 && attemptLimit <= 0
-            val managed = hardBlocked || isManagedPackage(pkg, blocked) || limitMin > 0 || attemptLimit > 0
+            val hardBlocked = if (allowMode) allowModeListed && !isManagedPackage(pkg, blocked) && limitMin <= 0 && attemptLimit <= 0 && perVisitLimitMin <= 0 && !essentialAllowed else isManagedPackage(pkg, blocked) && limitMin <= 0 && attemptLimit <= 0 && perVisitLimitMin <= 0
+            val managed = hardBlocked || isManagedPackage(pkg, blocked) || limitMin > 0 || attemptLimit > 0 || perVisitLimitMin > 0
             markRuntimeBlockCheck(
                 reason = if (managed) "decision_allow" else "not_managed_for_profile",
-                details = "profile=$profile blockedCount=${blocked.size} hardBlocked=$hardBlocked allowModeListed=$allowModeListed essentialAllowed=$essentialAllowed limitMin=$limitMin attemptLimit=$attemptLimit opensExceeded=$opensExceeded limitUsageMs=$effectiveUsageMsToday force=$force event=${eventTypeLabel(event)}"
+                details = "profile=$profile blockedCount=${blocked.size} hardBlocked=$hardBlocked allowModeListed=$allowModeListed essentialAllowed=$essentialAllowed limitMin=$limitMin attemptLimit=$attemptLimit opensExceeded=$opensExceeded limitUsageMs=$effectiveUsageMsToday perVisitLimitMin=$perVisitLimitMin perVisitUsageMs=$perVisitUsageMs force=$force event=${eventTypeLabel(event)}"
             )
             return
         }
         markRuntimeBlockCheck(
             reason = "decision_block",
-            details = "profile=$profile limitMin=$limitMin attemptLimit=$attemptLimit opensExceeded=$opensExceeded immediate=${decision.immediate} force=$force event=${eventTypeLabel(event)}"
+            details = "profile=$profile limitMin=$limitMin attemptLimit=$attemptLimit opensExceeded=$opensExceeded perVisitLimitMin=$perVisitLimitMin perVisitUsageMs=$perVisitUsageMs immediate=${decision.immediate} force=$force event=${eventTypeLabel(event)}"
         )
         val appRule = when {
             allowMode && allowModeListed && !isManagedPackage(pkg, blocked) -> getString(R.string.block_reason_rule_allow_selected)
             limitMin > 0 && effectiveUsageMsToday >= limitMin * 60_000L -> getString(R.string.block_reason_rule_daily_time_limit)
+            perVisitLimitMin > 0 && perVisitUsageMs >= perVisitLimitMin * 60_000L -> getString(R.string.block_reason_rule_per_visit_limit)
             opensExceeded -> getString(R.string.block_reason_rule_open_limit)
             lockActive && isHighRiskBlockTarget(this, pkg) -> getString(R.string.block_reason_rule_strict_lock)
             else -> getString(R.string.block_reason_rule_blocked_apps)
