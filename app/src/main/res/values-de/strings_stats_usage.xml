@@ -413,7 +413,10 @@
     <string name="hidden_apps_tile_unselected_desc">%1$s, sichtbar. Doppeltippen zum Ausblenden.</string>
     <string name="hidden_apps_select_all">Alle auswählen</string>
     <string name="hidden_apps_clear_all">Alle zurücksetzen</string>
-    <string name="hidden_apps_saved_notice">Ausgeblendete Apps gespeichert</string>
+    <plurals name="hidden_apps_saved_notice">
+        <item quantity="one">%1$d Änderung gespeichert.</item>
+        <item quantity="other">%1$d Änderungen gespeichert.</item>
+    </plurals>
 
     <!-- ====================================================== -->
     <!-- Usage support -->

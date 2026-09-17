@@ -954,17 +954,23 @@ class AppPickerActivity : AppCompatActivity() {
         // NOTE: re-apply the sanitized saved set directly instead of re-reading the
         // profile store, whose read filters would untick explicitly blocked apps that
         // only carry in-app rules.
+        val changedCount = setDifferenceCount(originalManagedPackages, managed)
         originalManagedPackages = managed
         adapter.replaceManagedPackages(managed)
-        showPickerNotice(
-            findViewById(R.id.btnSave) ?: findViewById(android.R.id.content),
+        val notice = if (changedCount == 0) {
+            getString(R.string.save_no_changes)
+        } else {
             resources.getQuantityString(
                 R.plurals.app_picker_saved_notice,
-                managed.size,
-                managed.size
+                changedCount,
+                changedCount
             )
-        )
+        }
+        showPickerNotice(findViewById(R.id.btnSave) ?: findViewById(android.R.id.content), notice)
     }
+
+    private fun setDifferenceCount(before: Set<String>, after: Set<String>): Int =
+        (before - after).size + (after - before).size
 
     private fun ensureAppCanBeManaged(app: AppEntry, onAllowed: () -> Unit) {
         when (app.blockSafety.level) {

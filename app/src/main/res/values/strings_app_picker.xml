@@ -126,8 +126,8 @@
         <item quantity="other">%1$d unavailable app entries were removed. Tap Save to keep the cleanup.</item>
     </plurals>
     <plurals name="app_picker_saved_notice">
-        <item quantity="one">Saved %1$d app.</item>
-        <item quantity="other">Saved %1$d apps.</item>
+        <item quantity="one">Saved %1$d change.</item>
+        <item quantity="other">Saved %1$d changes.</item>
     </plurals>
 
     <!-- ====================================================== -->

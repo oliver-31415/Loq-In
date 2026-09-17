@@ -413,7 +413,10 @@
     <string name="hidden_apps_tile_unselected_desc">%1$s, visible. Double tap to hide.</string>
     <string name="hidden_apps_select_all">Select all</string>
     <string name="hidden_apps_clear_all">Clear all</string>
-    <string name="hidden_apps_saved_notice">Hidden apps saved</string>
+    <plurals name="hidden_apps_saved_notice">
+        <item quantity="one">Saved %1$d change.</item>
+        <item quantity="other">Saved %1$d changes.</item>
+    </plurals>
 
     <!-- ====================================================== -->
     <!-- Usage support -->

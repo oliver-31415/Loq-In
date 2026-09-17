@@ -126,8 +126,8 @@
         <item quantity="other">%1$d nicht verfügbare App-Einträge wurden entfernt. Tippe auf Speichern, um die Bereinigung zu behalten.</item>
     </plurals>
     <plurals name="app_picker_saved_notice">
-        <item quantity="one">%1$d App gespeichert.</item>
-        <item quantity="other">%1$d Apps gespeichert.</item>
+        <item quantity="one">%1$d Änderung gespeichert.</item>
+        <item quantity="other">%1$d Änderungen gespeichert.</item>
     </plurals>
 
     <!-- ====================================================== -->
