@@ -51,7 +51,13 @@
     <!-- ====================================================== -->
     <string name="app_limit_editor_subtitle_fmt">%1$s\n%2$s</string>
     <string name="app_limit_editor_summary">Set any combination here. For example, 4 opens per day with 8 minutes per visit.</string>
-    <string name="app_limit_time_hint">Overall time limit (minutes)</string>
+    <string name="app_limit_time_hint">Daily limit</string>
+    <string name="app_limit_unit_minutes">min</string>
+    <string name="app_limit_unit_opens">opens</string>
+    <string name="app_limit_pill_15m">15m</string>
+    <string name="app_limit_pill_30m">30m</string>
+    <string name="app_limit_pill_1h">1h</string>
+    <string name="app_limit_pill_2h">2h</string>
     <string name="app_limit_attempts_hint">Opens per day</string>
     <string name="app_limit_per_visit_hint">Minutes per visit</string>
     <string name="app_limit_blank_hint">Leave a field blank to disable that limit.</string>
@@ -68,8 +74,8 @@
     <string name="app_limit_remove_confirm_message">This clears all limits for %1$s and resets today’s counters.</string>
     <string name="app_limit_sentence_none">No limits set. This app can be opened without restrictions.</string>
     <string name="app_limit_sentence_time_fmt">Allow up to %1$d min/day</string>
-    <string name="app_limit_sentence_split_fmt">, split across at most %1$d opens</string>
-    <string name="app_limit_sentence_visit_fmt"> (max %1$d min per visit)</string>
+    <string name="app_limit_sentence_split_fmt">\u0020\u00b7 split across at most %1$d opens</string>
+    <string name="app_limit_sentence_visit_fmt">\u0020\u00b7 max %1$d min per visit</string>
     <string name="app_limit_sentence_opens_only_fmt">Up to %1$d opens per day</string>
     <string name="app_limit_sentence_visit_only_fmt">Up to %1$d min per visit</string>
     <string name="app_limit_error_required">Enter a value</string>

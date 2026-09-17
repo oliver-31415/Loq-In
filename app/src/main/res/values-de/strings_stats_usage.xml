@@ -51,7 +51,13 @@
     <!-- ====================================================== -->
     <string name="app_limit_editor_subtitle_fmt">%1$s\n%2$s</string>
     <string name="app_limit_editor_summary">Hier kannst du Limits kombinieren, z. B. 4 Öffnungen pro Tag mit 8 Minuten pro Besuch.</string>
-    <string name="app_limit_time_hint">Gesamt-Zeitlimit (Minuten)</string>
+    <string name="app_limit_time_hint">Tageslimit</string>
+    <string name="app_limit_unit_minutes">Min.</string>
+    <string name="app_limit_unit_opens">Öffnungen</string>
+    <string name="app_limit_pill_15m">15 Min.</string>
+    <string name="app_limit_pill_30m">30 Min.</string>
+    <string name="app_limit_pill_1h">1 Std.</string>
+    <string name="app_limit_pill_2h">2 Std.</string>
     <string name="app_limit_attempts_hint">Öffnungen pro Tag</string>
     <string name="app_limit_per_visit_hint">Minuten pro Besuch</string>
     <string name="app_limit_blank_hint">Feld leer lassen, um dieses Limit zu deaktivieren.</string>
@@ -68,8 +74,8 @@
     <string name="app_limit_remove_confirm_message">Dadurch werden alle Limits für %1$s gelöscht und die heutigen Zähler zurückgesetzt.</string>
     <string name="app_limit_sentence_none">Keine Limits festgelegt. Diese App kann ohne Einschränkungen geöffnet werden.</string>
     <string name="app_limit_sentence_time_fmt">Bis zu %1$d Min./Tag erlaubt</string>
-    <string name="app_limit_sentence_split_fmt">, aufgeteilt auf höchstens %1$d Öffnungen</string>
-    <string name="app_limit_sentence_visit_fmt"> (max. %1$d Min. pro Besuch)</string>
+    <string name="app_limit_sentence_split_fmt">\u0020\u00b7 aufgeteilt auf höchstens %1$d Öffnungen</string>
+    <string name="app_limit_sentence_visit_fmt">\u0020\u00b7 max. %1$d Min. pro Besuch</string>
     <string name="app_limit_sentence_opens_only_fmt">Bis zu %1$d Öffnungen pro Tag</string>
     <string name="app_limit_sentence_visit_only_fmt">Bis zu %1$d Min. pro Besuch</string>
     <string name="app_limit_error_required">Gib einen Wert ein</string>

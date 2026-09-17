@@ -163,6 +163,9 @@ object QuickLimitDialogs {
         val tilPerVisit = v.findViewById<TextInputLayout>(R.id.tilAppLimitPerVisit)
         val etPerVisit = v.findViewById<TextInputEditText>(R.id.etAppLimitPerVisit)
         val tvVisitWarning = v.findViewById<TextView>(R.id.tvVisitWarning)
+        val rowTimeControls = v.findViewById<View>(R.id.rowLimitTimeControls)
+        val rowOpensControls = v.findViewById<View>(R.id.rowLimitOpensControls)
+        val rowVisitControls = v.findViewById<View>(R.id.rowLimitVisitControls)
         val btnClear = v.findViewById<MaterialButton>(R.id.btnAppLimitClear)
         val btnCancel = v.findViewById<MaterialButton>(R.id.btnAppLimitCancel)
         val btnSave = v.findViewById<MaterialButton>(R.id.btnAppLimitSave)
@@ -195,6 +198,32 @@ object QuickLimitDialogs {
             til.boxStrokeColor = accent
             til.hintTextColor = accentList
             til.defaultHintTextColor = accentList
+        }
+        listOf(swTime, swOpens, swVisit).forEach { CustomAccentApplier.tintSwitch(it) }
+        runCatching {
+            val surfaceVariant = androidx.core.content.ContextCompat.getColor(activity, R.color.foqos_surface_variant)
+            v.findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardAppLimitSummary)
+                .setCardBackgroundColor(
+                    androidx.core.graphics.ColorUtils.compositeColors(
+                        androidx.core.graphics.ColorUtils.setAlphaComponent(accent, 0x1F),
+                        surfaceVariant,
+                    )
+                )
+        }
+
+        // Disabled sections keep their layout but dim and become non-interactive, so the dialog
+        // stays stable while making the active limits obvious.
+        fun setSectionEnabled(container: View, enabled: Boolean) {
+            container.alpha = if (enabled) 1f else 0.45f
+            fun apply(view: View) {
+                view.isEnabled = enabled
+                if (view is android.view.ViewGroup) {
+                    for (index in 0 until view.childCount) {
+                        apply(view.getChildAt(index))
+                    }
+                }
+            }
+            apply(container)
         }
 
         btnCancel.setTextColor(accent)
@@ -356,6 +385,7 @@ object QuickLimitDialogs {
                 setTimeValue(DEFAULT_TIME_MINUTES)
             }
             if (!checked) tilTime.error = null
+            setSectionEnabled(rowTimeControls, checked)
             refreshAll()
         }
         swOpens.setOnCheckedChangeListener { _, checked ->
@@ -364,6 +394,7 @@ object QuickLimitDialogs {
                 etAttempts.setSelection(etAttempts.text?.length ?: 0)
             }
             if (!checked) tilAttempts.error = null
+            setSectionEnabled(rowOpensControls, checked)
             refreshAll()
         }
         swVisit.setOnCheckedChangeListener { _, checked ->
@@ -372,8 +403,13 @@ object QuickLimitDialogs {
                 etPerVisit.setSelection(etPerVisit.text?.length ?: 0)
             }
             if (!checked) tilPerVisit.error = null
+            setSectionEnabled(rowVisitControls, checked)
             refreshAll()
         }
+
+        setSectionEnabled(rowTimeControls, swTime.isChecked)
+        setSectionEnabled(rowOpensControls, swOpens.isChecked)
+        setSectionEnabled(rowVisitControls, swVisit.isChecked)
 
         fun stepTime(delta: Int) {
             if (!swTime.isChecked && delta <= 0) return
