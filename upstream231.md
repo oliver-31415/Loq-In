@@ -44,6 +44,7 @@ Upstream source paths are under `app/src/main/java/at/saltyy/switchly/...`; our 
 | 2026-09-17 | Refill mode in limit editor | `feature/upstream-w2` | Done — `f827463` | Exposes Daily / Protection restart; renames "Single session cap" |
 | 2026-09-17 | Refill control polish | `feature/upstream-w2` | Done — `52ee896` | Segmented track + session wording everywhere in the editor |
 | 2026-09-17 | **WS2 complete** | `feature/upstream-w2` | A4 + A5 done | Remaining WS2 follow-ups: manual pause/off-on checks on a real device |
+| 2026-09-17 | W3.1–W3.3 A3 | `feature/upstream-w2` | Done — `a6ef23f` | Website path rules with wildcards; store + service + UI |
 
 ### W1.1 implementation + test evidence (2026-09-16)
 
@@ -362,6 +363,19 @@ Owner feedback: the dialog still said "per day" in places when Protection restar
 - The control is now a segmented track (`bg_segmented_track.xml`, `foqos_surface` rounded 14 dp) with inset, fully rounded buttons: the selected option is accent-filled with on-accent text, the other is transparent with accent text (no more outline seam).
 - Emulator-verified with a seeded session limit: summary `Allow up to 60 min per protection session`, subtitle/hint session wording, and the new segmented look.
 
+### W3.1–W3.3 A3 — Website path rules (2026-09-17, `a6ef23f`)
+
+Port of the upstream 2.2.9/2.3.x path-rule support, adapted to our service and UI.
+- `DomainBlockStore`: `normalize` now preserves paths (with `*` and `?` wildcards; fragments/whitespace tails dropped; queries intentionally preserved in stored rules), added `hostPart`/`pathPart`/`isPathRule`, `matches(target, rule)` with a glob path matcher, disabled-rule checks are host-only, disabled-set filtering is exact membership, and path rules are excluded in allow mode.
+- `LoqInAccessibilityService`: new `tryExtractWebsiteTargetFromBrowserUrlViews` (full host+path from browser URL views); `domainFromText` derives the host from `websiteTargetFromText` (path capture stops at `?`/`#`); all three match sites (`maybeBlockWebsite`, visible-site recheck, post-ack recheck) now pass the target only when its host equals the already-detected host, falling back to the host otherwise; the block reason stores the matched target.
+- `ManageBlockedWebsitesActivity`: the add dialog shows a "You can add a path, e.g. youtube.com/shorts/*" helper in block mode, and entering a path in allow mode is rejected with an explanation. Rule rows already render the raw rule string, so path rules display correctly.
+- `DomainLimitStore.clearForProfile` already existed in our fork; limits remain host-scoped (path rules only affect matching).
+
+Verification:
+- Unit tests (`DomainBlockStoreTest`, 8 tests) cover host normalization, path preservation/truncation, host/path parts, subdomain matching, path globs (`*`, `?`) and the bare-host/path-rule mismatch. `./gradlew :app:testDebugUnitTest` passes.
+- Emulator: seeded `example.com/blocked/*`; Chrome blocked on `example.com/blocked/test` (reason "Website is blocked!"), while `example.com/allowed/page` opened normally. UI: the rule list renders `example.com/blocked/*`, adding `youtube.com/shorts/*` via the dialog works with the path helper visible, and in Allow-selected mode the dialog shows "Path rules only work in Block selected mode.".
+- Still manual: Firefox host-only fallback and the backup export/import round trip (rules are plain strings, so risk is low).
+
 ### W2.2 A5 — Session limit reset semantics (2026-09-17, `a8d8ec4`)
 
 Owner-approved upstream port; the highest-risk change in the plan.
@@ -504,7 +518,8 @@ Owner request: make the app limit editor (`dialog_app_limits.xml`, opened from p
 
 Branch `feature/upstream-w3-websites` off the W2 tip.
 
-### W3.1 A3 store — normalize/matches with path and wildcard rules
+### W3.1 A3 store — normalize/matches with path and wildcard rules — **DONE 2026-09-17** (`a6ef23f`, covers W3.1–W3.3)
+> Implemented and emulator-verified; see the progress log entry "W3.1–W3.3 A3 — Website path rules".
 - **Goal:** rules like `youtube.com/shorts/*` can be stored, matched and displayed, without breaking existing host rules.
 - **Files:** `app/src/main/java/com/oliver/loqin/data/prefs/DomainBlockStore.kt`, `app/src/test/java/com/oliver/loqin/data/prefs/DomainBlockStoreTest.kt`.
 - **Upstream reference:** `git diff be4ab60..bf9526b -- app/src/main/java/at/saltyy/switchly/data/prefs/DomainBlockStore.kt`
