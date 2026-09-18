@@ -53,6 +53,7 @@ Upstream source paths are under `app/src/main/java/at/saltyy/switchly/...`; our 
 | 2026-09-18 | Firefox heavy-page detection | `feature/upstream-w2` | Done — `df1f217` | BFS toolbar scan; real pages (ABC News/Wikipedia) now detect |
 | 2026-09-18 | Firefox 97–155 sweep | `feature/upstream-w2` | 16/16 pass | Only first-run promos masked the toolbar temporarily |
 | 2026-09-18 | Samsung Internet + path backup + independence | `feature/upstream-w2` | Done — `778d38b` | Samsung host-only blocking; path rules export and survive host-rule deletion |
+| 2026-09-18 | **W4.1 A2** | `feature/upstream-w4-a2` | Done — `7b6e5f9` | Budgeted root lookup + scan telemetry; no regressions on emulator |
 
 ### W1.1 implementation + test evidence (2026-09-16)
 
@@ -713,7 +714,11 @@ Branch `feature/upstream-w3-websites` off the W2 tip.
 
 ## W4 — ANR work budget and the YouTube experiment
 
-### W4.1 A2 — Accessibility work budget + async root lookup (shared infra)
+### W4.1 A2 — Accessibility work budget + async root lookup (shared infra) — **DONE 2026-09-18** (`7b6e5f9`)
+
+> Ported to our rebuilt service on branch `feature/upstream-w4-a2`. New `AccessibilityWorkBudget` (in-memory counters persisted every 25 ops or on slow work; no node text), a `loqin-accessibility-binder` HandlerThread, `activeRootWithBudget()` (in-flight guard, 12 ms main-thread wait, returns null on timeout), `currentRoot()` now prefers `event.source` then the budgeted active root, and telemetry on `collectNodeTextBlob`, `collectNodeIdBlob`, `findAnyNode` and `findFirefoxUrlNode`. Generic root lookups migrated (`usage_tick`, `facebook_surface`); YouTube lookups intentionally left for W4.2.
+>
+> Emulator evidence (AVD HolyPixel): website path matrix 10/10 unchanged (Firefox 155 + Chrome), app blocking unchanged (Calendar), counters `roots=832 slow=198 scans=2962 overruns=46 nodeLimitHits=0 lastRoot=usage_tick/1ms`, no ANRs. Support screen shows the budget line. Manual stress on a slow OEM device (Samsung A12/Bigme) still pending.
 - **Goal:** eliminate multi-second `rootInActiveWindow`/`windows` Binder stalls on the Accessibility main thread and add bounded scan telemetry.
 - **Branch:** `feature/upstream-w4-a2` off the W3 tip (or off `feature/upstream-work` if W3 is not merged; avoid conflicts by doing W4.1 last in the W1–W4 run).
 - **Files:**
