@@ -50,6 +50,9 @@ Upstream source paths are under `app/src/main/java/at/saltyy/switchly/...`; our 
 | 2026-09-17 | Firefox internal-screen false blocks | `feature/upstream-w2` | Done — `67e5b09` | Verified side by side against upstream Switchly 2.2.9 on the emulator |
 | 2026-09-18 | Firefox path rules + Chrome redirect research | `feature/upstream-w2` | Done | Firefox path rules verified working; Chrome NTP not reachable, about:blank stays |
 | 2026-09-18 | Firefox 155 Compose toolbar path rules | `feature/upstream-w2` | Done — `182d711` | The user's Firefox 155 exposes the URL via a Compose test tag; path rules now work there too |
+| 2026-09-18 | Firefox heavy-page detection | `feature/upstream-w2` | Done — `df1f217` | BFS toolbar scan; real pages (ABC News/Wikipedia) now detect |
+| 2026-09-18 | Firefox 97–155 sweep | `feature/upstream-w2` | 16/16 pass | Only first-run promos masked the toolbar temporarily |
+| 2026-09-18 | Samsung Internet + path backup + independence | `feature/upstream-w2` | Done — `778d38b` | Samsung host-only blocking; path rules export and survive host-rule deletion |
 
 ### W1.1 implementation + test evidence (2026-09-16)
 
@@ -492,6 +495,22 @@ Findings:
 - Both toolbar families expose the full host+path in the accessibility text (`example.com/allowed/page` verified on 113 and 150), so the existing legacy-id path and the Compose fallback cover every release from 97 to 155.
 - The Compose toolbar (`ADDRESSBAR_URL_BOX`) first appears in the 150.0.3 build in this set; 145.0.1 still uses the mozac views.
 - Every apparent failure in the automated sweep was a **one-time first-run Firefox promo** (e.g. "Total Cookie Protection") that covers the screen and masks the accessibility tree on the first session after a fresh install/first run. Re-running the navigation after the promo disappears (relaunch or dismiss) blocks correctly on 113, 116, 119 and 120. Real-world impact: the very first page load on a freshly installed Firefox may not be blocked while such a promo is up; afterwards blocking is unaffected. No code change was needed.
+
+### Samsung Internet, path-rule backup and host-rule independence (2026-09-18, `778d38b`)
+
+**Samsung Internet** (`com.sec.android.app.sbrowser` 30.0.2.61, installed on the AVD from the arm64 APK; the emulator runs it through `libndk_translation`):
+- Host rules work: the URL is read from `com.sec.android.app.sbrowser:id/location_bar_edit_text` (an EditText whose id contains "location"), e.g. `example.com`. Verified: `example.com` rule blocks `https://example.com/` and `https://example.com/allowed/page`.
+- Path rules cannot match on this build: Samsung's accessibility URL text is **host-only** (`example.com`, with a leading U+200E LTR mark) and the path appears nowhere else in the accessibility tree (searched the full dump for the path text). Path-rule coverage therefore stays with Chrome/Brave/Firefox; Samsung Internet falls back to host-only blocking. No code change.
+- Note: installing the arm64 APK requires `adb install --abi arm64-v8a` on the x86_64 AVD (the mixed arm64+armv7 APK otherwise fails with `INSTALL_FAILED_INTERNAL_ERROR` because armeabi-v7a is not in the device ABI list).
+
+**Path rules in backups** (verified by code + new unit tests, `BackupPathRulesTest`):
+- Path rules live in the same per-profile string set as host rules (`domain_block_domains__p__<profile>`), the Website rules backup category maps that key, and the payload copies sets to lists and restores them as string sets. Path rules are therefore exported and restored unchanged.
+- Tests cover: inclusion when the Website rules category is selected, exclusion when it is not, and the set -> list -> set round trip preserving the path.
+
+**Path rules are independent of the host rule** (`778d38b`):
+- Removing a rule removes exactly that string; deleting `example.com` already left `example.com/blocked/<path>` in place.
+- The one coupling was limits: deleting a host rule cleared the host's limits even when path rules for the same host remained. `ManageBlockedWebsitesActivity` now clears the host limit only when no rule (selected, allowed or disabled) for that host is left.
+- Rules cannot be edited while protection is active (existing `websiteEditingLocked()` policy); the emulator's lock made a full UI delete-flow run impractical, so the change is covered by code review plus the unit-tested store/backup semantics.
 
 ### W2.2 A5 — Session limit reset semantics (2026-09-17, `a8d8ec4`)
 
