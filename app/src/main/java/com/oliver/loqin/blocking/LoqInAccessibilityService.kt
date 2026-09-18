@@ -473,6 +473,13 @@ class LoqInAccessibilityService : AccessibilityService() {
     private val PIP_KILL_COOLDOWN_MS = 8_000L
 
     private val MAX_NODE_SCAN_COUNT = 120
+    // The Firefox URL-bar scan is breadth-first and needs a larger budget than the shared
+    // depth-first scans: on real pages the page-content subtree is huge, and a 120-node budget
+    // was exhausted before the toolbar (shallow chrome) was reached, so heavy pages such as
+    // ABC News articles never produced a host on the owner's device.
+    private val FIREFOX_URL_NODE_SCAN_MAX = 400
+    private val FIREFOX_URL_NODE_SCAN_DEPTH = 40
+    private val FIREFOX_URL_NODE_SCAN_MS = 50L
     // Real YouTube trees are far deeper than assumed: Shorts action controls sit at depth ~31,
     // the bottom nav at depth ~13 (verified on device via uiautomator dump). Depth caps below
     // that made every scan return after visiting only the first root chain (~9-26 nodes),
@@ -3173,37 +3180,66 @@ class LoqInAccessibilityService : AccessibilityService() {
      * The address-bar edit field, its autocomplete list and internal-screen leftovers are never
      * eligible: the display node must be visible, must not be editable/focused and must carry a
      * URL-shaped text or description.
+     *
+     * Breadth-first on purpose: the toolbar is shallow UI chrome while page content subtrees are
+     * deep and can exhaust a depth-first budget on real-world pages (ABC News, Wikipedia) before
+     * the URL node is ever reached.
      */
     private fun findFirefoxUrlNode(root: AccessibilityNodeInfo, pkg: String): AccessibilityNodeInfo? {
         if (!isFirefoxFamily(pkg)) return null
-        return findAnyNode(root) { node ->
-            if (!runCatching { node.isVisibleToUser }.getOrDefault(false)) {
-                return@findAnyNode false
+        val direct = runCatching {
+            root.findAccessibilityNodeInfosByViewId(FIREFOX_COMPOSE_URL_VIEW_ID).orEmpty()
+        }.getOrNull().orEmpty()
+        direct.firstOrNull { isEligibleFirefoxUrlNode(it) }?.let { return it }
+        val queue = ArrayDeque<Pair<AccessibilityNodeInfo, Int>>()
+        queue.addLast(root to 0)
+        var visited = 0
+        val deadline = SystemClock.uptimeMillis() + FIREFOX_URL_NODE_SCAN_MS
+        while (queue.isNotEmpty() && visited < FIREFOX_URL_NODE_SCAN_MAX &&
+            SystemClock.uptimeMillis() < deadline
+        ) {
+            val (node, depth) = queue.removeFirst()
+            visited++
+            if (isEligibleFirefoxUrlNode(node)) {
+                return node
             }
-            if (node.isEditable || node.isFocused || node.isAccessibilityFocused) {
-                return@findAnyNode false
+            if (depth >= FIREFOX_URL_NODE_SCAN_DEPTH) continue
+            val childCount = runCatching { node.childCount }.getOrDefault(0)
+            for (i in 0 until childCount) {
+                if (visited + queue.size >= FIREFOX_URL_NODE_SCAN_MAX) break
+                runCatching { node.getChild(i) }.getOrNull()?.let { queue.addLast(it to depth + 1) }
             }
-            val vid = node.viewIdResourceName?.lowercase(Locale.getDefault()).orEmpty()
-            val short = vid.substringAfterLast('/')
-            // Toolbar/address-bar nodes only. A loose "url" match would also accept History rows
-            // (org.mozilla.firefox:id/url), which must never be treated as the current page.
-            val idHint = vid.contains("mozac") || vid.contains("toolbar") || vid.contains("origin") ||
-                vid.contains("omnibox") || vid.contains("display_url") || short in FIREFOX_COMPOSE_URL_TAGS
-            if (!idHint) {
-                return@findAnyNode false
-            }
-            // The address-bar edit field, its autocomplete list and Compose search box contain
-            // typed or suggested URLs and must never become the "current page".
-            if (vid.contains("edit") || vid.contains("autocomplete") || vid.contains("suggestion") ||
-                short.contains("search_box")
-            ) {
-                return@findAnyNode false
-            }
-            val t = node.text?.toString().orEmpty()
-            val cd = node.contentDescription?.toString().orEmpty()
-            val c = (t + " " + cd).trim()
-            c.contains(".") || c.contains("http", ignoreCase = true)
         }
+        return null
+    }
+
+    private fun isEligibleFirefoxUrlNode(node: AccessibilityNodeInfo): Boolean {
+        if (!runCatching { node.isVisibleToUser }.getOrDefault(false)) {
+            return false
+        }
+        if (node.isEditable || node.isFocused || node.isAccessibilityFocused) {
+            return false
+        }
+        val vid = node.viewIdResourceName?.lowercase(Locale.getDefault()).orEmpty()
+        val short = vid.substringAfterLast('/')
+        // Toolbar/address-bar nodes only. A loose "url" match would also accept History rows
+        // (org.mozilla.firefox:id/url), which must never be treated as the current page.
+        val idHint = vid.contains("mozac") || vid.contains("toolbar") || vid.contains("origin") ||
+            vid.contains("omnibox") || vid.contains("display_url") || short in FIREFOX_COMPOSE_URL_TAGS
+        if (!idHint) {
+            return false
+        }
+        // The address-bar edit field, its autocomplete list and Compose search box contain typed
+        // or suggested URLs and must never become the "current page".
+        if (vid.contains("edit") || vid.contains("autocomplete") || vid.contains("suggestion") ||
+            short.contains("search_box")
+        ) {
+            return false
+        }
+        val t = node.text?.toString().orEmpty()
+        val cd = node.contentDescription?.toString().orEmpty()
+        val c = (t + " " + cd).trim()
+        return c.contains(".") || c.contains("http", ignoreCase = true)
     }
 
     private fun findBrowserUrlNode(root: AccessibilityNodeInfo, pkg: String): AccessibilityNodeInfo? {
