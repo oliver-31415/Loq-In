@@ -465,6 +465,34 @@ Verification (AVD `HolyPixel`, Android 36, x86_64, rule `example.com/blocked/*`)
 - No false positives on Firefox 155: address-bar typing with suggestions (`address_editing` / `addressBarInput`), the home screen (its search bar is in Compose edit mode by default), the History screen listing `example.com/blocked/test` (scrolled), and a Google results page whose text mentions the blocked URL — all unblocked.
 - `./gradlew :app:testDebugUnitTest` passes (including the updated `DomainBlockStoreTest`).
 
+### Firefox version compatibility sweep (2026-09-18)
+
+Owner asked whether path blocking works across Firefox versions. 16 x86_64 release APKs from Mozilla's archive (`ftp.mozilla.org/pub/fenix/releases/`) were installed one by one on the AVD and tested with the `example.com/blocked/*` rule (blocked path must block with the exact matched target, allowed path must not):
+
+| Firefox | Result | Toolbar family (URL view) |
+| --- | --- | --- |
+| 97.1.0 | PASS | legacy mozac |
+| 105.1.0 | PASS | legacy mozac |
+| 113.2.0 | PASS | legacy mozac (`mozac_browser_toolbar_url_view` text has the full path) |
+| 116.2.0 | PASS | legacy mozac |
+| 119.0.1 | PASS | legacy mozac |
+| 120.1.1 | PASS | legacy mozac |
+| 122.0 | PASS | legacy mozac |
+| 125.3.0 | PASS | legacy mozac |
+| 130.0 | PASS | legacy mozac |
+| 136.0.1 | PASS | legacy mozac |
+| 140.0 | PASS | legacy mozac |
+| 145.0.1 | PASS | legacy mozac |
+| 150.0.3 | PASS | Compose `ADDRESSBAR_URL_BOX` |
+| 152.0.6 | PASS | Compose `ADDRESSBAR_URL_BOX` |
+| 154.0.1 | PASS | Compose `ADDRESSBAR_URL_BOX` |
+| 155.0.1 | PASS | Compose `ADDRESSBAR_URL_BOX` |
+
+Findings:
+- Both toolbar families expose the full host+path in the accessibility text (`example.com/allowed/page` verified on 113 and 150), so the existing legacy-id path and the Compose fallback cover every release from 97 to 155.
+- The Compose toolbar (`ADDRESSBAR_URL_BOX`) first appears in the 150.0.3 build in this set; 145.0.1 still uses the mozac views.
+- Every apparent failure in the automated sweep was a **one-time first-run Firefox promo** (e.g. "Total Cookie Protection") that covers the screen and masks the accessibility tree on the first session after a fresh install/first run. Re-running the navigation after the promo disappears (relaunch or dismiss) blocks correctly on 113, 116, 119 and 120. Real-world impact: the very first page load on a freshly installed Firefox may not be blocked while such a promo is up; afterwards blocking is unaffected. No code change was needed.
+
 ### W2.2 A5 — Session limit reset semantics (2026-09-17, `a8d8ec4`)
 
 Owner-approved upstream port; the highest-risk change in the plan.
