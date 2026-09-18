@@ -2310,15 +2310,20 @@ class LoqInAccessibilityService : AccessibilityService() {
             message = "pkg=$pkg title=${sanitizeWebsiteSignal(title, 80)} backCount=$backCount defer=$deferNavigationUntilAcknowledge returnToPkg=$returnToPackageOnClose force=$forceShow preHome=$prePopupPhoneHome preYtHome=$prePopupYouTubeHome"
         )
 
-        rememberBlockReason(
-            pkg = pkg,
-            label = appLabel,
-            profile = ProfileStore.getCurrent(this),
-            rule = title,
-            source = getString(R.string.block_reason_source_in_app),
-            matched = title,
-            result = getString(R.string.block_reason_result_surface_blocked)
-        )
+        // Website blocks write their own reason (rule + matched target) right before showing the
+        // surface; overwriting it with the generic in-app reason made the blocker screen say
+        // "In-app rule" for website/path-rule blocks.
+        if (blockCategory != BlockCategoryCountStore.Category.WEBSITE) {
+            rememberBlockReason(
+                pkg = pkg,
+                label = appLabel,
+                profile = ProfileStore.getCurrent(this),
+                rule = title,
+                source = getString(R.string.block_reason_source_in_app),
+                matched = title,
+                result = getString(R.string.block_reason_result_surface_blocked)
+            )
+        }
 
         // Short grace period after a surface block to prevent re-detect loops while the app animates away.
         // Snapchat needs a much tighter window: after blocking one story, opening the next story should be checked immediately.
@@ -3144,7 +3149,61 @@ class LoqInAccessibilityService : AccessibilityService() {
                 }
             }
         }
+
+        // Firefox 155+ dropped the mozac URL views for a Compose toolbar whose URL node is only
+        // discoverable by traversal. Without this the host is still detected by findBrowserUrlNode
+        // but the path is lost, so path rules never match in Firefox.
+        if (isFirefoxFamily(pkg)) {
+            val node = findFirefoxUrlNode(root, pkg) ?: return null
+            val candidates = sequenceOf(
+                node.text?.toString(),
+                node.contentDescription?.toString()
+            )
+            for (raw in candidates) {
+                val value = raw?.trim().orEmpty()
+                if (value.isBlank()) continue
+                websiteTargetFromText(value)?.let { return it }
+            }
+        }
         return null
+    }
+
+    /**
+     * Finds the visible Firefox URL-bar node across UI generations.
+     * The address-bar edit field, its autocomplete list and internal-screen leftovers are never
+     * eligible: the display node must be visible, must not be editable/focused and must carry a
+     * URL-shaped text or description.
+     */
+    private fun findFirefoxUrlNode(root: AccessibilityNodeInfo, pkg: String): AccessibilityNodeInfo? {
+        if (!isFirefoxFamily(pkg)) return null
+        return findAnyNode(root) { node ->
+            if (!runCatching { node.isVisibleToUser }.getOrDefault(false)) {
+                return@findAnyNode false
+            }
+            if (node.isEditable || node.isFocused || node.isAccessibilityFocused) {
+                return@findAnyNode false
+            }
+            val vid = node.viewIdResourceName?.lowercase(Locale.getDefault()).orEmpty()
+            val short = vid.substringAfterLast('/')
+            // Toolbar/address-bar nodes only. A loose "url" match would also accept History rows
+            // (org.mozilla.firefox:id/url), which must never be treated as the current page.
+            val idHint = vid.contains("mozac") || vid.contains("toolbar") || vid.contains("origin") ||
+                vid.contains("omnibox") || vid.contains("display_url") || short in FIREFOX_COMPOSE_URL_TAGS
+            if (!idHint) {
+                return@findAnyNode false
+            }
+            // The address-bar edit field, its autocomplete list and Compose search box contain
+            // typed or suggested URLs and must never become the "current page".
+            if (vid.contains("edit") || vid.contains("autocomplete") || vid.contains("suggestion") ||
+                short.contains("search_box")
+            ) {
+                return@findAnyNode false
+            }
+            val t = node.text?.toString().orEmpty()
+            val cd = node.contentDescription?.toString().orEmpty()
+            val c = (t + " " + cd).trim()
+            c.contains(".") || c.contains("http", ignoreCase = true)
+        }
     }
 
     private fun findBrowserUrlNode(root: AccessibilityNodeInfo, pkg: String): AccessibilityNodeInfo? {
@@ -3163,26 +3222,7 @@ class LoqInAccessibilityService : AccessibilityService() {
 
         // Firefox/Fenix can shift view IDs between versions. Fallback by scanning toolbar-like nodes.
         if (pkg.startsWith("org.mozilla.")) {
-            return findAnyNode(root) { node ->
-                val vid = node.viewIdResourceName?.lowercase(Locale.getDefault()).orEmpty()
-                // Internal screens (History, Bookmarks, Settings, home) can keep a stale URL-bar node
-                // in the tree; only visibly displayed toolbar nodes count.
-                if (!runCatching { node.isVisibleToUser }.getOrDefault(false)) {
-                    return@findAnyNode false
-                }
-                // The address-bar edit field and its autocomplete list contain typed/suggested URLs.
-                // They must never be treated as the page the user is actually on.
-                if (vid.contains("edit") || vid.contains("autocomplete") || vid.contains("suggestion")) {
-                    return@findAnyNode false
-                }
-                if (!(vid.contains("mozac") || vid.contains("toolbar") || vid.contains("url") || vid.contains("origin"))) {
-                    return@findAnyNode false
-                }
-                val t = node.text?.toString().orEmpty()
-                val cd = node.contentDescription?.toString().orEmpty()
-                val c = (t + " " + cd).trim()
-                c.contains(".") || c.contains("http", ignoreCase = true)
-            }
+            return findFirefoxUrlNode(root, pkg)
         }
 
         return null
@@ -3428,7 +3468,14 @@ class LoqInAccessibilityService : AccessibilityService() {
 
         val token = s0.split(" ", "›", "·", "|", "—", " ")
             .firstOrNull { it.contains(".") } ?: s0
-        val s = token.trim()
+        // Firefox truncates long URLs in the address bar with an ellipsis. Keep the parsable
+        // prefix so the path rule still matches what the user sees.
+        var s = token.trim().replace("\u2026", "").removeSuffix("...")
+        // Firefox 155's Compose address bar exposes "<url>. <hint>" as the content description;
+        // the space split above leaves that separator period attached to a URL that has a path.
+        if (s.length > 1 && s.endsWith('.') && s.dropLast(1).contains('/')) {
+            s = s.dropLast(1)
+        }
 
         // Detected browser targets intentionally exclude queries; a stored ? is the rule wildcard.
         val rx = Regex("(?i)(?:https?://)?([a-z0-9.-]+\\.[a-z]{2,})(?::\\d+)?(/[^\\s?#]*)?")
@@ -3645,8 +3692,14 @@ class LoqInAccessibilityService : AccessibilityService() {
         if (nodeHasViewId(root, firefoxEditingViewIds(pkg))) {
             return true
         }
+        // Firefox 155+: the address-bar edit state replaces the URL display node with a focused
+        // Compose EditText (ADDRESSBAR_SEARCH_BOX) inside the ADDRESSBAR_EDIT_MODE container.
+        if (isFirefoxComposeEditModePresent(root, pkg)) {
+            return true
+        }
         // ID drift across Firefox versions: look for a focused editable node inside the toolbar.
         val toolbarIds = listOf(
+            "$pkg:id/composable_toolbar",
             "$pkg:id/mozac_browser_toolbar_container",
             "$pkg:id/mozac_browser_toolbar",
             "$pkg:id/toolbar",
@@ -3658,6 +3711,22 @@ class LoqInAccessibilityService : AccessibilityService() {
                 }
             }.getOrDefault(false)
         }
+    }
+
+    /**
+     * Firefox 155+ Compose toolbar edit mode. The test tags are bare resource ids, so they are
+     * matched by traversal. Only visible nodes count: stale hidden toolbar containers from the
+     * previous page must not mark the page as "editing".
+     */
+    private fun isFirefoxComposeEditModePresent(root: AccessibilityNodeInfo, pkg: String): Boolean {
+        if (!isFirefoxFamily(pkg)) return false
+        return findAnyNode(root) { node ->
+            val short = node.viewIdResourceName?.lowercase(Locale.getDefault()).orEmpty().substringAfterLast('/')
+            if (short !in FIREFOX_COMPOSE_EDITING_TAGS) {
+                return@findAnyNode false
+            }
+            runCatching { node.isVisibleToUser }.getOrDefault(false)
+        } != null
     }
 
     private fun nodeHasFocusedEditable(node: AccessibilityNodeInfo, depth: Int): Boolean {

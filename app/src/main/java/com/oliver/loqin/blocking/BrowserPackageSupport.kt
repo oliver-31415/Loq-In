@@ -180,7 +180,7 @@ internal fun browserUrlViewIds(pkg: String): List<String> {
 }
 
 internal fun firefoxEditingViewIds(pkg: String): List<String> {
-    return when (pkg) {
+    val legacy = when (pkg) {
         "org.mozilla.firefox" -> listOf("org.mozilla.firefox:id/mozac_browser_toolbar_edit_url_view")
         "org.mozilla.firefox_beta" -> listOf("org.mozilla.firefox_beta:id/mozac_browser_toolbar_edit_url_view")
         "org.mozilla.fennec_fdroid" -> listOf("org.mozilla.fennec_fdroid:id/mozac_browser_toolbar_edit_url_view")
@@ -189,4 +189,19 @@ internal fun firefoxEditingViewIds(pkg: String): List<String> {
         "net.waterfox.android.release" -> listOf("net.waterfox.android.release:id/mozac_browser_toolbar_edit_url_view")
         else -> emptyList()
     }
+    if (legacy.isEmpty()) return legacy
+    // Firefox 155+ moved the toolbar to Compose. The edit state exposes a focused
+    // ADDRESSBAR_SEARCH_BOX EditText and an ADDRESSBAR_EDIT_MODE container; those test tags are
+    // reported as bare resource ids (no package prefix), so they are matched by name, not by
+    // findAccessibilityNodeInfosByViewId.
+    return legacy + FIREFOX_COMPOSE_EDITING_TAGS
 }
+
+/**
+ * Firefox 155+ Compose toolbar test tags (lowercase). They are exposed as bare resource ids and
+ * cannot be resolved through findAccessibilityNodeInfosByViewId, so view-id lookups must fall
+ * back to a traversal that compares the resource-id name.
+ */
+internal val FIREFOX_COMPOSE_EDITING_TAGS = listOf("addressbar_search_box", "addressbar_edit_mode")
+
+internal val FIREFOX_COMPOSE_URL_TAGS = listOf("addressbar_url_box")

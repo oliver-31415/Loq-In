@@ -385,7 +385,14 @@ object DomainBlockStore {
 
         val rulePath = pathPart(normalizedRule) ?: return true
         val targetPath = pathPart(normalizedTarget) ?: return false
-        return globPathMatches(targetPath, rulePath)
+        if (globPathMatches(targetPath, rulePath)) return true
+        // Browsers trim the trailing slash in the displayed URL (Firefox's trimmed-URL display
+        // shows "/news/" as "/news"). A rule written for the real URL ("/news/*") must still
+        // match the trimmed target, otherwise Firefox path rules silently miss.
+        if (!targetPath.endsWith("/") && rulePath.contains('/')) {
+            return globPathMatches("$targetPath/", rulePath)
+        }
+        return false
     }
 
     private fun globPathMatches(targetPath: String, rulePath: String): Boolean {

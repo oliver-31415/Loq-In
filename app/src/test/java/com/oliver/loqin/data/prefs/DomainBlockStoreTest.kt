@@ -84,7 +84,9 @@ class DomainBlockStoreTest {
         assertTrue(DomainBlockStore.matches("youtube.com/shorts/", "youtube.com/shorts/*"))
         assertFalse(DomainBlockStore.matches("youtube.com", "youtube.com/shorts/*"))
         assertFalse(DomainBlockStore.matches("youtube.com/watch?v=1", "youtube.com/shorts/*"))
-        assertFalse(DomainBlockStore.matches("youtube.com/shorts", "youtube.com/shorts/*"))
+        // Browsers trim the trailing slash in the displayed URL (Firefox shows "/shorts/" as
+        // "/shorts"), so the trimmed target must still match the rule written for the real URL.
+        assertTrue(DomainBlockStore.matches("youtube.com/shorts", "youtube.com/shorts/*"))
     }
 
     @Test
