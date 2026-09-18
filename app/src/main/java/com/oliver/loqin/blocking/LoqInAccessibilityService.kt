@@ -4275,15 +4275,21 @@ class LoqInAccessibilityService : AccessibilityService() {
             throttleMs = 1_500L
         )
         scheduleWebsiteBlockFollowUp(pkg, host, appLabel, title, msg, redirected)
+        // Browsers that cannot be redirected to a safe page (Firefox rejects about:blank) keep the
+        // blocked page in the tab, so a single BACK after acknowledgment can leave the user on it
+        // (e.g. when the tab has no back history or the toolbar is hidden and detection goes quiet).
+        // Move to the launcher while the block is shown instead, and do not bring the browser back
+        // on OK.
         softBlockSurface(
             pkg,
             appLabel,
             title,
             msg,
-            backCount = if (redirected) 0 else 1,
-            deferNavigationUntilAcknowledge = !redirected,
-            returnToPackageOnClose = true,
-            blockCategory = BlockCategoryCountStore.Category.WEBSITE
+            backCount = 0,
+            deferNavigationUntilAcknowledge = false,
+            returnToPackageOnClose = redirected,
+            blockCategory = BlockCategoryCountStore.Category.WEBSITE,
+            prePopupPhoneHome = !redirected
         )
     }
 
