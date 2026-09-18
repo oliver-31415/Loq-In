@@ -81,6 +81,9 @@ import com.oliver.loqin.util.AppUsageToday
 import com.oliver.loqin.util.PackageLaunchIntentCompat
 import java.util.ArrayDeque
 import java.util.Locale
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.abs
 
 /**
@@ -95,6 +98,12 @@ class LoqInAccessibilityService : AccessibilityService() {
     private val handler = Handler(Looper.getMainLooper())
     private var usageWorkerThread: HandlerThread? = null
     private var usageWorker: Handler? = null
+    // Root lookups run on a dedicated worker with a short main-thread wait: rootInActiveWindow is
+    // a Binder call and has been observed stalling the accessibility main thread for seconds on
+    // some OEM devices.
+    private var accessibilityBinderThread: HandlerThread? = null
+    private var accessibilityBinderWorker: Handler? = null
+    @Volatile private var activeRootLookupInFlight: Boolean = false
     private val usageEventsForegroundResolver by lazy { UsageEventsForegroundResolver(this) }
     private val blockLaunchController by lazy { BlockLaunchController(this, handler) }
     @Volatile private var topRefreshInFlight: Boolean = false
@@ -473,6 +482,9 @@ class LoqInAccessibilityService : AccessibilityService() {
     private val PIP_KILL_COOLDOWN_MS = 8_000L
 
     private val MAX_NODE_SCAN_COUNT = 120
+    // Main-thread wait for a root lookup; on slow devices the lookup is abandoned and its result
+    // dropped rather than blocking the accessibility callback.
+    private val ACCESSIBILITY_BINDER_MAIN_WAIT_MS = 12L
     // The Firefox URL-bar scan is breadth-first and needs a larger budget than the shared
     // depth-first scans: on real pages the page-content subtree is huge, and a 120-node budget
     // was exhausted before the toolbar (shallow chrome) was reached, so heavy pages such as
@@ -1035,6 +1047,10 @@ class LoqInAccessibilityService : AccessibilityService() {
         usageWorkerThread?.quitSafely()
         usageWorkerThread = HandlerThread("loqin-usage-worker").apply { start() }
         usageWorker = Handler(usageWorkerThread!!.looper)
+        accessibilityBinderThread?.quitSafely()
+        accessibilityBinderThread = HandlerThread("loqin-accessibility-binder").apply { start() }
+        accessibilityBinderWorker = Handler(accessibilityBinderThread!!.looper)
+        activeRootLookupInFlight = false
         topRefreshInFlight = false
         usageOpenScanInFlight = false
         handler.removeCallbacks(tick)
@@ -1081,6 +1097,10 @@ class LoqInAccessibilityService : AccessibilityService() {
         usageWorkerThread?.quitSafely()
         usageWorkerThread = null
         usageWorker = null
+        accessibilityBinderThread?.quitSafely()
+        accessibilityBinderThread = null
+        accessibilityBinderWorker = null
+        activeRootLookupInFlight = false
         topRefreshInFlight = false
         usageOpenScanInFlight = false
         protectionRecheckGeneration++
@@ -1487,7 +1507,7 @@ class LoqInAccessibilityService : AccessibilityService() {
 
         // Some apps produce very few accessibility events.
         // To avoid tracking the wrong foreground package (which would break real-time limits), prefer the active window package when available.
-        val rootPkg = runCatching { rootInActiveWindow?.packageName?.toString() }.getOrNull()
+        val rootPkg = runCatching { activeRootWithBudget("usage_tick")?.packageName?.toString() }.getOrNull()
         if (!rootPkg.isNullOrBlank() && rootPkg != packageName && rootPkg != currentTopPkg) {
             currentTopPkg = rootPkg
             BlockingRuntime.markForegroundPackage(this, rootPkg, "active_window_root")
@@ -2926,6 +2946,7 @@ class LoqInAccessibilityService : AccessibilityService() {
         event?.text?.forEach { if (!it.isNullOrBlank()) parts += it.toString() }
         event?.contentDescription?.toString()?.takeIf { it.isNotBlank() }?.let { parts += it }
 
+        val started = SystemClock.elapsedRealtime()
         val stack = ArrayDeque<WorkItem>()
         stack.addLast(WorkItem(root, 0, false))
         var visited = 0
@@ -2946,6 +2967,13 @@ class LoqInAccessibilityService : AccessibilityService() {
             } finally {
             }
         }
+        AccessibilityWorkBudget.recordScan(
+            this,
+            "collectNodeTextBlob",
+            visited,
+            MAX_NODE_SCAN_COUNT,
+            SystemClock.elapsedRealtime() - started,
+        )
         return parts.joinToString(separator = " ").lowercase(Locale.ROOT)
     }
 
@@ -2953,6 +2981,7 @@ class LoqInAccessibilityService : AccessibilityService() {
         data class WorkItem(val node: AccessibilityNodeInfo, val depth: Int, val owned: Boolean)
 
         val parts = ArrayList<String>(24)
+        val started = SystemClock.elapsedRealtime()
         val stack = ArrayDeque<WorkItem>()
         stack.addLast(WorkItem(root, 0, false))
         var visited = 0
@@ -2972,6 +3001,13 @@ class LoqInAccessibilityService : AccessibilityService() {
             } finally {
             }
         }
+        AccessibilityWorkBudget.recordScan(
+            this,
+            "collectNodeIdBlob",
+            visited,
+            MAX_NODE_SCAN_COUNT,
+            SystemClock.elapsedRealtime() - started,
+        )
         return parts.joinToString(separator = " ").lowercase(Locale.ROOT)
     }
 
@@ -3194,6 +3230,7 @@ class LoqInAccessibilityService : AccessibilityService() {
         val queue = ArrayDeque<Pair<AccessibilityNodeInfo, Int>>()
         queue.addLast(root to 0)
         var visited = 0
+        val started = SystemClock.elapsedRealtime()
         val deadline = SystemClock.uptimeMillis() + FIREFOX_URL_NODE_SCAN_MS
         while (queue.isNotEmpty() && visited < FIREFOX_URL_NODE_SCAN_MAX &&
             SystemClock.uptimeMillis() < deadline
@@ -3201,6 +3238,13 @@ class LoqInAccessibilityService : AccessibilityService() {
             val (node, depth) = queue.removeFirst()
             visited++
             if (isEligibleFirefoxUrlNode(node)) {
+                AccessibilityWorkBudget.recordScan(
+                    this,
+                    "findFirefoxUrlNode",
+                    visited,
+                    FIREFOX_URL_NODE_SCAN_MAX,
+                    SystemClock.elapsedRealtime() - started,
+                )
                 return node
             }
             if (depth >= FIREFOX_URL_NODE_SCAN_DEPTH) continue
@@ -3210,6 +3254,13 @@ class LoqInAccessibilityService : AccessibilityService() {
                 runCatching { node.getChild(i) }.getOrNull()?.let { queue.addLast(it to depth + 1) }
             }
         }
+        AccessibilityWorkBudget.recordScan(
+            this,
+            "findFirefoxUrlNode",
+            visited,
+            FIREFOX_URL_NODE_SCAN_MAX,
+            SystemClock.elapsedRealtime() - started,
+        )
         return null
     }
 
@@ -3831,11 +3882,51 @@ class LoqInAccessibilityService : AccessibilityService() {
         return null
     }
 
+    /**
+     * Reads the active root on a dedicated worker with a short main-thread wait. `rootInActiveWindow`
+     * is a Binder call and can stall the accessibility callback for seconds on some OEM devices;
+     * on timeout the lookup returns null and the caller retries on the next event.
+     */
+    private fun activeRootWithBudget(reason: String): AccessibilityNodeInfo? {
+        val worker = accessibilityBinderWorker ?: return null
+        if (activeRootLookupInFlight) {
+            return null
+        }
+
+        val started = SystemClock.elapsedRealtime()
+        val result = AtomicReference<AccessibilityNodeInfo?>(null)
+        val latch = CountDownLatch(1)
+        activeRootLookupInFlight = true
+        val posted = worker.post {
+            try {
+                result.set(runCatching { rootInActiveWindow }.getOrNull())
+            } finally {
+                activeRootLookupInFlight = false
+                latch.countDown()
+            }
+        }
+        if (!posted) {
+            activeRootLookupInFlight = false
+            return null
+        }
+
+        val completed = runCatching {
+            latch.await(ACCESSIBILITY_BINDER_MAIN_WAIT_MS, TimeUnit.MILLISECONDS)
+        }.getOrDefault(false)
+        val duration = SystemClock.elapsedRealtime() - started
+        AccessibilityWorkBudget.recordRootLookup(
+            this,
+            if (completed) reason else "${reason}_timeout",
+            duration,
+        )
+        return if (completed) result.get() else null
+    }
+
     private fun currentRoot(event: AccessibilityEvent? = null): AccessibilityNodeInfo? {
-        val root = rootInActiveWindow
-            ?: event?.source
-            ?: runCatching { windows?.firstOrNull { it.isActive }?.root }.getOrNull()
-            ?: runCatching { windows?.firstOrNull()?.root }.getOrNull()
+        // The event source comes with the callback (no Binder transaction); it is the cheapest
+        // usable root. Fall back to the budgeted active-window lookup when no event is available.
+        val root = runCatching { event?.source }.getOrNull()
+            ?: activeRootWithBudget("current_root")
             ?: return null
 
         val rootPackage = runCatching { root.packageName?.toString()?.trim().orEmpty() }.getOrDefault("")
@@ -4423,6 +4514,7 @@ class LoqInAccessibilityService : AccessibilityService() {
         val stack = ArrayDeque<WorkItem>()
         stack.addLast(WorkItem(root, 0, false))
         var visited = 0
+        val started = SystemClock.elapsedRealtime()
         val deadline = if (timeBudgetMs > 0L) SystemClock.uptimeMillis() + timeBudgetMs else Long.MAX_VALUE
 
         while (stack.isNotEmpty() && visited < maxNodes && SystemClock.uptimeMillis() < deadline) {
@@ -4431,6 +4523,13 @@ class LoqInAccessibilityService : AccessibilityService() {
             try {
                 visited++
                 if (pred(current)) {
+                    AccessibilityWorkBudget.recordScan(
+                        this,
+                        "findAnyNode",
+                        visited,
+                        maxNodes,
+                        SystemClock.elapsedRealtime() - started,
+                    )
                     return current
                 }
 
@@ -4445,6 +4544,13 @@ class LoqInAccessibilityService : AccessibilityService() {
             } finally {
             }
         }
+        AccessibilityWorkBudget.recordScan(
+            this,
+            "findAnyNode",
+            visited,
+            maxNodes,
+            SystemClock.elapsedRealtime() - started,
+        )
         return null
     }
 
@@ -8397,7 +8503,7 @@ class LoqInAccessibilityService : AccessibilityService() {
             type != AccessibilityEvent.TYPE_VIEW_FOCUSED) return null
 
         var current = runCatching { event.source }.getOrNull()
-        val activeRoot = runCatching { rootInActiveWindow }.getOrNull()
+        val activeRoot = activeRootWithBudget("facebook_surface")
         val activeRootPkg = activeRoot?.packageName?.toString()?.lowercase(Locale.ROOT).orEmpty()
         val metrics = if (activeRoot != null &&
             (activeRootPkg == PACKAGE_FACEBOOK || activeRootPkg == PACKAGE_FACEBOOK_LITE)

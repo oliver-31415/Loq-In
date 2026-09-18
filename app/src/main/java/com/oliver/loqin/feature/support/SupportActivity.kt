@@ -47,6 +47,7 @@ import androidx.core.widget.ImageViewCompat
 import androidx.preference.PreferenceManager
 import com.oliver.loqin.BuildConfig
 import com.oliver.loqin.R
+import com.oliver.loqin.blocking.AccessibilityWorkBudget
 import com.oliver.loqin.blocking.BlockingRuntime
 import com.oliver.loqin.blocking.OemAccessibilityKeepAlive
 import com.oliver.loqin.blocking.UsageAccessFallbackBlocking
@@ -1253,6 +1254,14 @@ class SupportActivity : AppCompatActivity() {
                 else -> "disabled"
             }
         )
+        runCatching { AccessibilityWorkBudget.snapshot(this@SupportActivity) }.getOrNull()?.let { budget ->
+            line(
+                "Accessibility work budget",
+                "roots=${budget.rootLookups} slow=${budget.slowRootLookups} scans=${budget.scans} " +
+                    "overruns=${budget.scanOverruns} nodeLimitHits=${budget.nodeLimitHits} " +
+                    "lastRoot=${budget.lastRootReason}/${budget.lastRootMs}ms lastScan=${budget.lastScan}/${budget.lastScanMs}ms/${budget.lastScanNodes}n"
+            )
+        }
         line("Advanced Protection Mode", advancedProtectionEnabled)
         line("Limited UsageEvents fallback running", limitedFallbackRunning)
         line(
