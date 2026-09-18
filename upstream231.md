@@ -513,6 +513,19 @@ Findings:
 - The one coupling was limits: deleting a host rule cleared the host's limits even when path rules for the same host remained. `ManageBlockedWebsitesActivity` now clears the host limit only when no rule (selected, allowed or disabled) for that host is left.
 - Rules cannot be edited while protection is active (existing `websiteEditingLocked()` policy); the emulator's lock made a full UI delete-flow run impractical, so the change is covered by code review plus the unit-tested store/backup semantics.
 
+### Firefox website blocks kick out of the browser (2026-09-18, `1621976`)
+
+Owner report: with a tab already open before the rule/blocking was active, selecting that tab could leave them on the blocked site ("doesn't kick me out correctly").
+
+Root cause: Firefox cannot be redirected to a safe page (`about:blank` is rejected), so the block flow used `backCount=1` + deferred navigation. On OK the service brought Firefox back to the front and pressed BACK once; when the blocked page was the tab's first page, BACK did nothing (or landed on another page of the same site), and the follow-up `enforceWebsiteBlockIfStillVisible` gave up whenever no host was visible (scrolled page = toolbar disposed from the accessibility tree).
+
+Fix (`LoqInAccessibilityService.maybeBlockWebsite`): when the browser could not be redirected (`!redirected`), the surface now posts HOME while the popup is shown (`prePopupPhoneHome=true`) and OK does not return to the browser (`returnToPackageOnClose=false`, no deferred BACK). Chrome keeps the existing safe-page redirect path unchanged.
+
+Emulator evidence (Firefox 155, rule `example.com/blocked/*`):
+- Blocked page: activity order behind the blocker is `BlockerActivity > launcher > Firefox`; OK leaves the launcher on screen.
+- Chrome: block still redirects (`about:blank`) and OK returns to Chrome.
+- Full Firefox/Chrome path-rule matrix still 10/10.
+
 ### W2.2 A5 — Session limit reset semantics (2026-09-17, `a8d8ec4`)
 
 Owner-approved upstream port; the highest-risk change in the plan.
