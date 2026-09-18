@@ -517,7 +517,7 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
                 val profile = currentProfile()
                 selectedDomains.toList().forEach { domain ->
                     DomainBlockStore.removeDomainForProfile(this@ManageBlockedWebsitesActivity, profile, domain)
-                    DomainLimitStore.clearForProfile(this@ManageBlockedWebsitesActivity, profile, domain)
+                    clearLimitIfNoRulesRemainForHost(profile, domain)
                 }
                 exitSelectionMode()
                 refreshList()
@@ -534,8 +534,26 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         }
         val profile = currentProfile()
         DomainBlockStore.removeDomainForProfile(this, profile, domain)
-        DomainLimitStore.clearForProfile(this, profile, domain)
+        clearLimitIfNoRulesRemainForHost(profile, domain)
         refreshList()
+    }
+
+    /**
+     * Path rules are independent of a host rule: deleting "example.com" must leave its path rules
+     * (for example "example.com/blocked/&lt;path&gt;") untouched. Limits are stored per host, so the
+     * host limit may only be cleared when no rule for that host remains.
+     */
+    private fun clearLimitIfNoRulesRemainForHost(profile: String, removedRule: String) {
+        val normalized = DomainBlockStore.normalize(removedRule) ?: return
+        val host = DomainBlockStore.hostPart(normalized)?.takeIf { it.isNotBlank() } ?: return
+        val remaining = DomainBlockStore.getDomainsForProfileAndMode(this, profile).any {
+            DomainBlockStore.hostPart(it) == host
+        } || DomainBlockStore.getDisabledDomainsForProfile(this, profile).any {
+            DomainBlockStore.hostPart(it) == host
+        }
+        if (!remaining) {
+            DomainLimitStore.clearForProfile(this, profile, host)
+        }
     }
 
     private fun setRuleEnabled(domain: String, enabled: Boolean) {
