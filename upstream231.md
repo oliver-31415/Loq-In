@@ -49,6 +49,7 @@ Upstream source paths are under `app/src/main/java/at/saltyy/switchly/...`; our 
 | 2026-09-17 | Firefox autocomplete false-block fix | `feature/upstream-w2` | Done — `b34ad98` | Root cause of the "broken Firefox" report |
 | 2026-09-17 | Firefox internal-screen false blocks | `feature/upstream-w2` | Done — `67e5b09` | Verified side by side against upstream Switchly 2.2.9 on the emulator |
 | 2026-09-18 | Firefox path rules + Chrome redirect research | `feature/upstream-w2` | Done | Firefox path rules verified working; Chrome NTP not reachable, about:blank stays |
+| 2026-09-18 | Firefox 155 Compose toolbar path rules | `feature/upstream-w2` | Done — `182d711` | The user's Firefox 155 exposes the URL via a Compose test tag; path rules now work there too |
 
 ### W1.1 implementation + test evidence (2026-09-16)
 
@@ -437,6 +438,32 @@ Owner asked how upstream blocks without a blank page and whether Firefox support
 - **Chrome redirect / blank page.** There is no public way for another app to open Chrome's New Tab Page: `chrome-native://newtab` and `chrome://newtab` are unresolvable from an external `ACTION_VIEW` intent, and Chrome ignores `about:home` (the intent resolves but the page does not change). `about:blank` is the only reliable safe target for Chrome, and that is what upstream and our build already use. The blocker dialog is shown over it, so the user sees the block reason instead of the blank page; pressing OK reveals the cleared blank tab.
   - Firefox cannot resolve `about:blank` or `about:home` from an external intent at all, so `redirected=false` there and the existing single-BACK fallback runs (no blank page in Firefox).
   - The remaining alternative for Chrome would be to skip the redirect and use the single-BACK fallback like Firefox, which pops the blocked tab but can exit Chrome entirely when it was the last tab. Kept upstream's redirect behaviour. No code change was made.
+
+### Firefox 155 Compose toolbar — path rules actually work on the owner's version (2026-09-18, `182d711`)
+
+The `2026-09-18` note above was measured on Firefox 125.3.0. The owner's phone runs **Firefox 155.0.1**, where the toolbar was rewritten in Compose and the old `mozac_browser_toolbar_*` views are gone. Host detection survived through the toolbar fallback, but `tryExtractWebsiteTargetFromBrowserUrlViews` only read the old ids, so the path was lost and `abc.net.au/news/*` never matched. That is the real cause of the owner's original "path rule does not block the article" report.
+
+Accessibility shape on Firefox 155 (verified with UI dumps on the emulator, same 155.0.1 APK from Mozilla's archive):
+- Display state: `ADDRESSBAR_URL_BOX` (View), `content-desc` = `" example.com/blocked/test. Search or enter address"` (full host+path+query, a literal `. ` separator before the hint).
+- Edit state: `ADDRESSBAR_EDIT_MODE` + focused `ADDRESSBAR_SEARCH_BOX` (EditText, text = the full URL); the URL display node disappears.
+- These Compose test tags are exposed as **bare resource ids** (no `package:` prefix), so `findAccessibilityNodeInfosByViewId` cannot resolve them — a traversal is required.
+
+Implementation (`182d711`):
+- `LoqInAccessibilityService`:
+  - New `findFirefoxUrlNode()`: visible, non-editable, non-focused nodes with toolbar/address-bar ids (`mozac`, `toolbar`, `origin`, `omnibox`, `display_url`, or the Compose `ADDRESSBAR_URL_BOX` tag). History rows (`org.mozilla.firefox:id/url`) and internal-screen leftovers are excluded.
+  - `tryExtractWebsiteTargetFromBrowserUrlViews()` falls back to that node for Firefox, so path rules get host+path; `findBrowserUrlNode()` reuses the same helper.
+  - `isFirefoxAddressBarActive()` detects the 155 Compose edit mode; the Compose tags are appended to `firefoxEditingViewIds()` so the event guards (`eventLooksLikeBrowserAddressEditing`, `isFirefoxAddressBarInputEvent`) cover 155 as well.
+  - `websiteTargetFromText()` strips the Firefox `". <hint>"` separator period and URL ellipsis truncation, so the stored matched target is exact (`example.com/blocked/test`, not `example.com/blocked/test.`).
+- `DomainBlockStore.matches()`: a `prefix/*` rule now also matches the same path without the trailing slash, because browsers trim it in the displayed URL (Firefox shows `/news/` as `/news`). Unit test updated accordingly.
+- `softBlockSurface()` no longer overwrites the website-rule block reason with the generic in-app reason; the blocker screen shows `Blocked by: Website rule` for website and path-rule blocks.
+
+Verification (AVD `HolyPixel`, Android 36, x86_64, rule `example.com/blocked/*`) — scenario driver with a force-stop between cases so post-block suppression cannot mask results, 10/10:
+- Firefox 155.0.1: blocked path, allowed path, same-tab navigation, query string (`?x=1`), subdomain (`www.`), trailing-slash-only (`/blocked/`), long deep path → all blocked with the exact `matched` target; bare host (`example.com/`) allowed.
+- Chrome: blocked path blocked, allowed path allowed (regression).
+- Firefox 125.3.0 (old toolbar, clean install): the same 10/10 pass, so the legacy path is intact.
+- Owner's real rule `abc.net.au/news/*`: `https://www.abc.net.au/news/2026-09-18/firefox-path-rule-test` → blocked (`matched=abc.net.au/news/2026-09-18/firefox-path-rule-test`); `https://www.abc.net.au/` → allowed.
+- No false positives on Firefox 155: address-bar typing with suggestions (`address_editing` / `addressBarInput`), the home screen (its search bar is in Compose edit mode by default), the History screen listing `example.com/blocked/test` (scrolled), and a Google results page whose text mentions the blocked URL — all unblocked.
+- `./gradlew :app:testDebugUnitTest` passes (including the updated `DomainBlockStoreTest`).
 
 ### W2.2 A5 — Session limit reset semantics (2026-09-17, `a8d8ec4`)
 
