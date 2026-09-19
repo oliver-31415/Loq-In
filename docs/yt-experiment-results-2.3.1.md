@@ -171,6 +171,34 @@ Emulator limitation unchanged: neither official YouTube nor Morphe creates a
 system PiP window on the AVD, so the new PiP close path still needs a device
 pass on the phone.
 
+## Follow-up: blocker cascades after floating-player blocks (2026-09-19, `59d2e2f`)
+
+Owner report after `4aceb8f`: the mini-player block kicked out correctly but then
+fired ~4 "You is blocked" popups and a "Subscriptions is blocked" before settling.
+Emulator reproduction with Morphe also produced a "Picture-in-picture is blocked"
+storm after the first block.
+
+Causes and fixes:
+- **PiP false positive**: Morphe exposes its in-app mini-player as its own small
+  window; the PiP window heuristic matched it even while YouTube was the
+  foreground app. `isYouTubePictureInPictureWindowVisible()` now returns false
+  when a YouTube package is the active/foreground window, and an explicit
+  mini-player identity wins over the window heuristic in the floating-player
+  classification.
+- **Shorts false positive**: a playing mini-player (or a briefly restored watch
+  page with Home still selected) satisfied the Shorts player heuristics and the
+  quiet-session net blocked "Shorts" seconds after the mini-player block. A
+  visible mini-player identity now vetoes the Shorts classification unless the
+  deterministic Shorts reel container is present.
+- **Cascades**: after a floating-player block, YouTube navigates back through its
+  tabs (You/Subscriptions/Shorts) for a few seconds. The package-wide surface
+  guard after mini/PiP blocks is now 6 s (was effectively 0.6-2.5 s), so those
+  transitional surfaces cannot stack extra blockers while the app settles.
+
+Result on the emulator: play -> BACK -> "Mini player is blocked!" -> OK -> no
+further blockers, YouTube settles; Morphe Shorts/Subscriptions/You tabs still
+block with correct labels; official suite still 9/9.
+
 ## Recommendation
 
 1. Cherry-pick `ad814d2` (upstream evidence port) and `7b21a85` (coordinate-tap
