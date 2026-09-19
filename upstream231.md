@@ -759,6 +759,8 @@ Branch `feature/upstream-w3-websites` off the W2 tip.
 
 ### W4.2 B — YouTube experiment (separate branch, A/B comparison) — **RUN 2026-09-18** (`experiment/yt-upstream-2.3.1`: `ad814d2`, `7b21a85`, `b5ae16d`)
 
+> Follow-up (2026-09-19, `7bbc996`): mini-player and PiP were re-enabled as user-facing rules at the owner's request - both keys are enforced again (gated per profile) with new In-App Rules toggles; the mini-player flow is emulator-verified (rule on blocks and closes it, rule off leaves it), while this YouTube build never enters system PiP on the emulator so the PiP path still needs a device pass.
+>
 > Experiment outcome: our rebuilt implementation already passed every reproducible scenario (baseline 9/9). Ported the three upstream pieces that still add value (Binder-risk gating, direct Subscriptions/You bottom-nav pre-dedupe, watch-ad position guard) and removed the fork's unsafe coordinate mini-player taps/swipes. Evaluated and left out upstream's PiP and mini-player enforcement (this fork removed those user-facing rules by design) and the Shorts event-burst/card heuristics (our Shorts detection passed everything; revisit only on a real regression). Full matrix, coverage comparison and recommendation: `docs/yt-experiment-results-2.3.1.md`.
 
 - **Goal:** decide empirically whether upstream's 2.3.x YouTube logic beats our rebuilt implementation. **Nothing from this step merges without the experiment outcome.**

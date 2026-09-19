@@ -98,6 +98,47 @@ Also removed the now-unused `"bounds"`/`"swipe"` strategy entries.
 - YouTube builds other than 21.36.45 were not exercised; the burst heuristics
   left out are the main candidate if a future build regresses.
 
+## Mini-player and PiP re-enabled (2026-09-19, `7bbc996`)
+
+Owner asked to make the floating-player rules usable again if they work. The keys
+(`KEY_BLOCK_YT_MINI_PLAYER`, `KEY_BLOCK_YT_PIP`) already existed but were
+hardcoded off and hidden from the In-App Rules screen.
+
+Implemented:
+- `maybeBlockYouTubeFloatingPlayer` reads both rule keys; the rules are inert
+  unless enabled for the profile.
+- In-App Rules screen: new "Mini player" and "Picture-in-picture" rows for the
+  three YouTube packages (en/de strings), backup/profile handling included.
+- Floating-player blocks show the standard blocker popup with the surface
+  label (ported upstream `showYouTubeFloatingPlayerBlock`) instead of a silent
+  kill.
+
+Detection fixes found on the emulator (YouTube 21.36.45):
+- The floating check now runs on content events too: the in-app mini-player
+  appears via `WINDOW_CONTENT_CHANGED` (BACK from the watch page) and the
+  transition-only call site never saw it.
+- Mini-player detection requires an explicit label/view-id identity and
+  `isVisibleToUser`. Geometry alone also matched the watch page's player
+  control bar (false "Mini player is blocked" popups while scrolling), and a
+  hidden mini-player container exists in the watch-page tree.
+- Label lists learned YouTube's "Minimized player" wording.
+- A visible blocker is not re-shown every second while a lingering mini-player
+  sits behind it (`forceShow` bypasses the surface cooldown).
+
+Test evidence:
+- Rule off: play a video from the Home feed, BACK -> mini-player visible, **no
+  blocker**. Rule on, same flow -> "Mini player is blocked!" popup, mini-player
+  closed, OK does not re-block. Run 3x: 2/3 blocked as mini-player; the third
+  was intercepted by the You rule because BACK landed on the You tab.
+- Watch page scrolling: no floating-player block.
+- Shorts/Subs/You/deeplink/watch/rapid/shelf suite still 9/9.
+
+PiP limitation: this YouTube build never enters system PiP on the emulator —
+its activities report `supportsEnterPipOnTaskSwitch: false` and Home/gesture
+leave goes straight to the launcher. The PiP rule path is implemented and gated
+(window detection + kill + popup) but could not be exercised end-to-end here;
+it needs a device where YouTube actually enters PiP (or ReVanced/Morphe).
+
 ## Recommendation
 
 1. Cherry-pick `ad814d2` (upstream evidence port) and `7b21a85` (coordinate-tap
