@@ -5686,7 +5686,7 @@ class LoqInAccessibilityService : AccessibilityService() {
         val windowPip = isYouTubePictureInPictureWindowVisible()
         val miniIdentity =
             root?.let { hasYouTubeMiniPlayerIdentity(it) } == true ||
-                anyNeedleMatches(eventSignal, YT_MINI_PLAYER_NAME_LABELS)
+                (anyNeedleMatches(eventSignal, YT_MINI_PLAYER_NAME_LABELS) && !isExpandMiniPlayerSignal(eventSignal))
         // Detection requires an explicit mini-player label/view id (or a real PiP window).
         // Geometry alone also matches the watch page's player control bar, which caused false
         // "Mini player is blocked" popups while watching/scrolling. Geometry is still used by the
@@ -5741,12 +5741,12 @@ class LoqInAccessibilityService : AccessibilityService() {
         clearSurfaceHintForPackage(pkg)
 
         if (eventRealPip || windowPip) {
-            showYouTubeFloatingPlayerBlock(surfaceKey, reason, killPictureInPicture = true)
+            showYouTubeFloatingPlayerBlock(pkg, surfaceKey, reason, killPictureInPicture = true)
             return true
         }
 
-        blockYouTubeMiniPlayer(reason)
-        showYouTubeFloatingPlayerBlock(surfaceKey, reason, killPictureInPicture = false)
+        blockYouTubeMiniPlayer(reason, pkg)
+        showYouTubeFloatingPlayerBlock(pkg, surfaceKey, reason, killPictureInPicture = false)
         return true
     }
 
@@ -5755,11 +5755,11 @@ class LoqInAccessibilityService : AccessibilityService() {
      * PiP is killed before the popup; the mini-player close strategies run separately.
      */
     private fun showYouTubeFloatingPlayerBlock(
+        pkg: String,
         surfaceKey: String,
         reason: String,
         killPictureInPicture: Boolean,
     ) {
-        val pkg = PACKAGE_YOUTUBE
         val labelRes = if (surfaceKey == "yt:pip") {
             R.string.in_app_surface_pip_label
         } else {
@@ -9185,6 +9185,21 @@ class LoqInAccessibilityService : AccessibilityService() {
     }
 
     /**
+     * True when the signal describes a control that ENTERS the mini-player (e.g. Morphe's
+     * "Expand Mini Player" on the watch page). Those controls are always present while a video is
+     * open and must never be mistaken for the mini-player itself.
+     */
+    private fun isExpandMiniPlayerSignal(signal: String): Boolean {
+        val lowered = signal.lowercase(Locale.ROOT)
+        if (!lowered.contains("mini")) return false
+        return lowered.contains("expand") ||
+            lowered.contains("enter mini") ||
+            lowered.contains("play in mini") ||
+            lowered.contains("switch to mini") ||
+            lowered.contains("open mini")
+    }
+
+    /**
      * Explicit mini-player identity (label or view id) without geometry. Used by the content-event
      * path, where geometry alone also matches the watch page's player control bar.
      */
@@ -9192,6 +9207,8 @@ class LoqInAccessibilityService : AccessibilityService() {
         if (!isYouTubeRootNode(root)) {
             return false
         }
+        val height = resources.displayMetrics.heightPixels.coerceAtLeast(1)
+        val bounds = Rect()
         return findAnyNode(root) { node ->
             val nodePkg = node.packageName?.toString()?.lowercase(Locale.getDefault()).orEmpty()
             if (nodePkg.isNotBlank() && !isYouTubePackage(nodePkg)) return@findAnyNode false
@@ -9203,9 +9220,23 @@ class LoqInAccessibilityService : AccessibilityService() {
             val desc = node.contentDescription?.toString().orEmpty()
             val viewId = node.viewIdResourceName?.lowercase(Locale.getDefault()).orEmpty()
             val signal = "$text $desc"
-            anyNeedleMatches(signal, YT_MINI_PLAYER_HINT_LABELS) ||
-                anyNeedleMatches(signal, YT_MINI_PLAYER_CLOSE_LABELS) ||
-                (viewId.contains("mini") && viewId.contains("player"))
+            if (isExpandMiniPlayerSignal(signal)) return@findAnyNode false
+
+            val idMini =
+                viewId.contains("miniplayer") ||
+                    viewId.contains("mini_player") ||
+                    (viewId.contains("mini") && viewId.contains("player"))
+            val labelMini =
+                anyNeedleMatches(signal, YT_MINI_PLAYER_HINT_LABELS) ||
+                    anyNeedleMatches(signal, YT_MINI_PLAYER_CLOSE_LABELS)
+            if (!idMini && !labelMini) return@findAnyNode false
+            if (!idMini) {
+                // Label-only matches must be docked at the bottom: the mini-player is a bottom bar,
+                // while watch-page controls sit at the top of the player.
+                runCatching { node.getBoundsInScreen(bounds) }.getOrNull()
+                if (bounds.isEmpty || bounds.exactCenterY() / height < 0.55f) return@findAnyNode false
+            }
+            true
         } != null
     }
 
@@ -9403,16 +9434,13 @@ class LoqInAccessibilityService : AccessibilityService() {
         appendBlockingLog(
             category = "pip_block",
             key = "pip-kill|$pkg",
-            message = "pkg=$pkg action=bounce_home_and_kill"
+            message = "pkg=$pkg action=close_pip_via_front_and_home"
         )
         clearSurfaceEvidence("yt:pip")
         clearSurfaceHintForPackage(pkg)
         surfaceBlockGuardUntil["$pkg|yt:pip"] = now + PIP_KILL_COOLDOWN_MS
-        bounceHomeAndKill(pkg)
-    }
-
-    private fun bounceHomeAndKill(pkg: String) {
-        blockLaunchController.bounceHomeAndKill(pkg)
+        // Bringing the app to the front makes Android dismiss its PiP window; then go home.
+        blockLaunchController.closePictureInPicture(pkg)
     }
 
     private fun AccessibilityNodeInfo.isCheckedCompat(): Boolean {
