@@ -139,6 +139,38 @@ leave goes straight to the launcher. The PiP rule path is implemented and gated
 (window detection + kill + popup) but could not be exercised end-to-end here;
 it needs a device where YouTube actually enters PiP (or ReVanced/Morphe).
 
+## Phone follow-up: Morphe false positives and PiP close (2026-09-19, `4aceb8f`)
+
+The owner tested the enabled rules on the phone (primary YouTube = **Morphe
+21.13.164**, plus official 21.36.45) and reported:
+1. the mini-player rule fired constantly while YouTube was open;
+2. PiP blocks never closed the PiP - they repeated until it was closed manually.
+
+Reproduced on the emulator with the owner's Morphe APK (pulled from the phone,
+installed with `--abi arm64-v8a`, ReVanced MicroG 7.1.1 pulled as well):
+
+- **Mini false positive**: Morphe's watch page always exposes
+  `player_overlays` with content-desc "Expand Mini Player". The "mini player"
+  needle matched it, so every content event while a video was open looked like
+  a minimized player. Fixed: controls that ENTER the mini-player
+  (expand/enter/play in/switch to/open mini) are rejected, and label-only
+  identity matches must be docked in the bottom half; id-based matches
+  (`modern_miniplayer_close`, `floaty_bar_controls_view`) stay authoritative.
+  Watch page + scrolling now produce zero mini-player detections, while BACK
+  still blocks the real mini-player ("Mini player is blocked!" over "YouTube
+  Morphe", stable, OK does not re-block).
+- **PiP**: `showYouTubeFloatingPlayerBlock` hardcoded the official package for
+  the popup and the kill, so with Morphe the kill targeted a package that was
+  not even running. It now uses the detected package. `killYouTubePictureInPicture`
+  also stopped using HOME+killBackgroundProcesses (a no-op on Android 14+ that
+  left the PiP floating) and now brings the app to the front, which dismisses
+  its PiP; no HOME press is queued any more because it backgrounded the blocker,
+  cleared its visibility state and re-armed the once-per-second block loop.
+
+Emulator limitation unchanged: neither official YouTube nor Morphe creates a
+system PiP window on the AVD, so the new PiP close path still needs a device
+pass on the phone.
+
 ## Recommendation
 
 1. Cherry-pick `ad814d2` (upstream evidence port) and `7b21a85` (coordinate-tap
