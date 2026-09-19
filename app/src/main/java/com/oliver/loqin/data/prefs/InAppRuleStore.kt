@@ -74,17 +74,23 @@ object InAppRuleStore {
         "com.google.android.youtube" to setOf(
             BlockingToggleKeys.KEY_BLOCK_YT_SHORTS,
             BlockingToggleKeys.KEY_BLOCK_YT_SUBSCRIPTIONS,
-            BlockingToggleKeys.KEY_BLOCK_YT_YOU
+            BlockingToggleKeys.KEY_BLOCK_YT_YOU,
+            BlockingToggleKeys.KEY_BLOCK_YT_MINI_PLAYER,
+            BlockingToggleKeys.KEY_BLOCK_YT_PIP
         ),
         "app.revanced.android.youtube" to setOf(
             BlockingToggleKeys.KEY_BLOCK_YT_SHORTS,
             BlockingToggleKeys.KEY_BLOCK_YT_SUBSCRIPTIONS,
-            BlockingToggleKeys.KEY_BLOCK_YT_YOU
+            BlockingToggleKeys.KEY_BLOCK_YT_YOU,
+            BlockingToggleKeys.KEY_BLOCK_YT_MINI_PLAYER,
+            BlockingToggleKeys.KEY_BLOCK_YT_PIP
         ),
         "app.morphe.android.youtube" to setOf(
             BlockingToggleKeys.KEY_BLOCK_YT_SHORTS,
             BlockingToggleKeys.KEY_BLOCK_YT_SUBSCRIPTIONS,
-            BlockingToggleKeys.KEY_BLOCK_YT_YOU
+            BlockingToggleKeys.KEY_BLOCK_YT_YOU,
+            BlockingToggleKeys.KEY_BLOCK_YT_MINI_PLAYER,
+            BlockingToggleKeys.KEY_BLOCK_YT_PIP
         ),
         "com.instagram.android" to setOf(
             BlockingToggleKeys.KEY_BLOCK_IG_REELS,

@@ -329,13 +329,18 @@ class LoqInAccessibilityService : AccessibilityService() {
         "search", "suche",
         "search button", "search tab", "open search"
     )
-    private val YT_MINI_PLAYER_NAME_LABELS = listOf("miniplayer", "mini player", "mini-player")
+    private val YT_MINI_PLAYER_NAME_LABELS = listOf(
+        "miniplayer", "mini player", "mini-player",
+        // YouTube 21.x exposes the in-app mini-player as "Minimized player".
+        "minimized player", "minimized miniplayer", "minimized video"
+    )
     private val YT_MINI_PLAYER_CLOSE_LABELS = listOf(
         "close player", "close mini player", "close miniplayer",
         "dismiss player", "dismiss mini player",
         "close video", "video schließen",
         "player schließen", "player ausblenden",
         "miniplayer schließen", "mini player schließen", "miniplayer ausblenden",
+        "close minimized player", "minimized player schließen",
         "schließen"
     )
     private val YT_MINI_PLAYER_PLAY_PAUSE_LABELS = listOf(
@@ -1429,6 +1434,12 @@ class LoqInAccessibilityService : AccessibilityService() {
                 type == AccessibilityEvent.TYPE_VIEW_FOCUSED
 
         if (specialPkg && specialEvent) {
+            // Floating-player detection must also run on content events: the in-app mini-player
+            // appears via WINDOW_CONTENT_CHANGED (e.g. after BACK from the watch page) without a
+            // window transition, so the transition-only call site never saw it.
+            if (isYouTubePackage(pkg) && maybeBlockYouTubeFloatingPlayer(event, "content")) {
+                return
+            }
             if (shouldRunDeepProbe(pkg, type, isTransition = false, now = now)) {
                 maybeBlockNow(pkg, event)
             }
@@ -5648,10 +5659,10 @@ class LoqInAccessibilityService : AccessibilityService() {
         if (!SwitchModeStore.isEnabled(this)) {
             return false
         }
-        // Mini player and PiP surfaces were removed as user-facing rules. The floating-player
-        // helper still runs for Shorts-in-PiP cleanup via the blockShorts path below.
-        val blockMiniPlayer = false
-        val blockPictureInPicture = false
+        // Mini-player and PiP are user-facing rules again (experiment branch): they are inert
+        // unless the matching rule is enabled for the profile.
+        val blockMiniPlayer = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_MINI_PLAYER)
+        val blockPictureInPicture = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_PIP)
         val blockShorts = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_SHORTS)
         if (!blockMiniPlayer && !blockPictureInPicture && !blockShorts) {
             return false
@@ -5661,15 +5672,26 @@ class LoqInAccessibilityService : AccessibilityService() {
         if (!force && now - lastYouTubeFloatingPlayerBlockAt < 420L) {
             return false
         }
+        // Do not re-show the floating-player blocker while it is already on screen (forceShow
+        // bypasses the surface cooldown, so without this a still-visible mini-player re-triggered
+        // the popup once per second).
+        if (!force && (BlockerActivity.isVisible || BlockerActivity.isRecentlyFocusedFor(pkg))) {
+            return true
+        }
 
         val root = rootOverride ?: youtubeCurrentRoot(event)
         val eventSignal = youtubeEventSourceSignal(event, maxHops = 3)
         val eventRealPip = isLikelyYouTubePictureInPicture(root, event) ||
             anyNeedleMatches(eventSignal, YT_REAL_PIP_LABELS)
         val windowPip = isYouTubePictureInPictureWindowVisible()
-        val miniVisible =
-            root?.let { isLikelyYouTubeMiniPlayerVisible(it) || hasYouTubeMiniPlayerGeometry(it) } == true ||
+        val miniIdentity =
+            root?.let { hasYouTubeMiniPlayerIdentity(it) } == true ||
                 anyNeedleMatches(eventSignal, YT_MINI_PLAYER_NAME_LABELS)
+        // Detection requires an explicit mini-player label/view id (or a real PiP window).
+        // Geometry alone also matches the watch page's player control bar, which caused false
+        // "Mini player is blocked" popups while watching/scrolling. Geometry is still used by the
+        // close strategies via findYouTubeMiniPlayerBounds().
+        val miniVisible = miniIdentity || eventRealPip || windowPip
 
         val selectedSurface = root?.let { detectYouTubeSelectedSurface(it) ?: resolveYouTubeSurfaceFromEvent(event) }
         val explicitShortsFloatingContext =
@@ -5719,14 +5741,62 @@ class LoqInAccessibilityService : AccessibilityService() {
         clearSurfaceHintForPackage(pkg)
 
         if (eventRealPip || windowPip) {
-            runCatching { blockLaunchController.pauseActiveMediaPlayback() }
-            dismissYouTubeMiniPlayer("pip_rule_$reason", allowFallbackTap = true)
-            killYouTubePictureInPicture(pkg)
+            showYouTubeFloatingPlayerBlock(surfaceKey, reason, killPictureInPicture = true)
             return true
         }
 
         blockYouTubeMiniPlayer(reason)
+        showYouTubeFloatingPlayerBlock(surfaceKey, reason, killPictureInPicture = false)
         return true
+    }
+
+    /**
+     * Blocker feedback for the YouTube floating-player rules (ported from upstream 2.3.x).
+     * PiP is killed before the popup; the mini-player close strategies run separately.
+     */
+    private fun showYouTubeFloatingPlayerBlock(
+        surfaceKey: String,
+        reason: String,
+        killPictureInPicture: Boolean,
+    ) {
+        val pkg = PACKAGE_YOUTUBE
+        val labelRes = if (surfaceKey == "yt:pip") {
+            R.string.in_app_surface_pip_label
+        } else {
+            R.string.in_app_surface_mini_player_label
+        }
+        val label = getString(labelRes)
+        val title = getString(R.string.blocking_surface_blocked_title, label)
+        val message = surfaceUsageLine(surfaceKey, 0)
+
+        currentSurfaceKey = surfaceKey
+        currentSurfacePkg = pkg
+        clearSurfaceEvidence(surfaceKey)
+        clearSurfaceHintForPackage(pkg)
+        runCatching { blockLaunchController.pauseActiveMediaPlayback() }
+
+        if (killPictureInPicture) {
+            killYouTubePictureInPicture(pkg)
+        }
+
+        appendBlockingLog(
+            category = "yt_floating_block",
+            key = "yt-floating-block|$surfaceKey|$reason",
+            message = "surface=$surfaceKey reason=$reason killPip=$killPictureInPicture",
+            throttleMs = 700L,
+        )
+        softBlockSurface(
+            pkg = pkg,
+            appLabel = safeAppLabel(pkg),
+            title = title,
+            message = message,
+            backCount = 0,
+            deferNavigationUntilAcknowledge = true,
+            returnToPackageOnClose = false,
+            forceShow = true,
+            postAcknowledgeYouTubeHome = true,
+            postAcknowledgeYouTubeCleanupMini = true,
+        )
     }
 
     private fun maybeBlockYouTubeHomeShortsBeforeDedupe(event: AccessibilityEvent?): Boolean {
@@ -9112,6 +9182,31 @@ class LoqInAccessibilityService : AccessibilityService() {
             start = signal.indexOf(token, start + 1)
         }
         return false
+    }
+
+    /**
+     * Explicit mini-player identity (label or view id) without geometry. Used by the content-event
+     * path, where geometry alone also matches the watch page's player control bar.
+     */
+    private fun hasYouTubeMiniPlayerIdentity(root: AccessibilityNodeInfo): Boolean {
+        if (!isYouTubeRootNode(root)) {
+            return false
+        }
+        return findAnyNode(root) { node ->
+            val nodePkg = node.packageName?.toString()?.lowercase(Locale.getDefault()).orEmpty()
+            if (nodePkg.isNotBlank() && !isYouTubePackage(nodePkg)) return@findAnyNode false
+            // YouTube keeps a hidden mini-player container in the watch-page tree; only a visibly
+            // displayed node may count as the in-app mini-player.
+            if (!runCatching { node.isVisibleToUser }.getOrDefault(false)) return@findAnyNode false
+
+            val text = node.text?.toString().orEmpty()
+            val desc = node.contentDescription?.toString().orEmpty()
+            val viewId = node.viewIdResourceName?.lowercase(Locale.getDefault()).orEmpty()
+            val signal = "$text $desc"
+            anyNeedleMatches(signal, YT_MINI_PLAYER_HINT_LABELS) ||
+                anyNeedleMatches(signal, YT_MINI_PLAYER_CLOSE_LABELS) ||
+                (viewId.contains("mini") && viewId.contains("player"))
+        } != null
     }
 
     private fun isLikelyYouTubeMiniPlayerVisible(root: AccessibilityNodeInfo?): Boolean {

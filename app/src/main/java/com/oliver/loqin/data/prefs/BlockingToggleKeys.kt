@@ -71,6 +71,8 @@ object BlockingToggleKeys {
         KEY_BLOCK_YT_SHORTS,
         KEY_BLOCK_YT_SUBSCRIPTIONS,
         KEY_BLOCK_YT_YOU,
+        KEY_BLOCK_YT_MINI_PLAYER,
+        KEY_BLOCK_YT_PIP,
 
         KEY_BLOCK_IG_REELS,
         KEY_BLOCK_IG_SEARCH,
