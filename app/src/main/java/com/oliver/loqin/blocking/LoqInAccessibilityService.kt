@@ -191,6 +191,9 @@ class LoqInAccessibilityService : AccessibilityService() {
     private val inAppGraceUntilByPkg = HashMap<String, Long>()
     // Per-surface re-entry guards (belt-and-braces on top of the package grace).
     private val surfaceBlockGuardUntil = HashMap<String, Long>()
+    // After YouTube ad controls are observed, geometry-only surface resolution is suppressed for a
+    // short window: ad dismiss/skip buttons sit in the same lower-screen bands as the bottom nav.
+    @Volatile private var youtubeWatchAdPositionGuardUntilUptime: Long = 0L
     // Facebook bottom-tab tap hints are tracked separately from the shared single-slot hint so the
     // Reels auto-hint (which rewrites the shared slot on every detected frame) cannot clobber a
     // tab tap before the passive probe consumes it.
@@ -312,6 +315,14 @@ class LoqInAccessibilityService : AccessibilityService() {
         "subscriptions, tab", "subscription, tab",
         "abos", "abo", "abonnements", "abonnement",
         "abo, tab", "abos, tab"
+    )
+    // Watch-page ad dismiss controls (ported from upstream 2.3.x). The Ad Center / sponsored /
+    // visit-site label lists above already describe the rest of the overlay.
+    private val YT_WATCH_AD_DISMISS_LABELS = listOf(
+        "skip ad", "skip ads", "close ad", "dismiss ad",
+        "anzeige überspringen", "werbung überspringen", "anzeige schließen", "werbung schließen",
+        "omitir anuncio", "cerrar anuncio",
+        "pular anúncio", "fechar anúncio",
     )
     private val YT_SEARCH_LABELS = listOf(
         "search youtube", "youtube durchsuchen", "youtube suchen",
@@ -480,6 +491,7 @@ class LoqInAccessibilityService : AccessibilityService() {
     // Home-redirect animation, short enough that re-tapping a blocked tab cannot slip through.
     private val YT_POST_BLOCK_GRACE_MS = 600L
     private val PIP_KILL_COOLDOWN_MS = 8_000L
+    private val YT_WATCH_AD_POSITION_GUARD_MS = 2_000L
 
     private val MAX_NODE_SCAN_COUNT = 120
     // Main-thread wait for a root lookup; on slow devices the lookup is abandoned and its result
@@ -1159,6 +1171,9 @@ class LoqInAccessibilityService : AccessibilityService() {
             return
         }
 
+        if (isYouTubePackage(pkg) && maybeBlockYouTubeDirectNavigationBeforeDedupe(event)) {
+            return
+        }
         if (isYouTubePackage(pkg) && maybeBlockYouTubeHomeShortsBeforeDedupe(event)) {
             return
         }
@@ -3997,6 +4012,20 @@ class LoqInAccessibilityService : AccessibilityService() {
         } != null
     }
 
+    /**
+     * Devices where deep accessibility walks have caused Binder stalls/ANRs (Samsung Android 12,
+     * Bigme HiBreak on Android 14). On these, YouTube classification relies on direct event
+     * evidence and skips multi-hop parent/geometry traversal (ported from upstream 2.3.x).
+     */
+    private fun isYouTubeAccessibilityBinderRiskDevice(): Boolean {
+        val manufacturer = Build.MANUFACTURER.orEmpty().lowercase(Locale.ROOT)
+        val brand = Build.BRAND.orEmpty().lowercase(Locale.ROOT)
+        val samsung = manufacturer.contains("samsung") || brand.contains("samsung")
+        val samsungAndroid12 = samsung && Build.VERSION.SDK_INT in 31..32
+        val bigme = manufacturer.contains("bigme") || brand.contains("bigme")
+        return samsungAndroid12 || bigme
+    }
+
     private fun tryRedirectBrowserToSafePage(pkg: String): Boolean {
         val safeUris = listOf("about:blank", "about:home")
         for (raw in safeUris) {
@@ -5808,10 +5837,38 @@ class LoqInAccessibilityService : AccessibilityService() {
             return false
         }
 
-        val root = youtubeCurrentRoot(event) ?: return false
+        // This fast Shorts path runs before the normal YouTube surface resolver. An explicit
+        // Subscriptions bottom-nav event must win here; otherwise a transient Shorts/player signal
+        // underneath the tab can show the correct block with the wrong "Shorts" label.
+        val directSurface = resolveYouTubeSurfaceFromEvent(event, allowFocused = false)
+        if (isDirectYouTubeSubscriptionsEvent(event) || directSurface == "yt:subscriptions") {
+            rememberSurfaceHint(pkg, "yt:subscriptions", now)
+            return false
+        }
+
+        // While a watch-page ad overlay is up, skip this Shorts heuristic: ad controls sit in the
+        // same lower-screen band as the Shorts shelf and must not classify a watch page as Shorts.
+        val riskyBinderDevice = isYouTubeAccessibilityBinderRiskDevice()
+        val root = if (riskyBinderDevice) null else youtubeCurrentRoot(event)
+        val selectedSurface = root?.let { detectYouTubeSelectedSurface(it) }
+        val watchAdOverlay =
+            hasYouTubeWatchAdDismissEvent(event) ||
+                (root != null && shouldProbeYouTubeWatchAdOverlayRoot(event) &&
+                    hasYouTubeWatchAdOverlaySignal(root, event, selectedSurface))
+        if (watchAdOverlay && selectedSurface != "yt:shorts") {
+            armYouTubeWatchAdPositionGuard()
+            return false
+        }
+
+        val directShortsEvent =
+            isYouTubeShortsEntryEvent(event) ||
+                resolveYouTubeSurfaceFromEvent(event, allowFocused = false) == "yt:shorts"
         val detected =
-            isYouTubeHomeShortsShelfEvent(event, root) ||
-                isYouTubeHomeFeedShortsPlayer(root, event)
+            directShortsEvent ||
+                (root != null && (
+                    isYouTubeHomeShortsShelfEvent(event, root) ||
+                        isYouTubeHomeFeedShortsPlayer(root, event)
+                    ))
         if (!detected) {
             return false
         }
@@ -5835,6 +5892,180 @@ class LoqInAccessibilityService : AccessibilityService() {
             postAcknowledgeYouTubeCleanupMini = false
         )
         return true
+    }
+
+    /**
+     * Explicit bottom-navigation evidence (Subscriptions/You) is reliable enough to act on without
+     * waiting for the next root scan: YouTube can replace its tree between the tap event and the
+     * normal classification pass, which used to make the block land late or with the wrong label.
+     * Ported from upstream 2.3.x.
+     */
+    private fun maybeBlockYouTubeDirectNavigationBeforeDedupe(event: AccessibilityEvent?): Boolean {
+        if (!SwitchModeStore.isEnabled(this)) {
+            return false
+        }
+
+        val type = event?.eventType ?: return false
+        if (type != AccessibilityEvent.TYPE_VIEW_CLICKED &&
+            type != AccessibilityEvent.TYPE_VIEW_SELECTED &&
+            type != AccessibilityEvent.TYPE_VIEW_FOCUSED
+        ) {
+            return false
+        }
+
+        val surface = when {
+            isDirectYouTubeSubscriptionsEvent(event) -> "yt:subscriptions"
+            else -> resolveYouTubeSurfaceFromEvent(event, allowFocused = true)
+        }
+        if (surface != "yt:subscriptions" && surface != "yt:you") {
+            return false
+        }
+
+        val enabled = when (surface) {
+            "yt:subscriptions" -> inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_SUBSCRIPTIONS)
+            "yt:you" -> inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_YOU)
+            else -> false
+        }
+        val now = System.currentTimeMillis()
+        rememberSurfaceHint(PACKAGE_YOUTUBE, surface, now)
+        if (!enabled || surfaceGuardActive(PACKAGE_YOUTUBE, surface, now)) {
+            return false
+        }
+
+        val label = if (surface == "yt:subscriptions") {
+            getString(R.string.in_app_surface_subscriptions_label)
+        } else {
+            getString(R.string.in_app_surface_you_label)
+        }
+        currentSurfaceKey = surface
+        currentSurfacePkg = PACKAGE_YOUTUBE
+        clearSurfaceEvidence(surface)
+        surfaceBlockGuardUntil["$PACKAGE_YOUTUBE|$surface"] = now +
+            maxOf(YT_SHORTS_REENTRY_GUARD_MS, INAPP_POST_BLOCK_GRACE_MS)
+        if (surface == "yt:subscriptions") {
+            runCatching { blockLaunchController.pauseActiveMediaPlayback() }
+        }
+        logInAppSurfaceDetect(
+            PACKAGE_YOUTUBE,
+            surface,
+            enabled = true,
+            event = event,
+            detail = "direct_bottom_navigation",
+        )
+        softBlockSurface(
+            pkg = PACKAGE_YOUTUBE,
+            appLabel = safeAppLabel(PACKAGE_YOUTUBE),
+            title = getString(R.string.blocking_surface_blocked_title, label),
+            message = surfaceUsageLine(surface, 0),
+            backCount = 0,
+            deferNavigationUntilAcknowledge = true,
+            returnToPackageOnClose = false,
+            forceShow = true,
+            postAcknowledgeYouTubeHome = true,
+            postAcknowledgeYouTubeCleanupMini = true,
+        )
+        return true
+    }
+
+    /**
+     * Explicit Subscriptions bottom-navigation event (label plus bottom-band geometry or
+     * pivot/nav/bottom view ids). Geometry hops are skipped on Binder-risk devices.
+     * Ported from upstream 2.3.x.
+     */
+    private fun isDirectYouTubeSubscriptionsEvent(event: AccessibilityEvent?): Boolean {
+        val type = event?.eventType ?: return false
+        if (type != AccessibilityEvent.TYPE_VIEW_CLICKED &&
+            type != AccessibilityEvent.TYPE_VIEW_SELECTED &&
+            type != AccessibilityEvent.TYPE_VIEW_FOCUSED
+        ) return false
+
+        val signal = youtubeEventSourceSignal(event, maxHops = 3)
+        if (!anyNeedleMatches(signal, YT_SUBSCRIPTIONS_LABELS)) return false
+
+        val source = runCatching { event.source }.getOrNull()
+        val sourceViewId = source?.viewIdResourceName?.lowercase(Locale.ROOT).orEmpty()
+        val sourceIsExplicitBottomNav =
+            sourceViewId.contains("pivot") ||
+                sourceViewId.contains("bottom") ||
+                sourceViewId.contains("navigation") ||
+                sourceViewId.contains("tab") ||
+                sourceViewId.contains("nav") ||
+                source?.isSelected == true ||
+                source?.isCheckedCompat() == true
+        if (sourceIsExplicitBottomNav) return true
+
+        // The geometry-only surface resolver is intentionally suppressed for a short window after
+        // YouTube ad controls are observed. An explicit Subscriptions label in the bottom
+        // navigation is safe to accept even while that guard is active.
+        var current = runCatching { event.source }.getOrNull()
+        val width = resources.displayMetrics.widthPixels.coerceAtLeast(1)
+        val height = resources.displayMetrics.heightPixels.coerceAtLeast(1)
+        val bounds = Rect()
+        var hops = 0
+        val maxHops = if (isYouTubeAccessibilityBinderRiskDevice()) 0 else 3
+        while (current != null && hops <= maxHops) {
+            val node = current ?: break
+            val nodePkg = node.packageName?.toString()?.lowercase(Locale.ROOT).orEmpty()
+            if (nodePkg.isBlank() || isYouTubePackage(nodePkg)) {
+                runCatching { node.getBoundsInScreen(bounds) }.getOrNull()
+                if (!bounds.isEmpty) {
+                    val centerX = bounds.exactCenterX() / width.toFloat()
+                    val centerY = bounds.exactCenterY() / height.toFloat()
+                    val widthRatio = bounds.width() / width.toFloat()
+                    val heightRatio = bounds.height() / height.toFloat()
+                    if (centerY >= 0.68f && centerX in 0.50f..0.90f &&
+                        widthRatio <= 0.42f && heightRatio <= 0.26f
+                    ) {
+                        return true
+                    }
+                }
+            }
+            hops++
+            if (hops > maxHops) break
+            current = runCatching { node.parent }.getOrNull()
+        }
+        return false
+    }
+
+    private fun armYouTubeWatchAdPositionGuard() {
+        youtubeWatchAdPositionGuardUntilUptime = maxOf(
+            youtubeWatchAdPositionGuardUntilUptime,
+            SystemClock.uptimeMillis() + YT_WATCH_AD_POSITION_GUARD_MS,
+        )
+    }
+
+    private fun isYouTubeWatchAdPositionGuardActive(): Boolean =
+        SystemClock.uptimeMillis() < youtubeWatchAdPositionGuardUntilUptime
+
+    private fun shouldProbeYouTubeWatchAdOverlayRoot(event: AccessibilityEvent?): Boolean {
+        val type = event?.eventType ?: return false
+        return type == AccessibilityEvent.TYPE_VIEW_CLICKED ||
+            type == AccessibilityEvent.TYPE_VIEW_SELECTED
+    }
+
+    private fun hasYouTubeWatchAdDismissEvent(event: AccessibilityEvent?): Boolean {
+        val type = event?.eventType ?: return false
+        if (type != AccessibilityEvent.TYPE_VIEW_CLICKED &&
+            type != AccessibilityEvent.TYPE_VIEW_SELECTED &&
+            type != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED &&
+            type != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
+        ) return false
+
+        val source = runCatching { event.source }.getOrNull()
+        val sourcePkg = source?.packageName?.toString()?.lowercase(Locale.ROOT).orEmpty()
+        if (sourcePkg.isNotBlank() && !isYouTubePackage(sourcePkg)) return false
+
+        return isYouTubeWatchAdSignal(youtubeEventSourceSignal(event, maxHops = 2))
+    }
+
+    private fun isYouTubeWatchAdSignal(signal: String): Boolean {
+        if (signal.isBlank()) return false
+        val lowered = signal.lowercase(Locale.ROOT)
+        val adCenter = YT_WATCH_AD_CENTER_LABELS.any(lowered::contains)
+        val sponsored = YT_WATCH_AD_SPONSORED_LABELS.any { containsSemanticToken(lowered, it) }
+        val visitSite = YT_WATCH_AD_VISIT_LABELS.any(lowered::contains)
+        val dismiss = YT_WATCH_AD_DISMISS_LABELS.any(lowered::contains)
+        return adCenter || dismiss || (sponsored && visitSite)
     }
 
     /**
@@ -6330,10 +6561,26 @@ class LoqInAccessibilityService : AccessibilityService() {
             val blockYtSubscriptionsEnabled = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_SUBSCRIPTIONS)
             val blockYtYouEnabled = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_YOU)
 
-            val ytTappedSurface = resolveYouTubeSurfaceFromEvent(event, allowFocused = true)
             val ytEnteredAt = appEnteredAtByPkg[pkg] ?: 0L
             val ytSettled = ytEnteredAt == 0L || (now - ytEnteredAt) >= 350L
             val ytSelectedSurface = if (ytSettled) detectYouTubeSelectedSurface(root) else null
+            // A real bottom-navigation Subscriptions event is explicit enough to trust immediately.
+            // Resolve it before the ad-position suppression so genuine tab taps are not delayed
+            // while the generic geometry fallback is intentionally guarded (upstream 2.3.x).
+            val ytDirectSubscriptionsNow = isDirectYouTubeSubscriptionsEvent(event)
+            val ytWatchAdOverlay =
+                hasYouTubeWatchAdDismissEvent(event) ||
+                    (shouldProbeYouTubeWatchAdOverlayRoot(event) &&
+                        hasYouTubeWatchAdOverlaySignal(root, event, ytSelectedSurface))
+            val ytSuppressNavigationSurfaceDetection = ytWatchAdOverlay && ytSelectedSurface != "yt:shorts"
+            if (ytSuppressNavigationSurfaceDetection) {
+                armYouTubeWatchAdPositionGuard()
+            }
+            val ytTappedSurface = when {
+                ytDirectSubscriptionsNow -> "yt:subscriptions"
+                ytSuppressNavigationSurfaceDetection -> null
+                else -> resolveYouTubeSurfaceFromEvent(event, allowFocused = true)
+            }
             val ytShortsEntryNow = isYouTubeShortsEntryEvent(event) || isYouTubeHomeShortsShelfEvent(event, root)
             val ytHomeSurfaceCandidate = ytTappedSurface == "yt:home" || ytSelectedSurface == "yt:home"
             val ytExplicitShortsContext = ytTappedSurface == "yt:shorts" || ytSelectedSurface == "yt:shorts" || ytShortsEntryNow
@@ -7691,6 +7938,12 @@ class LoqInAccessibilityService : AccessibilityService() {
             return null
         }
 
+        // An explicit Subscriptions bottom-nav event wins over any transient player/Shorts signal
+        // underneath the tab (ported from upstream 2.3.x).
+        if (isDirectYouTubeSubscriptionsEvent(event)) {
+            return "yt:subscriptions"
+        }
+
         val viewId = source?.viewIdResourceName?.lowercase(Locale.getDefault()).orEmpty()
         val surfaceFromPosition = youtubeSurfaceFromEventPosition(event)
         val sourceLooksLikeBottomNav =
@@ -7849,6 +8102,12 @@ class LoqInAccessibilityService : AccessibilityService() {
     }
 
     private fun youtubeSurfaceFromEventPosition(event: AccessibilityEvent?): String? {
+        // Ad dismiss/skip controls often live in the same lower-screen bands as YouTube's bottom
+        // navigation. For a short window after observing an ad overlay, do not infer a surface from
+        // geometry alone. Real bottom-nav events still resolve via their direct label/view-id
+        // semantics in resolveYouTubeSurfaceFromEvent().
+        if (isYouTubeWatchAdPositionGuardActive()) return null
+
         val type = event?.eventType ?: return null
         if (type != AccessibilityEvent.TYPE_VIEW_CLICKED &&
             type != AccessibilityEvent.TYPE_VIEW_SELECTED &&
@@ -7858,8 +8117,10 @@ class LoqInAccessibilityService : AccessibilityService() {
         val width = resources.displayMetrics.widthPixels.coerceAtLeast(1)
         val height = resources.displayMetrics.heightPixels.coerceAtLeast(1)
         var hops = 0
+        // Binder-risk devices (Samsung Android 12, Bigme) skip the multi-hop parent walk.
+        val maxHops = if (isYouTubeAccessibilityBinderRiskDevice()) 1 else 5
         val bounds = Rect()
-        while (current != null && hops < 5) {
+        while (current != null && hops < maxHops) {
             val nodePkg = current.packageName?.toString()?.lowercase(Locale.getDefault()).orEmpty()
             if (nodePkg.isBlank() || isYouTubePackage(nodePkg)) {
                 runCatching { current.getBoundsInScreen(bounds) }.getOrNull()
@@ -8758,10 +9019,9 @@ class LoqInAccessibilityService : AccessibilityService() {
         val signal = parts.joinToString(" ").lowercase(Locale.ROOT)
         if (signal.isBlank()) return false
 
-        val adCenter = YT_WATCH_AD_CENTER_LABELS.any(signal::contains)
-        val sponsored = YT_WATCH_AD_SPONSORED_LABELS.any { containsSemanticToken(signal, it) }
-        val visitSite = YT_WATCH_AD_VISIT_LABELS.any(signal::contains)
-        return adCenter || (sponsored && visitSite)
+        // Includes the ad dismiss/skip labels on top of Ad Center and sponsored+visit-site
+        // (ported from upstream 2.3.x).
+        return isYouTubeWatchAdSignal(signal)
     }
 
     private fun hasYouTubeNativeShortsLimitReachedSignal(
