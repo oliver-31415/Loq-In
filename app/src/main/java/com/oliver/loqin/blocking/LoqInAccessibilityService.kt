@@ -5301,6 +5301,9 @@ class LoqInAccessibilityService : AccessibilityService() {
         }
 
         if (allowFallbackTap && (isLikelyYouTubeMiniPlayerVisible(root) || hasYouTubeMiniPlayerGeometry(root))) {
+            // Node-based strategies only: pause-axis/sibling node clicks and accessibility
+            // actions. Coordinate taps/swipes were removed because a wrong tap can open a video
+            // or navigate somewhere unrelated.
             val pauseAxisClicked = closeYouTubeMiniPlayerFromPlayPauseAxis(root, reason)
             if (pauseAxisClicked) {
                 return true
@@ -5310,31 +5313,6 @@ class LoqInAccessibilityService : AccessibilityService() {
             if (actionDismissed) {
                 return true
             }
-
-            val boundsClicked = tapYouTubeMiniPlayerCloseByBounds(root, reason)
-            if (boundsClicked) {
-                return true
-            }
-
-            val swiped = swipeYouTubeMiniPlayerAway(root, reason)
-            if (swiped) {
-                return true
-            }
-
-            val fallbackClicked =
-                tapScreenAtRatio(0.94f, 0.68f) ||
-                    tapScreenAtRatio(0.94f, 0.76f) ||
-                    tapScreenAtRatio(0.94f, 0.82f) ||
-                    tapScreenAtRatio(0.94f, 0.86f) ||
-                    tapScreenAtRatio(0.94f, 0.88f) ||
-                    tapScreenAtRatio(0.88f, 0.76f)
-            appendBlockingLog(
-                category = "yt_mini_close",
-                key = "yt-mini-close-fallback|$reason",
-                message = "reason=$reason fallbackClicked=$fallbackClicked",
-                throttleMs = 500L
-            )
-            return fallbackClicked
         }
         return false
     }
@@ -5447,7 +5425,6 @@ class LoqInAccessibilityService : AccessibilityService() {
             return false
         }
 
-        var tapped = false
         pauseCandidates.forEach { pauseNode ->
             val pauseBounds = Rect()
             runCatching { pauseNode.getBoundsInScreen(pauseBounds) }.getOrNull()
@@ -5469,28 +5446,15 @@ class LoqInAccessibilityService : AccessibilityService() {
                 )
                 return true
             }
-
-            val y = pauseBounds.exactCenterY().coerceIn(playerBounds.top + 1f, playerBounds.bottom - 1f)
-            val xCandidates = listOf(
-                playerBounds.right - width * 0.025f,
-                playerBounds.right - width * 0.045f,
-                playerBounds.right - width * 0.065f,
-                playerBounds.right - width * 0.095f,
-                playerBounds.left + playerBounds.width() * 0.88f,
-                playerBounds.left + playerBounds.width() * 0.94f,
-                playerBounds.left + playerBounds.width() * 0.98f
-            )
-            xCandidates.forEach { x ->
-                if (tapScreenAtPoint(x, y)) tapped = true
-            }
         }
+        // Node-based strategies only: coordinate taps near the mini-player were removed.
         appendBlockingLog(
             category = "yt_mini_close",
-            key = "yt-mini-close-pause-axis-tap|$reason",
-            message = "reason=$reason candidates=${pauseCandidates.size} tapped=$tapped",
+            key = "yt-mini-close-pause-axis-node-only|$reason",
+            message = "reason=$reason candidates=${pauseCandidates.size} nodeOnly=true",
             throttleMs = 500L
         )
-        return tapped
+        return false
     }
 
     private fun closeYouTubeMiniPlayerFromPauseSiblings(
@@ -5671,53 +5635,6 @@ class LoqInAccessibilityService : AccessibilityService() {
         }
 
         return best
-    }
-
-    private fun swipeYouTubeMiniPlayerAway(root: AccessibilityNodeInfo, reason: String): Boolean {
-        val playerBounds = findYouTubeMiniPlayerBounds(root) ?: return false
-        val width = resources.displayMetrics.widthPixels.coerceAtLeast(1)
-        val height = resources.displayMetrics.heightPixels.coerceAtLeast(1)
-        val fromX = playerBounds.exactCenterX()
-        val fromY = playerBounds.exactCenterY()
-        val toX = minOf(width - 4f, playerBounds.right + width * 0.36f)
-        val toY = minOf(height - 4f, playerBounds.bottom + playerBounds.height() * 1.35f)
-        val swiped =
-            swipeScreen(fromX, fromY, toX, fromY, durationMs = 220L) ||
-                swipeScreen(playerBounds.left + playerBounds.width() * 0.25f, fromY, toX, fromY, durationMs = 260L) ||
-                swipeScreen(fromX, fromY, fromX, toY, durationMs = 220L) ||
-                swipeScreen(playerBounds.left + playerBounds.width() * 0.78f, fromY, fromX, toY, durationMs = 220L)
-        appendBlockingLog(
-            category = "yt_mini_close",
-            key = "yt-mini-close-swipe|$reason",
-            message = "reason=$reason bounds=${playerBounds.left},${playerBounds.top},${playerBounds.right},${playerBounds.bottom} swiped=$swiped",
-            throttleMs = 500L
-        )
-        return swiped
-    }
-
-    private fun tapYouTubeMiniPlayerCloseByBounds(root: AccessibilityNodeInfo, reason: String): Boolean {
-        val playerBounds = findYouTubeMiniPlayerBounds(root) ?: return false
-        val closeX1 = playerBounds.right - playerBounds.width() * 0.06f
-        val closeX2 = playerBounds.right - resources.displayMetrics.widthPixels.coerceAtLeast(1) * 0.035f
-        val closeX3 = playerBounds.left + playerBounds.width() * 0.94f
-        val closeY1 = playerBounds.exactCenterY()
-        val closeY2 = playerBounds.top + playerBounds.height() * 0.42f
-        val closeY3 = playerBounds.top + playerBounds.height() * 0.62f
-
-        val clicked =
-            tapScreenAtPoint(closeX1, closeY1) ||
-                tapScreenAtPoint(closeX2, closeY1) ||
-                tapScreenAtPoint(closeX3, closeY1) ||
-                tapScreenAtPoint(closeX1, closeY2) ||
-                tapScreenAtPoint(closeX1, closeY3)
-
-        appendBlockingLog(
-            category = "yt_mini_close",
-            key = "yt-mini-close-bounds|$reason",
-            message = "reason=$reason bounds=${playerBounds.left},${playerBounds.top},${playerBounds.right},${playerBounds.bottom} clicked=$clicked",
-            throttleMs = 500L
-        )
-        return clicked
     }
 
     private fun maybeBlockYouTubeFloatingPlayer(
@@ -6154,8 +6071,6 @@ class LoqInAccessibilityService : AccessibilityService() {
         listOf(
             120L to "axis",
             320L to "action",
-            700L to "bounds",
-            1_100L to "swipe",
             1_600L to "all"
         ).forEach { (delay, strategy) ->
             handler.postDelayed({
@@ -6178,8 +6093,8 @@ class LoqInAccessibilityService : AccessibilityService() {
         return when (strategy) {
             "axis" -> closeYouTubeMiniPlayerFromPlayPauseAxis(root, reason)
             "action" -> dismissYouTubeMiniPlayerByAccessibilityAction(root, reason)
-            "bounds" -> tapYouTubeMiniPlayerCloseByBounds(root, reason)
-            "swipe" -> swipeYouTubeMiniPlayerAway(root, reason)
+            // Coordinate-based "bounds"/"swipe" strategies were removed: a wrong tap can open a
+            // video or navigate somewhere unrelated.
             else -> dismissYouTubeMiniPlayer(reason, allowFallbackTap = true)
         }
     }
