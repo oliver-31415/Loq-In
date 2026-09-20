@@ -24,6 +24,7 @@ import android.content.Intent
 import com.oliver.loqin.blocking.BlockingRuntime
 import com.oliver.loqin.data.prefs.SwitchModeStore
 import com.oliver.loqin.platform.receiver.location.LocationTriggerMonitor
+import com.oliver.loqin.util.ProtectionChangeGate
 import com.oliver.loqin.util.PersistentStatusNotifier
 import com.oliver.loqin.util.ProtectionStatusNotifier
 
@@ -40,6 +41,8 @@ class PostUpdateReceiver : BroadcastReceiver() {
 
         val appContext = ctx.applicationContext
         runCatching { LocationTriggerMonitor.ensureStarted(appContext) }
+        // Alarms do not survive an app update; apply overdue changes and re-arm the next one.
+        runCatching { ProtectionChangeGate.applyDueChanges(appContext) }
         if (SwitchModeStore.isEnabled(appContext)) {
             runCatching { BlockingRuntime.ensureRunning(appContext) }
         }

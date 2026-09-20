@@ -31,6 +31,7 @@ import com.oliver.loqin.platform.receiver.bluetooth.BluetoothTriggerMonitor
 import com.oliver.loqin.platform.receiver.location.LocationTriggerMonitor
 import com.oliver.loqin.platform.receiver.schedule.ScheduleReceiver
 import com.oliver.loqin.platform.receiver.wifi.WifiTriggerMonitor
+import com.oliver.loqin.util.ProtectionChangeGate
 import com.oliver.loqin.util.ProtectionStatusNotifier
 
 // Receives system boot events and restores LoqIn runtime state.
@@ -52,6 +53,10 @@ class BootCompletedReceiver : BroadcastReceiver() {
 
         // Ensure prefs/runtime initialized
         SwitchModeStore.ensureInit(ctx)
+
+        // Apply any protection-weakening changes whose delay expired while the device was off,
+        // then restore the next pending alarm if one remains.
+        runCatching { ProtectionChangeGate.applyDueChanges(ctx) }
 
         val enabled = SwitchModeStore.isEnabled(ctx)
         val autostart = AutostartStore.isEnabled(ctx)

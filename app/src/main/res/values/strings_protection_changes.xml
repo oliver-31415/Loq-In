@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Protection change gate / delay queue.
+-->
+<resources>
+    <string name="protection_change_queued">This protection-reducing change is queued and will apply after the configured delay.</string>
+    <string name="protection_pending_changes_title">Pending changes</string>
+</resources>

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Schutzänderungs-Gate / Verzögerungswarteschlange.
+-->
+<resources>
+    <string name="protection_change_queued">Diese schutzreduzierende Änderung wurde vorgemerkt und wird nach der eingestellten Verzögerung angewendet.</string>
+    <string name="protection_pending_changes_title">Ausstehende Änderungen</string>
+</resources>

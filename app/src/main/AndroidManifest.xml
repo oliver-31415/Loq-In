@@ -555,6 +555,11 @@
             </intent-filter>
         </receiver>
 
+        <!-- Alarm target for the protection change queue (targeted PendingIntent only) -->
+        <receiver
+            android:name=".receiver.ProtectionChangeReceiver"
+            android:exported="false" />
+
         <!-- Time-change receiver to re-evaluate schedules -->
         <receiver
             android:name=".platform.receiver.system.TimeChangeReceiver"

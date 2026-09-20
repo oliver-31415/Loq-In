@@ -37,6 +37,7 @@ import com.oliver.loqin.util.LocaleHelper
 import com.oliver.loqin.util.AdvancedProtectionCompat
 import com.oliver.loqin.util.FrameworkApi34Compat
 import com.oliver.loqin.util.ManagedDevicePolicyHelper
+import com.oliver.loqin.util.ProtectionChangeGate
 import com.oliver.loqin.util.PersistentStatusNotifier
 import com.oliver.loqin.util.SettingsSchemaMigration
 import java.util.concurrent.Executors
@@ -98,6 +99,10 @@ class LoqInApp : Application() {
         // Startup work below can touch system services, Google Play services or disk.
         // Do it after Application.onCreate() returns so Android/Samsung cold starts do not get stuck in finishAttachApplication or slow binder calls.
         startupExecutor.execute {
+            // Apply any protection-weakening changes whose delay expired while the app was not
+            // running, then restore the next pending alarm if one remains.
+            runCatching { ProtectionChangeGate.applyDueChanges(appContext) }
+
             // Initialize the durable statistics archive before monitors can emit new counters.
             runCatching { StatsPersistence.initialize(appContext) }
 
