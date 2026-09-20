@@ -63,7 +63,10 @@ import com.oliver.loqin.ui.dialog.styleLoqInDestructivePositiveButton
 import com.oliver.loqin.ui.dialog.styleLoqInDialogButtons
 import com.oliver.loqin.ui.updateSelectionSubtitle
 import com.oliver.loqin.util.EditingLockGuard
+import com.oliver.loqin.util.ProtectionChangeGate
+import com.oliver.loqin.util.ProtectionChangePolicy
 import com.oliver.loqin.util.ProtectionEditPolicy
+import com.oliver.loqin.util.ProtectionFeedback
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
@@ -282,7 +285,7 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         rv.layoutManager = LinearLayoutManager(this)
         rv.adapter = adapter
         rv.attachEditDeleteSwipe(
-            canSwipe = { !isSelectionMode && !EditingLockGuard.isLocked(this) },
+            canSwipe = { !isSelectionMode },
             onEdit = { position ->
                 adapter.itemAt(position)?.let { showEditDialog(it.domain) }
             },
@@ -497,9 +500,6 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
     }
 
     private fun confirmDeleteSelected() {
-        if (websiteEditingLocked()) {
-            return
-        }
         if (selectedDomains.isEmpty()) {
             return
         }
@@ -515,13 +515,24 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
             dlg.styleLoqInDestructivePositiveButton()
             dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                 val profile = currentProfile()
+                var queued = 0
+                var denied = 0
                 selectedDomains.toList().forEach { domain ->
-                    DomainBlockStore.removeDomainForProfile(this@ManageBlockedWebsitesActivity, profile, domain)
-                    clearLimitIfNoRulesRemainForHost(profile, domain)
+                    when (ProtectionChangeGate.requestWebsiteRemoval(this@ManageBlockedWebsitesActivity, profile, domain)) {
+                        ProtectionChangePolicy.Result.APPLIED -> Unit
+                        ProtectionChangePolicy.Result.QUEUED -> queued++
+                        ProtectionChangePolicy.Result.DENIED -> denied++
+                    }
                 }
                 exitSelectionMode()
                 refreshList()
                 dlg.dismiss()
+                when {
+                    denied > 0 -> findViewById<View>(android.R.id.content)
+                        .showWarnPill(R.string.edit_locked_manage_websites)
+
+                    queued > 0 -> ProtectionFeedback.showQueued(this)
+                }
             }
         }
 
@@ -529,13 +540,17 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
     }
 
     private fun removeRule(domain: String) {
-        if (websiteEditingLocked()) {
-            return
+        when (ProtectionChangeGate.requestWebsiteRemoval(this, currentProfile(), domain)) {
+            ProtectionChangePolicy.Result.APPLIED -> refreshList()
+
+            ProtectionChangePolicy.Result.QUEUED -> {
+                ProtectionFeedback.showQueued(this)
+                refreshList()
+            }
+
+            ProtectionChangePolicy.Result.DENIED -> findViewById<View>(android.R.id.content)
+                .showWarnPill(R.string.edit_locked_manage_websites)
         }
-        val profile = currentProfile()
-        DomainBlockStore.removeDomainForProfile(this, profile, domain)
-        clearLimitIfNoRulesRemainForHost(profile, domain)
-        refreshList()
     }
 
     /**
@@ -565,9 +580,6 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
     }
 
     private fun confirmDeleteSingle(domain: String) {
-        if (websiteEditingLocked()) {
-            return
-        }
         AlertDialog.Builder(this)
             .setTitle(R.string.delete)
             .setMessage(
