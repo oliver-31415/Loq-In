@@ -58,6 +58,7 @@ Upstream source paths are under `app/src/main/java/at/saltyy/switchly/...`; our 
 | 2026-09-20 | **W6.1 E10** | `feature/upstream-w6-polish` | Done — `774896d` | Edge-to-edge helpers + 7 camera/NFC screens; emulator gesture/3-button/landscape checks |
 | 2026-09-20 | **A7 follow-up** | `feature/upstream-w6-polish` | Done — `774896d` | Non-blocking warn pill when a Settings rule outlives its strict-protection gate; rule never cleared |
 | 2026-09-20 | **W4.2 merge** | `feature/upstream-w6-polish` | Done — `1123091` | Owner decision: YouTube experiment brought into the upstreaming line (merge commit; experiment branch kept) |
+| 2026-09-20 | **W5.2 C1 plan** | `docs/w5-protection-change-gate-plan.md` | Written | Full port plan: gate + delay queue + settings page, call-site table, test matrix, phases P0–P6 |
 
 ### W1.1 implementation + test evidence (2026-09-16)
 
@@ -199,7 +200,7 @@ Emulator gotchas for future sessions:
 | W2 | Limits | W2.1 A4, W2.2 A5 | 3–4d | `feature/upstream-w2-limits` |
 | W3 | Websites | W3.1 A3 store, W3.2 A3 service, W3.3 A3 UI/backup | 3–4d | `feature/upstream-w3-websites` |
 | W4 | ANR & YouTube | W4.1 A2 infra, W4.2 YT experiment (B) | 1–2d + 4–7d | `feature/upstream-w4-a2`, `experiment/yt-upstream-2.3.1` |
-| W5 | Protection model (optional) | W5.1 D3, W5.2 C1, W5.3 C2, W5.4 D5 | 1–2 weeks | `feature/upstream-w5-protection` |
+| W5 | Protection model (optional) | W5.1 D3, W5.2 C1, W5.3 C2, W5.4 D5 | 1–2 weeks | `feature/upstream-w5-protection-gate` |
 | W6 | Polish | W6.1 E10, W6.2 E6, W6.3 E7, W6.4 E8, W6.5 E12 | 2–4d | `feature/upstream-w6-polish` |
 
 Ordering rules:
@@ -802,8 +803,9 @@ Do not start until W1–W3 are merged and stable. Decide first (see §8): adopt 
 ### W5.1 D3 — FeatureFlagStore + dev tiles
 - Port `FeatureFlagStore.kt` (52 LOC) and the `AdvancedModeActivity` tile entries. Adapt to our Advanced-mode screen; no Firebase.
 
-### W5.2 C1 — ProtectionChangeGate core
-- Upstream: `util/ProtectionChangeGate.kt` (782 LOC), `receiver/ProtectionChangeReceiver.kt`, `util/ProtectionFeedback.kt`, `data/prefs/TemporaryPauseProtectionEditStore.kt`.
+### W5.2 C1 — ProtectionChangeGate core — **PLANNED 2026-09-20**
+- **Full implementation plan: `docs/w5-protection-change-gate-plan.md`** (scope, architecture, file inventory, settings page spec, call-site migration table, test matrix, phases, risks). Branch: `feature/upstream-w5-protection-gate` off the current upstreaming tip.
+- Upstream: `util/ProtectionChangeGate.kt` (782 LOC), `receiver/ProtectionChangeReceiver.kt`, `util/ProtectionFeedback.kt`, `data/prefs/TemporaryPauseProtectionEditStore.kt` (omitted).
 - Adaptations required:
   - Strip `PremiumManager` (the custom-delay branch is premium; omit it) and `CrashlyticsContext`.
   - Use our `DiagnosticsTimelineStore` for events.
@@ -880,7 +882,7 @@ Do not start until W1–W3 are merged and stable. Decide first (see §8): adopt 
 
 1. **A7 follow-up (current implementation = upstream behavior):** the gate is selection-time only, so an existing Settings rule keeps being enforced even if Device Admin is later revoked. Do we want an additional in-app warning when a Settings rule exists but the gate is no longer satisfied? Recommendation: add a non-blocking warning later; no rule clearing. — **RESOLVED 2026-09-20:** implemented as a non-blocking warn pill in the app picker (`774896d`); rules are never cleared.
 2. **W4.2 timebox:** suggested 3 test sessions on 2 devices; confirm before starting.
-3. **W5 go/no-go:** adopt `ProtectionChangeGate` and remove `ProtectionEditPolicy`/`EditingLockGuard` from edit paths, or keep our simpler policy and only port D3/D5/C2?
+3. **W5 go/no-go:** adopt `ProtectionChangeGate` and remove `ProtectionEditPolicy`/`EditingLockGuard` from edit paths, or keep our simpler policy and only port D3/D5/C2? — **RESOLVED 2026-09-20:** adopt C1 (ProtectionChangeGate + delay queue + dedicated settings page); `ProtectionEditPolicy` to be removed during the port. Phased plan and test matrix: `docs/w5-protection-change-gate-plan.md`.
 4. **E9 onboarding:** confirm skip.
 5. **D5 attachment:** clipboard-only (current) or add a `.md` share attachment via `FileProvider`?
 6. **W3.1 follow-up:** should deleting a host rule also delete its path rules?
