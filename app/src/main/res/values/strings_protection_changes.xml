@@ -3,6 +3,69 @@
   Protection change gate / delay queue.
 -->
 <resources>
+    <string name="protection_changes_title">Protection changes</string>
+    <string name="protection_changes_summary">Delay protection-weakening changes and review queued ones.</string>
+    <string name="protection_changes_section_delay">Change delay</string>
+    <string name="protection_changes_info_title">How this works</string>
+    <string name="protection_changes_info_body">Changes that strengthen protection apply immediately. Changes that weaken it wait for the configured delay before they take effect. Applying a pending change early is only possible while Loq In is fully off.</string>
+
+    <string name="protection_change_delay_title">Protection change delay</string>
+    <string name="protection_change_delay_off">Off</string>
+    <string name="protection_change_delay_15m">15 minutes</string>
+    <string name="protection_change_delay_1h">1 hour</string>
+    <string name="protection_change_delay_6h">6 hours</string>
+    <string name="protection_change_delay_24h">24 hours</string>
+    <string name="protection_change_delay_summary_off">Weakening changes stay blocked while protection is active.</string>
+    <string name="protection_change_delay_summary_on">Weakening changes wait %1$s. Stricter changes still apply immediately.</string>
+    <string name="protection_change_delay_locked">While protection is active, the delay can only stay the same or be increased.</string>
+    <string name="protection_change_delay_custom">Custom time…</string>
+    <string name="protection_change_delay_custom_title">Custom protection change delay</string>
+    <string name="protection_change_delay_custom_message">Enter a duration from 1 minute to 7 days. Stricter changes still apply immediately; only protection-weakening changes wait for this duration.</string>
+    <string name="protection_change_delay_custom_hint">Minutes (1–10080)</string>
+    <string name="protection_change_delay_custom_invalid">Enter a value from 1 to 10080 minutes.</string>
+    <plurals name="protection_change_delay_minutes_value">
+        <item quantity="one">%d minute</item>
+        <item quantity="other">%d minutes</item>
+    </plurals>
+    <plurals name="protection_change_delay_hours_value">
+        <item quantity="one">%d hour</item>
+        <item quantity="other">%d hours</item>
+    </plurals>
+    <plurals name="protection_change_delay_days_value">
+        <item quantity="one">%d day</item>
+        <item quantity="other">%d days</item>
+    </plurals>
+
     <string name="protection_change_queued">This protection-reducing change is queued and will apply after the configured delay.</string>
+
     <string name="protection_pending_changes_title">Pending changes</string>
+    <string name="protection_pending_changes_none">No pending protection changes</string>
+    <plurals name="protection_pending_changes_count">
+        <item quantity="one">%d pending change</item>
+        <item quantity="other">%d pending changes</item>
+    </plurals>
+    <string name="protection_pending_changes_open">These changes are waiting for their delay. Tap one to review or discard it.</string>
+
+    <string name="protection_pending_item_app_rules">App rules · %1$s</string>
+    <string name="protection_pending_item_in_app">In-app rule · %1$s</string>
+    <string name="protection_pending_item_website">Website rule · %1$s</string>
+    <string name="protection_pending_item_app_limits">App limits · %1$s</string>
+    <string name="protection_pending_item_unknown">Protection change</string>
+
+    <string name="protection_pending_cancel_one_title">Discard this pending change?</string>
+    <string name="protection_pending_cancel_one_action">Discard</string>
+    <string name="protection_pending_cancel_one_done">Pending change discarded.</string>
+    <string name="protection_pending_cancel_title">Discard pending changes?</string>
+    <string name="protection_pending_cancel_message">All pending protection-weakening changes will be discarded.</string>
+    <string name="protection_pending_cancel_action">Discard all</string>
+    <string name="protection_pending_cancelled">Pending protection changes discarded.</string>
+
+    <string name="protection_pending_apply_one_title">Apply this pending change now?</string>
+    <string name="protection_pending_apply_one_action">Apply now</string>
+    <string name="protection_pending_apply_one_done">Pending change applied.</string>
+    <string name="protection_pending_apply_failed">This pending change could not be applied.</string>
+    <string name="protection_pending_apply_all_title">Apply all pending changes now?</string>
+    <string name="protection_pending_apply_all_message">Loq In is fully off, so these delayed weakening changes can be accepted immediately instead of waiting for their timers.</string>
+    <string name="protection_pending_apply_all_action">Apply all now</string>
+    <string name="protection_pending_apply_all_done">Pending changes applied.</string>
 </resources>
