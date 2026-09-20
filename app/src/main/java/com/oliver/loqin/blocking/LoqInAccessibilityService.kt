@@ -5681,6 +5681,12 @@ class LoqInAccessibilityService : AccessibilityService() {
         if (!force && (BlockerActivity.isVisible || BlockerActivity.isRecentlyFocusedFor(pkg))) {
             return true
         }
+        // Respect the post-block guard: after closing the mini-player/PiP, YouTube leaves stale
+        // off-screen player nodes in the tree for a few seconds and transition events used to
+        // re-block them ("Mini player is blocked!" three times in a row on the phone).
+        if (!force && (surfaceGuardActive(pkg, "yt:miniplayer") || surfaceGuardActive(pkg, "yt:pip"))) {
+            return false
+        }
 
         val root = rootOverride ?: youtubeCurrentRoot(event)
         val eventSignal = youtubeEventSourceSignal(event, maxHops = 3)
@@ -5915,14 +5921,20 @@ class LoqInAccessibilityService : AccessibilityService() {
             return false
         }
 
+        // Use the detected package: the event may come from Morphe/ReVanced, and hardcoding the
+        // official package made the per-surface guards and the block target the wrong app
+        // (a Morphe You-tab tap still blocked "You" as com.google.android.youtube).
+        val detectedPkg = event?.packageName?.toString()
+        val pkg = if (isYouTubePackage(detectedPkg)) detectedPkg!! else PACKAGE_YOUTUBE
+
         val enabled = when (surface) {
             "yt:subscriptions" -> inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_SUBSCRIPTIONS)
             "yt:you" -> inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_YOU)
             else -> false
         }
         val now = System.currentTimeMillis()
-        rememberSurfaceHint(PACKAGE_YOUTUBE, surface, now)
-        if (!enabled || surfaceGuardActive(PACKAGE_YOUTUBE, surface, now)) {
+        rememberSurfaceHint(pkg, surface, now)
+        if (!enabled || surfaceGuardActive(pkg, surface, now)) {
             return false
         }
 
@@ -5932,23 +5944,23 @@ class LoqInAccessibilityService : AccessibilityService() {
             getString(R.string.in_app_surface_you_label)
         }
         currentSurfaceKey = surface
-        currentSurfacePkg = PACKAGE_YOUTUBE
+        currentSurfacePkg = pkg
         clearSurfaceEvidence(surface)
-        surfaceBlockGuardUntil["$PACKAGE_YOUTUBE|$surface"] = now +
+        surfaceBlockGuardUntil["$pkg|$surface"] = now +
             maxOf(YT_SHORTS_REENTRY_GUARD_MS, INAPP_POST_BLOCK_GRACE_MS)
         if (surface == "yt:subscriptions") {
             runCatching { blockLaunchController.pauseActiveMediaPlayback() }
         }
         logInAppSurfaceDetect(
-            PACKAGE_YOUTUBE,
+            pkg,
             surface,
             enabled = true,
             event = event,
             detail = "direct_bottom_navigation",
         )
         softBlockSurface(
-            pkg = PACKAGE_YOUTUBE,
-            appLabel = safeAppLabel(PACKAGE_YOUTUBE),
+            pkg = pkg,
+            appLabel = safeAppLabel(pkg),
             title = getString(R.string.blocking_surface_blocked_title, label),
             message = surfaceUsageLine(surface, 0),
             backCount = 0,
@@ -9236,6 +9248,7 @@ class LoqInAccessibilityService : AccessibilityService() {
         if (!isYouTubeRootNode(root)) {
             return false
         }
+        val width = resources.displayMetrics.widthPixels.coerceAtLeast(1)
         val height = resources.displayMetrics.heightPixels.coerceAtLeast(1)
         val bounds = Rect()
         return findAnyNode(root) { node ->
@@ -9244,6 +9257,14 @@ class LoqInAccessibilityService : AccessibilityService() {
             // YouTube keeps a hidden mini-player container in the watch-page tree; only a visibly
             // displayed node may count as the in-app mini-player.
             if (!runCatching { node.isVisibleToUser }.getOrDefault(false)) return@findAnyNode false
+            // A closed/sliding mini-player window can leave a stale node at negative coordinates;
+            // require the node to intersect the screen.
+            runCatching { node.getBoundsInScreen(bounds) }.getOrNull()
+            if (bounds.isEmpty || bounds.right <= 0 || bounds.bottom <= 0 ||
+                bounds.left >= width || bounds.top >= height
+            ) {
+                return@findAnyNode false
+            }
 
             val text = node.text?.toString().orEmpty()
             val desc = node.contentDescription?.toString().orEmpty()
