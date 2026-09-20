@@ -54,6 +54,8 @@ Upstream source paths are under `app/src/main/java/at/saltyy/switchly/...`; our 
 | 2026-09-18 | Firefox 97–155 sweep | `feature/upstream-w2` | 16/16 pass | Only first-run promos masked the toolbar temporarily |
 | 2026-09-18 | Samsung Internet + path backup + independence | `feature/upstream-w2` | Done — `778d38b` | Samsung host-only blocking; path rules export and survive host-rule deletion |
 | 2026-09-18 | **W4.1 A2** | `feature/upstream-w4-a2` | Done — `7b6e5f9` | Budgeted root lookup + scan telemetry; no regressions on emulator |
+| 2026-09-20 | **W6.1 E10** | `feature/upstream-w6-polish` | Done — `774896d` | Edge-to-edge helpers + 7 camera/NFC screens; emulator gesture/3-button/landscape checks |
+| 2026-09-20 | **A7 follow-up** | `feature/upstream-w6-polish` | Done — `774896d` | Non-blocking warn pill when a Settings rule outlives its strict-protection gate; rule never cleared |
 
 ### W1.1 implementation + test evidence (2026-09-16)
 
@@ -292,7 +294,7 @@ Branch `feature/upstream-w1-safety` off `feature/upstream-work`. Merge back per 
   - Revoke Device Admin in system settings → verify `canAllowStrictModeBlocking` flips back to false (picker + service behavior).
   - Service path: with Settings blocked and admin revoked, verify the service no longer enforces (logcat/AppLog) and doesn't loop (service L2105 branch only adds a temporary allow when strict mode is required).
 - **Risks / gotchas:**
-  - **Behavior change:** verified that the gate is selection-time only. Existing Settings rules stay enforced after admin revocation (matching upstream); only new selections require the gate. Optional follow-up (open decision §8): warn when a Settings rule exists but the gate is no longer satisfied.
+  - **Behavior change:** verified that the gate is selection-time only. Existing Settings rules stay enforced after admin revocation (matching upstream); only new selections require the gate. Follow-up implemented 2026-09-20: `AppBlockSafety.hasUnprotectedStrictModeRule(...)` + a non-blocking warn pill in `AppPickerActivity.onResume()` when the current profile (block mode) has a Settings-style rule and the gate is no longer satisfied; the pill's action opens `AppLockSettingsActivity`. No rule is cleared. Verified on emulator-5554 (`774896d`): with Device Admin active no pill appears; after clearing app data and restoring a prefs copy with `com.android.settings` blocked and no strict protection/emergency PIN, the pill "Settings is still blocked, but uninstall protection is no longer active." appears on picker open and its action opens `AppLockSettingsActivity`. Emulator prefs restored to the pre-test state afterwards.
   - Keep the function name `canAllowStrictModeBlocking` so service/picker call sites compile unchanged.
 - **Done when:** gate behaves per verification and copy is updated.
 
@@ -814,10 +816,10 @@ Do not start until W1–W3 are merged and stable. Decide first (see §8): adopt 
 
 ## W6 — Polish
 
-### W6.1 E10 — Edge-to-edge helpers (Phase 0 gap)
-- `ui/EdgeToEdgeUtils.kt`: add `setupStandalone(activity, root)` and `enableEdgeToEdgeOnly(activity)` overloads for `AppCompatActivity` and plain `Activity`, mirroring upstream, using `FrameworkApi34Compat` guards first. Optionally switch `WindowCompat.enableEdgeToEdge(activity.window)` → `activity.enableEdgeToEdge()` (equivalent; only do it consistently).
-- Call from camera/NFC entry screens (`BarcodeScanActivity`, `UnifiedScanActivity`, `QrScanActivity`, `ExternalQrActionActivity`, `ScanLauncherActivity`, `NfcEntryActivity`, `NfcWriteWaitingActivity`) — these were not covered by `setupClassic`.
-- Verify insets on gesture-nav and 3-button-nav devices; camera preview must not draw under the status bar incorrectly.
+### W6.1 E10 — Edge-to-edge helpers (Phase 0 gap) — **DONE 2026-09-20** (`774896d`)
+- `ui/EdgeToEdgeUtils.kt`: added `setupStandalone(activity, root)` and `enableEdgeToEdgeOnly(activity)` overloads for `AppCompatActivity` and plain `Activity`, mirroring upstream, with the `FrameworkApi34Compat` crash shield first. Kept `WindowCompat.enableEdgeToEdge(activity.window)` (our existing style; equivalent to `activity.enableEdgeToEdge()`).
+- Wired the same way as upstream: `enableEdgeToEdgeOnly` from `BarcodeScanActivity`, `UnifiedScanActivity`, `QrScanActivity`, `ExternalQrActionActivity`, `ScanLauncherActivity`, `NfcEntryActivity` (camera preview full-bleed, no padding); `setupStandalone(this, findViewById(android.R.id.content))` from `NfcWriteWaitingActivity` (root keeps its padding and gets system-bar + cutout insets added).
+- **Test evidence (emulator-5554, API 36, targetSdk 36):** scanner via the QR shortcut trampoline is full-bleed in portrait and landscape (status bar + gesture handle overlay the preview, no letterboxing, no crash). NFC waiting screen was verified by temporarily setting `android:exported="true"` on `NfcWriteWaitingActivity` (reverted; manifest diff clean): close button sits below the status bar; with 3-button nav (`cmd overlay enable-exclusive --category com.android.systemui.navbar.threebutton`) the title bounds move up 36px vs gesture nav, proving the bottom inset is applied; landscape with a side nav bar keeps the close button clear of it. Gesture mode + auto-rotate restored afterwards. The dedicated `BarcodeScanActivity`/`QrScanActivity` call sites are one-liners identical to the verified `UnifiedScanActivity` path.
 
 ### W6.2 E6 — Defer Maps fragment creation
 - `LocationMapPickerActivity`: instantiate `SupportMapFragment` from a `post {}` on the map container, reuse an existing fragment, attach via `runOnCommit`, and only show the unavailable message on failure. Port upstream's structure.
@@ -869,7 +871,7 @@ Do not start until W1–W3 are merged and stable. Decide first (see §8): adopt 
 
 ## 8. Open decisions (ask the owner before starting the relevant step)
 
-1. **A7 follow-up (current implementation = upstream behavior):** the gate is selection-time only, so an existing Settings rule keeps being enforced even if Device Admin is later revoked. Do we want an additional in-app warning when a Settings rule exists but the gate is no longer satisfied? Recommendation: add a non-blocking warning later; no rule clearing.
+1. **A7 follow-up (current implementation = upstream behavior):** the gate is selection-time only, so an existing Settings rule keeps being enforced even if Device Admin is later revoked. Do we want an additional in-app warning when a Settings rule exists but the gate is no longer satisfied? Recommendation: add a non-blocking warning later; no rule clearing. — **RESOLVED 2026-09-20:** implemented as a non-blocking warn pill in the app picker (`774896d`); rules are never cleared.
 2. **W4.2 timebox:** suggested 3 test sessions on 2 devices; confirm before starting.
 3. **W5 go/no-go:** adopt `ProtectionChangeGate` and remove `ProtectionEditPolicy`/`EditingLockGuard` from edit paths, or keep our simpler policy and only port D3/D5/C2?
 4. **E9 onboarding:** confirm skip.
