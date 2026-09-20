@@ -93,6 +93,60 @@ object EdgeToEdgeUtils {
     }
 
     /**
+     * Edge-to-edge for a screen without an AppBarLayout.
+     * The root keeps its existing padding and receives all system-bar/display-cutout insets on top of it.
+     */
+    fun setupStandalone(
+        activity: androidx.appcompat.app.AppCompatActivity,
+        root: View
+    ) {
+        if (FrameworkApi34Compat.needsWindowInsetsCrashShield()) {
+            FrameworkApi34Compat.applyWindowInsetsWorkaround(activity)
+            return
+        }
+
+        WindowCompat.enableEdgeToEdge(activity.window)
+        val initialLeft = root.paddingLeft
+        val initialTop = root.paddingTop
+        val initialRight = root.paddingRight
+        val initialBottom = root.paddingBottom
+        ViewCompat.setOnApplyWindowInsetsListener(root) { v, insets ->
+            val safe = insets.getInsets(
+                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+            )
+            v.updatePadding(
+                left = initialLeft + safe.left,
+                top = initialTop + safe.top,
+                right = initialRight + safe.right,
+                bottom = initialBottom + safe.bottom,
+            )
+            insets
+        }
+        ViewCompat.requestApplyInsets(root)
+    }
+
+    /**
+     * Enables edge-to-edge when the Activity itself has no inset-managed content root.
+     * Camera previews render full-bleed under the system bars; dialog windows manage their own insets.
+     */
+    fun enableEdgeToEdgeOnly(activity: androidx.appcompat.app.AppCompatActivity) {
+        if (FrameworkApi34Compat.needsWindowInsetsCrashShield()) {
+            FrameworkApi34Compat.applyWindowInsetsWorkaround(activity)
+            return
+        }
+        WindowCompat.enableEdgeToEdge(activity.window)
+    }
+
+    /** Lightweight/proxy Activity overload for NFC/launcher entry points that do not use AppCompat. */
+    fun enableEdgeToEdgeOnly(activity: android.app.Activity) {
+        if (FrameworkApi34Compat.needsWindowInsetsCrashShield()) {
+            FrameworkApi34Compat.applyWindowInsetsWorkaround(activity)
+            return
+        }
+        WindowCompat.enableEdgeToEdge(activity.window)
+    }
+
+    /**
      * Adds a small, consistent "nice" spacing for BottomNavigationView on gesture navigation.
      * Some devices report 0 navigationBars() inset in classic mode (decorFitsSystemWindows=true), but still have a gesture area.
      * Using systemGestures() makes the bottom items sit higher, matching the look of the Schedules screen.

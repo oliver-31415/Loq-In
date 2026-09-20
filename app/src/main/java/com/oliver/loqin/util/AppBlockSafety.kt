@@ -388,6 +388,17 @@ object AppBlockSafety {
         return isSettingsBlockingProtectionEnabled(context) && hasEmergencyRecoveryConfigured(context)
     }
 
+    /**
+     * True when any of [packages] needs strict-mode protection for blocking but the gate is no
+     * longer satisfied (for example Device Admin was revoked after the rule was created).
+     * The rule itself keeps being enforced; this only drives a non-blocking warning.
+     */
+    fun hasUnprotectedStrictModeRule(context: Context, packages: Set<String>): Boolean {
+        return packages.any { pkg ->
+            requiresStrictModeForBlocking(context, pkg) && !canAllowStrictModeBlocking(context, pkg)
+        }
+    }
+
     fun getDefaultInputMethodPackage(context: Context): String? {
         val currentId = runCatching {
             Settings.Secure.getString(context.contentResolver, Settings.Secure.DEFAULT_INPUT_METHOD)

@@ -50,6 +50,7 @@ import com.oliver.loqin.feature.settings.ControlModeGuidance
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.dialog.ClockDurationDialSheet
 import com.oliver.loqin.util.ScanFeedback
+import com.oliver.loqin.ui.EdgeToEdgeUtils
 
 /**
  * NFC/deep-link entry point.
@@ -62,6 +63,7 @@ class NfcEntryActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         ThemeUtils.applyAccentTheme(this)
         super.onCreate(savedInstanceState)
+        EdgeToEdgeUtils.enableEdgeToEdgeOnly(this)
         handleIncomingIntent(intent)
     }
 

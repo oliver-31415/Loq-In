@@ -48,6 +48,7 @@ import com.google.mlkit.vision.barcode.BarcodeScanning
 import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.common.InputImage
 import java.util.concurrent.atomic.AtomicBoolean
+import com.oliver.loqin.ui.EdgeToEdgeUtils
 
 /**
  * Shared CameraX/ML Kit scanner for LoqIn QR codes and managed barcodes.
@@ -98,6 +99,7 @@ class UnifiedScanActivity : AppCompatActivity() {
 
         previewView = PreviewView(this)
         setContentView(previewView)
+        EdgeToEdgeUtils.enableEdgeToEdgeOnly(this)
 
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) ==
             PackageManager.PERMISSION_GRANTED

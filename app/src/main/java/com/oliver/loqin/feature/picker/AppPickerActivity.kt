@@ -384,6 +384,37 @@ class AppPickerActivity : AppCompatActivity() {
                 adapter.notifyItemRangeChanged(0, adapter.itemCount)
             }
         }
+        maybeWarnUnprotectedStrictModeRule()
+    }
+
+    private var unprotectedStrictModeWarned = false
+
+    /**
+     * Non-blocking warning when a Settings-style rule was created while the strict-mode gate was
+     * satisfied and the gate has since been lost (Device Admin revoked, strict protection or the
+     * emergency PIN removed). The rule keeps being enforced; nothing is cleared here.
+     */
+    private fun maybeWarnUnprotectedStrictModeRule() {
+        val profile = currentProfile ?: return
+        if (currentRuleMode != ProfileRuleModeStore.MODE_BLOCK_SELECTED) {
+            unprotectedStrictModeWarned = false
+            return
+        }
+        val blocked = ProfileStore.getBlockedForProfile(this, profile)
+        if (!AppBlockSafety.hasUnprotectedStrictModeRule(this, blocked)) {
+            unprotectedStrictModeWarned = false
+            return
+        }
+        if (unprotectedStrictModeWarned) {
+            return
+        }
+        unprotectedStrictModeWarned = true
+        findViewById<View>(android.R.id.content).showWarnPill(
+            R.string.app_picker_settings_rule_unprotected_warning,
+            actionLabel = getString(R.string.app_picker_settings_requirements_setup_action),
+        ) {
+            startActivity(Intent(this, AppLockSettingsActivity::class.java))
+        }
     }
 
     override fun finish() {

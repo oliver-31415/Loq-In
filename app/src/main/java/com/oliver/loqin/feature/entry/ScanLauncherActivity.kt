@@ -29,6 +29,7 @@ import com.oliver.loqin.nfc.NfcWriterActivity
 import com.oliver.loqin.ui.MainActivity
 import com.oliver.loqin.util.ActivityTransitionCompat
 import com.oliver.loqin.widget.QuickActionReceiver
+import com.oliver.loqin.ui.EdgeToEdgeUtils
 
 /**
  * Lightweight exported trampoline for launcher shortcuts, widgets and Quick Settings tiles.
@@ -38,6 +39,7 @@ class ScanLauncherActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        EdgeToEdgeUtils.enableEdgeToEdgeOnly(this)
         handleIntent(intent)
     }
 
