@@ -59,6 +59,8 @@ Upstream source paths are under `app/src/main/java/at/saltyy/switchly/...`; our 
 | 2026-09-20 | **A7 follow-up** | `feature/upstream-w6-polish` | Done — `774896d` | Non-blocking warn pill when a Settings rule outlives its strict-protection gate; rule never cleared |
 | 2026-09-20 | **W4.2 merge** | `feature/upstream-w6-polish` | Done — `1123091` | Owner decision: YouTube experiment brought into the upstreaming line (merge commit; experiment branch kept) |
 | 2026-09-20 | **W5.2 C1 plan** | `docs/w5-protection-change-gate-plan.md` | Written | Full port plan: gate + delay queue + settings page, call-site table, test matrix, phases P0–P6 |
+| 2026-09-20 | **W5.2 P0** | `feature/upstream-w5-protection-gate` | Done — `e11e9b4`, `6774077` | Pure policy + pending queue model; 38 new unit tests (60 total) |
+| 2026-09-20 | **W5.2 P1** | `feature/upstream-w5-protection-gate` | Done — `b90e72a`, `c2b11ea` | Gate shell, alarm receiver, feedback, boot/update/start hooks; website-delete pilot + emulator evidence |
 
 ### W1.1 implementation + test evidence (2026-09-16)
 
@@ -803,8 +805,11 @@ Do not start until W1–W3 are merged and stable. Decide first (see §8): adopt 
 ### W5.1 D3 — FeatureFlagStore + dev tiles
 - Port `FeatureFlagStore.kt` (52 LOC) and the `AdvancedModeActivity` tile entries. Adapt to our Advanced-mode screen; no Firebase.
 
-### W5.2 C1 — ProtectionChangeGate core — **PLANNED 2026-09-20**
+### W5.2 C1 — ProtectionChangeGate core — **P0+P1 DONE 2026-09-20**
 - **Full implementation plan: `docs/w5-protection-change-gate-plan.md`** (scope, architecture, file inventory, settings page spec, call-site migration table, test matrix, phases, risks). Branch: `feature/upstream-w5-protection-gate` off the current upstreaming tip.
+- **P0** (`e11e9b4`, `6774077`): `ProtectionChangePolicy` (directions, decision matrix, selection/limits delta splitting, delay rules) + `PendingChange` (model, JSON codec, dedupe, due partition, apply-time from-value guards). 38 unit tests; `./gradlew :app:testDebugUnitTest` 60/60.
+- **P1** (`b90e72a`, `c2b11ea`): `ProtectionChangeGate` shell (delay, all request types, pending management, apply functions), `ProtectionChangeReceiver` (alarm target), `ProtectionFeedback`, manifest receiver, `applyDueChanges` on app start/boot/post-update, and website-rule deletion as the pilot call site.
+  - Emulator evidence (emulator-5554, API 36): locked + delay 0 → delete denied with pill, rule intact; locked + delay 1 min → queued dialog, `protection_pending_changes_json` entry + `RTC_WAKEUP` alarm, applied after due (queue empty, rule removed); locked + delay 15 → adding a rule applies immediately and is not queued; queue with 15 min delay survives `adb reboot` and the alarm is re-armed by `BootCompletedReceiver`.
 - Upstream: `util/ProtectionChangeGate.kt` (782 LOC), `receiver/ProtectionChangeReceiver.kt`, `util/ProtectionFeedback.kt`, `data/prefs/TemporaryPauseProtectionEditStore.kt` (omitted).
 - Adaptations required:
   - Strip `PremiumManager` (the custom-delay branch is premium; omit it) and `CrashlyticsContext`.

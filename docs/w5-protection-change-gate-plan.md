@@ -1,6 +1,6 @@
 # W5.2 C1 — Protection Change Gate + Delay Queue: Implementation Plan
 
-**Status:** planned, not started
+**Status:** in progress — P0 + P1 done 2026-09-20 (see `upstream231.md` progress log; commits `e11e9b4`, `6774077`, `b90e72a`, `c2b11ea`)
 **Date:** 2026-09-20
 **Proposed branch:** `feature/upstream-w5-protection-gate` (off `feature/upstream-w6-polish`, which now includes W2/W3/W4.1/W4.2-YouTube/W6.1/A7)
 **Upstream source:** `at.saltyy.switchly.util.ProtectionChangeGate` (782 LOC), `receiver/ProtectionChangeReceiver`, `util/ProtectionFeedback`, `feature/settings/AdvancedProtectionActivity` (page only)
