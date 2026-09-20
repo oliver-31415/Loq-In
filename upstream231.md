@@ -57,6 +57,7 @@ Upstream source paths are under `app/src/main/java/at/saltyy/switchly/...`; our 
 | 2026-09-18 | **W4.2 B** experiment | `experiment/yt-upstream-2.3.1` | Done — `ad814d2`, `7b21a85`, `b5ae16d` | Upstream evidence port + coordinate-tap removal; see `docs/yt-experiment-results-2.3.1.md` |
 | 2026-09-20 | **W6.1 E10** | `feature/upstream-w6-polish` | Done — `774896d` | Edge-to-edge helpers + 7 camera/NFC screens; emulator gesture/3-button/landscape checks |
 | 2026-09-20 | **A7 follow-up** | `feature/upstream-w6-polish` | Done — `774896d` | Non-blocking warn pill when a Settings rule outlives its strict-protection gate; rule never cleared |
+| 2026-09-20 | **W4.2 merge** | `feature/upstream-w6-polish` | Done — `1123091` | Owner decision: YouTube experiment brought into the upstreaming line (merge commit; experiment branch kept) |
 
 ### W1.1 implementation + test evidence (2026-09-16)
 
@@ -765,7 +766,7 @@ Branch `feature/upstream-w3-websites` off the W2 tip.
 >
 > Experiment outcome: our rebuilt implementation already passed every reproducible scenario (baseline 9/9). Ported the three upstream pieces that still add value (Binder-risk gating, direct Subscriptions/You bottom-nav pre-dedupe, watch-ad position guard) and removed the fork's unsafe coordinate mini-player taps/swipes. Evaluated and left out upstream's PiP and mini-player enforcement (this fork removed those user-facing rules by design) and the Shorts event-burst/card heuristics (our Shorts detection passed everything; revisit only on a real regression). Full matrix, coverage comparison and recommendation: `docs/yt-experiment-results-2.3.1.md`.
 
-- **Goal:** decide empirically whether upstream's 2.3.x YouTube logic beats our rebuilt implementation. **Nothing from this step merges without the experiment outcome.**
+- **Goal:** decide empirically whether upstream's 2.3.x YouTube logic beats our rebuilt implementation. **Nothing from this step merges without the experiment outcome.** — **MERGED 2026-09-20** into `feature/upstream-w6-polish` (`1123091`) by owner decision; the re-enabled mini-player/PiP rules stay in the upstreaming line.
 - **Branch:** `experiment/yt-upstream-2.3.1` off the W4.1 tip.
 - **Context:** our service (`LoqInAccessibilityService.kt`, ~8.7k lines) is a parallel implementation. Our user-facing mini-player and PiP rules were removed; cleanup helpers remain for Shorts-in-PiP. Upstream's changes target those surfaces, so they must be re-tested rather than assumed better.
 - **Upstream reference:** `git diff be4ab60..bf9526b -- app/src/main/java/at/saltyy/switchly/blocking/SwitchlyAccessibilityService.kt` (~1800 changed lines; functions named in §5).
