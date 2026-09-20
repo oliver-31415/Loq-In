@@ -155,6 +155,8 @@ dependencies {
 
     // JVM unit tests for pure blocking logic (BlockDecision, domain matching).
     add("testImplementation", "junit:junit:4.13.2")
+    // Real org.json for JVM tests: the mockable android.jar stubs org.json.
+    add("testImplementation", "org.json:json:20180813")
 }
 
 // Fix for duplicated classes: com.intellij:annotations vs org.jetbrains:annotations.
