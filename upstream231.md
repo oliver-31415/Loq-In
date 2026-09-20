@@ -54,6 +54,7 @@ Upstream source paths are under `app/src/main/java/at/saltyy/switchly/...`; our 
 | 2026-09-18 | Firefox 97–155 sweep | `feature/upstream-w2` | 16/16 pass | Only first-run promos masked the toolbar temporarily |
 | 2026-09-18 | Samsung Internet + path backup + independence | `feature/upstream-w2` | Done — `778d38b` | Samsung host-only blocking; path rules export and survive host-rule deletion |
 | 2026-09-18 | **W4.1 A2** | `feature/upstream-w4-a2` | Done — `7b6e5f9` | Budgeted root lookup + scan telemetry; no regressions on emulator |
+| 2026-09-18 | **W4.2 B** experiment | `experiment/yt-upstream-2.3.1` | Done — `ad814d2`, `7b21a85`, `b5ae16d` | Upstream evidence port + coordinate-tap removal; see `docs/yt-experiment-results-2.3.1.md` |
 | 2026-09-20 | **W6.1 E10** | `feature/upstream-w6-polish` | Done — `774896d` | Edge-to-edge helpers + 7 camera/NFC screens; emulator gesture/3-button/landscape checks |
 | 2026-09-20 | **A7 follow-up** | `feature/upstream-w6-polish` | Done — `774896d` | Non-blocking warn pill when a Settings rule outlives its strict-protection gate; rule never cleared |
 
@@ -758,7 +759,12 @@ Branch `feature/upstream-w3-websites` off the W2 tip.
 - **Risks:** timeouts return null and can skip enforcement for one event; existing call sites are `runCatching`-based and null-tolerant. Add a log category for timeouts so W4.2 can tune the wait constant.
 - **Done when:** no direct root lookups outside the budget helper, counters observable, no blocking regressions.
 
-### W4.2 B — YouTube experiment (separate branch, A/B comparison)
+### W4.2 B — YouTube experiment (separate branch, A/B comparison) — **RUN 2026-09-18** (`experiment/yt-upstream-2.3.1`: `ad814d2`, `7b21a85`, `b5ae16d`)
+
+> Follow-up (2026-09-19, `7bbc996`): mini-player and PiP were re-enabled as user-facing rules at the owner's request - both keys are enforced again (gated per profile) with new In-App Rules toggles; the mini-player flow is emulator-verified (rule on blocks and closes it, rule off leaves it), while this YouTube build never enters system PiP on the emulator so the PiP path still needs a device pass.
+>
+> Experiment outcome: our rebuilt implementation already passed every reproducible scenario (baseline 9/9). Ported the three upstream pieces that still add value (Binder-risk gating, direct Subscriptions/You bottom-nav pre-dedupe, watch-ad position guard) and removed the fork's unsafe coordinate mini-player taps/swipes. Evaluated and left out upstream's PiP and mini-player enforcement (this fork removed those user-facing rules by design) and the Shorts event-burst/card heuristics (our Shorts detection passed everything; revisit only on a real regression). Full matrix, coverage comparison and recommendation: `docs/yt-experiment-results-2.3.1.md`.
+
 - **Goal:** decide empirically whether upstream's 2.3.x YouTube logic beats our rebuilt implementation. **Nothing from this step merges without the experiment outcome.**
 - **Branch:** `experiment/yt-upstream-2.3.1` off the W4.1 tip.
 - **Context:** our service (`LoqInAccessibilityService.kt`, ~8.7k lines) is a parallel implementation. Our user-facing mini-player and PiP rules were removed; cleanup helpers remain for Shorts-in-PiP. Upstream's changes target those surfaces, so they must be re-tested rather than assumed better.

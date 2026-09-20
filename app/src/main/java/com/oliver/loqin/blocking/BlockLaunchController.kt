@@ -21,6 +21,7 @@ package com.oliver.loqin.blocking
 import android.accessibilityservice.AccessibilityService
 import android.app.ActivityManager
 import android.content.Context
+import android.content.Intent
 import android.media.AudioManager
 import android.os.Build
 import android.os.Handler
@@ -188,5 +189,28 @@ internal class BlockLaunchController(
     fun bounceHomeAndKill(pkg: String) {
         postHome()
         postKillBackgroundPackage(pkg)
+    }
+
+    /**
+     * Closes an app's PiP window by bringing the app to the front: Android dismisses the PiP when
+     * the app's activity is resumed. killBackgroundProcesses is a no-op on Android 14+, so the old
+     * HOME+kill path left the PiP floating over the launcher and the block re-fired in a loop.
+     *
+     * No HOME press is queued here: the caller shows the blocker again right after, and a HOME
+     * press backgrounds the blocker, which clears its visibility state and re-arms the block loop.
+     */
+    fun closePictureInPicture(pkg: String) {
+        val launch = runCatching { service.packageManager.getLaunchIntentForPackage(pkg) }.getOrNull()
+        if (launch == null) {
+            // No launcher activity to resume: fall back to the previous home bounce.
+            postHome()
+            postKillBackgroundPackage(pkg)
+            return
+        }
+        launch.addFlags(
+            Intent.FLAG_ACTIVITY_NEW_TASK or
+                Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED
+        )
+        runCatching { service.startActivity(launch) }
     }
 }

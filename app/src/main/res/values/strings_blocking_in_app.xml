@@ -39,6 +39,8 @@
     <string name="in_app_surface_shorts_label">Shorts</string>
     <string name="in_app_surface_subscriptions_label">Subscriptions</string>
     <string name="in_app_surface_you_label">You</string>
+    <string name="in_app_surface_mini_player_label">Mini player</string>
+    <string name="in_app_surface_pip_label">Picture-in-picture</string>
     <string name="in_app_surface_reels_label">Reels</string>
     <string name="in_app_surface_marketplace_label">Marketplace</string>
     <string name="in_app_surface_watch_label">Watch</string>

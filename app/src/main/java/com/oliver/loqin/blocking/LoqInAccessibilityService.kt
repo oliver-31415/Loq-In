@@ -191,6 +191,9 @@ class LoqInAccessibilityService : AccessibilityService() {
     private val inAppGraceUntilByPkg = HashMap<String, Long>()
     // Per-surface re-entry guards (belt-and-braces on top of the package grace).
     private val surfaceBlockGuardUntil = HashMap<String, Long>()
+    // After YouTube ad controls are observed, geometry-only surface resolution is suppressed for a
+    // short window: ad dismiss/skip buttons sit in the same lower-screen bands as the bottom nav.
+    @Volatile private var youtubeWatchAdPositionGuardUntilUptime: Long = 0L
     // Facebook bottom-tab tap hints are tracked separately from the shared single-slot hint so the
     // Reels auto-hint (which rewrites the shared slot on every detected frame) cannot clobber a
     // tab tap before the passive probe consumes it.
@@ -313,18 +316,31 @@ class LoqInAccessibilityService : AccessibilityService() {
         "abos", "abo", "abonnements", "abonnement",
         "abo, tab", "abos, tab"
     )
+    // Watch-page ad dismiss controls (ported from upstream 2.3.x). The Ad Center / sponsored /
+    // visit-site label lists above already describe the rest of the overlay.
+    private val YT_WATCH_AD_DISMISS_LABELS = listOf(
+        "skip ad", "skip ads", "close ad", "dismiss ad",
+        "anzeige überspringen", "werbung überspringen", "anzeige schließen", "werbung schließen",
+        "omitir anuncio", "cerrar anuncio",
+        "pular anúncio", "fechar anúncio",
+    )
     private val YT_SEARCH_LABELS = listOf(
         "search youtube", "youtube durchsuchen", "youtube suchen",
         "search", "suche",
         "search button", "search tab", "open search"
     )
-    private val YT_MINI_PLAYER_NAME_LABELS = listOf("miniplayer", "mini player", "mini-player")
+    private val YT_MINI_PLAYER_NAME_LABELS = listOf(
+        "miniplayer", "mini player", "mini-player",
+        // YouTube 21.x exposes the in-app mini-player as "Minimized player".
+        "minimized player", "minimized miniplayer", "minimized video"
+    )
     private val YT_MINI_PLAYER_CLOSE_LABELS = listOf(
         "close player", "close mini player", "close miniplayer",
         "dismiss player", "dismiss mini player",
         "close video", "video schließen",
         "player schließen", "player ausblenden",
         "miniplayer schließen", "mini player schließen", "miniplayer ausblenden",
+        "close minimized player", "minimized player schließen",
         "schließen"
     )
     private val YT_MINI_PLAYER_PLAY_PAUSE_LABELS = listOf(
@@ -480,6 +496,10 @@ class LoqInAccessibilityService : AccessibilityService() {
     // Home-redirect animation, short enough that re-tapping a blocked tab cannot slip through.
     private val YT_POST_BLOCK_GRACE_MS = 600L
     private val PIP_KILL_COOLDOWN_MS = 8_000L
+    private val YT_WATCH_AD_POSITION_GUARD_MS = 2_000L
+    // After a floating-player (mini/PiP) block YouTube navigates back through its tabs and
+    // player state for a few seconds; a short guard left You/Subscriptions/Shorts cascades.
+    private val YOUTUBE_FLOATING_POST_BLOCK_GUARD_MS = 6_000L
 
     private val MAX_NODE_SCAN_COUNT = 120
     // Main-thread wait for a root lookup; on slow devices the lookup is abandoned and its result
@@ -1159,6 +1179,9 @@ class LoqInAccessibilityService : AccessibilityService() {
             return
         }
 
+        if (isYouTubePackage(pkg) && maybeBlockYouTubeDirectNavigationBeforeDedupe(event)) {
+            return
+        }
         if (isYouTubePackage(pkg) && maybeBlockYouTubeHomeShortsBeforeDedupe(event)) {
             return
         }
@@ -1414,6 +1437,12 @@ class LoqInAccessibilityService : AccessibilityService() {
                 type == AccessibilityEvent.TYPE_VIEW_FOCUSED
 
         if (specialPkg && specialEvent) {
+            // Floating-player detection must also run on content events: the in-app mini-player
+            // appears via WINDOW_CONTENT_CHANGED (e.g. after BACK from the watch page) without a
+            // window transition, so the transition-only call site never saw it.
+            if (isYouTubePackage(pkg) && maybeBlockYouTubeFloatingPlayer(event, "content")) {
+                return
+            }
             if (shouldRunDeepProbe(pkg, type, isTransition = false, now = now)) {
                 maybeBlockNow(pkg, event)
             }
@@ -3997,6 +4026,20 @@ class LoqInAccessibilityService : AccessibilityService() {
         } != null
     }
 
+    /**
+     * Devices where deep accessibility walks have caused Binder stalls/ANRs (Samsung Android 12,
+     * Bigme HiBreak on Android 14). On these, YouTube classification relies on direct event
+     * evidence and skips multi-hop parent/geometry traversal (ported from upstream 2.3.x).
+     */
+    private fun isYouTubeAccessibilityBinderRiskDevice(): Boolean {
+        val manufacturer = Build.MANUFACTURER.orEmpty().lowercase(Locale.ROOT)
+        val brand = Build.BRAND.orEmpty().lowercase(Locale.ROOT)
+        val samsung = manufacturer.contains("samsung") || brand.contains("samsung")
+        val samsungAndroid12 = samsung && Build.VERSION.SDK_INT in 31..32
+        val bigme = manufacturer.contains("bigme") || brand.contains("bigme")
+        return samsungAndroid12 || bigme
+    }
+
     private fun tryRedirectBrowserToSafePage(pkg: String): Boolean {
         val safeUris = listOf("about:blank", "about:home")
         for (raw in safeUris) {
@@ -5272,6 +5315,9 @@ class LoqInAccessibilityService : AccessibilityService() {
         }
 
         if (allowFallbackTap && (isLikelyYouTubeMiniPlayerVisible(root) || hasYouTubeMiniPlayerGeometry(root))) {
+            // Node-based strategies only: pause-axis/sibling node clicks and accessibility
+            // actions. Coordinate taps/swipes were removed because a wrong tap can open a video
+            // or navigate somewhere unrelated.
             val pauseAxisClicked = closeYouTubeMiniPlayerFromPlayPauseAxis(root, reason)
             if (pauseAxisClicked) {
                 return true
@@ -5281,31 +5327,6 @@ class LoqInAccessibilityService : AccessibilityService() {
             if (actionDismissed) {
                 return true
             }
-
-            val boundsClicked = tapYouTubeMiniPlayerCloseByBounds(root, reason)
-            if (boundsClicked) {
-                return true
-            }
-
-            val swiped = swipeYouTubeMiniPlayerAway(root, reason)
-            if (swiped) {
-                return true
-            }
-
-            val fallbackClicked =
-                tapScreenAtRatio(0.94f, 0.68f) ||
-                    tapScreenAtRatio(0.94f, 0.76f) ||
-                    tapScreenAtRatio(0.94f, 0.82f) ||
-                    tapScreenAtRatio(0.94f, 0.86f) ||
-                    tapScreenAtRatio(0.94f, 0.88f) ||
-                    tapScreenAtRatio(0.88f, 0.76f)
-            appendBlockingLog(
-                category = "yt_mini_close",
-                key = "yt-mini-close-fallback|$reason",
-                message = "reason=$reason fallbackClicked=$fallbackClicked",
-                throttleMs = 500L
-            )
-            return fallbackClicked
         }
         return false
     }
@@ -5418,7 +5439,6 @@ class LoqInAccessibilityService : AccessibilityService() {
             return false
         }
 
-        var tapped = false
         pauseCandidates.forEach { pauseNode ->
             val pauseBounds = Rect()
             runCatching { pauseNode.getBoundsInScreen(pauseBounds) }.getOrNull()
@@ -5440,28 +5460,15 @@ class LoqInAccessibilityService : AccessibilityService() {
                 )
                 return true
             }
-
-            val y = pauseBounds.exactCenterY().coerceIn(playerBounds.top + 1f, playerBounds.bottom - 1f)
-            val xCandidates = listOf(
-                playerBounds.right - width * 0.025f,
-                playerBounds.right - width * 0.045f,
-                playerBounds.right - width * 0.065f,
-                playerBounds.right - width * 0.095f,
-                playerBounds.left + playerBounds.width() * 0.88f,
-                playerBounds.left + playerBounds.width() * 0.94f,
-                playerBounds.left + playerBounds.width() * 0.98f
-            )
-            xCandidates.forEach { x ->
-                if (tapScreenAtPoint(x, y)) tapped = true
-            }
         }
+        // Node-based strategies only: coordinate taps near the mini-player were removed.
         appendBlockingLog(
             category = "yt_mini_close",
-            key = "yt-mini-close-pause-axis-tap|$reason",
-            message = "reason=$reason candidates=${pauseCandidates.size} tapped=$tapped",
+            key = "yt-mini-close-pause-axis-node-only|$reason",
+            message = "reason=$reason candidates=${pauseCandidates.size} nodeOnly=true",
             throttleMs = 500L
         )
-        return tapped
+        return false
     }
 
     private fun closeYouTubeMiniPlayerFromPauseSiblings(
@@ -5644,53 +5651,6 @@ class LoqInAccessibilityService : AccessibilityService() {
         return best
     }
 
-    private fun swipeYouTubeMiniPlayerAway(root: AccessibilityNodeInfo, reason: String): Boolean {
-        val playerBounds = findYouTubeMiniPlayerBounds(root) ?: return false
-        val width = resources.displayMetrics.widthPixels.coerceAtLeast(1)
-        val height = resources.displayMetrics.heightPixels.coerceAtLeast(1)
-        val fromX = playerBounds.exactCenterX()
-        val fromY = playerBounds.exactCenterY()
-        val toX = minOf(width - 4f, playerBounds.right + width * 0.36f)
-        val toY = minOf(height - 4f, playerBounds.bottom + playerBounds.height() * 1.35f)
-        val swiped =
-            swipeScreen(fromX, fromY, toX, fromY, durationMs = 220L) ||
-                swipeScreen(playerBounds.left + playerBounds.width() * 0.25f, fromY, toX, fromY, durationMs = 260L) ||
-                swipeScreen(fromX, fromY, fromX, toY, durationMs = 220L) ||
-                swipeScreen(playerBounds.left + playerBounds.width() * 0.78f, fromY, fromX, toY, durationMs = 220L)
-        appendBlockingLog(
-            category = "yt_mini_close",
-            key = "yt-mini-close-swipe|$reason",
-            message = "reason=$reason bounds=${playerBounds.left},${playerBounds.top},${playerBounds.right},${playerBounds.bottom} swiped=$swiped",
-            throttleMs = 500L
-        )
-        return swiped
-    }
-
-    private fun tapYouTubeMiniPlayerCloseByBounds(root: AccessibilityNodeInfo, reason: String): Boolean {
-        val playerBounds = findYouTubeMiniPlayerBounds(root) ?: return false
-        val closeX1 = playerBounds.right - playerBounds.width() * 0.06f
-        val closeX2 = playerBounds.right - resources.displayMetrics.widthPixels.coerceAtLeast(1) * 0.035f
-        val closeX3 = playerBounds.left + playerBounds.width() * 0.94f
-        val closeY1 = playerBounds.exactCenterY()
-        val closeY2 = playerBounds.top + playerBounds.height() * 0.42f
-        val closeY3 = playerBounds.top + playerBounds.height() * 0.62f
-
-        val clicked =
-            tapScreenAtPoint(closeX1, closeY1) ||
-                tapScreenAtPoint(closeX2, closeY1) ||
-                tapScreenAtPoint(closeX3, closeY1) ||
-                tapScreenAtPoint(closeX1, closeY2) ||
-                tapScreenAtPoint(closeX1, closeY3)
-
-        appendBlockingLog(
-            category = "yt_mini_close",
-            key = "yt-mini-close-bounds|$reason",
-            message = "reason=$reason bounds=${playerBounds.left},${playerBounds.top},${playerBounds.right},${playerBounds.bottom} clicked=$clicked",
-            throttleMs = 500L
-        )
-        return clicked
-    }
-
     private fun maybeBlockYouTubeFloatingPlayer(
         event: AccessibilityEvent?,
         reason: String,
@@ -5702,10 +5662,10 @@ class LoqInAccessibilityService : AccessibilityService() {
         if (!SwitchModeStore.isEnabled(this)) {
             return false
         }
-        // Mini player and PiP surfaces were removed as user-facing rules. The floating-player
-        // helper still runs for Shorts-in-PiP cleanup via the blockShorts path below.
-        val blockMiniPlayer = false
-        val blockPictureInPicture = false
+        // Mini-player and PiP are user-facing rules again (experiment branch): they are inert
+        // unless the matching rule is enabled for the profile.
+        val blockMiniPlayer = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_MINI_PLAYER)
+        val blockPictureInPicture = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_PIP)
         val blockShorts = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_SHORTS)
         if (!blockMiniPlayer && !blockPictureInPicture && !blockShorts) {
             return false
@@ -5715,25 +5675,45 @@ class LoqInAccessibilityService : AccessibilityService() {
         if (!force && now - lastYouTubeFloatingPlayerBlockAt < 420L) {
             return false
         }
+        // Do not re-show the floating-player blocker while it is already on screen (forceShow
+        // bypasses the surface cooldown, so without this a still-visible mini-player re-triggered
+        // the popup once per second).
+        if (!force && (BlockerActivity.isVisible || BlockerActivity.isRecentlyFocusedFor(pkg))) {
+            return true
+        }
+        // Respect the post-block guard: after closing the mini-player/PiP, YouTube leaves stale
+        // off-screen player nodes in the tree for a few seconds and transition events used to
+        // re-block them ("Mini player is blocked!" three times in a row on the phone).
+        if (!force && (surfaceGuardActive(pkg, "yt:miniplayer") || surfaceGuardActive(pkg, "yt:pip"))) {
+            return false
+        }
 
         val root = rootOverride ?: youtubeCurrentRoot(event)
         val eventSignal = youtubeEventSourceSignal(event, maxHops = 3)
         val eventRealPip = isLikelyYouTubePictureInPicture(root, event) ||
             anyNeedleMatches(eventSignal, YT_REAL_PIP_LABELS)
         val windowPip = isYouTubePictureInPictureWindowVisible()
-        val miniVisible =
-            root?.let { isLikelyYouTubeMiniPlayerVisible(it) || hasYouTubeMiniPlayerGeometry(it) } == true ||
-                anyNeedleMatches(eventSignal, YT_MINI_PLAYER_NAME_LABELS)
+        val miniIdentity =
+            root?.let { hasYouTubeMiniPlayerIdentity(it) } == true ||
+                (anyNeedleMatches(eventSignal, YT_MINI_PLAYER_NAME_LABELS) && !isExpandMiniPlayerSignal(eventSignal))
+        // Detection requires an explicit mini-player label/view id (or a real PiP window).
+        // Geometry alone also matches the watch page's player control bar, which caused false
+        // "Mini player is blocked" popups while watching/scrolling. Geometry is still used by the
+        // close strategies via findYouTubeMiniPlayerBounds().
+        // The in-app mini-player wins over the PiP window heuristic: Morphe exposes it as its own
+        // small window, which the heuristic would otherwise read as a PiP.
+        val windowPipEffective = windowPip && !miniIdentity
+        val miniVisible = miniIdentity || eventRealPip || windowPipEffective
 
         val selectedSurface = root?.let { detectYouTubeSelectedSurface(it) ?: resolveYouTubeSurfaceFromEvent(event) }
         val explicitShortsFloatingContext =
             eventRealPip ||
-                windowPip ||
+                windowPipEffective ||
                 selectedSurface == "yt:shorts" ||
                 isYouTubeShortsEntryEvent(event)
         val shortsFloating =
             blockShorts &&
-                (eventRealPip || windowPip || (miniVisible && explicitShortsFloatingContext)) &&
+                (eventRealPip || windowPipEffective || (miniVisible && explicitShortsFloatingContext)) &&
                 root?.let { isLikelyYouTubeShortsPlayer(it, event) || isYouTubeHomeFeedShortsPlayer(it, event) || hasYouTubeDeepShortsSignal(it) } == true
         if (shortsFloating) {
             lastYouTubeFloatingPlayerBlockAt = now
@@ -5744,7 +5724,7 @@ class LoqInAccessibilityService : AccessibilityService() {
                 event = event,
                 detail = "floating_shorts reason=$reason realPip=$eventRealPip windowPip=$windowPip mini=$miniVisible"
             )
-            if (eventRealPip || windowPip) {
+            if (eventRealPip || windowPipEffective) {
                 runCatching { blockLaunchController.pauseActiveMediaPlayback() }
                 killYouTubePictureInPicture(pkg)
                 return true
@@ -5752,10 +5732,10 @@ class LoqInAccessibilityService : AccessibilityService() {
             return closeYouTubeShortsPlayer("floating_$reason", root)
         }
 
-        if (!eventRealPip && !windowPip && !miniVisible) {
+        if (!eventRealPip && !windowPipEffective && !miniVisible) {
             return false
         }
-        val surfaceKey = if (eventRealPip || windowPip) "yt:pip" else "yt:miniplayer"
+        val surfaceKey = if (eventRealPip || windowPipEffective) "yt:pip" else "yt:miniplayer"
         if ((surfaceKey == "yt:pip" && !blockPictureInPicture) || (surfaceKey == "yt:miniplayer" && !blockMiniPlayer)) {
             return false
         }
@@ -5766,21 +5746,70 @@ class LoqInAccessibilityService : AccessibilityService() {
             surfaceKey,
             enabled = true,
             event = event,
-            detail = "floating reason=$reason realPip=$eventRealPip windowPip=$windowPip mini=$miniVisible"
+            detail = "floating reason=$reason realPip=$eventRealPip windowPip=$windowPipEffective mini=$miniVisible"
         )
 
         clearSurfaceEvidence(surfaceKey)
         clearSurfaceHintForPackage(pkg)
 
-        if (eventRealPip || windowPip) {
-            runCatching { blockLaunchController.pauseActiveMediaPlayback() }
-            dismissYouTubeMiniPlayer("pip_rule_$reason", allowFallbackTap = true)
-            killYouTubePictureInPicture(pkg)
+        if (eventRealPip || windowPipEffective) {
+            showYouTubeFloatingPlayerBlock(pkg, surfaceKey, reason, killPictureInPicture = true)
             return true
         }
 
-        blockYouTubeMiniPlayer(reason)
+        blockYouTubeMiniPlayer(reason, pkg)
+        showYouTubeFloatingPlayerBlock(pkg, surfaceKey, reason, killPictureInPicture = false)
         return true
+    }
+
+    /**
+     * Blocker feedback for the YouTube floating-player rules (ported from upstream 2.3.x).
+     * PiP is killed before the popup; the mini-player close strategies run separately.
+     */
+    private fun showYouTubeFloatingPlayerBlock(
+        pkg: String,
+        surfaceKey: String,
+        reason: String,
+        killPictureInPicture: Boolean,
+    ) {
+        val labelRes = if (surfaceKey == "yt:pip") {
+            R.string.in_app_surface_pip_label
+        } else {
+            R.string.in_app_surface_mini_player_label
+        }
+        val label = getString(labelRes)
+        val title = getString(R.string.blocking_surface_blocked_title, label)
+        val message = surfaceUsageLine(surfaceKey, 0)
+
+        currentSurfaceKey = surfaceKey
+        currentSurfacePkg = pkg
+        clearSurfaceEvidence(surfaceKey)
+        clearSurfaceHintForPackage(pkg)
+        guardAllYouTubeSurfaces(pkg, System.currentTimeMillis(), YOUTUBE_FLOATING_POST_BLOCK_GUARD_MS)
+        runCatching { blockLaunchController.pauseActiveMediaPlayback() }
+
+        if (killPictureInPicture) {
+            killYouTubePictureInPicture(pkg)
+        }
+
+        appendBlockingLog(
+            category = "yt_floating_block",
+            key = "yt-floating-block|$surfaceKey|$reason",
+            message = "surface=$surfaceKey reason=$reason killPip=$killPictureInPicture",
+            throttleMs = 700L,
+        )
+        softBlockSurface(
+            pkg = pkg,
+            appLabel = safeAppLabel(pkg),
+            title = title,
+            message = message,
+            backCount = 0,
+            deferNavigationUntilAcknowledge = true,
+            returnToPackageOnClose = false,
+            forceShow = true,
+            postAcknowledgeYouTubeHome = true,
+            postAcknowledgeYouTubeCleanupMini = true,
+        )
     }
 
     private fun maybeBlockYouTubeHomeShortsBeforeDedupe(event: AccessibilityEvent?): Boolean {
@@ -5808,10 +5837,38 @@ class LoqInAccessibilityService : AccessibilityService() {
             return false
         }
 
-        val root = youtubeCurrentRoot(event) ?: return false
+        // This fast Shorts path runs before the normal YouTube surface resolver. An explicit
+        // Subscriptions bottom-nav event must win here; otherwise a transient Shorts/player signal
+        // underneath the tab can show the correct block with the wrong "Shorts" label.
+        val directSurface = resolveYouTubeSurfaceFromEvent(event, allowFocused = false)
+        if (isDirectYouTubeSubscriptionsEvent(event) || directSurface == "yt:subscriptions") {
+            rememberSurfaceHint(pkg, "yt:subscriptions", now)
+            return false
+        }
+
+        // While a watch-page ad overlay is up, skip this Shorts heuristic: ad controls sit in the
+        // same lower-screen band as the Shorts shelf and must not classify a watch page as Shorts.
+        val riskyBinderDevice = isYouTubeAccessibilityBinderRiskDevice()
+        val root = if (riskyBinderDevice) null else youtubeCurrentRoot(event)
+        val selectedSurface = root?.let { detectYouTubeSelectedSurface(it) }
+        val watchAdOverlay =
+            hasYouTubeWatchAdDismissEvent(event) ||
+                (root != null && shouldProbeYouTubeWatchAdOverlayRoot(event) &&
+                    hasYouTubeWatchAdOverlaySignal(root, event, selectedSurface))
+        if (watchAdOverlay && selectedSurface != "yt:shorts") {
+            armYouTubeWatchAdPositionGuard()
+            return false
+        }
+
+        val directShortsEvent =
+            isYouTubeShortsEntryEvent(event) ||
+                resolveYouTubeSurfaceFromEvent(event, allowFocused = false) == "yt:shorts"
         val detected =
-            isYouTubeHomeShortsShelfEvent(event, root) ||
-                isYouTubeHomeFeedShortsPlayer(root, event)
+            directShortsEvent ||
+                (root != null && (
+                    isYouTubeHomeShortsShelfEvent(event, root) ||
+                        isYouTubeHomeFeedShortsPlayer(root, event)
+                    ))
         if (!detected) {
             return false
         }
@@ -5835,6 +5892,186 @@ class LoqInAccessibilityService : AccessibilityService() {
             postAcknowledgeYouTubeCleanupMini = false
         )
         return true
+    }
+
+    /**
+     * Explicit bottom-navigation evidence (Subscriptions/You) is reliable enough to act on without
+     * waiting for the next root scan: YouTube can replace its tree between the tap event and the
+     * normal classification pass, which used to make the block land late or with the wrong label.
+     * Ported from upstream 2.3.x.
+     */
+    private fun maybeBlockYouTubeDirectNavigationBeforeDedupe(event: AccessibilityEvent?): Boolean {
+        if (!SwitchModeStore.isEnabled(this)) {
+            return false
+        }
+
+        val type = event?.eventType ?: return false
+        if (type != AccessibilityEvent.TYPE_VIEW_CLICKED &&
+            type != AccessibilityEvent.TYPE_VIEW_SELECTED &&
+            type != AccessibilityEvent.TYPE_VIEW_FOCUSED
+        ) {
+            return false
+        }
+
+        val surface = when {
+            isDirectYouTubeSubscriptionsEvent(event) -> "yt:subscriptions"
+            else -> resolveYouTubeSurfaceFromEvent(event, allowFocused = true)
+        }
+        if (surface != "yt:subscriptions" && surface != "yt:you") {
+            return false
+        }
+
+        // Use the detected package: the event may come from Morphe/ReVanced, and hardcoding the
+        // official package made the per-surface guards and the block target the wrong app
+        // (a Morphe You-tab tap still blocked "You" as com.google.android.youtube).
+        val detectedPkg = event?.packageName?.toString()
+        val pkg = if (isYouTubePackage(detectedPkg)) detectedPkg!! else PACKAGE_YOUTUBE
+
+        val enabled = when (surface) {
+            "yt:subscriptions" -> inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_SUBSCRIPTIONS)
+            "yt:you" -> inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_YOU)
+            else -> false
+        }
+        val now = System.currentTimeMillis()
+        rememberSurfaceHint(pkg, surface, now)
+        if (!enabled || surfaceGuardActive(pkg, surface, now)) {
+            return false
+        }
+
+        val label = if (surface == "yt:subscriptions") {
+            getString(R.string.in_app_surface_subscriptions_label)
+        } else {
+            getString(R.string.in_app_surface_you_label)
+        }
+        currentSurfaceKey = surface
+        currentSurfacePkg = pkg
+        clearSurfaceEvidence(surface)
+        surfaceBlockGuardUntil["$pkg|$surface"] = now +
+            maxOf(YT_SHORTS_REENTRY_GUARD_MS, INAPP_POST_BLOCK_GRACE_MS)
+        if (surface == "yt:subscriptions") {
+            runCatching { blockLaunchController.pauseActiveMediaPlayback() }
+        }
+        logInAppSurfaceDetect(
+            pkg,
+            surface,
+            enabled = true,
+            event = event,
+            detail = "direct_bottom_navigation",
+        )
+        softBlockSurface(
+            pkg = pkg,
+            appLabel = safeAppLabel(pkg),
+            title = getString(R.string.blocking_surface_blocked_title, label),
+            message = surfaceUsageLine(surface, 0),
+            backCount = 0,
+            deferNavigationUntilAcknowledge = true,
+            returnToPackageOnClose = false,
+            forceShow = true,
+            postAcknowledgeYouTubeHome = true,
+            postAcknowledgeYouTubeCleanupMini = true,
+        )
+        return true
+    }
+
+    /**
+     * Explicit Subscriptions bottom-navigation event (label plus bottom-band geometry or
+     * pivot/nav/bottom view ids). Geometry hops are skipped on Binder-risk devices.
+     * Ported from upstream 2.3.x.
+     */
+    private fun isDirectYouTubeSubscriptionsEvent(event: AccessibilityEvent?): Boolean {
+        val type = event?.eventType ?: return false
+        if (type != AccessibilityEvent.TYPE_VIEW_CLICKED &&
+            type != AccessibilityEvent.TYPE_VIEW_SELECTED &&
+            type != AccessibilityEvent.TYPE_VIEW_FOCUSED
+        ) return false
+
+        val signal = youtubeEventSourceSignal(event, maxHops = 3)
+        if (!anyNeedleMatches(signal, YT_SUBSCRIPTIONS_LABELS)) return false
+
+        val source = runCatching { event.source }.getOrNull()
+        val sourceViewId = source?.viewIdResourceName?.lowercase(Locale.ROOT).orEmpty()
+        val sourceIsExplicitBottomNav =
+            sourceViewId.contains("pivot") ||
+                sourceViewId.contains("bottom") ||
+                sourceViewId.contains("navigation") ||
+                sourceViewId.contains("tab") ||
+                sourceViewId.contains("nav") ||
+                source?.isSelected == true ||
+                source?.isCheckedCompat() == true
+        if (sourceIsExplicitBottomNav) return true
+
+        // The geometry-only surface resolver is intentionally suppressed for a short window after
+        // YouTube ad controls are observed. An explicit Subscriptions label in the bottom
+        // navigation is safe to accept even while that guard is active.
+        var current = runCatching { event.source }.getOrNull()
+        val width = resources.displayMetrics.widthPixels.coerceAtLeast(1)
+        val height = resources.displayMetrics.heightPixels.coerceAtLeast(1)
+        val bounds = Rect()
+        var hops = 0
+        val maxHops = if (isYouTubeAccessibilityBinderRiskDevice()) 0 else 3
+        while (current != null && hops <= maxHops) {
+            val node = current ?: break
+            val nodePkg = node.packageName?.toString()?.lowercase(Locale.ROOT).orEmpty()
+            if (nodePkg.isBlank() || isYouTubePackage(nodePkg)) {
+                runCatching { node.getBoundsInScreen(bounds) }.getOrNull()
+                if (!bounds.isEmpty) {
+                    val centerX = bounds.exactCenterX() / width.toFloat()
+                    val centerY = bounds.exactCenterY() / height.toFloat()
+                    val widthRatio = bounds.width() / width.toFloat()
+                    val heightRatio = bounds.height() / height.toFloat()
+                    if (centerY >= 0.68f && centerX in 0.50f..0.90f &&
+                        widthRatio <= 0.42f && heightRatio <= 0.26f
+                    ) {
+                        return true
+                    }
+                }
+            }
+            hops++
+            if (hops > maxHops) break
+            current = runCatching { node.parent }.getOrNull()
+        }
+        return false
+    }
+
+    private fun armYouTubeWatchAdPositionGuard() {
+        youtubeWatchAdPositionGuardUntilUptime = maxOf(
+            youtubeWatchAdPositionGuardUntilUptime,
+            SystemClock.uptimeMillis() + YT_WATCH_AD_POSITION_GUARD_MS,
+        )
+    }
+
+    private fun isYouTubeWatchAdPositionGuardActive(): Boolean =
+        SystemClock.uptimeMillis() < youtubeWatchAdPositionGuardUntilUptime
+
+    private fun shouldProbeYouTubeWatchAdOverlayRoot(event: AccessibilityEvent?): Boolean {
+        val type = event?.eventType ?: return false
+        return type == AccessibilityEvent.TYPE_VIEW_CLICKED ||
+            type == AccessibilityEvent.TYPE_VIEW_SELECTED
+    }
+
+    private fun hasYouTubeWatchAdDismissEvent(event: AccessibilityEvent?): Boolean {
+        val type = event?.eventType ?: return false
+        if (type != AccessibilityEvent.TYPE_VIEW_CLICKED &&
+            type != AccessibilityEvent.TYPE_VIEW_SELECTED &&
+            type != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED &&
+            type != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
+        ) return false
+
+        val source = runCatching { event.source }.getOrNull()
+        val sourcePkg = source?.packageName?.toString()?.lowercase(Locale.ROOT).orEmpty()
+        if (sourcePkg.isNotBlank() && !isYouTubePackage(sourcePkg)) return false
+
+        return isYouTubeWatchAdSignal(youtubeEventSourceSignal(event, maxHops = 2))
+    }
+
+    private fun isYouTubeWatchAdSignal(signal: String): Boolean {
+        if (signal.isBlank()) return false
+        val lowered = signal.lowercase(Locale.ROOT)
+        val adCenter = YT_WATCH_AD_CENTER_LABELS.any(lowered::contains)
+        val sponsored = YT_WATCH_AD_SPONSORED_LABELS.any { containsSemanticToken(lowered, it) }
+        val visitSite = YT_WATCH_AD_VISIT_LABELS.any(lowered::contains)
+        val dismiss = YT_WATCH_AD_DISMISS_LABELS.any(lowered::contains)
+        return adCenter || dismiss || (sponsored && visitSite)
     }
 
     /**
@@ -5877,6 +6114,11 @@ class LoqInAccessibilityService : AccessibilityService() {
             (selectedSurface == null || selectedSurface == "yt:home") &&
                 isYouTubeFullScreenShortsPlayerActive(root)
         val shortsByReelContainer = hasVisibleYouTubeReelPlayerContainer(root, pkg)
+        // A visible in-app mini-player is a normal video session, not Shorts; only the
+        // deterministic Shorts container may override that.
+        if (!shortsByReelContainer && hasYouTubeMiniPlayerIdentity(root)) {
+            return false
+        }
         if (!shortsByNavTab && !shortsByHomeFeedOverlay && !shortsByReelContainer) {
             return false
         }
@@ -5918,13 +6160,15 @@ class LoqInAccessibilityService : AccessibilityService() {
         clearSurfaceEvidence("yt:shorts")
         clearSurfaceHintForPackage(pkg)
         surfaceBlockGuardUntil["$pkg|yt:shorts"] = now + 2_800L
+        // The mini-player close and the post-acknowledge Home redirect navigate through YouTube's
+        // tabs; without a package-wide guard the previously selected tab (You/Subscriptions) blocks
+        // right after the mini-player block and the user gets a cascade of blockers.
+        guardAllYouTubeSurfaces(pkg, now, YOUTUBE_FLOATING_POST_BLOCK_GUARD_MS)
         attemptYouTubeMiniPlayerCloseStrategy("mini_rule_${reason}_immediate", "axis")
 
         listOf(
             120L to "axis",
             320L to "action",
-            700L to "bounds",
-            1_100L to "swipe",
             1_600L to "all"
         ).forEach { (delay, strategy) ->
             handler.postDelayed({
@@ -5947,8 +6191,8 @@ class LoqInAccessibilityService : AccessibilityService() {
         return when (strategy) {
             "axis" -> closeYouTubeMiniPlayerFromPlayPauseAxis(root, reason)
             "action" -> dismissYouTubeMiniPlayerByAccessibilityAction(root, reason)
-            "bounds" -> tapYouTubeMiniPlayerCloseByBounds(root, reason)
-            "swipe" -> swipeYouTubeMiniPlayerAway(root, reason)
+            // Coordinate-based "bounds"/"swipe" strategies were removed: a wrong tap can open a
+            // video or navigate somewhere unrelated.
             else -> dismissYouTubeMiniPlayer(reason, allowFallbackTap = true)
         }
     }
@@ -6330,10 +6574,26 @@ class LoqInAccessibilityService : AccessibilityService() {
             val blockYtSubscriptionsEnabled = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_SUBSCRIPTIONS)
             val blockYtYouEnabled = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_YOU)
 
-            val ytTappedSurface = resolveYouTubeSurfaceFromEvent(event, allowFocused = true)
             val ytEnteredAt = appEnteredAtByPkg[pkg] ?: 0L
             val ytSettled = ytEnteredAt == 0L || (now - ytEnteredAt) >= 350L
             val ytSelectedSurface = if (ytSettled) detectYouTubeSelectedSurface(root) else null
+            // A real bottom-navigation Subscriptions event is explicit enough to trust immediately.
+            // Resolve it before the ad-position suppression so genuine tab taps are not delayed
+            // while the generic geometry fallback is intentionally guarded (upstream 2.3.x).
+            val ytDirectSubscriptionsNow = isDirectYouTubeSubscriptionsEvent(event)
+            val ytWatchAdOverlay =
+                hasYouTubeWatchAdDismissEvent(event) ||
+                    (shouldProbeYouTubeWatchAdOverlayRoot(event) &&
+                        hasYouTubeWatchAdOverlaySignal(root, event, ytSelectedSurface))
+            val ytSuppressNavigationSurfaceDetection = ytWatchAdOverlay && ytSelectedSurface != "yt:shorts"
+            if (ytSuppressNavigationSurfaceDetection) {
+                armYouTubeWatchAdPositionGuard()
+            }
+            val ytTappedSurface = when {
+                ytDirectSubscriptionsNow -> "yt:subscriptions"
+                ytSuppressNavigationSurfaceDetection -> null
+                else -> resolveYouTubeSurfaceFromEvent(event, allowFocused = true)
+            }
             val ytShortsEntryNow = isYouTubeShortsEntryEvent(event) || isYouTubeHomeShortsShelfEvent(event, root)
             val ytHomeSurfaceCandidate = ytTappedSurface == "yt:home" || ytSelectedSurface == "yt:home"
             val ytExplicitShortsContext = ytTappedSurface == "yt:shorts" || ytSelectedSurface == "yt:shorts" || ytShortsEntryNow
@@ -6341,8 +6601,12 @@ class LoqInAccessibilityService : AccessibilityService() {
             // visible the Shorts player is on screen regardless of nav state — it covers
             // tab Shorts AND home-feed overlay Shorts.
             val ytReelContainerNow = hasVisibleYouTubeReelPlayerContainer(root, pkg)
+            // A playing in-app mini-player (Morphe exposes it as its own window with a pause
+            // control and bottom-band geometry) is not a Shorts session. Only the deterministic
+            // Shorts container may override that veto.
+            val ytMiniPlayerNow = !ytReelContainerNow && hasYouTubeMiniPlayerIdentity(root)
             val ytShortsPlayerNow =
-                when {
+                !ytMiniPlayerNow && (when {
                     ytHomeSurfaceCandidate -> isYouTubeHomeFeedShortsPlayer(root, event)
                     ytExplicitShortsContext -> isLikelyYouTubeShortsPlayer(root, event) || hasYouTubeShortsPlayerControl(root)
                     else -> isYouTubeShortsScreen(root, event) ||
@@ -6354,7 +6618,7 @@ class LoqInAccessibilityService : AccessibilityService() {
                         (eventTextMatches(event, YT_SHORTS_PLAYER_HINT_LABELS) &&
                             hasYouTubeShortsPlayerControl(root) &&
                             hasYouTubeShortsPlayerGeometry(root))
-                } || ytReelContainerNow
+                } || ytReelContainerNow)
             val ytShortsGuardActive = surfaceGuardActive(pkg, "yt:shorts", now)
 
             // Delayed YouTube retry probes call this path with a null event after the UI has had time to settle.
@@ -7691,6 +7955,12 @@ class LoqInAccessibilityService : AccessibilityService() {
             return null
         }
 
+        // An explicit Subscriptions bottom-nav event wins over any transient player/Shorts signal
+        // underneath the tab (ported from upstream 2.3.x).
+        if (isDirectYouTubeSubscriptionsEvent(event)) {
+            return "yt:subscriptions"
+        }
+
         val viewId = source?.viewIdResourceName?.lowercase(Locale.getDefault()).orEmpty()
         val surfaceFromPosition = youtubeSurfaceFromEventPosition(event)
         val sourceLooksLikeBottomNav =
@@ -7849,6 +8119,12 @@ class LoqInAccessibilityService : AccessibilityService() {
     }
 
     private fun youtubeSurfaceFromEventPosition(event: AccessibilityEvent?): String? {
+        // Ad dismiss/skip controls often live in the same lower-screen bands as YouTube's bottom
+        // navigation. For a short window after observing an ad overlay, do not infer a surface from
+        // geometry alone. Real bottom-nav events still resolve via their direct label/view-id
+        // semantics in resolveYouTubeSurfaceFromEvent().
+        if (isYouTubeWatchAdPositionGuardActive()) return null
+
         val type = event?.eventType ?: return null
         if (type != AccessibilityEvent.TYPE_VIEW_CLICKED &&
             type != AccessibilityEvent.TYPE_VIEW_SELECTED &&
@@ -7858,8 +8134,10 @@ class LoqInAccessibilityService : AccessibilityService() {
         val width = resources.displayMetrics.widthPixels.coerceAtLeast(1)
         val height = resources.displayMetrics.heightPixels.coerceAtLeast(1)
         var hops = 0
+        // Binder-risk devices (Samsung Android 12, Bigme) skip the multi-hop parent walk.
+        val maxHops = if (isYouTubeAccessibilityBinderRiskDevice()) 1 else 5
         val bounds = Rect()
-        while (current != null && hops < 5) {
+        while (current != null && hops < maxHops) {
             val nodePkg = current.packageName?.toString()?.lowercase(Locale.getDefault()).orEmpty()
             if (nodePkg.isBlank() || isYouTubePackage(nodePkg)) {
                 runCatching { current.getBoundsInScreen(bounds) }.getOrNull()
@@ -8758,10 +9036,9 @@ class LoqInAccessibilityService : AccessibilityService() {
         val signal = parts.joinToString(" ").lowercase(Locale.ROOT)
         if (signal.isBlank()) return false
 
-        val adCenter = YT_WATCH_AD_CENTER_LABELS.any(signal::contains)
-        val sponsored = YT_WATCH_AD_SPONSORED_LABELS.any { containsSemanticToken(signal, it) }
-        val visitSite = YT_WATCH_AD_VISIT_LABELS.any(signal::contains)
-        return adCenter || (sponsored && visitSite)
+        // Includes the ad dismiss/skip labels on top of Ad Center and sponsored+visit-site
+        // (ported from upstream 2.3.x).
+        return isYouTubeWatchAdSignal(signal)
     }
 
     private fun hasYouTubeNativeShortsLimitReachedSignal(
@@ -8939,6 +9216,80 @@ class LoqInAccessibilityService : AccessibilityService() {
         return false
     }
 
+    /**
+     * True when the signal describes a control that ENTERS the mini-player (e.g. Morphe's
+     * "Expand Mini Player" on the watch page). Those controls are always present while a video is
+     * open and must never be mistaken for the mini-player itself.
+     */
+    /** Suppress all YouTube surface rules for a short window while the app navigates. */
+    private fun guardAllYouTubeSurfaces(pkg: String, now: Long, durationMs: Long) {
+        val until = now + durationMs
+        inAppGraceUntilByPkg[pkg] = maxOf(inAppGraceUntilByPkg[pkg] ?: 0L, until)
+        for (surface in arrayOf("yt:home", "yt:shorts", "yt:subscriptions", "yt:you", "yt:miniplayer", "yt:pip")) {
+            surfaceBlockGuardUntil["$pkg|$surface"] = maxOf(surfaceBlockGuardUntil["$pkg|$surface"] ?: 0L, until)
+        }
+    }
+
+    private fun isExpandMiniPlayerSignal(signal: String): Boolean {
+        val lowered = signal.lowercase(Locale.ROOT)
+        if (!lowered.contains("mini")) return false
+        return lowered.contains("expand") ||
+            lowered.contains("enter mini") ||
+            lowered.contains("play in mini") ||
+            lowered.contains("switch to mini") ||
+            lowered.contains("open mini")
+    }
+
+    /**
+     * Explicit mini-player identity (label or view id) without geometry. Used by the content-event
+     * path, where geometry alone also matches the watch page's player control bar.
+     */
+    private fun hasYouTubeMiniPlayerIdentity(root: AccessibilityNodeInfo): Boolean {
+        if (!isYouTubeRootNode(root)) {
+            return false
+        }
+        val width = resources.displayMetrics.widthPixels.coerceAtLeast(1)
+        val height = resources.displayMetrics.heightPixels.coerceAtLeast(1)
+        val bounds = Rect()
+        return findAnyNode(root) { node ->
+            val nodePkg = node.packageName?.toString()?.lowercase(Locale.getDefault()).orEmpty()
+            if (nodePkg.isNotBlank() && !isYouTubePackage(nodePkg)) return@findAnyNode false
+            // YouTube keeps a hidden mini-player container in the watch-page tree; only a visibly
+            // displayed node may count as the in-app mini-player.
+            if (!runCatching { node.isVisibleToUser }.getOrDefault(false)) return@findAnyNode false
+            // A closed/sliding mini-player window can leave a stale node at negative coordinates;
+            // require the node to intersect the screen.
+            runCatching { node.getBoundsInScreen(bounds) }.getOrNull()
+            if (bounds.isEmpty || bounds.right <= 0 || bounds.bottom <= 0 ||
+                bounds.left >= width || bounds.top >= height
+            ) {
+                return@findAnyNode false
+            }
+
+            val text = node.text?.toString().orEmpty()
+            val desc = node.contentDescription?.toString().orEmpty()
+            val viewId = node.viewIdResourceName?.lowercase(Locale.getDefault()).orEmpty()
+            val signal = "$text $desc"
+            if (isExpandMiniPlayerSignal(signal)) return@findAnyNode false
+
+            val idMini =
+                viewId.contains("miniplayer") ||
+                    viewId.contains("mini_player") ||
+                    (viewId.contains("mini") && viewId.contains("player"))
+            val labelMini =
+                anyNeedleMatches(signal, YT_MINI_PLAYER_HINT_LABELS) ||
+                    anyNeedleMatches(signal, YT_MINI_PLAYER_CLOSE_LABELS)
+            if (!idMini && !labelMini) return@findAnyNode false
+            if (!idMini) {
+                // Label-only matches must be docked at the bottom: the mini-player is a bottom bar,
+                // while watch-page controls sit at the top of the player.
+                runCatching { node.getBoundsInScreen(bounds) }.getOrNull()
+                if (bounds.isEmpty || bounds.exactCenterY() / height < 0.55f) return@findAnyNode false
+            }
+            true
+        } != null
+    }
+
     private fun isLikelyYouTubeMiniPlayerVisible(root: AccessibilityNodeInfo?): Boolean {
         val r = root ?: return false
         if (!isYouTubeRootNode(r)) {
@@ -9049,6 +9400,16 @@ class LoqInAccessibilityService : AccessibilityService() {
         val bounds = Rect()
         val activeWindows = runCatching { windows }.getOrNull().orEmpty()
 
+        // A PiP window only exists while the app is in the background. Morphe exposes its in-app
+        // mini-player as its own small window; while YouTube itself is the foreground app that
+        // window is the mini-player, not a PiP.
+        val foregroundPkg = runCatching {
+            activeWindows.firstOrNull { it.isActive }?.root?.packageName?.toString()
+        }.getOrNull()
+        if (isYouTubePackage(foregroundPkg) || isYouTubePackage(currentTopPkg)) {
+            return false
+        }
+
         for (window in activeWindows) {
             val inPip = runCatching {
                 (AccessibilityWindowInfo::class.java
@@ -9133,16 +9494,13 @@ class LoqInAccessibilityService : AccessibilityService() {
         appendBlockingLog(
             category = "pip_block",
             key = "pip-kill|$pkg",
-            message = "pkg=$pkg action=bounce_home_and_kill"
+            message = "pkg=$pkg action=close_pip_via_front_and_home"
         )
         clearSurfaceEvidence("yt:pip")
         clearSurfaceHintForPackage(pkg)
         surfaceBlockGuardUntil["$pkg|yt:pip"] = now + PIP_KILL_COOLDOWN_MS
-        bounceHomeAndKill(pkg)
-    }
-
-    private fun bounceHomeAndKill(pkg: String) {
-        blockLaunchController.bounceHomeAndKill(pkg)
+        // Bringing the app to the front makes Android dismiss its PiP window; then go home.
+        blockLaunchController.closePictureInPicture(pkg)
     }
 
     private fun AccessibilityNodeInfo.isCheckedCompat(): Boolean {
