@@ -64,6 +64,7 @@ Upstream source paths are under `app/src/main/java/at/saltyy/switchly/...`; our 
 | 2026-09-20 | **W5.2 P2** | `feature/upstream-w5-protection-gate` | Done — `8b9b628`, `3e7af0f` | "Protection changes" settings page (delay + pending list), Settings entry + dynamic summary; en/de, light/dark, 3-button nav verified |
 | 2026-09-20 | **W5.2 P3** | `feature/upstream-w5-protection-gate` | Done — `9ca2b22`, `f9ac39b` | Gate wired through picker (save, toggles, auto-block, clears), in-app rules, website enable/disable, app limits, remove-blocked-app; structural paths keep deny |
 | 2026-09-20 | **W5.2 queue fix** | `feature/upstream-w5-protection-gate` | Done — `161f927` | Owner report: app-selection entries deduped per profile/mode, so a second unblock replaced the first (timer reset) and the label hid the apps. Now per-target entries (independent timers, individually discardable) and labels name the apps; stricter edits cancel matching pending weakenings |
+| 2026-09-20 | **W5.2 UI rework** | `feature/upstream-w5-protection-gate` | Done — `1b89c07` | Owner feedback: page did not match the app aesthetic and sat alone in Settings. Settings entry merged into the Controls card (Feature access + divider + Protection changes); page rebuilt on the AppLockSettings pattern (section headers + cards, trailing value, list rows with icons/dividers, tonal footer actions, info row) |
 
 ### W1.1 implementation + test evidence (2026-09-16)
 
