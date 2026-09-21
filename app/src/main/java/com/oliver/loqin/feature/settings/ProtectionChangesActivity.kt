@@ -218,10 +218,7 @@ class ProtectionChangesActivity : AppCompatActivity() {
             textSize = 13f
             gravity = android.view.Gravity.CENTER
             setTextColor(secondaryTextColor())
-        }
-        val offSwitch = com.google.android.material.materialswitch.MaterialSwitch(this).apply {
-            text = getString(R.string.protection_change_delay_off_switch)
-            isChecked = current <= 0
+            visibility = View.GONE
         }
 
         val daysPicker = numberPicker(minValue = 0, maxValue = 7, value = current / 1_440)
@@ -229,7 +226,6 @@ class ProtectionChangesActivity : AppCompatActivity() {
         val minutesPicker = numberPicker(minValue = 0, maxValue = 59, value = current % 60)
 
         fun selectedMinutes(): Int {
-            if (offSwitch.isChecked) return 0
             val days = daysPicker.value
             if (days >= 7) return maxMinutes
             return days * 1_440 + hoursPicker.value * 60 + minutesPicker.value
@@ -238,17 +234,10 @@ class ProtectionChangesActivity : AppCompatActivity() {
         fun refresh() {
             val minutes = selectedMinutes()
             totalLabel.text = delayLabel(minutes)
-            val wheelsEnabled = !offSwitch.isChecked
-            daysPicker.isEnabled = wheelsEnabled
-            hoursPicker.isEnabled = wheelsEnabled
-            minutesPicker.isEnabled = wheelsEnabled
-            daysPicker.alpha = if (wheelsEnabled) 1f else 0.45f
-            hoursPicker.alpha = if (wheelsEnabled) 1f else 0.45f
-            minutesPicker.alpha = if (wheelsEnabled) 1f else 0.45f
-            hint.text = when {
-                locked && minutes < current -> getString(R.string.protection_change_delay_locked)
-                else -> getString(R.string.protection_change_delay_wheels_hint)
-            }
+            // 0/0/0 means Off; only an invalid (too short while locked) pick shows an explanation.
+            val invalid = locked && minutes < current
+            hint.visibility = if (invalid) View.VISIBLE else View.GONE
+            hint.text = getString(R.string.protection_change_delay_locked)
         }
 
         val wheels = LinearLayout(this).apply {
@@ -269,7 +258,7 @@ class ProtectionChangesActivity : AppCompatActivity() {
                 picker,
                 LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
-                    dp(120),
+                    dp(170),
                 ),
             )
             column.addView(TextView(this).apply {
@@ -299,13 +288,6 @@ class ProtectionChangesActivity : AppCompatActivity() {
                     ViewGroup.LayoutParams.WRAP_CONTENT,
                 ).apply { topMargin = dp(4) },
             )
-            addView(
-                offSwitch,
-                LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT,
-                    ViewGroup.LayoutParams.WRAP_CONTENT,
-                ).apply { topMargin = dp(12) },
-            )
         }
 
         val dialog = MaterialAlertDialogBuilder(this)
@@ -314,7 +296,6 @@ class ProtectionChangesActivity : AppCompatActivity() {
             .setNegativeButton(R.string.cancel, null)
             .setPositiveButton(R.string.save, null)
             .create()
-        offSwitch.setOnCheckedChangeListener { _, _ -> refresh() }
         daysPicker.setOnValueChangedListener { _, _, _ -> refresh() }
         hoursPicker.setOnValueChangedListener { _, _, _ -> refresh() }
         minutesPicker.setOnValueChangedListener { _, _, _ -> refresh() }

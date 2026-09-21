@@ -138,11 +138,20 @@ object PendingChangeQueue {
         else -> change.id
     }
 
-    /** Queueing the same target again replaces the previous entry and restarts its timer. */
+    /**
+     * Queueing the same target again replaces the payload but keeps the original timer, so an
+     * accidental repeat cannot extend (or shorten) the delay the user already agreed to.
+     */
     fun upsert(existing: List<PendingChange>, change: PendingChange): List<PendingChange> {
         val key = dedupeKey(change)
+        val previous = existing.firstOrNull { dedupeKey(it) == key }
+        val merged = if (previous == null) {
+            change
+        } else {
+            change.copy(executeAtMs = previous.executeAtMs, createdAtMs = previous.createdAtMs)
+        }
         val remaining = existing.filterNot { dedupeKey(it) == key }
-        return (remaining + change).sortedBy { it.executeAtMs }
+        return (remaining + merged).sortedBy { it.executeAtMs }
     }
 
     fun removeById(existing: List<PendingChange>, id: String): List<PendingChange> =

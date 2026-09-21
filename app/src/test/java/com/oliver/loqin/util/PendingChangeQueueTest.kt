@@ -246,6 +246,7 @@ class PendingChangeQueueTest {
 
         assertEquals(1, result.size)
         assertEquals("second", result.first().id)
+        assertEquals(1_000L, result.first().executeAtMs)
     }
 
     @Test
@@ -329,15 +330,16 @@ class PendingChangeQueueTest {
     }
 
     @Test
-    fun `upsert replaces the same target and restarts its timer`() {
+    fun `upsert replaces the same target but keeps the original timer`() {
         val first = appSelectionChange("first", dueAt = 1_000L)
-        val replacement = appSelectionChange("second", dueAt = 2_000L)
+        val replacement = appSelectionChange("second", dueAt = 5_000L)
 
         val result = PendingChangeQueue.upsert(listOf(first), replacement)
 
         assertEquals(1, result.size)
         assertEquals("second", result.first().id)
-        assertEquals(2_000L, result.first().executeAtMs)
+        assertEquals(1_000L, result.first().executeAtMs)
+        assertEquals(0L, result.first().createdAtMs)
     }
 
     @Test

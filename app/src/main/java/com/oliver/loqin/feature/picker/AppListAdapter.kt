@@ -260,12 +260,12 @@ class AppListAdapter(
         private fun updateTileState(selected: Boolean) {
             val ctx = itemView.context
             if (selected && currentPending) {
-                // Queued weakening change: the store still has it selected, so show a distinct
-                // "waiting" state instead of the normal blocked styling.
-                val warning = ContextCompat.getColor(ctx, R.color.status_warning)
+                // Queued weakening change: same accent hue, lighter shade and a faded badge so it
+                // reads as "blocked, but a change is waiting" instead of a different color.
+                val accent = AccentColor.getAccentColorInt(ctx)
                 cardRoot.strokeWidth = dp(2f)
-                cardRoot.strokeColor = warning
-                cardRoot.setCardBackgroundColor(ColorUtils.setAlphaComponent(warning, 0x26))
+                cardRoot.strokeColor = ColorUtils.setAlphaComponent(accent, 0x66)
+                cardRoot.setCardBackgroundColor(ColorUtils.setAlphaComponent(accent, 0x14))
             } else if (selected) {
                 val accent = AccentColor.getAccentColorInt(ctx)
                 cardRoot.strokeWidth = dp(2f)
@@ -280,13 +280,8 @@ class AppListAdapter(
             if (selected) {
                 // Selected + limits is a restricted app, not a fully blocked one.
                 val limited = currentHasLimit
-                ivChecked.setImageResource(
-                    when {
-                        currentPending -> R.drawable.schedule_24
-                        limited -> R.drawable.timer_24
-                        else -> R.drawable.check_circle_24
-                    }
-                )
+                ivChecked.setImageResource(if (limited) R.drawable.timer_24 else R.drawable.check_circle_24)
+                ivChecked.alpha = if (currentPending) 0.45f else 1f
                 ivChecked.contentDescription = when {
                     currentPending -> ctx.getString(R.string.app_picker_pending_badge)
                     limited -> ctx.getString(R.string.app_picker_limited_badge)

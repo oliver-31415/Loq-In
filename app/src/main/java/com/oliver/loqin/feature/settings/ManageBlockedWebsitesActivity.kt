@@ -277,6 +277,12 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         adapter = DomainRuleAdapter(
             onEdit = { showEditDialog(it) },
             onToggleEnabled = { domain, enabled -> setRuleEnabled(domain, enabled) },
+            pendingEnabledProvider = {
+                ProtectionChangeGate.pendingWebsiteEnabled(this, currentProfile())
+            },
+            pendingRemovalsProvider = {
+                ProtectionChangeGate.pendingWebsiteRemovals(this, currentProfile())
+            },
             onToggleSelection = { toggleSelection(it) },
             isSelectionMode = { isSelectionMode },
             isSelected = { selectedDomains.contains(it) }
@@ -775,6 +781,8 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
     private inner class DomainRuleAdapter(
         private val onEdit: (String) -> Unit,
         private val onToggleEnabled: (String, Boolean) -> Unit,
+        private val pendingEnabledProvider: () -> Map<String, Boolean> = { emptyMap() },
+        private val pendingRemovalsProvider: () -> Set<String> = { emptySet() },
         private val onToggleSelection: (String) -> Unit,
         private val isSelectionMode: () -> Boolean,
         private val isSelected: (String) -> Boolean,
@@ -829,11 +837,22 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
                     rule.isHardBlocked -> getString(R.string.rule_blocked)
                     else -> ""
                 }
-                tvMeta.text = listOfNotNull(
-                    if (rule.enabled) null else getString(R.string.website_rule_disabled),
-                    baseMeta.takeIf { it.isNotBlank() }
-                ).joinToString(" · ")
-                val contentAlpha = if (rule.enabled) 1f else 0.52f
+                val pendingEnabled = pendingEnabledProvider()[rule.domain]
+                val pendingRemoval = rule.domain in pendingRemovalsProvider()
+                val pending = pendingEnabled != null || pendingRemoval
+                tvMeta.text = if (pending) {
+                    getString(R.string.website_rule_pending)
+                } else {
+                    listOfNotNull(
+                        if (rule.enabled) null else getString(R.string.website_rule_disabled),
+                        baseMeta.takeIf { it.isNotBlank() }
+                    ).joinToString(" · ")
+                }
+                val contentAlpha = when {
+                    pending -> 0.62f
+                    rule.enabled -> 1f
+                    else -> 0.52f
+                }
                 tvDomain.alpha = contentAlpha
                 tvMeta.alpha = if (rule.enabled) 0.70f else 0.56f
                 ivDomainIcon.alpha = contentAlpha
@@ -861,10 +880,15 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
 
                 CustomAccentApplier.tintSwitch(swRuleEnabled)
                 swRuleEnabled.setOnCheckedChangeListener(null)
-                swRuleEnabled.isChecked = rule.enabled
+                // A queued change previews its target state in a faded switch instead of reverting.
+                swRuleEnabled.isChecked = pendingEnabled ?: rule.enabled
                 // Stay tappable (dimmed) so locked taps warn via popover instead of doing nothing.
                 swRuleEnabled.isEnabled = true
-                swRuleEnabled.alpha = if (readOnly) 0.45f else 1f
+                swRuleEnabled.alpha = when {
+                    pending -> 0.55f
+                    readOnly -> 0.45f
+                    else -> 1f
+                }
                 swRuleEnabled.setOnCheckedChangeListener { _, isChecked ->
                     // The gate decides (apply / queue / deny) and refreshList() restores the
                     // switch when the change was queued or denied.

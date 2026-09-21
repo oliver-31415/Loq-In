@@ -160,8 +160,11 @@ class InAppRulesActivity : AppCompatActivity() {
         )
     }
 
+    private var pendingInAppSelections: Map<String, Boolean> = emptyMap()
+
     private fun render() {
         CustomAccentApplier.applyIfNeeded(this)
+        pendingInAppSelections = ProtectionChangeGate.pendingInAppSelections(this, currentProfile())
         container.removeAllViews()
         val focusPackage = intent.getStringExtra(EXTRA_FOCUS_PACKAGE).orEmpty()
         var focusView: View? = null
@@ -799,6 +802,7 @@ class InAppRulesActivity : AppCompatActivity() {
         val prefKey = surface.prefKey
         val readOnly = EditingLockGuard.isLocked(this)
         val currentChecked = prefKey?.let { readProfileBool(it) } ?: false
+        val pendingSelected = prefKey?.let { pendingInAppSelections[it] }
         val canToggleWhileLocked = prefKey != null && run {
             if (!EditingLockGuard.isLocked(this)) return@run true
             val direction = ProtectionChangePolicy.inAppDirection(
@@ -813,12 +817,13 @@ class InAppRulesActivity : AppCompatActivity() {
             isEnabled = prefKey != null
             alpha = when {
                 prefKey == null -> 0.52f
+                pendingSelected != null -> 0.55f
                 readOnly && !canToggleWhileLocked -> 0.45f
                 else -> 1f
             }
             if (prefKey != null) {
-                isChecked = currentChecked
-                if (isChecked && !readOnly) {
+                isChecked = pendingSelected ?: currentChecked
+                if (isChecked && !readOnly && pendingSelected == null) {
                     surface.surfaceKey?.let { setSurfaceRuleForMode(it, checked = true) }
                 }
                 setOnCheckedChangeListener { button, checked ->

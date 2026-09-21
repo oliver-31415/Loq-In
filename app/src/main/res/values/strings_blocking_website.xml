@@ -37,6 +37,7 @@
     <string name="rule_type">Rule type</string>
     <string name="rule_block_always">Block always</string>
     <string name="rule_daily_limit">Daily limit</string>
+    <string name="website_rule_pending">Pending — applies after the delay</string>
     <string name="website_rule_disabled">Rule disabled</string>
     <string name="website_rule_toggle">Enable website rule</string>
     <string name="rule_blocked">Blocked</string>

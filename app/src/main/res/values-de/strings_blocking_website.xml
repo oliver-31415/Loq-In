@@ -37,6 +37,7 @@
     <string name="rule_type">Regeltyp</string>
     <string name="rule_block_always">Immer blockieren</string>
     <string name="rule_daily_limit">Tägliches Limit</string>
+    <string name="website_rule_pending">Vorgemerkt — wird nach der Verzögerung angewendet</string>
     <string name="website_rule_disabled">Regel deaktiviert</string>
     <string name="website_rule_toggle">Website-Regel aktivieren</string>
     <string name="rule_blocked">Blockiert</string>

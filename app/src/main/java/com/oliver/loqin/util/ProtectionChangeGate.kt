@@ -433,6 +433,48 @@ object ProtectionChangeGate {
 
     fun pendingCount(context: Context): Int = pendingChanges(context).size
 
+    /** Rule keys with a queued weakening in-app change: baseKey -> requested selected state. */
+    fun pendingInAppSelections(context: Context, profile: String): Map<String, Boolean> {
+        if (profile.isBlank()) return emptyMap()
+        val out = linkedMapOf<String, Boolean>()
+        pendingChanges(context).forEach { change ->
+            if (change.type != PendingChangeType.IN_APP_SELECTION) return@forEach
+            if (change.data.optString("profile") != profile) return@forEach
+            val baseKey = change.data.optString("baseKey")
+            if (baseKey.isNotBlank()) {
+                out[baseKey] = change.data.optBoolean("selected", false)
+            }
+        }
+        return out
+    }
+
+    /** Website rules with a queued enable/disable change: rule -> requested enabled state. */
+    fun pendingWebsiteEnabled(context: Context, profile: String): Map<String, Boolean> {
+        if (profile.isBlank()) return emptyMap()
+        val out = linkedMapOf<String, Boolean>()
+        pendingChanges(context).forEach { change ->
+            if (change.type != PendingChangeType.WEBSITE_ENABLED) return@forEach
+            if (change.data.optString("profile") != profile) return@forEach
+            val rule = change.data.optString("rule")
+            if (rule.isNotBlank()) {
+                out[rule] = change.data.optBoolean("enabled", true)
+            }
+        }
+        return out
+    }
+
+    /** Website rules with a queued removal for the given profile. */
+    fun pendingWebsiteRemovals(context: Context, profile: String): Set<String> {
+        if (profile.isBlank()) return emptySet()
+        val out = linkedSetOf<String>()
+        pendingChanges(context).forEach { change ->
+            if (change.type != PendingChangeType.WEBSITE_REMOVE) return@forEach
+            if (change.data.optString("profile") != profile) return@forEach
+            change.data.optString("rule").takeIf { it.isNotBlank() }?.let(out::add)
+        }
+        return out
+    }
+
     /**
      * Packages with a queued weakening app-selection change for the given profile and mode.
      * Block mode returns queued unblocks; allow mode returns queued additions.
