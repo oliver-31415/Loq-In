@@ -73,6 +73,7 @@ import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.launch
+import com.oliver.loqin.feature.usage.QuickLimitDialogs
 
 class ManageBlockedWebsitesActivity : AppCompatActivity() {
 
@@ -284,6 +285,13 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         adapter = DomainRuleAdapter(
             onEdit = { showEditDialog(it) },
             onToggleEnabled = { domain, enabled -> setRuleEnabled(domain, enabled) },
+            onEditLimits = { domain ->
+                QuickLimitDialogs.showForWebsite(
+                    activity = this,
+                    domain = domain,
+                    label = domain,
+                ) { refreshList() }
+            },
             pendingEnabledProvider = {
                 ProtectionChangeGate.pendingWebsiteEnabled(this, currentProfile())
             },
@@ -788,6 +796,7 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
     private inner class DomainRuleAdapter(
         private val onEdit: (String) -> Unit,
         private val onToggleEnabled: (String, Boolean) -> Unit,
+        private val onEditLimits: ((String) -> Unit)? = null,
         private val pendingEnabledProvider: () -> Map<String, Boolean> = { emptyMap() },
         private val pendingRemovalsProvider: () -> Set<String> = { emptySet() },
         private val onToggleSelection: (String) -> Unit,
@@ -906,11 +915,8 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
                 btnLimit.isEnabled = true
                 btnLimit.alpha = if (readOnly) 0.45f else 1f
                 btnLimit.setOnClickListener {
-                    if (websiteEditingLocked()) {
-                        denyWebsiteEditWithPopover()
-                        return@setOnClickListener
-                    }
-                    onEdit(rule.domain)
+                    // Opens the gated limit editor (the row itself opens the rule editor).
+                    onEditLimits?.invoke(rule.domain) ?: onEdit(rule.domain)
                 }
 
                 itemView.setOnLongClickListener {
