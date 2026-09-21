@@ -74,26 +74,19 @@ Code is complete; nothing structural remains. Two things:
 
 ---
 
-## 4. W5.3 — Advanced Protection hub + ProtectionStateProvider
+## 4. W5.3 — Advanced Protection hub — **SKIPPED (owner decision 2026-09-21)**
+
+> Removed from the plan. The owner does not want a separate hub screen; the W5.2 "Protection changes" page stays as-is, and the support report reads protection state directly (no shared provider). Nothing else depended on the hub.
 
 **Goal:** one canonical view of protection state, and a single place that gathers protection status, the change delay/queue, and privileged setup.
 
-**Deliverables**
-- `util/ProtectionStateProvider.kt`: snapshot with `State` (DISABLED, ENABLED, TEMPORARILY_DISABLED, TEMPORARILY_ENABLED, EMERGENCY_UNLOCK, EMERGENCY_UNLOCK_PAUSED), `baseEnabled`, `effectiveEnabled`, `blockingExpected`, temporary disable/enable remaining, emergency remaining minutes. Read-only, built on `SwitchModeStore` + `EmergencyBypassStore`.
-- `feature/settings/AdvancedProtectionActivity.kt` + layout: tile sections
-  - **Status:** accessibility active/inactive; uninstall protection (Device Admin) active/inactive; Settings guard (broad Settings blocking ready/active/accessibility-only); diagnostics summary (state + accessibility).
-  - **Changes:** "Protection change delay" and "Pending changes" — both open our `ProtectionChangesActivity`.
-  - **Privileged:** ADB/managed-device tile (admin/owner + release diagnostics).
-  - Canonical state line at the top.
-- `TilesInfoActivity.Tile.rowAlpha` property (replaces the inline alpha in `BlockingFeaturesActivity`).
-- Settings entry (recommend: a new **Protection** section directly under Controls) + settings search index entry.
-- en/de strings (`strings_advanced_protection.xml`), adapted copy, no premium branches.
+---
 
-**Decision to take:** the hub duplicates parts of existing screens (Feature access, App lock, Protection changes). Recommended role: the hub is a **status/overview** screen; it links to the editors rather than reimplementing them. Do not move toggles into it.
+## 4b. W5.4 — Support-report surfacing — **DONE 2026-09-21**
 
-**Verification:** hub reflects state changes live (enable/disable/temporary/emergency); links land on the right screens; locked/unlocked, light/dark, en/de; `rowAlpha` renders dimmed rows without layout jumps.
+Implemented in `SupportActivity`: canonical **Protection state** (+ base enabled, blocking expected) in the Loq In state section, **Settings schema** + **Feature flag** lines in Build configuration, and a **Diagnostics timeline** section (last 20 events). Also fixed the entry point: the Info screen's Support card opened the raw log viewer; it now opens the report, which links to the logs itself.
 
-**Effort:** 1–2 days. **Depends on:** W5.2 (links), optionally W5.1 (flags in diagnostics).
+Remaining: open Settings → Info → Support once to eyeball the new sections.
 
 ---
 
