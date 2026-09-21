@@ -57,8 +57,13 @@ class InfoActivity : AppCompatActivity() {
             startActivity(Intent(this, FaqActivity::class.java))
         }
         findViewById<View>(R.id.cardInfoSupport).setOnClickListener {
-            // The report screen links to the raw log viewer itself.
-            startActivity(Intent(this, com.oliver.loqin.feature.support.SupportActivity::class.java))
+            startActivity(
+                Intent(this, com.oliver.loqin.feature.support.SupportActivity::class.java)
+                    .putExtra(
+                        com.oliver.loqin.feature.support.SupportActivity.EXTRA_COPY_QUICK,
+                        true,
+                    )
+            )
         }
         findViewById<View>(R.id.cardInfoWhatsNew).setOnClickListener {
             startActivity(Intent(this, WhatsNewActivity::class.java))

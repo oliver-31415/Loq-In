@@ -113,7 +113,10 @@ import com.oliver.loqin.data.prefs.DiagnosticsTimelineStore
 
 class SupportActivity : AppCompatActivity() {
 
-    private companion object {
+    companion object {
+        /** Copies the support report straight to the clipboard and finishes (Info screen shortcut). */
+        const val EXTRA_COPY_QUICK = "extra_copy_quick"
+
         private const val KEY_INCLUDE_DEBUG = "support_include_debug"
         private const val KEY_INCLUDE_ADVANCED_DEBUG = "support_include_advanced_debug"
         private const val KEY_INCLUDE_SETUP_DETAILS = "support_include_setup_details"
@@ -151,6 +154,20 @@ class SupportActivity : AppCompatActivity() {
 
         findViewById<MaterialButton>(R.id.btnOpenEmail).setOnClickListener {
             showReportSelectionDialog()
+        }
+
+        if (intent?.getBooleanExtra(EXTRA_COPY_QUICK, false) == true) {
+            exportSupportReport(
+                ReportSelection(
+                    includeDebug = true,
+                    includeActiveProfileApps = false,
+                    includeSetupDetails = true,
+                    includeAdvancedDebug = true,
+                    includeLogs = false,
+                )
+            )
+            // Let the "copied" pill be visible before leaving the screen.
+            window.decorView.postDelayed({ finish() }, 1_800L)
         }
     }
 

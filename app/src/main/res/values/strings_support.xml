@@ -71,4 +71,6 @@
     <string name="support_logs_card_title">Copy latest logs</string>
     <string name="support_logs_card_desc">Copy recent Loq In events to paste them into an existing message or issue.</string>
 
+    <string name="info_copy_support_title">Copy support info</string>
+    <string name="info_copy_support_summary">Copies diagnostics and app state to the clipboard.</string>
 </resources>
