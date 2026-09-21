@@ -65,7 +65,6 @@ import com.oliver.loqin.ui.updateSelectionSubtitle
 import com.oliver.loqin.util.EditingLockGuard
 import com.oliver.loqin.util.ProtectionChangeGate
 import com.oliver.loqin.util.ProtectionChangePolicy
-import com.oliver.loqin.util.ProtectionEditPolicy
 import com.oliver.loqin.util.ProtectionFeedback
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
@@ -85,8 +84,16 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         return EditingLockGuard.isLocked(this)
     }
 
-    private fun canAddBlockedWebsite(): Boolean =
-        ProtectionEditPolicy.canAddBlockedWebsite(this, currentProfile(), isAllowMode())
+    /**
+     * Adding a block rule is stricter and stays available while protection is active; in allow mode
+     * an addition would widen the allow list, so it requires protection to be off.
+     */
+    private fun canAddBlockedWebsite(): Boolean {
+        val profile = currentProfile()
+        if (profile.isNullOrBlank()) return false
+        if (!EditingLockGuard.isLocked(this)) return true
+        return ProfileStore.getCurrent(this) == profile && !isAllowMode()
+    }
 
     private fun denyWebsiteEditWithPopover(): Boolean {
         if (EditingLockGuard.isLocked(this)) {

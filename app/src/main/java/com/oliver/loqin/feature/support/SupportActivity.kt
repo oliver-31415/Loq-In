@@ -106,6 +106,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import com.oliver.loqin.util.ProtectionChangeGate
 
 class SupportActivity : AppCompatActivity() {
 
@@ -964,6 +965,15 @@ class SupportActivity : AppCompatActivity() {
         line(
             "Backup selection",
             BackupSelectionStore.load(this@SupportActivity).displaySummary()
+        )
+        val protectionDelayMinutes = ProtectionChangeGate.getDelayMinutes(this@SupportActivity)
+        line(
+            "Protection change delay",
+            if (protectionDelayMinutes <= 0) "off" else "${protectionDelayMinutes}min"
+        )
+        line(
+            "Pending protection changes",
+            ProtectionChangeGate.pendingCount(this@SupportActivity)
         )
 
         section("Permissions")

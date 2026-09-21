@@ -61,6 +61,8 @@ object LocalBackupPayload {
         "switch_mode_active_since_ms",
         "loqin_runtime_running_since",
         "stats_archive_last_sync_ms",
+        // Pending protection changes are device-local timers and must not travel in a backup.
+        "protection_pending_changes_json",
     )
 
     private val backupExcludedKeyMarkers = listOf(
@@ -82,7 +84,7 @@ object LocalBackupPayload {
         "unlock_pin"
     )
 
-    private fun isBackupExcludedKey(key: String): Boolean {
+    internal fun isBackupExcludedKey(key: String): Boolean {
         val normalized = key.trim().lowercase()
         if (normalized.isBlank()) {
             return true
