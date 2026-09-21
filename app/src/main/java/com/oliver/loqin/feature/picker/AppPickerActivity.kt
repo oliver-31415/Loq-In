@@ -78,7 +78,6 @@ import com.oliver.loqin.util.AppBlockSafety
 import com.oliver.loqin.util.EditingLockGuard
 import com.oliver.loqin.util.LocaleHelper
 import com.oliver.loqin.util.PackageLaunchIntentCompat
-import com.oliver.loqin.util.ProtectionEditPolicy
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
@@ -89,6 +88,9 @@ import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputLayout
 import java.util.Locale
+import com.oliver.loqin.util.ProtectionFeedback
+import com.oliver.loqin.util.ProtectionChangePolicy
+import com.oliver.loqin.util.ProtectionChangeGate
 
 class AppPickerActivity : AppCompatActivity() {
 
@@ -145,18 +147,38 @@ class AppPickerActivity : AppCompatActivity() {
         if (allowLockedProfileStrictEdits && !currentProfile.isNullOrBlank()) {
             true
         } else {
-            ProtectionEditPolicy.canTightenActiveProfile(this, currentProfile)
+            !EditingLockGuard.isLocked(this) ||
+                (!currentProfile.isNullOrBlank() && ProfileStore.getCurrent(this) == currentProfile)
         }
 
-    private fun canChangeSelection(currentlySelected: Boolean, requestedSelected: Boolean): Boolean =
-        ProtectionEditPolicy.canChangeSelection(
-            context = this,
-            profile = currentProfile,
-            allowMode = currentRuleMode == ProfileRuleModeStore.MODE_ALLOW_SELECTED,
-            currentlySelected = currentlySelected,
-            requestedSelected = requestedSelected,
-            allowInactiveProfile = allowLockedProfileStrictEdits,
-        )
+    /** Edits to an inactive profile never weaken the profile that is currently enforcing. */
+    private fun editsInactiveProfile(): Boolean {
+        val profile = currentProfile ?: return false
+        return allowLockedProfileStrictEdits && profile != ProfileStore.getCurrent(this)
+    }
+
+    private fun canChangeSelection(currentlySelected: Boolean, requestedSelected: Boolean): Boolean {
+        if (editsInactiveProfile()) return true
+        if (!EditingLockGuard.isLocked(this)) return true
+        val profile = currentProfile
+        if (profile.isNullOrBlank() || ProfileStore.getCurrent(this) != profile) return false
+        if (currentlySelected == requestedSelected) return true
+        val allowMode = currentRuleMode == ProfileRuleModeStore.MODE_ALLOW_SELECTED
+        val direction = if (allowMode) {
+            if (currentlySelected) {
+                ProtectionChangePolicy.Direction.STRICTER
+            } else {
+                ProtectionChangePolicy.Direction.WEAKER
+            }
+        } else {
+            if (currentlySelected) {
+                ProtectionChangePolicy.Direction.WEAKER
+            } else {
+                ProtectionChangePolicy.Direction.STRICTER
+            }
+        }
+        return ProtectionChangeGate.decision(this, direction) != ProtectionChangePolicy.Decision.DENY
+    }
 
     private fun syncReadOnlyUi() {
         val readOnly = EditingLockGuard.isLocked(this)
@@ -831,18 +853,26 @@ class AppPickerActivity : AppCompatActivity() {
         cbAutoBlockNewApps.isEnabled = !isAllow && !profile.isNullOrBlank()
         cbAutoBlockNewApps.isChecked = !isAllow && (profile?.let { ProfileStore.isAutoBlockNewAppsEnabled(this, it) } ?: false)
         cbAutoBlockNewApps.setOnCheckedChangeListener { _, isChecked ->
-            if (!ensureLoqInDisabledForAppRules()) {
-                cbAutoBlockNewApps.setOnCheckedChangeListener(null)
-                cbAutoBlockNewApps.isChecked = !isAllow && (profile?.let { ProfileStore.isAutoBlockNewAppsEnabled(this, it) } ?: false)
-                cbAutoBlockNewApps.alpha = 0.45f
-                return@setOnCheckedChangeListener
-            }
             if (currentRuleMode == ProfileRuleModeStore.MODE_ALLOW_SELECTED) return@setOnCheckedChangeListener
             val activeProfile = currentProfile
             if (activeProfile.isNullOrBlank()) return@setOnCheckedChangeListener
-            ProfileStore.setAutoBlockNewAppsEnabled(this, activeProfile, isChecked)
-            if (isChecked) {
-                ProfileStore.setAutoBlockKnownPackages(this, activeProfile, ProfileStore.getLaunchablePackages(this))
+            when (ProtectionChangeGate.requestAutoBlockNewApps(this, activeProfile, isChecked)) {
+                ProtectionChangePolicy.Result.APPLIED -> Unit
+
+                ProtectionChangePolicy.Result.QUEUED -> {
+                    ProtectionFeedback.showQueued(this)
+                    cbAutoBlockNewApps.setOnCheckedChangeListener(null)
+                    cbAutoBlockNewApps.isChecked = !isChecked
+                    cbAutoBlockNewApps.alpha = 0.45f
+                }
+
+                ProtectionChangePolicy.Result.DENIED -> {
+                    findViewById<View>(android.R.id.content)
+                        .showWarnPill(R.string.toast_disable_loqin_to_edit_blocked_apps)
+                    cbAutoBlockNewApps.setOnCheckedChangeListener(null)
+                    cbAutoBlockNewApps.isChecked = !isChecked
+                    cbAutoBlockNewApps.alpha = 0.45f
+                }
             }
         }
     }
@@ -873,7 +903,14 @@ class AppPickerActivity : AppCompatActivity() {
         }
 
         btnClearAll.setOnClickListener {
-            if (!ensureLoqInDisabledForAppRules()) return@setOnClickListener
+            if (EditingLockGuard.isLocked(this) && !editsInactiveProfile() &&
+                ProtectionChangeGate.decision(this, ProtectionChangePolicy.Direction.WEAKER) ==
+                ProtectionChangePolicy.Decision.DENY
+            ) {
+                findViewById<View>(android.R.id.content)
+                    .showWarnPill(R.string.toast_disable_loqin_to_edit_blocked_apps)
+                return@setOnClickListener
+            }
             val unavailableCount = adapter.unavailableManagedCount(this)
             if (unavailableCount > 0) {
                 val removed = adapter.clearUnavailable(this)
@@ -931,19 +968,6 @@ class AppPickerActivity : AppCompatActivity() {
 
             val managed = AppBlockSafety.sanitizeManagedPackages(this, adapter.getManagedPackages())
             val allowMode = currentRuleMode == ProfileRuleModeStore.MODE_ALLOW_SELECTED
-            if (!ProtectionEditPolicy.canSaveSelection(
-                    context = this,
-                    profile = profile,
-                    allowMode = allowMode,
-                    original = originalManagedPackages,
-                    requested = managed,
-                    allowInactiveProfile = allowLockedProfileStrictEdits,
-                )
-            ) {
-                EditingLockGuard.showLockedDialog(this, R.string.rules_tighten_only_active_message)
-                syncReadOnlyUi()
-                return@setOnClickListener
-            }
             if (allowMode && managed.isEmpty()) {
                 AlertDialog.Builder(this)
                     .setTitle(R.string.allow_mode_empty_save_title)
@@ -962,23 +986,44 @@ class AppPickerActivity : AppCompatActivity() {
 
     private fun saveManagedApps(profile: String, managed: Set<String>) {
         val allowMode = currentRuleMode == ProfileRuleModeStore.MODE_ALLOW_SELECTED
-        if (!ProtectionEditPolicy.canSaveSelection(
+        val result = if (editsInactiveProfile()) {
+            if (allowMode) {
+                ProfileStore.setAllowedForProfile(this, profile, managed)
+            } else {
+                ProfileStore.setBlockedForProfile(this, profile, managed)
+            }
+            ProtectionChangePolicy.Result.APPLIED
+        } else {
+            ProtectionChangeGate.requestAppSelection(
                 context = this,
                 profile = profile,
                 allowMode = allowMode,
                 original = originalManagedPackages,
                 requested = managed,
-                allowInactiveProfile = allowLockedProfileStrictEdits,
             )
-        ) {
-            EditingLockGuard.showLockedDialog(this, R.string.rules_tighten_only_active_message)
-            syncReadOnlyUi()
-            return
         }
-        if (allowMode) {
-            ProfileStore.setAllowedForProfile(this, profile, managed)
-        } else {
-            ProfileStore.setBlockedForProfile(this, profile, managed)
+        when (result) {
+            ProtectionChangePolicy.Result.APPLIED -> Unit
+
+            ProtectionChangePolicy.Result.QUEUED -> {
+                ProtectionFeedback.showQueued(this)
+                // Re-baseline to the store: stricter parts applied, weakening parts wait.
+                val storeNow = if (allowMode) {
+                    ProfileStore.getAllowedForProfile(this, profile)
+                } else {
+                    ProfileStore.getBlockedForProfile(this, profile)
+                }
+                originalManagedPackages = storeNow
+                adapter.replaceManagedPackages(storeNow)
+                syncReadOnlyUi()
+                return
+            }
+
+            ProtectionChangePolicy.Result.DENIED -> {
+                EditingLockGuard.showLockedDialog(this, R.string.rules_tighten_only_active_message)
+                syncReadOnlyUi()
+                return
+            }
         }
         BlockingRuntime.ensureRunning(this)
         // Stay open so the save result is visible: re-baseline the dirty check and confirm.

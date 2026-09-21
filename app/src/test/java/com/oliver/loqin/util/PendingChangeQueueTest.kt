@@ -179,6 +179,30 @@ class PendingChangeQueueTest {
             ),
         )
         assertEquals(
+            "auto-block:Default",
+            PendingChangeQueue.dedupeKey(
+                PendingChange(
+                    "f",
+                    PendingChangeType.AUTO_BLOCK_NEW_APPS,
+                    1L,
+                    1L,
+                    JSONObject().put("profile", "Default").put("enabled", false),
+                ),
+            ),
+        )
+        assertEquals(
+            "clear-app-data:Default",
+            PendingChangeQueue.dedupeKey(
+                PendingChange(
+                    "g",
+                    PendingChangeType.CLEAR_APP_DATA,
+                    1L,
+                    1L,
+                    JSONObject().put("profile", "Default").put("packages", org.json.JSONArray().put("com.example.app")),
+                ),
+            ),
+        )
+        assertEquals(
             "app-limits:Default:com.example.app",
             PendingChangeQueue.dedupeKey(
                 PendingChange(

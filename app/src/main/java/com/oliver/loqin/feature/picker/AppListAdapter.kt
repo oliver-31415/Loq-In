@@ -46,6 +46,7 @@ import com.oliver.loqin.ui.showWarnPill
 import com.oliver.loqin.util.AppBlockSafety
 import com.google.android.material.card.MaterialCardView
 import java.util.Locale
+import com.oliver.loqin.util.ProtectionChangeGate
 
 class AppListAdapter(
     allApps: List<AppEntry>,
@@ -142,11 +143,12 @@ class AppListAdapter(
         unavailablePkgs.forEach { pkg ->
             managed.remove(pkg)
             if (!profile.isNullOrBlank()) {
-                UsageLimitStore.setLimitMinutes(context, profile, pkg, 0)
-                SessionLimitStore.setLimitMinutes(context, profile, pkg, 0)
-                AttemptLimitStore.setLimitAttempts(context, profile, pkg, 0)
-                OpenCountStore.setToday(context, profile, pkg, 0)
-                InAppRuleStore.clearRulesForPackage(context, profile, pkg)
+                ProtectionChangeGate.requestClearAppData(
+                    context = context,
+                    profile = profile,
+                    packages = listOf(pkg),
+                    includeInAppRules = true,
+                )
             }
         }
 
@@ -167,10 +169,12 @@ class AppListAdapter(
             val wasManaged = managed.remove(item.packageName)
 
             if (!item.isAvailable && !profile.isNullOrBlank()) {
-                UsageLimitStore.setLimitMinutes(context, profile, item.packageName, 0)
-                SessionLimitStore.setLimitMinutes(context, profile, item.packageName, 0)
-                AttemptLimitStore.setLimitAttempts(context, profile, item.packageName, 0)
-                OpenCountStore.setToday(context, profile, item.packageName, 0)
+                ProtectionChangeGate.requestClearAppData(
+                    context = context,
+                    profile = profile,
+                    packages = listOf(item.packageName),
+                    includeInAppRules = false,
+                )
             }
 
             if (wasManaged) {
@@ -425,11 +429,12 @@ class AppListAdapter(
 
                     if (!item.isAvailable) {
                         if (!profile.isNullOrBlank()) {
-                            UsageLimitStore.setLimitMinutes(ctx, profile, item.packageName, 0)
-                            SessionLimitStore.setLimitMinutes(ctx, profile, item.packageName, 0)
-                            AttemptLimitStore.setLimitAttempts(ctx, profile, item.packageName, 0)
-                            OpenCountStore.setToday(ctx, profile, item.packageName, 0)
-                            InAppRuleStore.clearRulesForPackage(ctx, profile, item.packageName)
+                            ProtectionChangeGate.requestClearAppData(
+                                context = ctx,
+                                profile = profile,
+                                packages = listOf(item.packageName),
+                                includeInAppRules = true,
+                            )
                         }
                         allApps.removeAll { it.packageName == item.packageName }
                         submitList(currentList.filterNot { it.packageName == item.packageName })

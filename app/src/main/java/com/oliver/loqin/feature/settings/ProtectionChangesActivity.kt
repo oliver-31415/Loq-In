@@ -343,6 +343,15 @@ class ProtectionChangesActivity : AppCompatActivity() {
                 getString(R.string.protection_pending_item_app_limits, appLabel(packageName))
             }
 
+            PendingChangeType.AUTO_BLOCK_NEW_APPS ->
+                getString(R.string.protection_pending_item_auto_block, profile)
+
+            PendingChangeType.CLEAR_APP_DATA -> {
+                val packages = change.data.optJSONArray("packages")
+                val first = packages?.optString(0).orEmpty()
+                getString(R.string.protection_pending_item_clear_data, appLabel(first))
+            }
+
             else -> getString(R.string.protection_pending_item_unknown)
         }
     }

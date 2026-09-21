@@ -42,6 +42,8 @@ object PendingChangeType {
     const val WEBSITE_REMOVE = "website_remove"
     const val WEBSITE_ENABLED = "website_enabled"
     const val APP_LIMITS = "app_limits"
+    const val AUTO_BLOCK_NEW_APPS = "auto_block_new_apps"
+    const val CLEAR_APP_DATA = "clear_app_data"
 }
 
 object PendingChangeCodec {
@@ -118,6 +120,12 @@ object PendingChangeQueue {
 
         PendingChangeType.APP_LIMITS ->
             "app-limits:${change.data.optString("profile")}:${change.data.optString("packageName")}"
+
+        PendingChangeType.AUTO_BLOCK_NEW_APPS ->
+            "auto-block:${change.data.optString("profile")}"
+
+        PendingChangeType.CLEAR_APP_DATA ->
+            "clear-app-data:${change.data.optString("profile")}"
 
         else -> change.id
     }

@@ -307,6 +307,74 @@ object ProtectionChangeGate {
     }
 
     // ---------------------------------------------------------------------------------------------
+    // Auto-block new apps
+    // ---------------------------------------------------------------------------------------------
+
+    /** Enabling auto-block adds protection (stricter); disabling it is a weakening change. */
+    fun requestAutoBlockNewApps(context: Context, profile: String, enabled: Boolean): ProtectionChangePolicy.Result {
+        if (profile.isBlank()) return ProtectionChangePolicy.Result.DENIED
+        val direction = if (enabled) {
+            ProtectionChangePolicy.Direction.STRICTER
+        } else {
+            ProtectionChangePolicy.Direction.WEAKER
+        }
+        return when (decision(context, direction)) {
+            ProtectionChangePolicy.Decision.APPLY_NOW -> {
+                applyAutoBlockNewApps(context, profile, enabled)
+                ProtectionChangePolicy.Result.APPLIED
+            }
+
+            ProtectionChangePolicy.Decision.QUEUE_DELAYED -> {
+                queue(
+                    context = context,
+                    type = PendingChangeType.AUTO_BLOCK_NEW_APPS,
+                    data = JSONObject().put("profile", profile).put("enabled", enabled),
+                )
+                ProtectionChangePolicy.Result.QUEUED
+            }
+
+            ProtectionChangePolicy.Decision.DENY -> ProtectionChangePolicy.Result.DENIED
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Clearing limits / in-app rules for packages
+    // ---------------------------------------------------------------------------------------------
+
+    /**
+     * Clears per-app limits and (optionally) in-app rules for [packages]. This is always treated as
+     * a weakening change: removing a limit or rule loosens protection.
+     */
+    fun requestClearAppData(
+        context: Context,
+        profile: String,
+        packages: Collection<String>,
+        includeInAppRules: Boolean,
+    ): ProtectionChangePolicy.Result {
+        if (profile.isBlank() || packages.isEmpty()) return ProtectionChangePolicy.Result.APPLIED
+        return when (decision(context, ProtectionChangePolicy.Direction.WEAKER)) {
+            ProtectionChangePolicy.Decision.APPLY_NOW -> {
+                applyClearAppData(context, profile, packages, includeInAppRules)
+                ProtectionChangePolicy.Result.APPLIED
+            }
+
+            ProtectionChangePolicy.Decision.QUEUE_DELAYED -> {
+                queue(
+                    context = context,
+                    type = PendingChangeType.CLEAR_APP_DATA,
+                    data = JSONObject()
+                        .put("profile", profile)
+                        .put("packages", JSONArray(packages.toList().sorted()))
+                        .put("includeInAppRules", includeInAppRules),
+                )
+                ProtectionChangePolicy.Result.QUEUED
+            }
+
+            ProtectionChangePolicy.Decision.DENY -> ProtectionChangePolicy.Result.DENIED
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------------
     // Control mode
     // ---------------------------------------------------------------------------------------------
 
@@ -521,6 +589,26 @@ object ProtectionChangeGate {
                 }
             }
 
+            PendingChangeType.AUTO_BLOCK_NEW_APPS -> {
+                val profile = change.data.getString("profile")
+                if (profile !in ProfileStore.getProfiles(context)) return@runCatching false
+                applyAutoBlockNewApps(context, profile, change.data.optBoolean("enabled", false))
+            }
+
+            PendingChangeType.CLEAR_APP_DATA -> {
+                val profile = change.data.getString("profile")
+                if (profile !in ProfileStore.getProfiles(context)) return@runCatching false
+                val packages = stringSet(change.data.optJSONArray("packages"))
+                if (packages.isNotEmpty()) {
+                    applyClearAppData(
+                        context,
+                        profile,
+                        packages,
+                        change.data.optBoolean("includeInAppRules", true),
+                    )
+                }
+            }
+
             else -> return@runCatching false
         }
         true
@@ -639,6 +727,33 @@ object ProtectionChangeGate {
             val selected = ProfileStore.getSelectedForProfileMode(context, profile)
             if (packageName !in selected) {
                 ProfileStore.setSelectedForProfileMode(context, profile, selected + packageName)
+            }
+        }
+        BlockingRuntime.ensureRunning(context)
+    }
+
+    private fun applyAutoBlockNewApps(context: Context, profile: String, enabled: Boolean) {
+        ProfileStore.setAutoBlockNewAppsEnabled(context, profile, enabled)
+        if (enabled) {
+            ProfileStore.setAutoBlockKnownPackages(context, profile, ProfileStore.getLaunchablePackages(context))
+        }
+        BlockingRuntime.ensureRunning(context)
+    }
+
+    private fun applyClearAppData(
+        context: Context,
+        profile: String,
+        packages: Collection<String>,
+        includeInAppRules: Boolean,
+    ) {
+        for (packageName in packages) {
+            if (packageName.isBlank()) continue
+            UsageLimitStore.setLimitMinutes(context, profile, packageName, 0)
+            SessionLimitStore.setLimitMinutes(context, profile, packageName, 0)
+            AttemptLimitStore.setLimitAttempts(context, profile, packageName, 0)
+            OpenCountStore.setToday(context, profile, packageName, 0)
+            if (includeInAppRules) {
+                InAppRuleStore.clearRulesForPackage(context, profile, packageName)
             }
         }
         BlockingRuntime.ensureRunning(context)
