@@ -154,45 +154,87 @@ class LocationMapPickerActivity : AppCompatActivity() {
 
     private fun setupMap(hasInitialPoint: Boolean) {
         val startLatLng = pickedLatLng ?: LatLng(48.2082, 16.3738)
-        val mapFragment = supportFragmentManager
-            .findFragmentById(R.id.mapFragment) as? SupportMapFragment
+        setupMap(startLatLng, hasInitialPoint)
+    }
 
-        if (mapFragment == null) {
-            showMapUnavailableMessage()
+    /**
+     * The map container instantiates its fragment asynchronously, so a cold start or a restore can
+     * run before the fragment is attached. Wait for the first layout, reuse an attached fragment,
+     * and only report "map unavailable" when creation genuinely fails.
+     */
+    private fun setupMap(startLatLng: LatLng, hasInitialPoint: Boolean) {
+        val attached = supportFragmentManager.findFragmentById(R.id.mapFragment) as? SupportMapFragment
+        if (attached != null) {
+            awaitMap(attached, startLatLng, hasInitialPoint)
             return
         }
 
+        val container = findViewById<android.view.View>(R.id.mapFragment)
+        if (container == null) {
+            showMapUnavailableMessage()
+            return
+        }
+        container.post {
+            if (isFinishing || isDestroyed) return@post
+            val lateAttached = supportFragmentManager.findFragmentById(R.id.mapFragment) as? SupportMapFragment
+            if (lateAttached != null) {
+                awaitMap(lateAttached, startLatLng, hasInitialPoint)
+                return@post
+            }
+            val created = runCatching { SupportMapFragment.newInstance() }.getOrNull()
+            if (created == null) {
+                showMapUnavailableMessage()
+                return@post
+            }
+            runCatching {
+                supportFragmentManager.beginTransaction()
+                    .replace(R.id.mapFragment, created)
+                    .runOnCommit {
+                        if (!isFinishing && !isDestroyed) {
+                            awaitMap(created, startLatLng, hasInitialPoint)
+                        }
+                    }
+                    .commit()
+            }.onFailure { showMapUnavailableMessage() }
+        }
+    }
+
+    private fun awaitMap(mapFragment: SupportMapFragment, startLatLng: LatLng, hasInitialPoint: Boolean) {
         mapLoadHandler.postDelayed(mapLoadTimeout, MAP_LOAD_TIMEOUT_MS)
 
-        mapFragment.getMapAsync { map ->
-            googleMap = map
-            map.mapType = GoogleMap.MAP_TYPE_NORMAL
-            map.setMinZoomPreference(6f)
+        runCatching {
+            mapFragment.getMapAsync { map ->
+                googleMap = map
+                map.mapType = GoogleMap.MAP_TYPE_NORMAL
+                map.setMinZoomPreference(6f)
 
-            with(map.uiSettings) {
-                isZoomControlsEnabled = true
-                isZoomGesturesEnabled = true
-                isScrollGesturesEnabled = true
-                isTiltGesturesEnabled = false
-                isRotateGesturesEnabled = false
-                isCompassEnabled = true
-                isMapToolbarEnabled = false
-                isMyLocationButtonEnabled = false
+                with(map.uiSettings) {
+                    isZoomControlsEnabled = true
+                    isZoomGesturesEnabled = true
+                    isScrollGesturesEnabled = true
+                    isTiltGesturesEnabled = false
+                    isRotateGesturesEnabled = false
+                    isCompassEnabled = true
+                    isMapToolbarEnabled = false
+                    isMyLocationButtonEnabled = false
+                }
+
+                map.setOnMapLoadedCallback {
+                    mapLoaded = true
+                    mapLoadHandler.removeCallbacks(mapLoadTimeout)
+                }
+
+                map.moveCamera(
+                    CameraUpdateFactory.newLatLngZoom(startLatLng, if (hasInitialPoint) 17f else 12f)
+                )
+                pickedLatLng?.let { renderMarker(it, pickedLabel, moveCamera = false) }
+
+                map.setOnMapClickListener { point ->
+                    pickedLatLng = point
+                    renderMarker(point)
+                }
             }
-
-            map.setOnMapLoadedCallback {
-                mapLoaded = true
-                mapLoadHandler.removeCallbacks(mapLoadTimeout)
-            }
-
-            map.moveCamera(CameraUpdateFactory.newLatLngZoom(startLatLng, if (hasInitialPoint) 17f else 12f))
-            pickedLatLng?.let { renderMarker(it, pickedLabel, moveCamera = false) }
-
-            map.setOnMapClickListener { point ->
-                pickedLatLng = point
-                renderMarker(point)
-            }
-        }
+        }.onFailure { showMapUnavailableMessage() }
     }
 
     private fun showMapUnavailableMessage() {
