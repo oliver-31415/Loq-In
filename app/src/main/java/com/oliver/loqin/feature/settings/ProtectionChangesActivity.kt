@@ -21,6 +21,7 @@ package com.oliver.loqin.feature.settings
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
+import androidx.annotation.StringRes
 import android.text.InputType
 import android.text.format.DateUtils
 import android.view.View
@@ -204,57 +205,107 @@ class ProtectionChangesActivity : AppCompatActivity() {
 
     private fun showDelayDialog() {
         val current = ProtectionChangeGate.getDelayMinutes(this)
-        val values = delaySliderValues(current)
         val locked = EditingLockGuard.isLocked(this)
-        val currentIndex = values.indexOf(current).coerceAtLeast(0)
+        val maxMinutes = ProtectionChangePolicy.MAX_CUSTOM_DELAY_MINUTES
 
-        val valueLabel = TextView(this).apply {
-            text = delayLabel(current)
-            textSize = 22f
+        val totalLabel = TextView(this).apply {
+            textSize = 24f
             gravity = android.view.Gravity.CENTER
             setTypeface(typeface, android.graphics.Typeface.BOLD)
             setTextColor(accentColor())
         }
-        val slider = com.google.android.material.slider.Slider(this).apply {
-            valueFrom = if (locked) currentIndex.toFloat() else 0f
-            valueTo = (values.size - 1).toFloat()
-            stepSize = 1f
-            value = currentIndex.toFloat().coerceIn(valueFrom, valueTo)
-            labelBehavior = com.google.android.material.slider.LabelFormatter.LABEL_GONE
-            addOnChangeListener { _, value, _ ->
-                valueLabel.text = delayLabel(values[value.toInt().coerceIn(0, values.size - 1)])
+        val hint = TextView(this).apply {
+            textSize = 13f
+            gravity = android.view.Gravity.CENTER
+            setTextColor(secondaryTextColor())
+        }
+        val offSwitch = com.google.android.material.materialswitch.MaterialSwitch(this).apply {
+            text = getString(R.string.protection_change_delay_off_switch)
+            isChecked = current <= 0
+        }
+
+        val daysPicker = numberPicker(minValue = 0, maxValue = 7, value = current / 1_440)
+        val hoursPicker = numberPicker(minValue = 0, maxValue = 23, value = (current % 1_440) / 60)
+        val minutesPicker = numberPicker(minValue = 0, maxValue = 59, value = current % 60)
+
+        fun selectedMinutes(): Int {
+            if (offSwitch.isChecked) return 0
+            val days = daysPicker.value
+            if (days >= 7) return maxMinutes
+            return days * 1_440 + hoursPicker.value * 60 + minutesPicker.value
+        }
+
+        fun refresh() {
+            val minutes = selectedMinutes()
+            totalLabel.text = delayLabel(minutes)
+            val wheelsEnabled = !offSwitch.isChecked
+            daysPicker.isEnabled = wheelsEnabled
+            hoursPicker.isEnabled = wheelsEnabled
+            minutesPicker.isEnabled = wheelsEnabled
+            daysPicker.alpha = if (wheelsEnabled) 1f else 0.45f
+            hoursPicker.alpha = if (wheelsEnabled) 1f else 0.45f
+            minutesPicker.alpha = if (wheelsEnabled) 1f else 0.45f
+            hint.text = when {
+                locked && minutes < current -> getString(R.string.protection_change_delay_locked)
+                else -> getString(R.string.protection_change_delay_wheels_hint)
             }
         }
-        val hint = TextView(this).apply {
-            text = getString(
-                if (locked) {
-                    R.string.protection_change_delay_locked
-                } else {
-                    R.string.protection_change_delay_slider_hint
-                }
-            )
-            textSize = 13f
-            setTextColor(secondaryTextColor())
+
+        val wheels = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
             gravity = android.view.Gravity.CENTER
-            val params = LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT,
-                ViewGroup.LayoutParams.WRAP_CONTENT,
-            )
-            params.topMargin = dp(8)
-            layoutParams = params
         }
+        listOf(
+            daysPicker to R.string.protection_change_delay_unit_days,
+            hoursPicker to R.string.protection_change_delay_unit_hours,
+            minutesPicker to R.string.protection_change_delay_unit_minutes,
+        ).forEach { (picker, unitRes) ->
+            val column = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = android.view.Gravity.CENTER
+                layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+            }
+            column.addView(
+                picker,
+                LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    dp(120),
+                ),
+            )
+            column.addView(TextView(this).apply {
+                text = getString(unitRes)
+                textSize = 12f
+                gravity = android.view.Gravity.CENTER
+                setTextColor(secondaryTextColor())
+            })
+            wheels.addView(column)
+        }
+
         val container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(24), dp(16), dp(24), dp(4))
-            addView(valueLabel)
+            setPadding(dp(16), dp(8), dp(16), dp(4))
+            addView(totalLabel)
             addView(
-                slider,
+                wheels,
                 LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT,
-                ).apply { topMargin = dp(8) },
+                ).apply { topMargin = dp(4) },
             )
-            addView(hint)
+            addView(
+                hint,
+                LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                ).apply { topMargin = dp(4) },
+            )
+            addView(
+                offSwitch,
+                LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                ).apply { topMargin = dp(12) },
+            )
         }
 
         val dialog = MaterialAlertDialogBuilder(this)
@@ -263,29 +314,35 @@ class ProtectionChangesActivity : AppCompatActivity() {
             .setNegativeButton(R.string.cancel, null)
             .setPositiveButton(R.string.save, null)
             .create()
+        offSwitch.setOnCheckedChangeListener { _, _ -> refresh() }
+        daysPicker.setOnValueChangedListener { _, _, _ -> refresh() }
+        hoursPicker.setOnValueChangedListener { _, _, _ -> refresh() }
+        minutesPicker.setOnValueChangedListener { _, _, _ -> refresh() }
         dialog.setOnShowListener {
             dialog.styleLoqInDialogButtons()
+            refresh()
             dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                val index = slider.value.toInt().coerceIn(0, values.size - 1)
+                val minutes = selectedMinutes()
+                if (locked && minutes < current) {
+                    refresh()
+                    return@setOnClickListener
+                }
                 dialog.dismiss()
-                applyDelay(values[index])
+                applyDelay(minutes)
             }
         }
         dialog.show()
+        refresh()
     }
 
-    /**
-     * Snap points covering the whole range from Off to 7 days without typing a number.
-     * A non-preset current value (legacy custom delay) is inserted so it stays selectable.
-     */
-    private fun delaySliderValues(current: Int): List<Int> {
-        val base = listOf(
-            0, 1, 2, 5, 10, 15, 30,
-            60, 120, 180, 360, 720,
-            1_440, 2_880, 4_320, 7_200, 10_080,
-        )
-        return if (current in base) base else (base + current).sorted()
-    }
+    private fun numberPicker(minValue: Int, maxValue: Int, value: Int): android.widget.NumberPicker =
+        android.widget.NumberPicker(this).apply {
+            this.minValue = minValue
+            this.maxValue = maxValue
+            this.value = value.coerceIn(minValue, maxValue)
+            wrapSelectorWheel = false
+            descendantFocusability = ViewGroup.FOCUS_BLOCK_DESCENDANTS
+        }
 
     private fun applyDelay(minutes: Int) {
         if (ProtectionChangeGate.setDelayMinutes(this, minutes)) {
@@ -301,17 +358,52 @@ class ProtectionChangesActivity : AppCompatActivity() {
 
     private fun showPendingChangeActionsDialog(change: PendingChange) {
         val canApplyNow = ProtectionChangeGate.canApplyPendingNow(this)
-        val builder = MaterialAlertDialogBuilder(this)
-            .setTitle(
-                if (canApplyNow) {
-                    R.string.protection_pending_apply_one_title
-                } else {
-                    R.string.protection_pending_cancel_one_title
-                }
+        val sheet = com.google.android.material.bottomsheet.BottomSheetDialog(this)
+        val content = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(18), dp(20), dp(20))
+        }
+        content.addView(TextView(this).apply {
+            text = pendingChangeLabel(change)
+            textSize = 17f
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+        })
+        content.addView(TextView(this).apply {
+            text = dueLabel(change.executeAtMs)
+            textSize = 13f
+            setTextColor(secondaryTextColor())
+            val params = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
             )
-            .setMessage(pendingChangeLabel(change))
-            .setNegativeButton(R.string.cancel, null)
-            .setNeutralButton(R.string.protection_pending_cancel_one_action) { _, _ ->
+            params.topMargin = dp(2)
+            layoutParams = params
+        })
+        if (canApplyNow) {
+            content.addView(
+                tonalButton(R.string.protection_pending_apply_one_action) {
+                    sheet.dismiss()
+                    val applied = ProtectionChangeGate.applyPendingNow(this, change.id)
+                    refreshUi()
+                    ProtectionFeedback.showInfo(
+                        this,
+                        R.string.protection_pending_changes_title,
+                        if (applied) {
+                            R.string.protection_pending_apply_one_done
+                        } else {
+                            R.string.protection_pending_apply_failed
+                        },
+                    )
+                },
+                LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                ).apply { topMargin = dp(16) },
+            )
+        }
+        content.addView(
+            tonalButton(R.string.protection_pending_cancel_one_action) {
+                sheet.dismiss()
                 if (ProtectionChangeGate.cancelPending(this, change.id)) {
                     refreshUi()
                     ProtectionFeedback.showInfo(
@@ -320,24 +412,22 @@ class ProtectionChangesActivity : AppCompatActivity() {
                         R.string.protection_pending_cancel_one_done,
                     )
                 }
-            }
-        if (canApplyNow) {
-            builder.setPositiveButton(R.string.protection_pending_apply_one_action) { _, _ ->
-                val applied = ProtectionChangeGate.applyPendingNow(this, change.id)
-                refreshUi()
-                ProtectionFeedback.showInfo(
-                    this,
-                    R.string.protection_pending_changes_title,
-                    if (applied) {
-                        R.string.protection_pending_apply_one_done
-                    } else {
-                        R.string.protection_pending_apply_failed
-                    },
-                )
-            }
-        }
-        builder.showAccented()
+            },
+            LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            ).apply { topMargin = dp(8) },
+        )
+        sheet.setContentView(content)
+        sheet.show()
     }
+
+    private fun tonalButton(@StringRes textRes: Int, onClick: () -> Unit): MaterialButton =
+        MaterialButton(this, null, com.google.android.material.R.attr.materialButtonTonalStyle).apply {
+            setText(textRes)
+            minHeight = dp(44)
+            setOnClickListener { onClick() }
+        }
 
     private fun confirmApplyAll() {
         MaterialAlertDialogBuilder(this)

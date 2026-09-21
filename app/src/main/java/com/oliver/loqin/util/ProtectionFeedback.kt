@@ -20,47 +20,30 @@ package com.oliver.loqin.util
 
 import android.app.Activity
 import android.content.Context
+import android.view.View
+import android.widget.Toast
 import androidx.annotation.StringRes
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.oliver.loqin.R
-import com.oliver.loqin.ui.dialog.showAccented
+import com.oliver.loqin.ui.showWarnPill
 
-/** Shared protection feedback so queued/blocked edits do not fall back to transient toasts. */
+/** Shared protection feedback: bottom pills, never full-screen dialogs. */
 object ProtectionFeedback {
 
-    fun showQueued(context: Context, afterDismiss: (() -> Unit)? = null) {
-        val show = {
-            MaterialAlertDialogBuilder(context)
-                .setTitle(R.string.protection_pending_changes_title)
-                .setMessage(R.string.protection_change_queued)
-                .setIcon(R.drawable.schedule_24)
-                .setPositiveButton(R.string.ok, null)
-                .showAccented()
-                .apply {
-                    if (afterDismiss != null) setOnDismissListener { afterDismiss() }
-                }
-        }
-        val activity = context as? Activity
-        if (activity != null && !activity.isFinishing && !activity.isDestroyed) {
-            // Several callers close their own editor dialog in the same callback; posting makes
-            // this the next visible dialog instead of stacking two windows.
-            activity.window.decorView.post {
-                if (!activity.isFinishing && !activity.isDestroyed) show()
-            }
-        } else if (afterDismiss == null) {
-            show()
-        }
+    fun showQueued(context: Context, message: CharSequence? = null) {
+        showPill(context, message ?: context.getString(R.string.protection_change_queued))
     }
 
-    fun showInfo(
-        context: Context,
-        @StringRes titleRes: Int,
-        @StringRes messageRes: Int,
-    ) {
-        MaterialAlertDialogBuilder(context)
-            .setTitle(titleRes)
-            .setMessage(messageRes)
-            .setPositiveButton(R.string.ok, null)
-            .showAccented()
+    fun showInfo(context: Context, @StringRes titleRes: Int, @StringRes messageRes: Int) {
+        showPill(context, context.getString(messageRes))
+    }
+
+    private fun showPill(context: Context, message: CharSequence) {
+        val activity = context as? Activity
+        val anchor = activity?.findViewById<View>(android.R.id.content)
+        if (anchor != null) {
+            anchor.showWarnPill(message)
+        } else {
+            Toast.makeText(context, message, Toast.LENGTH_LONG).show()
+        }
     }
 }

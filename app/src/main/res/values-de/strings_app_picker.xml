@@ -94,6 +94,7 @@
     <string name="app_picker_dialer_hint">Wenn du deine aktuelle Telefon-App blockierst, können Anrufe und der Notfallzugriff schwieriger werden.</string>
     <string name="app_picker_dialer_warning_title">Diese Telefon-App trotzdem blockieren?</string>
     <string name="app_picker_dialer_warning_message">Wenn du deine aktuelle Telefon-App blockierst, können normale Anrufe und der Notfallzugriff schwieriger werden.</string>
+    <string name="app_picker_pending_badge">Vorgemerkt — wird nach der Verzögerung angewendet</string>
     <string name="app_picker_settings_hint">Das Blockieren von Einstellungen kann Fehlerbehebung und Berechtigungsänderungen erschweren.</string>
     <string name="app_picker_settings_warning_title">Einstellungen trotzdem blockieren?</string>
     <string name="app_picker_settings_warning_message">Das Blockieren von Einstellungen kann Fehlerbehebung und Berechtigungsänderungen erschweren.</string>

@@ -311,7 +311,19 @@ class AppPickerActivity : AppCompatActivity() {
             },
             onSelectionChanged = { updateClearButtonLabel(btnClearAll) },
             isReadOnlyProvider = { EditingLockGuard.isLocked(this) },
-            canChangeSelectionProvider = { current, requested -> canChangeSelection(current, requested) }
+            canChangeSelectionProvider = { current, requested -> canChangeSelection(current, requested) },
+            pendingPackagesProvider = {
+                val profile = currentProfile
+                if (profile.isNullOrBlank()) {
+                    emptySet()
+                } else {
+                    ProtectionChangeGate.pendingAppSelectionPackages(
+                        this,
+                        profile,
+                        currentRuleMode == ProfileRuleModeStore.MODE_ALLOW_SELECTED,
+                    )
+                }
+            }
         )
         rvApps.adapter = adapter
 
@@ -374,7 +386,19 @@ class AppPickerActivity : AppCompatActivity() {
                     },
                     onSelectionChanged = { updateClearButtonLabel(btnClearAll) },
                     isReadOnlyProvider = { EditingLockGuard.isLocked(this) },
-                    canChangeSelectionProvider = { current, requested -> canChangeSelection(current, requested) }
+                    canChangeSelectionProvider = { current, requested -> canChangeSelection(current, requested) },
+            pendingPackagesProvider = {
+                val profile = currentProfile
+                if (profile.isNullOrBlank()) {
+                    emptySet()
+                } else {
+                    ProtectionChangeGate.pendingAppSelectionPackages(
+                        this,
+                        profile,
+                        currentRuleMode == ProfileRuleModeStore.MODE_ALLOW_SELECTED,
+                    )
+                }
+            }
                 )
                 rvApps.adapter = adapter
 

@@ -433,6 +433,23 @@ object ProtectionChangeGate {
 
     fun pendingCount(context: Context): Int = pendingChanges(context).size
 
+    /**
+     * Packages with a queued weakening app-selection change for the given profile and mode.
+     * Block mode returns queued unblocks; allow mode returns queued additions.
+     */
+    fun pendingAppSelectionPackages(context: Context, profile: String, allowMode: Boolean): Set<String> {
+        if (profile.isBlank()) return emptySet()
+        val key = if (allowMode) "addPackages" else "removePackages"
+        val out = linkedSetOf<String>()
+        pendingChanges(context).forEach { change ->
+            if (change.type != PendingChangeType.APP_SELECTION) return@forEach
+            if (change.data.optString("profile") != profile) return@forEach
+            if (change.data.optBoolean("allowMode") != allowMode) return@forEach
+            out += stringSet(change.data.optJSONArray(key))
+        }
+        return out
+    }
+
     fun cancelAllPending(context: Context) {
         prefs(context).edit { remove(PREF_PENDING_JSON) }
         cancelAlarm(context)

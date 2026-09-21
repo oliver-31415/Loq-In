@@ -60,7 +60,8 @@ class AppListAdapter(
     private val onProtectedSelectionRequested: ((app: AppEntry, onAllowed: () -> Unit) -> Unit)? = null,
     private val onSelectionChanged: ((count: Int) -> Unit)? = null,
     private val isReadOnlyProvider: () -> Boolean = { false },
-    private val canChangeSelectionProvider: (currentlySelected: Boolean, requestedSelected: Boolean) -> Boolean = { _, _ -> true }
+    private val canChangeSelectionProvider: (currentlySelected: Boolean, requestedSelected: Boolean) -> Boolean = { _, _ -> true },
+    private val pendingPackagesProvider: () -> Set<String> = { emptySet() },
 ) : ListAdapter<AppEntry, AppListAdapter.VH>(DIFF) {
 
     private val allApps = allApps.toMutableList()
@@ -251,13 +252,21 @@ class AppListAdapter(
         private var current: AppEntry? = null
         private var currentSelected = false
         private var currentHasLimit = false
+        private var currentPending = false
 
         private fun dp(value: Float): Int =
             (value * itemView.resources.displayMetrics.density).toInt()
 
         private fun updateTileState(selected: Boolean) {
             val ctx = itemView.context
-            if (selected) {
+            if (selected && currentPending) {
+                // Queued weakening change: the store still has it selected, so show a distinct
+                // "waiting" state instead of the normal blocked styling.
+                val warning = ContextCompat.getColor(ctx, R.color.status_warning)
+                cardRoot.strokeWidth = dp(2f)
+                cardRoot.strokeColor = warning
+                cardRoot.setCardBackgroundColor(ColorUtils.setAlphaComponent(warning, 0x26))
+            } else if (selected) {
                 val accent = AccentColor.getAccentColorInt(ctx)
                 cardRoot.strokeWidth = dp(2f)
                 cardRoot.strokeColor = accent
@@ -271,17 +280,24 @@ class AppListAdapter(
             if (selected) {
                 // Selected + limits is a restricted app, not a fully blocked one.
                 val limited = currentHasLimit
-                ivChecked.setImageResource(if (limited) R.drawable.timer_24 else R.drawable.check_circle_24)
-                ivChecked.contentDescription = if (limited) {
-                    ctx.getString(R.string.app_picker_limited_badge)
-                } else {
-                    ctx.getString(R.string.app_picker_blocked_badge)
+                ivChecked.setImageResource(
+                    when {
+                        currentPending -> R.drawable.schedule_24
+                        limited -> R.drawable.timer_24
+                        else -> R.drawable.check_circle_24
+                    }
+                )
+                ivChecked.contentDescription = when {
+                    currentPending -> ctx.getString(R.string.app_picker_pending_badge)
+                    limited -> ctx.getString(R.string.app_picker_limited_badge)
+                    else -> ctx.getString(R.string.app_picker_blocked_badge)
                 }
             }
         }
 
         fun bind(item: AppEntry) {
             val ctx = itemView.context
+            currentPending = pendingPackagesProvider.invoke().contains(item.packageName)
             val profile = currentProfileProvider.invoke()
             val readOnly = isReadOnlyProvider.invoke()
             val protectedApp = item.blockSafety.level == AppBlockSafety.Level.PROTECTED

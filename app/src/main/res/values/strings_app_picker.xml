@@ -94,6 +94,7 @@
     <string name="app_picker_dialer_hint">Blocking your current phone app can make calls and emergency access harder.</string>
     <string name="app_picker_dialer_warning_title">Block this phone app anyway?</string>
     <string name="app_picker_dialer_warning_message">Blocking your current phone app can make regular calls and emergency access harder.</string>
+    <string name="app_picker_pending_badge">Queued — will apply after the delay</string>
     <string name="app_picker_settings_hint">Blocking Settings can make troubleshooting and permission changes harder.</string>
     <string name="app_picker_settings_warning_title">Block Settings anyway?</string>
     <string name="app_picker_settings_warning_message">Blocking Settings can make troubleshooting and permission changes harder.</string>
