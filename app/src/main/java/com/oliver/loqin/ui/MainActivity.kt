@@ -180,6 +180,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.oliver.loqin.util.ProtectionFeedback
+import com.oliver.loqin.util.ProtectionChangePolicy
+import com.oliver.loqin.util.ProtectionChangeGate
 
 class MainActivity : AppCompatActivity() {
 
@@ -1169,13 +1172,32 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun ensureCanRemoveBlockedApp(showFeedback: Boolean = true): Boolean {
-        if (isNfcLocked() || EditingLockGuard.isLocked(this)) {
+        if (isNfcLocked()) {
             if (showFeedback) {
                 snackRoot().showWarnPill(R.string.toast_disable_loqin_to_edit_app_limits)
             }
             return false
         }
-        return true
+        if (!EditingLockGuard.isLocked(this)) return true
+
+        // Removing a blocked app is a weakening change; with a change delay configured it may be
+        // queued instead of denied, so the removal affordance stays reachable.
+        val profile = ProfileStore.getCurrent(this)
+        val allowed = !profile.isNullOrBlank() &&
+            ProtectionChangeGate.decision(
+                this,
+                if (ProfileRuleModeStore.isAllowMode(this, profile)) {
+                    ProtectionChangePolicy.Direction.STRICTER
+                } else {
+                    ProtectionChangePolicy.Direction.WEAKER
+                },
+            ) != ProtectionChangePolicy.Decision.DENY &&
+            ProtectionChangeGate.decision(this, ProtectionChangePolicy.Direction.WEAKER) !=
+            ProtectionChangePolicy.Decision.DENY
+        if (!allowed && showFeedback) {
+            snackRoot().showWarnPill(R.string.toast_disable_loqin_to_edit_app_limits)
+        }
+        return allowed
     }
 
     // Anchor defaults to the activity content, but callers inside a dialog/sheet
@@ -4016,18 +4038,41 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
+        val allowMode = ProfileRuleModeStore.isAllowMode(this, profile)
         val selected = ProfileStore.getSelectedForProfileMode(this, profile).toMutableSet()
-        selected.remove(item.pkg)
-        ProfileStore.setSelectedForProfileMode(this, profile, selected)
+        val requested = selected.toMutableSet().apply { remove(item.pkg) }
 
-        UsageLimitStore.setLimitMinutes(this, profile, item.pkg, 0)
-        SessionLimitStore.setLimitMinutes(this, profile, item.pkg, 0)
-        AttemptLimitStore.setLimitAttempts(this, profile, item.pkg, 0)
-        OpenCountStore.setToday(this, profile, item.pkg, 0)
-        LimitReachedStore.clearToday(this, item.pkg)
+        val selectionResult = ProtectionChangeGate.requestAppSelection(
+            context = this,
+            profile = profile,
+            allowMode = allowMode,
+            original = selected,
+            requested = requested,
+        )
+        val clearResult = ProtectionChangeGate.requestClearAppData(
+            context = this,
+            profile = profile,
+            packages = listOf(item.pkg),
+            includeInAppRules = false,
+        )
+
+        if (selectionResult == ProtectionChangePolicy.Result.DENIED ||
+            clearResult == ProtectionChangePolicy.Result.DENIED
+        ) {
+            snackRoot().showWarnPill(R.string.toast_disable_loqin_to_edit_app_limits)
+            refreshBlockedList()
+            return
+        }
 
         BlockingRuntime.ensureRunning(this)
         refreshBlockedList()
+
+        if (selectionResult == ProtectionChangePolicy.Result.QUEUED ||
+            clearResult == ProtectionChangePolicy.Result.QUEUED
+        ) {
+            ProtectionFeedback.showQueued(this)
+            return
+        }
 
         Snackbar.make(
             snackRoot(),

@@ -56,6 +56,9 @@ import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import java.util.Locale
+import com.oliver.loqin.util.ProtectionFeedback
+import com.oliver.loqin.util.ProtectionChangePolicy
+import com.oliver.loqin.util.ProtectionChangeGate
 
 /**
  * Quick-edit dialogs for app/website limits.
@@ -115,12 +118,6 @@ object QuickLimitDialogs {
         startOnAttempts: Boolean? = null,
         onChanged: (() -> Unit)? = null
     ) {
-        if (EditingLockGuard.isLocked(activity)) {
-            activity.findViewById<View>(android.R.id.content)
-                .showWarnPill(R.string.toast_disable_loqin_to_edit_app_limits)
-            return
-        }
-
         val profile = ProfileStore.getCurrent(activity)
         if (profile.isNullOrBlank()) {
             activity.findViewById<View>(android.R.id.content).showWarnPill(R.string.no_profile_selected)
@@ -533,30 +530,30 @@ object QuickLimitDialogs {
         refreshAll()
 
         fun applyValues(timeMinutes: Int, attempts: Int, perVisitMinutes: Int) {
-            UsageLimitStore.setLimitMinutes(activity, profile, pkg, timeMinutes)
-            SessionLimitStore.setLimitMinutes(activity, profile, pkg, perVisitMinutes)
-            AttemptLimitStore.setLimitAttempts(activity, profile, pkg, attempts)
-
-            LimitReachedStore.clearToday(activity, pkg)
-            if (timeMinutes > 0) {
-                UsageLimitResetStore.setMode(
-                    activity,
-                    profile,
-                    pkg,
-                    if (sessionResetMode) UsageLimitResetStore.MODE_SESSION else UsageLimitResetStore.MODE_DAY
-                )
+            val resetMode = if (sessionResetMode) {
+                UsageLimitResetStore.MODE_SESSION
             } else {
-                UsageLimitResetStore.clearMode(activity, profile, pkg)
-                UsageStore.setUsageMsToday(activity, pkg, 0L)
+                UsageLimitResetStore.MODE_DAY
             }
-            if (attempts == 0) {
-                OpenCountStore.setToday(activity, profile, pkg, 0)
-            }
-            if (timeMinutes > 0 || attempts > 0 || perVisitMinutes > 0) {
-                ensureManaged(activity, profile, pkg)
-            }
+            when (ProtectionChangeGate.requestAppLimits(
+                context = activity,
+                profile = profile,
+                packageName = pkg,
+                requestedTimeMinutes = timeMinutes,
+                requestedAttempts = attempts,
+                requestedPerVisitMinutes = perVisitMinutes,
+                requestedResetMode = resetMode,
+            )) {
+                ProtectionChangePolicy.Result.APPLIED -> Unit
 
-            BlockingRuntime.ensureRunning(activity)
+                ProtectionChangePolicy.Result.QUEUED -> ProtectionFeedback.showQueued(activity)
+
+                ProtectionChangePolicy.Result.DENIED -> {
+                    activity.findViewById<View>(android.R.id.content)
+                        .showWarnPill(R.string.toast_disable_loqin_to_edit_app_limits)
+                    return
+                }
+            }
             onChanged?.invoke()
         }
 

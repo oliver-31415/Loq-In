@@ -57,7 +57,6 @@ import com.oliver.loqin.ui.dialog.showLoqInInfoDialog
 import com.oliver.loqin.ui.dialog.styleLoqInDialogButtons
 import com.oliver.loqin.util.EditingLockGuard
 import com.oliver.loqin.util.PackageLaunchIntentCompat
-import com.oliver.loqin.util.ProtectionEditPolicy
 import com.oliver.loqin.util.RelativeTimeFormatter
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
@@ -65,6 +64,9 @@ import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.oliver.loqin.util.ProtectionFeedback
+import com.oliver.loqin.util.ProtectionChangePolicy
+import com.oliver.loqin.util.ProtectionChangeGate
 
 class InAppRulesActivity : AppCompatActivity() {
     companion object {
@@ -797,13 +799,15 @@ class InAppRulesActivity : AppCompatActivity() {
         val prefKey = surface.prefKey
         val readOnly = EditingLockGuard.isLocked(this)
         val currentChecked = prefKey?.let { readProfileBool(it) } ?: false
-        val canToggleWhileLocked = prefKey != null && ProtectionEditPolicy.canChangeSelection(
-            context = this,
-            profile = currentProfile(),
-            allowMode = isInAppAllowMode(),
-            currentlySelected = currentChecked,
-            requestedSelected = !currentChecked,
-        )
+        val canToggleWhileLocked = prefKey != null && run {
+            if (!EditingLockGuard.isLocked(this)) return@run true
+            val direction = ProtectionChangePolicy.inAppDirection(
+                allowMode = isInAppAllowMode(),
+                currentSelected = currentChecked,
+                requestedSelected = !currentChecked,
+            )
+            ProtectionChangeGate.decision(this, direction) != ProtectionChangePolicy.Decision.DENY
+        }
         val sw = SwitchCompat(this).apply {
             // Stay tappable (dimmed): denied taps warn via pill instead of doing nothing.
             isEnabled = prefKey != null
@@ -819,32 +823,40 @@ class InAppRulesActivity : AppCompatActivity() {
                 }
                 setOnCheckedChangeListener { button, checked ->
                     val before = readProfileBool(prefKey)
-                    if (!ProtectionEditPolicy.canChangeSelection(
-                            context = this@InAppRulesActivity,
-                            profile = currentProfile(),
-                            allowMode = isInAppAllowMode(),
-                            currentlySelected = before,
-                            requestedSelected = checked,
-                        )
-                    ) {
-                        if (EditingLockGuard.isLocked(this@InAppRulesActivity)) {
-                            this@InAppRulesActivity.findViewById<View>(android.R.id.content)
-                                .showWarnPill(R.string.rules_tighten_only_active_message)
+                    when (ProtectionChangeGate.requestInAppSelection(
+                        context = this@InAppRulesActivity,
+                        profile = currentProfile(),
+                        packageName = packageName,
+                        baseKey = prefKey,
+                        surfaceKey = surface.surfaceKey,
+                        allowMode = isInAppAllowMode(),
+                        currentSelected = before,
+                        requestedSelected = checked,
+                    )) {
+                        ProtectionChangePolicy.Result.APPLIED -> {
+                            BlockingRuntime.ensureRunning(this@InAppRulesActivity)
+                            onToggle?.invoke()
+                            if (EditingLockGuard.isLocked(this@InAppRulesActivity)) {
+                                button.post { render() }
+                            }
                         }
-                        button.setOnCheckedChangeListener(null)
-                        button.isChecked = before
-                        button.post { render() }
-                        return@setOnCheckedChangeListener
-                    }
-                    writeProfileBool(prefKey, checked)
-                    surface.surfaceKey?.let { surfaceKey ->
-                        setSurfaceRuleForMode(surfaceKey, checked)
-                    }
-                    keepAppAllowedForInAppRule(packageName, prefKey, checked)
-                    BlockingRuntime.ensureRunning(this@InAppRulesActivity)
-                    onToggle?.invoke()
-                    if (EditingLockGuard.isLocked(this@InAppRulesActivity)) {
-                        button.post { render() }
+
+                        ProtectionChangePolicy.Result.QUEUED -> {
+                            ProtectionFeedback.showQueued(this@InAppRulesActivity)
+                            button.setOnCheckedChangeListener(null)
+                            button.isChecked = before
+                            button.post { render() }
+                        }
+
+                        ProtectionChangePolicy.Result.DENIED -> {
+                            if (EditingLockGuard.isLocked(this@InAppRulesActivity)) {
+                                this@InAppRulesActivity.findViewById<View>(android.R.id.content)
+                                    .showWarnPill(R.string.rules_tighten_only_active_message)
+                            }
+                            button.setOnCheckedChangeListener(null)
+                            button.isChecked = before
+                            button.post { render() }
+                        }
                     }
                 }
             }

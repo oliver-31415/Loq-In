@@ -572,11 +572,26 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
     }
 
     private fun setRuleEnabled(domain: String, enabled: Boolean) {
-        if (websiteEditingLocked()) {
-            return
+        when (ProtectionChangeGate.requestWebsiteEnabled(
+            context = this,
+            profile = currentProfile(),
+            rule = domain,
+            currentEnabled = !enabled,
+            requestedEnabled = enabled,
+        )) {
+            ProtectionChangePolicy.Result.APPLIED -> refreshList()
+
+            ProtectionChangePolicy.Result.QUEUED -> {
+                ProtectionFeedback.showQueued(this)
+                refreshList()
+            }
+
+            ProtectionChangePolicy.Result.DENIED -> {
+                findViewById<View>(android.R.id.content)
+                    .showWarnPill(R.string.edit_locked_manage_websites)
+                refreshList()
+            }
         }
-        DomainBlockStore.setDomainEnabledForProfile(this, currentProfile(), domain, enabled)
-        refreshList()
     }
 
     private fun confirmDeleteSingle(domain: String) {
@@ -851,12 +866,8 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
                 swRuleEnabled.isEnabled = true
                 swRuleEnabled.alpha = if (readOnly) 0.45f else 1f
                 swRuleEnabled.setOnCheckedChangeListener { _, isChecked ->
-                    if (websiteEditingLocked()) {
-                        swRuleEnabled.isChecked = rule.enabled
-                        swRuleEnabled.alpha = 0.45f
-                        denyWebsiteEditWithPopover()
-                        return@setOnCheckedChangeListener
-                    }
+                    // The gate decides (apply / queue / deny) and refreshList() restores the
+                    // switch when the change was queued or denied.
                     onToggleEnabled(rule.domain, isChecked)
                 }
 
