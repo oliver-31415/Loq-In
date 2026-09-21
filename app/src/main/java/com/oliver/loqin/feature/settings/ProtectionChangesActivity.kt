@@ -51,6 +51,10 @@ import com.oliver.loqin.util.PendingChangeType
 import com.oliver.loqin.util.ProtectionChangeGate
 import com.oliver.loqin.util.ProtectionChangePolicy
 import com.oliver.loqin.util.ProtectionFeedback
+import com.oliver.loqin.ui.dialog.showLoqInInfoDialog
+import com.oliver.loqin.ui.dialog.LoqInInfoRow
+import com.oliver.loqin.util.EditingLockGuard
+import com.oliver.loqin.util.InAppRuleLabels
 
 /**
  * Settings page for the protection change gate: configure the delay for weakening changes and
@@ -83,6 +87,17 @@ class ProtectionChangesActivity : AppCompatActivity() {
 
         tvChangeDelayValue = findViewById(R.id.tvChangeDelayValue)
         tvChangeDelaySummary = findViewById(R.id.tvChangeDelaySummary)
+        findViewById<View>(R.id.btnProtectionChangesInfo).setOnClickListener {
+            showLoqInInfoDialog(
+                title = getString(R.string.protection_changes_info_title),
+                rows = listOf(
+                    LoqInInfoRow(
+                        label = getString(R.string.protection_changes_info_title),
+                        value = getString(R.string.protection_changes_info_body),
+                    ),
+                ),
+            )
+        }
         tvPendingEmpty = findViewById(R.id.tvPendingEmpty)
         tvPendingSummary = findViewById(R.id.tvPendingSummary)
         pendingFooter = findViewById(R.id.pendingFooter)
@@ -146,9 +161,14 @@ class ProtectionChangesActivity : AppCompatActivity() {
             setOnClickListener { showPendingChangeActionsDialog(change) }
         }
         row.addView(ImageView(this).apply {
-            setImageResource(R.drawable.schedule_24)
-            imageTintList = android.content.res.ColorStateList.valueOf(accentColor())
-            layoutParams = LinearLayout.LayoutParams(dp(20), dp(20))
+            val icon = leadingIcon(change)
+            if (icon != null) {
+                setImageDrawable(icon)
+            } else {
+                setImageResource(R.drawable.schedule_24)
+                imageTintList = android.content.res.ColorStateList.valueOf(accentColor())
+            }
+            layoutParams = LinearLayout.LayoutParams(dp(24), dp(24))
         })
         val texts = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -183,26 +203,88 @@ class ProtectionChangesActivity : AppCompatActivity() {
     }
 
     private fun showDelayDialog() {
-        val presets = ProtectionChangePolicy.delayOptionsMinutes
         val current = ProtectionChangeGate.getDelayMinutes(this)
-        val customSelected = !ProtectionChangePolicy.isPresetDelayMinutes(current) && current > 0
-        val options = presets.map { minutes ->
-            LoqInDialogOption(title = delayLabel(minutes), selected = minutes == current)
-        } + LoqInDialogOption(
-            title = getString(R.string.protection_change_delay_custom),
-            selected = customSelected,
-        )
-        showLoqInOptionDialog(
-            title = getString(R.string.protection_change_delay_title),
-            options = options,
-            onSelected = { index ->
-                if (index < presets.size) {
-                    applyDelay(presets[index])
+        val values = delaySliderValues(current)
+        val locked = EditingLockGuard.isLocked(this)
+        val currentIndex = values.indexOf(current).coerceAtLeast(0)
+
+        val valueLabel = TextView(this).apply {
+            text = delayLabel(current)
+            textSize = 22f
+            gravity = android.view.Gravity.CENTER
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
+            setTextColor(accentColor())
+        }
+        val slider = com.google.android.material.slider.Slider(this).apply {
+            valueFrom = if (locked) currentIndex.toFloat() else 0f
+            valueTo = (values.size - 1).toFloat()
+            stepSize = 1f
+            value = currentIndex.toFloat().coerceIn(valueFrom, valueTo)
+            labelBehavior = com.google.android.material.slider.LabelFormatter.LABEL_GONE
+            addOnChangeListener { _, value, _ ->
+                valueLabel.text = delayLabel(values[value.toInt().coerceIn(0, values.size - 1)])
+            }
+        }
+        val hint = TextView(this).apply {
+            text = getString(
+                if (locked) {
+                    R.string.protection_change_delay_locked
                 } else {
-                    showCustomDelayDialog(current)
+                    R.string.protection_change_delay_slider_hint
                 }
-            },
+            )
+            textSize = 13f
+            setTextColor(secondaryTextColor())
+            gravity = android.view.Gravity.CENTER
+            val params = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.WRAP_CONTENT,
+            )
+            params.topMargin = dp(8)
+            layoutParams = params
+        }
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(24), dp(16), dp(24), dp(4))
+            addView(valueLabel)
+            addView(
+                slider,
+                LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT,
+                ).apply { topMargin = dp(8) },
+            )
+            addView(hint)
+        }
+
+        val dialog = MaterialAlertDialogBuilder(this)
+            .setTitle(R.string.protection_change_delay_title)
+            .setView(container)
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(R.string.save, null)
+            .create()
+        dialog.setOnShowListener {
+            dialog.styleLoqInDialogButtons()
+            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
+                val index = slider.value.toInt().coerceIn(0, values.size - 1)
+                dialog.dismiss()
+                applyDelay(values[index])
+            }
+        }
+        dialog.show()
+    }
+
+    /**
+     * Snap points covering the whole range from Off to 7 days without typing a number.
+     * A non-preset current value (legacy custom delay) is inserted so it stays selectable.
+     */
+    private fun delaySliderValues(current: Int): List<Int> {
+        val base = listOf(
+            0, 1, 2, 5, 10, 15, 30,
+            60, 120, 180, 360, 720,
+            1_440, 2_880, 4_320, 7_200, 10_080,
         )
+        return if (current in base) base else (base + current).sorted()
     }
 
     private fun applyDelay(minutes: Int) {
@@ -215,43 +297,6 @@ class ProtectionChangesActivity : AppCompatActivity() {
                 R.string.protection_change_delay_locked,
             )
         }
-    }
-
-    private fun showCustomDelayDialog(current: Int) {
-        val input = EditText(this).apply {
-            inputType = InputType.TYPE_CLASS_NUMBER
-            hint = getString(R.string.protection_change_delay_custom_hint)
-            if (!ProtectionChangePolicy.isPresetDelayMinutes(current) && current > 0) {
-                setText(current.toString())
-                setSelection(text.length)
-            }
-        }
-        val container = FrameLayout(this).apply {
-            val padH = dp(24)
-            setPadding(padH, dp(12), padH, dp(4))
-            addView(input)
-        }
-        val dialog = MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.protection_change_delay_custom_title)
-            .setMessage(R.string.protection_change_delay_custom_message)
-            .setView(container)
-            .setNegativeButton(R.string.cancel, null)
-            .setPositiveButton(R.string.ok, null)
-            .create()
-        dialog.setOnShowListener {
-            dialog.styleLoqInDialogButtons()
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                val minutes = input.text?.toString()?.trim()?.toIntOrNull()
-                if (minutes == null || minutes <= 0 || !ProtectionChangePolicy.isValidDelayMinutes(minutes)) {
-                    findViewById<View>(android.R.id.content)
-                        .showWarnPill(R.string.protection_change_delay_custom_invalid)
-                    return@setOnClickListener
-                }
-                dialog.dismiss()
-                applyDelay(minutes)
-            }
-        }
-        dialog.show()
     }
 
     private fun showPendingChangeActionsDialog(change: PendingChange) {
@@ -348,8 +393,9 @@ class ProtectionChangesActivity : AppCompatActivity() {
             }
 
             PendingChangeType.IN_APP_SELECTION -> {
-                val key = change.data.optString("baseKey").ifBlank { profile }
-                getString(R.string.protection_pending_item_in_app, key)
+                val baseKey = change.data.optString("baseKey")
+                val surface = InAppRuleLabels.label(this, baseKey) ?: baseKey.ifBlank { profile }
+                getString(R.string.protection_pending_item_in_app, surface)
             }
 
             PendingChangeType.WEBSITE_REMOVE,
@@ -375,6 +421,36 @@ class ProtectionChangesActivity : AppCompatActivity() {
 
             else -> getString(R.string.protection_pending_item_unknown)
         }
+    }
+
+    private fun leadingIcon(change: PendingChange): android.graphics.drawable.Drawable? = when (change.type) {
+        PendingChangeType.APP_SELECTION -> appIcon(
+            firstPackage(change.data.optJSONArray("removePackages"))
+                ?: firstPackage(change.data.optJSONArray("addPackages")),
+        )
+
+        PendingChangeType.IN_APP_SELECTION,
+        PendingChangeType.APP_LIMITS -> appIcon(change.data.optString("packageName"))
+
+        PendingChangeType.CLEAR_APP_DATA -> appIcon(firstPackage(change.data.optJSONArray("packages")))
+
+        PendingChangeType.WEBSITE_REMOVE,
+        PendingChangeType.WEBSITE_ENABLED -> androidx.core.content.ContextCompat
+            .getDrawable(this, R.drawable.language_24)
+            ?.mutate()
+            ?.apply { setTint(accentColor()) }
+
+        else -> null
+    }
+
+    private fun appIcon(packageName: String?): android.graphics.drawable.Drawable? {
+        if (packageName.isNullOrBlank()) return null
+        return runCatching { packageManager.getApplicationIcon(packageName) }.getOrNull()
+    }
+
+    private fun firstPackage(packages: org.json.JSONArray?): String? {
+        if (packages == null || packages.length() == 0) return null
+        return packages.optString(0).takeIf { it.isNotBlank() }
     }
 
     private fun appNames(packages: org.json.JSONArray?): String {

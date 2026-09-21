@@ -17,6 +17,7 @@
     <string name="protection_change_delay_24h">24 Stunden</string>
     <string name="protection_change_delay_summary_off">Schutzreduzierende Änderungen bleiben blockiert, solange der Schutz aktiv ist.</string>
     <string name="protection_change_delay_summary_on">Schutzreduzierende Änderungen warten %1$s. Stärkere Änderungen gelten weiterhin sofort.</string>
+    <string name="protection_change_delay_slider_hint">Wähle per Schieberegler eine Verzögerung von 1 Minute bis 7 Tage. Stärkere Änderungen gelten weiterhin sofort.</string>
     <string name="protection_change_delay_locked">Solange der Schutz aktiv ist, kann die Verzögerung nur gleich bleiben oder erhöht werden.</string>
     <string name="protection_change_delay_custom">Eigene Zeit…</string>
     <string name="protection_change_delay_custom_title">Eigene Verzögerung für Schutzänderungen</string>
