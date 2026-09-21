@@ -62,6 +62,7 @@ Upstream source paths are under `app/src/main/java/at/saltyy/switchly/...`; our 
 | 2026-09-20 | **W5.2 P0** | `feature/upstream-w5-protection-gate` | Done — `e11e9b4`, `6774077` | Pure policy + pending queue model; 38 new unit tests (60 total) |
 | 2026-09-20 | **W5.2 P1** | `feature/upstream-w5-protection-gate` | Done — `b90e72a`, `c2b11ea` | Gate shell, alarm receiver, feedback, boot/update/start hooks; website-delete pilot + emulator evidence |
 | 2026-09-20 | **W5.2 P2** | `feature/upstream-w5-protection-gate` | Done — `8b9b628`, `3e7af0f` | "Protection changes" settings page (delay + pending list), Settings entry + dynamic summary; en/de, light/dark, 3-button nav verified |
+| 2026-09-20 | **W5.2 P3** | `feature/upstream-w5-protection-gate` | Done — `9ca2b22`, `f9ac39b` | Gate wired through picker (save, toggles, auto-block, clears), in-app rules, website enable/disable, app limits, remove-blocked-app; structural paths keep deny |
 
 ### W1.1 implementation + test evidence (2026-09-16)
 
@@ -806,13 +807,15 @@ Do not start until W1–W3 are merged and stable. Decide first (see §8): adopt 
 ### W5.1 D3 — FeatureFlagStore + dev tiles
 - Port `FeatureFlagStore.kt` (52 LOC) and the `AdvancedModeActivity` tile entries. Adapt to our Advanced-mode screen; no Firebase.
 
-### W5.2 C1 — ProtectionChangeGate core — **P0–P2 DONE 2026-09-20**
+### W5.2 C1 — ProtectionChangeGate core — **P0–P3 DONE 2026-09-20**
 - **Full implementation plan: `docs/w5-protection-change-gate-plan.md`** (scope, architecture, file inventory, settings page spec, call-site migration table, test matrix, phases, risks). Branch: `feature/upstream-w5-protection-gate` off the current upstreaming tip.
 - **P0** (`e11e9b4`, `6774077`): `ProtectionChangePolicy` (directions, decision matrix, selection/limits delta splitting, delay rules) + `PendingChange` (model, JSON codec, dedupe, due partition, apply-time from-value guards). 38 unit tests; `./gradlew :app:testDebugUnitTest` 60/60.
 - **P1** (`b90e72a`, `c2b11ea`): `ProtectionChangeGate` shell (delay, all request types, pending management, apply functions), `ProtectionChangeReceiver` (alarm target), `ProtectionFeedback`, manifest receiver, `applyDueChanges` on app start/boot/post-update, and website-rule deletion as the pilot call site.
   - Emulator evidence (emulator-5554, API 36): locked + delay 0 → delete denied with pill, rule intact; locked + delay 1 min → queued dialog, `protection_pending_changes_json` entry + `RTC_WAKEUP` alarm, applied after due (queue empty, rule removed); locked + delay 15 → adding a rule applies immediately and is not queued; queue with 15 min delay survives `adb reboot` and the alarm is re-armed by `BootCompletedReceiver`.
 - **P2** (`8b9b628`, `3e7af0f`): `ProtectionChangesActivity` + layout (delay card with presets/custom dialog, pending list with per-item review/discard, apply-all when fully off, info card), full en/de strings, Settings → Controls card with live delay + pending summary, search index entry, manifest registration.
   - Emulator evidence: page renders empty and populated states; delay locked rule (shorter value refused with message, longer applies); per-item discard updates the list; German and light-mode rendering; toolbar inset fixed with `fitsSystemWindows`; settings summary shows "15 minutes · 1 pending change".
+- **P3** (`9ca2b22`, `f9ac39b`): gate wired into `AppPickerActivity` (save with stricter/weaker delta split, row toggles, auto-block new apps, bulk clear via a new `clear_app_data` pending type), `AppListAdapter` (unavailable clears), `InAppRulesActivity` (surface toggles), `ManageBlockedWebsitesActivity` (rule enable/disable), `QuickLimitDialogs` (app limits), `MainActivity.removeBlockedApp` (selection + limit clear). Inactive-profile edits keep their existing bypass; website add/edit, website limits, rule-mode and control-mode/profile changes keep the structural deny (never queued). `ProtectionEditPolicy` is now unused except `canAddBlockedWebsite` (deleted in P4).
+  - Emulator evidence: with delay 15 and protection active — picker unblock of Calendar queued as `app_selection` (removePackages), website rule disable queued as `website_enabled` and the switch reverted; pending queue inspected in prefs. In-app toggle, limit raise, auto-block, clear-data and blocked-app-removal paths use the same gate calls and are covered by the unit-tested policy/dedupe; full device pass remains in P6.
 - Upstream: `util/ProtectionChangeGate.kt` (782 LOC), `receiver/ProtectionChangeReceiver.kt`, `util/ProtectionFeedback.kt`, `data/prefs/TemporaryPauseProtectionEditStore.kt` (omitted).
 - Adaptations required:
   - Strip `PremiumManager` (the custom-delay branch is premium; omit it) and `CrashlyticsContext`.
