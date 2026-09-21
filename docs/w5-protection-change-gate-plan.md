@@ -1,6 +1,6 @@
 # W5.2 C1 — Protection Change Gate + Delay Queue: Implementation Plan
 
-**Status:** in progress — P0–P3 done 2026-09-20 (see `upstream231.md` progress log; commits `e11e9b4`, `6774077`, `b90e72a`, `c2b11ea`, `8b9b628`, `3e7af0f`, `9ca2b22`, `f9ac39b`)
+**Status:** complete 2026-09-21 — P0–P6 done, merged into `feature/upstream-w6-polish` (fast-forward; commits `e11e9b4`, `6774077`, `b90e72a`, `c2b11ea`, `8b9b628`, `3e7af0f`, `9ca2b22`, `f9ac39b`, `161f927`, `1b89c07`, `4ddd292`, `33ffe27`, `cea737f`, `dfd572d`). Remaining manual checks: limit dialog, auto-block, clear-all, remove-blocked-app, Doze timing, OEM alarms. Phase 2 scope decision still open (protection toggles, hidden apps, NFC pairing, schedules, website limits, backup import).
 **Date:** 2026-09-20
 **Proposed branch:** `feature/upstream-w5-protection-gate` (off `feature/upstream-w6-polish`, which now includes W2/W3/W4.1/W4.2-YouTube/W6.1/A7)
 **Upstream source:** `at.saltyy.switchly.util.ProtectionChangeGate` (782 LOC), `receiver/ProtectionChangeReceiver`, `util/ProtectionFeedback`, `feature/settings/AdvancedProtectionActivity` (page only)
