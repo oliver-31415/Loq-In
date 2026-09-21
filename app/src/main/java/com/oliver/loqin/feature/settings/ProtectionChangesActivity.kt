@@ -481,6 +481,12 @@ class ProtectionChangesActivity : AppCompatActivity() {
                 getString(R.string.protection_pending_item_app_limits, appLabel(packageName))
             }
 
+            PendingChangeType.WEBSITE_LIMIT ->
+                getString(
+                    R.string.protection_pending_item_website_limit,
+                    change.data.optString("rule").ifBlank { profile },
+                )
+
             PendingChangeType.AUTO_BLOCK_NEW_APPS ->
                 getString(R.string.protection_pending_item_auto_block, profile)
 

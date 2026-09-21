@@ -455,10 +455,7 @@ class AppListAdapter(
 
             cardRoot.setOnClickListener { onTileToggle() }
             cardRoot.setOnLongClickListener {
-                if (isReadOnlyProvider.invoke()) {
-                    itemView.showWarnPill(R.string.toast_disable_loqin_to_edit_app_limits)
-                    return@setOnLongClickListener true
-                }
+                // The limit editor opens while protection is active; the gate decides on save.
                 onSetSessionLimitClicked?.invoke(item)
                 true
             }
@@ -520,18 +517,9 @@ class AppListAdapter(
                 btnLimit.visibility = View.VISIBLE
                 val readOnly = isReadOnlyProvider.invoke()
                 btnLimit.isEnabled = true
-                btnLimit.alpha = if (readOnly) 0.45f else 1f
-                btnLimit.setOnClickListener {
-                    if (isReadOnlyProvider.invoke()) {
-                        itemView.showWarnPill(R.string.toast_disable_loqin_to_edit_app_limits)
-                        return@setOnClickListener
-                    }
-                    onSetLimitClicked(item)
-                }
+                btnLimit.alpha = if (readOnly) 0.62f else 1f
+                btnLimit.setOnClickListener { onSetLimitClicked(item) }
                 btnLimit.setOnLongClickListener {
-                    if (isReadOnlyProvider.invoke()) {
-                        return@setOnLongClickListener true
-                    }
                     onSetSessionLimitClicked?.invoke(item)
                     true
                 }

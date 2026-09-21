@@ -62,6 +62,7 @@
         <item quantity="one">%d app</item>
         <item quantity="other">%d apps</item>
     </plurals>
+    <string name="protection_pending_item_website_limit">Website limits · %1$s</string>
     <string name="protection_pending_item_auto_block">Auto-block new apps · %1$s</string>
     <string name="protection_pending_item_clear_data">App limits/rules · %1$s</string>
     <string name="protection_pending_item_unknown">Protection change</string>

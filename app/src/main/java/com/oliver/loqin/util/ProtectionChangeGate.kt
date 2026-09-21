@@ -401,6 +401,61 @@ object ProtectionChangeGate {
     }
 
     // ---------------------------------------------------------------------------------------------
+    // Website limits
+    // ---------------------------------------------------------------------------------------------
+
+    /**
+     * The website limit editor can switch a rule between "block always" and a time limit.
+     * Adding protection applies immediately; reducing it queues (or is denied with delay 0).
+     */
+    fun requestWebsiteLimit(
+        context: Context,
+        profile: String,
+        rule: String,
+        currentlyAlwaysBlocked: Boolean,
+        currentMinutes: Int,
+        requestedAlwaysBlock: Boolean,
+        requestedMinutes: Int,
+    ): ProtectionChangePolicy.Result {
+        if (profile.isBlank() || rule.isBlank()) return ProtectionChangePolicy.Result.DENIED
+        val allowMode = WebsiteRuleModeStore.isAllowMode(context, profile)
+        val direction = ProtectionChangePolicy.websiteLimitDirection(
+            allowMode = allowMode,
+            currentlyAlwaysBlocked = currentlyAlwaysBlocked,
+            currentMinutes = currentMinutes,
+            requestedAlwaysBlock = requestedAlwaysBlock,
+            requestedMinutes = requestedMinutes,
+        )
+        if (direction == ProtectionChangePolicy.Direction.NEUTRAL) {
+            return ProtectionChangePolicy.Result.APPLIED
+        }
+        return when (decision(context, direction)) {
+            ProtectionChangePolicy.Decision.APPLY_NOW -> {
+                applyWebsiteLimit(context, profile, rule, allowMode, requestedAlwaysBlock, requestedMinutes)
+                ProtectionChangePolicy.Result.APPLIED
+            }
+
+            ProtectionChangePolicy.Decision.QUEUE_DELAYED -> {
+                queue(
+                    context = context,
+                    type = PendingChangeType.WEBSITE_LIMIT,
+                    data = JSONObject()
+                        .put("profile", profile)
+                        .put("rule", rule)
+                        .put("allowMode", allowMode)
+                        .put("fromAlwaysBlock", currentlyAlwaysBlocked)
+                        .put("fromMinutes", currentMinutes)
+                        .put("alwaysBlock", requestedAlwaysBlock)
+                        .put("minutes", requestedMinutes),
+                )
+                ProtectionChangePolicy.Result.QUEUED
+            }
+
+            ProtectionChangePolicy.Decision.DENY -> ProtectionChangePolicy.Result.DENIED
+        }
+    }
+
+    // ---------------------------------------------------------------------------------------------
     // Control mode
     // ---------------------------------------------------------------------------------------------
 
@@ -684,6 +739,25 @@ object ProtectionChangeGate {
                 }
             }
 
+            PendingChangeType.WEBSITE_LIMIT -> {
+                val profile = change.data.getString("profile")
+                if (profile !in ProfileStore.getProfiles(context)) return@runCatching false
+                val rule = change.data.getString("rule")
+                // Stricter edit since? Leave the current value alone.
+                val currentMinutes = DomainLimitStore.getLimitMinutesForProfile(context, profile, rule)
+                if (change.data.has("fromMinutes") && currentMinutes != change.data.optInt("fromMinutes")) {
+                    return@runCatching true
+                }
+                applyWebsiteLimit(
+                    context = context,
+                    profile = profile,
+                    rule = rule,
+                    allowMode = change.data.optBoolean("allowMode", false),
+                    alwaysBlock = change.data.optBoolean("alwaysBlock", false),
+                    minutes = change.data.optInt("minutes", 0),
+                )
+            }
+
             PendingChangeType.AUTO_BLOCK_NEW_APPS -> {
                 val profile = change.data.getString("profile")
                 if (profile !in ProfileStore.getProfiles(context)) return@runCatching false
@@ -759,6 +833,39 @@ object ProtectionChangeGate {
             val allowed = ProfileStore.getAllowedForProfile(context, profile)
             if (packageName !in allowed) ProfileStore.setAllowedForProfile(context, profile, allowed + packageName)
         }
+    }
+
+    private fun applyWebsiteLimit(
+        context: Context,
+        profile: String,
+        rule: String,
+        allowMode: Boolean,
+        alwaysBlock: Boolean,
+        minutes: Int,
+    ) {
+        when {
+            alwaysBlock && minutes > 0 -> {
+                DomainLimitStore.clearForProfile(context, profile, rule)
+                DomainBlockStore.addDomainForProfile(context, profile, rule)
+            }
+
+            alwaysBlock -> DomainBlockStore.removeDomainForProfile(context, profile, rule)
+
+            minutes <= 0 -> {
+                DomainLimitStore.clearForProfile(context, profile, rule)
+                DomainBlockStore.removeDomainForProfile(context, profile, rule)
+            }
+
+            else -> {
+                if (allowMode) {
+                    DomainBlockStore.addDomainForProfile(context, profile, rule)
+                } else {
+                    DomainBlockStore.removeDomainForProfile(context, profile, rule)
+                }
+                DomainLimitStore.setLimitMinutesForProfile(context, profile, rule, minutes)
+            }
+        }
+        BlockingRuntime.ensureRunning(context)
     }
 
     private fun applyWebsiteRemoval(context: Context, profile: String, rule: String) {

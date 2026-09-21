@@ -185,6 +185,18 @@ class PendingChangeQueueTest {
             ),
         )
         assertEquals(
+            "web-limit:Default:example.com",
+            PendingChangeQueue.dedupeKey(
+                PendingChange(
+                    "h",
+                    PendingChangeType.WEBSITE_LIMIT,
+                    1L,
+                    1L,
+                    JSONObject().put("profile", "Default").put("rule", "example.com"),
+                ),
+            ),
+        )
+        assertEquals(
             "auto-block:Default",
             PendingChangeQueue.dedupeKey(
                 PendingChange(

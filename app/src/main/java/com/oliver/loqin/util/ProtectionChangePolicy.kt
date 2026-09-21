@@ -167,6 +167,34 @@ object ProtectionChangePolicy {
             if (requestedEnabled) Direction.STRICTER else Direction.WEAKER
         }
 
+    /**
+     * Direction of a website limit edit (the website limit editor can switch between a hard block
+     * and a time limit).
+     * - switching to "block always" adds protection;
+     * - switching away from "block always" reduces it;
+     * - otherwise the numeric limit direction applies, inverted in allow mode where a limit is an
+     *   allowed exception (adding/raising it widens access).
+     */
+    fun websiteLimitDirection(
+        allowMode: Boolean,
+        currentlyAlwaysBlocked: Boolean,
+        currentMinutes: Int,
+        requestedAlwaysBlock: Boolean,
+        requestedMinutes: Int,
+    ): Direction {
+        if (requestedAlwaysBlock) {
+            return if (currentlyAlwaysBlocked) Direction.NEUTRAL else Direction.STRICTER
+        }
+        if (currentlyAlwaysBlocked) return Direction.WEAKER
+        val numeric = numericLimitDirection(currentMinutes, requestedMinutes)
+        if (!allowMode) return numeric
+        return when (numeric) {
+            Direction.STRICTER -> Direction.WEAKER
+            Direction.WEAKER -> Direction.STRICTER
+            else -> Direction.NEUTRAL
+        }
+    }
+
     // ---------------------------------------------------------------------------------------------
     // Limits
     // ---------------------------------------------------------------------------------------------

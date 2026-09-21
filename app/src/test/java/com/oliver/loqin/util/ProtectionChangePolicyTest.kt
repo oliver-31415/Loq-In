@@ -263,6 +263,52 @@ class ProtectionChangePolicyTest {
     }
 
     @Test
+    fun `website limit directions`() {
+        // Switching to always-block adds protection.
+        assertEquals(
+            Direction.STRICTER,
+            ProtectionChangePolicy.websiteLimitDirection(
+                allowMode = false, currentlyAlwaysBlocked = false,
+                currentMinutes = 0, requestedAlwaysBlock = true, requestedMinutes = 0,
+            ),
+        )
+        // Switching away from always-block reduces it.
+        assertEquals(
+            Direction.WEAKER,
+            ProtectionChangePolicy.websiteLimitDirection(
+                allowMode = false, currentlyAlwaysBlocked = true,
+                currentMinutes = 0, requestedAlwaysBlock = false, requestedMinutes = 30,
+            ),
+        )
+        // Block mode: raising a limit is weaker, lowering is stricter.
+        assertEquals(
+            Direction.WEAKER,
+            ProtectionChangePolicy.websiteLimitDirection(false, false, 10, false, 30),
+        )
+        assertEquals(
+            Direction.STRICTER,
+            ProtectionChangePolicy.websiteLimitDirection(false, false, 30, false, 10),
+        )
+        assertEquals(
+            Direction.STRICTER,
+            ProtectionChangePolicy.websiteLimitDirection(false, false, 0, false, 30),
+        )
+        assertEquals(
+            Direction.WEAKER,
+            ProtectionChangePolicy.websiteLimitDirection(false, false, 30, false, 0),
+        )
+        // Allow mode inverts the numeric direction.
+        assertEquals(
+            Direction.WEAKER,
+            ProtectionChangePolicy.websiteLimitDirection(true, false, 0, false, 30),
+        )
+        assertEquals(
+            Direction.STRICTER,
+            ProtectionChangePolicy.websiteLimitDirection(true, false, 30, false, 0),
+        )
+    }
+
+    @Test
     fun `limits with no change are neutral`() {
         val plan = ProtectionChangePolicy.planAppLimits(30, 30, 5, 5, 10, 10, "day", "day")
         assertEquals(Direction.NEUTRAL, plan.direction)

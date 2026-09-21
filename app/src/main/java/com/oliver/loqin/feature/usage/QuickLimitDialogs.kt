@@ -593,13 +593,8 @@ object QuickLimitDialogs {
     }
 
     fun showForWebsite(activity: AppCompatActivity, domain: String, label: String, onChanged: (() -> Unit)? = null) {
-        if (EditingLockGuard.isLocked(activity)) {
-            activity.findViewById<View>(android.R.id.content)
-                .showWarnPill(R.string.toast_disable_loqin_to_edit_websites)
-            return
-        }
-
-        // Websites support: time limit OR always-block rule.
+        // Websites support: time limit OR always-block rule. The gate decides whether the edit
+        // applies now, queues, or is denied.
         val normalized = DomainBlockStore.normalize(domain) ?: domain
         val isAllowMode = ProfileStore.getCurrent(activity)?.let { ProfileRuleModeStore.isAllowMode(activity, it) } == true
         val isAlways = DomainBlockStore.getDomains(activity).contains(normalized)
@@ -613,34 +608,29 @@ object QuickLimitDialogs {
             initialMode = if (isAlways) MODE_ALWAYS_BLOCK else MODE_TIME,
             initialValueProvider = { current }
         ) { mode, value, _ ->
-            when (mode) {
-                MODE_ALWAYS_BLOCK -> {
-                    if (value > 0) {
-                        DomainLimitStore.clear(activity, normalized)
-                        DomainBlockStore.addDomain(activity, normalized)
-                    } else {
-                        // Clear always-block
-                        DomainBlockStore.removeDomain(activity, normalized)
-                    }
-                }
-
-                else -> {
-                    val m = value.coerceAtLeast(0)
-                    if (m <= 0) {
-                        DomainLimitStore.clear(activity, normalized)
-                        DomainBlockStore.removeDomain(activity, normalized)
-                    } else {
-                        if (isAllowMode) {
-                            DomainBlockStore.addDomain(activity, normalized)
-                        } else {
-                            DomainBlockStore.removeDomain(activity, normalized)
-                        }
-                        DomainLimitStore.setLimitMinutes(activity, normalized, m)
-                    }
-                }
+            val profile = ProfileStore.getCurrent(activity)
+            if (profile.isNullOrBlank()) {
+                onChanged?.invoke()
+                return@showCompactLimitDialog
             }
+            val alwaysBlock = mode == MODE_ALWAYS_BLOCK
+            val minutes = value.coerceAtLeast(0)
+            when (ProtectionChangeGate.requestWebsiteLimit(
+                context = activity,
+                profile = profile,
+                rule = normalized,
+                currentlyAlwaysBlocked = isAlways,
+                currentMinutes = current,
+                requestedAlwaysBlock = alwaysBlock,
+                requestedMinutes = minutes,
+            )) {
+                ProtectionChangePolicy.Result.APPLIED -> Unit
 
-            BlockingRuntime.ensureRunning(activity)
+                ProtectionChangePolicy.Result.QUEUED -> ProtectionFeedback.showQueued(activity)
+
+                ProtectionChangePolicy.Result.DENIED -> activity.findViewById<View>(android.R.id.content)
+                    .showWarnPill(R.string.toast_disable_loqin_to_edit_websites)
+            }
             onChanged?.invoke()
         }
     }
