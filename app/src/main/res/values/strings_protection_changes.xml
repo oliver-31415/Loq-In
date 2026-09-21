@@ -50,6 +50,12 @@
     <string name="protection_pending_item_in_app">In-app rule · %1$s</string>
     <string name="protection_pending_item_website">Website rule · %1$s</string>
     <string name="protection_pending_item_app_limits">App limits · %1$s</string>
+    <string name="protection_pending_item_unblock_apps">Unblock %1$s</string>
+    <string name="protection_pending_item_allow_apps">Allow %1$s</string>
+    <plurals name="protection_pending_apps_count">
+        <item quantity="one">%d app</item>
+        <item quantity="other">%d apps</item>
+    </plurals>
     <string name="protection_pending_item_auto_block">Auto-block new apps · %1$s</string>
     <string name="protection_pending_item_clear_data">App limits/rules · %1$s</string>
     <string name="protection_pending_item_unknown">Protection change</string>

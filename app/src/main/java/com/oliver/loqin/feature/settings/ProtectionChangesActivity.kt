@@ -323,8 +323,17 @@ class ProtectionChangesActivity : AppCompatActivity() {
     private fun pendingChangeLabel(change: PendingChange): String {
         val profile = change.data.optString("profile").ifBlank { "-" }
         return when (change.type) {
-            PendingChangeType.APP_SELECTION ->
-                getString(R.string.protection_pending_item_app_rules, profile)
+            PendingChangeType.APP_SELECTION -> {
+                val removals = change.data.optJSONArray("removePackages")
+                if (removals != null) {
+                    getString(R.string.protection_pending_item_unblock_apps, appNames(removals))
+                } else {
+                    getString(
+                        R.string.protection_pending_item_allow_apps,
+                        appNames(change.data.optJSONArray("addPackages")),
+                    )
+                }
+            }
 
             PendingChangeType.IN_APP_SELECTION -> {
                 val key = change.data.optString("baseKey").ifBlank { profile }
@@ -346,13 +355,31 @@ class ProtectionChangesActivity : AppCompatActivity() {
             PendingChangeType.AUTO_BLOCK_NEW_APPS ->
                 getString(R.string.protection_pending_item_auto_block, profile)
 
-            PendingChangeType.CLEAR_APP_DATA -> {
-                val packages = change.data.optJSONArray("packages")
-                val first = packages?.optString(0).orEmpty()
-                getString(R.string.protection_pending_item_clear_data, appLabel(first))
-            }
+            PendingChangeType.CLEAR_APP_DATA ->
+                getString(
+                    R.string.protection_pending_item_clear_data,
+                    appNames(change.data.optJSONArray("packages")),
+                )
 
             else -> getString(R.string.protection_pending_item_unknown)
+        }
+    }
+
+    private fun appNames(packages: org.json.JSONArray?): String {
+        val labels = ArrayList<String>()
+        val count = packages?.length() ?: 0
+        for (index in 0 until count) {
+            val packageName = packages?.optString(index).orEmpty()
+            if (packageName.isNotBlank()) labels += appLabel(packageName)
+        }
+        return when {
+            labels.isEmpty() -> getString(R.string.protection_pending_item_unknown)
+            labels.size <= 3 -> labels.joinToString(", ")
+            else -> resources.getQuantityString(
+                R.plurals.protection_pending_apps_count,
+                labels.size,
+                labels.size,
+            )
         }
     }
 

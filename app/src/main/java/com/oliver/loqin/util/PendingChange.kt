@@ -106,8 +106,13 @@ object PendingChangeQueue {
     }
 
     fun dedupeKey(change: PendingChange): String = when (change.type) {
-        PendingChangeType.APP_SELECTION ->
-            "app:${change.data.optString("profile")}:${change.data.optBoolean("allowMode")}"
+        PendingChangeType.APP_SELECTION -> {
+            val profile = change.data.optString("profile")
+            val allowMode = change.data.optBoolean("allowMode")
+            val packages = packageList(change.data, "removePackages") +
+                packageList(change.data, "addPackages")
+            "app:$profile:$allowMode:${packages.sorted().joinToString(",")}"
+        }
 
         PendingChangeType.IN_APP_SELECTION ->
             "inapp:${change.data.optString("profile")}:${change.data.optString("baseKey")}"
@@ -124,8 +129,11 @@ object PendingChangeQueue {
         PendingChangeType.AUTO_BLOCK_NEW_APPS ->
             "auto-block:${change.data.optString("profile")}"
 
-        PendingChangeType.CLEAR_APP_DATA ->
-            "clear-app-data:${change.data.optString("profile")}"
+        PendingChangeType.CLEAR_APP_DATA -> {
+            val profile = change.data.optString("profile")
+            val packages = packageList(change.data, "packages")
+            "clear-app-data:$profile:${packages.sorted().joinToString(",")}"
+        }
 
         else -> change.id
     }
@@ -149,6 +157,78 @@ object PendingChangeQueue {
 
     fun earliestDueAtMs(existing: List<PendingChange>): Long? =
         existing.minOfOrNull { it.executeAtMs }
+
+    private fun packageList(data: JSONObject, key: String): List<String> {
+        val array = data.optJSONArray(key) ?: return emptyList()
+        val out = ArrayList<String>(array.length())
+        for (index in 0 until array.length()) {
+            array.optString(index).takeIf { it.isNotBlank() }?.let(out::add)
+        }
+        return out
+    }
+
+    private fun removePackagesFromEntry(change: PendingChange, key: String, packages: Set<String>): PendingChange? {
+        val remaining = packageList(change.data, key).filterNot { it in packages }
+        if (remaining.isEmpty()) return null
+        val data = JSONObject(change.data.toString())
+        data.put(key, JSONArray(remaining))
+        return change.copy(data = data)
+    }
+
+    /**
+     * A stricter app-selection edit (blocking an app again / removing an allowed exception) cancels
+     * the matching pending weakening change, so the queued removal/addition cannot undo it later.
+     */
+    fun pruneAppSelection(
+        existing: List<PendingChange>,
+        profile: String,
+        allowMode: Boolean,
+        packages: Set<String>,
+    ): List<PendingChange> {
+        if (packages.isEmpty()) return existing
+        val weakeningKey = if (allowMode) "addPackages" else "removePackages"
+        return existing.mapNotNull { change ->
+            if (change.type != PendingChangeType.APP_SELECTION) return@mapNotNull change
+            if (change.data.optString("profile") != profile) return@mapNotNull change
+            if (change.data.optBoolean("allowMode") != allowMode) return@mapNotNull change
+            removePackagesFromEntry(change, weakeningKey, packages)
+        }
+    }
+
+    /** A stricter in-app rule edit cancels the pending weakening change for the same rule. */
+    fun pruneInAppSelections(
+        existing: List<PendingChange>,
+        profile: String,
+        baseKeys: Set<String>,
+    ): List<PendingChange> {
+        if (baseKeys.isEmpty()) return existing
+        return existing.filterNot { change ->
+            change.type == PendingChangeType.IN_APP_SELECTION &&
+                change.data.optString("profile") == profile &&
+                change.data.optString("baseKey") in baseKeys
+        }
+    }
+
+    /** Re-enabling/removing a website rule cancels the pending weakening change for that rule. */
+    fun pruneWebsiteEnabled(
+        existing: List<PendingChange>,
+        profile: String,
+        rules: Set<String>,
+    ): List<PendingChange> {
+        if (rules.isEmpty()) return existing
+        return existing.filterNot { change ->
+            change.type == PendingChangeType.WEBSITE_ENABLED &&
+                change.data.optString("profile") == profile &&
+                change.data.optString("rule") in rules
+        }
+    }
+
+    /** Re-enabling auto-block cancels the pending disable. */
+    fun pruneAutoBlock(existing: List<PendingChange>, profile: String): List<PendingChange> =
+        existing.filterNot { change ->
+            change.type == PendingChangeType.AUTO_BLOCK_NEW_APPS &&
+                change.data.optString("profile") == profile
+        }
 
     fun shouldApplyNumeric(currentValue: Int, fromValue: Int): Boolean = currentValue == fromValue
 

@@ -109,6 +109,12 @@ object ProtectionChangeGate {
     ): ProtectionChangePolicy.Result {
         if (profile.isBlank()) return ProtectionChangePolicy.Result.DENIED
         val plan = ProtectionChangePolicy.planAppSelection(allowMode, original, requested)
+        // Stricter packages cancel any pending weakening change for the same packages.
+        if (plan.applyNow.isNotEmpty()) {
+            prunePending(context) { pending ->
+                PendingChangeQueue.pruneAppSelection(pending, profile, allowMode, plan.applyNow)
+            }
+        }
         return when (decision(context, plan.direction)) {
             ProtectionChangePolicy.Decision.APPLY_NOW -> {
                 applySelection(context, profile, allowMode, plan.applyNow, remove = allowMode)
@@ -154,6 +160,11 @@ object ProtectionChangeGate {
         return when (decision(context, direction)) {
             ProtectionChangePolicy.Decision.APPLY_NOW -> {
                 applyInAppSelection(context, profile, packageName, baseKey, surfaceKey, allowMode, requestedSelected)
+                if (direction == ProtectionChangePolicy.Direction.STRICTER) {
+                    prunePending(context) { pending ->
+                        PendingChangeQueue.pruneInAppSelections(pending, profile, setOf(baseKey))
+                    }
+                }
                 ProtectionChangePolicy.Result.APPLIED
             }
 
@@ -187,6 +198,11 @@ object ProtectionChangeGate {
         return when (decision(context, direction)) {
             ProtectionChangePolicy.Decision.APPLY_NOW -> {
                 applyWebsiteRemoval(context, profile, rule)
+                if (direction == ProtectionChangePolicy.Direction.STRICTER) {
+                    prunePending(context) { pending ->
+                        PendingChangeQueue.pruneWebsiteEnabled(pending, profile, setOf(rule))
+                    }
+                }
                 ProtectionChangePolicy.Result.APPLIED
             }
 
@@ -217,6 +233,11 @@ object ProtectionChangeGate {
         return when (decision(context, direction)) {
             ProtectionChangePolicy.Decision.APPLY_NOW -> {
                 DomainBlockStore.setDomainEnabledForProfile(context, profile, rule, requestedEnabled)
+                if (direction == ProtectionChangePolicy.Direction.STRICTER) {
+                    prunePending(context) { pending ->
+                        PendingChangeQueue.pruneWebsiteEnabled(pending, profile, setOf(rule))
+                    }
+                }
                 ProtectionChangePolicy.Result.APPLIED
             }
 
@@ -321,6 +342,11 @@ object ProtectionChangeGate {
         return when (decision(context, direction)) {
             ProtectionChangePolicy.Decision.APPLY_NOW -> {
                 applyAutoBlockNewApps(context, profile, enabled)
+                if (enabled) {
+                    prunePending(context) { pending ->
+                        PendingChangeQueue.pruneAutoBlock(pending, profile)
+                    }
+                }
                 ProtectionChangePolicy.Result.APPLIED
             }
 
@@ -497,6 +523,16 @@ object ProtectionChangeGate {
         scheduleNext(context, updated)
         recordEvent(context, "Protection change queued", "type=$type profile=${data.optString("profile")}")
         logRateLimited(context, "queued type=$type")
+    }
+
+    /** Applies a pruning transform and persists/reschedules only when something changed. */
+    private fun prunePending(context: Context, transform: (List<PendingChange>) -> List<PendingChange>) {
+        val current = pendingChanges(context)
+        val pruned = transform(current)
+        if (PendingChangeCodec.encode(pruned) == PendingChangeCodec.encode(current)) return
+        savePending(context, pruned)
+        scheduleNext(context, pruned)
+        recordEvent(context, "Pending change cancelled by stricter edit", "count=${current.size - pruned.size}")
     }
 
     private fun savePending(context: Context, changes: List<PendingChange>) {

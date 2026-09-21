@@ -41,7 +41,7 @@ class PendingChangeQueueTest {
         data = JSONObject()
             .put("profile", profile)
             .put("allowMode", allowMode)
-            .put("removePackages", remove),
+            .put("removePackages", org.json.JSONArray(remove)),
     )
 
     // ---------------------------------------------------------------------------------------------
@@ -140,8 +140,14 @@ class PendingChangeQueueTest {
 
     @Test
     fun `dedupe keys are type specific`() {
-        assertEquals("app:Default:false", PendingChangeQueue.dedupeKey(appSelectionChange("a")))
-        assertEquals("app:Default:true", PendingChangeQueue.dedupeKey(appSelectionChange("a", allowMode = true)))
+        assertEquals(
+            "app:Default:false:com.example.app",
+            PendingChangeQueue.dedupeKey(appSelectionChange("a")),
+        )
+        assertEquals(
+            "app:Default:true:com.example.app",
+            PendingChangeQueue.dedupeKey(appSelectionChange("a", allowMode = true)),
+        )
         assertEquals(
             "inapp:Default:shorts",
             PendingChangeQueue.dedupeKey(
@@ -191,7 +197,7 @@ class PendingChangeQueueTest {
             ),
         )
         assertEquals(
-            "clear-app-data:Default",
+            "clear-app-data:Default:com.example.app",
             PendingChangeQueue.dedupeKey(
                 PendingChange(
                     "g",
@@ -214,6 +220,112 @@ class PendingChangeQueueTest {
                 ),
             ),
         )
+    }
+
+    @Test
+    fun `app selection entries for different packages coexist`() {
+        val first = appSelectionChange("first", remove = listOf("com.example.one"), dueAt = 1_000L)
+        val second = appSelectionChange("second", remove = listOf("com.example.two"), dueAt = 2_000L)
+
+        assertFalse(PendingChangeQueue.dedupeKey(first) == PendingChangeQueue.dedupeKey(second))
+
+        val result = PendingChangeQueue.upsert(listOf(first), second)
+
+        assertEquals(2, result.size)
+        assertEquals(listOf("first", "second"), result.map { it.id })
+    }
+
+    @Test
+    fun `app selection entries for the same packages still dedupe`() {
+        val first = appSelectionChange("first", remove = listOf("com.example.one"), dueAt = 1_000L)
+        val second = appSelectionChange("second", remove = listOf("com.example.one"), dueAt = 5_000L)
+
+        assertEquals(PendingChangeQueue.dedupeKey(first), PendingChangeQueue.dedupeKey(second))
+
+        val result = PendingChangeQueue.upsert(listOf(first), second)
+
+        assertEquals(1, result.size)
+        assertEquals("second", result.first().id)
+    }
+
+    @Test
+    fun `clear app data entries for different packages coexist`() {
+        fun clear(id: String, packages: List<String>) = PendingChange(
+            id,
+            PendingChangeType.CLEAR_APP_DATA,
+            1L,
+            1L,
+            JSONObject().put("profile", "Default").put("packages", org.json.JSONArray(packages)),
+        )
+        assertFalse(
+            PendingChangeQueue.dedupeKey(clear("a", listOf("com.example.one"))) ==
+                PendingChangeQueue.dedupeKey(clear("b", listOf("com.example.two"))),
+        )
+    }
+
+    @Test
+    fun `prune app selection removes a package from the pending entry`() {
+        val entry = appSelectionChange("a", remove = listOf("com.example.one", "com.example.two"))
+
+        val result = PendingChangeQueue.pruneAppSelection(
+            existing = listOf(entry),
+            profile = "Default",
+            allowMode = false,
+            packages = setOf("com.example.one"),
+        )
+
+        assertEquals(1, result.size)
+        val remaining = result.first().data.optJSONArray("removePackages")
+        assertEquals(listOf("com.example.two"), (0 until remaining!!.length()).map { remaining.optString(it) })
+    }
+
+    @Test
+    fun `prune app selection drops the entry when all packages are stricter again`() {
+        val entry = appSelectionChange("a", remove = listOf("com.example.one"))
+
+        val result = PendingChangeQueue.pruneAppSelection(
+            existing = listOf(entry),
+            profile = "Default",
+            allowMode = false,
+            packages = setOf("com.example.one"),
+        )
+
+        assertTrue(result.isEmpty())
+    }
+
+    @Test
+    fun `prune app selection leaves other profiles and modes alone`() {
+        val entry = appSelectionChange("a", profile = "Second", remove = listOf("com.example.one"))
+
+        val result = PendingChangeQueue.pruneAppSelection(
+            existing = listOf(entry),
+            profile = "Default",
+            allowMode = false,
+            packages = setOf("com.example.one"),
+        )
+
+        assertEquals(1, result.size)
+    }
+
+    @Test
+    fun `prune in-app and website enabled and auto-block entries`() {
+        val inApp = PendingChange(
+            "i", PendingChangeType.IN_APP_SELECTION, 1L, 1L,
+            JSONObject().put("profile", "Default").put("baseKey", "shorts"),
+        )
+        val website = PendingChange(
+            "w", PendingChangeType.WEBSITE_ENABLED, 1L, 1L,
+            JSONObject().put("profile", "Default").put("rule", "example.com"),
+        )
+        val autoBlock = PendingChange(
+            "b", PendingChangeType.AUTO_BLOCK_NEW_APPS, 1L, 1L,
+            JSONObject().put("profile", "Default").put("enabled", false),
+        )
+        val all = listOf(inApp, website, autoBlock)
+
+        assertTrue(PendingChangeQueue.pruneInAppSelections(all, "Default", setOf("shorts")).none { it.id == "i" })
+        assertTrue(PendingChangeQueue.pruneWebsiteEnabled(all, "Default", setOf("example.com")).none { it.id == "w" })
+        assertTrue(PendingChangeQueue.pruneAutoBlock(all, "Default").none { it.id == "b" })
     }
 
     @Test
