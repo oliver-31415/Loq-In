@@ -138,7 +138,11 @@ class SettingsActivity : AppCompatActivity() {
         } else {
             resources.getQuantityString(R.plurals.protection_pending_changes_count, pending, pending)
         }
-        summary.text = getString(R.string.protection_changes_summary) + "\n" + delayLabel + " · " + pendingText
+        summary.text = if (delayMinutes <= 0 && pending <= 0) {
+            getString(R.string.protection_changes_summary)
+        } else {
+            delayLabel + " · " + pendingText
+        }
     }
 
     override fun onSupportNavigateUp(): Boolean {

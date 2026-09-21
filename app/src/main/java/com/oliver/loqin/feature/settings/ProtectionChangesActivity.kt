@@ -35,6 +35,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.google.android.material.divider.MaterialDivider
 import com.oliver.loqin.R
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.theme.CustomAccentApplier
@@ -61,6 +62,7 @@ class ProtectionChangesActivity : AppCompatActivity() {
     private lateinit var tvChangeDelaySummary: TextView
     private lateinit var tvPendingEmpty: TextView
     private lateinit var tvPendingSummary: TextView
+    private lateinit var pendingFooter: View
     private lateinit var pendingContainer: LinearLayout
     private lateinit var pendingActionsRow: View
     private lateinit var btnApplyAllPending: MaterialButton
@@ -83,6 +85,7 @@ class ProtectionChangesActivity : AppCompatActivity() {
         tvChangeDelaySummary = findViewById(R.id.tvChangeDelaySummary)
         tvPendingEmpty = findViewById(R.id.tvPendingEmpty)
         tvPendingSummary = findViewById(R.id.tvPendingSummary)
+        pendingFooter = findViewById(R.id.pendingFooter)
         pendingContainer = findViewById(R.id.pendingChangesContainer)
         pendingActionsRow = findViewById(R.id.pendingActionsRow)
         btnApplyAllPending = findViewById(R.id.btnApplyAllPending)
@@ -102,31 +105,31 @@ class ProtectionChangesActivity : AppCompatActivity() {
         val delay = ProtectionChangeGate.getDelayMinutes(this)
         val delayLabel = delayLabel(delay)
         tvChangeDelayValue.text = delayLabel
-        val summary = if (delay <= 0) {
+        tvChangeDelaySummary.text = if (delay <= 0) {
             getString(R.string.protection_change_delay_summary_off)
         } else {
             getString(R.string.protection_change_delay_summary_on, delayLabel)
-        }
-        tvChangeDelaySummary.text = if (ProtectionChangeGate.decision(
-                this,
-                ProtectionChangePolicy.Direction.WEAKER,
-            ) == ProtectionChangePolicy.Decision.DENY
-        ) {
-            summary + "\n" + getString(R.string.protection_change_delay_locked)
-        } else {
-            summary
         }
 
         val pending = ProtectionChangeGate.pendingChanges(this)
         val hasPending = pending.isNotEmpty()
         tvPendingEmpty.visibility = if (hasPending) View.GONE else View.VISIBLE
-        tvPendingSummary.visibility = if (hasPending) View.VISIBLE else View.GONE
+        pendingFooter.visibility = if (hasPending) View.VISIBLE else View.GONE
         pendingActionsRow.visibility = if (hasPending) View.VISIBLE else View.GONE
         btnApplyAllPending.visibility =
             if (hasPending && ProtectionChangeGate.canApplyPendingNow(this)) View.VISIBLE else View.GONE
 
         pendingContainer.removeAllViews()
-        pending.forEach { change ->
+        pending.forEachIndexed { index, change ->
+            if (index > 0) {
+                pendingContainer.addView(
+                    MaterialDivider(this).apply {
+                        dividerInsetStart = dp(54)
+                        dividerInsetEnd = 0
+                        setDividerColor(dividerColor())
+                    }
+                )
+            }
             pendingContainer.addView(buildPendingRow(change))
         }
     }
@@ -135,23 +138,32 @@ class ProtectionChangesActivity : AppCompatActivity() {
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = android.view.Gravity.CENTER_VERTICAL
-            minimumHeight = dp(52)
+            minimumHeight = dp(56)
             isClickable = true
             isFocusable = true
+            setPadding(dp(16), dp(12), dp(16), dp(12))
             setBackgroundResource(selectableItemBackground())
             setOnClickListener { showPendingChangeActionsDialog(change) }
         }
+        row.addView(ImageView(this).apply {
+            setImageResource(R.drawable.schedule_24)
+            imageTintList = android.content.res.ColorStateList.valueOf(accentColor())
+            layoutParams = LinearLayout.LayoutParams(dp(20), dp(20))
+        })
         val texts = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+            val params = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+            params.marginStart = dp(14)
+            layoutParams = params
         }
         texts.addView(TextView(this).apply {
             text = pendingChangeLabel(change)
-            textSize = 14f
+            textSize = 15f
+            setTypeface(typeface, android.graphics.Typeface.BOLD)
         })
         texts.addView(TextView(this).apply {
             text = dueLabel(change.executeAtMs)
-            textSize = 12f
+            textSize = 13f
             setTextColor(secondaryTextColor())
             val params = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -427,6 +439,18 @@ class ProtectionChangesActivity : AppCompatActivity() {
     }
 
     private fun secondaryTextColor(): Int {
+        val typedValue = android.util.TypedValue()
+        theme.resolveAttribute(android.R.attr.textColorSecondary, typedValue, true)
+        return if (typedValue.resourceId != 0) {
+            androidx.core.content.ContextCompat.getColor(this, typedValue.resourceId)
+        } else {
+            typedValue.data
+        }
+    }
+
+    private fun accentColor(): Int = com.oliver.loqin.theme.AccentColor.getAccentColorInt(this)
+
+    private fun dividerColor(): Int {
         val typedValue = android.util.TypedValue()
         theme.resolveAttribute(android.R.attr.textColorSecondary, typedValue, true)
         return if (typedValue.resourceId != 0) {
