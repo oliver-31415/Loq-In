@@ -143,6 +143,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
+import com.oliver.loqin.data.prefs.FeatureFlagStore
 
 class SchedulesActivity : AppCompatActivity() {
 
@@ -3579,7 +3580,7 @@ class SchedulesActivity : AppCompatActivity() {
                     oldList.map { if (it.id == existing.id) newScheduleWithPriority else it }
                 }
 
-                fun persistSchedule() {
+                fun persistScheduleNow() {
                     ScheduleStore.saveAll(this@SchedulesActivity, newList)
                     LocationTriggerMonitor.syncAsync(this@SchedulesActivity)
                     reapplySchedulesNow()
@@ -3587,6 +3588,30 @@ class SchedulesActivity : AppCompatActivity() {
                     SchedulePlanner.notifyNextChanged(this@SchedulesActivity)
                     refreshList()
                     dialog.dismiss()
+                }
+
+                fun persistSchedule() {
+                    if (FeatureFlagStore.isEnabled(
+                            this@SchedulesActivity,
+                            FeatureFlagStore.Flag.AUTOMATION_SAVE_PREVIEW,
+                        )
+                    ) {
+                        AlertDialog.Builder(this@SchedulesActivity)
+                            .setTitle(R.string.schedules_preview_title)
+                            .setMessage(
+                                SchedulePreviewFormatter.describe(
+                                    this@SchedulesActivity,
+                                    newScheduleWithPriority,
+                                )
+                            )
+                            .setNegativeButton(R.string.cancel, null)
+                            .setPositiveButton(R.string.schedules_preview_confirm) { _, _ ->
+                                persistScheduleNow()
+                            }
+                            .showAccented()
+                        return
+                    }
+                    persistScheduleNow()
                 }
 
                 val overlap = ScheduleInsights.detectOverlaps(newList).firstOrNull {

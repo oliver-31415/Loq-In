@@ -314,4 +314,19 @@
     <string name="schedules_test_result_emergency">blocked while Emergency Bypass is active</string>
     <string name="schedules_test_result_temp_override">would update the schedule base state; the temporary action stays active</string>
 
+    <string name="schedules_preview_title">Save this schedule?</string>
+    <string name="schedules_preview_confirm">Save schedule</string>
+    <string name="schedules_preview_profile">Profile</string>
+    <string name="schedules_preview_action">Action</string>
+    <string name="schedules_preview_when">When</string>
+    <string name="schedules_preview_time">Time</string>
+    <string name="schedules_preview_note">Note</string>
+    <string name="schedules_preview_wifi_fmt">Wi-Fi · %1$s</string>
+    <string name="schedules_preview_bt_fmt">Bluetooth · %1$s</string>
+    <string name="schedules_preview_location_fmt">Location · %1$s</string>
+    <string name="schedules_preview_location_enter">on arrival</string>
+    <string name="schedules_preview_location_exit">on leaving</string>
+    <string name="schedules_preview_location_enter_exit">on arrival and leaving</string>
+    <string name="schedules_preview_once">Once</string>
+    <string name="schedules_preview_weekly">Weekly</string>
 </resources>
