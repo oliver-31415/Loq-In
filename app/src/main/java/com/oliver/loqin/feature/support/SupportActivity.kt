@@ -107,6 +107,9 @@ import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
 import com.oliver.loqin.util.ProtectionChangeGate
+import com.oliver.loqin.util.SettingsSchemaMigration
+import com.oliver.loqin.data.prefs.FeatureFlagStore
+import com.oliver.loqin.data.prefs.DiagnosticsTimelineStore
 
 class SupportActivity : AppCompatActivity() {
 
@@ -427,6 +430,13 @@ class SupportActivity : AppCompatActivity() {
             "Official release signing configured at build",
             BuildConfig.LOQIN_RELEASE_SIGNING_CONFIGURED
         )
+        line(
+            "Settings schema",
+            runCatching { SettingsSchemaMigration.currentStoredVersion(this@SupportActivity) }.getOrDefault(-1)
+        )
+        FeatureFlagStore.snapshot(this@SupportActivity).forEach { (flag, enabled) ->
+            line("Feature flag: ${flag.key}", enabled)
+        }
 
         section("Release diagnostics")
         val releaseDiagnostics = ReleaseDiagnostics.snapshot(this@SupportActivity)
@@ -465,6 +475,25 @@ class SupportActivity : AppCompatActivity() {
         )
 
         section("Loq In state")
+        val protectionTempDisableMs = runCatching { SwitchModeStore.getTemporaryRemainingMillis(this@SupportActivity) }.getOrDefault(0L)
+        val protectionTempEnableMs = runCatching { SwitchModeStore.getTemporaryEnableRemainingMillis(this@SupportActivity) }.getOrDefault(0L)
+        val protectionEmergencyActive = runCatching { EmergencyBypassStore.isActive(this@SupportActivity) }.getOrDefault(false)
+        val protectionEmergencyPaused = runCatching { EmergencyBypassStore.isPaused(this@SupportActivity) }.getOrDefault(false)
+        val protectionBaseEnabled = runCatching { SwitchModeStore.isBaseEnabled(this@SupportActivity) }.getOrDefault(false)
+        val protectionEffectiveEnabled = runCatching { SwitchModeStore.isEnabled(this@SupportActivity) }.getOrDefault(false)
+        line(
+            "Protection state",
+            when {
+                protectionEmergencyActive -> "emergency unlock (${runCatching { EmergencyBypassStore.minutesRemaining(this@SupportActivity) }.getOrDefault(0)}min left)"
+                protectionEmergencyPaused -> "emergency unlock paused"
+                protectionTempDisableMs > 0L -> "temporarily disabled (${protectionTempDisableMs / 60_000L}min left)"
+                protectionTempEnableMs > 0L -> "temporarily enabled (${protectionTempEnableMs / 60_000L}min left)"
+                protectionEffectiveEnabled -> "enabled"
+                else -> "disabled"
+            }
+        )
+        line("Base enabled", protectionBaseEnabled)
+        line("Blocking expected", protectionEffectiveEnabled && !protectionEmergencyActive)
         val currentProfile = runCatching { ProfileStore.getCurrent(this@SupportActivity) }.getOrNull().orEmpty()
         val blockedCurrentProfile = if (currentProfile.isNotBlank()) {
             runCatching { ProfileStore.getSelectedForProfileMode(this@SupportActivity, currentProfile).size }.getOrDefault(0)
@@ -1461,6 +1490,34 @@ class SupportActivity : AppCompatActivity() {
                 "Profile names sample",
                 if (sampleProfiles.isBlank()) "-" else sampleProfiles
             )
+        }
+
+        section("Diagnostics timeline")
+        val timelineEntries = runCatching {
+            DiagnosticsTimelineStore.latest(this@SupportActivity, 20)
+        }.getOrDefault(emptyList())
+        if (timelineEntries.isEmpty()) {
+            line("Events", "-")
+        } else {
+            val timeFormat = java.text.DateFormat.getDateTimeInstance(
+                java.text.DateFormat.SHORT,
+                java.text.DateFormat.MEDIUM,
+            )
+            timelineEntries.forEach { entry ->
+                line(
+                    timeFormat.format(java.util.Date(entry.timestampMillis)),
+                    buildString {
+                        append(entry.category)
+                        append(": ")
+                        append(entry.event)
+                        if (entry.details.isNotBlank()) {
+                            append(" (")
+                            append(entry.details)
+                            append(")")
+                        }
+                    },
+                )
+            }
         }
 
         section("Recent context")
