@@ -78,6 +78,10 @@ object SchedulePreviewFormatter {
         return lines
     }
 
+    /** Label/value pairs for the app's row-style info dialog. */
+    fun infoRows(context: Context, schedule: ScheduleStore.Schedule): List<Pair<String, String>> =
+        lines(schedule).map { context.getString(it.labelRes) to value(context, it) }
+
     fun describe(context: Context, schedule: ScheduleStore.Schedule): String =
         lines(schedule).joinToString("\n") { line ->
             "${context.getString(line.labelRes)}: ${value(context, line)}"

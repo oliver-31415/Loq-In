@@ -266,6 +266,7 @@ class InAppRulesActivity : AppCompatActivity() {
 
         MaterialAlertDialogBuilder(this)
             .setTitle(getString(R.string.in_app_block_entire_title, label))
+            .setIcon(R.drawable.apps_24)
             .setMessage(getString(R.string.in_app_block_entire_message, label))
             .setNegativeButton(R.string.in_app_block_entire_later, null)
             .setPositiveButton(R.string.in_app_block_entire_confirm) { _, _ ->

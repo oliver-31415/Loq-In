@@ -3596,19 +3596,20 @@ class SchedulesActivity : AppCompatActivity() {
                             FeatureFlagStore.Flag.AUTOMATION_SAVE_PREVIEW,
                         )
                     ) {
-                        AlertDialog.Builder(this@SchedulesActivity)
-                            .setTitle(R.string.schedules_preview_title)
-                            .setMessage(
-                                SchedulePreviewFormatter.describe(
-                                    this@SchedulesActivity,
-                                    newScheduleWithPriority,
+                        showLoqInInfoDialog(
+                            title = getString(R.string.schedules_preview_title),
+                            rows = SchedulePreviewFormatter.infoRows(
+                                this@SchedulesActivity,
+                                newScheduleWithPriority,
+                            ).map { (label, value) ->
+                                com.oliver.loqin.ui.dialog.LoqInInfoRow(
+                                    label = label,
+                                    value = value,
                                 )
-                            )
-                            .setNegativeButton(R.string.cancel, null)
-                            .setPositiveButton(R.string.schedules_preview_confirm) { _, _ ->
-                                persistScheduleNow()
-                            }
-                            .showAccented()
+                            },
+                            positiveText = getString(R.string.schedules_preview_confirm),
+                            onPositive = { persistScheduleNow() },
+                        )
                         return
                     }
                     persistScheduleNow()
