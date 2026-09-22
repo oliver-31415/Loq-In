@@ -367,24 +367,27 @@ class AppListAdapter(
             // Whole-app blocking is independent of in-app rules: an app with active
             // in-app rules is NOT shown ticked unless it is explicitly blocked.
             currentSelected = managed.contains(item.packageName) || unavailableConfigured
+            // A queued selection change shows its target state (faded + hourglass) so the list
+            // does not look like the toggle was lost after re-entering the screen.
+            val intendedSelected = if (currentPending) !currentSelected else currentSelected
             val canToggleSelection = canChangeSelectionProvider(
-                currentSelected,
-                !currentSelected,
+                intendedSelected,
+                !intendedSelected,
             )
             // Tile stays tappable while locked (dimmed): denied taps warn via pill.
             val dimmed = !item.isAvailable || (readOnly && !canToggleSelection)
             ivAppIcon.alpha = if (dimmed) 0.45f else 1f
             tvLabel.alpha = if (dimmed) 0.55f else 1f
-            updateTileState(currentSelected)
+            updateTileState(intendedSelected)
             cardRoot.contentDescription = when {
-                currentSelected && hasLimit -> ctx.getString(R.string.app_picker_tile_limited_desc, item.label)
-                currentSelected -> ctx.getString(R.string.app_picker_tile_selected_desc, item.label)
+                intendedSelected && hasLimit -> ctx.getString(R.string.app_picker_tile_limited_desc, item.label)
+                intendedSelected -> ctx.getString(R.string.app_picker_tile_selected_desc, item.label)
                 else -> ctx.getString(R.string.app_picker_tile_unselected_desc, item.label)
             }
 
             fun onTileToggle() {
-                val checked = !currentSelected
-                val before = managed.contains(item.packageName) || hasUnavailableConfiguration(ctx, profile, item)
+                val checked = !intendedSelected
+                val before = intendedSelected
                 if (!canChangeSelectionProvider(before, checked)) {
                     if (isReadOnlyProvider.invoke()) {
                         itemView.showWarnPill(R.string.toast_disable_loqin_to_edit_blocked_apps)
