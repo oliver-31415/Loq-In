@@ -116,8 +116,8 @@ Remaining: open Settings → Info → Support once to eyeball the new sections.
 | **W6.2 E6** | Defer `SupportMapFragment` creation in `feature/schedule/LocationMapPickerActivity.kt` (post to the container, reuse existing fragment, `runOnCommit`, unavailable message only on failure) | Self-contained; low risk | 0.5 d |
 | **W6.3 E7** | Port `SchedulePreviewFormatter.kt` + save-preview dialog | **Depends on W5.1** (`AUTOMATION_SAVE_PREVIEW` flag); our `ScheduleStore.Action` has 2 extra values — extend the `when` | 1 d |
 | **W6.4 E8** | Pinned in-app rule → offer "Block entire app" | Route the whole-app block through `ProtectionChangeGate.requestAppSelection` so it queues correctly | 0.5–1 d |
-| **W6.5 E12** | Bottom-nav runtime menu + `keep_bottom_navigation.xml` | Only if it matches our redesigned home; low priority — recommend skip if it conflicts | 0.5 d or skip |
-| **W6.6 E9** | Onboarding reorder | Recommended **skip** (our onboarding is redesigned; upstream's adapter reorder conflicts). Needs your confirmation (decision §8 #4) | 0 |
+| **W6.5 E12** | Bottom-nav runtime menu + `keep_bottom_navigation.xml` | **SKIPPED** — our bottom nav/menu and icons are part of the redesigned home; upstream's keep rule references its own drawables. Release builds shrink resources, but our menu is referenced from XML/code and is traced. If a release build ever strips a bottom-nav resource, add our own `tools:keep` rule instead | 0 |
+| **W6.6 E9** | Onboarding reorder | **SKIPPED** — our onboarding is redesigned; upstream's adapter reorder conflicts | 0 |
 
 Order: W6.2 → W6.3 (after W5.1) → W6.4 → W6.5/skip.
 
