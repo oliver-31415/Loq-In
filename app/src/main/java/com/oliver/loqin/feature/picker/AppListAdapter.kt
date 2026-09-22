@@ -281,8 +281,15 @@ class AppListAdapter(
             if (selected) {
                 // Selected + limits is a restricted app, not a fully blocked one.
                 val limited = currentHasLimit
-                ivChecked.setImageResource(if (limited) R.drawable.timer_24 else R.drawable.check_circle_24)
-                ivChecked.alpha = if (currentPending) 0.45f else 1f
+                // Distinct badges: hourglass = a change is queued, clock = limited, check = blocked.
+                ivChecked.setImageResource(
+                    when {
+                        currentPending -> R.drawable.hourglass_24
+                        limited -> R.drawable.timer_24
+                        else -> R.drawable.check_circle_24
+                    }
+                )
+                ivChecked.alpha = if (currentPending) 0.85f else 1f
                 ivChecked.contentDescription = when {
                     currentPending -> ctx.getString(R.string.app_picker_pending_badge)
                     limited -> ctx.getString(R.string.app_picker_limited_badge)
