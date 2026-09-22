@@ -1103,9 +1103,19 @@ class AppPickerActivity : AppCompatActivity() {
     private fun autoSaveSelection() {
         val profile = currentProfile
         if (profile.isNullOrBlank()) return
-        if (editsInactiveProfile()) return
         val allowMode = currentRuleMode == ProfileRuleModeStore.MODE_ALLOW_SELECTED
         val managed = AppBlockSafety.sanitizeManagedPackages(this, adapter.getManagedPackages())
+        // Edits to an inactive profile never weaken the profile that is currently enforcing, so
+        // they bypass the gate and persist directly (same rule the old Save path used).
+        if (editsInactiveProfile()) {
+            if (allowMode) {
+                ProfileStore.setAllowedForProfile(this, profile, managed)
+            } else {
+                ProfileStore.setBlockedForProfile(this, profile, managed)
+            }
+            originalManagedPackages = managed
+            return
+        }
         val store = if (allowMode) {
             ProfileStore.getAllowedForProfile(this, profile)
         } else {
