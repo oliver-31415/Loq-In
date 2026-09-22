@@ -340,9 +340,7 @@ class AppListAdapter(
             val hasLimit = hasDailyLimit || hasSessionLimit || hasAttemptLimit
             currentHasLimit = hasLimit
 
-            // The badge and the "N min/day" subtitle already communicate a limit; the extra dot
-            // looked like a queued/delayed marker, so it stays hidden.
-            viewLimitDot.visibility = View.GONE
+            viewLimitDot.visibility = if (hasLimit) View.VISIBLE else View.GONE
             if (hasLimit) {
                 tvSub.visibility = View.VISIBLE
                 // Compact tile labels: long "Daily limit: …" style labels overflow the square tile.

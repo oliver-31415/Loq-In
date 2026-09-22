@@ -308,7 +308,7 @@ With protection active, do each of these and check that you get the "turn Loq In
 - A **queued** change shows an **hourglass** badge on the tile (plus the lighter shade).
 - Blocked **and** limited apps show the plain **check**; a limit is stated by the subtitle ("60 min/day").
   There is no stopwatch badge — it read as a delay timer.
-- The small extra dot is hidden; the badge and subtitle carry the state.
+- The small dot marks apps that have a limit (shown together with the "N min/day" subtitle).
 
 ### 3.1 Queue page
 1. Settings → Controls → **Protection changes**.
