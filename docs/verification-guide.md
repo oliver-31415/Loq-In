@@ -65,6 +65,18 @@ Key consequences (this is what the gate now models):
 
 The limit editor now tells you which case you are in at the top, e.g. **"Fully blocked. Adding a limit allows it until the limit is reached."** or **"Limited. Removing all limits blocks the app completely."**
 
+### 0.65 Auto-save (the picker has no Save button)
+
+The app list saves as you go: every tile toggle is sent through the protection gate immediately
+(debounced ~250 ms so Select all / Clear all count as one change). Stricter changes apply at once,
+weakening ones queue and then re-baseline the list to the store, and a refusal shows the locked
+message and reverts the tile.
+
+- Toggle a tile → leave the screen → come back: the change is still there.
+- A queued change shows the tile in the store's state plus the pending shade; the queue entry
+  appears in Protection changes.
+- In allow-selected mode, Clear all asks for confirmation before it would block every app.
+
 ### 0.7 Unselecting an app that has limits
 
 An app with limits stays limited even after you remove it from the block list, so the picker asks what to do:
@@ -72,7 +84,7 @@ An app with limits stays limited even after you remove it from the block list, s
 1. Picker → tap an app that is **checked** and has a **timer badge** (a limit).
 2. **You should see:** **"Remove limits for <app>?"** with the message, a **Remember my choice** checkbox, and **Keep limits** / **Remove limits**.
 3. **Keep limits** → the app is unselected but its limits still apply (it stays limited).
-4. **Remove limits** → the app is unselected and its limits are cleared: with protection active this goes through the gate, so it **queues** (or is refused when the delay is Off).
+4. **Remove limits** → the app's limits are cleared and the tile updates immediately (the limit badge disappears). The unselect itself is a weakening change, so it queues (or is refused when the delay is Off).
 5. Tick **Remember my choice** before choosing, and the question stops appearing; your answer becomes the default.
 6. Change the default later in **Settings → Controls → Feature access → "Unselecting an app with limits"** (Ask every time / Remove limits / Keep limits).
 7. **Allow-selected mode is inverted:** unselecting removes the app's exemption. Removing its limits then makes it hard-blocked (a strengthening, applied immediately), while keeping them leaves it limited.

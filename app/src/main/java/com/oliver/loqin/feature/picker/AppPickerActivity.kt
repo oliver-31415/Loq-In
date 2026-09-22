@@ -213,9 +213,10 @@ class AppPickerActivity : AppCompatActivity() {
             }
         }
         findViewById<View>(R.id.btnSave)?.apply {
-            isEnabled = true
-            isClickable = true
-            alpha = if (!readOnly || canTighten) 1f else 0.45f
+            // Selection is saved automatically now; the button is kept only as a legacy anchor.
+            visibility = View.GONE
+            isEnabled = false
+            isClickable = false
         }
 
         if (::adapter.isInitialized && adapter.itemCount > 0) {
@@ -310,7 +311,10 @@ class AppPickerActivity : AppCompatActivity() {
             onProtectedSelectionRequested = { app, onAllowed ->
                 ensureAppCanBeManaged(app, onAllowed)
             },
-            onSelectionChanged = { updateClearButtonLabel(btnClearAll) },
+            onSelectionChanged = { count ->
+                updateClearButtonLabel(btnClearAll)
+                scheduleAutoSave(count)
+            },
             isReadOnlyProvider = { EditingLockGuard.isLocked(this) },
             canChangeSelectionProvider = { current, requested -> canChangeSelection(current, requested) },
             onUncheckWithLimits = { packageName, label, proceed ->
@@ -388,7 +392,10 @@ class AppPickerActivity : AppCompatActivity() {
                     onProtectedSelectionRequested = { app, onAllowed ->
                         ensureAppCanBeManaged(app, onAllowed)
                     },
-                    onSelectionChanged = { updateClearButtonLabel(btnClearAll) },
+                    onSelectionChanged = { count ->
+                updateClearButtonLabel(btnClearAll)
+                scheduleAutoSave(count)
+            },
                     isReadOnlyProvider = { EditingLockGuard.isLocked(this) },
                     canChangeSelectionProvider = { current, requested -> canChangeSelection(current, requested) },
             onUncheckWithLimits = { packageName, label, proceed ->
@@ -934,6 +941,20 @@ class AppPickerActivity : AppCompatActivity() {
         }
 
         btnClearAll.setOnClickListener {
+            if (currentRuleMode == ProfileRuleModeStore.MODE_ALLOW_SELECTED &&
+                adapter.itemCount > 0 &&
+                adapter.managedCount() == adapter.itemCount
+            ) {
+                AlertDialog.Builder(this)
+                    .setTitle(R.string.allow_mode_empty_save_title)
+                    .setMessage(R.string.allow_mode_empty_save_message)
+                    .setNegativeButton(R.string.cancel, null)
+                    .setPositiveButton(R.string.allow_mode_empty_save_confirm) { _, _ ->
+                        adapter.clearAllVisible(this)
+                    }
+                    .showAccented()
+                return@setOnClickListener
+            }
             if (EditingLockGuard.isLocked(this) && !editsInactiveProfile() &&
                 ProtectionChangeGate.decision(this, ProtectionChangePolicy.Direction.WEAKER) ==
                 ProtectionChangePolicy.Decision.DENY
@@ -1057,6 +1078,81 @@ class AppPickerActivity : AppCompatActivity() {
                 R.string.rules_tighten_only_active_message,
             )
         }
+        // The limit badge is read from the stores, so rebind the tile to drop it immediately.
+        if (::adapter.isInitialized) adapter.notifyPkgChanged(packageName)
+    }
+
+    // --- Auto-save ------------------------------------------------------------------------------
+
+    private val autoSaveHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val autoSaveRunnable = Runnable { autoSaveSelection() }
+    private var autoSaveSuspended = false
+
+    /** Coalesces rapid toggles (select all / clear all) into one persist. */
+    private fun scheduleAutoSave(@Suppress("UNUSED_PARAMETER") count: Int) {
+        if (autoSaveSuspended) return
+        autoSaveHandler.removeCallbacks(autoSaveRunnable)
+        autoSaveHandler.postDelayed(autoSaveRunnable, 250L)
+    }
+
+    /**
+     * The picker saves as you go: every selection change is sent through the protection gate.
+     * Stricter changes apply immediately; weakening ones queue (or are refused with delay 0).
+     */
+    private fun autoSaveSelection() {
+        val profile = currentProfile
+        if (profile.isNullOrBlank()) return
+        if (editsInactiveProfile()) return
+        val allowMode = currentRuleMode == ProfileRuleModeStore.MODE_ALLOW_SELECTED
+        val managed = AppBlockSafety.sanitizeManagedPackages(this, adapter.getManagedPackages())
+        val store = if (allowMode) {
+            ProfileStore.getAllowedForProfile(this, profile)
+        } else {
+            ProfileStore.getBlockedForProfile(this, profile)
+        }
+        if (store == managed) {
+            originalManagedPackages = store
+            return
+        }
+        when (ProtectionChangeGate.requestAppSelection(
+            context = this,
+            profile = profile,
+            allowMode = allowMode,
+            original = store,
+            requested = managed,
+        )) {
+            ProtectionChangePolicy.Result.APPLIED -> {
+                originalManagedPackages = if (allowMode) {
+                    ProfileStore.getAllowedForProfile(this, profile)
+                } else {
+                    ProfileStore.getBlockedForProfile(this, profile)
+                }
+                BlockingRuntime.ensureRunning(this)
+            }
+
+            ProtectionChangePolicy.Result.QUEUED -> {
+                ProtectionFeedback.showQueued(this)
+                rebaselineToStore(profile, allowMode)
+            }
+
+            ProtectionChangePolicy.Result.DENIED -> {
+                EditingLockGuard.showLockedDialog(this, R.string.rules_tighten_only_active_message)
+                rebaselineToStore(profile, allowMode)
+            }
+        }
+    }
+
+    private fun rebaselineToStore(profile: String, allowMode: Boolean) {
+        val storeNow = if (allowMode) {
+            ProfileStore.getAllowedForProfile(this, profile)
+        } else {
+            ProfileStore.getBlockedForProfile(this, profile)
+        }
+        originalManagedPackages = storeNow
+        autoSaveSuspended = true
+        adapter.replaceManagedPackages(storeNow)
+        autoSaveSuspended = false
+        syncReadOnlyUi()
     }
 
     private fun setupSaveButton(btnSave: Button) {
