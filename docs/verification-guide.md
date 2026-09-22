@@ -1,303 +1,362 @@
-# Verification Guide — step by step
+# Verification Guide — do this, in order
 
-**Devices:** Pixel 10 Pro XL (main) · emulator-5554 (API 36) · Samsung A12 / Bigme A14 (only if available)
-**Build:** debug `com.oliver.loqin.loqindev` · versionName 2.2.8
-Every test below is written as: **preconditions → numbered taps → what you should see → how to reset.**
+This guide tells you exactly which buttons to press. Anything in **bold** is text you will see on screen.
+Do §0 first. Then run the tests top to bottom; each one tells you its preconditions.
+
+Devices: Pixel 10 Pro XL (main), emulator-5554. Build: `com.oliver.loqin.loqindev` (2.2.8).
 
 ---
 
-## 0. Before you start
+## 0. One-time setup
 
-### 0.1 Check protection is on
-1. Open Loq In. On the home screen the profile card says **"Active now · Xd Xh"**.
-2. If it says "Disabled", tap **Disable/Enable** on the profile card until it is active.
-3. The toolbar top-right has three icons: camera, sliders, account. The **gear is the middle icon** (Settings).
-4. With protection active, tapping the gear shows **"Open Settings?"** → tap **Open Settings**.
+### 0.1 Check protection is active
+1. Unlock the phone and open **Loq In**.
+2. On the home screen, scroll down until you see the big blue card with your profile name (e.g. **Default**).
+3. At the bottom of that card there is a pill that says either **Active now · Xd Xh** or **Disabled**.
+4. If it says **Disabled**, tap the **Enable** button on the card. Wait until it reads **Active now**.
+5. **Do not continue until it says Active now** — most tests only work while protection is active.
 
-### 0.2 Set the delay to 1 minute (do this first)
-1. Settings → **Controls** section → **Protection changes**.
-2. Tap the **Protection change delay** row.
-3. Three wheels appear: **days / hours / minutes** with a big total above (e.g. "Off").
-4. Set `0 days`, `0 hours`, `1 min`. The total must read **"1 minute"**.
-5. Tap **Save**. The row now shows **"1 minute"** and the summary "Weakening changes wait 1 minute…".
-6. Important: while protection is active the delay can only stay the same or grow. If it is already 15 minutes or more, fully disable Loq In first (home → profile card → Disable), set the delay, then re-enable.
+### 0.2 Open the Settings screen
+1. On the home screen, look at the top-right corner: three icons (camera, sliders, a person).
+2. Tap the **middle icon (sliders)**.
+3. A dialog appears: **Open Settings?** with the text "Loq In is active. Settings can still be viewed…".
+4. Tap **Open Settings** (bottom-right of the dialog).
 
-### 0.3 How to read the queue (source of truth)
-1. Settings → Controls → **Protection changes** → the **Pending changes** card.
-2. Each row shows what is waiting and when: **"Unblock Calendar"**, **"In 1 min."**, with a chevron.
-3. Bottom pill messages ("…is queued…", "Pending change discarded.") are only feedback and disappear; the list is the truth.
+### 0.3 Set the delay to 1 minute
+1. On Settings, find the **Controls** section (first one at the top). It has two rows: **Feature access** and **Protection changes**.
+2. Tap **Protection changes**.
+3. The **Protection changes** screen opens. You see:
+   - **Change delay** (header) → a card with **Protection change delay** and a value on the right (e.g. **Off** or **15 minutes**).
+   - **Pending changes** (header) → a card that says **No pending protection changes** when empty.
+   - An **info icon (i)** in the top-right toolbar.
+4. Tap the **Protection change delay** row.
+5. A dialog opens with a big number at the top and three scrollable wheels: **days**, **hours**, **min**.
+6. Flick the wheels until they read `0`, `0`, `1`. The big number at the top must read **1 minute**.
+7. Tap **Save**.
+8. The row now shows **1 minute** on the right.
+9. **If the value is already bigger than 1 minute** (e.g. 15 minutes), you must first turn protection off: go Home → profile card → **Disable**, then set the delay, then **Enable** again.
 
-### 0.4 Where each screen lives
-| Screen | Path |
-|---|---|
-| Queue + delay | Settings → Controls → Protection changes |
-| App rules (picker) | Home → scroll to the **Profile** card → tap the **pencil** (top-right of the card) → bottom sheet → **Apps** → dialog **Open Rules** |
-| In-app rules | same sheet → **In-app rules** → Open Rules |
-| Websites | same sheet → **Websites** → Open Rules |
-| App limit editor | in the picker, **long-press** an app tile (or tap the clock badge on the tile) |
-| Website usage/limits | Home → **More insights** (next to "4 Week Activity") → switch to the websites view → tap a site → **Edit limits** |
-| Blocked apps list | Home → **Blocked apps** row (expand it) |
-| Developer screen | Settings → Info → **App info** → **long-press the "2.2.8 (228)" row for ~2.5 seconds** |
-| Copy support info | Settings → Info → **Copy support info** |
+### 0.4 Two shortcuts you will need often
+- **Queue page** = Settings → Controls → **Protection changes** (as in 0.3).
+- **Picker** (App rules) = Home → scroll to the blue profile card → tap the **pencil icon** (top-right corner of the card) → a sheet slides up from the bottom with rows **Apps / Websites / In-app rules / Schedules / Breaks / Delete profile** → tap **Apps** → a dialog **Open Rules?** appears → tap **Open Rules**.
+
+### 0.5 Turn protection off / on (some tests need this)
+1. **Off:** Home → blue profile card → tap **Disable**. The pill changes to **Disabled**.
+2. **On:** Home → blue profile card → tap **Enable**. Wait for **Active now**.
 
 ---
 
 ## 1. Queue mechanics
 
-### 1.1 Parity: delay Off means "refused"
-**Preconditions:** protection active, delay **Off**.
-1. Open the picker (0.4).
-2. Tap a blocked app (blue check tile) to untick it.
-3. Tap **Save** at the bottom.
-**Expect:** the locked dialog ("Turn off Loq In to edit blocked apps" style) and the app stays blocked. No queue entry.
-**Reset:** none.
+### 1.1 Delay = Off means "refused" (the old behaviour)
+**Preconditions:** protection active, delay **Off** (0.3 with `0/0/0`).
+1. Open the **Picker** (0.4).
+2. Find a tile with a **blue border and a checkmark** (that means blocked). Example: **Calendar**.
+3. Tap that tile once. The checkmark disappears (this is only in the list so far).
+4. Tap the big blue **Save** button at the very bottom.
+5. **You should see:** a dialog telling you Loq In must be turned off to edit blocked apps. The tile returns to blocked.
+6. **You should NOT see:** any row in Protection changes.
+**Reset:** nothing to do.
 
-### 1.2 Queue an unblock, then watch it apply
+### 1.2 Queue an unblock and watch it apply
 **Preconditions:** protection active, delay **1 minute**.
-1. Picker → untick **Calendar** → **Save**.
-**Expect:** bottom pill *"This protection-reducing change is queued and will apply after the configured delay."*
-2. Open Protection changes.
-**Expect:** a row **"Unblock Calendar"** with a due time ("In 1 min."). Calendar is still blocked (tile stays checked after Save).
-3. Wait ~70 seconds (keep the phone unlocked or leave it; both work).
-4. Re-open Protection changes.
-**Expect:** the row is gone. Open Calendar → it opens (no block).
-**Reset:** re-block Calendar in the picker → Save (applies immediately because blocking is stricter).
+1. Picker (0.4) → tap **Calendar** to remove its checkmark → tap **Save**.
+2. **You should see:** a dark pill at the bottom: **"This protection-reducing change is queued and will apply after the configured delay."**
+3. Tap anywhere to dismiss the pill. Notice Calendar is **checked again** in the list — that is correct: it stays blocked until the timer runs out.
+4. Go to the **Queue page** (0.4).
+5. **You should see:** a row **Unblock Calendar** with a subtitle like **In 1 min.** and a **>** chevron.
+6. Leave the phone alone for about **70 seconds** (screen on or off both work).
+7. Re-open the Queue page.
+8. **You should see:** the row is gone.
+9. Open Calendar from the home screen / app drawer.
+10. **You should see:** it opens normally (no "blocked" screen).
+**Reset:** Picker → tap Calendar (check it) → Save. Blocking applies immediately, no pill.
 
-### 1.3 Two apps, two timers (the reported bug)
-**Preconditions:** delay 1 minute, Calendar and Chrome both blocked.
-1. Picker → untick **Calendar** → Save → dismiss the pill.
-2. Wait ~20 seconds.
-3. Picker → untick **Chrome** → Save.
-4. Open Protection changes.
-**Expect:** **two** rows — "Unblock Calendar" (In ~40s) and "Unblock Chrome" (In 1 min.) — with **different** due times. The second action must not replace or reset the first.
-**Reset:** Discard all, then re-block both.
+### 1.3 Two different apps = two separate timers (this was the bug)
+**Preconditions:** delay 1 minute, both **Calendar** and **Chrome** blocked.
+1. Picker → untick **Calendar** → **Save** → dismiss the pill.
+2. Wait about 20 seconds.
+3. Picker → untick **Chrome** → **Save** → dismiss the pill.
+4. Open the **Queue page**.
+5. **You should see TWO rows:**
+   - **Unblock Calendar** — **In ~40 sec.** (or similar)
+   - **Unblock Chrome** — **In 1 min.**
+6. The two rows must have **different** times. The second action must not have replaced the first.
+**Reset:** Queue page → **Discard all** → confirm. Then re-block both in the picker.
 
-### 1.4 Same app again: timer must not restart
-1. Queue an unblock for Calendar with a **15-minute** delay (set the delay to 15 first).
-2. Open Protection changes and note the due time ("In 14 min.").
-3. Go back to the picker, untick Calendar again → Save.
-4. Check the queue.
-**Expect:** still one row, **same due time** as before (the original timer is kept).
-**Reset:** Discard all; set the delay back to 1 minute.
+### 1.4 Queueing the same app again must not extend the timer
+**Preconditions:** delay **15 minutes** (0.3 with `0/0/15`), Calendar blocked.
+1. Picker → untick **Calendar** → Save → dismiss.
+2. Queue page → note the time on the row, e.g. **In 14 min.**
+3. Picker → untick **Calendar** again → Save → dismiss.
+4. Queue page.
+5. **You should see:** still **one** row, with the **same** time as step 2 (e.g. still "In 14 min.", not "In 15 min.").
+**Reset:** Discard all, set delay back to 1 minute.
 
 ### 1.5 Stricter changes apply immediately
-1. Delay 1 minute, protection active.
-2. Picker → tick a **new** app → Save.
-**Expect:** applied instantly, no pill, no queue row.
-**Reset:** untick it and discard the queued unblock.
+**Preconditions:** delay 1 minute, protection active.
+1. Picker → tap an app that is **not** checked (e.g. **Camera**) → tap **Save**.
+2. **You should see:** NO pill and NO queue row. Camera is now blocked.
+**Reset:** untick Camera → Save → the unblock queues; discard it in the Queue page.
 
-### 1.6 Discard one / discard all
-1. Queue two unblocks (1.3).
-2. Protection changes → tap **"Unblock Calendar"**.
-**Expect:** a **bottom sheet** (not a full-screen dialog) with the label, the due time and a **Discard** button (plus **Apply now** only when Loq In is fully off).
+### 1.6 Discard one item / discard everything
+**Preconditions:** two queued unblocks from 1.3.
+1. Queue page → tap the row **Unblock Calendar**.
+2. **You should see:** a **sheet sliding up from the bottom** (not a big centred dialog) with:
+   - the title **Unblock Calendar**
+   - the due time **In X min.**
+   - a full-width **Discard** button
+   - (only if protection is fully off) an **Apply now** button
 3. Tap **Discard**.
-**Expect:** pill *"Pending change discarded."* and only "Unblock Chrome" remains.
-4. Tap **Discard all** → confirm.
-**Expect:** the list is empty.
+4. **You should see:** the sheet closes, a pill **"Pending change discarded."**, and only **Unblock Chrome** remains.
+5. Tap **Discard all** at the bottom of the card → confirm.
+6. **You should see:** **No pending protection changes**.
 
-### 1.7 Apply now (only when fully off)
-1. Queue an unblock (delay 15 min).
-2. Home → profile card → **Disable** Loq In completely (not "Take a break", not Emergency Unlock).
-3. Open Protection changes.
-**Expect:** **"Apply all now"** appears, and tapping a row shows **Apply now** in the sheet.
-4. Tap **Apply all now** → confirm.
-**Expect:** pill "Pending changes applied."; the queue empties and the app is unblocked immediately.
-5. Re-enable protection.
-**Expect:** with a temporary break or Emergency Unlock active, **Apply now is not offered**.
+### 1.7 Apply a queued change early (only when protection is fully off)
+1. Queue an unblock with the delay set to **15 minutes**.
+2. Go Home → profile card → tap **Disable**. The pill must say **Disabled** (this is different from "Take a break" and from "Emergency unlock").
+3. Open the Queue page.
+4. **You should see:** a **Apply all now** button at the bottom of the card.
+5. Tap the pending row → the sheet now also shows **Apply now**.
+6. Tap **Apply all now** → confirm.
+7. **You should see:** a pill **"Pending changes applied."**, the queue is empty, and the app opens immediately.
+8. Re-enable protection (profile card → **Enable**).
+9. Repeat steps 1–3 but instead of Disable, use **Take a break** (or Emergency unlock).
+10. **You should see:** **Apply now is not offered** (the card has only Discard all).
 
-### 1.8 Reboot survival
-1. Delay 15 minutes → queue an unblock.
-2. Note the due time, then reboot the phone.
-3. After boot, open Protection changes.
-**Expect:** the row is still there with the same due time; it applies when due.
+### 1.8 Surviving a reboot
+1. Set the delay to **15 minutes** → queue an unblock (1.2 step 1).
+2. Note the time on the queue row.
+3. Reboot the phone (power menu → Restart).
+4. After it boots, open the Queue page.
+5. **You should see:** the same row with the same time; it applies when due.
 **Reset:** Discard all.
 
-### 1.9 Doze deferral (emulator/phone with adb)
+### 1.9 Doze (phone/emulator with adb)
 1. Delay 1 minute → queue an unblock.
-2. `adb shell dumpsys deviceidle force-idle`
-3. Wait 95 seconds, check the queue.
-**Expect:** still pending (the alarm is deferred in Doze — by design, the due time is a floor).
-4. `adb shell dumpsys deviceidle unforce`
-5. Wait ~30 seconds.
-**Expect:** the row disappears and the change applies.
+2. Run on your computer: `adb shell dumpsys deviceidle force-idle`
+3. Wait **95 seconds**, then open the Queue page.
+4. **You should see:** the row is **still there** — Android defers alarms in Doze. This is expected.
+5. Run: `adb shell dumpsys deviceidle unforce`
+6. Wait ~30 seconds.
+7. **You should see:** the row is gone and the app is unblocked.
 
 ### 1.10 Deleted profile
-1. Queue a change for a **non-active profile** (switch profile, make the change, switch back) — or skip this one if you only use one profile.
-2. Delete that profile (Manage profiles → swipe/menu → Delete).
-3. Re-open the app.
-**Expect:** the pending row is gone, no crash.
+**Only if you have a second profile.**
+1. Switch to profile **Second** (Home → **Switch profile**).
+2. Queue an unblock in that profile (delay 1 minute).
+3. Switch back to **Default**.
+4. Manage profiles (Home → **Switch profile** → manage/edit) → delete **Second**.
+5. Open the Queue page / restart the app.
+6. **You should see:** no row for the deleted profile and no crash.
 
-### 1.11 Stricter wins for limits
-1. Delay 15 minutes → app limit: set 30 (applies immediately), then **raise to 60** → Save.
-**Expect:** queued "App limits · <app>".
-2. Before it fires, lower it to **20** → Save.
-**Expect:** applies immediately; when the queued 60 fires it is **skipped** (value stays 20).
+### 1.11 Stricter wins (limits)
+1. Delay **15 minutes**.
+2. Picker → long-press **Calendar** → in the editor turn **Screen time** on → type **30** → **Save limits**.
+3. Long-press Calendar again → change 30 to **60** → **Save limits**.
+4. **You should see:** a pill and a queue row **App limits · Calendar**.
+5. Before the timer fires, open the editor again → change it to **20** → Save.
+6. Wait for the timer to pass.
+7. **You should see:** the limit is **20** — the queued 60 was skipped because you made a stricter edit in the meantime.
 
 ---
 
-## 2. Per-surface behaviour (delay 1 minute, protection active)
+## 2. Each screen that can queue something
 
-### 2.1 Auto-block new apps
-1. Picker → top checkbox **"Automatically block newly installed apps"**: turn it **on**.
-**Expect:** applies immediately, no queue row (enabling is stricter).
-2. Turn it **off**.
-**Expect:** pill + queue row **"Auto-block new apps · <profile>"**; the checkbox stays on until the timer fires.
-3. Turn it **on** again before the timer.
-**Expect:** the pending disable is cancelled (queue row disappears).
+### 2.1 The auto-block checkbox
+**Preconditions:** delay 1 minute, protection active.
+1. Picker → at the top there is a checkbox **Automatically block newly installed apps** (currently off).
+2. Tap it to turn it **on**.
+3. **You should see:** it stays on, no pill, no queue row (turning protection on is stricter).
+4. Tap it again to turn it **off**.
+5. **You should see:** a pill, and in the Queue page a row **Auto-block new apps · Default**. The checkbox flips back on by itself until the timer fires.
+6. Before the timer fires, turn the checkbox **on** again.
+7. **You should see:** the pending row disappears (your stricter change cancelled it).
 
-### 2.2 In-app rule (and the pending preview)
-1. Profile pencil → **In-app rules** → Open Rules.
-2. Expand **YouTube** (tap the group row; it says "N rules active · Tap to expand").
-3. Turn a rule **off** (e.g. Shorts).
-**Expect:** pill + queue row **"In-app rule · Shorts"**; the switch shows the **off** position but faded (the target state, not the current one).
+### 2.2 In-app rules
+**Preconditions:** delay 1 minute, protection active.
+1. Home → profile pencil → sheet → **In-app rules** → **Open Rules**.
+2. You see groups: **YouTube**, **Instagram**, **X/Twitter**, **Snapchat**, **Facebook** (some may say **Not installed**).
+3. Tap **YouTube**. It expands and shows rows with switches: **Shorts**, **Subscriptions**, **You**, **Mini player**, **Picture-in-picture**.
+4. Tap the switch for **Shorts** to turn it **off**.
+5. **You should see:** a pill and a queue row **In-app rule · Shorts**. The switch shows the **off** position but **faded** (lighter than a normal off switch).
+**Reset:** Discard all.
 
-### 2.3 Whole-app offer when enabling a rule
-1. Same screen → turn a rule **on** for an app that is **not** whole-app blocked (e.g. YouTube).
-**Expect:** dialog **"Also block YouTube entirely?"** with the app icon, **Block entire app** / **Not now**.
-2. Tap **Block entire app**.
-**Expect:** blocking the whole app is a **stricter** change, so it applies **immediately** (no queue row, no pill): YouTube becomes whole-app blocked and the in-app rule stays active. If you instead do this while the app can only be queued (never the case for a block) the gate would queue it.
-**Note:** the offer never appears if the app is already whole-app blocked or is a protected app (keyboard/launcher/dialer).
+### 2.3 "Also block the whole app?" when you turn a rule on
+**Preconditions:** protection active, YouTube is **not** whole-app blocked.
+1. In-app rules → YouTube → turn **Shorts** (or any rule) **on**.
+2. **You should see:** a dialog **"Also block YouTube entirely?"** with the app icon, the text about the in-app rule staying active, and buttons **Not now** / **Block entire app**.
+3. Tap **Block entire app**.
+4. **You should see:** YouTube is now whole-app blocked (open the Picker and YouTube has a checkmark). No queue row — blocking is stricter and applies instantly.
+5. Try the same for an app that is **already** whole-app blocked.
+6. **You should see:** no dialog at all.
 
-### 2.4 Website rule: disable / enable / delete
-1. Websites → toggle a rule **off**.
-**Expect:** pill + queue row **"Website rule · <rule>"**; the switch previews **off** faded; the row meta reads **"Pending — applies after the delay"**.
-2. Toggle it **on** again before it fires.
-**Expect:** the pending disable is cancelled.
-3. Swipe a rule left → **Delete**.
-**Expect:** pill + queue row "Website rule · <rule>"; the rule stays in the list until the timer fires.
-4. Tap a **disabled** rule's switch to enable it.
-**Expect:** applies immediately.
+### 2.4 Website rules
+**Preconditions:** delay 1 minute, protection active, at least one rule exists (e.g. `example.com/blocked/*`).
+1. Home → profile pencil → sheet → **Websites** → **Open Rules**.
+2. You see the rule list with a globe icon, the rule text and a **Blocked** subtitle; each row has a **clock button** and a **switch**.
+3. Tap the **switch** of a rule to turn it **off**.
+4. **You should see:** a pill; the row subtitle changes to **Pending — applies after the delay**; the switch shows the off position but faded; a queue row **Website rule · example.com/blocked/*** appears.
+5. Turn the switch **on** again before the timer.
+6. **You should see:** the pending row disappears.
+7. **Swipe a rule from right to left** → a **Delete** dialog appears → tap **Delete**.
+8. **You should see:** a pill and a queue row **Website rule · <the rule>**; the rule stays in the list until the timer fires.
+9. Tap a rule's switch to turn a **disabled** rule back on.
+10. **You should see:** it applies immediately (no queue row).
+**Note:** tapping the **clock button** opens the *rule editor* (domain, mode, daily limit) which is still locked while protection is active — that is intended. The rule's limit editor lives in the usage screen (2.5).
 
 ### 2.5 Website limits
-1. Home → **More insights** → **Websites** tab → tap a site → **Edit limits**.
-2. Raise the daily minutes (e.g. 10 → 30) → confirm.
-**Expect:** pill + queue row **"Website limits · <domain>"**.
-3. Lower the minutes (30 → 5).
-**Expect:** applies immediately, no queue row.
+**Preconditions:** delay 1 minute, protection active, a website with usage.
+1. Home → **More insights** (the button next to "4 Week Activity").
+2. Switch to the **websites** view (tabs at the top of that screen).
+3. Tap a website row to open its detail page. You see **Today** usage and buttons including **Edit limits**.
+4. Tap **Edit limits**.
+5. Raise the daily minutes (e.g. **10 → 30**) → confirm/save.
+6. **You should see:** a pill and a queue row **Website limits · <domain>**.
+7. Lower it again (e.g. **30 → 5**).
+8. **You should see:** it applies immediately, no queue row.
 
 ### 2.6 App limits
-1. Picker → **long-press** an app tile.
-**Expect:** the limit editor opens even while protection is active (this was previously refused).
-2. Turn **Screen time** on, set a value (e.g. 30) → **Save limits**.
-**Expect:** if the app had **no** limit, this applies immediately (adding a limit is stricter).
-3. Long-press again → raise it to **60** → Save.
-**Expect:** pill + queue row **"App limits · <app>"**; the editor still shows 30 until the timer fires.
-4. Lower it to **20** → Save.
-**Expect:** applies immediately.
-**Caveat:** when driving this by adb, `input text` into the minutes field is unreliable (it produced "603" once). Type manually.
+**Preconditions:** delay 1 minute, protection active.
+1. Picker → **press and hold** an app tile for about a second.
+2. **You should see:** the limit editor opens (this used to be refused). It shows the app name, **Profile: Default**, and rows: **Screen time / Total minutes per day**, **App opens / How often the app can be opened per day**, **Max per visit / Longest single visit**, plus **Cancel** / **Save limits**.
+3. Turn **Screen time** on, type **30** in the minutes field, tap **Save limits**.
+4. **You should see:** no pill and no queue row (the app had no limit, so adding one is stricter).
+5. Long-press the tile again → change **30** to **60** → **Save limits**.
+6. **You should see:** a pill and a queue row **App limits · <app>**. Re-open the editor: it still shows **30**.
+7. Change it to **20** → Save.
+8. **You should see:** it applies immediately.
+**Tip:** type the numbers by hand; automation tools are unreliable in that field.
 
-### 2.7 Remove a blocked app from the home list
-1. Home → **Blocked apps** row → expand it.
-2. Tap an app → quick actions → **Remove** (destructive) → confirm.
-**Expect:** pill + queue row **"Unblock <app>"** (plus "App limits/rules · <app>" if it had limits). The app stays in the list until the timer.
+### 2.7 Removing a blocked app from the home list
+**Preconditions:** delay 1 minute, protection active, at least one blocked app.
+1. Home → scroll to the **Blocked apps** row (below the profile card area) → tap it to expand the list.
+2. Tap a blocked app row.
+3. **You should see:** a quick-actions sheet/dialog with options including **Remove** (in red).
+4. Tap **Remove** → confirm.
+5. **You should see:** a pill and a queue row **Unblock <app>** (plus **App limits/rules · <app>** if that app had limits). The app stays in the list until the timer.
 
-### 2.8 Clear all
-1. Picker → type something in **Search apps** (or tap a category chip like "Media").
-**Expect:** the bulk bar appears with **Select all** / **Clear all** (it only shows while filtering).
-2. Tap **Clear all** → **Save**.
-**Expect:** pill + one queue row **"Unblock A, B, C"** (up to 3 names, otherwise "Unblock N apps").
+### 2.8 Clear all (bulk)
+**Preconditions:** delay 1 minute, protection active, several apps blocked.
+1. Picker → tap into the **Search apps** field and type a letter (e.g. `c`) or tap a category chip such as **Media**.
+2. **You should see:** a bulk bar appears with **Select all** and **Clear all** (it only appears while you are filtering).
+3. Tap **Clear all**.
+4. **You should see:** the visible tiles lose their checkmarks.
+5. Tap **Save**.
+6. **You should see:** a pill and **one** queue row **Unblock A, B, C** (up to three names; more shows "Unblock N apps").
+**Reset:** Discard all, then re-block what you need.
 
-### 2.9 What must still be refused (never queued)
-With protection active, these show the locked message and change nothing:
-- Adding or editing a **website rule** (the "+" button and tapping a rule row).
-- Switching **Block selected / Allow selected** for websites or apps.
-- Switching the **control mode** (Schedule/NFC/QR/Barcode/Mixed).
-- Switching or deleting a **profile**.
+### 2.9 Things that must still be refused (nothing queued)
+With protection active, do each of these and check that you get the "turn Loq In off" message and **no** queue row:
+1. Websites screen → tap **+** and try to add a rule.
+2. Websites screen → tap a rule row (opens the rule editor).
+3. Picker → tap **Allow selected** in the top toggle.
+4. Settings → Controls → **Feature access** → try to change the **control mode** (Schedule/NFC/QR/Barcode/Mixed).
+5. Home → **Switch profile** → try to switch to another profile; or try to delete one.
 
 ---
 
-## 3. UI checks
+## 3. How the screens should look
 
-### 3.1 The queue page
-1. Open Protection changes.
-**Expect:** section headers ("Change delay", "Pending changes") above cards; the delay row shows the value on the right ("1 minute") with a chevron; pending rows have the **target's icon** (Calendar/YouTube app icons, globe for websites) and a due time; an **info icon** in the toolbar opens the explanation overlay.
+### 3.1 Queue page
+1. Settings → Controls → **Protection changes**.
+2. **You should see:**
+   - Header **Change delay**, card with **Protection change delay**, a value on the right (**Off** / **1 minute** / **15 minutes**), and a **>**.
+   - Header **Pending changes**, then one row per queued change with the **target's icon**:
+     - an app's real icon for app rules and app limits (Calendar, Chrome, YouTube…),
+     - a **globe** for website rules,
+     - a **clock** for anything else (auto-block).
+   - Each row has a bold title (**Unblock Calendar**, **In-app rule · Shorts**, **Website rule · …**) and a time (**In 1 min.**).
+   - An **info icon (i)** in the toolbar; tapping it opens the "How this works" overlay.
+   - When something is queued: a hint line and a **Discard all** button.
 
-### 3.2 The wheels
-1. Tap the delay row.
-**Expect:** days/hours/minutes wheels, big live total, **no** hint text and **no** Off switch; `0/0/0` reads "Off".
-2. While protection is active, pick less than the current value.
-**Expect:** the hint "While protection is active, the delay can only stay the same or be increased." and Save does nothing.
+### 3.2 The delay wheels
+1. Tap the **Protection change delay** row.
+2. **You should see:** the big total at the top, three wheels with the labels **days / hours / min**, and **Cancel** / **Save**.
+3. There must be **no** extra hint paragraph and **no** On/Off switch. `0/0/0` reads **Off**.
+4. While protection is active, drag the wheels to a value **smaller** than the current one.
+5. **You should see:** the text **"While protection is active, the delay can only stay the same or be increased."** and Save does nothing.
 
 ### 3.3 Pills vs dialogs
-1. Queue anything / discard anything.
-**Expect:** always a **bottom pill**; reviewing an item is a **bottom sheet**, never a full-screen dialog.
+1. Queue anything and discard anything (1.2, 1.6).
+2. **You should see:** bottom pills for feedback, and a **bottom sheet** when you tap a pending row. You should never get a full-screen dialog for these.
 
-### 3.4 German + light mode
-Switch language in Appearance and the system to light; open the page and the two new dialogs (3.1, W6.3, W6.4).
-**Expect:** all copy translated, no clipped text.
-
----
-
-## 4. Other workstreams
-
-### 4.1 Feature flags (W5.1)
-1. Settings → Info → **App info** → long-press **"2.2.8 (228)"** for ~2.5 s.
-**Expect:** the **Developer Tools** screen opens with a **Feature flags** section:
-   - "Diagnostic timeline · On"
-   - "Schedule save preview · On"
-   - "Automation engine v2 · Off · scaffold"
-   - "Continuous usage trigger · Off · scaffold"
-2. Tap **Diagnostic timeline**.
-**Expect:** the subtitle flips to "Off" and the value is stored (`loqin_feature_flags.xml`, key `diagnostic_timeline`). Tap again to restore.
-
-### 4.2 Copy support info (W5.4)
-1. Settings → Info → **Copy support info**.
-**Expect:** the Support screen opens briefly, a pill confirms the copy and it returns. Paste anywhere to see the report — it contains **Protection state / Base enabled / Blocking expected**, **Settings schema**, every **Feature flag**, and the **Diagnostics timeline** entries.
-
-### 4.3 Map picker (W6.2)
-1. Schedules → add/edit → choose **Location schedule** → **Open map picker**.
-**Expect with no Maps API key (current builds):** "Map picker is unavailable in this build. Using location search instead." and the text search stays usable.
-**Expect with a key configured:** the map opens and loads; the "map unavailable" message must **not** appear while the fragment is still initialising (only on a real failure or the 15 s timeout).
-
-### 4.4 Schedule save preview (W6.3)
-1. Schedules → **Add first schedule** (or +) → choose **Time schedule** → leave defaults → **Create**.
-**Expect:** row-style dialog **"Save this schedule?"** with **Profile / Action / When / Time** (and Note if set) and a **Save schedule** button. Cancel discards.
-2. Toggle a schedule's switch, delete one, reorder — **no** preview for those.
-
-### 4.5 Whole-app offer (W6.4)
-See 2.3.
+### 3.4 Language and theme
+1. Settings → Personalization → **Appearance** → set language to **German**.
+2. Open the Queue page, the wheels, and the two new dialogs.
+3. **You should see:** German text everywhere, nothing cut off. Switch back to English.
 
 ---
 
-## 5. Emulator reproduction (for the automated checks)
+## 4. The other workstreams
 
-```bash
-P=com.oliver.loqin.loqindev
+### 4.1 Feature flags
+1. Settings → Info → **App info**.
+2. Press and hold the row that shows **2.2.8 (228)** for about **2.5 seconds**.
+3. **You should see:** the **Developer Tools** screen opens. Scroll to the bottom.
+4. **You should see a Feature flags section:**
+   - **Diagnostic timeline · On**
+   - **Schedule save preview · On**
+   - **Automation engine v2 · Off · scaffold**
+   - **Continuous usage trigger · Off · scaffold**
+5. Tap **Diagnostic timeline**.
+6. **You should see:** its subtitle flips to **Off**. Tap again to turn it back On.
 
-# Read the queue
-adb -s emulator-5554 shell run-as $P cat /data/data/$P/shared_prefs/${P}_preferences.xml
+### 4.2 Copy support info
+1. Settings → Info → tap **Copy support info**.
+2. **You should see:** the Support screen opens briefly, a pill confirms the copy, and the screen closes.
+3. Open any text field (e.g. a note) and **paste**.
+4. **You should see** in the pasted text: **Protection state**, **Base enabled**, **Blocking expected**, **Settings schema**, **Feature flag: …** lines, and a **Diagnostics timeline** list.
 
-# Inject a delay (force-stop first, then restore)
-adb shell am force-stop $P
-# edit the XML copy locally, then:
-adb shell "run-as $P sh -c 'cat > /data/data/$P/shared_prefs/${P}_preferences.xml'" < /tmp/state.xml
+### 4.3 Map picker
+**First turn protection off (0.5)** — schedule editing is locked while active.
+1. Home → profile pencil → **Schedules** → **Open Rules**.
+2. Tap **Add first schedule** (or **+** in the toolbar).
+3. Tap **Location schedule**, then **Open map picker**.
+4. **You should see (current builds, no Maps API key):** the message **"Map picker is unavailable in this build. Using location search instead."** and the text field stays usable. That is expected — there is no API key configured.
+5. If a key is configured, the map should open and load without a premature "map unavailable" message.
 
-# Armed alarm
-adb shell dumpsys alarm | grep -A2 ProtectionChangeReceiver
-
-# Doze
-adb shell dumpsys deviceidle force-idle
-adb shell dumpsys deviceidle unforce
-```
-UI automation used `uiautomator dump` + `input tap`; the prefs files are the pass/fail source of truth.
-Known limits: the limit editor's text field and clipboard reads (Android blocks adb clipboard access).
+### 4.4 Schedule save preview
+**Protection must be off (0.5).**
+1. Home → profile pencil → **Schedules** → **Open Rules**.
+2. Tap **Add first schedule** (or **+**).
+3. Tap **Time schedule**.
+4. Leave everything at its default (profile Default, action Enable profile, time 08:00) and tap **Create** at the bottom.
+5. **You should see:** a dialog **"Save this schedule?"** with rows **Profile: Default**, **Action: Enable profile**, **When: Weekly**, **Time: 08:00**, and a **Save schedule** button. **Cancel** throws it away.
+6. Turn a schedule's switch on/off, delete one, or reorder — **no** preview dialog for those.
+7. Re-enable protection (0.5).
 
 ---
 
-## 6. Still unverified — do these four
+## 5. The four tests that were not finished
 
-1. **App-limit raise → queue** (2.6 step 3).
-2. **Website-limit raise → queue** (2.5 step 2).
-3. **Clear all → Save → queue** (2.8).
-4. **Remove blocked app → queue** (2.7).
-5. **OEM alarm delivery** (only with the Samsung/Bigme): delay 15 min → queue → lock the phone 20–30 min → it applies (possibly late); repeat with the app in the OEM's sleeping-apps list.
+Do these in order; each says what to look for.
+
+### 5.1 App limit raise → queue
+Follow **2.6** steps 1–3 (set 30, applies), then step 5 (raise to 60). **Expect** a pill and a queue row **App limits · <app>**.
+
+### 5.2 Website limit raise → queue
+Follow **2.5**. **Expect** a queue row **Website limits · <domain>**.
+
+### 5.3 Clear all → queue
+Follow **2.8**. **Expect** one queue row listing the unblocked apps.
+
+### 5.4 Remove blocked app → queue
+Follow **2.7**. **Expect** a queue row **Unblock <app>**.
+
+### 5.5 OEM alarm delivery (Samsung/Bigme only)
+1. Set the delay to 15 minutes and queue an unblock.
+2. Lock the phone and leave it unplugged for 20–30 minutes.
+3. **Expect:** the change has applied (open the app / check the queue). It may apply a few minutes late.
+4. Repeat with Loq In added to the phone's "Sleeping apps"/"Deep sleeping apps" list.
+5. **Worst case:** it applies the next time you open Loq In — note if that happens.
 
 ---
 
-## 7. Regression spot checks
+## 6. Regression spot checks
 
-1. **Websites still block:** add `example.com/blocked/*`, open `example.com/blocked/test` in Chrome → blocked; `example.com/allowed` opens.
-2. **YouTube rules still block:** with a rule on, trigger it → blocked; rule off → not blocked.
-3. **Scanner + NFC screens:** QR shortcut → camera fills the screen; NFC write waiting screen → close button below the status bar.
+1. **Website blocking:** Websites → add `example.com/blocked/*` → open `example.com/blocked/test` in Chrome → it is blocked; `example.com/allowed` opens.
+2. **YouTube rule:** turn a rule on → trigger it → it blocks; turn it off → it does not.
+3. **Scanner:** use the QR shortcut → the camera fills the whole screen (no black bars).
 4. **A7 warning:** with a Settings rule and Device Admin revoked → the picker shows the warning pill.
-5. **Schedules still fire** and app blocking still blocks/allows.
+5. **Schedules still fire** and app blocking still blocks/allows normally.
