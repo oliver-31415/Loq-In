@@ -303,6 +303,13 @@ With protection active, do each of these and check that you get the "turn Loq In
 
 ## 3. How the screens should look
 
+### 3.05 Picker badges
+
+- A **queued** change shows an **hourglass** badge on the tile (plus the lighter shade).
+- Blocked **and** limited apps show the plain **check**; a limit is stated by the subtitle ("60 min/day").
+  There is no stopwatch badge — it read as a delay timer.
+- The small extra dot is hidden; the badge and subtitle carry the state.
+
 ### 3.1 Queue page
 1. Settings → Controls → **Protection changes**.
 2. **You should see:**
