@@ -281,13 +281,11 @@ class AppListAdapter(
             if (selected) {
                 // Selected + limits is a restricted app, not a fully blocked one.
                 val limited = currentHasLimit
-                // Distinct badges: hourglass = a change is queued, clock = limited, check = blocked.
+                // Hourglass = a change is queued. Everything else (blocked or limited) uses the
+                // check; a limit is already shown by the "N min/day" subtitle, and a stopwatch
+                // badge read as a delay timer.
                 ivChecked.setImageResource(
-                    when {
-                        currentPending -> R.drawable.hourglass_24
-                        limited -> R.drawable.timer_24
-                        else -> R.drawable.check_circle_24
-                    }
+                    if (currentPending) R.drawable.hourglass_24 else R.drawable.check_circle_24
                 )
                 ivChecked.alpha = if (currentPending) 0.85f else 1f
                 ivChecked.contentDescription = when {
@@ -342,7 +340,9 @@ class AppListAdapter(
             val hasLimit = hasDailyLimit || hasSessionLimit || hasAttemptLimit
             currentHasLimit = hasLimit
 
-            viewLimitDot.visibility = if (hasLimit) View.VISIBLE else View.GONE
+            // The badge and the "N min/day" subtitle already communicate a limit; the extra dot
+            // looked like a queued/delayed marker, so it stays hidden.
+            viewLimitDot.visibility = View.GONE
             if (hasLimit) {
                 tvSub.visibility = View.VISIBLE
                 // Compact tile labels: long "Daily limit: …" style labels overflow the square tile.

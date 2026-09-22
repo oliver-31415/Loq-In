@@ -858,7 +858,7 @@ class InAppRulesActivity : AppCompatActivity() {
         val currentChecked = prefKey?.let { readProfileBool(it) } ?: false
         val pendingSelected = prefKey?.let { pendingInAppSelections[it] }
         val canToggleWhileLocked = prefKey != null && run {
-            if (!SwitchModeStore.isEnabled(this)) return@run true
+            if (ProtectionChangeGate.isEditingUnlocked(this)) return@run true
             val direction = ProtectionChangePolicy.inAppDirection(
                 allowMode = isInAppAllowMode(),
                 currentSelected = currentChecked,

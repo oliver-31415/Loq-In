@@ -81,7 +81,8 @@ object ProtectionChangeGate {
 
     /** The delay itself is protection-sensitive: while locked it may only stay the same or grow. */
     fun setDelayMinutes(context: Context, requestedMinutes: Int): Boolean {
-        val locked = runCatching { SwitchModeStore.isEnabled(context) }.getOrDefault(false)
+        val emergencyUnlocked = runCatching { EmergencyBypassStore.isActive(context) }.getOrDefault(false)
+        val locked = EditingLockGuard.isLocked(context) && !emergencyUnlocked
         if (!ProtectionChangePolicy.canSetDelayMinutes(locked, getDelayMinutes(context), requestedMinutes)) {
             return false
         }
@@ -90,21 +91,15 @@ object ProtectionChangeGate {
     }
 
     /**
-     * Weakening changes are only gated while protection is actually enforcing. A temporary break or
-     * Emergency Unlock means nothing is being blocked right now, so edits apply immediately instead
-     * of queuing with a countdown. Structural changes still require the fully-off state.
+     * Weakening changes are gated while protection is configured to run — including temporary
+     * pauses, which must not become a way to weaken rules. Emergency Unlock is the deliberate
+     * "let me in now" path and is treated as unlocked, so edits apply instead of queuing.
      */
     fun decision(context: Context, direction: ProtectionChangePolicy.Direction): ProtectionChangePolicy.Decision {
-        if (direction == ProtectionChangePolicy.Direction.PROTECTED_STRUCTURAL) {
-            return ProtectionChangePolicy.decision(
-                locked = EditingLockGuard.isLocked(context),
-                delayMinutes = getDelayMinutes(context),
-                direction = direction,
-            )
-        }
-        val effectivelyEnforcing = runCatching { SwitchModeStore.isEnabled(context) }.getOrDefault(false)
+        val emergencyUnlocked = runCatching { EmergencyBypassStore.isActive(context) }.getOrDefault(false)
+        val locked = EditingLockGuard.isLocked(context) && !emergencyUnlocked
         return ProtectionChangePolicy.decision(
-            locked = effectivelyEnforcing,
+            locked = locked,
             delayMinutes = getDelayMinutes(context),
             direction = direction,
         )
@@ -558,6 +553,14 @@ object ProtectionChangeGate {
         PendingChangeCodec.decode(prefs(context).getString(PREF_PENDING_JSON, null))
 
     fun pendingCount(context: Context): Int = pendingChanges(context).size
+
+    /**
+     * True when protection edits are not gated: fully off, or Emergency Unlock active.
+     * Temporary pauses count as locked on purpose (a pause must not weaken rules).
+     */
+    fun isEditingUnlocked(context: Context): Boolean =
+        !EditingLockGuard.isLocked(context) ||
+            runCatching { EmergencyBypassStore.isActive(context) }.getOrDefault(false)
 
     /** Rule keys with a queued weakening in-app change: baseKey -> requested selected state. */
     fun pendingInAppSelections(context: Context, profile: String): Map<String, Boolean> {

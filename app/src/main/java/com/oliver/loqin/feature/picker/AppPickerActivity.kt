@@ -149,7 +149,7 @@ class AppPickerActivity : AppCompatActivity() {
         if (allowLockedProfileStrictEdits && !currentProfile.isNullOrBlank()) {
             true
         } else {
-            !SwitchModeStore.isEnabled(this) ||
+            ProtectionChangeGate.isEditingUnlocked(this) ||
                 (!currentProfile.isNullOrBlank() && ProfileStore.getCurrent(this) == currentProfile)
         }
 
@@ -161,7 +161,7 @@ class AppPickerActivity : AppCompatActivity() {
 
     private fun canChangeSelection(currentlySelected: Boolean, requestedSelected: Boolean): Boolean {
         if (editsInactiveProfile()) return true
-        if (!SwitchModeStore.isEnabled(this)) return true
+        if (ProtectionChangeGate.isEditingUnlocked(this)) return true
         val profile = currentProfile
         if (profile.isNullOrBlank() || ProfileStore.getCurrent(this) != profile) return false
         if (currentlySelected == requestedSelected) return true
