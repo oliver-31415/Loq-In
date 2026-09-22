@@ -563,18 +563,16 @@ object ProtectionChangeGate {
             runCatching { EmergencyBypassStore.isActive(context) }.getOrDefault(false)
 
     /**
-     * Cancels queued app-selection weakenings that the user's current on-screen intent contradicts,
-     * e.g. re-checking an app whose unblock is still queued.
+     * Cancels a queued app-selection weakening for the given packages (user tapped the tile back
+     * to its stored state). Returns how many entries were affected.
      */
-    fun reconcilePendingWithSelection(context: Context, profile: String, allowMode: Boolean, managed: Set<String>) {
-        if (profile.isBlank()) return
+    fun cancelPendingAppSelection(context: Context, profile: String, allowMode: Boolean, packages: Set<String>): Int {
+        if (profile.isBlank() || packages.isEmpty()) return 0
+        val before = pendingChanges(context).size
         prunePending(context) { pending ->
-            if (allowMode) {
-                PendingChangeQueue.pruneAllowAdditionsNotIn(pending, profile, managed)
-            } else {
-                PendingChangeQueue.pruneAppSelection(pending, profile, allowMode = false, packages = managed)
-            }
+            PendingChangeQueue.pruneAppSelection(pending, profile, allowMode, packages)
         }
+        return before - pendingChanges(context).size
     }
 
     /** Rule keys with a queued weakening in-app change: baseKey -> requested selected state. */

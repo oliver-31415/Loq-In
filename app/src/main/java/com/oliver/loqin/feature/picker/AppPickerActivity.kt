@@ -321,6 +321,18 @@ class AppPickerActivity : AppCompatActivity() {
             onUncheckWithLimits = { packageName, label, proceed ->
                 promptLimitRemoval(packageName, label, proceed)
             },
+            onCancelPendingSelection = { packageName ->
+                val profile = currentProfile
+                if (!profile.isNullOrBlank()) {
+                    val allowMode = currentRuleMode == ProfileRuleModeStore.MODE_ALLOW_SELECTED
+                    ProtectionChangeGate.cancelPendingAppSelection(
+                        this, profile, allowMode, setOf(packageName),
+                    )
+                    if (::adapter.isInitialized && adapter.itemCount > 0) {
+                        adapter.notifyItemRangeChanged(0, adapter.itemCount)
+                    }
+                }
+            },
             pendingPackagesProvider = {
                 val profile = currentProfile
                 if (profile.isNullOrBlank()) {
@@ -401,6 +413,18 @@ class AppPickerActivity : AppCompatActivity() {
                     canChangeSelectionProvider = { current, requested -> canChangeSelection(current, requested) },
             onUncheckWithLimits = { packageName, label, proceed ->
                 promptLimitRemoval(packageName, label, proceed)
+            },
+            onCancelPendingSelection = { packageName ->
+                val profile = currentProfile
+                if (!profile.isNullOrBlank()) {
+                    val allowMode = currentRuleMode == ProfileRuleModeStore.MODE_ALLOW_SELECTED
+                    ProtectionChangeGate.cancelPendingAppSelection(
+                        this, profile, allowMode, setOf(packageName),
+                    )
+                    if (::adapter.isInitialized && adapter.itemCount > 0) {
+                        adapter.notifyItemRangeChanged(0, adapter.itemCount)
+                    }
+                }
             },
             pendingPackagesProvider = {
                 val profile = currentProfile
@@ -1122,13 +1146,9 @@ class AppPickerActivity : AppCompatActivity() {
             ProfileStore.getBlockedForProfile(this, profile)
         }
         if (store == managed) {
-            // Nothing to apply, but an undo (re-checking an app with a queued unblock) must
-            // cancel that pending change.
-            ProtectionChangeGate.reconcilePendingWithSelection(this, profile, allowMode, managed)
+            // Nothing changed. Do NOT touch the queue here: the store still contains apps whose
+            // unblock is queued, and reconciling from the store would silently cancel them.
             originalManagedPackages = store
-            if (::adapter.isInitialized && adapter.itemCount > 0) {
-                adapter.notifyItemRangeChanged(0, adapter.itemCount)
-            }
             return
         }
         when (ProtectionChangeGate.requestAppSelection(
@@ -1152,7 +1172,6 @@ class AppPickerActivity : AppCompatActivity() {
                 // snapping back to the store; the queued change will apply after the delay.
                 ProtectionFeedback.showQueued(this)
                 originalManagedPackages = store
-                ProtectionChangeGate.reconcilePendingWithSelection(this, profile, allowMode, managed)
                 // Rebind so the queued tile shows the hourglass badge and pending shade.
                 if (::adapter.isInitialized && adapter.itemCount > 0) {
                     adapter.notifyItemRangeChanged(0, adapter.itemCount)

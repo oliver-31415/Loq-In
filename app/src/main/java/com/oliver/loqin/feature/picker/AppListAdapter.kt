@@ -63,6 +63,7 @@ class AppListAdapter(
     private val canChangeSelectionProvider: (currentlySelected: Boolean, requestedSelected: Boolean) -> Boolean = { _, _ -> true },
     private val pendingPackagesProvider: () -> Set<String> = { emptySet() },
     private val onUncheckWithLimits: ((packageName: String, label: String, proceed: () -> Unit) -> Unit)? = null,
+    private val onCancelPendingSelection: ((packageName: String) -> Unit)? = null,
 ) : ListAdapter<AppEntry, AppListAdapter.VH>(DIFF) {
 
     private val allApps = allApps.toMutableList()
@@ -387,6 +388,11 @@ class AppListAdapter(
 
             fun onTileToggle() {
                 val checked = !intendedSelected
+                // Tapping a tile that has a queued change back to its stored state undoes it.
+                if (currentPending && checked == currentSelected) {
+                    onCancelPendingSelection?.invoke(item.packageName)
+                    return
+                }
                 val before = intendedSelected
                 if (!canChangeSelectionProvider(before, checked)) {
                     if (isReadOnlyProvider.invoke()) {
