@@ -89,4 +89,8 @@
     <string name="in_app_rules_active_summary_allow">%1$d von %2$d Bereichen erlaubt</string>
     <string name="in_app_rules_none_active">Keine Regeln aktiv · Zum Erweitern tippen</string>
     <string name="in_app_recognized_variants">Erkannt: %1$s</string>
+    <string name="in_app_block_entire_title">%1$s zusätzlich komplett blockieren?</string>
+    <string name="in_app_block_entire_message">Die In-App-Regel bleibt aktiv. Wenn du die ganze App blockierst, wird alles in %1$s blockiert, nicht nur der ausgewählte Bereich.</string>
+    <string name="in_app_block_entire_confirm">Ganze App blockieren</string>
+    <string name="in_app_block_entire_later">Nicht jetzt</string>
 </resources>

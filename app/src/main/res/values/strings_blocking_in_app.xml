@@ -89,4 +89,8 @@
     <string name="in_app_rules_active_summary_allow">%1$d of %2$d sections allowed</string>
     <string name="in_app_rules_none_active">No rules active · Tap to expand</string>
     <string name="in_app_recognized_variants">Recognized: %1$s</string>
+    <string name="in_app_block_entire_title">Also block %1$s entirely?</string>
+    <string name="in_app_block_entire_message">The in-app rule stays active. Blocking the entire app blocks everything in %1$s, not just the selected area.</string>
+    <string name="in_app_block_entire_confirm">Block entire app</string>
+    <string name="in_app_block_entire_later">Not now</string>
 </resources>

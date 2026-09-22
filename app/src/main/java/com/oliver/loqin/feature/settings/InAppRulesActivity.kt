@@ -67,6 +67,8 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.oliver.loqin.util.ProtectionFeedback
 import com.oliver.loqin.util.ProtectionChangePolicy
 import com.oliver.loqin.util.ProtectionChangeGate
+import com.oliver.loqin.ui.dialog.showAccented
+import com.oliver.loqin.util.AppBlockSafety
 
 class InAppRulesActivity : AppCompatActivity() {
     companion object {
@@ -234,6 +236,56 @@ class InAppRulesActivity : AppCompatActivity() {
                 applyRuleMode(mode)
             }
         }
+    }
+
+    /**
+     * After enabling an in-app rule for an app that is not whole-app managed, offer to block the
+     * entire app. The whole-app block goes through the protection change gate, so it queues while
+     * protection is active instead of applying instantly.
+     */
+    private fun appLabel(packageName: String): String = runCatching {
+        val info = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            packageManager.getApplicationInfo(
+                packageName,
+                android.content.pm.PackageManager.ApplicationInfoFlags.of(0),
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            packageManager.getApplicationInfo(packageName, 0)
+        }
+        packageManager.getApplicationLabel(info).toString()
+    }.getOrDefault(packageName)
+
+    private fun maybeOfferWholeAppBlock(packageName: String, label: String) {
+        val profile = currentProfile()
+        if (profile.isBlank() || packageName.isBlank()) return
+        if (AppBlockSafety.isAlwaysExcluded(this, packageName)) return
+        val allowMode = ProfileRuleModeStore.isAllowMode(this, profile)
+        val selected = ProfileStore.getSelectedForProfileMode(this, profile)
+        if (packageName in selected) return
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.in_app_block_entire_title, label))
+            .setMessage(getString(R.string.in_app_block_entire_message, label))
+            .setNegativeButton(R.string.in_app_block_entire_later, null)
+            .setPositiveButton(R.string.in_app_block_entire_confirm) { _, _ ->
+                when (ProtectionChangeGate.requestAppSelection(
+                    context = this,
+                    profile = profile,
+                    allowMode = allowMode,
+                    original = selected,
+                    requested = selected + packageName,
+                )) {
+                    ProtectionChangePolicy.Result.APPLIED -> Unit
+
+                    ProtectionChangePolicy.Result.QUEUED -> ProtectionFeedback.showQueued(this)
+
+                    ProtectionChangePolicy.Result.DENIED -> findViewById<View>(android.R.id.content)
+                        .showWarnPill(R.string.rules_tighten_only_active_message)
+                }
+                render()
+            }
+            .showAccented()
     }
 
     private fun confirmAllowSelectedMode() {
@@ -841,6 +893,9 @@ class InAppRulesActivity : AppCompatActivity() {
                         ProtectionChangePolicy.Result.APPLIED -> {
                             BlockingRuntime.ensureRunning(this@InAppRulesActivity)
                             onToggle?.invoke()
+                            if (checked) {
+                                maybeOfferWholeAppBlock(packageName, appLabel(packageName))
+                            }
                             if (EditingLockGuard.isLocked(this@InAppRulesActivity)) {
                                 button.post { render() }
                             }
