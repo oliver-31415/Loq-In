@@ -562,6 +562,21 @@ object ProtectionChangeGate {
         !EditingLockGuard.isLocked(context) ||
             runCatching { EmergencyBypassStore.isActive(context) }.getOrDefault(false)
 
+    /**
+     * Cancels queued app-selection weakenings that the user's current on-screen intent contradicts,
+     * e.g. re-checking an app whose unblock is still queued.
+     */
+    fun reconcilePendingWithSelection(context: Context, profile: String, allowMode: Boolean, managed: Set<String>) {
+        if (profile.isBlank()) return
+        prunePending(context) { pending ->
+            if (allowMode) {
+                PendingChangeQueue.pruneAllowAdditionsNotIn(pending, profile, managed)
+            } else {
+                PendingChangeQueue.pruneAppSelection(pending, profile, allowMode = false, packages = managed)
+            }
+        }
+    }
+
     /** Rule keys with a queued weakening in-app change: baseKey -> requested selected state. */
     fun pendingInAppSelections(context: Context, profile: String): Map<String, Boolean> {
         if (profile.isBlank()) return emptyMap()

@@ -1112,7 +1112,13 @@ class AppPickerActivity : AppCompatActivity() {
             ProfileStore.getBlockedForProfile(this, profile)
         }
         if (store == managed) {
+            // Nothing to apply, but an undo (re-checking an app with a queued unblock) must
+            // cancel that pending change.
+            ProtectionChangeGate.reconcilePendingWithSelection(this, profile, allowMode, managed)
             originalManagedPackages = store
+            if (::adapter.isInitialized && adapter.itemCount > 0) {
+                adapter.notifyItemRangeChanged(0, adapter.itemCount)
+            }
             return
         }
         when (ProtectionChangeGate.requestAppSelection(
@@ -1132,8 +1138,15 @@ class AppPickerActivity : AppCompatActivity() {
             }
 
             ProtectionChangePolicy.Result.QUEUED -> {
+                // Keep the user's intent on screen (tile unchecked, hourglass badge) instead of
+                // snapping back to the store; the queued change will apply after the delay.
                 ProtectionFeedback.showQueued(this)
-                rebaselineToStore(profile, allowMode)
+                originalManagedPackages = store
+                ProtectionChangeGate.reconcilePendingWithSelection(this, profile, allowMode, managed)
+                // Rebind so the queued tile shows the hourglass badge and pending shade.
+                if (::adapter.isInitialized && adapter.itemCount > 0) {
+                    adapter.notifyItemRangeChanged(0, adapter.itemCount)
+                }
             }
 
             ProtectionChangePolicy.Result.DENIED -> {

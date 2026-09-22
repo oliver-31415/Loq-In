@@ -73,8 +73,11 @@ weakening ones queue and then re-baseline the list to the store, and a refusal s
 message and reverts the tile.
 
 - Toggle a tile → leave the screen → come back: the change is still there.
-- A queued change shows the tile in the store's state plus the pending shade; the queue entry
-  appears in Protection changes.
+- A **queued** change keeps your intent on screen: the tile stays unchecked and shows the
+  **hourglass** badge ("Queued — will apply after the delay") plus the lighter shade; the app is
+  still blocked until the timer fires, and the entry appears in Protection changes.
+- **Undo:** re-check the tile before the timer and the queued change is cancelled.
+- With the delay Off, a weakening toggle is refused (locked message) and the tile reverts.
 - In allow-selected mode, Clear all asks for confirmation before it would block every app.
 
 ### 0.7 Unselecting an app that has limits

@@ -260,7 +260,7 @@ class AppListAdapter(
 
         private fun updateTileState(selected: Boolean) {
             val ctx = itemView.context
-            if (selected && currentPending) {
+            if (currentPending) {
                 // Queued weakening change: same accent hue, lighter shade and a faded badge so it
                 // reads as "blocked, but a change is waiting" instead of a different color.
                 val accent = AccentColor.getAccentColorInt(ctx)
@@ -277,10 +277,9 @@ class AppListAdapter(
                 cardRoot.setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.foqos_surface))
                 cardRoot.strokeColor = ContextCompat.getColor(ctx, R.color.foqos_outline_variant)
             }
-            ivChecked.visibility = if (selected) View.VISIBLE else View.GONE
-            if (selected) {
-                // Selected + limits is a restricted app, not a fully blocked one.
-                val limited = currentHasLimit
+            val showBadge = selected || currentPending
+            ivChecked.visibility = if (showBadge) View.VISIBLE else View.GONE
+            if (showBadge) {
                 // Hourglass = a change is queued. Everything else (blocked or limited) uses the
                 // check; a limit is already shown by the "N min/day" subtitle, and a stopwatch
                 // badge read as a delay timer.
@@ -290,7 +289,7 @@ class AppListAdapter(
                 ivChecked.alpha = if (currentPending) 0.85f else 1f
                 ivChecked.contentDescription = when {
                     currentPending -> ctx.getString(R.string.app_picker_pending_badge)
-                    limited -> ctx.getString(R.string.app_picker_limited_badge)
+                    currentHasLimit -> ctx.getString(R.string.app_picker_limited_badge)
                     else -> ctx.getString(R.string.app_picker_blocked_badge)
                 }
             }

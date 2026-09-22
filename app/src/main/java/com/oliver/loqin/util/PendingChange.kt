@@ -236,6 +236,24 @@ object PendingChangeQueue {
         }
     }
 
+    /** Cancels pending allow-additions for packages the user no longer wants allowed. */
+    fun pruneAllowAdditionsNotIn(
+        existing: List<PendingChange>,
+        profile: String,
+        allowedPackages: Set<String>,
+    ): List<PendingChange> = existing.mapNotNull { change ->
+        if (change.type != PendingChangeType.APP_SELECTION) return@mapNotNull change
+        if (change.data.optString("profile") != profile) return@mapNotNull change
+        if (!change.data.optBoolean("allowMode")) return@mapNotNull change
+        val requested = packageList(change.data, "addPackages")
+        val keep = requested.filter { it in allowedPackages }
+        if (keep.isEmpty()) return@mapNotNull null
+        if (keep.size == requested.size) return@mapNotNull change
+        val data = JSONObject(change.data.toString())
+        data.put("addPackages", JSONArray(keep))
+        change.copy(data = data)
+    }
+
     /** Re-enabling auto-block cancels the pending disable. */
     fun pruneAutoBlock(existing: List<PendingChange>, profile: String): List<PendingChange> =
         existing.filterNot { change ->
