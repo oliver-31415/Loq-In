@@ -183,4 +183,9 @@
     <string name="app_picker_row_action_in_app_rules">In-app rules</string>
     <string name="app_picker_row_action_in_app_rules_summary">Manage supported in-app sections for this profile.</string>
 
+    <string name="picker_limit_removal_title">Remove limits for %1$s?</string>
+    <string name="picker_limit_removal_message">%1$s has app limits. Remove them together with the selection, or keep them (the app stays limited).</string>
+    <string name="picker_limit_removal_remove">Remove limits</string>
+    <string name="picker_limit_removal_keep">Keep limits</string>
+    <string name="picker_limit_removal_remember">Remember my choice (change it later in Settings)</string>
 </resources>

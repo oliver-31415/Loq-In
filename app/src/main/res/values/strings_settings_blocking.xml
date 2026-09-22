@@ -331,4 +331,6 @@
     <string name="status_notification_temp_disable_body">Protection resumes when the timer ends</string>
     <string name="status_notification_temp_enable_body">Temporary protection ends when the timer ends</string>
 
+    <string name="pref_limit_removal_mode_title">Unselecting an app with limits</string>
+    <string name="limit_removal_mode_ask">Ask every time</string>
 </resources>

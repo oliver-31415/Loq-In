@@ -178,6 +178,18 @@ object ProtectionChangePolicy {
      * - allow mode: a listed but unselected app is hard-blocked, so adding a limit there weakens it;
      *   a selected (allowed) app gets restricted by a limit (strengthens).
      */
+    /**
+     * Direction of removing an app's limits, which depends on the whole-app state:
+     * - block mode: a selected app becomes hard-blocked (stricter), an unselected app becomes free (weaker);
+     * - allow mode: a selected (allowed) app becomes fully allowed (weaker), an unselected app becomes hard-blocked (stricter).
+     */
+    fun limitClearDirection(allowMode: Boolean, selected: Boolean): Direction = when {
+        !allowMode && selected -> Direction.STRICTER
+        !allowMode -> Direction.WEAKER
+        allowMode && selected -> Direction.WEAKER
+        else -> Direction.STRICTER
+    }
+
     fun appLimitSetDirection(
         allowMode: Boolean,
         selected: Boolean,

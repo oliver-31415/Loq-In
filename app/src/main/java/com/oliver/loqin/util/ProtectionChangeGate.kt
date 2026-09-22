@@ -431,7 +431,11 @@ object ProtectionChangeGate {
         includeInAppRules: Boolean,
     ): ProtectionChangePolicy.Result {
         if (profile.isBlank() || packages.isEmpty()) return ProtectionChangePolicy.Result.APPLIED
-        return when (decision(context, ProtectionChangePolicy.Direction.WEAKER)) {
+        val allowMode = ProfileRuleModeStore.isAllowMode(context, profile)
+        val selected = ProfileStore.getSelectedForProfileMode(context, profile)
+        val anySelected = packages.any { it in selected }
+        val direction = ProtectionChangePolicy.limitClearDirection(allowMode, anySelected)
+        return when (decision(context, direction)) {
             ProtectionChangePolicy.Decision.APPLY_NOW -> {
                 applyClearAppData(context, profile, packages, includeInAppRules)
                 ProtectionChangePolicy.Result.APPLIED

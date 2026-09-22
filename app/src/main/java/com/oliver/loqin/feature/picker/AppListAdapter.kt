@@ -62,6 +62,7 @@ class AppListAdapter(
     private val isReadOnlyProvider: () -> Boolean = { false },
     private val canChangeSelectionProvider: (currentlySelected: Boolean, requestedSelected: Boolean) -> Boolean = { _, _ -> true },
     private val pendingPackagesProvider: () -> Set<String> = { emptySet() },
+    private val onUncheckWithLimits: ((packageName: String, label: String, proceed: () -> Unit) -> Unit)? = null,
 ) : ListAdapter<AppEntry, AppListAdapter.VH>(DIFF) {
 
     private val allApps = allApps.toMutableList()
@@ -430,16 +431,17 @@ class AppListAdapter(
                         updateTileState(true)
                     }
                 } else {
-                    managed.remove(item.packageName)
-                    if (inAppRulesActive) {
-                        itemView.showWarnPill(R.string.app_picker_in_app_rules_stays_on_toast)
-                    }
-                    notifySelectionCountChanged()
-                    currentSelected = false
-                    updateTileState(false)
+                    fun applyUncheck() {
+                        managed.remove(item.packageName)
+                        if (inAppRulesActive) {
+                            itemView.showWarnPill(R.string.app_picker_in_app_rules_stays_on_toast)
+                        }
+                        notifySelectionCountChanged()
+                        currentSelected = false
+                        updateTileState(false)
 
-                    if (!item.isAvailable) {
-                        if (!profile.isNullOrBlank()) {
+                        if (!item.isAvailable) {
+                            if (!profile.isNullOrBlank()) {
                             ProtectionChangeGate.requestClearAppData(
                                 context = ctx,
                                 profile = profile,
@@ -447,8 +449,16 @@ class AppListAdapter(
                                 includeInAppRules = true,
                             )
                         }
-                        allApps.removeAll { it.packageName == item.packageName }
-                        submitList(currentList.filterNot { it.packageName == item.packageName })
+                            allApps.removeAll { it.packageName == item.packageName }
+                            submitList(currentList.filterNot { it.packageName == item.packageName })
+                        }
+                    }
+                    // An app with limits stays limited after unselecting, so ask what to do with them.
+                    val limitHandler = onUncheckWithLimits
+                    if (currentHasLimit && limitHandler != null) {
+                        limitHandler.invoke(item.packageName, item.label, ::applyUncheck)
+                    } else {
+                        applyUncheck()
                     }
                 }
             }

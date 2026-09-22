@@ -65,6 +65,18 @@ Key consequences (this is what the gate now models):
 
 The limit editor now tells you which case you are in at the top, e.g. **"Fully blocked. Adding a limit allows it until the limit is reached."** or **"Limited. Removing all limits blocks the app completely."**
 
+### 0.7 Unselecting an app that has limits
+
+An app with limits stays limited even after you remove it from the block list, so the picker asks what to do:
+
+1. Picker → tap an app that is **checked** and has a **timer badge** (a limit).
+2. **You should see:** **"Remove limits for <app>?"** with the message, a **Remember my choice** checkbox, and **Keep limits** / **Remove limits**.
+3. **Keep limits** → the app is unselected but its limits still apply (it stays limited).
+4. **Remove limits** → the app is unselected and its limits are cleared: with protection active this goes through the gate, so it **queues** (or is refused when the delay is Off).
+5. Tick **Remember my choice** before choosing, and the question stops appearing; your answer becomes the default.
+6. Change the default later in **Settings → Controls → Feature access → "Unselecting an app with limits"** (Ask every time / Remove limits / Keep limits).
+7. **Allow-selected mode is inverted:** unselecting removes the app's exemption. Removing its limits then makes it hard-blocked (a strengthening, applied immediately), while keeping them leaves it limited.
+
 ---
 
 ## 1. Queue mechanics

@@ -183,4 +183,9 @@
     <string name="app_picker_row_action_in_app_rules">In-App-Regeln</string>
     <string name="app_picker_row_action_in_app_rules_summary">Unterstützte In-App-Bereiche für dieses Profil verwalten.</string>
 
+    <string name="picker_limit_removal_title">Limits für %1$s entfernen?</string>
+    <string name="picker_limit_removal_message">%1$s hat App-Limits. Entferne sie zusammen mit der Auswahl oder behalte sie (die App bleibt limitiert).</string>
+    <string name="picker_limit_removal_remove">Limits entfernen</string>
+    <string name="picker_limit_removal_keep">Limits behalten</string>
+    <string name="picker_limit_removal_remember">Auswahl merken (später in den Einstellungen änderbar)</string>
 </resources>

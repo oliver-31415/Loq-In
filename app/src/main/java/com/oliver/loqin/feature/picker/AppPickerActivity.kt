@@ -91,6 +91,7 @@ import java.util.Locale
 import com.oliver.loqin.util.ProtectionFeedback
 import com.oliver.loqin.util.ProtectionChangePolicy
 import com.oliver.loqin.util.ProtectionChangeGate
+import com.oliver.loqin.data.prefs.PickerLimitActionStore
 
 class AppPickerActivity : AppCompatActivity() {
 
@@ -312,6 +313,9 @@ class AppPickerActivity : AppCompatActivity() {
             onSelectionChanged = { updateClearButtonLabel(btnClearAll) },
             isReadOnlyProvider = { EditingLockGuard.isLocked(this) },
             canChangeSelectionProvider = { current, requested -> canChangeSelection(current, requested) },
+            onUncheckWithLimits = { packageName, label, proceed ->
+                promptLimitRemoval(packageName, label, proceed)
+            },
             pendingPackagesProvider = {
                 val profile = currentProfile
                 if (profile.isNullOrBlank()) {
@@ -387,6 +391,9 @@ class AppPickerActivity : AppCompatActivity() {
                     onSelectionChanged = { updateClearButtonLabel(btnClearAll) },
                     isReadOnlyProvider = { EditingLockGuard.isLocked(this) },
                     canChangeSelectionProvider = { current, requested -> canChangeSelection(current, requested) },
+            onUncheckWithLimits = { packageName, label, proceed ->
+                promptLimitRemoval(packageName, label, proceed)
+            },
             pendingPackagesProvider = {
                 val profile = currentProfile
                 if (profile.isNullOrBlank()) {
@@ -980,6 +987,76 @@ class AppPickerActivity : AppCompatActivity() {
             .setAnchorView(anchor)
             .applyLoqInStyle()
             .show()
+    }
+
+    /**
+     * An app with limits stays limited after unselecting, so ask whether the limits should go too.
+     * The answer can be remembered; the default is configurable in Settings (Feature access).
+     */
+    private fun promptLimitRemoval(packageName: String, label: String, proceed: () -> Unit) {
+        val profile = currentProfile ?: return
+        when (PickerLimitActionStore.get(this)) {
+            PickerLimitActionStore.Action.REMOVE_LIMITS -> {
+                proceed()
+                removeAppLimits(profile, packageName)
+            }
+
+            PickerLimitActionStore.Action.KEEP_LIMITS -> proceed()
+
+            PickerLimitActionStore.Action.ASK -> showLimitRemovalDialog(packageName, label, proceed)
+        }
+    }
+
+    private fun showLimitRemovalDialog(packageName: String, label: String, proceed: () -> Unit) {
+        val profile = currentProfile ?: return
+        val density = resources.displayMetrics.density
+        val remember = com.google.android.material.checkbox.MaterialCheckBox(this).apply {
+            text = getString(R.string.picker_limit_removal_remember)
+            val night = (resources.configuration.uiMode and
+                android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+                android.content.res.Configuration.UI_MODE_NIGHT_YES
+            setTextColor(if (night) 0xFFF2F1EC.toInt() else 0xFF1B1B18.toInt())
+            setPadding(0, (12 * density).toInt(), 0, 0)
+        }
+        val container = android.widget.FrameLayout(this).apply {
+            val padH = (24 * density).toInt()
+            setPadding(padH, (4 * density).toInt(), padH, 0)
+            addView(remember)
+        }
+        AlertDialog.Builder(this)
+            .setTitle(getString(R.string.picker_limit_removal_title, label))
+            .setMessage(getString(R.string.picker_limit_removal_message, label))
+            .setView(container)
+            .setNegativeButton(R.string.picker_limit_removal_keep) { _, _ ->
+                if (remember.isChecked) {
+                    PickerLimitActionStore.set(this, PickerLimitActionStore.Action.KEEP_LIMITS)
+                }
+                proceed()
+            }
+            .setPositiveButton(R.string.picker_limit_removal_remove) { _, _ ->
+                if (remember.isChecked) {
+                    PickerLimitActionStore.set(this, PickerLimitActionStore.Action.REMOVE_LIMITS)
+                }
+                proceed()
+                removeAppLimits(profile, packageName)
+            }
+            .showAccented()
+    }
+
+    private fun removeAppLimits(profile: String, packageName: String) {
+        when (ProtectionChangeGate.requestClearAppData(
+            context = this,
+            profile = profile,
+            packages = listOf(packageName),
+            includeInAppRules = false,
+        )) {
+            ProtectionChangePolicy.Result.APPLIED -> Unit
+            ProtectionChangePolicy.Result.QUEUED -> ProtectionFeedback.showQueued(this)
+            ProtectionChangePolicy.Result.DENIED -> EditingLockGuard.showLockedDialog(
+                this,
+                R.string.rules_tighten_only_active_message,
+            )
+        }
     }
 
     private fun setupSaveButton(btnSave: Button) {
