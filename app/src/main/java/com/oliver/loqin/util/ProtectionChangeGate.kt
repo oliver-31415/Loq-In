@@ -272,13 +272,66 @@ object ProtectionChangeGate {
     ): ProtectionChangePolicy.Result {
         if (profile.isBlank() || packageName.isBlank()) return ProtectionChangePolicy.Result.DENIED
 
+        val oldTime = UsageLimitStore.getLimitMinutes(context, profile, packageName)
+        val oldAttempts = AttemptLimitStore.getLimitAttempts(context, profile, packageName)
+        val oldPerVisit = SessionLimitStore.getLimitMinutes(context, profile, packageName)
+        val newTime = requestedTimeMinutes.coerceAtLeast(0)
+        val newAttempts = requestedAttempts.coerceAtLeast(0)
+        val newPerVisit = requestedPerVisitMinutes.coerceAtLeast(0)
+
+        val allowMode = ProfileRuleModeStore.isAllowMode(context, profile)
+        val selected = packageName in ProfileStore.getSelectedForProfileMode(context, profile)
+        val currentHasLimit = oldTime > 0 || oldAttempts > 0 || oldPerVisit > 0
+        val requestedHasLimit = newTime > 0 || newAttempts > 0 || newPerVisit > 0
+
+        // Crossing the hard-block -> limited boundary changes what the limit means, so the whole
+        // edit is treated as one change instead of the per-component split.
+        if (currentHasLimit != requestedHasLimit) {
+            val direction = ProtectionChangePolicy.appLimitSetDirection(
+                allowMode = allowMode,
+                selected = selected,
+                currentHasLimit = currentHasLimit,
+                requestedHasLimit = requestedHasLimit,
+                componentDirection = ProtectionChangePolicy.Direction.NEUTRAL,
+            )
+            return when (decision(context, direction)) {
+                ProtectionChangePolicy.Decision.APPLY_NOW -> {
+                    applyLimitValues(
+                        context, profile, packageName,
+                        timeMinutes = newTime,
+                        attempts = newAttempts,
+                        perVisitMinutes = newPerVisit,
+                        resetMode = requestedResetMode,
+                    )
+                    ProtectionChangePolicy.Result.APPLIED
+                }
+
+                ProtectionChangePolicy.Decision.DENY -> ProtectionChangePolicy.Result.DENIED
+
+                ProtectionChangePolicy.Decision.QUEUE_DELAYED -> {
+                    val data = JSONObject()
+                        .put("profile", profile)
+                        .put("packageName", packageName)
+                        .put("fromTime", oldTime).put("toTime", newTime)
+                        .put("fromAttempts", oldAttempts).put("toAttempts", newAttempts)
+                        .put("fromPerVisit", oldPerVisit).put("toPerVisit", newPerVisit)
+                    if (newTime > 0) {
+                        data.put("fromReset", UsageLimitResetStore.getMode(context, profile, packageName))
+                            .put("toReset", requestedResetMode)
+                    }
+                    queue(context, PendingChangeType.APP_LIMITS, data)
+                    ProtectionChangePolicy.Result.QUEUED
+                }
+            }
+        }
+
         val plan = ProtectionChangePolicy.planAppLimits(
-            currentTimeMinutes = UsageLimitStore.getLimitMinutes(context, profile, packageName),
-            requestedTimeMinutes = requestedTimeMinutes,
-            currentAttempts = AttemptLimitStore.getLimitAttempts(context, profile, packageName),
-            requestedAttempts = requestedAttempts,
-            currentPerVisitMinutes = SessionLimitStore.getLimitMinutes(context, profile, packageName),
-            requestedPerVisitMinutes = requestedPerVisitMinutes,
+            currentTimeMinutes = oldTime,
+            requestedTimeMinutes = newTime,
+            currentAttempts = oldAttempts,
+            requestedAttempts = newAttempts,
+            currentPerVisitMinutes = oldPerVisit,
+            requestedPerVisitMinutes = newPerVisit,
             currentResetMode = UsageLimitResetStore.getMode(context, profile, packageName),
             requestedResetMode = requestedResetMode,
         )

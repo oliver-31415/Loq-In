@@ -189,7 +189,22 @@ object QuickLimitDialogs {
         }
 
         tvTitle.text = label
-        tvSubtitle.text = activity.getString(R.string.profile_active_fmt, profile)
+        val limitAllowMode = ProfileRuleModeStore.isAllowMode(activity, profile)
+        val limitSelected = pkg in ProfileStore.getSelectedForProfileMode(activity, profile)
+        val limitHasLimit = UsageLimitStore.getLimitMinutes(activity, profile, pkg) > 0 ||
+            AttemptLimitStore.getLimitAttempts(activity, profile, pkg) > 0 ||
+            SessionLimitStore.getLimitMinutes(activity, profile, pkg) > 0
+        val limitStateHint = activity.getString(
+            when {
+                limitAllowMode && limitSelected -> R.string.app_limit_state_allowed_allow_mode
+                limitAllowMode -> R.string.app_limit_state_blocked_allow_mode
+                limitSelected && limitHasLimit -> R.string.app_limit_state_blocked_has_limit
+                limitSelected -> R.string.app_limit_state_blocked
+                limitHasLimit -> R.string.app_limit_state_limited_unselected
+                else -> R.string.app_limit_state_free
+            }
+        )
+        tvSubtitle.text = activity.getString(R.string.profile_active_fmt, profile) + "\n" + limitStateHint
         runCatching {
             ivIcon.setImageDrawable(activity.packageManager.getApplicationIcon(pkg))
         }.onFailure {

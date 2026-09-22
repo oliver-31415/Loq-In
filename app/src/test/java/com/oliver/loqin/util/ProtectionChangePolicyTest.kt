@@ -309,6 +309,58 @@ class ProtectionChangePolicyTest {
     }
 
     @Test
+    fun `app limit edits account for the whole-app state`() {
+        val stricter = ProtectionChangePolicy.Direction.STRICTER
+        val weaker = ProtectionChangePolicy.Direction.WEAKER
+
+        // Block mode: adding the first limit to a blocked app turns a hard block into a limited app.
+        assertEquals(
+            weaker,
+            ProtectionChangePolicy.appLimitSetDirection(false, selected = true, currentHasLimit = false, requestedHasLimit = true, componentDirection = stricter),
+        )
+        // Block mode: adding a limit to a free app restricts it.
+        assertEquals(
+            stricter,
+            ProtectionChangePolicy.appLimitSetDirection(false, selected = false, currentHasLimit = false, requestedHasLimit = true, componentDirection = stricter),
+        )
+        // Block mode: removing the last limit from a blocked app returns it to hard block.
+        assertEquals(
+            stricter,
+            ProtectionChangePolicy.appLimitSetDirection(false, selected = true, currentHasLimit = true, requestedHasLimit = false, componentDirection = weaker),
+        )
+        // Block mode: removing the last limit from a limited (unselected) app frees it.
+        assertEquals(
+            weaker,
+            ProtectionChangePolicy.appLimitSetDirection(false, selected = false, currentHasLimit = true, requestedHasLimit = false, componentDirection = weaker),
+        )
+        // Both states have limits: per-component direction wins.
+        assertEquals(
+            weaker,
+            ProtectionChangePolicy.appLimitSetDirection(false, selected = true, currentHasLimit = true, requestedHasLimit = true, componentDirection = weaker),
+        )
+        // Allow mode: a selected (allowed) app gets restricted by a limit.
+        assertEquals(
+            stricter,
+            ProtectionChangePolicy.appLimitSetDirection(true, selected = true, currentHasLimit = false, requestedHasLimit = true, componentDirection = stricter),
+        )
+        // Allow mode: a listed-but-blocked app becomes limited instead of blocked.
+        assertEquals(
+            weaker,
+            ProtectionChangePolicy.appLimitSetDirection(true, selected = false, currentHasLimit = false, requestedHasLimit = true, componentDirection = stricter),
+        )
+        // Allow mode: removing the last limit hard-blocks the app again.
+        assertEquals(
+            stricter,
+            ProtectionChangePolicy.appLimitSetDirection(true, selected = false, currentHasLimit = true, requestedHasLimit = false, componentDirection = weaker),
+        )
+        // No limit on either side is neutral.
+        assertEquals(
+            ProtectionChangePolicy.Direction.NEUTRAL,
+            ProtectionChangePolicy.appLimitSetDirection(false, selected = true, currentHasLimit = false, requestedHasLimit = false, componentDirection = stricter),
+        )
+    }
+
+    @Test
     fun `limits with no change are neutral`() {
         val plan = ProtectionChangePolicy.planAppLimits(30, 30, 5, 5, 10, 10, "day", "day")
         assertEquals(Direction.NEUTRAL, plan.direction)

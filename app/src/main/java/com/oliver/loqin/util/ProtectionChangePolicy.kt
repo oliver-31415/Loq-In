@@ -168,6 +168,42 @@ object ProtectionChangePolicy {
         }
 
     /**
+     * Direction of an app limit edit once the whole-app state is taken into account.
+     *
+     * A limit is a softer restriction than a whole-app block:
+     * - block mode: a selected app is hard-blocked until it gets a limit, so adding the first limit
+     *   weakens protection; removing the last limit hard-blocks it again (strengthens).
+     * - block mode, app not selected: adding a limit restricts an otherwise free app (strengthens),
+     *   removing it frees the app again (weakens).
+     * - allow mode: a listed but unselected app is hard-blocked, so adding a limit there weakens it;
+     *   a selected (allowed) app gets restricted by a limit (strengthens).
+     */
+    fun appLimitSetDirection(
+        allowMode: Boolean,
+        selected: Boolean,
+        currentHasLimit: Boolean,
+        requestedHasLimit: Boolean,
+        componentDirection: Direction,
+    ): Direction {
+        if (currentHasLimit && requestedHasLimit) return componentDirection
+        if (!currentHasLimit && requestedHasLimit) {
+            return if (allowMode) {
+                if (selected) Direction.STRICTER else Direction.WEAKER
+            } else {
+                if (selected) Direction.WEAKER else Direction.STRICTER
+            }
+        }
+        if (currentHasLimit) {
+            return if (allowMode) {
+                if (selected) Direction.WEAKER else Direction.STRICTER
+            } else {
+                if (selected) Direction.STRICTER else Direction.WEAKER
+            }
+        }
+        return Direction.NEUTRAL
+    }
+
+    /**
      * Direction of a website limit edit (the website limit editor can switch between a hard block
      * and a time limit).
      * - switching to "block always" adds protection;

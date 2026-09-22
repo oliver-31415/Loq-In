@@ -438,4 +438,10 @@
     <string name="usage_timeline_recent_details_unavailable">No archived open sessions are available for this range yet. Loq In now stores exact sessions locally and includes them in statistics backups; recent Android history is imported when Usage Access is available.</string>
     <string name="usage_chart_other_apps">Other</string>
 
+    <string name="app_limit_state_blocked">Fully blocked. Adding a limit allows it until the limit is reached.</string>
+    <string name="app_limit_state_blocked_has_limit">Limited. Removing all limits blocks the app completely.</string>
+    <string name="app_limit_state_free">Not restricted. Adding a limit restricts how much it can be used.</string>
+    <string name="app_limit_state_limited_unselected">Limited. Removing all limits frees the app again.</string>
+    <string name="app_limit_state_allowed_allow_mode">Allowed. A limit restricts how much it can be used.</string>
+    <string name="app_limit_state_blocked_allow_mode">Blocked. Adding a limit allows it until the limit is reached.</string>
 </resources>

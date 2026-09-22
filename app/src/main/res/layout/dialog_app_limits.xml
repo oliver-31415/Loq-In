@@ -51,7 +51,7 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="1dp"
                     android:ellipsize="end"
-                    android:maxLines="1"
+                    android:maxLines="2"
                     android:textColor="@color/foqos_on_surface_variant"
                     android:textSize="12.5sp" />
             </LinearLayout>

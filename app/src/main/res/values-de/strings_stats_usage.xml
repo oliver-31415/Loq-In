@@ -438,4 +438,10 @@
     <string name="usage_timeline_recent_details_unavailable">Für diesen Zeitraum sind noch keine archivierten App-Öffnungen verfügbar. Loq In speichert exakte Sitzungen jetzt lokal und übernimmt sie in Statistik-Backups; der aktuelle Android-Verlauf wird importiert, wenn der Nutzungszugriff verfügbar ist.</string>
     <string name="usage_chart_other_apps">Andere</string>
 
+    <string name="app_limit_state_blocked">Vollständig blockiert. Ein Limit erlaubt die App bis zum Erreichen des Limits.</string>
+    <string name="app_limit_state_blocked_has_limit">Limitiert. Wenn alle Limits entfernt werden, wird die App komplett blockiert.</string>
+    <string name="app_limit_state_free">Nicht eingeschränkt. Ein Limit schränkt die Nutzung ein.</string>
+    <string name="app_limit_state_limited_unselected">Limitiert. Wenn alle Limits entfernt werden, ist die App wieder frei.</string>
+    <string name="app_limit_state_allowed_allow_mode">Erlaubt. Ein Limit schränkt die Nutzung ein.</string>
+    <string name="app_limit_state_blocked_allow_mode">Blockiert. Ein Limit erlaubt die App bis zum Erreichen des Limits.</string>
 </resources>

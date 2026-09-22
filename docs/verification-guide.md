@@ -44,6 +44,27 @@ Devices: Pixel 10 Pro XL (main), emulator-5554. Build: `com.oliver.loqin.loqinde
 1. **Off:** Home → blue profile card → tap **Disable**. The pill changes to **Disabled**.
 2. **On:** Home → blue profile card → tap **Enable**. Wait for **Active now**.
 
+### 0.6 Blocked vs limited — read this before the limit tests
+
+These are two different states, and the second one always wins:
+
+| State | Meaning | Example |
+|---|---|---|
+| **Blocked** | On the profile's block list and **no limit set** | Opening Calendar always shows the block screen |
+| **Limited** | **Any** limit is set (screen time, opens/day, max per visit) | Calendar opens, but once the daily minutes are used up it blocks for the day |
+| **Unrestricted** | Not on the block list and no limit | Calendar always opens |
+
+Key consequences (this is what the gate now models):
+
+- **Adding a limit to a blocked app makes it limited** — it changes from "always blocked" to "allowed until the limit". That is a **weakening**, so with protection active it **queues** instead of applying.
+- **Removing the last limit from a blocked app** returns it to a hard block — a **strengthening**, applied immediately.
+- **Adding a limit to an unrestricted app** restricts it — a strengthening, applied immediately.
+- **Removing the last limit from an unrestricted app** frees it — a weakening, queues.
+- Raising/lowering a limit on an already-limited app: lowering is stricter, raising is weaker (component by component, e.g. lowering screen time while raising opens).
+- In **allow-selected** mode the same logic applies inverted: the app's own entry is the exception, so adding a limit to an allowed app restricts it, and adding a limit to a blocked app makes it limited instead.
+
+The limit editor now tells you which case you are in at the top, e.g. **"Fully blocked. Adding a limit allows it until the limit is reached."** or **"Limited. Removing all limits blocks the app completely."**
+
 ---
 
 ## 1. Queue mechanics
