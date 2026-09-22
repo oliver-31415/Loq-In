@@ -92,6 +92,7 @@ import com.oliver.loqin.util.ProtectionFeedback
 import com.oliver.loqin.util.ProtectionChangePolicy
 import com.oliver.loqin.util.ProtectionChangeGate
 import com.oliver.loqin.data.prefs.PickerLimitActionStore
+import com.oliver.loqin.data.prefs.SwitchModeStore
 
 class AppPickerActivity : AppCompatActivity() {
 
@@ -148,7 +149,7 @@ class AppPickerActivity : AppCompatActivity() {
         if (allowLockedProfileStrictEdits && !currentProfile.isNullOrBlank()) {
             true
         } else {
-            !EditingLockGuard.isLocked(this) ||
+            !SwitchModeStore.isEnabled(this) ||
                 (!currentProfile.isNullOrBlank() && ProfileStore.getCurrent(this) == currentProfile)
         }
 
@@ -160,7 +161,7 @@ class AppPickerActivity : AppCompatActivity() {
 
     private fun canChangeSelection(currentlySelected: Boolean, requestedSelected: Boolean): Boolean {
         if (editsInactiveProfile()) return true
-        if (!EditingLockGuard.isLocked(this)) return true
+        if (!SwitchModeStore.isEnabled(this)) return true
         val profile = currentProfile
         if (profile.isNullOrBlank() || ProfileStore.getCurrent(this) != profile) return false
         if (currentlySelected == requestedSelected) return true

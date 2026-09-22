@@ -69,6 +69,7 @@ import com.oliver.loqin.util.ProtectionChangePolicy
 import com.oliver.loqin.util.ProtectionChangeGate
 import com.oliver.loqin.ui.dialog.showAccented
 import com.oliver.loqin.util.AppBlockSafety
+import com.oliver.loqin.data.prefs.SwitchModeStore
 
 class InAppRulesActivity : AppCompatActivity() {
     companion object {
@@ -857,7 +858,7 @@ class InAppRulesActivity : AppCompatActivity() {
         val currentChecked = prefKey?.let { readProfileBool(it) } ?: false
         val pendingSelected = prefKey?.let { pendingInAppSelections[it] }
         val canToggleWhileLocked = prefKey != null && run {
-            if (!EditingLockGuard.isLocked(this)) return@run true
+            if (!SwitchModeStore.isEnabled(this)) return@run true
             val direction = ProtectionChangePolicy.inAppDirection(
                 allowMode = isInAppAllowMode(),
                 currentSelected = currentChecked,

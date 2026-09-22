@@ -81,7 +81,7 @@ object ProtectionChangeGate {
 
     /** The delay itself is protection-sensitive: while locked it may only stay the same or grow. */
     fun setDelayMinutes(context: Context, requestedMinutes: Int): Boolean {
-        val locked = EditingLockGuard.isLocked(context)
+        val locked = runCatching { SwitchModeStore.isEnabled(context) }.getOrDefault(false)
         if (!ProtectionChangePolicy.canSetDelayMinutes(locked, getDelayMinutes(context), requestedMinutes)) {
             return false
         }
@@ -89,12 +89,26 @@ object ProtectionChangeGate {
         return true
     }
 
-    fun decision(context: Context, direction: ProtectionChangePolicy.Direction): ProtectionChangePolicy.Decision =
-        ProtectionChangePolicy.decision(
-            locked = EditingLockGuard.isLocked(context),
+    /**
+     * Weakening changes are only gated while protection is actually enforcing. A temporary break or
+     * Emergency Unlock means nothing is being blocked right now, so edits apply immediately instead
+     * of queuing with a countdown. Structural changes still require the fully-off state.
+     */
+    fun decision(context: Context, direction: ProtectionChangePolicy.Direction): ProtectionChangePolicy.Decision {
+        if (direction == ProtectionChangePolicy.Direction.PROTECTED_STRUCTURAL) {
+            return ProtectionChangePolicy.decision(
+                locked = EditingLockGuard.isLocked(context),
+                delayMinutes = getDelayMinutes(context),
+                direction = direction,
+            )
+        }
+        val effectivelyEnforcing = runCatching { SwitchModeStore.isEnabled(context) }.getOrDefault(false)
+        return ProtectionChangePolicy.decision(
+            locked = effectivelyEnforcing,
             delayMinutes = getDelayMinutes(context),
             direction = direction,
         )
+    }
 
     // ---------------------------------------------------------------------------------------------
     // App selection
