@@ -126,7 +126,13 @@ object ProtectionChangeGate {
         }
         return when (decision(context, plan.direction)) {
             ProtectionChangePolicy.Decision.APPLY_NOW -> {
-                applySelection(context, profile, allowMode, plan.applyNow, remove = allowMode)
+                // Unlocked (or not enforcing): the requested selection is the new state. Applying
+                // only the stricter half would silently drop removals.
+                if (allowMode) {
+                    ProfileStore.setAllowedForProfile(context, profile, requested)
+                } else {
+                    ProfileStore.setBlockedForProfile(context, profile, requested)
+                }
                 ProtectionChangePolicy.Result.APPLIED
             }
 
