@@ -314,4 +314,19 @@
     <string name="schedules_test_result_emergency">während des Notfallmodus blockiert</string>
     <string name="schedules_test_result_temp_override">würde den Basiszustand des Zeitplans aktualisieren; die temporäre Aktion bleibt aktiv</string>
 
+    <string name="schedules_preview_title">Diesen Zeitplan speichern?</string>
+    <string name="schedules_preview_confirm">Zeitplan speichern</string>
+    <string name="schedules_preview_profile">Profil</string>
+    <string name="schedules_preview_action">Aktion</string>
+    <string name="schedules_preview_when">Wann</string>
+    <string name="schedules_preview_time">Zeit</string>
+    <string name="schedules_preview_note">Notiz</string>
+    <string name="schedules_preview_wifi_fmt">WLAN · %1$s</string>
+    <string name="schedules_preview_bt_fmt">Bluetooth · %1$s</string>
+    <string name="schedules_preview_location_fmt">Ort · %1$s</string>
+    <string name="schedules_preview_location_enter">bei Ankunft</string>
+    <string name="schedules_preview_location_exit">beim Verlassen</string>
+    <string name="schedules_preview_location_enter_exit">bei Ankunft und Verlassen</string>
+    <string name="schedules_preview_once">Einmalig</string>
+    <string name="schedules_preview_weekly">Wöchentlich</string>
 </resources>

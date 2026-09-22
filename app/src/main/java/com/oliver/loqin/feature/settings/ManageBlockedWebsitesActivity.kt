@@ -63,7 +63,9 @@ import com.oliver.loqin.ui.dialog.styleLoqInDestructivePositiveButton
 import com.oliver.loqin.ui.dialog.styleLoqInDialogButtons
 import com.oliver.loqin.ui.updateSelectionSubtitle
 import com.oliver.loqin.util.EditingLockGuard
-import com.oliver.loqin.util.ProtectionEditPolicy
+import com.oliver.loqin.util.ProtectionChangeGate
+import com.oliver.loqin.util.ProtectionChangePolicy
+import com.oliver.loqin.util.ProtectionFeedback
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
@@ -82,8 +84,16 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         return EditingLockGuard.isLocked(this)
     }
 
-    private fun canAddBlockedWebsite(): Boolean =
-        ProtectionEditPolicy.canAddBlockedWebsite(this, currentProfile(), isAllowMode())
+    /**
+     * Adding a block rule is stricter and stays available while protection is active; in allow mode
+     * an addition would widen the allow list, so it requires protection to be off.
+     */
+    private fun canAddBlockedWebsite(): Boolean {
+        val profile = currentProfile()
+        if (profile.isNullOrBlank()) return false
+        if (!EditingLockGuard.isLocked(this)) return true
+        return ProfileStore.getCurrent(this) == profile && !isAllowMode()
+    }
 
     private fun denyWebsiteEditWithPopover(): Boolean {
         if (EditingLockGuard.isLocked(this)) {
@@ -274,6 +284,12 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         adapter = DomainRuleAdapter(
             onEdit = { showEditDialog(it) },
             onToggleEnabled = { domain, enabled -> setRuleEnabled(domain, enabled) },
+            pendingEnabledProvider = {
+                ProtectionChangeGate.pendingWebsiteEnabled(this, currentProfile())
+            },
+            pendingRemovalsProvider = {
+                ProtectionChangeGate.pendingWebsiteRemovals(this, currentProfile())
+            },
             onToggleSelection = { toggleSelection(it) },
             isSelectionMode = { isSelectionMode },
             isSelected = { selectedDomains.contains(it) }
@@ -282,7 +298,7 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         rv.layoutManager = LinearLayoutManager(this)
         rv.adapter = adapter
         rv.attachEditDeleteSwipe(
-            canSwipe = { !isSelectionMode && !EditingLockGuard.isLocked(this) },
+            canSwipe = { !isSelectionMode },
             onEdit = { position ->
                 adapter.itemAt(position)?.let { showEditDialog(it.domain) }
             },
@@ -497,9 +513,6 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
     }
 
     private fun confirmDeleteSelected() {
-        if (websiteEditingLocked()) {
-            return
-        }
         if (selectedDomains.isEmpty()) {
             return
         }
@@ -515,13 +528,24 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
             dlg.styleLoqInDestructivePositiveButton()
             dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
                 val profile = currentProfile()
+                var queued = 0
+                var denied = 0
                 selectedDomains.toList().forEach { domain ->
-                    DomainBlockStore.removeDomainForProfile(this@ManageBlockedWebsitesActivity, profile, domain)
-                    DomainLimitStore.clearForProfile(this@ManageBlockedWebsitesActivity, profile, domain)
+                    when (ProtectionChangeGate.requestWebsiteRemoval(this@ManageBlockedWebsitesActivity, profile, domain)) {
+                        ProtectionChangePolicy.Result.APPLIED -> Unit
+                        ProtectionChangePolicy.Result.QUEUED -> queued++
+                        ProtectionChangePolicy.Result.DENIED -> denied++
+                    }
                 }
                 exitSelectionMode()
                 refreshList()
                 dlg.dismiss()
+                when {
+                    denied > 0 -> findViewById<View>(android.R.id.content)
+                        .showWarnPill(R.string.edit_locked_manage_websites)
+
+                    queued > 0 -> ProtectionFeedback.showQueued(this)
+                }
             }
         }
 
@@ -529,27 +553,61 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
     }
 
     private fun removeRule(domain: String) {
-        if (websiteEditingLocked()) {
-            return
+        when (ProtectionChangeGate.requestWebsiteRemoval(this, currentProfile(), domain)) {
+            ProtectionChangePolicy.Result.APPLIED -> refreshList()
+
+            ProtectionChangePolicy.Result.QUEUED -> {
+                ProtectionFeedback.showQueued(this)
+                refreshList()
+            }
+
+            ProtectionChangePolicy.Result.DENIED -> findViewById<View>(android.R.id.content)
+                .showWarnPill(R.string.edit_locked_manage_websites)
         }
-        val profile = currentProfile()
-        DomainBlockStore.removeDomainForProfile(this, profile, domain)
-        DomainLimitStore.clearForProfile(this, profile, domain)
-        refreshList()
+    }
+
+    /**
+     * Path rules are independent of a host rule: deleting "example.com" must leave its path rules
+     * (for example "example.com/blocked/&lt;path&gt;") untouched. Limits are stored per host, so the
+     * host limit may only be cleared when no rule for that host remains.
+     */
+    private fun clearLimitIfNoRulesRemainForHost(profile: String, removedRule: String) {
+        val normalized = DomainBlockStore.normalize(removedRule) ?: return
+        val host = DomainBlockStore.hostPart(normalized)?.takeIf { it.isNotBlank() } ?: return
+        val remaining = DomainBlockStore.getDomainsForProfileAndMode(this, profile).any {
+            DomainBlockStore.hostPart(it) == host
+        } || DomainBlockStore.getDisabledDomainsForProfile(this, profile).any {
+            DomainBlockStore.hostPart(it) == host
+        }
+        if (!remaining) {
+            DomainLimitStore.clearForProfile(this, profile, host)
+        }
     }
 
     private fun setRuleEnabled(domain: String, enabled: Boolean) {
-        if (websiteEditingLocked()) {
-            return
+        when (ProtectionChangeGate.requestWebsiteEnabled(
+            context = this,
+            profile = currentProfile(),
+            rule = domain,
+            currentEnabled = !enabled,
+            requestedEnabled = enabled,
+        )) {
+            ProtectionChangePolicy.Result.APPLIED -> refreshList()
+
+            ProtectionChangePolicy.Result.QUEUED -> {
+                ProtectionFeedback.showQueued(this)
+                refreshList()
+            }
+
+            ProtectionChangePolicy.Result.DENIED -> {
+                findViewById<View>(android.R.id.content)
+                    .showWarnPill(R.string.edit_locked_manage_websites)
+                refreshList()
+            }
         }
-        DomainBlockStore.setDomainEnabledForProfile(this, currentProfile(), domain, enabled)
-        refreshList()
     }
 
     private fun confirmDeleteSingle(domain: String) {
-        if (websiteEditingLocked()) {
-            return
-        }
         AlertDialog.Builder(this)
             .setTitle(R.string.delete)
             .setMessage(
@@ -611,6 +669,11 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
 
         etDomain.setText(initialDomain)
         etDomain.isEnabled = allowDomainEdit
+        tilDomain.helperText = if (allowDomainEdit && !isAllowMode()) {
+            getString(R.string.website_rule_path_hint)
+        } else {
+            null
+        }
 
         val modeAlways = getString(if (isAllowMode()) R.string.rule_allowed_always else R.string.rule_block_always)
         val modeLimit = getString(R.string.rule_daily_limit)
@@ -667,6 +730,10 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
                     tilDomain.error = getString(R.string.domain_required)
                     return@setOnClickListener
                 }
+                if (isAllowMode() && DomainBlockStore.isPathRule(normalized)) {
+                    tilDomain.error = getString(R.string.website_rule_path_allow_mode_error)
+                    return@setOnClickListener
+                }
                 tilDomain.error = null
 
                 val hardBlock = acMode.text?.toString() == modeAlways
@@ -721,6 +788,8 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
     private inner class DomainRuleAdapter(
         private val onEdit: (String) -> Unit,
         private val onToggleEnabled: (String, Boolean) -> Unit,
+        private val pendingEnabledProvider: () -> Map<String, Boolean> = { emptyMap() },
+        private val pendingRemovalsProvider: () -> Set<String> = { emptySet() },
         private val onToggleSelection: (String) -> Unit,
         private val isSelectionMode: () -> Boolean,
         private val isSelected: (String) -> Boolean,
@@ -775,11 +844,22 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
                     rule.isHardBlocked -> getString(R.string.rule_blocked)
                     else -> ""
                 }
-                tvMeta.text = listOfNotNull(
-                    if (rule.enabled) null else getString(R.string.website_rule_disabled),
-                    baseMeta.takeIf { it.isNotBlank() }
-                ).joinToString(" · ")
-                val contentAlpha = if (rule.enabled) 1f else 0.52f
+                val pendingEnabled = pendingEnabledProvider()[rule.domain]
+                val pendingRemoval = rule.domain in pendingRemovalsProvider()
+                val pending = pendingEnabled != null || pendingRemoval
+                tvMeta.text = if (pending) {
+                    getString(R.string.website_rule_pending)
+                } else {
+                    listOfNotNull(
+                        if (rule.enabled) null else getString(R.string.website_rule_disabled),
+                        baseMeta.takeIf { it.isNotBlank() }
+                    ).joinToString(" · ")
+                }
+                val contentAlpha = when {
+                    pending -> 0.62f
+                    rule.enabled -> 1f
+                    else -> 0.52f
+                }
                 tvDomain.alpha = contentAlpha
                 tvMeta.alpha = if (rule.enabled) 0.70f else 0.56f
                 ivDomainIcon.alpha = contentAlpha
@@ -807,17 +887,18 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
 
                 CustomAccentApplier.tintSwitch(swRuleEnabled)
                 swRuleEnabled.setOnCheckedChangeListener(null)
-                swRuleEnabled.isChecked = rule.enabled
+                // A queued change previews its target state in a faded switch instead of reverting.
+                swRuleEnabled.isChecked = pendingEnabled ?: rule.enabled
                 // Stay tappable (dimmed) so locked taps warn via popover instead of doing nothing.
                 swRuleEnabled.isEnabled = true
-                swRuleEnabled.alpha = if (readOnly) 0.45f else 1f
+                swRuleEnabled.alpha = when {
+                    pending -> 0.55f
+                    readOnly -> 0.45f
+                    else -> 1f
+                }
                 swRuleEnabled.setOnCheckedChangeListener { _, isChecked ->
-                    if (websiteEditingLocked()) {
-                        swRuleEnabled.isChecked = rule.enabled
-                        swRuleEnabled.alpha = 0.45f
-                        denyWebsiteEditWithPopover()
-                        return@setOnCheckedChangeListener
-                    }
+                    // The gate decides (apply / queue / deny) and refreshList() restores the
+                    // switch when the change was queued or denied.
                     onToggleEnabled(rule.domain, isChecked)
                 }
 

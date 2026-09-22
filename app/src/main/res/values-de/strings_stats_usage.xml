@@ -9,6 +9,9 @@
     <string name="daily_limit_label">Tägliches Limit: %1$d Min/Tag</string>
     <string name="daily_limit_10">Tägliches Limit: 10 Min</string>
     <string name="attempt_limit_label">Öffnen-Limit: %1$d/Tag</string>
+    <string name="limit_tile_daily_fmt">%1$d Min./Tag</string>
+    <string name="limit_tile_visit_fmt">%1$d Min./Besuch</string>
+    <string name="limit_tile_attempts_fmt">%1$d Öffnungen/Tag</string>
     <plurals name="daily_attempt_limit_value_format">
         <item quantity="one">%1$d Öffnung/Tag</item>
         <item quantity="other">%1$d Öffnungen/Tag</item>
@@ -51,25 +54,41 @@
     <!-- ====================================================== -->
     <string name="app_limit_editor_subtitle_fmt">%1$s\n%2$s</string>
     <string name="app_limit_editor_summary">Hier kannst du Limits kombinieren, z. B. 4 Öffnungen pro Tag mit 8 Minuten pro Besuch.</string>
-    <string name="app_limit_time_hint">Gesamt-Zeitlimit (Minuten)</string>
+    <string name="app_limit_time_hint">Tageslimit</string>
+    <string name="app_limit_unit_minutes">Min.</string>
+    <string name="app_limit_unit_opens">Öffnungen</string>
+    <string name="app_limit_pill_15m">15 Min.</string>
+    <string name="app_limit_pill_30m">30 Min.</string>
+    <string name="app_limit_pill_1h">1 Std.</string>
+    <string name="app_limit_pill_2h">2 Std.</string>
     <string name="app_limit_attempts_hint">Öffnungen pro Tag</string>
     <string name="app_limit_per_visit_hint">Minuten pro Besuch</string>
     <string name="app_limit_blank_hint">Feld leer lassen, um dieses Limit zu deaktivieren.</string>
     <string name="app_limit_clear_all">Limits löschen</string>
     <string name="app_limit_section_time">Bildschirmzeit</string>
     <string name="app_limit_section_opens">App-Öffnungen</string>
-    <string name="app_limit_section_visit">Einzelne Sitzung</string>
+    <string name="app_limit_section_visit">Max. pro Besuch</string>
+    <string name="app_limit_reset_label">Erneuert sich</string>
+    <string name="app_limit_reset_daily">Jeden Tag</string>
+    <string name="app_limit_reset_protection">Schutz-Neustart</string>
+    <string name="app_limit_reset_hint_daily">Das Kontingent wird um Mitternacht erneuert.</string>
+    <string name="app_limit_reset_hint_protection">Das Kontingent wird erneuert, wenn der Schutz aus- und wieder eingeschaltet wird.</string>
+    <string name="app_limit_sentence_time_session_fmt">Bis zu %1$d Min. pro Schutz-Sitzung</string>
     <string name="app_limit_time_subtitle">Minuten insgesamt pro Tag</string>
+    <string name="app_limit_time_subtitle_session">Minuten insgesamt pro Schutz-Sitzung</string>
+    <string name="app_limit_time_hint_session">Limit pro Sitzung</string>
+    <string name="app_limit_visit_exceeds_session_fmt">Besuchslimit (%1$d Min.) ist höher als das Sitzungslimit (%2$d Min.).</string>
     <string name="app_limit_opens_subtitle">Wie oft die App pro Tag geöffnet werden darf</string>
-    <string name="app_limit_visit_subtitle">Längste einzelne Sitzung</string>
+    <string name="app_limit_visit_subtitle">Längster einzelner Besuch</string>
     <string name="app_limit_save">Limits speichern</string>
     <string name="app_limit_remove">Limits entfernen</string>
     <string name="app_limit_remove_confirm_title">Limits entfernen?</string>
     <string name="app_limit_remove_confirm_message">Dadurch werden alle Limits für %1$s gelöscht und die heutigen Zähler zurückgesetzt.</string>
     <string name="app_limit_sentence_none">Keine Limits festgelegt. Diese App kann ohne Einschränkungen geöffnet werden.</string>
+    <string name="app_limit_sentence_fully_blocked">Diese App ist im aktuellen Profil vollständig blockiert. Füge ein Limit hinzu, um eine eingeschränkte Nutzung zu erlauben.</string>
     <string name="app_limit_sentence_time_fmt">Bis zu %1$d Min./Tag erlaubt</string>
-    <string name="app_limit_sentence_split_fmt">, aufgeteilt auf höchstens %1$d Öffnungen</string>
-    <string name="app_limit_sentence_visit_fmt"> (max. %1$d Min. pro Besuch)</string>
+    <string name="app_limit_sentence_split_fmt">\u0020\u00b7 aufgeteilt auf höchstens %1$d Öffnungen</string>
+    <string name="app_limit_sentence_visit_fmt">\u0020\u00b7 max. %1$d Min. pro Besuch</string>
     <string name="app_limit_sentence_opens_only_fmt">Bis zu %1$d Öffnungen pro Tag</string>
     <string name="app_limit_sentence_visit_only_fmt">Bis zu %1$d Min. pro Besuch</string>
     <string name="app_limit_error_required">Gib einen Wert ein</string>
@@ -403,7 +422,10 @@
     <string name="hidden_apps_tile_unselected_desc">%1$s, sichtbar. Doppeltippen zum Ausblenden.</string>
     <string name="hidden_apps_select_all">Alle auswählen</string>
     <string name="hidden_apps_clear_all">Alle zurücksetzen</string>
-    <string name="hidden_apps_saved_notice">Ausgeblendete Apps gespeichert</string>
+    <plurals name="hidden_apps_saved_notice">
+        <item quantity="one">%1$d Änderung gespeichert.</item>
+        <item quantity="other">%1$d Änderungen gespeichert.</item>
+    </plurals>
 
     <!-- ====================================================== -->
     <!-- Usage support -->
@@ -416,4 +438,10 @@
     <string name="usage_timeline_recent_details_unavailable">Für diesen Zeitraum sind noch keine archivierten App-Öffnungen verfügbar. Loq In speichert exakte Sitzungen jetzt lokal und übernimmt sie in Statistik-Backups; der aktuelle Android-Verlauf wird importiert, wenn der Nutzungszugriff verfügbar ist.</string>
     <string name="usage_chart_other_apps">Andere</string>
 
+    <string name="app_limit_state_blocked">Vollständig blockiert. Ein Limit erlaubt die App bis zum Erreichen des Limits.</string>
+    <string name="app_limit_state_blocked_has_limit">Limitiert. Wenn alle Limits entfernt werden, wird die App komplett blockiert.</string>
+    <string name="app_limit_state_free">Nicht eingeschränkt. Ein Limit schränkt die Nutzung ein.</string>
+    <string name="app_limit_state_limited_unselected">Limitiert. Wenn alle Limits entfernt werden, ist die App wieder frei.</string>
+    <string name="app_limit_state_allowed_allow_mode">Erlaubt. Ein Limit schränkt die Nutzung ein.</string>
+    <string name="app_limit_state_blocked_allow_mode">Blockiert. Ein Limit erlaubt die App bis zum Erreichen des Limits.</string>
 </resources>

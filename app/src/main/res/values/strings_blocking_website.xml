@@ -32,9 +32,12 @@
     <string name="add_website_rule_title">Add website rule</string>
     <string name="domain_rule_hint_example">example.com</string>
     <string name="domain_required">Please enter a domain.</string>
+    <string name="website_rule_path_hint">You can add a path, e.g. youtube.com/shorts/*</string>
+    <string name="website_rule_path_allow_mode_error">Path rules only work in Block selected mode.</string>
     <string name="rule_type">Rule type</string>
     <string name="rule_block_always">Block always</string>
     <string name="rule_daily_limit">Daily limit</string>
+    <string name="website_rule_pending">Pending — applies after the delay</string>
     <string name="website_rule_disabled">Rule disabled</string>
     <string name="website_rule_toggle">Enable website rule</string>
     <string name="rule_blocked">Blocked</string>

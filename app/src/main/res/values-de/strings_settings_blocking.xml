@@ -192,6 +192,11 @@
     <string name="emergency_open_controls_action">Blockier-Steuerung öffnen</string>
     <string name="emergency_pin_changed">Notfall-PIN aktualisiert.</string>
     <string name="emergency_pin_removed">Notfall-PIN entfernt.</string>
+    <string name="emergency_pin_reset_action">PIN zurücksetzen</string>
+    <string name="emergency_pin_reset_title">Notfall-PIN zurücksetzen?</string>
+    <string name="emergency_pin_reset_message">Du kannst eine neue Notfall-PIN ohne die aktuelle festlegen, weil der Loq In-Schutz vollständig aus ist. Die Notfall-Entsperrung bleibt deaktiviert, bis der Schutz wieder aktiviert wird.</string>
+    <string name="emergency_pin_reset_requires_disabled">Deaktiviere den Loq In-Schutz vollständig, bevor du die Notfall-PIN zurücksetzt.</string>
+    <string name="emergency_pin_reset_done">Notfall-PIN zurückgesetzt.</string>
 
     <!-- ====================================================== -->
     <!-- Home display -->
@@ -326,4 +331,6 @@
     <string name="status_notification_temp_disable_body">Der Schutz wird nach Ablauf des Timers wieder aktiviert</string>
     <string name="status_notification_temp_enable_body">Der temporäre Schutz endet nach Ablauf des Timers</string>
 
+    <string name="pref_limit_removal_mode_title">App mit Limits abwählen</string>
+    <string name="limit_removal_mode_ask">Jedes Mal fragen</string>
 </resources>

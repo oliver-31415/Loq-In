@@ -62,4 +62,16 @@
     <string name="developer_mode_disable_action">Turn off Developer mode</string>
     <string name="developer_mode_disabled_toast">Developer mode turned off</string>
 
+    <string name="about_section_feature_flags">Feature flags</string>
+    <string name="feature_flag_state_on">On</string>
+    <string name="feature_flag_state_off">Off</string>
+    <string name="feature_flag_scaffold">scaffold</string>
+    <string name="feature_flag_diagnostic_timeline">Diagnostic timeline</string>
+    <string name="feature_flag_diagnostic_timeline_summary">Record diagnostics events for the support report and troubleshooting.</string>
+    <string name="feature_flag_automation_preview">Schedule save preview</string>
+    <string name="feature_flag_automation_preview_summary">Show a preview of schedule changes before saving them.</string>
+    <string name="feature_flag_automation_v2">Automation engine v2</string>
+    <string name="feature_flag_automation_v2_summary">Reserved for the next automation engine.</string>
+    <string name="feature_flag_continuous_usage">Continuous usage trigger</string>
+    <string name="feature_flag_continuous_usage_summary">Reserved for continuous usage-based triggers.</string>
 </resources>

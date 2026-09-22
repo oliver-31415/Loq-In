@@ -32,6 +32,7 @@ import android.os.IBinder
 import android.os.PowerManager
 import android.os.SystemClock
 import androidx.core.app.NotificationCompat
+import androidx.core.app.ServiceCompat
 import com.oliver.loqin.R
 import com.oliver.loqin.data.prefs.AppLogStore
 import com.oliver.loqin.data.prefs.BlockAttemptStore
@@ -92,10 +93,9 @@ class UsageAccessFallbackBlockingService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        resolver = UsageEventsForegroundResolver(this)
-        powerManager = getSystemService(POWER_SERVICE) as PowerManager
-        keyguardManager = getSystemService(KeyguardManager::class.java)
 
+        // Promote before touching UsageStats/system services.
+        // A service started with startForegroundService() only gets a few seconds to enter the foreground; OEM binder/system-service stalls before this point can otherwise crash the process.
         val promoted = runCatching { createChannelAndPromote() }
             .onFailure { error ->
                 AppLogStore.append(
@@ -110,6 +110,10 @@ class UsageAccessFallbackBlockingService : Service() {
             stopSelf()
             return
         }
+
+        resolver = UsageEventsForegroundResolver(this)
+        powerManager = getSystemService(POWER_SERVICE) as PowerManager
+        keyguardManager = getSystemService(KeyguardManager::class.java)
 
         workerThread = HandlerThread("LoqInLimitedUsageFallback").apply { start() }
         worker = Handler(workerThread.looper)
@@ -323,15 +327,16 @@ class UsageAccessFallbackBlockingService : Service() {
             .setPriority(NotificationCompat.PRIORITY_LOW)
             .build()
 
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            startForeground(
-                NOTIFICATION_ID,
-                notification,
+        ServiceCompat.startForeground(
+            this,
+            NOTIFICATION_ID,
+            notification,
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
                 ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
-            )
-        } else {
-            startForeground(NOTIFICATION_ID, notification)
-        }
+            } else {
+                0
+            }
+        )
     }
 
     companion object {

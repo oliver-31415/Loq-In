@@ -9,6 +9,9 @@
     <string name="daily_limit_label">Daily limit: %1$d min/day</string>
     <string name="daily_limit_10">Daily limit: 10 min</string>
     <string name="attempt_limit_label">Open limit: %1$d/day</string>
+    <string name="limit_tile_daily_fmt">%1$d min/day</string>
+    <string name="limit_tile_visit_fmt">%1$d min/visit</string>
+    <string name="limit_tile_attempts_fmt">%1$d opens/day</string>
     <plurals name="daily_attempt_limit_value_format">
         <item quantity="one">%1$d open/day</item>
         <item quantity="other">%1$d opens/day</item>
@@ -51,25 +54,41 @@
     <!-- ====================================================== -->
     <string name="app_limit_editor_subtitle_fmt">%1$s\n%2$s</string>
     <string name="app_limit_editor_summary">Set any combination here. For example, 4 opens per day with 8 minutes per visit.</string>
-    <string name="app_limit_time_hint">Overall time limit (minutes)</string>
+    <string name="app_limit_time_hint">Daily limit</string>
+    <string name="app_limit_unit_minutes">min</string>
+    <string name="app_limit_unit_opens">opens</string>
+    <string name="app_limit_pill_15m">15m</string>
+    <string name="app_limit_pill_30m">30m</string>
+    <string name="app_limit_pill_1h">1h</string>
+    <string name="app_limit_pill_2h">2h</string>
     <string name="app_limit_attempts_hint">Opens per day</string>
     <string name="app_limit_per_visit_hint">Minutes per visit</string>
     <string name="app_limit_blank_hint">Leave a field blank to disable that limit.</string>
     <string name="app_limit_clear_all">Clear limits</string>
     <string name="app_limit_section_time">Screen time</string>
     <string name="app_limit_section_opens">App opens</string>
-    <string name="app_limit_section_visit">Single session cap</string>
+    <string name="app_limit_section_visit">Max per visit</string>
+    <string name="app_limit_reset_label">Refills</string>
+    <string name="app_limit_reset_daily">Every day</string>
+    <string name="app_limit_reset_protection">Protection restart</string>
+    <string name="app_limit_reset_hint_daily">The allowance refills at midnight.</string>
+    <string name="app_limit_reset_hint_protection">The allowance refills when protection is turned off and on again.</string>
+    <string name="app_limit_sentence_time_session_fmt">Allow up to %1$d min per protection session</string>
     <string name="app_limit_time_subtitle">Total minutes per day</string>
+    <string name="app_limit_time_subtitle_session">Total minutes per protection session</string>
+    <string name="app_limit_time_hint_session">Limit per session</string>
+    <string name="app_limit_visit_exceeds_session_fmt">Visit limit (%1$d min) is higher than the session limit (%2$d min).</string>
     <string name="app_limit_opens_subtitle">How often the app can be opened per day</string>
-    <string name="app_limit_visit_subtitle">Longest single session</string>
+    <string name="app_limit_visit_subtitle">Longest single visit</string>
     <string name="app_limit_save">Save limits</string>
     <string name="app_limit_remove">Remove limits</string>
     <string name="app_limit_remove_confirm_title">Remove limits?</string>
     <string name="app_limit_remove_confirm_message">This clears all limits for %1$s and resets today’s counters.</string>
     <string name="app_limit_sentence_none">No limits set. This app can be opened without restrictions.</string>
+    <string name="app_limit_sentence_fully_blocked">This app is fully blocked by this profile. Add a limit to allow restricted use.</string>
     <string name="app_limit_sentence_time_fmt">Allow up to %1$d min/day</string>
-    <string name="app_limit_sentence_split_fmt">, split across at most %1$d opens</string>
-    <string name="app_limit_sentence_visit_fmt"> (max %1$d min per visit)</string>
+    <string name="app_limit_sentence_split_fmt">\u0020\u00b7 split across at most %1$d opens</string>
+    <string name="app_limit_sentence_visit_fmt">\u0020\u00b7 max %1$d min per visit</string>
     <string name="app_limit_sentence_opens_only_fmt">Up to %1$d opens per day</string>
     <string name="app_limit_sentence_visit_only_fmt">Up to %1$d min per visit</string>
     <string name="app_limit_error_required">Enter a value</string>
@@ -403,7 +422,10 @@
     <string name="hidden_apps_tile_unselected_desc">%1$s, visible. Double tap to hide.</string>
     <string name="hidden_apps_select_all">Select all</string>
     <string name="hidden_apps_clear_all">Clear all</string>
-    <string name="hidden_apps_saved_notice">Hidden apps saved</string>
+    <plurals name="hidden_apps_saved_notice">
+        <item quantity="one">Saved %1$d change.</item>
+        <item quantity="other">Saved %1$d changes.</item>
+    </plurals>
 
     <!-- ====================================================== -->
     <!-- Usage support -->
@@ -416,4 +438,10 @@
     <string name="usage_timeline_recent_details_unavailable">No archived open sessions are available for this range yet. Loq In now stores exact sessions locally and includes them in statistics backups; recent Android history is imported when Usage Access is available.</string>
     <string name="usage_chart_other_apps">Other</string>
 
+    <string name="app_limit_state_blocked">Fully blocked. Adding a limit allows it until the limit is reached.</string>
+    <string name="app_limit_state_blocked_has_limit">Limited. Removing all limits blocks the app completely.</string>
+    <string name="app_limit_state_free">Not restricted. Adding a limit restricts how much it can be used.</string>
+    <string name="app_limit_state_limited_unselected">Limited. Removing all limits frees the app again.</string>
+    <string name="app_limit_state_allowed_allow_mode">Allowed. A limit restricts how much it can be used.</string>
+    <string name="app_limit_state_blocked_allow_mode">Blocked. Adding a limit allows it until the limit is reached.</string>
 </resources>

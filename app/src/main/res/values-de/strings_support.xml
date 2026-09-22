@@ -71,4 +71,6 @@
     <string name="support_logs_card_title">Aktuelle Logs kopieren</string>
     <string name="support_logs_card_desc">Kopiere aktuelle Loq In-Ereignisse für eine bestehende Nachricht oder ein Issue.</string>
 
+    <string name="info_copy_support_title">Support-Infos kopieren</string>
+    <string name="info_copy_support_summary">Kopiert Diagnose- und App-Status in die Zwischenablage.</string>
 </resources>

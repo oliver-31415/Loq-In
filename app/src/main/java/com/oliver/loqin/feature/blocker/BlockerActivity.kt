@@ -33,6 +33,7 @@ import android.view.View
 import android.view.KeyEvent
 import android.view.WindowManager
 import android.widget.Button
+import android.widget.ImageButton
 import android.widget.TextView
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
@@ -60,7 +61,8 @@ class BlockerActivity : ComponentActivity() {
     private lateinit var titleView: TextView
     private lateinit var appNameView: TextView
     private lateinit var messageView: TextView
-    private lateinit var debugInfoButton: View
+    private lateinit var reasonSummaryView: TextView
+    private lateinit var debugInfoButton: ImageButton
     private lateinit var btnClose: Button
     private var blockReasonSnapshot: LastBlockReasonStore.Snapshot? = null
 
@@ -84,11 +86,11 @@ class BlockerActivity : ComponentActivity() {
         ThemeUtils.applyAccentTheme(this)
         super.onCreate(savedInstanceState)
         if (!FrameworkApi34Compat.needsWindowInsetsCrashShield()) {
-            WindowCompat.enableEdgeToEdge(window)
+            // The blocker is a safety-critical screen: a platform/theme-specific edge-to-edge failure must never take down the app process or the Accessibility service.
+            runCatching { WindowCompat.enableEdgeToEdge(window) }
         }
         suppressOpenActivityTransition()
         suppressLegacyPendingTransition()
-        currentActivityRef = WeakReference(this)
 
         if (!SwitchModeStore.isEnabled(this)) {
             clearVisibilityState("created_while_disabled")
@@ -133,10 +135,15 @@ class BlockerActivity : ComponentActivity() {
         titleView = findViewById(R.id.blocker_title)
         appNameView = findViewById(R.id.blocker_app_name)
         messageView = findViewById(R.id.blocker_message)
+        reasonSummaryView = findViewById(R.id.blocker_reason_summary)
         debugInfoButton = findViewById(R.id.blocker_debug_info)
         btnClose = findViewById(R.id.btn_close)
 
-        btnClose.backgroundTintList = AccentColor.getActiveColor(this)
+        currentActivityRef = WeakReference(this)
+
+        val accent = AccentColor.getActiveColor(this)
+        debugInfoButton.imageTintList = accent
+        btnClose.backgroundTintList = accent
 
         titleView.text = getString(R.string.blocked_app_default)
         messageView.text = getString(R.string.blocked_message)
@@ -149,9 +156,19 @@ class BlockerActivity : ComponentActivity() {
         applyFromIntent(intent)
     }
 
-    override fun onNewIntent(intent: Intent?) {
+    override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+
+        if (!SwitchModeStore.isEnabled(this)) {
+            clearVisibilityState("new_intent_while_disabled")
+            finish()
+            return
+        }
+        if (isFinishing || isDestroyed || !areBlockerViewsInitialized()) {
+            return
+        }
+
         applyFromIntent(intent)
     }
 
@@ -222,7 +239,20 @@ class BlockerActivity : ComponentActivity() {
         shownAt = System.currentTimeMillis()
     }
 
+    private fun areBlockerViewsInitialized(): Boolean =
+        ::titleView.isInitialized &&
+            ::appNameView.isInitialized &&
+            ::messageView.isInitialized &&
+            ::reasonSummaryView.isInitialized &&
+            ::debugInfoButton.isInitialized &&
+            ::btnClose.isInitialized
+
     private fun applyFromIntent(intent: Intent?) {
+        // A finishing BlockerActivity can receive a new intent after onCreate() returned early because protection was already disabled.
+        if (!areBlockerViewsInitialized()) {
+            return
+        }
+
         val pkg = intent?.getStringExtra(EXTRA_PKG).orEmpty()
         val label = intent?.getStringExtra(EXTRA_LABEL).orEmpty()
         val title = intent?.getStringExtra(EXTRA_TITLE).orEmpty()
@@ -257,9 +287,17 @@ class BlockerActivity : ComponentActivity() {
             ?.takeIf { pkg.isBlank() || it.pkg == pkg }
         if (snapshot == null) {
             blockReasonSnapshot = null
+            reasonSummaryView.visibility = View.GONE
             debugInfoButton.visibility = View.GONE
         } else {
             blockReasonSnapshot = snapshot
+            val summary = snapshot.userFacingSummary()
+            if (summary.isNullOrBlank()) {
+                reasonSummaryView.visibility = View.GONE
+            } else {
+                reasonSummaryView.text = getString(R.string.block_reason_summary_fmt, summary)
+                reasonSummaryView.visibility = View.VISIBLE
+            }
             debugInfoButton.visibility = View.VISIBLE
         }
     }

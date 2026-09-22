@@ -18,6 +18,8 @@
 
 package com.oliver.loqin.util
 
+import android.app.admin.DevicePolicyManager
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -27,6 +29,8 @@ import android.telecom.TelecomManager
 import com.oliver.loqin.R
 import com.oliver.loqin.data.prefs.EmergencyBypassStore
 import com.oliver.loqin.data.prefs.EmergencyPinStore
+import com.oliver.loqin.receiver.DPMReceiver
+import com.oliver.loqin.security.AppLockStore
 
 object AppBlockSafety {
 
@@ -357,9 +361,20 @@ object AppBlockSafety {
             isSettingsPackage(normalized, defaultSettingsPackage = null)
     }
 
-    fun isStrictModeEnabled(context: Context): Boolean {
-        return context.getSharedPreferences(APP_PREFS, Context.MODE_PRIVATE)
-            .getBoolean(KEY_DEV_UNLOCKED, false)
+    /**
+     * Settings/system-management blocking is only allowed when uninstall protection is both configured and backed by an active Device Admin/managed owner.
+     * Developer mode is intentionally unrelated to this safety gate.
+     */
+    fun isSettingsBlockingProtectionEnabled(context: Context): Boolean {
+        if (!AppLockStore.isStrictProtectionEnabled(context)) {
+            return false
+        }
+
+        val dpm = context.getSystemService(DevicePolicyManager::class.java) ?: return false
+        val admin = ComponentName(context, DPMReceiver::class.java)
+        return dpm.isAdminActive(admin) ||
+            dpm.isProfileOwnerApp(context.packageName) ||
+            dpm.isDeviceOwnerApp(context.packageName)
     }
 
     fun hasEmergencyRecoveryConfigured(context: Context): Boolean {
@@ -370,7 +385,18 @@ object AppBlockSafety {
         if (!requiresStrictModeForBlocking(context, pkg)) {
             return true
         }
-        return isStrictModeEnabled(context) && hasEmergencyRecoveryConfigured(context)
+        return isSettingsBlockingProtectionEnabled(context) && hasEmergencyRecoveryConfigured(context)
+    }
+
+    /**
+     * True when any of [packages] needs strict-mode protection for blocking but the gate is no
+     * longer satisfied (for example Device Admin was revoked after the rule was created).
+     * The rule itself keeps being enforced; this only drives a non-blocking warning.
+     */
+    fun hasUnprotectedStrictModeRule(context: Context, packages: Set<String>): Boolean {
+        return packages.any { pkg ->
+            requiresStrictModeForBlocking(context, pkg) && !canAllowStrictModeBlocking(context, pkg)
+        }
     }
 
     fun getDefaultInputMethodPackage(context: Context): String? {
@@ -597,9 +623,6 @@ object AppBlockSafety {
         }
         return normalized
     }
-
-    private const val APP_PREFS = "loqin_prefs"
-    private const val KEY_DEV_UNLOCKED = "pref_dev_unlocked"
 
     private val knownSettingsPackages = AndroidSystemPackages.SETTINGS_PACKAGES
 

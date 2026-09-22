@@ -56,6 +56,7 @@ import java.io.IOException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.oliver.loqin.ui.EdgeToEdgeUtils
 
 /**
  * Full-screen "ready to write" screen.
@@ -138,6 +139,7 @@ class NfcWriteWaitingActivity : AppCompatActivity() {
         com.oliver.loqin.ui.ThemeUtils.applyAccentTheme(this)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_nfc_write_wait)
+        EdgeToEdgeUtils.setupStandalone(this, findViewById(android.R.id.content))
 
         progress = findViewById(R.id.waitProgress)
         // Indicator would otherwise keep the compile-time default green.

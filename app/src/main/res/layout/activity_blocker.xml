@@ -7,7 +7,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:padding="16dp"
-    android:background="?attr/colorSurface"
+    android:background="@color/loqin_bg"
     tools:ignore="Overdraw">
 
     <!-- Content -->
@@ -24,7 +24,6 @@
         app:layout_constraintWidth_max="340dp">
 
         <LinearLayout
-            android:id="@+id/blocker_title_row"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:orientation="horizontal"
@@ -36,7 +35,7 @@
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:text="@string/blocked_app_default"
-                android:textColor="?attr/colorOnSurface"
+                android:textColor="@color/loqin_text_primary"
                 android:textSize="20sp"
                 android:textStyle="bold" />
 
@@ -46,11 +45,10 @@
                 android:layout_height="40dp"
                 android:layout_marginStart="4dp"
                 android:padding="10dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
+                android:background="@android:color/transparent"
                 android:visibility="gone"
                 android:contentDescription="@string/block_reason_info_button_desc"
-                android:src="@drawable/info_24"
-                app:tint="?attr/colorPrimary" />
+                android:src="@drawable/info_24" />
         </LinearLayout>
 
         <TextView
@@ -60,7 +58,7 @@
             android:layout_marginTop="8dp"
             android:gravity="center"
             android:visibility="gone"
-            android:textColor="?attr/colorOnSurface"
+            android:textColor="@color/loqin_text_primary"
             android:textSize="16sp"
             android:textStyle="bold" />
 
@@ -71,12 +69,21 @@
             android:layout_marginTop="12dp"
             android:gravity="center"
             android:text="@string/blocked_message"
-            android:textColor="?attr/colorOnSurface"
+            android:textColor="@color/loqin_text_primary"
             android:textSize="14sp" />
 
-        <com.google.android.material.button.MaterialButton
+        <TextView
+            android:id="@+id/blocker_reason_summary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center"
+            android:textColor="@color/loqin_text_secondary"
+            android:textSize="12sp"
+            android:visibility="gone" />
+
+        <Button
             android:id="@+id/btn_close"
-            style="@style/LoqIn.Button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="18dp"
@@ -84,7 +91,6 @@
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
             android:text="@android:string/ok"
-            android:textColor="@android:color/white"
-            android:backgroundTint="?attr/colorPrimary" />
+            android:textColor="@android:color/white" />
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

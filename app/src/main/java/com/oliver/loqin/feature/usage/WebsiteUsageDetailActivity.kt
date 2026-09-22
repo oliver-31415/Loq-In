@@ -161,7 +161,7 @@ class WebsiteUsageDetailActivity : AppCompatActivity() {
 
         refreshDailyLimit(domain)
         b.btnEditLimits.setOnClickListener {
-            if (websiteEditingLocked()) return@setOnClickListener
+            // The gate decides on save; the editor must open while protection is active.
             QuickLimitDialogs.showForWebsite(
                 activity = this,
                 domain = domain,

@@ -70,6 +70,7 @@ import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.switchmaterial.SwitchMaterial
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
+import com.oliver.loqin.data.prefs.PickerLimitActionStore
 
 /**
  * Feature access screen.
@@ -106,6 +107,7 @@ class BlockingFeaturesActivity : AppCompatActivity() {
     private lateinit var rowChangeEmergencyPin: View
     private lateinit var rowPersistentStatusNotificationMode: View
     private lateinit var tvPersistentStatusNotificationModeValue: TextView
+    private lateinit var tvLimitRemovalModeValue: TextView
 
     override fun attachBaseContext(newBase: Context) {
         super.attachBaseContext(LocaleHelper.wrapContext(newBase))
@@ -187,6 +189,7 @@ class BlockingFeaturesActivity : AppCompatActivity() {
         rowChangeEmergencyPin = findViewById(R.id.rowChangeEmergencyPin)
         rowPersistentStatusNotificationMode = findViewById(R.id.rowPersistentStatusNotificationMode)
         tvPersistentStatusNotificationModeValue = findViewById(R.id.tvPersistentStatusNotificationModeValue)
+        tvLimitRemovalModeValue = findViewById(R.id.tvLimitRemovalModeValue)
 
         accentSwitches.clear()
         accentSwitches += listOf(
@@ -367,6 +370,9 @@ class BlockingFeaturesActivity : AppCompatActivity() {
             EmergencyPinDialog.showChangePinFlow(this)
         }
         rowPersistentStatusNotificationMode.setOnClickListener { showStatusNotificationModeDialog() }
+        findViewById<View>(R.id.rowLimitRemovalMode).setOnClickListener {
+            showLimitRemovalModeDialog()
+        }
     }
 
     private fun rowToggle(rowId: Int, sw: SwitchMaterial) {
@@ -448,6 +454,29 @@ class BlockingFeaturesActivity : AppCompatActivity() {
         dialog.show()
     }
 
+    private fun pickerLimitActionLabel(action: PickerLimitActionStore.Action): String = getString(
+        when (action) {
+            PickerLimitActionStore.Action.ASK -> R.string.limit_removal_mode_ask
+            PickerLimitActionStore.Action.REMOVE_LIMITS -> R.string.picker_limit_removal_remove
+            PickerLimitActionStore.Action.KEEP_LIMITS -> R.string.picker_limit_removal_keep
+        }
+    )
+
+    private fun showLimitRemovalModeDialog() {
+        val actions = PickerLimitActionStore.Action.entries
+        val checked = actions.indexOf(PickerLimitActionStore.get(this)).coerceAtLeast(0)
+        showLoqInOptionDialog(
+            titleRes = R.string.pref_limit_removal_mode_title,
+            options = actions.mapIndexed { index, action ->
+                LoqInDialogOption(title = pickerLimitActionLabel(action), selected = index == checked)
+            },
+        ) { which ->
+            val action = actions.getOrNull(which) ?: return@showLoqInOptionDialog
+            PickerLimitActionStore.set(this, action)
+            tvLimitRemovalModeValue.text = pickerLimitActionLabel(action)
+        }
+    }
+
     private fun showStatusNotificationModeDialog() {
         if (!switchPersistentStatusNotification.isChecked) return
         val modes = arrayOf(
@@ -509,6 +538,8 @@ class BlockingFeaturesActivity : AppCompatActivity() {
         rowPersistentStatusNotificationMode.isEnabled = statusEnabled
         rowPersistentStatusNotificationMode.isClickable = statusEnabled
         rowPersistentStatusNotificationMode.alpha = if (statusEnabled) 1f else 0.5f
+        tvLimitRemovalModeValue.text = pickerLimitActionLabel(PickerLimitActionStore.get(this))
+
         tvPersistentStatusNotificationModeValue.text =
             statusNotificationModeLabel(PersistentStatusNotifier.detailMode(this))
 

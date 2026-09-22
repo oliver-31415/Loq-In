@@ -83,6 +83,8 @@ class IgnoredUsageAppsActivity : AppCompatActivity() {
     private var searchQuery = ""
     private var usageSelection: Set<String> = emptySet()
     private var appPickerSelection: Set<String> = emptySet()
+    private var initialUsageSelection: Set<String> = emptySet()
+    private var initialAppPickerSelection: Set<String> = emptySet()
     private var suggestedPackages: Set<String> = emptySet()
     private var usagePackages: Set<String> = emptySet()
     private var appPickerPackages: Set<String> = emptySet()
@@ -107,6 +109,8 @@ class IgnoredUsageAppsActivity : AppCompatActivity() {
 
         usageSelection = IgnoredUsageAppsStore.getIgnoredPackages(this)
         appPickerSelection = IgnoredUsageAppsStore.getAppPickerHiddenPackages(this)
+        initialUsageSelection = usageSelection
+        initialAppPickerSelection = appPickerSelection
         currentSection = if (intent.getBooleanExtra(EXTRA_SHOW_APP_PICKERS, true)) {
             Section.APP_PICKERS
         } else {
@@ -143,7 +147,20 @@ class IgnoredUsageAppsActivity : AppCompatActivity() {
         findViewById<MaterialButton>(R.id.btnSaveIgnoredApps).setOnClickListener {
             IgnoredUsageAppsStore.setIgnoredPackages(this, usageSelection)
             IgnoredUsageAppsStore.setAppPickerHiddenPackages(this, appPickerSelection)
-            findViewById<View>(R.id.btnSaveIgnoredApps).showWarnPill(R.string.hidden_apps_saved_notice)
+            val changedCount = setDifferenceCount(initialUsageSelection, usageSelection) +
+                setDifferenceCount(initialAppPickerSelection, appPickerSelection)
+            initialUsageSelection = usageSelection
+            initialAppPickerSelection = appPickerSelection
+            val notice = if (changedCount == 0) {
+                getString(R.string.save_no_changes)
+            } else {
+                resources.getQuantityString(
+                    R.plurals.hidden_apps_saved_notice,
+                    changedCount,
+                    changedCount
+                )
+            }
+            findViewById<View>(R.id.btnSaveIgnoredApps).showWarnPill(notice)
         }
 
         updateCount(currentSelection().size)
@@ -303,6 +320,9 @@ class IgnoredUsageAppsActivity : AppCompatActivity() {
             Section.APP_PICKERS -> appPickerSelection
         }
     }
+
+    private fun setDifferenceCount(before: Set<String>, after: Set<String>): Int =
+        (before - after).size + (after - before).size
 
     private fun showInfoDialog() {
         val titleRes = when (currentSection) {

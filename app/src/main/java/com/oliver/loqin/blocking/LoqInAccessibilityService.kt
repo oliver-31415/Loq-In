@@ -64,6 +64,7 @@ import com.oliver.loqin.data.prefs.ProfileRuleModeStore
 import com.oliver.loqin.data.prefs.WebsiteRuleModeStore
 import com.oliver.loqin.data.prefs.ProfileUsageStore
 import com.oliver.loqin.data.prefs.ScheduleStore
+import com.oliver.loqin.data.prefs.SessionLimitStore
 import com.oliver.loqin.data.prefs.SurfaceUsageStore
 import com.oliver.loqin.data.prefs.SwitchModeStore
 import com.oliver.loqin.data.prefs.TempAllowStore
@@ -80,6 +81,9 @@ import com.oliver.loqin.util.AppUsageToday
 import com.oliver.loqin.util.PackageLaunchIntentCompat
 import java.util.ArrayDeque
 import java.util.Locale
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicReference
 import kotlin.math.abs
 
 /**
@@ -94,6 +98,12 @@ class LoqInAccessibilityService : AccessibilityService() {
     private val handler = Handler(Looper.getMainLooper())
     private var usageWorkerThread: HandlerThread? = null
     private var usageWorker: Handler? = null
+    // Root lookups run on a dedicated worker with a short main-thread wait: rootInActiveWindow is
+    // a Binder call and has been observed stalling the accessibility main thread for seconds on
+    // some OEM devices.
+    private var accessibilityBinderThread: HandlerThread? = null
+    private var accessibilityBinderWorker: Handler? = null
+    @Volatile private var activeRootLookupInFlight: Boolean = false
     private val usageEventsForegroundResolver by lazy { UsageEventsForegroundResolver(this) }
     private val blockLaunchController by lazy { BlockLaunchController(this, handler) }
     @Volatile private var topRefreshInFlight: Boolean = false
@@ -159,6 +169,12 @@ class LoqInAccessibilityService : AccessibilityService() {
     private val sessionLimitUsageMsByKey = HashMap<String, Long>()
     private val sessionLimitReachedKeys = HashSet<String>()
 
+    // Minutes-per-visit session. Independent of the daily-limit session above: it resets on app
+    // re-entry, screen off, protection pause/bypass and temp-allow, and it is never persisted.
+    private var activePerVisitProfile: String? = null
+    private var activePerVisitPkg: String? = null
+    private var activePerVisitStartedAt: Long = 0L
+
     // Debounce block/attempt stats + blocker UI launches.
     private val lastAttemptAt = HashMap<String, Long>()
     private val lastBlockShownAt = HashMap<String, Long>()
@@ -175,6 +191,9 @@ class LoqInAccessibilityService : AccessibilityService() {
     private val inAppGraceUntilByPkg = HashMap<String, Long>()
     // Per-surface re-entry guards (belt-and-braces on top of the package grace).
     private val surfaceBlockGuardUntil = HashMap<String, Long>()
+    // After YouTube ad controls are observed, geometry-only surface resolution is suppressed for a
+    // short window: ad dismiss/skip buttons sit in the same lower-screen bands as the bottom nav.
+    @Volatile private var youtubeWatchAdPositionGuardUntilUptime: Long = 0L
     // Facebook bottom-tab tap hints are tracked separately from the shared single-slot hint so the
     // Reels auto-hint (which rewrites the shared slot on every detected frame) cannot clobber a
     // tab tap before the passive probe consumes it.
@@ -297,18 +316,31 @@ class LoqInAccessibilityService : AccessibilityService() {
         "abos", "abo", "abonnements", "abonnement",
         "abo, tab", "abos, tab"
     )
+    // Watch-page ad dismiss controls (ported from upstream 2.3.x). The Ad Center / sponsored /
+    // visit-site label lists above already describe the rest of the overlay.
+    private val YT_WATCH_AD_DISMISS_LABELS = listOf(
+        "skip ad", "skip ads", "close ad", "dismiss ad",
+        "anzeige überspringen", "werbung überspringen", "anzeige schließen", "werbung schließen",
+        "omitir anuncio", "cerrar anuncio",
+        "pular anúncio", "fechar anúncio",
+    )
     private val YT_SEARCH_LABELS = listOf(
         "search youtube", "youtube durchsuchen", "youtube suchen",
         "search", "suche",
         "search button", "search tab", "open search"
     )
-    private val YT_MINI_PLAYER_NAME_LABELS = listOf("miniplayer", "mini player", "mini-player")
+    private val YT_MINI_PLAYER_NAME_LABELS = listOf(
+        "miniplayer", "mini player", "mini-player",
+        // YouTube 21.x exposes the in-app mini-player as "Minimized player".
+        "minimized player", "minimized miniplayer", "minimized video"
+    )
     private val YT_MINI_PLAYER_CLOSE_LABELS = listOf(
         "close player", "close mini player", "close miniplayer",
         "dismiss player", "dismiss mini player",
         "close video", "video schließen",
         "player schließen", "player ausblenden",
         "miniplayer schließen", "mini player schließen", "miniplayer ausblenden",
+        "close minimized player", "minimized player schließen",
         "schließen"
     )
     private val YT_MINI_PLAYER_PLAY_PAUSE_LABELS = listOf(
@@ -464,8 +496,22 @@ class LoqInAccessibilityService : AccessibilityService() {
     // Home-redirect animation, short enough that re-tapping a blocked tab cannot slip through.
     private val YT_POST_BLOCK_GRACE_MS = 600L
     private val PIP_KILL_COOLDOWN_MS = 8_000L
+    private val YT_WATCH_AD_POSITION_GUARD_MS = 2_000L
+    // After a floating-player (mini/PiP) block YouTube navigates back through its tabs and
+    // player state for a few seconds; a short guard left You/Subscriptions/Shorts cascades.
+    private val YOUTUBE_FLOATING_POST_BLOCK_GUARD_MS = 6_000L
 
     private val MAX_NODE_SCAN_COUNT = 120
+    // Main-thread wait for a root lookup; on slow devices the lookup is abandoned and its result
+    // dropped rather than blocking the accessibility callback.
+    private val ACCESSIBILITY_BINDER_MAIN_WAIT_MS = 12L
+    // The Firefox URL-bar scan is breadth-first and needs a larger budget than the shared
+    // depth-first scans: on real pages the page-content subtree is huge, and a 120-node budget
+    // was exhausted before the toolbar (shallow chrome) was reached, so heavy pages such as
+    // ABC News articles never produced a host on the owner's device.
+    private val FIREFOX_URL_NODE_SCAN_MAX = 400
+    private val FIREFOX_URL_NODE_SCAN_DEPTH = 40
+    private val FIREFOX_URL_NODE_SCAN_MS = 50L
     // Real YouTube trees are far deeper than assumed: Shorts action controls sit at depth ~31,
     // the bottom nav at depth ~13 (verified on device via uiautomator dump). Depth caps below
     // that made every scan return after visiting only the first root chain (~9-26 nodes),
@@ -489,6 +535,10 @@ class LoqInAccessibilityService : AccessibilityService() {
     private var cachedUsageLimitAt: Long = 0L
     private var cachedUsageLimitProfile: String? = null
     private val cachedUsageLimitByPkg = HashMap<String, Int>()
+
+    private var cachedSessionLimitAt: Long = 0L
+    private var cachedSessionLimitProfile: String? = null
+    private val cachedSessionLimitByPkg = HashMap<String, Int>()
 
     private var cachedAttemptLimitAt: Long = 0L
     private var cachedAttemptLimitProfile: String? = null
@@ -585,6 +635,10 @@ class LoqInAccessibilityService : AccessibilityService() {
             cachedUsageLimitAt = 0L
             cachedUsageLimitByPkg.clear()
 
+            cachedSessionLimitProfile = null
+            cachedSessionLimitAt = 0L
+            cachedSessionLimitByPkg.clear()
+
             cachedAttemptLimitProfile = null
             cachedAttemptLimitAt = 0L
             cachedAttemptLimitByPkg.clear()
@@ -635,6 +689,23 @@ class LoqInAccessibilityService : AccessibilityService() {
         }
         return cachedUsageLimitByPkg.getOrPut(pkg) {
             UsageLimitStore.getLimitMinutes(this, profile, pkg)
+        }
+    }
+
+    private fun getSessionLimitCached(profile: String, pkg: String, now: Long = System.currentTimeMillis()): Int {
+        if (AppBlockSafety.isAlwaysExcluded(this, pkg)) {
+            return 0
+        }
+        val fresh =
+            cachedSessionLimitProfile == profile &&
+                (now - cachedSessionLimitAt) <= POLICY_CACHE_TTL_MS
+        if (!fresh) {
+            cachedSessionLimitProfile = profile
+            cachedSessionLimitAt = now
+            cachedSessionLimitByPkg.clear()
+        }
+        return cachedSessionLimitByPkg.getOrPut(pkg) {
+            SessionLimitStore.getLimitMinutes(this, profile, pkg)
         }
     }
 
@@ -996,6 +1067,10 @@ class LoqInAccessibilityService : AccessibilityService() {
         usageWorkerThread?.quitSafely()
         usageWorkerThread = HandlerThread("loqin-usage-worker").apply { start() }
         usageWorker = Handler(usageWorkerThread!!.looper)
+        accessibilityBinderThread?.quitSafely()
+        accessibilityBinderThread = HandlerThread("loqin-accessibility-binder").apply { start() }
+        accessibilityBinderWorker = Handler(accessibilityBinderThread!!.looper)
+        activeRootLookupInFlight = false
         topRefreshInFlight = false
         usageOpenScanInFlight = false
         handler.removeCallbacks(tick)
@@ -1042,6 +1117,10 @@ class LoqInAccessibilityService : AccessibilityService() {
         usageWorkerThread?.quitSafely()
         usageWorkerThread = null
         usageWorker = null
+        accessibilityBinderThread?.quitSafely()
+        accessibilityBinderThread = null
+        accessibilityBinderWorker = null
+        activeRootLookupInFlight = false
         topRefreshInFlight = false
         usageOpenScanInFlight = false
         protectionRecheckGeneration++
@@ -1100,6 +1179,9 @@ class LoqInAccessibilityService : AccessibilityService() {
             return
         }
 
+        if (isYouTubePackage(pkg) && maybeBlockYouTubeDirectNavigationBeforeDedupe(event)) {
+            return
+        }
         if (isYouTubePackage(pkg) && maybeBlockYouTubeHomeShortsBeforeDedupe(event)) {
             return
         }
@@ -1355,6 +1437,12 @@ class LoqInAccessibilityService : AccessibilityService() {
                 type == AccessibilityEvent.TYPE_VIEW_FOCUSED
 
         if (specialPkg && specialEvent) {
+            // Floating-player detection must also run on content events: the in-app mini-player
+            // appears via WINDOW_CONTENT_CHANGED (e.g. after BACK from the watch page) without a
+            // window transition, so the transition-only call site never saw it.
+            if (isYouTubePackage(pkg) && maybeBlockYouTubeFloatingPlayer(event, "content")) {
+                return
+            }
             if (shouldRunDeepProbe(pkg, type, isTransition = false, now = now)) {
                 maybeBlockNow(pkg, event)
             }
@@ -1448,7 +1536,7 @@ class LoqInAccessibilityService : AccessibilityService() {
 
         // Some apps produce very few accessibility events.
         // To avoid tracking the wrong foreground package (which would break real-time limits), prefer the active window package when available.
-        val rootPkg = runCatching { rootInActiveWindow?.packageName?.toString() }.getOrNull()
+        val rootPkg = runCatching { activeRootWithBudget("usage_tick")?.packageName?.toString() }.getOrNull()
         if (!rootPkg.isNullOrBlank() && rootPkg != packageName && rootPkg != currentTopPkg) {
             currentTopPkg = rootPkg
             BlockingRuntime.markForegroundPackage(this, rootPkg, "active_window_root")
@@ -1491,29 +1579,36 @@ class LoqInAccessibilityService : AccessibilityService() {
         // Only count usage while LoqIn is enabled and screen is interactive.
         if (!pm.isInteractive) {
             clearActiveLimitSession()
+            clearPerVisitSession()
             return
         }
         if (km?.isKeyguardLocked == true) {
             clearActiveLimitSession()
+            clearPerVisitSession()
             return
         }
         if (!SwitchModeStore.isEnabled(this)) {
             clearActiveLimitSession()
+            clearPerVisitSession()
             return
         }
         if (EmergencyBypassStore.isActive(this)) {
             clearActiveLimitSession()
+            clearPerVisitSession()
             return
         }
 
         val nowForCache = now
         val profile = getCurrentProfileCached(nowForCache)?.takeIf { it.isNotBlank() } ?: run {
             clearActiveLimitSession()
+            clearPerVisitSession()
             return
         }
         ensureActiveLimitSession(profile, nowForCache)
+        ensurePerVisitSession(profile, pkg, nowForCache)
 
         if (TempAllowStore.isAllowed(this, pkg)) {
+            clearPerVisitSession()
             return
         }
 
@@ -1564,8 +1659,29 @@ class LoqInAccessibilityService : AccessibilityService() {
         // Usage limits should work even if the app isn't in the "blocked apps" list.
         // (Users can set a daily limit without hard-blocking the app.)
         val limitMin = getUsageLimitCached(safeProfile, pkg, nowForCache)
-        if (limitMin <= 0) {
+        val perVisitLimitMin = getSessionLimitCached(safeProfile, pkg, nowForCache)
+        if (limitMin <= 0 && perVisitLimitMin <= 0) {
             return // hard block -> handled by event driven blocker
+        }
+
+        // Minutes per visit are wall-clock from app entry and independent of the daily limit.
+        if (perVisitLimitMin > 0) {
+            val perVisitUsedMs = getPerVisitUsageMs(safeProfile, pkg, nowForCache)
+            val perVisitLimitMs = perVisitLimitMin * 60_000L
+            if (perVisitUsedMs >= perVisitLimitMs) {
+                appendBlockingLog(
+                    category = "app_per_visit_limit_reached",
+                    key = "app-per-visit-limit-reached|$safeProfile|$pkg",
+                    message = "profile=$safeProfile pkg=$pkg perVisitMin=$perVisitLimitMin usageMs=$perVisitUsedMs limitMs=$perVisitLimitMs",
+                    throttleMs = 2_000L
+                )
+                maybeBlockNow(pkg, force = true)
+                return
+            }
+        }
+
+        if (limitMin <= 0) {
+            return
         }
 
         // Enforce app limits using usage accumulated while the current profile is active.
@@ -1615,39 +1731,76 @@ class LoqInAccessibilityService : AccessibilityService() {
      * Default behavior stays per day/profile. If a limit is configured as "per active session", the runtime-scoped session counter is used instead.
      */
     private fun getEnforcedLimitUsageMs(profile: String, pkg: String): Long {
-        return if (UsageLimitResetStore.isSessionMode(this, profile, pkg)) {
-            sessionLimitUsageMsByKey[limitSessionKey(profile, pkg)] ?: 0L
-        } else {
-            ProfileUsageStore.getUsageMsToday(this, profile, pkg)
+        if (!UsageLimitResetStore.isSessionMode(this, profile, pkg)) {
+            return ProfileUsageStore.getUsageMsToday(this, profile, pkg)
         }
+
+        val key = limitSessionKey(profile, pkg)
+        sessionLimitUsageMsByKey[key]?.let { return it }
+
+        // Restore the current generation after service/process recreation or after switching away from and back to this profile.
+        // Stale generations are rejected by the store itself.
+        val persisted = UsageLimitSessionRuntimeStore.get(this, profile, pkg)
+        val restored = persisted?.usedMs?.coerceAtLeast(0L) ?: 0L
+        sessionLimitUsageMsByKey[key] = restored
+        if (persisted?.reached == true) {
+            sessionLimitReachedKeys.add(key)
+        }
+        return restored
     }
 
     private fun ensureActiveLimitSession(profile: String, now: Long) {
         val generation = SwitchModeStore.getLimitSessionGeneration(this)
-        if (activeLimitSessionProfile == profile && activeLimitSessionGeneration == generation && activeLimitSessionStartedAt > 0L) {
+        if (activeLimitSessionGeneration == generation && activeLimitSessionStartedAt > 0L) {
+            activeLimitSessionProfile = profile
             return
         }
+
+        // Only wipe in-memory counters when a new generation was actually observed while this service instance was alive.
+        // The generation advances only for a genuine new LoqIn session, not for profile changes, screen locks, temporary pauses or service recreation.
+        if (activeLimitSessionGeneration >= 0L && activeLimitSessionGeneration != generation) {
+            sessionLimitUsageMsByKey.clear()
+            sessionLimitReachedKeys.clear()
+        }
+
         activeLimitSessionProfile = profile
         activeLimitSessionGeneration = generation
-        activeLimitSessionStartedAt = now
-        sessionLimitUsageMsByKey.clear()
-        sessionLimitReachedKeys.clear()
-        UsageLimitSessionRuntimeStore.clearAll(this)
+        activeLimitSessionStartedAt = SwitchModeStore.getLimitSessionStartedAt(this)
+            .takeIf { it > 0L }
+            ?: now
         appendBlockingLog(
             category = "limit_session",
-            key = "limit-session-start|$profile|$generation",
+            key = "limit-session-active|$generation",
             message = "profile=$profile generation=$generation startedAt=$activeLimitSessionStartedAt",
             throttleMs = 1_500L
         )
     }
 
     private fun clearActiveLimitSession() {
+        // This only clears the currently active profile pointer.
+        // Keep the observed generation and in-memory counters so screen lock, Temporary Disable and Emergency Unlock cannot reset the allowance.
+        // If a genuine new LoqIn session starts, ensureActiveLimitSession() sees the generation change and clears the old counters before tracking resumes.
         activeLimitSessionProfile = null
-        activeLimitSessionGeneration = -1L
-        activeLimitSessionStartedAt = 0L
-        sessionLimitUsageMsByKey.clear()
-        sessionLimitReachedKeys.clear()
-        UsageLimitSessionRuntimeStore.clearAll(this)
+    }
+
+    private fun ensurePerVisitSession(profile: String, pkg: String, now: Long) {
+        if (activePerVisitProfile == profile && activePerVisitPkg == pkg && activePerVisitStartedAt > 0L) {
+            return
+        }
+        activePerVisitProfile = profile
+        activePerVisitPkg = pkg
+        activePerVisitStartedAt = now
+    }
+
+    private fun clearPerVisitSession() {
+        activePerVisitProfile = null
+        activePerVisitPkg = null
+        activePerVisitStartedAt = 0L
+    }
+
+    private fun getPerVisitUsageMs(profile: String, pkg: String, now: Long): Long {
+        ensurePerVisitSession(profile, pkg, now)
+        return (now - activePerVisitStartedAt).coerceAtLeast(0L)
     }
 
     private fun limitSessionKey(profile: String, pkg: String): String = "$profile|$pkg"
@@ -1656,12 +1809,17 @@ class LoqInAccessibilityService : AccessibilityService() {
         if (limitMinutes <= 0) {
             return
         }
+        val generation = activeLimitSessionGeneration.takeIf { it >= 0L }
+            ?: SwitchModeStore.getLimitSessionGeneration(this)
+        val startedAt = activeLimitSessionStartedAt.takeIf { it > 0L }
+            ?: SwitchModeStore.getLimitSessionStartedAt(this).takeIf { it > 0L }
+            ?: System.currentTimeMillis()
         UsageLimitSessionRuntimeStore.update(
             context = this,
             profile = profile,
             pkg = pkg,
-            generation = activeLimitSessionGeneration.takeIf { it >= 0L } ?: SwitchModeStore.getLimitSessionGeneration(this),
-            startedAt = activeLimitSessionStartedAt,
+            generation = generation,
+            startedAt = startedAt,
             usedMs = usedMs,
             limitMs = limitMinutes.toLong() * 60_000L,
             reached = reached
@@ -1982,10 +2140,13 @@ class LoqInAccessibilityService : AccessibilityService() {
         val essentialAllowed = allowMode && AppBlockSafety.isAllowModeEssential(this, pkg)
         val lockActive = SwitchModeStore.isNfcRequiredForDisable(this)
         val limitMin = getUsageLimitCached(profile, pkg, nowForCache)
+        val perVisitLimitMin = getSessionLimitCached(profile, pkg, nowForCache)
         val attemptLimit = getAttemptLimitCached(profile, pkg, nowForCache)
 
         val opensExceeded = attemptLimit > 0 && OpenCountStore.getToday(this, profile, pkg) > attemptLimit
         val effectiveUsageMsToday = getEnforcedLimitUsageMs(profile, pkg)
+        val perVisitUsageMs =
+            if (perVisitLimitMin > 0) getPerVisitUsageMs(profile, pkg, nowForCache) else 0L
         val decision = resolveAppBlockDecision(
             pkg = pkg,
             blockedPackages = blocked,
@@ -1993,6 +2154,8 @@ class LoqInAccessibilityService : AccessibilityService() {
             attemptLimit = attemptLimit,
             opensExceeded = opensExceeded,
             effectiveUsageMsToday = effectiveUsageMsToday,
+            perVisitLimitMinutes = perVisitLimitMin,
+            perVisitUsageMs = perVisitUsageMs,
             lockActive = lockActive,
             highRisk = isHighRiskBlockTarget(this, pkg),
             force = force,
@@ -2001,33 +2164,34 @@ class LoqInAccessibilityService : AccessibilityService() {
             allowModeListed = allowModeListed
         )
 
-        if (limitMin > 0 || attemptLimit > 0) {
+        if (limitMin > 0 || attemptLimit > 0 || perVisitLimitMin > 0) {
             val limitMs = limitMin * 60_000L
-            val hardBlocked = if (allowMode) allowModeListed && !isManagedPackage(pkg, blocked) && limitMin <= 0 && attemptLimit <= 0 && !essentialAllowed else isManagedPackage(pkg, blocked) && limitMin <= 0 && attemptLimit <= 0
+            val hardBlocked = if (allowMode) allowModeListed && !isManagedPackage(pkg, blocked) && limitMin <= 0 && attemptLimit <= 0 && perVisitLimitMin <= 0 && !essentialAllowed else isManagedPackage(pkg, blocked) && limitMin <= 0 && attemptLimit <= 0 && perVisitLimitMin <= 0
             appendBlockingLog(
                 category = "app_limit_decision",
                 key = "app-limit-decision|$profile|$pkg",
-                message = "profile=$profile mode=${if (allowMode) "allow" else "block"} pkg=$pkg hardBlocked=$hardBlocked allowModeListed=$allowModeListed essentialAllowed=$essentialAllowed limitMin=$limitMin limitUsageMs=$effectiveUsageMsToday globalUsageMs=${getEffectiveUsageMsToday(pkg, System.currentTimeMillis())} limitMs=$limitMs attemptLimit=$attemptLimit opensExceeded=$opensExceeded force=$force shouldBlock=${decision.shouldBlock}",
+                message = "profile=$profile mode=${if (allowMode) "allow" else "block"} pkg=$pkg hardBlocked=$hardBlocked allowModeListed=$allowModeListed essentialAllowed=$essentialAllowed limitMin=$limitMin limitUsageMs=$effectiveUsageMsToday globalUsageMs=${getEffectiveUsageMsToday(pkg, System.currentTimeMillis())} limitMs=$limitMs attemptLimit=$attemptLimit opensExceeded=$opensExceeded perVisitLimitMin=$perVisitLimitMin perVisitUsageMs=$perVisitUsageMs force=$force shouldBlock=${decision.shouldBlock}",
                 throttleMs = 2_000L
             )
         }
 
         if (!decision.shouldBlock) {
-            val hardBlocked = if (allowMode) allowModeListed && !isManagedPackage(pkg, blocked) && limitMin <= 0 && attemptLimit <= 0 && !essentialAllowed else isManagedPackage(pkg, blocked) && limitMin <= 0 && attemptLimit <= 0
-            val managed = hardBlocked || isManagedPackage(pkg, blocked) || limitMin > 0 || attemptLimit > 0
+            val hardBlocked = if (allowMode) allowModeListed && !isManagedPackage(pkg, blocked) && limitMin <= 0 && attemptLimit <= 0 && perVisitLimitMin <= 0 && !essentialAllowed else isManagedPackage(pkg, blocked) && limitMin <= 0 && attemptLimit <= 0 && perVisitLimitMin <= 0
+            val managed = hardBlocked || isManagedPackage(pkg, blocked) || limitMin > 0 || attemptLimit > 0 || perVisitLimitMin > 0
             markRuntimeBlockCheck(
                 reason = if (managed) "decision_allow" else "not_managed_for_profile",
-                details = "profile=$profile blockedCount=${blocked.size} hardBlocked=$hardBlocked allowModeListed=$allowModeListed essentialAllowed=$essentialAllowed limitMin=$limitMin attemptLimit=$attemptLimit opensExceeded=$opensExceeded limitUsageMs=$effectiveUsageMsToday force=$force event=${eventTypeLabel(event)}"
+                details = "profile=$profile blockedCount=${blocked.size} hardBlocked=$hardBlocked allowModeListed=$allowModeListed essentialAllowed=$essentialAllowed limitMin=$limitMin attemptLimit=$attemptLimit opensExceeded=$opensExceeded limitUsageMs=$effectiveUsageMsToday perVisitLimitMin=$perVisitLimitMin perVisitUsageMs=$perVisitUsageMs force=$force event=${eventTypeLabel(event)}"
             )
             return
         }
         markRuntimeBlockCheck(
             reason = "decision_block",
-            details = "profile=$profile limitMin=$limitMin attemptLimit=$attemptLimit opensExceeded=$opensExceeded immediate=${decision.immediate} force=$force event=${eventTypeLabel(event)}"
+            details = "profile=$profile limitMin=$limitMin attemptLimit=$attemptLimit opensExceeded=$opensExceeded perVisitLimitMin=$perVisitLimitMin perVisitUsageMs=$perVisitUsageMs immediate=${decision.immediate} force=$force event=${eventTypeLabel(event)}"
         )
         val appRule = when {
             allowMode && allowModeListed && !isManagedPackage(pkg, blocked) -> getString(R.string.block_reason_rule_allow_selected)
             limitMin > 0 && effectiveUsageMsToday >= limitMin * 60_000L -> getString(R.string.block_reason_rule_daily_time_limit)
+            perVisitLimitMin > 0 && perVisitUsageMs >= perVisitLimitMin * 60_000L -> getString(R.string.block_reason_rule_per_visit_limit)
             opensExceeded -> getString(R.string.block_reason_rule_open_limit)
             lockActive && isHighRiskBlockTarget(this, pkg) -> getString(R.string.block_reason_rule_strict_lock)
             else -> getString(R.string.block_reason_rule_blocked_apps)
@@ -2202,15 +2366,20 @@ class LoqInAccessibilityService : AccessibilityService() {
             message = "pkg=$pkg title=${sanitizeWebsiteSignal(title, 80)} backCount=$backCount defer=$deferNavigationUntilAcknowledge returnToPkg=$returnToPackageOnClose force=$forceShow preHome=$prePopupPhoneHome preYtHome=$prePopupYouTubeHome"
         )
 
-        rememberBlockReason(
-            pkg = pkg,
-            label = appLabel,
-            profile = ProfileStore.getCurrent(this),
-            rule = title,
-            source = getString(R.string.block_reason_source_in_app),
-            matched = title,
-            result = getString(R.string.block_reason_result_surface_blocked)
-        )
+        // Website blocks write their own reason (rule + matched target) right before showing the
+        // surface; overwriting it with the generic in-app reason made the blocker screen say
+        // "In-app rule" for website/path-rule blocks.
+        if (blockCategory != BlockCategoryCountStore.Category.WEBSITE) {
+            rememberBlockReason(
+                pkg = pkg,
+                label = appLabel,
+                profile = ProfileStore.getCurrent(this),
+                rule = title,
+                source = getString(R.string.block_reason_source_in_app),
+                matched = title,
+                result = getString(R.string.block_reason_result_surface_blocked)
+            )
+        }
 
         // Short grace period after a surface block to prevent re-detect loops while the app animates away.
         // Snapchat needs a much tighter window: after blocking one story, opening the next story should be checked immediately.
@@ -2806,6 +2975,7 @@ class LoqInAccessibilityService : AccessibilityService() {
         event?.text?.forEach { if (!it.isNullOrBlank()) parts += it.toString() }
         event?.contentDescription?.toString()?.takeIf { it.isNotBlank() }?.let { parts += it }
 
+        val started = SystemClock.elapsedRealtime()
         val stack = ArrayDeque<WorkItem>()
         stack.addLast(WorkItem(root, 0, false))
         var visited = 0
@@ -2826,6 +2996,13 @@ class LoqInAccessibilityService : AccessibilityService() {
             } finally {
             }
         }
+        AccessibilityWorkBudget.recordScan(
+            this,
+            "collectNodeTextBlob",
+            visited,
+            MAX_NODE_SCAN_COUNT,
+            SystemClock.elapsedRealtime() - started,
+        )
         return parts.joinToString(separator = " ").lowercase(Locale.ROOT)
     }
 
@@ -2833,6 +3010,7 @@ class LoqInAccessibilityService : AccessibilityService() {
         data class WorkItem(val node: AccessibilityNodeInfo, val depth: Int, val owned: Boolean)
 
         val parts = ArrayList<String>(24)
+        val started = SystemClock.elapsedRealtime()
         val stack = ArrayDeque<WorkItem>()
         stack.addLast(WorkItem(root, 0, false))
         var visited = 0
@@ -2852,6 +3030,13 @@ class LoqInAccessibilityService : AccessibilityService() {
             } finally {
             }
         }
+        AccessibilityWorkBudget.recordScan(
+            this,
+            "collectNodeIdBlob",
+            visited,
+            MAX_NODE_SCAN_COUNT,
+            SystemClock.elapsedRealtime() - started,
+        )
         return parts.joinToString(separator = " ").lowercase(Locale.ROOT)
     }
 
@@ -3012,57 +3197,148 @@ class LoqInAccessibilityService : AccessibilityService() {
         return InAppRuleStore.shouldBlockSurface(this, profile, baseKey)
     }
 
-    private fun tryExtractDomainFromBrowserUrlViews(root: AccessibilityNodeInfo, pkg: String): String? {
+    private fun tryExtractDomainFromBrowserUrlViews(root: AccessibilityNodeInfo, pkg: String): String? =
+        tryExtractWebsiteTargetFromBrowserUrlViews(root, pkg)?.let { DomainBlockStore.hostPart(it) }
+
+    /** Full target (host + path) from the browser's URL view, used by path rules. */
+    private fun tryExtractWebsiteTargetFromBrowserUrlViews(root: AccessibilityNodeInfo, pkg: String): String? {
         val ids = browserUrlViewIds(pkg)
         for (id in ids) {
             val nodes = runCatching { root.findAccessibilityNodeInfosByViewId(id) }.getOrNull() ?: emptyList()
-            try {
-                for (node in nodes) {
-                    val candidates = sequenceOf(
-                        node.text?.toString(),
-                        node.contentDescription?.toString()
-                    )
-                    for (raw in candidates) {
-                        val value = raw?.trim().orEmpty()
-                        if (value.isBlank()) continue
-                        domainFromText(value)?.let { return it }
-                    }
+            for (node in nodes) {
+                // Firefox keeps the previous page's URL view in the accessibility tree on internal
+                // screens (History, Bookmarks, Settings, home). Only a URL bar that is actually
+                // displayed may be treated as the page the user is on.
+                if (!runCatching { node.isVisibleToUser }.getOrDefault(false)) continue
+                val candidates = sequenceOf(
+                    node.text?.toString(),
+                    node.contentDescription?.toString()
+                )
+                for (raw in candidates) {
+                    val value = raw?.trim().orEmpty()
+                    if (value.isBlank()) continue
+                    websiteTargetFromText(value)?.let { return it }
                 }
-            } finally {
+            }
+        }
+
+        // Firefox 155+ dropped the mozac URL views for a Compose toolbar whose URL node is only
+        // discoverable by traversal. Without this the host is still detected by findBrowserUrlNode
+        // but the path is lost, so path rules never match in Firefox.
+        if (isFirefoxFamily(pkg)) {
+            val node = findFirefoxUrlNode(root, pkg) ?: return null
+            val candidates = sequenceOf(
+                node.text?.toString(),
+                node.contentDescription?.toString()
+            )
+            for (raw in candidates) {
+                val value = raw?.trim().orEmpty()
+                if (value.isBlank()) continue
+                websiteTargetFromText(value)?.let { return it }
             }
         }
         return null
+    }
+
+    /**
+     * Finds the visible Firefox URL-bar node across UI generations.
+     * The address-bar edit field, its autocomplete list and internal-screen leftovers are never
+     * eligible: the display node must be visible, must not be editable/focused and must carry a
+     * URL-shaped text or description.
+     *
+     * Breadth-first on purpose: the toolbar is shallow UI chrome while page content subtrees are
+     * deep and can exhaust a depth-first budget on real-world pages (ABC News, Wikipedia) before
+     * the URL node is ever reached.
+     */
+    private fun findFirefoxUrlNode(root: AccessibilityNodeInfo, pkg: String): AccessibilityNodeInfo? {
+        if (!isFirefoxFamily(pkg)) return null
+        val direct = runCatching {
+            root.findAccessibilityNodeInfosByViewId(FIREFOX_COMPOSE_URL_VIEW_ID).orEmpty()
+        }.getOrNull().orEmpty()
+        direct.firstOrNull { isEligibleFirefoxUrlNode(it) }?.let { return it }
+        val queue = ArrayDeque<Pair<AccessibilityNodeInfo, Int>>()
+        queue.addLast(root to 0)
+        var visited = 0
+        val started = SystemClock.elapsedRealtime()
+        val deadline = SystemClock.uptimeMillis() + FIREFOX_URL_NODE_SCAN_MS
+        while (queue.isNotEmpty() && visited < FIREFOX_URL_NODE_SCAN_MAX &&
+            SystemClock.uptimeMillis() < deadline
+        ) {
+            val (node, depth) = queue.removeFirst()
+            visited++
+            if (isEligibleFirefoxUrlNode(node)) {
+                AccessibilityWorkBudget.recordScan(
+                    this,
+                    "findFirefoxUrlNode",
+                    visited,
+                    FIREFOX_URL_NODE_SCAN_MAX,
+                    SystemClock.elapsedRealtime() - started,
+                )
+                return node
+            }
+            if (depth >= FIREFOX_URL_NODE_SCAN_DEPTH) continue
+            val childCount = runCatching { node.childCount }.getOrDefault(0)
+            for (i in 0 until childCount) {
+                if (visited + queue.size >= FIREFOX_URL_NODE_SCAN_MAX) break
+                runCatching { node.getChild(i) }.getOrNull()?.let { queue.addLast(it to depth + 1) }
+            }
+        }
+        AccessibilityWorkBudget.recordScan(
+            this,
+            "findFirefoxUrlNode",
+            visited,
+            FIREFOX_URL_NODE_SCAN_MAX,
+            SystemClock.elapsedRealtime() - started,
+        )
+        return null
+    }
+
+    private fun isEligibleFirefoxUrlNode(node: AccessibilityNodeInfo): Boolean {
+        if (!runCatching { node.isVisibleToUser }.getOrDefault(false)) {
+            return false
+        }
+        if (node.isEditable || node.isFocused || node.isAccessibilityFocused) {
+            return false
+        }
+        val vid = node.viewIdResourceName?.lowercase(Locale.getDefault()).orEmpty()
+        val short = vid.substringAfterLast('/')
+        // Toolbar/address-bar nodes only. A loose "url" match would also accept History rows
+        // (org.mozilla.firefox:id/url), which must never be treated as the current page.
+        val idHint = vid.contains("mozac") || vid.contains("toolbar") || vid.contains("origin") ||
+            vid.contains("omnibox") || vid.contains("display_url") || short in FIREFOX_COMPOSE_URL_TAGS
+        if (!idHint) {
+            return false
+        }
+        // The address-bar edit field, its autocomplete list and Compose search box contain typed
+        // or suggested URLs and must never become the "current page".
+        if (vid.contains("edit") || vid.contains("autocomplete") || vid.contains("suggestion") ||
+            short.contains("search_box")
+        ) {
+            return false
+        }
+        val t = node.text?.toString().orEmpty()
+        val cd = node.contentDescription?.toString().orEmpty()
+        val c = (t + " " + cd).trim()
+        return c.contains(".") || c.contains("http", ignoreCase = true)
     }
 
     private fun findBrowserUrlNode(root: AccessibilityNodeInfo, pkg: String): AccessibilityNodeInfo? {
         val ids = browserUrlViewIds(pkg)
         for (id in ids) {
             val nodes = runCatching { root.findAccessibilityNodeInfosByViewId(id) }.getOrNull() ?: emptyList()
-            val copy = try {
-                val best = nodes.firstOrNull {
-                    !it.text?.toString().isNullOrBlank() ||
-                        !it.contentDescription?.toString().isNullOrBlank()
-                } ?: nodes.firstOrNull()
-                best?.let { it }
-            } finally {
-            }
-            if (copy != null) {
-                return copy
+            val visibleNodes = nodes.filter { runCatching { it.isVisibleToUser }.getOrDefault(false) }
+            val best = visibleNodes.firstOrNull {
+                !it.text?.toString().isNullOrBlank() ||
+                    !it.contentDescription?.toString().isNullOrBlank()
+            } ?: visibleNodes.firstOrNull()
+            if (best != null) {
+                return best
             }
         }
 
         // Firefox/Fenix can shift view IDs between versions. Fallback by scanning toolbar-like nodes.
         if (pkg.startsWith("org.mozilla.")) {
-            return findAnyNode(root) { node ->
-                val vid = node.viewIdResourceName?.lowercase(Locale.getDefault()).orEmpty()
-                if (!(vid.contains("mozac") || vid.contains("toolbar") || vid.contains("url") || vid.contains("origin"))) {
-                    return@findAnyNode false
-                }
-                val t = node.text?.toString().orEmpty()
-                val cd = node.contentDescription?.toString().orEmpty()
-                val c = (t + " " + cd).trim()
-                c.contains(".") || c.contains("http", ignoreCase = true)
-            }
+            return findFirefoxUrlNode(root, pkg)
         }
 
         return null
@@ -3125,6 +3401,14 @@ class LoqInAccessibilityService : AccessibilityService() {
         pkg: String,
         event: AccessibilityEvent?
     ): Boolean {
+        // Firefox versions expose the address bar as an explicit edit view (or a focused EditText
+        // inside the toolbar container). Check that before anything else so autocomplete text is
+        // never parsed as the current page.
+        if (isFirefoxFamily(pkg) && isFirefoxAddressBarActive(root, pkg)) {
+            browserWebsiteState.noteAddressEditing(pkg)
+            return true
+        }
+
         val node = findBrowserUrlNode(root, pkg) ?: return false
         try {
             if (isFirefoxFamily(pkg)) {
@@ -3255,12 +3539,15 @@ class LoqInAccessibilityService : AccessibilityService() {
             return null
         }
 
-        tryExtractDomainFromBrowserUrlViews(root, pkg)?.let { return it to true }
-
+        // Firefox's address bar (especially on the new-tab screen) shows autocomplete suggestions as
+        // the edit field's text. Detect that state before any URL extraction so a suggestion can
+        // never be mistaken for the current page.
         val firefoxEditing = isFirefoxFamily(pkg) && isBrowserAddressEditing(root, pkg, event)
         if (firefoxEditing) {
             return null
         }
+
+        tryExtractDomainFromBrowserUrlViews(root, pkg)?.let { return it to true }
         if (event != null && browserWebsiteState.addressEditingRecently(pkg)) {
             return null
         }
@@ -3288,26 +3575,37 @@ class LoqInAccessibilityService : AccessibilityService() {
         return candidate?.let { text -> domainFromText(text)?.let { it to true } }
     }
 
-    private fun domainFromText(raw: String): String? {
+    private fun domainFromText(raw: String): String? =
+        websiteTargetFromText(raw)?.let { DomainBlockStore.hostPart(it) }
+
+    private fun websiteTargetFromText(raw: String): String? {
         val s0 = raw.trim()
-        if (s0.isBlank()) {
-            return null
+        if (s0.isBlank()) return null
+
+        val token = s0.split(" ", "›", "·", "|", "—", " ")
+            .firstOrNull { it.contains(".") } ?: s0
+        // Firefox truncates long URLs in the address bar with an ellipsis. Keep the parsable
+        // prefix so the path rule still matches what the user sees.
+        var s = token.trim().replace("\u2026", "").removeSuffix("...")
+        // Firefox 155's Compose address bar exposes "<url>. <hint>" as the content description;
+        // the space split above leaves that separator period attached to a URL that has a path.
+        if (s.length > 1 && s.endsWith('.') && s.dropLast(1).contains('/')) {
+            s = s.dropLast(1)
         }
 
-        val token = s0.split(" ", "›", "·", "|", "—", " ")
-            .firstOrNull { it.contains(".") } ?: s0
-        val s = token.trim()
-
-        val rx = Regex("(?i)(?:https?://)?([a-z0-9.-]+\\.[a-z]{2,})(?::\\d+)?")
-        val m = rx.find(s)
-        val host = m?.groupValues?.getOrNull(1)
-        if (!host.isNullOrBlank()) {
-            return DomainBlockStore.normalize(host)
+        // Detected browser targets intentionally exclude queries; a stored ? is the rule wildcard.
+        val rx = Regex("(?i)(?:https?://)?([a-z0-9.-]+\\.[a-z]{2,})(?::\\d+)?(/[^\\s?#]*)?")
+        val match = rx.find(s)
+        if (match != null) {
+            val host = match.groupValues.getOrNull(1).orEmpty()
+            val path = match.groupValues.getOrNull(2).orEmpty()
+            DomainBlockStore.normalize(host + path)?.let { return it }
         }
 
         val withScheme = if (s.startsWith("http://") || s.startsWith("https://")) s else "https://$s"
-        val parsed = runCatching { withScheme.toUri().host }.getOrNull() ?: return null
-        return DomainBlockStore.normalize(parsed)
+        val uri = runCatching { withScheme.toUri() }.getOrNull() ?: return null
+        val host = uri.host ?: return null
+        return DomainBlockStore.normalize(host + uri.encodedPath.orEmpty())
     }
 
     private fun isFirefoxAddressBarInputEvent(pkg: String, event: AccessibilityEvent?): Boolean {
@@ -3506,6 +3804,63 @@ class LoqInAccessibilityService : AccessibilityService() {
         return null
     }
 
+    private fun isFirefoxAddressBarActive(root: AccessibilityNodeInfo, pkg: String): Boolean {
+        if (nodeHasViewId(root, firefoxEditingViewIds(pkg))) {
+            return true
+        }
+        // Firefox 155+: the address-bar edit state replaces the URL display node with a focused
+        // Compose EditText (ADDRESSBAR_SEARCH_BOX) inside the ADDRESSBAR_EDIT_MODE container.
+        if (isFirefoxComposeEditModePresent(root, pkg)) {
+            return true
+        }
+        // ID drift across Firefox versions: look for a focused editable node inside the toolbar.
+        val toolbarIds = listOf(
+            "$pkg:id/composable_toolbar",
+            "$pkg:id/mozac_browser_toolbar_container",
+            "$pkg:id/mozac_browser_toolbar",
+            "$pkg:id/toolbar",
+        )
+        return toolbarIds.any { id ->
+            runCatching {
+                root.findAccessibilityNodeInfosByViewId(id).orEmpty().any { toolbar ->
+                    nodeHasFocusedEditable(toolbar, 0)
+                }
+            }.getOrDefault(false)
+        }
+    }
+
+    /**
+     * Firefox 155+ Compose toolbar edit mode. The test tags are bare resource ids, so they are
+     * matched by traversal. Only visible nodes count: stale hidden toolbar containers from the
+     * previous page must not mark the page as "editing".
+     */
+    private fun isFirefoxComposeEditModePresent(root: AccessibilityNodeInfo, pkg: String): Boolean {
+        if (!isFirefoxFamily(pkg)) return false
+        return findAnyNode(root) { node ->
+            val short = node.viewIdResourceName?.lowercase(Locale.getDefault()).orEmpty().substringAfterLast('/')
+            if (short !in FIREFOX_COMPOSE_EDITING_TAGS) {
+                return@findAnyNode false
+            }
+            runCatching { node.isVisibleToUser }.getOrDefault(false)
+        } != null
+    }
+
+    private fun nodeHasFocusedEditable(node: AccessibilityNodeInfo, depth: Int): Boolean {
+        if (depth > 6) return false
+        return runCatching {
+            if (node.isFocused &&
+                (node.isEditable || node.className?.toString().orEmpty().contains("EditText", ignoreCase = true))
+            ) {
+                return true
+            }
+            for (index in 0 until node.childCount) {
+                val child = node.getChild(index) ?: continue
+                if (nodeHasFocusedEditable(child, depth + 1)) return true
+            }
+            false
+        }.getOrDefault(false)
+    }
+
     private fun findEditableUrlText(node: AccessibilityNodeInfo): String? {
         data class WorkItem(val node: AccessibilityNodeInfo, val depth: Int, val owned: Boolean)
 
@@ -3536,7 +3891,9 @@ class LoqInAccessibilityService : AccessibilityService() {
                 val isEdit = current.isEditable || cls.contains("EditText", ignoreCase = true)
                 val editingNow = current.isFocused || current.isAccessibilityFocused
 
-                if (candidate != null && looksLikeUrl && (idHints || isEdit) && !editingNow) {
+                if (candidate != null && looksLikeUrl && (idHints || isEdit) && !editingNow &&
+                    runCatching { current.isVisibleToUser }.getOrDefault(false)
+                ) {
                     return candidate
                 }
 
@@ -3554,11 +3911,51 @@ class LoqInAccessibilityService : AccessibilityService() {
         return null
     }
 
+    /**
+     * Reads the active root on a dedicated worker with a short main-thread wait. `rootInActiveWindow`
+     * is a Binder call and can stall the accessibility callback for seconds on some OEM devices;
+     * on timeout the lookup returns null and the caller retries on the next event.
+     */
+    private fun activeRootWithBudget(reason: String): AccessibilityNodeInfo? {
+        val worker = accessibilityBinderWorker ?: return null
+        if (activeRootLookupInFlight) {
+            return null
+        }
+
+        val started = SystemClock.elapsedRealtime()
+        val result = AtomicReference<AccessibilityNodeInfo?>(null)
+        val latch = CountDownLatch(1)
+        activeRootLookupInFlight = true
+        val posted = worker.post {
+            try {
+                result.set(runCatching { rootInActiveWindow }.getOrNull())
+            } finally {
+                activeRootLookupInFlight = false
+                latch.countDown()
+            }
+        }
+        if (!posted) {
+            activeRootLookupInFlight = false
+            return null
+        }
+
+        val completed = runCatching {
+            latch.await(ACCESSIBILITY_BINDER_MAIN_WAIT_MS, TimeUnit.MILLISECONDS)
+        }.getOrDefault(false)
+        val duration = SystemClock.elapsedRealtime() - started
+        AccessibilityWorkBudget.recordRootLookup(
+            this,
+            if (completed) reason else "${reason}_timeout",
+            duration,
+        )
+        return if (completed) result.get() else null
+    }
+
     private fun currentRoot(event: AccessibilityEvent? = null): AccessibilityNodeInfo? {
-        val root = rootInActiveWindow
-            ?: event?.source
-            ?: runCatching { windows?.firstOrNull { it.isActive }?.root }.getOrNull()
-            ?: runCatching { windows?.firstOrNull()?.root }.getOrNull()
+        // The event source comes with the callback (no Binder transaction); it is the cheapest
+        // usable root. Fall back to the budgeted active-window lookup when no event is available.
+        val root = runCatching { event?.source }.getOrNull()
+            ?: activeRootWithBudget("current_root")
             ?: return null
 
         val rootPackage = runCatching { root.packageName?.toString()?.trim().orEmpty() }.getOrDefault("")
@@ -3627,6 +4024,20 @@ class LoqInAccessibilityService : AccessibilityService() {
         return findAnyNode(root) { node ->
             isYouTubePackage(node.packageName?.toString()?.lowercase(Locale.getDefault()))
         } != null
+    }
+
+    /**
+     * Devices where deep accessibility walks have caused Binder stalls/ANRs (Samsung Android 12,
+     * Bigme HiBreak on Android 14). On these, YouTube classification relies on direct event
+     * evidence and skips multi-hop parent/geometry traversal (ported from upstream 2.3.x).
+     */
+    private fun isYouTubeAccessibilityBinderRiskDevice(): Boolean {
+        val manufacturer = Build.MANUFACTURER.orEmpty().lowercase(Locale.ROOT)
+        val brand = Build.BRAND.orEmpty().lowercase(Locale.ROOT)
+        val samsung = manufacturer.contains("samsung") || brand.contains("samsung")
+        val samsungAndroid12 = samsung && Build.VERSION.SDK_INT in 31..32
+        val bigme = manufacturer.contains("bigme") || brand.contains("bigme")
+        return samsungAndroid12 || bigme
     }
 
     private fun tryRedirectBrowserToSafePage(pkg: String): Boolean {
@@ -3709,7 +4120,26 @@ class LoqInAccessibilityService : AccessibilityService() {
             } else {
                 null
             }
-        val host = hostSignal?.first ?: inferredFirefoxHost
+        // Firefox surfaces other than the address bar (home screen, top sites, history, bookmarks,
+        // article bodies, recommendations) routinely contain URLs and domain names. Only a trusted
+        // address-bar signal may drive enforcement; text-derived signals are ignored completely.
+        // The pending/cached fallbacks below still cover the honest case where the URL bar signal
+        // existed earlier and the build emits sparse events afterwards.
+        val firefoxUntrustedSignal = isFirefoxFamily(pkg) &&
+            (hostSignal?.second == false || (hostSignal == null && inferredFirefoxHost != null))
+        if (firefoxUntrustedSignal) {
+            val ignoredHost = hostSignal?.first ?: inferredFirefoxHost
+            appendBlockingLog(
+                category = "website_skip",
+                key = "web-firefox-untrusted|$pkg|${ignoredHost ?: "-"}",
+                message = "pkg=$pkg host=${sanitizeWebsiteSignal(ignoredHost)} reason=firefox_text_signal action=ignored event=${eventTypeLabel(event)}",
+                throttleMs = 2_000L
+            )
+            browserWebsiteState.resetCandidate()
+            return
+        }
+
+        val host = hostSignal?.first
             ?: run {
                 if (isFirefoxFamily(pkg) && (loadedFirefoxPageEvent || !recentEditing)) {
                     browserWebsiteState.currentPendingDomain(pkg, now)?.let { pendingHost ->
@@ -3827,7 +4257,10 @@ class LoqInAccessibilityService : AccessibilityService() {
             return
         }
 
-        val hardBlocked = DomainBlockStore.shouldBlockHost(this, host)
+        val websiteTarget = tryExtractWebsiteTargetFromBrowserUrlViews(root, pkg)
+            ?.takeIf { DomainBlockStore.hostPart(it) == host }
+            ?: host
+        val hardBlocked = DomainBlockStore.shouldBlockHost(this, websiteTarget)
 
         val limitMin = if (DomainBlockStore.isRuleEnabledForHost(this, host)) {
             DomainLimitStore.getLimitMinutes(this, host)
@@ -3873,7 +4306,7 @@ class LoqInAccessibilityService : AccessibilityService() {
                 getString(R.string.block_reason_mode_website_block_selected)
             },
             source = getString(R.string.block_reason_source_website),
-            matched = host,
+            matched = websiteTarget,
             result = getString(R.string.block_reason_result_blocked)
         )
 
@@ -3885,15 +4318,21 @@ class LoqInAccessibilityService : AccessibilityService() {
             throttleMs = 1_500L
         )
         scheduleWebsiteBlockFollowUp(pkg, host, appLabel, title, msg, redirected)
+        // Browsers that cannot be redirected to a safe page (Firefox rejects about:blank) keep the
+        // blocked page in the tab, so a single BACK after acknowledgment can leave the user on it
+        // (e.g. when the tab has no back history or the toolbar is hidden and detection goes quiet).
+        // Move to the launcher while the block is shown instead, and do not bring the browser back
+        // on OK.
         softBlockSurface(
             pkg,
             appLabel,
             title,
             msg,
-            backCount = if (redirected) 0 else 1,
-            deferNavigationUntilAcknowledge = !redirected,
-            returnToPackageOnClose = true,
-            blockCategory = BlockCategoryCountStore.Category.WEBSITE
+            backCount = 0,
+            deferNavigationUntilAcknowledge = false,
+            returnToPackageOnClose = redirected,
+            blockCategory = BlockCategoryCountStore.Category.WEBSITE,
+            prePopupPhoneHome = !redirected
         )
     }
 
@@ -3965,7 +4404,10 @@ class LoqInAccessibilityService : AccessibilityService() {
             ?: browserWebsiteState.currentTrackedDomain(pkg, System.currentTimeMillis(), isFirefox = true)
             ?: return
 
-        val hardBlocked = DomainBlockStore.shouldBlockHost(this, visibleHost)
+        val visibleTarget = tryExtractWebsiteTargetFromBrowserUrlViews(root, pkg)
+            ?.takeIf { DomainBlockStore.hostPart(it) == visibleHost }
+            ?: visibleHost
+        val hardBlocked = DomainBlockStore.shouldBlockHost(this, visibleTarget)
         val limitMin = if (DomainBlockStore.isRuleEnabledForHost(this, visibleHost)) {
             DomainLimitStore.getLimitMinutes(this, visibleHost)
         } else {
@@ -4046,7 +4488,10 @@ class LoqInAccessibilityService : AccessibilityService() {
             ?: tryExtractDomainFromBrowser(root, pkg, null)?.first
             ?: return
 
-        val stillBlocked = DomainBlockStore.shouldBlockHost(this, visibleHost)
+        val visibleTarget = tryExtractWebsiteTargetFromBrowserUrlViews(root, pkg)
+            ?.takeIf { DomainBlockStore.hostPart(it) == visibleHost }
+            ?: visibleHost
+        val stillBlocked = DomainBlockStore.shouldBlockHost(this, visibleTarget)
         val limitMin = if (DomainBlockStore.isRuleEnabledForHost(this, visibleHost)) {
             DomainLimitStore.getLimitMinutes(this, visibleHost)
         } else {
@@ -4118,6 +4563,7 @@ class LoqInAccessibilityService : AccessibilityService() {
         val stack = ArrayDeque<WorkItem>()
         stack.addLast(WorkItem(root, 0, false))
         var visited = 0
+        val started = SystemClock.elapsedRealtime()
         val deadline = if (timeBudgetMs > 0L) SystemClock.uptimeMillis() + timeBudgetMs else Long.MAX_VALUE
 
         while (stack.isNotEmpty() && visited < maxNodes && SystemClock.uptimeMillis() < deadline) {
@@ -4126,6 +4572,13 @@ class LoqInAccessibilityService : AccessibilityService() {
             try {
                 visited++
                 if (pred(current)) {
+                    AccessibilityWorkBudget.recordScan(
+                        this,
+                        "findAnyNode",
+                        visited,
+                        maxNodes,
+                        SystemClock.elapsedRealtime() - started,
+                    )
                     return current
                 }
 
@@ -4140,6 +4593,13 @@ class LoqInAccessibilityService : AccessibilityService() {
             } finally {
             }
         }
+        AccessibilityWorkBudget.recordScan(
+            this,
+            "findAnyNode",
+            visited,
+            maxNodes,
+            SystemClock.elapsedRealtime() - started,
+        )
         return null
     }
 
@@ -4855,6 +5315,9 @@ class LoqInAccessibilityService : AccessibilityService() {
         }
 
         if (allowFallbackTap && (isLikelyYouTubeMiniPlayerVisible(root) || hasYouTubeMiniPlayerGeometry(root))) {
+            // Node-based strategies only: pause-axis/sibling node clicks and accessibility
+            // actions. Coordinate taps/swipes were removed because a wrong tap can open a video
+            // or navigate somewhere unrelated.
             val pauseAxisClicked = closeYouTubeMiniPlayerFromPlayPauseAxis(root, reason)
             if (pauseAxisClicked) {
                 return true
@@ -4864,31 +5327,6 @@ class LoqInAccessibilityService : AccessibilityService() {
             if (actionDismissed) {
                 return true
             }
-
-            val boundsClicked = tapYouTubeMiniPlayerCloseByBounds(root, reason)
-            if (boundsClicked) {
-                return true
-            }
-
-            val swiped = swipeYouTubeMiniPlayerAway(root, reason)
-            if (swiped) {
-                return true
-            }
-
-            val fallbackClicked =
-                tapScreenAtRatio(0.94f, 0.68f) ||
-                    tapScreenAtRatio(0.94f, 0.76f) ||
-                    tapScreenAtRatio(0.94f, 0.82f) ||
-                    tapScreenAtRatio(0.94f, 0.86f) ||
-                    tapScreenAtRatio(0.94f, 0.88f) ||
-                    tapScreenAtRatio(0.88f, 0.76f)
-            appendBlockingLog(
-                category = "yt_mini_close",
-                key = "yt-mini-close-fallback|$reason",
-                message = "reason=$reason fallbackClicked=$fallbackClicked",
-                throttleMs = 500L
-            )
-            return fallbackClicked
         }
         return false
     }
@@ -5001,7 +5439,6 @@ class LoqInAccessibilityService : AccessibilityService() {
             return false
         }
 
-        var tapped = false
         pauseCandidates.forEach { pauseNode ->
             val pauseBounds = Rect()
             runCatching { pauseNode.getBoundsInScreen(pauseBounds) }.getOrNull()
@@ -5023,28 +5460,15 @@ class LoqInAccessibilityService : AccessibilityService() {
                 )
                 return true
             }
-
-            val y = pauseBounds.exactCenterY().coerceIn(playerBounds.top + 1f, playerBounds.bottom - 1f)
-            val xCandidates = listOf(
-                playerBounds.right - width * 0.025f,
-                playerBounds.right - width * 0.045f,
-                playerBounds.right - width * 0.065f,
-                playerBounds.right - width * 0.095f,
-                playerBounds.left + playerBounds.width() * 0.88f,
-                playerBounds.left + playerBounds.width() * 0.94f,
-                playerBounds.left + playerBounds.width() * 0.98f
-            )
-            xCandidates.forEach { x ->
-                if (tapScreenAtPoint(x, y)) tapped = true
-            }
         }
+        // Node-based strategies only: coordinate taps near the mini-player were removed.
         appendBlockingLog(
             category = "yt_mini_close",
-            key = "yt-mini-close-pause-axis-tap|$reason",
-            message = "reason=$reason candidates=${pauseCandidates.size} tapped=$tapped",
+            key = "yt-mini-close-pause-axis-node-only|$reason",
+            message = "reason=$reason candidates=${pauseCandidates.size} nodeOnly=true",
             throttleMs = 500L
         )
-        return tapped
+        return false
     }
 
     private fun closeYouTubeMiniPlayerFromPauseSiblings(
@@ -5227,53 +5651,6 @@ class LoqInAccessibilityService : AccessibilityService() {
         return best
     }
 
-    private fun swipeYouTubeMiniPlayerAway(root: AccessibilityNodeInfo, reason: String): Boolean {
-        val playerBounds = findYouTubeMiniPlayerBounds(root) ?: return false
-        val width = resources.displayMetrics.widthPixels.coerceAtLeast(1)
-        val height = resources.displayMetrics.heightPixels.coerceAtLeast(1)
-        val fromX = playerBounds.exactCenterX()
-        val fromY = playerBounds.exactCenterY()
-        val toX = minOf(width - 4f, playerBounds.right + width * 0.36f)
-        val toY = minOf(height - 4f, playerBounds.bottom + playerBounds.height() * 1.35f)
-        val swiped =
-            swipeScreen(fromX, fromY, toX, fromY, durationMs = 220L) ||
-                swipeScreen(playerBounds.left + playerBounds.width() * 0.25f, fromY, toX, fromY, durationMs = 260L) ||
-                swipeScreen(fromX, fromY, fromX, toY, durationMs = 220L) ||
-                swipeScreen(playerBounds.left + playerBounds.width() * 0.78f, fromY, fromX, toY, durationMs = 220L)
-        appendBlockingLog(
-            category = "yt_mini_close",
-            key = "yt-mini-close-swipe|$reason",
-            message = "reason=$reason bounds=${playerBounds.left},${playerBounds.top},${playerBounds.right},${playerBounds.bottom} swiped=$swiped",
-            throttleMs = 500L
-        )
-        return swiped
-    }
-
-    private fun tapYouTubeMiniPlayerCloseByBounds(root: AccessibilityNodeInfo, reason: String): Boolean {
-        val playerBounds = findYouTubeMiniPlayerBounds(root) ?: return false
-        val closeX1 = playerBounds.right - playerBounds.width() * 0.06f
-        val closeX2 = playerBounds.right - resources.displayMetrics.widthPixels.coerceAtLeast(1) * 0.035f
-        val closeX3 = playerBounds.left + playerBounds.width() * 0.94f
-        val closeY1 = playerBounds.exactCenterY()
-        val closeY2 = playerBounds.top + playerBounds.height() * 0.42f
-        val closeY3 = playerBounds.top + playerBounds.height() * 0.62f
-
-        val clicked =
-            tapScreenAtPoint(closeX1, closeY1) ||
-                tapScreenAtPoint(closeX2, closeY1) ||
-                tapScreenAtPoint(closeX3, closeY1) ||
-                tapScreenAtPoint(closeX1, closeY2) ||
-                tapScreenAtPoint(closeX1, closeY3)
-
-        appendBlockingLog(
-            category = "yt_mini_close",
-            key = "yt-mini-close-bounds|$reason",
-            message = "reason=$reason bounds=${playerBounds.left},${playerBounds.top},${playerBounds.right},${playerBounds.bottom} clicked=$clicked",
-            throttleMs = 500L
-        )
-        return clicked
-    }
-
     private fun maybeBlockYouTubeFloatingPlayer(
         event: AccessibilityEvent?,
         reason: String,
@@ -5285,10 +5662,10 @@ class LoqInAccessibilityService : AccessibilityService() {
         if (!SwitchModeStore.isEnabled(this)) {
             return false
         }
-        // Mini player and PiP surfaces were removed as user-facing rules. The floating-player
-        // helper still runs for Shorts-in-PiP cleanup via the blockShorts path below.
-        val blockMiniPlayer = false
-        val blockPictureInPicture = false
+        // Mini-player and PiP are user-facing rules again (experiment branch): they are inert
+        // unless the matching rule is enabled for the profile.
+        val blockMiniPlayer = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_MINI_PLAYER)
+        val blockPictureInPicture = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_PIP)
         val blockShorts = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_SHORTS)
         if (!blockMiniPlayer && !blockPictureInPicture && !blockShorts) {
             return false
@@ -5298,25 +5675,45 @@ class LoqInAccessibilityService : AccessibilityService() {
         if (!force && now - lastYouTubeFloatingPlayerBlockAt < 420L) {
             return false
         }
+        // Do not re-show the floating-player blocker while it is already on screen (forceShow
+        // bypasses the surface cooldown, so without this a still-visible mini-player re-triggered
+        // the popup once per second).
+        if (!force && (BlockerActivity.isVisible || BlockerActivity.isRecentlyFocusedFor(pkg))) {
+            return true
+        }
+        // Respect the post-block guard: after closing the mini-player/PiP, YouTube leaves stale
+        // off-screen player nodes in the tree for a few seconds and transition events used to
+        // re-block them ("Mini player is blocked!" three times in a row on the phone).
+        if (!force && (surfaceGuardActive(pkg, "yt:miniplayer") || surfaceGuardActive(pkg, "yt:pip"))) {
+            return false
+        }
 
         val root = rootOverride ?: youtubeCurrentRoot(event)
         val eventSignal = youtubeEventSourceSignal(event, maxHops = 3)
         val eventRealPip = isLikelyYouTubePictureInPicture(root, event) ||
             anyNeedleMatches(eventSignal, YT_REAL_PIP_LABELS)
         val windowPip = isYouTubePictureInPictureWindowVisible()
-        val miniVisible =
-            root?.let { isLikelyYouTubeMiniPlayerVisible(it) || hasYouTubeMiniPlayerGeometry(it) } == true ||
-                anyNeedleMatches(eventSignal, YT_MINI_PLAYER_NAME_LABELS)
+        val miniIdentity =
+            root?.let { hasYouTubeMiniPlayerIdentity(it) } == true ||
+                (anyNeedleMatches(eventSignal, YT_MINI_PLAYER_NAME_LABELS) && !isExpandMiniPlayerSignal(eventSignal))
+        // Detection requires an explicit mini-player label/view id (or a real PiP window).
+        // Geometry alone also matches the watch page's player control bar, which caused false
+        // "Mini player is blocked" popups while watching/scrolling. Geometry is still used by the
+        // close strategies via findYouTubeMiniPlayerBounds().
+        // The in-app mini-player wins over the PiP window heuristic: Morphe exposes it as its own
+        // small window, which the heuristic would otherwise read as a PiP.
+        val windowPipEffective = windowPip && !miniIdentity
+        val miniVisible = miniIdentity || eventRealPip || windowPipEffective
 
         val selectedSurface = root?.let { detectYouTubeSelectedSurface(it) ?: resolveYouTubeSurfaceFromEvent(event) }
         val explicitShortsFloatingContext =
             eventRealPip ||
-                windowPip ||
+                windowPipEffective ||
                 selectedSurface == "yt:shorts" ||
                 isYouTubeShortsEntryEvent(event)
         val shortsFloating =
             blockShorts &&
-                (eventRealPip || windowPip || (miniVisible && explicitShortsFloatingContext)) &&
+                (eventRealPip || windowPipEffective || (miniVisible && explicitShortsFloatingContext)) &&
                 root?.let { isLikelyYouTubeShortsPlayer(it, event) || isYouTubeHomeFeedShortsPlayer(it, event) || hasYouTubeDeepShortsSignal(it) } == true
         if (shortsFloating) {
             lastYouTubeFloatingPlayerBlockAt = now
@@ -5327,7 +5724,7 @@ class LoqInAccessibilityService : AccessibilityService() {
                 event = event,
                 detail = "floating_shorts reason=$reason realPip=$eventRealPip windowPip=$windowPip mini=$miniVisible"
             )
-            if (eventRealPip || windowPip) {
+            if (eventRealPip || windowPipEffective) {
                 runCatching { blockLaunchController.pauseActiveMediaPlayback() }
                 killYouTubePictureInPicture(pkg)
                 return true
@@ -5335,10 +5732,10 @@ class LoqInAccessibilityService : AccessibilityService() {
             return closeYouTubeShortsPlayer("floating_$reason", root)
         }
 
-        if (!eventRealPip && !windowPip && !miniVisible) {
+        if (!eventRealPip && !windowPipEffective && !miniVisible) {
             return false
         }
-        val surfaceKey = if (eventRealPip || windowPip) "yt:pip" else "yt:miniplayer"
+        val surfaceKey = if (eventRealPip || windowPipEffective) "yt:pip" else "yt:miniplayer"
         if ((surfaceKey == "yt:pip" && !blockPictureInPicture) || (surfaceKey == "yt:miniplayer" && !blockMiniPlayer)) {
             return false
         }
@@ -5349,21 +5746,70 @@ class LoqInAccessibilityService : AccessibilityService() {
             surfaceKey,
             enabled = true,
             event = event,
-            detail = "floating reason=$reason realPip=$eventRealPip windowPip=$windowPip mini=$miniVisible"
+            detail = "floating reason=$reason realPip=$eventRealPip windowPip=$windowPipEffective mini=$miniVisible"
         )
 
         clearSurfaceEvidence(surfaceKey)
         clearSurfaceHintForPackage(pkg)
 
-        if (eventRealPip || windowPip) {
-            runCatching { blockLaunchController.pauseActiveMediaPlayback() }
-            dismissYouTubeMiniPlayer("pip_rule_$reason", allowFallbackTap = true)
-            killYouTubePictureInPicture(pkg)
+        if (eventRealPip || windowPipEffective) {
+            showYouTubeFloatingPlayerBlock(pkg, surfaceKey, reason, killPictureInPicture = true)
             return true
         }
 
-        blockYouTubeMiniPlayer(reason)
+        blockYouTubeMiniPlayer(reason, pkg)
+        showYouTubeFloatingPlayerBlock(pkg, surfaceKey, reason, killPictureInPicture = false)
         return true
+    }
+
+    /**
+     * Blocker feedback for the YouTube floating-player rules (ported from upstream 2.3.x).
+     * PiP is killed before the popup; the mini-player close strategies run separately.
+     */
+    private fun showYouTubeFloatingPlayerBlock(
+        pkg: String,
+        surfaceKey: String,
+        reason: String,
+        killPictureInPicture: Boolean,
+    ) {
+        val labelRes = if (surfaceKey == "yt:pip") {
+            R.string.in_app_surface_pip_label
+        } else {
+            R.string.in_app_surface_mini_player_label
+        }
+        val label = getString(labelRes)
+        val title = getString(R.string.blocking_surface_blocked_title, label)
+        val message = surfaceUsageLine(surfaceKey, 0)
+
+        currentSurfaceKey = surfaceKey
+        currentSurfacePkg = pkg
+        clearSurfaceEvidence(surfaceKey)
+        clearSurfaceHintForPackage(pkg)
+        guardAllYouTubeSurfaces(pkg, System.currentTimeMillis(), YOUTUBE_FLOATING_POST_BLOCK_GUARD_MS)
+        runCatching { blockLaunchController.pauseActiveMediaPlayback() }
+
+        if (killPictureInPicture) {
+            killYouTubePictureInPicture(pkg)
+        }
+
+        appendBlockingLog(
+            category = "yt_floating_block",
+            key = "yt-floating-block|$surfaceKey|$reason",
+            message = "surface=$surfaceKey reason=$reason killPip=$killPictureInPicture",
+            throttleMs = 700L,
+        )
+        softBlockSurface(
+            pkg = pkg,
+            appLabel = safeAppLabel(pkg),
+            title = title,
+            message = message,
+            backCount = 0,
+            deferNavigationUntilAcknowledge = true,
+            returnToPackageOnClose = false,
+            forceShow = true,
+            postAcknowledgeYouTubeHome = true,
+            postAcknowledgeYouTubeCleanupMini = true,
+        )
     }
 
     private fun maybeBlockYouTubeHomeShortsBeforeDedupe(event: AccessibilityEvent?): Boolean {
@@ -5391,10 +5837,38 @@ class LoqInAccessibilityService : AccessibilityService() {
             return false
         }
 
-        val root = youtubeCurrentRoot(event) ?: return false
+        // This fast Shorts path runs before the normal YouTube surface resolver. An explicit
+        // Subscriptions bottom-nav event must win here; otherwise a transient Shorts/player signal
+        // underneath the tab can show the correct block with the wrong "Shorts" label.
+        val directSurface = resolveYouTubeSurfaceFromEvent(event, allowFocused = false)
+        if (isDirectYouTubeSubscriptionsEvent(event) || directSurface == "yt:subscriptions") {
+            rememberSurfaceHint(pkg, "yt:subscriptions", now)
+            return false
+        }
+
+        // While a watch-page ad overlay is up, skip this Shorts heuristic: ad controls sit in the
+        // same lower-screen band as the Shorts shelf and must not classify a watch page as Shorts.
+        val riskyBinderDevice = isYouTubeAccessibilityBinderRiskDevice()
+        val root = if (riskyBinderDevice) null else youtubeCurrentRoot(event)
+        val selectedSurface = root?.let { detectYouTubeSelectedSurface(it) }
+        val watchAdOverlay =
+            hasYouTubeWatchAdDismissEvent(event) ||
+                (root != null && shouldProbeYouTubeWatchAdOverlayRoot(event) &&
+                    hasYouTubeWatchAdOverlaySignal(root, event, selectedSurface))
+        if (watchAdOverlay && selectedSurface != "yt:shorts") {
+            armYouTubeWatchAdPositionGuard()
+            return false
+        }
+
+        val directShortsEvent =
+            isYouTubeShortsEntryEvent(event) ||
+                resolveYouTubeSurfaceFromEvent(event, allowFocused = false) == "yt:shorts"
         val detected =
-            isYouTubeHomeShortsShelfEvent(event, root) ||
-                isYouTubeHomeFeedShortsPlayer(root, event)
+            directShortsEvent ||
+                (root != null && (
+                    isYouTubeHomeShortsShelfEvent(event, root) ||
+                        isYouTubeHomeFeedShortsPlayer(root, event)
+                    ))
         if (!detected) {
             return false
         }
@@ -5418,6 +5892,186 @@ class LoqInAccessibilityService : AccessibilityService() {
             postAcknowledgeYouTubeCleanupMini = false
         )
         return true
+    }
+
+    /**
+     * Explicit bottom-navigation evidence (Subscriptions/You) is reliable enough to act on without
+     * waiting for the next root scan: YouTube can replace its tree between the tap event and the
+     * normal classification pass, which used to make the block land late or with the wrong label.
+     * Ported from upstream 2.3.x.
+     */
+    private fun maybeBlockYouTubeDirectNavigationBeforeDedupe(event: AccessibilityEvent?): Boolean {
+        if (!SwitchModeStore.isEnabled(this)) {
+            return false
+        }
+
+        val type = event?.eventType ?: return false
+        if (type != AccessibilityEvent.TYPE_VIEW_CLICKED &&
+            type != AccessibilityEvent.TYPE_VIEW_SELECTED &&
+            type != AccessibilityEvent.TYPE_VIEW_FOCUSED
+        ) {
+            return false
+        }
+
+        val surface = when {
+            isDirectYouTubeSubscriptionsEvent(event) -> "yt:subscriptions"
+            else -> resolveYouTubeSurfaceFromEvent(event, allowFocused = true)
+        }
+        if (surface != "yt:subscriptions" && surface != "yt:you") {
+            return false
+        }
+
+        // Use the detected package: the event may come from Morphe/ReVanced, and hardcoding the
+        // official package made the per-surface guards and the block target the wrong app
+        // (a Morphe You-tab tap still blocked "You" as com.google.android.youtube).
+        val detectedPkg = event?.packageName?.toString()
+        val pkg = if (isYouTubePackage(detectedPkg)) detectedPkg!! else PACKAGE_YOUTUBE
+
+        val enabled = when (surface) {
+            "yt:subscriptions" -> inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_SUBSCRIPTIONS)
+            "yt:you" -> inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_YOU)
+            else -> false
+        }
+        val now = System.currentTimeMillis()
+        rememberSurfaceHint(pkg, surface, now)
+        if (!enabled || surfaceGuardActive(pkg, surface, now)) {
+            return false
+        }
+
+        val label = if (surface == "yt:subscriptions") {
+            getString(R.string.in_app_surface_subscriptions_label)
+        } else {
+            getString(R.string.in_app_surface_you_label)
+        }
+        currentSurfaceKey = surface
+        currentSurfacePkg = pkg
+        clearSurfaceEvidence(surface)
+        surfaceBlockGuardUntil["$pkg|$surface"] = now +
+            maxOf(YT_SHORTS_REENTRY_GUARD_MS, INAPP_POST_BLOCK_GRACE_MS)
+        if (surface == "yt:subscriptions") {
+            runCatching { blockLaunchController.pauseActiveMediaPlayback() }
+        }
+        logInAppSurfaceDetect(
+            pkg,
+            surface,
+            enabled = true,
+            event = event,
+            detail = "direct_bottom_navigation",
+        )
+        softBlockSurface(
+            pkg = pkg,
+            appLabel = safeAppLabel(pkg),
+            title = getString(R.string.blocking_surface_blocked_title, label),
+            message = surfaceUsageLine(surface, 0),
+            backCount = 0,
+            deferNavigationUntilAcknowledge = true,
+            returnToPackageOnClose = false,
+            forceShow = true,
+            postAcknowledgeYouTubeHome = true,
+            postAcknowledgeYouTubeCleanupMini = true,
+        )
+        return true
+    }
+
+    /**
+     * Explicit Subscriptions bottom-navigation event (label plus bottom-band geometry or
+     * pivot/nav/bottom view ids). Geometry hops are skipped on Binder-risk devices.
+     * Ported from upstream 2.3.x.
+     */
+    private fun isDirectYouTubeSubscriptionsEvent(event: AccessibilityEvent?): Boolean {
+        val type = event?.eventType ?: return false
+        if (type != AccessibilityEvent.TYPE_VIEW_CLICKED &&
+            type != AccessibilityEvent.TYPE_VIEW_SELECTED &&
+            type != AccessibilityEvent.TYPE_VIEW_FOCUSED
+        ) return false
+
+        val signal = youtubeEventSourceSignal(event, maxHops = 3)
+        if (!anyNeedleMatches(signal, YT_SUBSCRIPTIONS_LABELS)) return false
+
+        val source = runCatching { event.source }.getOrNull()
+        val sourceViewId = source?.viewIdResourceName?.lowercase(Locale.ROOT).orEmpty()
+        val sourceIsExplicitBottomNav =
+            sourceViewId.contains("pivot") ||
+                sourceViewId.contains("bottom") ||
+                sourceViewId.contains("navigation") ||
+                sourceViewId.contains("tab") ||
+                sourceViewId.contains("nav") ||
+                source?.isSelected == true ||
+                source?.isCheckedCompat() == true
+        if (sourceIsExplicitBottomNav) return true
+
+        // The geometry-only surface resolver is intentionally suppressed for a short window after
+        // YouTube ad controls are observed. An explicit Subscriptions label in the bottom
+        // navigation is safe to accept even while that guard is active.
+        var current = runCatching { event.source }.getOrNull()
+        val width = resources.displayMetrics.widthPixels.coerceAtLeast(1)
+        val height = resources.displayMetrics.heightPixels.coerceAtLeast(1)
+        val bounds = Rect()
+        var hops = 0
+        val maxHops = if (isYouTubeAccessibilityBinderRiskDevice()) 0 else 3
+        while (current != null && hops <= maxHops) {
+            val node = current ?: break
+            val nodePkg = node.packageName?.toString()?.lowercase(Locale.ROOT).orEmpty()
+            if (nodePkg.isBlank() || isYouTubePackage(nodePkg)) {
+                runCatching { node.getBoundsInScreen(bounds) }.getOrNull()
+                if (!bounds.isEmpty) {
+                    val centerX = bounds.exactCenterX() / width.toFloat()
+                    val centerY = bounds.exactCenterY() / height.toFloat()
+                    val widthRatio = bounds.width() / width.toFloat()
+                    val heightRatio = bounds.height() / height.toFloat()
+                    if (centerY >= 0.68f && centerX in 0.50f..0.90f &&
+                        widthRatio <= 0.42f && heightRatio <= 0.26f
+                    ) {
+                        return true
+                    }
+                }
+            }
+            hops++
+            if (hops > maxHops) break
+            current = runCatching { node.parent }.getOrNull()
+        }
+        return false
+    }
+
+    private fun armYouTubeWatchAdPositionGuard() {
+        youtubeWatchAdPositionGuardUntilUptime = maxOf(
+            youtubeWatchAdPositionGuardUntilUptime,
+            SystemClock.uptimeMillis() + YT_WATCH_AD_POSITION_GUARD_MS,
+        )
+    }
+
+    private fun isYouTubeWatchAdPositionGuardActive(): Boolean =
+        SystemClock.uptimeMillis() < youtubeWatchAdPositionGuardUntilUptime
+
+    private fun shouldProbeYouTubeWatchAdOverlayRoot(event: AccessibilityEvent?): Boolean {
+        val type = event?.eventType ?: return false
+        return type == AccessibilityEvent.TYPE_VIEW_CLICKED ||
+            type == AccessibilityEvent.TYPE_VIEW_SELECTED
+    }
+
+    private fun hasYouTubeWatchAdDismissEvent(event: AccessibilityEvent?): Boolean {
+        val type = event?.eventType ?: return false
+        if (type != AccessibilityEvent.TYPE_VIEW_CLICKED &&
+            type != AccessibilityEvent.TYPE_VIEW_SELECTED &&
+            type != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED &&
+            type != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
+        ) return false
+
+        val source = runCatching { event.source }.getOrNull()
+        val sourcePkg = source?.packageName?.toString()?.lowercase(Locale.ROOT).orEmpty()
+        if (sourcePkg.isNotBlank() && !isYouTubePackage(sourcePkg)) return false
+
+        return isYouTubeWatchAdSignal(youtubeEventSourceSignal(event, maxHops = 2))
+    }
+
+    private fun isYouTubeWatchAdSignal(signal: String): Boolean {
+        if (signal.isBlank()) return false
+        val lowered = signal.lowercase(Locale.ROOT)
+        val adCenter = YT_WATCH_AD_CENTER_LABELS.any(lowered::contains)
+        val sponsored = YT_WATCH_AD_SPONSORED_LABELS.any { containsSemanticToken(lowered, it) }
+        val visitSite = YT_WATCH_AD_VISIT_LABELS.any(lowered::contains)
+        val dismiss = YT_WATCH_AD_DISMISS_LABELS.any(lowered::contains)
+        return adCenter || dismiss || (sponsored && visitSite)
     }
 
     /**
@@ -5460,6 +6114,11 @@ class LoqInAccessibilityService : AccessibilityService() {
             (selectedSurface == null || selectedSurface == "yt:home") &&
                 isYouTubeFullScreenShortsPlayerActive(root)
         val shortsByReelContainer = hasVisibleYouTubeReelPlayerContainer(root, pkg)
+        // A visible in-app mini-player is a normal video session, not Shorts; only the
+        // deterministic Shorts container may override that.
+        if (!shortsByReelContainer && hasYouTubeMiniPlayerIdentity(root)) {
+            return false
+        }
         if (!shortsByNavTab && !shortsByHomeFeedOverlay && !shortsByReelContainer) {
             return false
         }
@@ -5501,13 +6160,15 @@ class LoqInAccessibilityService : AccessibilityService() {
         clearSurfaceEvidence("yt:shorts")
         clearSurfaceHintForPackage(pkg)
         surfaceBlockGuardUntil["$pkg|yt:shorts"] = now + 2_800L
+        // The mini-player close and the post-acknowledge Home redirect navigate through YouTube's
+        // tabs; without a package-wide guard the previously selected tab (You/Subscriptions) blocks
+        // right after the mini-player block and the user gets a cascade of blockers.
+        guardAllYouTubeSurfaces(pkg, now, YOUTUBE_FLOATING_POST_BLOCK_GUARD_MS)
         attemptYouTubeMiniPlayerCloseStrategy("mini_rule_${reason}_immediate", "axis")
 
         listOf(
             120L to "axis",
             320L to "action",
-            700L to "bounds",
-            1_100L to "swipe",
             1_600L to "all"
         ).forEach { (delay, strategy) ->
             handler.postDelayed({
@@ -5530,8 +6191,8 @@ class LoqInAccessibilityService : AccessibilityService() {
         return when (strategy) {
             "axis" -> closeYouTubeMiniPlayerFromPlayPauseAxis(root, reason)
             "action" -> dismissYouTubeMiniPlayerByAccessibilityAction(root, reason)
-            "bounds" -> tapYouTubeMiniPlayerCloseByBounds(root, reason)
-            "swipe" -> swipeYouTubeMiniPlayerAway(root, reason)
+            // Coordinate-based "bounds"/"swipe" strategies were removed: a wrong tap can open a
+            // video or navigate somewhere unrelated.
             else -> dismissYouTubeMiniPlayer(reason, allowFallbackTap = true)
         }
     }
@@ -5913,10 +6574,26 @@ class LoqInAccessibilityService : AccessibilityService() {
             val blockYtSubscriptionsEnabled = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_SUBSCRIPTIONS)
             val blockYtYouEnabled = inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_YOU)
 
-            val ytTappedSurface = resolveYouTubeSurfaceFromEvent(event, allowFocused = true)
             val ytEnteredAt = appEnteredAtByPkg[pkg] ?: 0L
             val ytSettled = ytEnteredAt == 0L || (now - ytEnteredAt) >= 350L
             val ytSelectedSurface = if (ytSettled) detectYouTubeSelectedSurface(root) else null
+            // A real bottom-navigation Subscriptions event is explicit enough to trust immediately.
+            // Resolve it before the ad-position suppression so genuine tab taps are not delayed
+            // while the generic geometry fallback is intentionally guarded (upstream 2.3.x).
+            val ytDirectSubscriptionsNow = isDirectYouTubeSubscriptionsEvent(event)
+            val ytWatchAdOverlay =
+                hasYouTubeWatchAdDismissEvent(event) ||
+                    (shouldProbeYouTubeWatchAdOverlayRoot(event) &&
+                        hasYouTubeWatchAdOverlaySignal(root, event, ytSelectedSurface))
+            val ytSuppressNavigationSurfaceDetection = ytWatchAdOverlay && ytSelectedSurface != "yt:shorts"
+            if (ytSuppressNavigationSurfaceDetection) {
+                armYouTubeWatchAdPositionGuard()
+            }
+            val ytTappedSurface = when {
+                ytDirectSubscriptionsNow -> "yt:subscriptions"
+                ytSuppressNavigationSurfaceDetection -> null
+                else -> resolveYouTubeSurfaceFromEvent(event, allowFocused = true)
+            }
             val ytShortsEntryNow = isYouTubeShortsEntryEvent(event) || isYouTubeHomeShortsShelfEvent(event, root)
             val ytHomeSurfaceCandidate = ytTappedSurface == "yt:home" || ytSelectedSurface == "yt:home"
             val ytExplicitShortsContext = ytTappedSurface == "yt:shorts" || ytSelectedSurface == "yt:shorts" || ytShortsEntryNow
@@ -5924,8 +6601,12 @@ class LoqInAccessibilityService : AccessibilityService() {
             // visible the Shorts player is on screen regardless of nav state — it covers
             // tab Shorts AND home-feed overlay Shorts.
             val ytReelContainerNow = hasVisibleYouTubeReelPlayerContainer(root, pkg)
+            // A playing in-app mini-player (Morphe exposes it as its own window with a pause
+            // control and bottom-band geometry) is not a Shorts session. Only the deterministic
+            // Shorts container may override that veto.
+            val ytMiniPlayerNow = !ytReelContainerNow && hasYouTubeMiniPlayerIdentity(root)
             val ytShortsPlayerNow =
-                when {
+                !ytMiniPlayerNow && (when {
                     ytHomeSurfaceCandidate -> isYouTubeHomeFeedShortsPlayer(root, event)
                     ytExplicitShortsContext -> isLikelyYouTubeShortsPlayer(root, event) || hasYouTubeShortsPlayerControl(root)
                     else -> isYouTubeShortsScreen(root, event) ||
@@ -5937,7 +6618,7 @@ class LoqInAccessibilityService : AccessibilityService() {
                         (eventTextMatches(event, YT_SHORTS_PLAYER_HINT_LABELS) &&
                             hasYouTubeShortsPlayerControl(root) &&
                             hasYouTubeShortsPlayerGeometry(root))
-                } || ytReelContainerNow
+                } || ytReelContainerNow)
             val ytShortsGuardActive = surfaceGuardActive(pkg, "yt:shorts", now)
 
             // Delayed YouTube retry probes call this path with a null event after the UI has had time to settle.
@@ -7274,6 +7955,12 @@ class LoqInAccessibilityService : AccessibilityService() {
             return null
         }
 
+        // An explicit Subscriptions bottom-nav event wins over any transient player/Shorts signal
+        // underneath the tab (ported from upstream 2.3.x).
+        if (isDirectYouTubeSubscriptionsEvent(event)) {
+            return "yt:subscriptions"
+        }
+
         val viewId = source?.viewIdResourceName?.lowercase(Locale.getDefault()).orEmpty()
         val surfaceFromPosition = youtubeSurfaceFromEventPosition(event)
         val sourceLooksLikeBottomNav =
@@ -7432,6 +8119,12 @@ class LoqInAccessibilityService : AccessibilityService() {
     }
 
     private fun youtubeSurfaceFromEventPosition(event: AccessibilityEvent?): String? {
+        // Ad dismiss/skip controls often live in the same lower-screen bands as YouTube's bottom
+        // navigation. For a short window after observing an ad overlay, do not infer a surface from
+        // geometry alone. Real bottom-nav events still resolve via their direct label/view-id
+        // semantics in resolveYouTubeSurfaceFromEvent().
+        if (isYouTubeWatchAdPositionGuardActive()) return null
+
         val type = event?.eventType ?: return null
         if (type != AccessibilityEvent.TYPE_VIEW_CLICKED &&
             type != AccessibilityEvent.TYPE_VIEW_SELECTED &&
@@ -7441,8 +8134,10 @@ class LoqInAccessibilityService : AccessibilityService() {
         val width = resources.displayMetrics.widthPixels.coerceAtLeast(1)
         val height = resources.displayMetrics.heightPixels.coerceAtLeast(1)
         var hops = 0
+        // Binder-risk devices (Samsung Android 12, Bigme) skip the multi-hop parent walk.
+        val maxHops = if (isYouTubeAccessibilityBinderRiskDevice()) 1 else 5
         val bounds = Rect()
-        while (current != null && hops < 5) {
+        while (current != null && hops < maxHops) {
             val nodePkg = current.packageName?.toString()?.lowercase(Locale.getDefault()).orEmpty()
             if (nodePkg.isBlank() || isYouTubePackage(nodePkg)) {
                 runCatching { current.getBoundsInScreen(bounds) }.getOrNull()
@@ -8092,7 +8787,7 @@ class LoqInAccessibilityService : AccessibilityService() {
             type != AccessibilityEvent.TYPE_VIEW_FOCUSED) return null
 
         var current = runCatching { event.source }.getOrNull()
-        val activeRoot = runCatching { rootInActiveWindow }.getOrNull()
+        val activeRoot = activeRootWithBudget("facebook_surface")
         val activeRootPkg = activeRoot?.packageName?.toString()?.lowercase(Locale.ROOT).orEmpty()
         val metrics = if (activeRoot != null &&
             (activeRootPkg == PACKAGE_FACEBOOK || activeRootPkg == PACKAGE_FACEBOOK_LITE)
@@ -8341,10 +9036,9 @@ class LoqInAccessibilityService : AccessibilityService() {
         val signal = parts.joinToString(" ").lowercase(Locale.ROOT)
         if (signal.isBlank()) return false
 
-        val adCenter = YT_WATCH_AD_CENTER_LABELS.any(signal::contains)
-        val sponsored = YT_WATCH_AD_SPONSORED_LABELS.any { containsSemanticToken(signal, it) }
-        val visitSite = YT_WATCH_AD_VISIT_LABELS.any(signal::contains)
-        return adCenter || (sponsored && visitSite)
+        // Includes the ad dismiss/skip labels on top of Ad Center and sponsored+visit-site
+        // (ported from upstream 2.3.x).
+        return isYouTubeWatchAdSignal(signal)
     }
 
     private fun hasYouTubeNativeShortsLimitReachedSignal(
@@ -8522,6 +9216,80 @@ class LoqInAccessibilityService : AccessibilityService() {
         return false
     }
 
+    /**
+     * True when the signal describes a control that ENTERS the mini-player (e.g. Morphe's
+     * "Expand Mini Player" on the watch page). Those controls are always present while a video is
+     * open and must never be mistaken for the mini-player itself.
+     */
+    /** Suppress all YouTube surface rules for a short window while the app navigates. */
+    private fun guardAllYouTubeSurfaces(pkg: String, now: Long, durationMs: Long) {
+        val until = now + durationMs
+        inAppGraceUntilByPkg[pkg] = maxOf(inAppGraceUntilByPkg[pkg] ?: 0L, until)
+        for (surface in arrayOf("yt:home", "yt:shorts", "yt:subscriptions", "yt:you", "yt:miniplayer", "yt:pip")) {
+            surfaceBlockGuardUntil["$pkg|$surface"] = maxOf(surfaceBlockGuardUntil["$pkg|$surface"] ?: 0L, until)
+        }
+    }
+
+    private fun isExpandMiniPlayerSignal(signal: String): Boolean {
+        val lowered = signal.lowercase(Locale.ROOT)
+        if (!lowered.contains("mini")) return false
+        return lowered.contains("expand") ||
+            lowered.contains("enter mini") ||
+            lowered.contains("play in mini") ||
+            lowered.contains("switch to mini") ||
+            lowered.contains("open mini")
+    }
+
+    /**
+     * Explicit mini-player identity (label or view id) without geometry. Used by the content-event
+     * path, where geometry alone also matches the watch page's player control bar.
+     */
+    private fun hasYouTubeMiniPlayerIdentity(root: AccessibilityNodeInfo): Boolean {
+        if (!isYouTubeRootNode(root)) {
+            return false
+        }
+        val width = resources.displayMetrics.widthPixels.coerceAtLeast(1)
+        val height = resources.displayMetrics.heightPixels.coerceAtLeast(1)
+        val bounds = Rect()
+        return findAnyNode(root) { node ->
+            val nodePkg = node.packageName?.toString()?.lowercase(Locale.getDefault()).orEmpty()
+            if (nodePkg.isNotBlank() && !isYouTubePackage(nodePkg)) return@findAnyNode false
+            // YouTube keeps a hidden mini-player container in the watch-page tree; only a visibly
+            // displayed node may count as the in-app mini-player.
+            if (!runCatching { node.isVisibleToUser }.getOrDefault(false)) return@findAnyNode false
+            // A closed/sliding mini-player window can leave a stale node at negative coordinates;
+            // require the node to intersect the screen.
+            runCatching { node.getBoundsInScreen(bounds) }.getOrNull()
+            if (bounds.isEmpty || bounds.right <= 0 || bounds.bottom <= 0 ||
+                bounds.left >= width || bounds.top >= height
+            ) {
+                return@findAnyNode false
+            }
+
+            val text = node.text?.toString().orEmpty()
+            val desc = node.contentDescription?.toString().orEmpty()
+            val viewId = node.viewIdResourceName?.lowercase(Locale.getDefault()).orEmpty()
+            val signal = "$text $desc"
+            if (isExpandMiniPlayerSignal(signal)) return@findAnyNode false
+
+            val idMini =
+                viewId.contains("miniplayer") ||
+                    viewId.contains("mini_player") ||
+                    (viewId.contains("mini") && viewId.contains("player"))
+            val labelMini =
+                anyNeedleMatches(signal, YT_MINI_PLAYER_HINT_LABELS) ||
+                    anyNeedleMatches(signal, YT_MINI_PLAYER_CLOSE_LABELS)
+            if (!idMini && !labelMini) return@findAnyNode false
+            if (!idMini) {
+                // Label-only matches must be docked at the bottom: the mini-player is a bottom bar,
+                // while watch-page controls sit at the top of the player.
+                runCatching { node.getBoundsInScreen(bounds) }.getOrNull()
+                if (bounds.isEmpty || bounds.exactCenterY() / height < 0.55f) return@findAnyNode false
+            }
+            true
+        } != null
+    }
+
     private fun isLikelyYouTubeMiniPlayerVisible(root: AccessibilityNodeInfo?): Boolean {
         val r = root ?: return false
         if (!isYouTubeRootNode(r)) {
@@ -8632,6 +9400,16 @@ class LoqInAccessibilityService : AccessibilityService() {
         val bounds = Rect()
         val activeWindows = runCatching { windows }.getOrNull().orEmpty()
 
+        // A PiP window only exists while the app is in the background. Morphe exposes its in-app
+        // mini-player as its own small window; while YouTube itself is the foreground app that
+        // window is the mini-player, not a PiP.
+        val foregroundPkg = runCatching {
+            activeWindows.firstOrNull { it.isActive }?.root?.packageName?.toString()
+        }.getOrNull()
+        if (isYouTubePackage(foregroundPkg) || isYouTubePackage(currentTopPkg)) {
+            return false
+        }
+
         for (window in activeWindows) {
             val inPip = runCatching {
                 (AccessibilityWindowInfo::class.java
@@ -8716,16 +9494,13 @@ class LoqInAccessibilityService : AccessibilityService() {
         appendBlockingLog(
             category = "pip_block",
             key = "pip-kill|$pkg",
-            message = "pkg=$pkg action=bounce_home_and_kill"
+            message = "pkg=$pkg action=close_pip_via_front_and_home"
         )
         clearSurfaceEvidence("yt:pip")
         clearSurfaceHintForPackage(pkg)
         surfaceBlockGuardUntil["$pkg|yt:pip"] = now + PIP_KILL_COOLDOWN_MS
-        bounceHomeAndKill(pkg)
-    }
-
-    private fun bounceHomeAndKill(pkg: String) {
-        blockLaunchController.bounceHomeAndKill(pkg)
+        // Bringing the app to the front makes Android dismiss its PiP window; then go home.
+        blockLaunchController.closePictureInPicture(pkg)
     }
 
     private fun AccessibilityNodeInfo.isCheckedCompat(): Boolean {

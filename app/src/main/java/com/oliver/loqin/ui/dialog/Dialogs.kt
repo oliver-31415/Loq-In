@@ -169,6 +169,7 @@ fun Context.showLoqInInfoDialog(
     rows: List<LoqInInfoRow>,
     emptyMessage: CharSequence? = null,
     positiveText: CharSequence = getString(R.string.ok),
+    onPositive: (() -> Unit)? = null,
 ): AlertDialog {
     fun dp(value: Int): Int = (value * resources.displayMetrics.density + 0.5f).toInt()
 
@@ -186,6 +187,7 @@ fun Context.showLoqInInfoDialog(
         dialog.applyLoqInDialogCorners()
         dialog.setOnShowListener {
             dialog.styleLoqInDialogButtons()
+            wireInfoPositive(dialog, onPositive)
         }
         dialog.show()
         return dialog
@@ -248,9 +250,18 @@ fun Context.showLoqInInfoDialog(
     dialog.applyLoqInDialogCorners()
     dialog.setOnShowListener {
         dialog.styleLoqInDialogButtons()
+        wireInfoPositive(dialog, onPositive)
     }
     dialog.show()
     return dialog
+}
+
+private fun wireInfoPositive(dialog: AlertDialog, onPositive: (() -> Unit)?) {
+    if (onPositive == null) return
+    dialog.getButton(AlertDialog.BUTTON_POSITIVE)?.setOnClickListener {
+        dialog.dismiss()
+        onPositive()
+    }
 }
 
 fun AlertDialog.styleLoqInDestructivePositiveButton() {

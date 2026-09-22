@@ -32,6 +32,7 @@ import com.oliver.loqin.nfc.NfcEntryActivity
 import com.oliver.loqin.nfc.NfcSchema
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.dialog.showAccented
+import com.oliver.loqin.ui.EdgeToEdgeUtils
 
 /**
  * Public, browsable entry point for loqin:// QR links opened by external scanners.
@@ -43,6 +44,7 @@ class ExternalQrActionActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         ThemeUtils.applyAccentTheme(this)
         super.onCreate(savedInstanceState)
+        EdgeToEdgeUtils.enableEdgeToEdgeOnly(this)
 
         val uri = intent?.data
         if (!NfcSchema.isSupportedCommandUri(uri)) {

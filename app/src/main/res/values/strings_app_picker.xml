@@ -94,6 +94,7 @@
     <string name="app_picker_dialer_hint">Blocking your current phone app can make calls and emergency access harder.</string>
     <string name="app_picker_dialer_warning_title">Block this phone app anyway?</string>
     <string name="app_picker_dialer_warning_message">Blocking your current phone app can make regular calls and emergency access harder.</string>
+    <string name="app_picker_pending_badge">Queued — will apply after the delay</string>
     <string name="app_picker_settings_hint">Blocking Settings can make troubleshooting and permission changes harder.</string>
     <string name="app_picker_settings_warning_title">Block Settings anyway?</string>
     <string name="app_picker_settings_warning_message">Blocking Settings can make troubleshooting and permission changes harder.</string>
@@ -111,8 +112,10 @@
     <!-- ====================================================== -->
     <!-- Settings lockout requirements -->
     <!-- ====================================================== -->
-    <string name="app_picker_settings_requirements_title">Emergency Unlock required</string>
-    <string name="app_picker_settings_requirements_message">To block Settings, advanced protection must be enabled and Emergency Unlock with an Emergency PIN must already be configured.</string>
+    <string name="app_picker_settings_requirements_title">Protection setup required</string>
+    <string name="app_picker_settings_requirements_message">To block Settings, uninstall protection with Device Admin must be active and Emergency Unlock with an Emergency PIN must already be configured.</string>
+    <string name="app_picker_settings_requirements_setup_action">Set up protection</string>
+    <string name="app_picker_settings_rule_unprotected_warning">Settings is still blocked, but uninstall protection is no longer active. Blocking Settings may be unreliable.</string>
     <string name="app_picker_settings_second_warning_title">Are you absolutely sure?</string>
     <string name="app_picker_settings_second_warning_message">Blocking Settings can make your phone harder to recover if another issue occurs. This option is intended for advanced users only.</string>
     <string name="app_picker_settings_temporarily_allowed">Settings temporarily allowed to prevent a lockout.</string>
@@ -125,8 +128,8 @@
         <item quantity="other">%1$d unavailable app entries were removed. Tap Save to keep the cleanup.</item>
     </plurals>
     <plurals name="app_picker_saved_notice">
-        <item quantity="one">Saved %1$d app.</item>
-        <item quantity="other">Saved %1$d apps.</item>
+        <item quantity="one">Saved %1$d change.</item>
+        <item quantity="other">Saved %1$d changes.</item>
     </plurals>
 
     <!-- ====================================================== -->
@@ -153,6 +156,9 @@
     <string name="app_picker_in_app_rules_open">Open in-app rules</string>
     <string name="app_picker_website_rules_open">Open website rules</string>
     <string name="app_picker_tile_selected_desc">%1$s, selected</string>
+    <string name="app_picker_tile_limited_desc">%1$s, limited</string>
+    <string name="app_picker_limited_badge">Limited</string>
+    <string name="app_picker_blocked_badge">Blocked</string>
     <string name="app_picker_tile_unselected_desc">%1$s, not selected</string>
 
     <!-- ====================================================== -->
@@ -177,4 +183,9 @@
     <string name="app_picker_row_action_in_app_rules">In-app rules</string>
     <string name="app_picker_row_action_in_app_rules_summary">Manage supported in-app sections for this profile.</string>
 
+    <string name="picker_limit_removal_title">Remove limits for %1$s?</string>
+    <string name="picker_limit_removal_message">%1$s has app limits. Remove them together with the selection, or keep them (the app stays limited).</string>
+    <string name="picker_limit_removal_remove">Remove limits</string>
+    <string name="picker_limit_removal_keep">Keep limits</string>
+    <string name="picker_limit_removal_remember">Remember my choice (change it later in Settings)</string>
 </resources>

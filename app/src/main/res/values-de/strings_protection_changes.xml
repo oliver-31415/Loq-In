@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Schutzänderungs-Gate / Verzögerungswarteschlange.
+-->
+<resources>
+    <string name="protection_changes_title">Schutzänderungen</string>
+    <string name="protection_changes_summary">Schutzreduzierende Änderungen verzögern und vorgemerkte Änderungen prüfen.</string>
+    <string name="protection_changes_section_delay">Änderungsverzögerung</string>
+    <string name="protection_changes_info_title">So funktioniert es</string>
+    <string name="protection_changes_info_body">Änderungen, die den Schutz verstärken, gelten sofort. Änderungen, die ihn abschwächen, warten auf die eingestellte Verzögerung. Ein vorzeitiges Anwenden ist nur möglich, wenn Loq In vollständig aus ist.</string>
+
+    <string name="protection_change_delay_title">Verzögerung für Schutzänderungen</string>
+    <string name="protection_change_delay_off">Aus</string>
+    <string name="protection_change_delay_15m">15 Minuten</string>
+    <string name="protection_change_delay_1h">1 Stunde</string>
+    <string name="protection_change_delay_6h">6 Stunden</string>
+    <string name="protection_change_delay_24h">24 Stunden</string>
+    <string name="protection_change_delay_summary_off">Schutzreduzierende Änderungen bleiben blockiert, solange der Schutz aktiv ist.</string>
+    <string name="protection_change_delay_summary_on">Schutzreduzierende Änderungen warten %1$s. Stärkere Änderungen gelten weiterhin sofort.</string>
+    <string name="protection_change_delay_slider_hint">Wähle per Schieberegler eine Verzögerung von 1 Minute bis 7 Tage. Stärkere Änderungen gelten weiterhin sofort.</string>
+    <string name="protection_change_delay_off_switch">Aus — schutzreduzierende Änderungen ablehnen</string>
+    <string name="protection_change_delay_wheels_hint">Wähle Tage, Stunden und Minuten. Stärkere Änderungen gelten weiterhin sofort.</string>
+    <string name="protection_change_delay_unit_days">Tage</string>
+    <string name="protection_change_delay_unit_hours">Stunden</string>
+    <string name="protection_change_delay_unit_minutes">Min.</string>
+    <string name="protection_change_delay_locked">Solange der Schutz aktiv ist, kann die Verzögerung nur gleich bleiben oder erhöht werden.</string>
+    <string name="protection_change_delay_custom">Eigene Zeit…</string>
+    <string name="protection_change_delay_custom_title">Eigene Verzögerung für Schutzänderungen</string>
+    <string name="protection_change_delay_custom_message">Gib eine Dauer von 1 Minute bis 7 Tage ein. Stärkere Änderungen gelten weiterhin sofort; nur schutzreduzierende Änderungen warten auf diese Dauer.</string>
+    <string name="protection_change_delay_custom_hint">Minuten (1–10080)</string>
+    <string name="protection_change_delay_custom_invalid">Gib einen Wert von 1 bis 10080 Minuten ein.</string>
+    <plurals name="protection_change_delay_minutes_value">
+        <item quantity="one">%d Minute</item>
+        <item quantity="other">%d Minuten</item>
+    </plurals>
+    <plurals name="protection_change_delay_hours_value">
+        <item quantity="one">%d Stunde</item>
+        <item quantity="other">%d Stunden</item>
+    </plurals>
+    <plurals name="protection_change_delay_days_value">
+        <item quantity="one">%d Tag</item>
+        <item quantity="other">%d Tage</item>
+    </plurals>
+
+    <string name="protection_change_queued">Diese schutzreduzierende Änderung wurde vorgemerkt und wird nach der eingestellten Verzögerung angewendet.</string>
+
+    <string name="protection_pending_changes_title">Ausstehende Änderungen</string>
+    <string name="protection_pending_changes_none">Keine ausstehenden Schutzänderungen</string>
+    <plurals name="protection_pending_changes_count">
+        <item quantity="one">%d ausstehende Änderung</item>
+        <item quantity="other">%d ausstehende Änderungen</item>
+    </plurals>
+    <string name="protection_pending_changes_open">Diese Änderungen warten auf ihre Verzögerung. Tippe eine an, um sie zu prüfen oder zu verwerfen.</string>
+
+    <string name="protection_pending_item_app_rules">App-Regeln · %1$s</string>
+    <string name="protection_pending_item_in_app">In-App-Regel · %1$s</string>
+    <string name="protection_pending_item_website">Website-Regel · %1$s</string>
+    <string name="protection_pending_item_app_limits">App-Limits · %1$s</string>
+    <string name="protection_pending_item_unblock_apps">Blockierung aufheben für %1$s</string>
+    <string name="protection_pending_item_allow_apps">Zulassen von %1$s</string>
+    <plurals name="protection_pending_apps_count">
+        <item quantity="one">%d App</item>
+        <item quantity="other">%d Apps</item>
+    </plurals>
+    <string name="protection_pending_item_website_limit">Website-Limits · %1$s</string>
+    <string name="protection_pending_item_auto_block">Neue Apps automatisch blockieren · %1$s</string>
+    <string name="protection_pending_item_clear_data">App-Limits/-Regeln · %1$s</string>
+    <string name="protection_pending_item_unknown">Schutzänderung</string>
+
+    <string name="protection_pending_cancel_one_title">Diese ausstehende Änderung verwerfen?</string>
+    <string name="protection_pending_cancel_one_action">Verwerfen</string>
+    <string name="protection_pending_cancel_one_done">Ausstehende Änderung verworfen.</string>
+    <string name="protection_pending_cancel_title">Ausstehende Änderungen verwerfen?</string>
+    <string name="protection_pending_cancel_message">Alle ausstehenden schutzreduzierenden Änderungen werden verworfen.</string>
+    <string name="protection_pending_cancel_action">Alle verwerfen</string>
+    <string name="protection_pending_cancelled">Ausstehende Schutzänderungen verworfen.</string>
+
+    <string name="protection_pending_apply_one_title">Diese ausstehende Änderung jetzt anwenden?</string>
+    <string name="protection_pending_apply_one_action">Jetzt anwenden</string>
+    <string name="protection_pending_apply_one_done">Ausstehende Änderung angewendet.</string>
+    <string name="protection_pending_apply_failed">Diese ausstehende Änderung konnte nicht angewendet werden.</string>
+    <string name="protection_pending_apply_all_title">Alle ausstehenden Änderungen jetzt anwenden?</string>
+    <string name="protection_pending_apply_all_message">Loq In ist vollständig aus, daher können diese verzögerten Änderungen sofort übernommen werden, statt auf ihre Timer zu warten.</string>
+    <string name="protection_pending_apply_all_action">Alle jetzt anwenden</string>
+    <string name="protection_pending_apply_all_done">Ausstehende Änderungen angewendet.</string>
+</resources>

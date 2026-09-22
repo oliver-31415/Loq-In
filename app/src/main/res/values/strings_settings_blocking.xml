@@ -192,6 +192,11 @@
     <string name="emergency_open_controls_action">Open Loq In controls</string>
     <string name="emergency_pin_changed">Emergency PIN updated.</string>
     <string name="emergency_pin_removed">Emergency PIN removed.</string>
+    <string name="emergency_pin_reset_action">Reset PIN</string>
+    <string name="emergency_pin_reset_title">Reset emergency PIN?</string>
+    <string name="emergency_pin_reset_message">You can set a new emergency PIN without the current one because Loq In protection is fully off. Emergency Unlock stays unavailable until protection is enabled again.</string>
+    <string name="emergency_pin_reset_requires_disabled">Turn Loq In protection off completely before resetting the emergency PIN.</string>
+    <string name="emergency_pin_reset_done">Emergency PIN reset.</string>
 
     <!-- ====================================================== -->
     <!-- Home display -->
@@ -326,4 +331,6 @@
     <string name="status_notification_temp_disable_body">Protection resumes when the timer ends</string>
     <string name="status_notification_temp_enable_body">Temporary protection ends when the timer ends</string>
 
+    <string name="pref_limit_removal_mode_title">Unselecting an app with limits</string>
+    <string name="limit_removal_mode_ask">Ask every time</string>
 </resources>

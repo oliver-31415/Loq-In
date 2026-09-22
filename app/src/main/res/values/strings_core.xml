@@ -14,6 +14,7 @@
     <string name="not_now">Not now</string>
     <string name="create">Create</string>
     <string name="save">Save</string>
+    <string name="save_no_changes">No changes to save.</string>
     <string name="delete">Delete</string>
     <string name="open">Open</string>
     <string name="action_copy">Copy</string>

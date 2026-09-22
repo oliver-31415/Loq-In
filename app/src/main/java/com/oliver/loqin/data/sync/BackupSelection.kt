@@ -455,6 +455,8 @@ object BackupCategoryFilter {
             key.startsWith("blocking_") ||
             key.contains("block", ignoreCase = true) -> setOf(BackupCategory.CONTROL_SETTINGS)
 
+        key == "protection_change_delay_minutes" -> setOf(BackupCategory.CONTROL_SETTINGS)
+
         else -> setOf(BackupCategory.APP_PREFERENCES)
     }
 

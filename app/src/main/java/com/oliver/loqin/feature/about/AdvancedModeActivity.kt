@@ -41,6 +41,7 @@ import com.oliver.loqin.receiver.DPMReceiver
 import com.oliver.loqin.util.AndroidSystemPackages
 import com.oliver.loqin.util.ReleaseDiagnostics
 import com.google.android.material.appbar.MaterialToolbar
+import com.oliver.loqin.data.prefs.FeatureFlagStore
 
 class AdvancedModeActivity : TilesInfoActivity() {
 
@@ -146,6 +147,38 @@ class AdvancedModeActivity : TilesInfoActivity() {
             dpm?.isAdminActive(adminComponentName) == true -> "device_admin"
             else -> "standard"
         }
+    }
+
+    private fun featureFlagTile(
+        flag: FeatureFlagStore.Flag,
+        titleRes: Int,
+        summaryRes: Int,
+        scaffoldOnly: Boolean = false,
+    ): Tile {
+        val enabled = FeatureFlagStore.isEnabled(this, flag)
+        val state = getString(
+            if (enabled) R.string.feature_flag_state_on else R.string.feature_flag_state_off
+        )
+        val summary = buildString {
+            append(getString(summaryRes))
+            append(" · ")
+            append(state)
+            if (scaffoldOnly) {
+                append(" · ")
+                append(getString(R.string.feature_flag_scaffold))
+            }
+        }
+        return Tile(
+            title = getString(titleRes),
+            subtitle = summary,
+            sectionTitle = getString(R.string.about_section_feature_flags),
+            iconRes = R.drawable.tune_24,
+            onClick = {
+                FeatureFlagStore.setEnabled(this, flag, !enabled)
+                refreshTiles()
+            },
+            copyValue = summary,
+        )
     }
 
     override fun tiles(): List<Tile> {
@@ -288,7 +321,29 @@ class AdvancedModeActivity : TilesInfoActivity() {
                 copyValue = getString(R.string.advanced_mode_docs_url),
                 showCopyButton = true,
                 copiedToast = getString(R.string.advanced_mode_command_copied)
-            )
+            ),
+            featureFlagTile(
+                FeatureFlagStore.Flag.DIAGNOSTIC_TIMELINE,
+                R.string.feature_flag_diagnostic_timeline,
+                R.string.feature_flag_diagnostic_timeline_summary,
+            ),
+            featureFlagTile(
+                FeatureFlagStore.Flag.AUTOMATION_SAVE_PREVIEW,
+                R.string.feature_flag_automation_preview,
+                R.string.feature_flag_automation_preview_summary,
+            ),
+            featureFlagTile(
+                FeatureFlagStore.Flag.AUTOMATION_ENGINE_V2,
+                R.string.feature_flag_automation_v2,
+                R.string.feature_flag_automation_v2_summary,
+                scaffoldOnly = true,
+            ),
+            featureFlagTile(
+                FeatureFlagStore.Flag.CONTINUOUS_USAGE_TRIGGER,
+                R.string.feature_flag_continuous_usage,
+                R.string.feature_flag_continuous_usage_summary,
+                scaffoldOnly = true,
+            ),
         )
     }
 

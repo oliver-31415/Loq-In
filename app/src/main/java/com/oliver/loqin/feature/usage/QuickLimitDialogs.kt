@@ -51,10 +51,14 @@ import com.oliver.loqin.ui.dialog.applyLoqInDialogWidth
 import com.oliver.loqin.util.AppBlockSafety
 import com.oliver.loqin.util.EditingLockGuard
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import java.util.Locale
+import com.oliver.loqin.util.ProtectionFeedback
+import com.oliver.loqin.util.ProtectionChangePolicy
+import com.oliver.loqin.util.ProtectionChangeGate
 
 /**
  * Quick-edit dialogs for app/website limits.
@@ -114,12 +118,6 @@ object QuickLimitDialogs {
         startOnAttempts: Boolean? = null,
         onChanged: (() -> Unit)? = null
     ) {
-        if (EditingLockGuard.isLocked(activity)) {
-            activity.findViewById<View>(android.R.id.content)
-                .showWarnPill(R.string.toast_disable_loqin_to_edit_app_limits)
-            return
-        }
-
         val profile = ProfileStore.getCurrent(activity)
         if (profile.isNullOrBlank()) {
             activity.findViewById<View>(android.R.id.content).showWarnPill(R.string.no_profile_selected)
@@ -152,6 +150,7 @@ object QuickLimitDialogs {
         val ivIcon = v.findViewById<android.widget.ImageView>(R.id.ivAppLimitIcon)
         val tvTitle = v.findViewById<TextView>(R.id.tvAppLimitTitle)
         val tvSubtitle = v.findViewById<TextView>(R.id.tvAppLimitSubtitle)
+        val tvTimeSubtitle = v.findViewById<TextView>(R.id.tvAppLimitTimeSubtitle)
         val tvSentence = v.findViewById<TextView>(R.id.tvAppLimitSentence)
         val swTime = v.findViewById<androidx.appcompat.widget.SwitchCompat>(R.id.swAppLimitTime)
         val swOpens = v.findViewById<androidx.appcompat.widget.SwitchCompat>(R.id.swAppLimitOpens)
@@ -163,6 +162,13 @@ object QuickLimitDialogs {
         val tilPerVisit = v.findViewById<TextInputLayout>(R.id.tilAppLimitPerVisit)
         val etPerVisit = v.findViewById<TextInputEditText>(R.id.etAppLimitPerVisit)
         val tvVisitWarning = v.findViewById<TextView>(R.id.tvVisitWarning)
+        val rowTimeControls = v.findViewById<View>(R.id.rowLimitTimeControls)
+        val rowOpensControls = v.findViewById<View>(R.id.rowLimitOpensControls)
+        val rowVisitControls = v.findViewById<View>(R.id.rowLimitVisitControls)
+        val toggleReset = v.findViewById<MaterialButtonToggleGroup>(R.id.toggleAppLimitReset)
+        val btnResetDaily = v.findViewById<MaterialButton>(R.id.btnAppLimitResetDaily)
+        val btnResetProtection = v.findViewById<MaterialButton>(R.id.btnAppLimitResetProtection)
+        val tvResetHint = v.findViewById<TextView>(R.id.tvAppLimitResetHint)
         val btnClear = v.findViewById<MaterialButton>(R.id.btnAppLimitClear)
         val btnCancel = v.findViewById<MaterialButton>(R.id.btnAppLimitCancel)
         val btnSave = v.findViewById<MaterialButton>(R.id.btnAppLimitSave)
@@ -171,8 +177,34 @@ object QuickLimitDialogs {
         val currentAttempts = AttemptLimitStore.getLimitAttempts(activity, profile, pkg)
         val currentPerVisit = SessionLimitStore.getLimitMinutes(activity, profile, pkg)
 
+        // Whole-app blocking is independent of limits: an app can be fully blocked
+        // (selected with no limits) or restricted (selected with a limit).
+        val allowMode = ProfileRuleModeStore.isAllowMode(activity, profile)
+        val fullyBlocked = if (allowMode) {
+            pkg in ProfileStore.getLaunchablePackages(activity) &&
+                pkg !in ProfileStore.getAllowedForProfile(activity, profile) &&
+                !AppBlockSafety.isAllowModeEssential(activity, pkg)
+        } else {
+            pkg in ProfileStore.getBlockedForProfile(activity, profile)
+        }
+
         tvTitle.text = label
-        tvSubtitle.text = activity.getString(R.string.profile_active_fmt, profile)
+        val limitAllowMode = ProfileRuleModeStore.isAllowMode(activity, profile)
+        val limitSelected = pkg in ProfileStore.getSelectedForProfileMode(activity, profile)
+        val limitHasLimit = UsageLimitStore.getLimitMinutes(activity, profile, pkg) > 0 ||
+            AttemptLimitStore.getLimitAttempts(activity, profile, pkg) > 0 ||
+            SessionLimitStore.getLimitMinutes(activity, profile, pkg) > 0
+        val limitStateHint = activity.getString(
+            when {
+                limitAllowMode && limitSelected -> R.string.app_limit_state_allowed_allow_mode
+                limitAllowMode -> R.string.app_limit_state_blocked_allow_mode
+                limitSelected && limitHasLimit -> R.string.app_limit_state_blocked_has_limit
+                limitSelected -> R.string.app_limit_state_blocked
+                limitHasLimit -> R.string.app_limit_state_limited_unselected
+                else -> R.string.app_limit_state_free
+            }
+        )
+        tvSubtitle.text = activity.getString(R.string.profile_active_fmt, profile) + "\n" + limitStateHint
         runCatching {
             ivIcon.setImageDrawable(activity.packageManager.getApplicationIcon(pkg))
         }.onFailure {
@@ -196,6 +228,70 @@ object QuickLimitDialogs {
             til.hintTextColor = accentList
             til.defaultHintTextColor = accentList
         }
+        listOf(swTime, swOpens, swVisit).forEach { CustomAccentApplier.tintSwitch(it) }
+
+        var sessionResetMode =
+            UsageLimitResetStore.getMode(activity, profile, pkg) == UsageLimitResetStore.MODE_SESSION
+        val onAccent = if (androidx.core.graphics.ColorUtils.calculateLuminance(accent) > 0.5) {
+            android.graphics.Color.BLACK
+        } else {
+            android.graphics.Color.WHITE
+        }
+        toggleReset.check(
+            if (sessionResetMode) R.id.btnAppLimitResetProtection else R.id.btnAppLimitResetDaily
+        )
+
+        fun styleResetToggle() {
+            val dailySelected = toggleReset.checkedButtonId == R.id.btnAppLimitResetDaily
+            listOf(btnResetDaily to dailySelected, btnResetProtection to !dailySelected).forEach { (button, selected) ->
+                button.isAllCaps = false
+                if (selected) {
+                    button.backgroundTintList = AccentColor.getActiveColor(activity)
+                    button.setTextColor(onAccent)
+                } else {
+                    button.backgroundTintList = ColorStateList.valueOf(android.graphics.Color.TRANSPARENT)
+                    button.setTextColor(accent)
+                }
+            }
+            tvResetHint.setText(
+                if (dailySelected) R.string.app_limit_reset_hint_daily
+                else R.string.app_limit_reset_hint_protection
+            )
+            tvTimeSubtitle.setText(
+                if (dailySelected) R.string.app_limit_time_subtitle
+                else R.string.app_limit_time_subtitle_session
+            )
+            tilTime.hint = activity.getString(
+                if (dailySelected) R.string.app_limit_time_hint
+                else R.string.app_limit_time_hint_session
+            )
+        }
+
+        runCatching {
+            val surfaceVariant = androidx.core.content.ContextCompat.getColor(activity, R.color.foqos_surface_variant)
+            v.findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardAppLimitSummary)
+                .setCardBackgroundColor(
+                    androidx.core.graphics.ColorUtils.compositeColors(
+                        androidx.core.graphics.ColorUtils.setAlphaComponent(accent, 0x1F),
+                        surfaceVariant,
+                    )
+                )
+        }
+
+        // Disabled sections collapse to their header row so the whole dialog fits without
+        // scrolling; enabling a switch reveals its controls.
+        fun setSectionEnabled(container: View, enabled: Boolean) {
+            container.visibility = if (enabled) View.VISIBLE else View.GONE
+            fun apply(view: View) {
+                view.isEnabled = enabled
+                if (view is android.view.ViewGroup) {
+                    for (index in 0 until view.childCount) {
+                        apply(view.getChildAt(index))
+                    }
+                }
+            }
+            apply(container)
+        }
 
         btnCancel.setTextColor(accent)
         btnCancel.isAllCaps = false
@@ -211,11 +307,6 @@ object QuickLimitDialogs {
             if (currentTime > 0 || currentAttempts > 0 || currentPerVisit > 0) View.VISIBLE
             else View.GONE
 
-        val onAccent = if (androidx.core.graphics.ColorUtils.calculateLuminance(accent) > 0.5) {
-            android.graphics.Color.BLACK
-        } else {
-            android.graphics.Color.WHITE
-        }
         btnSave.setTextColor(onAccent)
         btnSave.isAllCaps = false
         btnSave.backgroundTintList = AccentColor.getActiveColor(activity)
@@ -234,9 +325,18 @@ object QuickLimitDialogs {
             val (time, opens, visit) = effectiveValues()
             tvSentence.text = when {
                 time <= 0 && opens <= 0 && visit <= 0 ->
-                    activity.getString(R.string.app_limit_sentence_none)
+                    activity.getString(
+                        if (fullyBlocked) R.string.app_limit_sentence_fully_blocked
+                        else R.string.app_limit_sentence_none
+                    )
                 time > 0 -> buildString {
-                    append(activity.getString(R.string.app_limit_sentence_time_fmt, time))
+                    append(
+                        activity.getString(
+                            if (sessionResetMode) R.string.app_limit_sentence_time_session_fmt
+                            else R.string.app_limit_sentence_time_fmt,
+                            time
+                        )
+                    )
                     if (opens > 0) append(activity.getString(R.string.app_limit_sentence_split_fmt, opens))
                     if (visit > 0) append(activity.getString(R.string.app_limit_sentence_visit_fmt, visit))
                 }
@@ -248,7 +348,9 @@ object QuickLimitDialogs {
             }
             if (time > 0 && visit > time) {
                 tvVisitWarning.text = activity.getString(
-                    R.string.app_limit_visit_exceeds_daily_fmt, visit, time
+                    if (sessionResetMode) R.string.app_limit_visit_exceeds_session_fmt
+                    else R.string.app_limit_visit_exceeds_daily_fmt,
+                    visit, time
                 )
                 tvVisitWarning.visibility = View.VISIBLE
             } else {
@@ -268,16 +370,18 @@ object QuickLimitDialogs {
                 return 0
             }
             val raw = field.text?.toString()?.trim().orEmpty()
+            // Blank means "no limit for this section": the editor stays open while typing
+            // and only applies the removal on save.
             if (raw.isBlank()) {
-                layout.error = activity.getString(R.string.app_limit_error_required)
-                return null
+                layout.error = null
+                return 0
             }
             val value = raw.toIntOrNull()
             if (value == null) {
                 layout.error = activity.getString(R.string.app_limit_error_not_number)
                 return null
             }
-            if (value !in 1..max) {
+            if (value < 0 || value > max) {
                 layout.error = rangeError
                 return null
             }
@@ -322,29 +426,9 @@ object QuickLimitDialogs {
             refreshSaveState()
         }
 
-        // Clearing a field switches its limit off instead of leaving a stale
-        // number behind an off toggle (or an error behind an on toggle).
-        etTime.addTextChangedListener {
-            if (swTime.isChecked && etTime.text?.toString()?.trim().isNullOrEmpty()) {
-                swTime.isChecked = false
-            } else {
-                refreshAll()
-            }
-        }
-        etAttempts.addTextChangedListener {
-            if (swOpens.isChecked && etAttempts.text?.toString()?.trim().isNullOrEmpty()) {
-                swOpens.isChecked = false
-            } else {
-                refreshAll()
-            }
-        }
-        etPerVisit.addTextChangedListener {
-            if (swVisit.isChecked && etPerVisit.text?.toString()?.trim().isNullOrEmpty()) {
-                swVisit.isChecked = false
-            } else {
-                refreshAll()
-            }
-        }
+        etTime.addTextChangedListener { tilTime.error = null; refreshAll() }
+        etAttempts.addTextChangedListener { tilAttempts.error = null; refreshAll() }
+        etPerVisit.addTextChangedListener { tilPerVisit.error = null; refreshAll() }
 
         fun setTimeValue(value: Int) {
             etTime.setText(fmtInt(value))
@@ -356,6 +440,7 @@ object QuickLimitDialogs {
                 setTimeValue(DEFAULT_TIME_MINUTES)
             }
             if (!checked) tilTime.error = null
+            setSectionEnabled(rowTimeControls, checked)
             refreshAll()
         }
         swOpens.setOnCheckedChangeListener { _, checked ->
@@ -364,6 +449,7 @@ object QuickLimitDialogs {
                 etAttempts.setSelection(etAttempts.text?.length ?: 0)
             }
             if (!checked) tilAttempts.error = null
+            setSectionEnabled(rowOpensControls, checked)
             refreshAll()
         }
         swVisit.setOnCheckedChangeListener { _, checked ->
@@ -372,8 +458,21 @@ object QuickLimitDialogs {
                 etPerVisit.setSelection(etPerVisit.text?.length ?: 0)
             }
             if (!checked) tilPerVisit.error = null
+            setSectionEnabled(rowVisitControls, checked)
             refreshAll()
         }
+
+        toggleReset.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (!isChecked) return@addOnButtonCheckedListener
+            sessionResetMode = checkedId == R.id.btnAppLimitResetProtection
+            styleResetToggle()
+            refreshAll()
+        }
+
+        setSectionEnabled(rowTimeControls, swTime.isChecked)
+        setSectionEnabled(rowOpensControls, swOpens.isChecked)
+        setSectionEnabled(rowVisitControls, swVisit.isChecked)
+        styleResetToggle()
 
         fun stepTime(delta: Int) {
             if (!swTime.isChecked && delta <= 0) return
@@ -446,30 +545,34 @@ object QuickLimitDialogs {
         refreshAll()
 
         fun applyValues(timeMinutes: Int, attempts: Int, perVisitMinutes: Int) {
-            UsageLimitStore.setLimitMinutes(activity, profile, pkg, timeMinutes)
-            SessionLimitStore.setLimitMinutes(activity, profile, pkg, perVisitMinutes)
-            AttemptLimitStore.setLimitAttempts(activity, profile, pkg, attempts)
+            val resetMode = if (sessionResetMode) {
+                UsageLimitResetStore.MODE_SESSION
+            } else {
+                UsageLimitResetStore.MODE_DAY
+            }
+            when (ProtectionChangeGate.requestAppLimits(
+                context = activity,
+                profile = profile,
+                packageName = pkg,
+                requestedTimeMinutes = timeMinutes,
+                requestedAttempts = attempts,
+                requestedPerVisitMinutes = perVisitMinutes,
+                requestedResetMode = resetMode,
+            )) {
+                ProtectionChangePolicy.Result.APPLIED -> Unit
 
-            LimitReachedStore.clearToday(activity, pkg)
-            // No reset-mode choice in the UI: keep whatever cadence is stored
-            // (per-day default), only cleaning up when the time limit is removed.
-            if (timeMinutes <= 0) {
-                UsageLimitResetStore.clearMode(activity, profile, pkg)
-                UsageStore.setUsageMsToday(activity, pkg, 0L)
-            }
-            if (attempts == 0) {
-                OpenCountStore.setToday(activity, profile, pkg, 0)
-            }
-            if (timeMinutes > 0 || attempts > 0 || perVisitMinutes > 0) {
-                ensureManaged(activity, profile, pkg)
-            }
+                ProtectionChangePolicy.Result.QUEUED -> ProtectionFeedback.showQueued(activity)
 
-            BlockingRuntime.ensureRunning(activity)
+                ProtectionChangePolicy.Result.DENIED -> {
+                    activity.findViewById<View>(android.R.id.content)
+                        .showWarnPill(R.string.toast_disable_loqin_to_edit_app_limits)
+                    return
+                }
+            }
             onChanged?.invoke()
         }
 
         val dlg = Dialogs.builder(activity)
-            .setTitle(activity.getString(R.string.edit_limits))
             .setView(v)
             .create()
 
@@ -505,13 +608,8 @@ object QuickLimitDialogs {
     }
 
     fun showForWebsite(activity: AppCompatActivity, domain: String, label: String, onChanged: (() -> Unit)? = null) {
-        if (EditingLockGuard.isLocked(activity)) {
-            activity.findViewById<View>(android.R.id.content)
-                .showWarnPill(R.string.toast_disable_loqin_to_edit_websites)
-            return
-        }
-
-        // Websites support: time limit OR always-block rule.
+        // Websites support: time limit OR always-block rule. The gate decides whether the edit
+        // applies now, queues, or is denied.
         val normalized = DomainBlockStore.normalize(domain) ?: domain
         val isAllowMode = ProfileStore.getCurrent(activity)?.let { ProfileRuleModeStore.isAllowMode(activity, it) } == true
         val isAlways = DomainBlockStore.getDomains(activity).contains(normalized)
@@ -525,34 +623,29 @@ object QuickLimitDialogs {
             initialMode = if (isAlways) MODE_ALWAYS_BLOCK else MODE_TIME,
             initialValueProvider = { current }
         ) { mode, value, _ ->
-            when (mode) {
-                MODE_ALWAYS_BLOCK -> {
-                    if (value > 0) {
-                        DomainLimitStore.clear(activity, normalized)
-                        DomainBlockStore.addDomain(activity, normalized)
-                    } else {
-                        // Clear always-block
-                        DomainBlockStore.removeDomain(activity, normalized)
-                    }
-                }
-
-                else -> {
-                    val m = value.coerceAtLeast(0)
-                    if (m <= 0) {
-                        DomainLimitStore.clear(activity, normalized)
-                        DomainBlockStore.removeDomain(activity, normalized)
-                    } else {
-                        if (isAllowMode) {
-                            DomainBlockStore.addDomain(activity, normalized)
-                        } else {
-                            DomainBlockStore.removeDomain(activity, normalized)
-                        }
-                        DomainLimitStore.setLimitMinutes(activity, normalized, m)
-                    }
-                }
+            val profile = ProfileStore.getCurrent(activity)
+            if (profile.isNullOrBlank()) {
+                onChanged?.invoke()
+                return@showCompactLimitDialog
             }
+            val alwaysBlock = mode == MODE_ALWAYS_BLOCK
+            val minutes = value.coerceAtLeast(0)
+            when (ProtectionChangeGate.requestWebsiteLimit(
+                context = activity,
+                profile = profile,
+                rule = normalized,
+                currentlyAlwaysBlocked = isAlways,
+                currentMinutes = current,
+                requestedAlwaysBlock = alwaysBlock,
+                requestedMinutes = minutes,
+            )) {
+                ProtectionChangePolicy.Result.APPLIED -> Unit
 
-            BlockingRuntime.ensureRunning(activity)
+                ProtectionChangePolicy.Result.QUEUED -> ProtectionFeedback.showQueued(activity)
+
+                ProtectionChangePolicy.Result.DENIED -> activity.findViewById<View>(android.R.id.content)
+                    .showWarnPill(R.string.toast_disable_loqin_to_edit_websites)
+            }
             onChanged?.invoke()
         }
     }

@@ -285,7 +285,7 @@
                             <TextView
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:text="@string/support_logs_unified_title"
+                                android:text="@string/info_copy_support_title"
                                 android:textSize="15sp"
                                 android:textStyle="bold" />
 
@@ -293,7 +293,7 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
-                                android:text="@string/support_logs_unified_desc"
+                                android:text="@string/info_copy_support_summary"
                                 android:textColor="?android:attr/textColorSecondary"
                                 android:textSize="13sp" />
                         </LinearLayout>

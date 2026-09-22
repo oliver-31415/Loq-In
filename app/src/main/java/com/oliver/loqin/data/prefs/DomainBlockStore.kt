@@ -180,7 +180,9 @@ object DomainBlockStore {
         if (disabled.isEmpty()) {
             return true
         }
-        return disabled.none { matches(host, it) }
+        return disabled.none { disabledRule ->
+            !isPathRule(disabledRule) && matches(host, disabledRule)
+        }
     }
 
     fun getEnabledDomains(ctx: Context): Set<String> {
@@ -189,7 +191,7 @@ object DomainBlockStore {
         if (disabled.isEmpty()) {
             return getDomains(ctx)
         }
-        return getDomains(ctx).filterNot { d -> disabled.any { matches(d, it) } }.toCollection(linkedSetOf())
+        return getDomains(ctx).filterNot { it in disabled }.toCollection(linkedSetOf())
     }
 
     private fun selectedDomainsForMode(ctx: Context, profile: String): Set<String> {
@@ -241,7 +243,9 @@ object DomainBlockStore {
         } else {
             getDomainsForProfile(ctx, profile)
         }
-        val selected = selectedRaw.filterNot { domain -> disabled.any { matches(domain, it) } }
+        val selected = selectedRaw
+            .filterNot { it in disabled }
+            .filterNot { allowMode && isPathRule(it) }
         val matched = selected.any { matches(host, it) }
         return if (allowMode) {
             !matched
@@ -304,69 +308,109 @@ object DomainBlockStore {
 
     fun normalize(raw: String?): String? {
         var s = raw?.trim().orEmpty()
-        if (s.isBlank()) {
-            return null
-        }
+        if (s.isBlank()) return null
 
         s = s.lowercase(Locale.ROOT)
 
-        // Accept wildcard inputs like "*.youtube.com" and treat them as "youtube.com".
+        // Accept wildcard host inputs like "*.youtube.com" while subdomains are matched automatically.
         if (s.startsWith("*.")) s = s.removePrefix("*.")
 
         // Strip scheme if present (http/https/custom schemes).
         val schemeIdx = s.indexOf("://")
         if (schemeIdx >= 0) s = s.substring(schemeIdx + 3)
 
-        // Strip any path/query/fragment/whitespace tail.
-        val endIdx = listOf(
-            s.indexOf('/'),
-            s.indexOf('?'),
-            s.indexOf('#'),
-            s.indexOf(' ')
-        ).filter { it >= 0 }.minOrNull() ?: -1
-        if (endIdx >= 0) s = s.substring(0, endIdx)
+        // Drop fragments and whitespace tails.
+        // A literal ? is intentionally preserved in stored rules because it is the single-character wildcard for path matching.
+        // Detected browser targets exclude queries.
+        val whitespaceIndex = s.indexOfFirst { it.isWhitespace() }
+        if (whitespaceIndex >= 0) s = s.substring(0, whitespaceIndex)
+        s = s.substringBefore('#')
 
         // Strip potential user-info (user:pass@host).
-        val at = s.lastIndexOf('@')
+        val slashIndexBeforeUserInfo = s.indexOf('/').let { if (it >= 0) it else s.length }
+        val at = s.substring(0, slashIndexBeforeUserInfo).lastIndexOf('@')
         if (at >= 0 && at < s.length - 1) s = s.substring(at + 1)
 
-        s = s.trim().trimEnd('.')
-        if (s.startsWith("www.")) s = s.removePrefix("www.")
+        val rawHostPort = s.substringBefore('/').trim().trimEnd('.')
+        var host = rawHostPort
+        if (host.startsWith("www.")) host = host.removePrefix("www.")
 
         // Strip :port (keep IPv6 out of scope for now).
-        val colon = s.lastIndexOf(':')
+        val colon = host.lastIndexOf(':')
         if (colon > 0) {
-            val tail = s.substring(colon + 1)
-            if (tail.all { it.isDigit() }) s = s.substring(0, colon)
+            val tail = host.substring(colon + 1)
+            if (tail.all { it.isDigit() }) host = host.substring(0, colon)
         }
 
-        // Collapse accidental duplicate dots.
-        while (".." in s) s = s.replace("..", ".")
+        while (".." in host) host = host.replace("..", ".")
+        if (host.isBlank() || host.startsWith(".") || host.endsWith(".")) return null
 
-        if (s.isBlank() || s.startsWith(".") || s.endsWith(".")) {
-            return null
-        }
-
-        val ascii = runCatching { IDN.toASCII(s, IDN.ALLOW_UNASSIGNED) }.getOrNull()
+        val ascii = runCatching { IDN.toASCII(host, IDN.ALLOW_UNASSIGNED) }.getOrNull()
             ?.lowercase(Locale.ROOT)
             ?: return null
 
-        if (!ascii.contains('.')) {
-            return null
-        }
-        if (ascii.length !in 3..253) {
-            return null
-        }
-        if (!ascii.matches(Regex("^[a-z0-9][a-z0-9.-]*[a-z0-9]$"))) {
-            return null
-        }
+        if (!ascii.contains('.') || ascii.length !in 3..253) return null
+        if (!ascii.matches(Regex("^[a-z0-9][a-z0-9.-]*[a-z0-9]$"))) return null
 
-        return ascii
+        val slashIndex = s.indexOf('/')
+        if (slashIndex < 0) return ascii
+
+        var path = s.substring(slashIndex)
+            .trim()
+            .replace(Regex("/{2,}"), "/")
+        if (path == "/") return ascii
+        if (!path.startsWith('/')) path = "/$path"
+        if (path.any { it.isWhitespace() }) return null
+        if (path.length > 1_024) return null
+
+        return ascii + path
     }
 
-    fun matches(host: String, domain: String): Boolean {
-        val h = normalize(host) ?: return false
-        val d = normalize(domain) ?: return false
-        return h == d || h.endsWith("." + d)
+    fun hostPart(raw: String?): String? = normalize(raw)?.substringBefore('/')
+
+    fun pathPart(raw: String?): String? {
+        val normalized = normalize(raw) ?: return null
+        val slash = normalized.indexOf('/')
+        return if (slash >= 0) normalized.substring(slash) else null
+    }
+
+    fun isPathRule(raw: String?): Boolean = pathPart(raw) != null
+
+    fun matches(target: String, rule: String): Boolean {
+        val normalizedTarget = normalize(target) ?: return false
+        val normalizedRule = normalize(rule) ?: return false
+        val targetHost = normalizedTarget.substringBefore('/')
+        val ruleHost = normalizedRule.substringBefore('/')
+        if (targetHost != ruleHost && !targetHost.endsWith(".$ruleHost")) return false
+
+        val rulePath = pathPart(normalizedRule) ?: return true
+        val targetPath = pathPart(normalizedTarget) ?: return false
+        if (globPathMatches(targetPath, rulePath)) return true
+        // Browsers trim the trailing slash in the displayed URL (Firefox's trimmed-URL display
+        // shows "/news/" as "/news"). A rule written for the real URL ("/news/*") must still
+        // match the trimmed target, otherwise Firefox path rules silently miss.
+        if (!targetPath.endsWith("/") && rulePath.contains('/')) {
+            return globPathMatches("$targetPath/", rulePath)
+        }
+        return false
+    }
+
+    private fun globPathMatches(targetPath: String, rulePath: String): Boolean {
+        val regex = buildString {
+            append('^')
+            for (ch in rulePath) {
+                when (ch) {
+                    '*' -> append(".*")
+                    '?' -> append('.')
+                    '.', '(', ')', '[', ']', '{', '}', '+', '^', '$', '|', '\\' -> {
+                        append('\\')
+                        append(ch)
+                    }
+                    else -> append(ch)
+                }
+            }
+            append('$')
+        }
+        return runCatching { Regex(regex, RegexOption.IGNORE_CASE).matches(targetPath) }.getOrDefault(false)
     }
 }

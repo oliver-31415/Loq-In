@@ -94,6 +94,7 @@
     <string name="app_picker_dialer_hint">Wenn du deine aktuelle Telefon-App blockierst, können Anrufe und der Notfallzugriff schwieriger werden.</string>
     <string name="app_picker_dialer_warning_title">Diese Telefon-App trotzdem blockieren?</string>
     <string name="app_picker_dialer_warning_message">Wenn du deine aktuelle Telefon-App blockierst, können normale Anrufe und der Notfallzugriff schwieriger werden.</string>
+    <string name="app_picker_pending_badge">Vorgemerkt — wird nach der Verzögerung angewendet</string>
     <string name="app_picker_settings_hint">Das Blockieren von Einstellungen kann Fehlerbehebung und Berechtigungsänderungen erschweren.</string>
     <string name="app_picker_settings_warning_title">Einstellungen trotzdem blockieren?</string>
     <string name="app_picker_settings_warning_message">Das Blockieren von Einstellungen kann Fehlerbehebung und Berechtigungsänderungen erschweren.</string>
@@ -111,8 +112,10 @@
     <!-- ====================================================== -->
     <!-- Settings lockout requirements -->
     <!-- ====================================================== -->
-    <string name="app_picker_settings_requirements_title">Notfall-Entsperrung erforderlich</string>
-    <string name="app_picker_settings_requirements_message">Um Einstellungen zu blockieren, muss der erweiterte Schutz aktiviert sein und die Notfall-Entsperrung mit Notfall-PIN bereits eingerichtet sein.</string>
+    <string name="app_picker_settings_requirements_title">Schutz-Einrichtung erforderlich</string>
+    <string name="app_picker_settings_requirements_message">Um Einstellungen zu blockieren, muss der Deinstallationsschutz mit Geräte-Admin aktiv sein und die Notfall-Entsperrung mit Notfall-PIN bereits eingerichtet sein.</string>
+    <string name="app_picker_settings_requirements_setup_action">Schutz einrichten</string>
+    <string name="app_picker_settings_rule_unprotected_warning">Einstellungen sind weiterhin blockiert, aber der Deinstallationsschutz ist nicht mehr aktiv. Das Blockieren der Einstellungen ist eventuell unzuverlässig.</string>
     <string name="app_picker_settings_second_warning_title">Bist du dir ganz sicher?</string>
     <string name="app_picker_settings_second_warning_message">Das Blockieren von Einstellungen kann die Wiederherstellung deines Telefons erschweren, falls ein weiteres Problem auftritt. Diese Option ist nur für fortgeschrittene Nutzer gedacht.</string>
     <string name="app_picker_settings_temporarily_allowed">Einstellungen wurden vorübergehend erlaubt, um eine Sperrschleife zu verhindern.</string>
@@ -125,8 +128,8 @@
         <item quantity="other">%1$d nicht verfügbare App-Einträge wurden entfernt. Tippe auf Speichern, um die Bereinigung zu behalten.</item>
     </plurals>
     <plurals name="app_picker_saved_notice">
-        <item quantity="one">%1$d App gespeichert.</item>
-        <item quantity="other">%1$d Apps gespeichert.</item>
+        <item quantity="one">%1$d Änderung gespeichert.</item>
+        <item quantity="other">%1$d Änderungen gespeichert.</item>
     </plurals>
 
     <!-- ====================================================== -->
@@ -153,6 +156,9 @@
     <string name="app_picker_in_app_rules_open">In-App-Regeln öffnen</string>
     <string name="app_picker_website_rules_open">Website-Regeln öffnen</string>
     <string name="app_picker_tile_selected_desc">%1$s, ausgewählt</string>
+    <string name="app_picker_tile_limited_desc">%1$s, eingeschränkt</string>
+    <string name="app_picker_limited_badge">Eingeschränkt</string>
+    <string name="app_picker_blocked_badge">Blockiert</string>
     <string name="app_picker_tile_unselected_desc">%1$s, nicht ausgewählt</string>
 
     <!-- ====================================================== -->
@@ -177,4 +183,9 @@
     <string name="app_picker_row_action_in_app_rules">In-App-Regeln</string>
     <string name="app_picker_row_action_in_app_rules_summary">Unterstützte In-App-Bereiche für dieses Profil verwalten.</string>
 
+    <string name="picker_limit_removal_title">Limits für %1$s entfernen?</string>
+    <string name="picker_limit_removal_message">%1$s hat App-Limits. Entferne sie zusammen mit der Auswahl oder behalte sie (die App bleibt limitiert).</string>
+    <string name="picker_limit_removal_remove">Limits entfernen</string>
+    <string name="picker_limit_removal_keep">Limits behalten</string>
+    <string name="picker_limit_removal_remember">Auswahl merken (später in den Einstellungen änderbar)</string>
 </resources>

@@ -70,6 +70,8 @@ import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.bottomnavigation.BottomNavigationView
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
+import android.widget.TextView
+import com.oliver.loqin.util.ProtectionChangeGate
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -106,6 +108,41 @@ class SettingsActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         applyRestrictedAccessState()
+        refreshProtectionChangesSummary()
+    }
+
+    private fun refreshProtectionChangesSummary() {
+        val summary = findViewById<TextView>(R.id.tvSettingsProtectionChangesSummary) ?: return
+        val delayMinutes = ProtectionChangeGate.getDelayMinutes(this)
+        val delayLabel = when {
+            delayMinutes <= 0 -> getString(R.string.protection_change_delay_off)
+            delayMinutes % 1_440 == 0 -> {
+                val days = delayMinutes / 1_440
+                resources.getQuantityString(R.plurals.protection_change_delay_days_value, days, days)
+            }
+
+            delayMinutes % 60 == 0 -> {
+                val hours = delayMinutes / 60
+                resources.getQuantityString(R.plurals.protection_change_delay_hours_value, hours, hours)
+            }
+
+            else -> resources.getQuantityString(
+                R.plurals.protection_change_delay_minutes_value,
+                delayMinutes,
+                delayMinutes,
+            )
+        }
+        val pending = ProtectionChangeGate.pendingCount(this)
+        val pendingText = if (pending <= 0) {
+            getString(R.string.protection_pending_changes_none)
+        } else {
+            resources.getQuantityString(R.plurals.protection_pending_changes_count, pending, pending)
+        }
+        summary.text = if (delayMinutes <= 0 && pending <= 0) {
+            getString(R.string.protection_changes_summary)
+        } else {
+            delayLabel + " · " + pendingText
+        }
     }
 
     override fun onSupportNavigateUp(): Boolean {
@@ -211,6 +248,7 @@ class SettingsActivity : AppCompatActivity() {
         add(R.string.toggle_group_manage_other_blocking_features, "${getString(R.string.settings_search_terms_blocking)} temporary timer temporärer Timer safety Sicherheit status notification Benachrichtigung blocking features") {
             openRootCard(R.id.cardSettingsBlockingFeatures)
         }
+        add(R.string.protection_changes_title, "protection changes delay queue pending verzögern ausstehend warten") { openRootCard(R.id.cardSettingsProtectionChanges) }
         add(R.string.settings_theme_title, "theme appearance color language time home") { openRootCard(R.id.cardSettingsAppearance) }
         add(R.string.ignored_usage_apps_title, "usage statistics ignored apps") { openRootCard(R.id.cardSettingsIgnoredApps) }
         add(R.string.settings_display_shortcuts_title, "${getString(R.string.settings_search_terms_display)} widgets Kacheln tiles quick settings shortcuts Verknüpfungen home Startseite") { openRootCard(R.id.cardSettingsDisplayShortcuts) }
@@ -463,6 +501,9 @@ class SettingsActivity : AppCompatActivity() {
             openProtectedSettingsSection {
                 startActivity(Intent(this, BlockingFeaturesActivity::class.java))
             }
+        }
+        findViewById<View>(R.id.cardSettingsProtectionChanges).setOnClickListener {
+            startActivity(Intent(this, ProtectionChangesActivity::class.java))
         }
         findViewById<View>(R.id.cardSettingsAppearance).setOnClickListener {
             startActivity(Intent(this, AppearanceActivity::class.java))

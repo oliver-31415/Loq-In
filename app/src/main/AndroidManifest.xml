@@ -191,6 +191,12 @@
             android:exported="false"
             android:label="@string/settings" />
 
+        <!-- Protection change delay + pending queue -->
+        <activity
+            android:name=".feature.settings.ProtectionChangesActivity"
+            android:exported="false"
+            android:parentActivityName=".feature.settings.SettingsActivity" />
+
         <!-- Appearance screen -->
         <activity
             android:name=".feature.settings.AppearanceActivity"
@@ -554,6 +560,11 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
+
+        <!-- Alarm target for the protection change queue (targeted PendingIntent only) -->
+        <receiver
+            android:name=".receiver.ProtectionChangeReceiver"
+            android:exported="false" />
 
         <!-- Time-change receiver to re-evaluate schedules -->
         <receiver

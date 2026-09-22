@@ -57,7 +57,6 @@ import com.oliver.loqin.ui.dialog.showLoqInInfoDialog
 import com.oliver.loqin.ui.dialog.styleLoqInDialogButtons
 import com.oliver.loqin.util.EditingLockGuard
 import com.oliver.loqin.util.PackageLaunchIntentCompat
-import com.oliver.loqin.util.ProtectionEditPolicy
 import com.oliver.loqin.util.RelativeTimeFormatter
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
@@ -65,6 +64,12 @@ import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
+import com.oliver.loqin.util.ProtectionFeedback
+import com.oliver.loqin.util.ProtectionChangePolicy
+import com.oliver.loqin.util.ProtectionChangeGate
+import com.oliver.loqin.ui.dialog.showAccented
+import com.oliver.loqin.util.AppBlockSafety
+import com.oliver.loqin.data.prefs.SwitchModeStore
 
 class InAppRulesActivity : AppCompatActivity() {
     companion object {
@@ -158,8 +163,11 @@ class InAppRulesActivity : AppCompatActivity() {
         )
     }
 
+    private var pendingInAppSelections: Map<String, Boolean> = emptyMap()
+
     private fun render() {
         CustomAccentApplier.applyIfNeeded(this)
+        pendingInAppSelections = ProtectionChangeGate.pendingInAppSelections(this, currentProfile())
         container.removeAllViews()
         val focusPackage = intent.getStringExtra(EXTRA_FOCUS_PACKAGE).orEmpty()
         var focusView: View? = null
@@ -229,6 +237,57 @@ class InAppRulesActivity : AppCompatActivity() {
                 applyRuleMode(mode)
             }
         }
+    }
+
+    /**
+     * After enabling an in-app rule for an app that is not whole-app managed, offer to block the
+     * entire app. The whole-app block goes through the protection change gate, so it queues while
+     * protection is active instead of applying instantly.
+     */
+    private fun appLabel(packageName: String): String = runCatching {
+        val info = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
+            packageManager.getApplicationInfo(
+                packageName,
+                android.content.pm.PackageManager.ApplicationInfoFlags.of(0),
+            )
+        } else {
+            @Suppress("DEPRECATION")
+            packageManager.getApplicationInfo(packageName, 0)
+        }
+        packageManager.getApplicationLabel(info).toString()
+    }.getOrDefault(packageName)
+
+    private fun maybeOfferWholeAppBlock(packageName: String, label: String) {
+        val profile = currentProfile()
+        if (profile.isBlank() || packageName.isBlank()) return
+        if (AppBlockSafety.isAlwaysExcluded(this, packageName)) return
+        val allowMode = ProfileRuleModeStore.isAllowMode(this, profile)
+        val selected = ProfileStore.getSelectedForProfileMode(this, profile)
+        if (packageName in selected) return
+
+        MaterialAlertDialogBuilder(this)
+            .setTitle(getString(R.string.in_app_block_entire_title, label))
+            .setIcon(R.drawable.apps_24)
+            .setMessage(getString(R.string.in_app_block_entire_message, label))
+            .setNegativeButton(R.string.in_app_block_entire_later, null)
+            .setPositiveButton(R.string.in_app_block_entire_confirm) { _, _ ->
+                when (ProtectionChangeGate.requestAppSelection(
+                    context = this,
+                    profile = profile,
+                    allowMode = allowMode,
+                    original = selected,
+                    requested = selected + packageName,
+                )) {
+                    ProtectionChangePolicy.Result.APPLIED -> Unit
+
+                    ProtectionChangePolicy.Result.QUEUED -> ProtectionFeedback.showQueued(this)
+
+                    ProtectionChangePolicy.Result.DENIED -> findViewById<View>(android.R.id.content)
+                        .showWarnPill(R.string.rules_tighten_only_active_message)
+                }
+                render()
+            }
+            .showAccented()
     }
 
     private fun confirmAllowSelectedMode() {
@@ -797,54 +856,69 @@ class InAppRulesActivity : AppCompatActivity() {
         val prefKey = surface.prefKey
         val readOnly = EditingLockGuard.isLocked(this)
         val currentChecked = prefKey?.let { readProfileBool(it) } ?: false
-        val canToggleWhileLocked = prefKey != null && ProtectionEditPolicy.canChangeSelection(
-            context = this,
-            profile = currentProfile(),
-            allowMode = isInAppAllowMode(),
-            currentlySelected = currentChecked,
-            requestedSelected = !currentChecked,
-        )
+        val pendingSelected = prefKey?.let { pendingInAppSelections[it] }
+        val canToggleWhileLocked = prefKey != null && run {
+            if (ProtectionChangeGate.isEditingUnlocked(this)) return@run true
+            val direction = ProtectionChangePolicy.inAppDirection(
+                allowMode = isInAppAllowMode(),
+                currentSelected = currentChecked,
+                requestedSelected = !currentChecked,
+            )
+            ProtectionChangeGate.decision(this, direction) != ProtectionChangePolicy.Decision.DENY
+        }
         val sw = SwitchCompat(this).apply {
             // Stay tappable (dimmed): denied taps warn via pill instead of doing nothing.
             isEnabled = prefKey != null
             alpha = when {
                 prefKey == null -> 0.52f
+                pendingSelected != null -> 0.55f
                 readOnly && !canToggleWhileLocked -> 0.45f
                 else -> 1f
             }
             if (prefKey != null) {
-                isChecked = currentChecked
-                if (isChecked && !readOnly) {
+                isChecked = pendingSelected ?: currentChecked
+                if (isChecked && !readOnly && pendingSelected == null) {
                     surface.surfaceKey?.let { setSurfaceRuleForMode(it, checked = true) }
                 }
                 setOnCheckedChangeListener { button, checked ->
                     val before = readProfileBool(prefKey)
-                    if (!ProtectionEditPolicy.canChangeSelection(
-                            context = this@InAppRulesActivity,
-                            profile = currentProfile(),
-                            allowMode = isInAppAllowMode(),
-                            currentlySelected = before,
-                            requestedSelected = checked,
-                        )
-                    ) {
-                        if (EditingLockGuard.isLocked(this@InAppRulesActivity)) {
-                            this@InAppRulesActivity.findViewById<View>(android.R.id.content)
-                                .showWarnPill(R.string.rules_tighten_only_active_message)
+                    when (ProtectionChangeGate.requestInAppSelection(
+                        context = this@InAppRulesActivity,
+                        profile = currentProfile(),
+                        packageName = packageName,
+                        baseKey = prefKey,
+                        surfaceKey = surface.surfaceKey,
+                        allowMode = isInAppAllowMode(),
+                        currentSelected = before,
+                        requestedSelected = checked,
+                    )) {
+                        ProtectionChangePolicy.Result.APPLIED -> {
+                            BlockingRuntime.ensureRunning(this@InAppRulesActivity)
+                            onToggle?.invoke()
+                            if (checked) {
+                                maybeOfferWholeAppBlock(packageName, appLabel(packageName))
+                            }
+                            if (EditingLockGuard.isLocked(this@InAppRulesActivity)) {
+                                button.post { render() }
+                            }
                         }
-                        button.setOnCheckedChangeListener(null)
-                        button.isChecked = before
-                        button.post { render() }
-                        return@setOnCheckedChangeListener
-                    }
-                    writeProfileBool(prefKey, checked)
-                    surface.surfaceKey?.let { surfaceKey ->
-                        setSurfaceRuleForMode(surfaceKey, checked)
-                    }
-                    keepAppAllowedForInAppRule(packageName, prefKey, checked)
-                    BlockingRuntime.ensureRunning(this@InAppRulesActivity)
-                    onToggle?.invoke()
-                    if (EditingLockGuard.isLocked(this@InAppRulesActivity)) {
-                        button.post { render() }
+
+                        ProtectionChangePolicy.Result.QUEUED -> {
+                            ProtectionFeedback.showQueued(this@InAppRulesActivity)
+                            button.setOnCheckedChangeListener(null)
+                            button.isChecked = before
+                            button.post { render() }
+                        }
+
+                        ProtectionChangePolicy.Result.DENIED -> {
+                            if (EditingLockGuard.isLocked(this@InAppRulesActivity)) {
+                                this@InAppRulesActivity.findViewById<View>(android.R.id.content)
+                                    .showWarnPill(R.string.rules_tighten_only_active_message)
+                            }
+                            button.setOnCheckedChangeListener(null)
+                            button.isChecked = before
+                            button.post { render() }
+                        }
                     }
                 }
             }
@@ -861,7 +935,9 @@ class InAppRulesActivity : AppCompatActivity() {
             listOf(
                 Surface(R.string.in_app_surface_shorts_label, BlockingToggleKeys.KEY_BLOCK_YT_SHORTS, "yt:shorts", R.string.in_app_status_experimental),
                 Surface(R.string.in_app_surface_subscriptions_label, BlockingToggleKeys.KEY_BLOCK_YT_SUBSCRIPTIONS, "yt:subscriptions", R.string.in_app_status_supported),
-                Surface(R.string.in_app_surface_you_label, BlockingToggleKeys.KEY_BLOCK_YT_YOU, "yt:you", R.string.in_app_status_supported)
+                Surface(R.string.in_app_surface_you_label, BlockingToggleKeys.KEY_BLOCK_YT_YOU, "yt:you", R.string.in_app_status_supported),
+                Surface(R.string.in_app_surface_mini_player_label, BlockingToggleKeys.KEY_BLOCK_YT_MINI_PLAYER, "yt:miniplayer", R.string.in_app_status_experimental),
+                Surface(R.string.in_app_surface_pip_label, BlockingToggleKeys.KEY_BLOCK_YT_PIP, "yt:pip", R.string.in_app_status_experimental)
             )
         ),
         AppGroup(

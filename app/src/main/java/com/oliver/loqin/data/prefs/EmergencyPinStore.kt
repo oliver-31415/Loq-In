@@ -32,6 +32,9 @@ object EmergencyPinStore {
         "emergency_unlock_pin"
     )
 
+    private const val MIN_PIN_LENGTH = 4
+    private const val MAX_PIN_LENGTH = 8
+
     private fun prefs(ctx: Context) = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
     fun getPin(ctx: Context): String? {
@@ -51,18 +54,54 @@ object EmergencyPinStore {
     fun hasPin(ctx: Context): Boolean = !getPin(ctx).isNullOrBlank()
 
     fun setPin(ctx: Context, pin: String) {
-        prefs(ctx).edit(commit = true) { putString(KEY_EMERGENCY_PIN, pin.trim()) }
+        val clean = pin.trim()
+        if (clean.isBlank()) {
+            return
+        }
+        prefs(ctx).edit(commit = true) {
+            putString(KEY_EMERGENCY_PIN, clean)
+            legacyKeys.forEach { key -> remove(key) }
+        }
     }
 
     fun removePin(ctx: Context) {
-        prefs(ctx).edit(commit = true) {
-            remove(KEY_EMERGENCY_PIN)
-            legacyKeys.forEach { key -> remove(key) }
-        }
+        clearAllKnownPinValues(ctx)
     }
 
     fun matchesPin(ctx: Context, enteredPin: String): Boolean {
         val expected = getPin(ctx).orEmpty()
         return expected.isNotBlank() && expected == enteredPin.trim()
+    }
+
+    /**
+     * Recovery is intentionally only available when protection is genuinely off.
+     * A temporary disable/Emergency Unlock window must never become a PIN-reset bypass.
+     */
+    fun canResetWithoutCurrentPin(ctx: Context): Boolean {
+        return !SwitchModeStore.isBaseEnabled(ctx) &&
+            !SwitchModeStore.hasActiveTemporaryOverride(ctx) &&
+            !EmergencyBypassStore.isActive(ctx) &&
+            !EmergencyBypassStore.isPaused(ctx)
+    }
+
+    fun resetPinWhenFullyDisabled(ctx: Context, newPin: String): Boolean {
+        val clean = newPin.trim()
+        if (clean.length !in MIN_PIN_LENGTH..MAX_PIN_LENGTH) {
+            return false
+        }
+        if (!canResetWithoutCurrentPin(ctx)) {
+            return false
+        }
+
+        clearAllKnownPinValues(ctx)
+        setPin(ctx, clean)
+        return true
+    }
+
+    private fun clearAllKnownPinValues(ctx: Context) {
+        prefs(ctx).edit(commit = true) {
+            remove(KEY_EMERGENCY_PIN)
+            legacyKeys.forEach { key -> remove(key) }
+        }
     }
 }

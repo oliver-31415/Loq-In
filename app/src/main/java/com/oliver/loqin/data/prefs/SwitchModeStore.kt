@@ -43,6 +43,7 @@ object SwitchModeStore {
     private const val KEY_TEMP_ENABLE_UNTIL = "switch_mode_temp_enable_until"
     private const val KEY_REQUIRE_NFC_DISABLE = "switch_mode_require_nfc"
     private const val KEY_LIMIT_SESSION_GENERATION = "switch_mode_limit_session_generation"
+    private const val KEY_LIMIT_SESSION_STARTED_AT = "switch_mode_limit_session_started_at"
 
     // store previous base state so we can restore after temp-enable expires
     private const val KEY_BASE_BEFORE_TEMP_ENABLE = "switch_mode_base_before_temp_enable"
@@ -54,16 +55,35 @@ object SwitchModeStore {
     @Volatile
     private var initialized: Boolean = false
 
-    // Marker for runtime-only per-session limit counters.
+    // Marker for Overall-time limits configured with Reset mode = Session.
+    // One generation represents one continuous base LoqIn protection session.
+    // Temporary pauses, profile switches and service/process recreation must not grant a fresh allowance.
     fun getLimitSessionGeneration(ctx: Context): Long {
         val sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         return sp.getLongCompat(KEY_LIMIT_SESSION_GENERATION, 0L)
     }
 
-    private fun bumpLimitSessionGeneration(ctx: Context) {
+    fun getLimitSessionStartedAt(ctx: Context): Long {
+        val sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        return sp.getLongCompat(KEY_LIMIT_SESSION_STARTED_AT, 0L)
+    }
+
+    private fun startNewLimitSession(ctx: Context) {
         val sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val next = sp.getLongCompat(KEY_LIMIT_SESSION_GENERATION, 0L) + 1L
-        sp.edit { putLong(KEY_LIMIT_SESSION_GENERATION, next) }
+        sp.edit {
+            putLong(KEY_LIMIT_SESSION_GENERATION, next)
+            putLong(KEY_LIMIT_SESSION_STARTED_AT, System.currentTimeMillis())
+        }
+    }
+
+    private fun ensureLimitSessionStartedAt(ctx: Context) {
+        if (getLimitSessionStartedAt(ctx) > 0L || !isBaseEnabled(ctx)) {
+            return
+        }
+        ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit {
+            putLong(KEY_LIMIT_SESSION_STARTED_AT, System.currentTimeMillis())
+        }
     }
 
     private fun recordEffectiveStateChange(
@@ -91,6 +111,13 @@ object SwitchModeStore {
             }
             LoqInActionCountStore.incrementToday(ctx, scheduleAction)
         }
+
+        DiagnosticsTimelineStore.record(
+            ctx,
+            "Protection",
+            if (enabledAfter) "Protection enabled" else "Protection disabled",
+            "source=${if (causedBySchedule) "schedule" else "manual_or_external"}",
+        )
     }
 
     private fun syncActiveSinceForEffectiveState(ctx: Context, enabledNow: Boolean = isEnabled(ctx)) {
@@ -116,6 +143,7 @@ object SwitchModeStore {
             synchronized(this) {
                 if (!initialized) {
                     _enabledFlow.value = isEnabled(ctx)
+                    ensureLimitSessionStartedAt(ctx)
                     ActiveTimerWidgetProvider.updateAll(ctx)
                     PersistentStatusNotifier.refresh(ctx)
                     syncActiveSinceForEffectiveState(ctx)
@@ -202,6 +230,7 @@ object SwitchModeStore {
         }
 
         val sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val baseBefore = sp.getBoolean(KEY_ENABLED, false)
         val now = System.currentTimeMillis()
         val hadActiveTempEnable = sp.getLongCompat(KEY_TEMP_ENABLE_UNTIL, 0L) > now
         val profileBeforeTempEnable = if (hadActiveTempEnable) sp.getString(KEY_PROFILE_BEFORE_TEMP_ENABLE, null) else null
@@ -217,8 +246,10 @@ object SwitchModeStore {
         }
 
         val effectiveAfter = isEnabled(ctx)
+        if (!baseBefore && enabled && !currentlyEnabled && effectiveAfter) {
+            startNewLimitSession(ctx)
+        }
         if (currentlyEnabled != effectiveAfter) {
-            bumpLimitSessionGeneration(ctx)
             recordEffectiveStateChange(ctx, currentlyEnabled, effectiveAfter)
             // A manual turn-off vetoes connection-schedule re-asserts until the next
             // connect edge; a manual turn-on clears the veto. Schedule-driven writes
@@ -292,6 +323,7 @@ object SwitchModeStore {
         }
 
         val sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val baseBefore = sp.getBoolean(KEY_ENABLED, false)
         sp.edit {
             putBoolean(KEY_ENABLED, enabled)
 
@@ -307,8 +339,10 @@ object SwitchModeStore {
         }
 
         val effectiveAfter = isEnabled(ctx)
+        if (!baseBefore && enabled && !effectiveBefore && effectiveAfter) {
+            startNewLimitSession(ctx)
+        }
         if (effectiveBefore != effectiveAfter) {
-            bumpLimitSessionGeneration(ctx)
             recordEffectiveStateChange(
                 ctx = ctx,
                 enabledBefore = effectiveBefore,
@@ -375,7 +409,6 @@ object SwitchModeStore {
 
         val effectivelyEnabledAfter = isEnabled(ctx)
         if (effectivelyEnabledBefore != effectivelyEnabledAfter) {
-            bumpLimitSessionGeneration(ctx)
             recordEffectiveStateChange(ctx, effectivelyEnabledBefore, effectivelyEnabledAfter)
         }
 
@@ -440,6 +473,7 @@ object SwitchModeStore {
         val sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
         val now = System.currentTimeMillis()
+        val persistedBaseBeforeCall = sp.getBoolean(KEY_ENABLED, false)
         val activeTempUntil = sp.getLongCompat(KEY_TEMP_ENABLE_UNTIL, 0L)
         val effectivelyEnabledNow = isEnabled(ctx)
 
@@ -479,8 +513,10 @@ object SwitchModeStore {
             putLong(KEY_TEMP_ENABLE_UNTIL, until)
         }
         val effectivelyEnabledAfter = isEnabled(ctx)
+        if (!persistedBaseBeforeCall && !effectivelyEnabledNow && effectivelyEnabledAfter) {
+            startNewLimitSession(ctx)
+        }
         if (effectivelyEnabledNow != effectivelyEnabledAfter) {
-            bumpLimitSessionGeneration(ctx)
             recordEffectiveStateChange(ctx, effectivelyEnabledNow, effectivelyEnabledAfter)
         }
 
@@ -559,7 +595,6 @@ object SwitchModeStore {
 
         val effectivelyEnabledAfter = isEnabled(ctx)
         if (recordStats && !tempEnableWasMasked && effectivelyEnabledBefore != effectivelyEnabledAfter) {
-            bumpLimitSessionGeneration(ctx)
             recordEffectiveStateChange(ctx, effectivelyEnabledBefore, effectivelyEnabledAfter)
         }
 
@@ -599,7 +634,6 @@ object SwitchModeStore {
 
         val effectivelyEnabledAfter = isEnabled(ctx)
         if (effectivelyEnabledBefore != effectivelyEnabledAfter) {
-            bumpLimitSessionGeneration(ctx)
             recordEffectiveStateChange(ctx, effectivelyEnabledBefore, effectivelyEnabledAfter)
         }
 
@@ -623,7 +657,6 @@ object SwitchModeStore {
 
         val effectivelyEnabledAfter = isEnabled(ctx)
         if (effectivelyEnabledBefore != effectivelyEnabledAfter) {
-            bumpLimitSessionGeneration(ctx)
             recordEffectiveStateChange(ctx, effectivelyEnabledBefore, effectivelyEnabledAfter)
         }
         syncActiveSinceForEffectiveState(ctx, effectivelyEnabledAfter)
@@ -647,7 +680,6 @@ object SwitchModeStore {
 
         val effectivelyEnabledAfter = isEnabled(ctx)
         if (effectivelyEnabledBefore != effectivelyEnabledAfter) {
-            bumpLimitSessionGeneration(ctx)
             recordEffectiveStateChange(ctx, effectivelyEnabledBefore, effectivelyEnabledAfter)
         }
         syncActiveSinceForEffectiveState(ctx, effectivelyEnabledAfter)
@@ -675,7 +707,6 @@ object SwitchModeStore {
         }
         val effectivelyEnabledAfter = isEnabled(ctx)
         if (effectivelyEnabledBefore != effectivelyEnabledAfter) {
-            bumpLimitSessionGeneration(ctx)
             recordEffectiveStateChange(ctx, effectivelyEnabledBefore, effectivelyEnabledAfter)
         }
 
@@ -716,7 +747,6 @@ object SwitchModeStore {
 
         val effectivelyEnabledAfter = isEnabled(ctx)
         if (effectivelyEnabledBefore != effectivelyEnabledAfter) {
-            bumpLimitSessionGeneration(ctx)
             recordEffectiveStateChange(ctx, effectivelyEnabledBefore, effectivelyEnabledAfter)
         }
         syncActiveSinceForEffectiveState(ctx, effectivelyEnabledAfter)

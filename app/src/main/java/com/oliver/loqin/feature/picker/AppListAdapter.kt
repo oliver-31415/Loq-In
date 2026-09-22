@@ -46,6 +46,7 @@ import com.oliver.loqin.ui.showWarnPill
 import com.oliver.loqin.util.AppBlockSafety
 import com.google.android.material.card.MaterialCardView
 import java.util.Locale
+import com.oliver.loqin.util.ProtectionChangeGate
 
 class AppListAdapter(
     allApps: List<AppEntry>,
@@ -59,7 +60,10 @@ class AppListAdapter(
     private val onProtectedSelectionRequested: ((app: AppEntry, onAllowed: () -> Unit) -> Unit)? = null,
     private val onSelectionChanged: ((count: Int) -> Unit)? = null,
     private val isReadOnlyProvider: () -> Boolean = { false },
-    private val canChangeSelectionProvider: (currentlySelected: Boolean, requestedSelected: Boolean) -> Boolean = { _, _ -> true }
+    private val canChangeSelectionProvider: (currentlySelected: Boolean, requestedSelected: Boolean) -> Boolean = { _, _ -> true },
+    private val pendingPackagesProvider: () -> Set<String> = { emptySet() },
+    private val onUncheckWithLimits: ((packageName: String, label: String, proceed: () -> Unit) -> Unit)? = null,
+    private val onCancelPendingSelection: ((packageName: String) -> Unit)? = null,
 ) : ListAdapter<AppEntry, AppListAdapter.VH>(DIFF) {
 
     private val allApps = allApps.toMutableList()
@@ -142,11 +146,12 @@ class AppListAdapter(
         unavailablePkgs.forEach { pkg ->
             managed.remove(pkg)
             if (!profile.isNullOrBlank()) {
-                UsageLimitStore.setLimitMinutes(context, profile, pkg, 0)
-                SessionLimitStore.setLimitMinutes(context, profile, pkg, 0)
-                AttemptLimitStore.setLimitAttempts(context, profile, pkg, 0)
-                OpenCountStore.setToday(context, profile, pkg, 0)
-                InAppRuleStore.clearRulesForPackage(context, profile, pkg)
+                ProtectionChangeGate.requestClearAppData(
+                    context = context,
+                    profile = profile,
+                    packages = listOf(pkg),
+                    includeInAppRules = true,
+                )
             }
         }
 
@@ -167,10 +172,12 @@ class AppListAdapter(
             val wasManaged = managed.remove(item.packageName)
 
             if (!item.isAvailable && !profile.isNullOrBlank()) {
-                UsageLimitStore.setLimitMinutes(context, profile, item.packageName, 0)
-                SessionLimitStore.setLimitMinutes(context, profile, item.packageName, 0)
-                AttemptLimitStore.setLimitAttempts(context, profile, item.packageName, 0)
-                OpenCountStore.setToday(context, profile, item.packageName, 0)
+                ProtectionChangeGate.requestClearAppData(
+                    context = context,
+                    profile = profile,
+                    packages = listOf(item.packageName),
+                    includeInAppRules = false,
+                )
             }
 
             if (wasManaged) {
@@ -246,13 +253,22 @@ class AppListAdapter(
 
         private var current: AppEntry? = null
         private var currentSelected = false
+        private var currentHasLimit = false
+        private var currentPending = false
 
         private fun dp(value: Float): Int =
             (value * itemView.resources.displayMetrics.density).toInt()
 
         private fun updateTileState(selected: Boolean) {
             val ctx = itemView.context
-            if (selected) {
+            if (currentPending) {
+                // Queued weakening change: same accent hue, lighter shade and a faded badge so it
+                // reads as "blocked, but a change is waiting" instead of a different color.
+                val accent = AccentColor.getAccentColorInt(ctx)
+                cardRoot.strokeWidth = dp(2f)
+                cardRoot.strokeColor = ColorUtils.setAlphaComponent(accent, 0x66)
+                cardRoot.setCardBackgroundColor(ColorUtils.setAlphaComponent(accent, 0x14))
+            } else if (selected) {
                 val accent = AccentColor.getAccentColorInt(ctx)
                 cardRoot.strokeWidth = dp(2f)
                 cardRoot.strokeColor = accent
@@ -262,11 +278,27 @@ class AppListAdapter(
                 cardRoot.setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.foqos_surface))
                 cardRoot.strokeColor = ContextCompat.getColor(ctx, R.color.foqos_outline_variant)
             }
-            ivChecked.visibility = if (selected) View.VISIBLE else View.GONE
+            val showBadge = selected || currentPending
+            ivChecked.visibility = if (showBadge) View.VISIBLE else View.GONE
+            if (showBadge) {
+                // Hourglass = a change is queued. Everything else (blocked or limited) uses the
+                // check; a limit is already shown by the "N min/day" subtitle, and a stopwatch
+                // badge read as a delay timer.
+                ivChecked.setImageResource(
+                    if (currentPending) R.drawable.hourglass_24 else R.drawable.check_circle_24
+                )
+                ivChecked.alpha = if (currentPending) 0.85f else 1f
+                ivChecked.contentDescription = when {
+                    currentPending -> ctx.getString(R.string.app_picker_pending_badge)
+                    currentHasLimit -> ctx.getString(R.string.app_picker_limited_badge)
+                    else -> ctx.getString(R.string.app_picker_blocked_badge)
+                }
+            }
         }
 
         fun bind(item: AppEntry) {
             val ctx = itemView.context
+            currentPending = pendingPackagesProvider.invoke().contains(item.packageName)
             val profile = currentProfileProvider.invoke()
             val readOnly = isReadOnlyProvider.invoke()
             val protectedApp = item.blockSafety.level == AppBlockSafety.Level.PROTECTED
@@ -306,25 +338,27 @@ class AppListAdapter(
             val hasSessionLimit = sessionLimitMin > 0
             val hasAttemptLimit = attemptLimit > 0
             val hasLimit = hasDailyLimit || hasSessionLimit || hasAttemptLimit
+            currentHasLimit = hasLimit
 
             viewLimitDot.visibility = if (hasLimit) View.VISIBLE else View.GONE
             if (hasLimit) {
                 tvSub.visibility = View.VISIBLE
+                // Compact tile labels: long "Daily limit: …" style labels overflow the square tile.
                 tvSub.text = buildString {
                     if (hasDailyLimit) {
                         val resetMode = profile?.let { UsageLimitResetStore.getMode(ctx, it, item.packageName) }
                         append(ctx.getString(
-                            if (resetMode == UsageLimitResetStore.MODE_SESSION) R.string.session_reset_limit_value_format else R.string.daily_limit_label,
+                            if (resetMode == UsageLimitResetStore.MODE_SESSION) R.string.session_reset_limit_value_format else R.string.limit_tile_daily_fmt,
                             limitMin
                         ))
                     }
                     if (hasSessionLimit) {
                         if (isNotEmpty()) append(" · ")
-                        append(ctx.getString(R.string.session_limit_label, sessionLimitMin))
+                        append(ctx.getString(R.string.limit_tile_visit_fmt, sessionLimitMin))
                     }
                     if (hasAttemptLimit) {
                         if (isNotEmpty()) append(" · ")
-                        append(ctx.getString(R.string.attempt_limit_label, attemptLimit))
+                        append(ctx.getString(R.string.limit_tile_attempts_fmt, attemptLimit))
                     }
                 }
             } else {
@@ -334,24 +368,32 @@ class AppListAdapter(
             // Whole-app blocking is independent of in-app rules: an app with active
             // in-app rules is NOT shown ticked unless it is explicitly blocked.
             currentSelected = managed.contains(item.packageName) || unavailableConfigured
+            // A queued selection change shows its target state (faded + hourglass) so the list
+            // does not look like the toggle was lost after re-entering the screen.
+            val intendedSelected = if (currentPending) !currentSelected else currentSelected
             val canToggleSelection = canChangeSelectionProvider(
-                currentSelected,
-                !currentSelected,
+                intendedSelected,
+                !intendedSelected,
             )
             // Tile stays tappable while locked (dimmed): denied taps warn via pill.
             val dimmed = !item.isAvailable || (readOnly && !canToggleSelection)
             ivAppIcon.alpha = if (dimmed) 0.45f else 1f
             tvLabel.alpha = if (dimmed) 0.55f else 1f
-            updateTileState(currentSelected)
-            cardRoot.contentDescription = if (currentSelected) {
-                ctx.getString(R.string.app_picker_tile_selected_desc, item.label)
-            } else {
-                ctx.getString(R.string.app_picker_tile_unselected_desc, item.label)
+            updateTileState(intendedSelected)
+            cardRoot.contentDescription = when {
+                intendedSelected && hasLimit -> ctx.getString(R.string.app_picker_tile_limited_desc, item.label)
+                intendedSelected -> ctx.getString(R.string.app_picker_tile_selected_desc, item.label)
+                else -> ctx.getString(R.string.app_picker_tile_unselected_desc, item.label)
             }
 
             fun onTileToggle() {
-                val checked = !currentSelected
-                val before = managed.contains(item.packageName) || hasUnavailableConfiguration(ctx, profile, item)
+                val checked = !intendedSelected
+                // Tapping a tile that has a queued change back to its stored state undoes it.
+                if (currentPending && checked == currentSelected) {
+                    onCancelPendingSelection?.invoke(item.packageName)
+                    return
+                }
+                val before = intendedSelected
                 if (!canChangeSelectionProvider(before, checked)) {
                     if (isReadOnlyProvider.invoke()) {
                         itemView.showWarnPill(R.string.toast_disable_loqin_to_edit_blocked_apps)
@@ -402,34 +444,41 @@ class AppListAdapter(
                         updateTileState(true)
                     }
                 } else {
-                    managed.remove(item.packageName)
-                    if (inAppRulesActive) {
-                        itemView.showWarnPill(R.string.app_picker_in_app_rules_stays_on_toast)
-                    }
-                    notifySelectionCountChanged()
-                    currentSelected = false
-                    updateTileState(false)
-
-                    if (!item.isAvailable) {
-                        if (!profile.isNullOrBlank()) {
-                            UsageLimitStore.setLimitMinutes(ctx, profile, item.packageName, 0)
-                            SessionLimitStore.setLimitMinutes(ctx, profile, item.packageName, 0)
-                            AttemptLimitStore.setLimitAttempts(ctx, profile, item.packageName, 0)
-                            OpenCountStore.setToday(ctx, profile, item.packageName, 0)
-                            InAppRuleStore.clearRulesForPackage(ctx, profile, item.packageName)
+                    fun applyUncheck() {
+                        managed.remove(item.packageName)
+                        if (inAppRulesActive) {
+                            itemView.showWarnPill(R.string.app_picker_in_app_rules_stays_on_toast)
                         }
-                        allApps.removeAll { it.packageName == item.packageName }
-                        submitList(currentList.filterNot { it.packageName == item.packageName })
+                        notifySelectionCountChanged()
+                        currentSelected = false
+                        updateTileState(false)
+
+                        if (!item.isAvailable) {
+                            if (!profile.isNullOrBlank()) {
+                            ProtectionChangeGate.requestClearAppData(
+                                context = ctx,
+                                profile = profile,
+                                packages = listOf(item.packageName),
+                                includeInAppRules = true,
+                            )
+                        }
+                            allApps.removeAll { it.packageName == item.packageName }
+                            submitList(currentList.filterNot { it.packageName == item.packageName })
+                        }
+                    }
+                    // An app with limits stays limited after unselecting, so ask what to do with them.
+                    val limitHandler = onUncheckWithLimits
+                    if (currentHasLimit && limitHandler != null) {
+                        limitHandler.invoke(item.packageName, item.label, ::applyUncheck)
+                    } else {
+                        applyUncheck()
                     }
                 }
             }
 
             cardRoot.setOnClickListener { onTileToggle() }
             cardRoot.setOnLongClickListener {
-                if (isReadOnlyProvider.invoke()) {
-                    itemView.showWarnPill(R.string.toast_disable_loqin_to_edit_app_limits)
-                    return@setOnLongClickListener true
-                }
+                // The limit editor opens while protection is active; the gate decides on save.
                 onSetSessionLimitClicked?.invoke(item)
                 true
             }
@@ -491,18 +540,9 @@ class AppListAdapter(
                 btnLimit.visibility = View.VISIBLE
                 val readOnly = isReadOnlyProvider.invoke()
                 btnLimit.isEnabled = true
-                btnLimit.alpha = if (readOnly) 0.45f else 1f
-                btnLimit.setOnClickListener {
-                    if (isReadOnlyProvider.invoke()) {
-                        itemView.showWarnPill(R.string.toast_disable_loqin_to_edit_app_limits)
-                        return@setOnClickListener
-                    }
-                    onSetLimitClicked(item)
-                }
+                btnLimit.alpha = if (readOnly) 0.62f else 1f
+                btnLimit.setOnClickListener { onSetLimitClicked(item) }
                 btnLimit.setOnLongClickListener {
-                    if (isReadOnlyProvider.invoke()) {
-                        return@setOnLongClickListener true
-                    }
                     onSetSessionLimitClicked?.invoke(item)
                     true
                 }

@@ -61,4 +61,16 @@
     <string name="developer_mode_disable_action">Developer-Modus ausschalten</string>
     <string name="developer_mode_disabled_toast">Developer-Modus ausgeschaltet</string>
 
+    <string name="about_section_feature_flags">Funktionsschalter</string>
+    <string name="feature_flag_state_on">Ein</string>
+    <string name="feature_flag_state_off">Aus</string>
+    <string name="feature_flag_scaffold">Gerüst</string>
+    <string name="feature_flag_diagnostic_timeline">Diagnose-Zeitleiste</string>
+    <string name="feature_flag_diagnostic_timeline_summary">Zeichnet Diagnose-Ereignisse für Support-Bericht und Fehlersuche auf.</string>
+    <string name="feature_flag_automation_preview">Vorschau beim Speichern von Zeitplänen</string>
+    <string name="feature_flag_automation_preview_summary">Zeigt eine Vorschau der Zeitplan-Änderungen vor dem Speichern.</string>
+    <string name="feature_flag_automation_v2">Automatisierungs-Engine v2</string>
+    <string name="feature_flag_automation_v2_summary">Reserviert für die nächste Automatisierungs-Engine.</string>
+    <string name="feature_flag_continuous_usage">Kontinuierlicher Nutzungs-Trigger</string>
+    <string name="feature_flag_continuous_usage_summary">Reserviert für kontinuierliche nutzungsbasierte Trigger.</string>
 </resources>

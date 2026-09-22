@@ -47,6 +47,7 @@ import androidx.core.widget.ImageViewCompat
 import androidx.preference.PreferenceManager
 import com.oliver.loqin.BuildConfig
 import com.oliver.loqin.R
+import com.oliver.loqin.blocking.AccessibilityWorkBudget
 import com.oliver.loqin.blocking.BlockingRuntime
 import com.oliver.loqin.blocking.OemAccessibilityKeepAlive
 import com.oliver.loqin.blocking.UsageAccessFallbackBlocking
@@ -105,10 +106,17 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import com.oliver.loqin.util.ProtectionChangeGate
+import com.oliver.loqin.util.SettingsSchemaMigration
+import com.oliver.loqin.data.prefs.FeatureFlagStore
+import com.oliver.loqin.data.prefs.DiagnosticsTimelineStore
 
 class SupportActivity : AppCompatActivity() {
 
-    private companion object {
+    companion object {
+        /** Copies the support report straight to the clipboard and finishes (Info screen shortcut). */
+        const val EXTRA_COPY_QUICK = "extra_copy_quick"
+
         private const val KEY_INCLUDE_DEBUG = "support_include_debug"
         private const val KEY_INCLUDE_ADVANCED_DEBUG = "support_include_advanced_debug"
         private const val KEY_INCLUDE_SETUP_DETAILS = "support_include_setup_details"
@@ -146,6 +154,20 @@ class SupportActivity : AppCompatActivity() {
 
         findViewById<MaterialButton>(R.id.btnOpenEmail).setOnClickListener {
             showReportSelectionDialog()
+        }
+
+        if (intent?.getBooleanExtra(EXTRA_COPY_QUICK, false) == true) {
+            exportSupportReport(
+                ReportSelection(
+                    includeDebug = true,
+                    includeActiveProfileApps = false,
+                    includeSetupDetails = true,
+                    includeAdvancedDebug = true,
+                    includeLogs = false,
+                )
+            )
+            // Let the "copied" pill be visible before leaving the screen.
+            window.decorView.postDelayed({ finish() }, 1_800L)
         }
     }
 
@@ -425,6 +447,13 @@ class SupportActivity : AppCompatActivity() {
             "Official release signing configured at build",
             BuildConfig.LOQIN_RELEASE_SIGNING_CONFIGURED
         )
+        line(
+            "Settings schema",
+            runCatching { SettingsSchemaMigration.currentStoredVersion(this@SupportActivity) }.getOrDefault(-1)
+        )
+        FeatureFlagStore.snapshot(this@SupportActivity).forEach { (flag, enabled) ->
+            line("Feature flag: ${flag.key}", enabled)
+        }
 
         section("Release diagnostics")
         val releaseDiagnostics = ReleaseDiagnostics.snapshot(this@SupportActivity)
@@ -463,6 +492,25 @@ class SupportActivity : AppCompatActivity() {
         )
 
         section("Loq In state")
+        val protectionTempDisableMs = runCatching { SwitchModeStore.getTemporaryRemainingMillis(this@SupportActivity) }.getOrDefault(0L)
+        val protectionTempEnableMs = runCatching { SwitchModeStore.getTemporaryEnableRemainingMillis(this@SupportActivity) }.getOrDefault(0L)
+        val protectionEmergencyActive = runCatching { EmergencyBypassStore.isActive(this@SupportActivity) }.getOrDefault(false)
+        val protectionEmergencyPaused = runCatching { EmergencyBypassStore.isPaused(this@SupportActivity) }.getOrDefault(false)
+        val protectionBaseEnabled = runCatching { SwitchModeStore.isBaseEnabled(this@SupportActivity) }.getOrDefault(false)
+        val protectionEffectiveEnabled = runCatching { SwitchModeStore.isEnabled(this@SupportActivity) }.getOrDefault(false)
+        line(
+            "Protection state",
+            when {
+                protectionEmergencyActive -> "emergency unlock (${runCatching { EmergencyBypassStore.minutesRemaining(this@SupportActivity) }.getOrDefault(0)}min left)"
+                protectionEmergencyPaused -> "emergency unlock paused"
+                protectionTempDisableMs > 0L -> "temporarily disabled (${protectionTempDisableMs / 60_000L}min left)"
+                protectionTempEnableMs > 0L -> "temporarily enabled (${protectionTempEnableMs / 60_000L}min left)"
+                protectionEffectiveEnabled -> "enabled"
+                else -> "disabled"
+            }
+        )
+        line("Base enabled", protectionBaseEnabled)
+        line("Blocking expected", protectionEffectiveEnabled && !protectionEmergencyActive)
         val currentProfile = runCatching { ProfileStore.getCurrent(this@SupportActivity) }.getOrNull().orEmpty()
         val blockedCurrentProfile = if (currentProfile.isNotBlank()) {
             runCatching { ProfileStore.getSelectedForProfileMode(this@SupportActivity, currentProfile).size }.getOrDefault(0)
@@ -964,6 +1012,15 @@ class SupportActivity : AppCompatActivity() {
             "Backup selection",
             BackupSelectionStore.load(this@SupportActivity).displaySummary()
         )
+        val protectionDelayMinutes = ProtectionChangeGate.getDelayMinutes(this@SupportActivity)
+        line(
+            "Protection change delay",
+            if (protectionDelayMinutes <= 0) "off" else "${protectionDelayMinutes}min"
+        )
+        line(
+            "Pending protection changes",
+            ProtectionChangeGate.pendingCount(this@SupportActivity)
+        )
 
         section("Permissions")
         val notificationsEnabled = NotificationManagerCompat.from(this@SupportActivity).areNotificationsEnabled()
@@ -1253,6 +1310,14 @@ class SupportActivity : AppCompatActivity() {
                 else -> "disabled"
             }
         )
+        runCatching { AccessibilityWorkBudget.snapshot(this@SupportActivity) }.getOrNull()?.let { budget ->
+            line(
+                "Accessibility work budget",
+                "roots=${budget.rootLookups} slow=${budget.slowRootLookups} scans=${budget.scans} " +
+                    "overruns=${budget.scanOverruns} nodeLimitHits=${budget.nodeLimitHits} " +
+                    "lastRoot=${budget.lastRootReason}/${budget.lastRootMs}ms lastScan=${budget.lastScan}/${budget.lastScanMs}ms/${budget.lastScanNodes}n"
+            )
+        }
         line("Advanced Protection Mode", advancedProtectionEnabled)
         line("Limited UsageEvents fallback running", limitedFallbackRunning)
         line(
@@ -1442,6 +1507,34 @@ class SupportActivity : AppCompatActivity() {
                 "Profile names sample",
                 if (sampleProfiles.isBlank()) "-" else sampleProfiles
             )
+        }
+
+        section("Diagnostics timeline")
+        val timelineEntries = runCatching {
+            DiagnosticsTimelineStore.latest(this@SupportActivity, 20)
+        }.getOrDefault(emptyList())
+        if (timelineEntries.isEmpty()) {
+            line("Events", "-")
+        } else {
+            val timeFormat = java.text.DateFormat.getDateTimeInstance(
+                java.text.DateFormat.SHORT,
+                java.text.DateFormat.MEDIUM,
+            )
+            timelineEntries.forEach { entry ->
+                line(
+                    timeFormat.format(java.util.Date(entry.timestampMillis)),
+                    buildString {
+                        append(entry.category)
+                        append(": ")
+                        append(entry.event)
+                        if (entry.details.isNotBlank()) {
+                            append(" (")
+                            append(entry.details)
+                            append(")")
+                        }
+                    },
+                )
+            }
         }
 
         section("Recent context")
