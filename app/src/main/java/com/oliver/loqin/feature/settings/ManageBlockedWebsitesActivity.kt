@@ -13,11 +13,13 @@
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this program. If not, see <https://www.gnu.org/licenses/>.\n */
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
 
 package com.oliver.loqin.feature.settings
 
 import android.content.res.ColorStateList
+import android.graphics.Color
 import android.os.Bundle
 import android.text.InputType
 import android.view.LayoutInflater
@@ -27,51 +29,58 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.AutoCompleteTextView
 import android.widget.FrameLayout
-import android.widget.ImageButton
 import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.activity.addCallback
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.SwitchCompat
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.core.content.ContextCompat
-import androidx.core.graphics.ColorUtils
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.card.MaterialCardView
+import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.button.MaterialButtonToggleGroup
+import com.google.android.material.chip.Chip
+import com.google.android.material.chip.ChipGroup
+import com.google.android.material.textfield.TextInputEditText
+import com.google.android.material.textfield.TextInputLayout
 import com.oliver.loqin.R
 import com.oliver.loqin.blocking.BlockingRuntime
 import com.oliver.loqin.data.prefs.DomainBlockStore
 import com.oliver.loqin.data.prefs.DomainLimitStore
+import com.oliver.loqin.data.prefs.DomainVisitLimitStore
 import com.oliver.loqin.data.prefs.ProfileStore
 import com.oliver.loqin.data.prefs.SwitchModeStore
 import com.oliver.loqin.data.prefs.WebsiteRuleModeStore
+import com.oliver.loqin.data.prefs.WebsiteSuggestionsVisibilityStore
+import com.oliver.loqin.feature.usage.QuickLimitDialogs
+import com.oliver.loqin.feature.websites.WebsitePathRow
+import com.oliver.loqin.feature.websites.WebsitePathsSheet
+import com.oliver.loqin.feature.websites.WebsiteRuleTileAdapter
+import com.oliver.loqin.feature.websites.WebsiteSuggestion
+import com.oliver.loqin.feature.websites.WebsiteSuggestionCategory
+import com.oliver.loqin.feature.websites.WebsiteSuggestions
+import com.oliver.loqin.feature.websites.WebsiteTile
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.theme.CustomAccentApplier
-import com.oliver.loqin.ui.SegmentedToggleUi
 import com.oliver.loqin.ui.LoqInDropdownAdapter
+import com.oliver.loqin.ui.SegmentedToggleUi
 import com.oliver.loqin.ui.ThemeUtils
-import com.oliver.loqin.ui.showWarnPill
-import com.oliver.loqin.ui.attachEditDeleteSwipe
-import com.oliver.loqin.ui.dialog.Dialogs
 import com.oliver.loqin.ui.dialog.showAccented
 import com.oliver.loqin.ui.dialog.showDestructiveAccented
 import com.oliver.loqin.ui.dialog.styleLoqInDestructivePositiveButton
 import com.oliver.loqin.ui.dialog.styleLoqInDialogButtons
+import com.oliver.loqin.ui.showWarnPill
 import com.oliver.loqin.ui.updateSelectionSubtitle
 import com.oliver.loqin.util.EditingLockGuard
 import com.oliver.loqin.util.ProtectionChangeGate
 import com.oliver.loqin.util.ProtectionChangePolicy
 import com.oliver.loqin.util.ProtectionFeedback
-import com.google.android.material.appbar.MaterialToolbar
-import com.google.android.material.button.MaterialButton
-import com.google.android.material.button.MaterialButtonToggleGroup
-import com.google.android.material.checkbox.MaterialCheckBox
-import com.google.android.material.textfield.TextInputEditText
-import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.launch
 
 class ManageBlockedWebsitesActivity : AppCompatActivity() {
@@ -108,7 +117,6 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         val locked = EditingLockGuard.isLocked(this)
         val canAdd = canAddBlockedWebsite()
         findViewById<MaterialButton>(R.id.btnAddWebsite)?.apply {
-            // Stay tappable (dimmed) so locked taps warn via popover instead of doing nothing.
             isEnabled = true
             isClickable = true
             alpha = if (canAdd && !isSelectionMode) 1f else 0.45f
@@ -148,14 +156,19 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
     private lateinit var rv: RecyclerView
     private lateinit var emptyTitle: TextView
     private lateinit var emptyBody: TextView
-    private lateinit var adapter: DomainRuleAdapter
+    private lateinit var adapter: WebsiteRuleTileAdapter
     private lateinit var toolbar: MaterialToolbar
     private var searchQuery: String = ""
     private var allRules: List<DomainRule> = emptyList()
 
     private var isSelectionMode: Boolean = false
+    /** True while selecting suggestions (add flow); false while selecting saved rules (delete). */
+    private var selectionIsSuggestion: Boolean = false
+    /** Selected hosts; deleting a host expands to every rule it owns. */
     private val selectedDomains = linkedSetOf<String>()
     private var updatingModeUi = false
+
+    private var suggestionCategory: WebsiteSuggestionCategory = WebsiteSuggestionCategory.ALL
 
     private fun currentProfile(): String =
         intent.getStringExtra(EXTRA_PROFILE_NAME)?.trim()?.takeIf { it.isNotBlank() }
@@ -163,6 +176,9 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
 
     private fun isAllowMode(): Boolean =
         WebsiteRuleModeStore.isAllowMode(this, currentProfile())
+
+    private fun suggestionsVisible(): Boolean =
+        WebsiteSuggestionsVisibilityStore.isVisible(this)
 
     private fun syncRuleModeUi() {
         val allow = isAllowMode()
@@ -199,7 +215,7 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         } finally {
             updatingModeUi = false
         }
-        group.addOnButtonCheckedListener { toggleGroup, checkedId, isChecked ->
+        group.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (!isChecked || updatingModeUi) return@addOnButtonCheckedListener
             if (websiteEditingLocked()) {
                 syncRuleModeUi()
@@ -279,36 +295,40 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         val accent = AccentColor.getAccentColorInt(this)
         findViewById<ImageView>(R.id.ivEmptyWebsitesIcon)?.imageTintList = ColorStateList.valueOf(accent)
 
+        adapter = WebsiteRuleTileAdapter(object : WebsiteRuleTileAdapter.Listener {
+            override fun onHostToggle(host: String) = handleHostToggle(host)
+            override fun onHostEdit(host: String) = handleHostEdit(host)
+            override fun onHostLongPress(host: String, isSuggestion: Boolean) = handleHostLongPress(host, isSuggestion)
+            override fun onHostLimit(host: String) = handleHostLimit(host)
+            override fun onHostExpand(host: String) = showPathsSheet(host)
+            override fun onHostSelection(host: String, isSuggestion: Boolean) = toggleSelection(host, isSuggestion)
+            override fun onPathToggle(rule: String, enabled: Boolean) = handlePathToggle(rule, enabled)
+            override fun onPathEdit(rule: String) = handlePathEdit(rule)
+            override fun onSuggestionAdd(suggestion: WebsiteSuggestion) = handleSuggestionAdd(suggestion)
+            override fun onSuggestionQuickAdd(rule: String) = quickAddRule(rule)
+            override fun onAddCustom(query: String) = showAddDialog(query)
+            override fun onSectionAction(key: String) = handleSectionAction(key)
+            override fun onShowSuggestions() = handleSectionAction("suggestions_show")
+            override fun isSelectionMode(): Boolean = this@ManageBlockedWebsitesActivity.isSelectionMode
+            override fun isSelected(host: String): Boolean = selectedDomains.contains(host)
+            override fun isReadOnly(): Boolean = websiteEditingLocked()
+        })
 
-
-        adapter = DomainRuleAdapter(
-            onEdit = { showEditDialog(it) },
-            onToggleEnabled = { domain, enabled -> setRuleEnabled(domain, enabled) },
-            pendingEnabledProvider = {
-                ProtectionChangeGate.pendingWebsiteEnabled(this, currentProfile())
-            },
-            pendingRemovalsProvider = {
-                ProtectionChangeGate.pendingWebsiteRemovals(this, currentProfile())
-            },
-            onToggleSelection = { toggleSelection(it) },
-            isSelectionMode = { isSelectionMode },
-            isSelected = { selectedDomains.contains(it) }
-        )
-
-        rv.layoutManager = LinearLayoutManager(this)
-        rv.adapter = adapter
-        rv.attachEditDeleteSwipe(
-            canSwipe = { !isSelectionMode },
-            onEdit = { position ->
-                adapter.itemAt(position)?.let { showEditDialog(it.domain) }
-            },
-            onDelete = { position ->
-                adapter.itemAt(position)?.let { confirmDeleteSingle(it.domain) }
+        val layoutManager = GridLayoutManager(this, 3)
+        layoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+            override fun getSpanSize(position: Int): Int = when (adapter.getItemViewType(position)) {
+                WebsiteRuleTileAdapter.VIEW_TYPE_SECTION_HEADER,
+                WebsiteRuleTileAdapter.VIEW_TYPE_PATHS_PANEL,
+                WebsiteRuleTileAdapter.VIEW_TYPE_SHOW_SUGGESTIONS -> 3
+                else -> 1
             }
-        )
+        }
+        rv.layoutManager = layoutManager
+        rv.adapter = adapter
 
         DomainBlockStore.migrateLegacyDomainsIntoCurrentProfileIfNeeded(this)
         setupWebsiteRuleMode()
+        setupSuggestionChips()
         syncRuleModeUi()
 
         findViewById<MaterialButton>(R.id.btnAddWebsite).setOnClickListener {
@@ -325,8 +345,11 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
             }
             showAddDialog()
         }
+        findViewById<View>(R.id.btnEmptyShowSuggestions)?.setOnClickListener {
+            handleSectionAction("suggestions_show")
+        }
 
-        val etSearch = findViewById<com.google.android.material.textfield.TextInputEditText>(R.id.etSearch)
+        val etSearch = findViewById<TextInputEditText>(R.id.etSearch)
         etSearch.addTextChangedListener(object : android.text.TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
             override fun afterTextChanged(s: android.text.Editable?) {}
@@ -364,12 +387,70 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         syncEditingLockUi()
     }
 
+    private fun setupSuggestionChips() {
+        val group = findViewById<ChipGroup>(R.id.chipCategories) ?: return
+        // Category pills filter both "Your rules" and suggestions, so they stay visible
+        // even when the suggestion section itself is hidden.
+        (group.parent as? View)?.visibility = View.VISIBLE
+        group.removeAllViews()
+        val entries = listOf(
+            null to getString(R.string.website_category_all),
+            WebsiteSuggestionCategory.SOCIAL to getString(R.string.website_category_social),
+            WebsiteSuggestionCategory.VIDEO to getString(R.string.website_category_video),
+            WebsiteSuggestionCategory.NEWS to getString(R.string.website_category_news),
+            WebsiteSuggestionCategory.SHOPPING to getString(R.string.website_category_shopping),
+            WebsiteSuggestionCategory.GAMING to getString(R.string.website_category_gaming),
+        )
+
+        fun refreshChecks() {
+            val accent = AccentColor.getAccentColorInt(this)
+            val density = resources.displayMetrics.density
+            for (i in 0 until group.childCount) {
+                val chip = group.getChildAt(i) as? Chip ?: continue
+                val selected = (chip.tag as? WebsiteSuggestionCategory) == suggestionCategory ||
+                    (chip.tag == null && suggestionCategory == WebsiteSuggestionCategory.ALL)
+                chip.isChecked = selected
+                chip.chipBackgroundColor = ColorStateList.valueOf(
+                    if (selected) ColorUtils.setAlphaComponent(accent, 0x2E) else Color.TRANSPARENT
+                )
+                chip.chipStrokeColor = ColorStateList.valueOf(
+                    if (selected) accent
+                    else ContextCompat.getColor(this, R.color.foqos_outline_variant)
+                )
+                chip.chipStrokeWidth = 1f * density
+            }
+        }
+
+        entries.forEach { (category, label) ->
+            val chip = Chip(
+                this,
+                null,
+                com.google.android.material.R.style.Widget_Material3_Chip_Suggestion
+            ).apply {
+                text = label
+                isClickable = true
+                isFocusable = true
+                tag = category
+                id = View.generateViewId()
+                setOnClickListener {
+                    suggestionCategory = (tag as? WebsiteSuggestionCategory)
+                        ?: WebsiteSuggestionCategory.ALL
+                    refreshChecks()
+                    applyListFilter()
+                }
+            }
+            group.addView(chip)
+        }
+        refreshChecks()
+    }
+
     private fun refreshList() {
         val profile = currentProfile()
         val blocked = DomainBlockStore.getDomainsForProfileAndMode(this, profile)
         val limited = DomainLimitStore.getDomainsWithLimitForProfile(this, profile)
+        val visitLimited = DomainVisitLimitStore.getDomainsWithLimitsForProfile(this, profile)
 
-        val all = (blocked + limited)
+        val all = (blocked + limited + visitLimited)
             .map { it.trim() }
             .filter { it.isNotBlank() }
             .toSortedSet()
@@ -379,6 +460,8 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
                 domain = d,
                 isHardBlocked = blocked.contains(d),
                 limitMin = DomainLimitStore.getLimitMinutesForProfile(this, profile, d),
+                sessionLimitMin = DomainVisitLimitStore.getSessionLimitMinutesForProfile(this, profile, d),
+                visitLimit = DomainVisitLimitStore.getVisitLimitCountForProfile(this, profile, d),
                 enabled = DomainBlockStore.isDomainEnabledForProfile(this, profile, d)
             )
         }
@@ -386,8 +469,8 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         allRules = rules
         applyListFilter()
 
-        // Keep selection consistent.
-        selectedDomains.retainAll(rules.map { it.domain }.toSet())
+        val savedHosts = rules.mapNotNull { DomainBlockStore.hostPart(it.domain) }.toSet()
+        selectedDomains.retainAll(savedHosts)
         if (isSelectionMode && rules.isEmpty()) {
             exitSelectionMode()
         } else {
@@ -399,15 +482,382 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
     private fun applyListFilter() {
         if (!::adapter.isInitialized) return
         val q = searchQuery.trim().lowercase()
-        val displayed = if (q.isBlank()) {
-            allRules
-        } else {
-            allRules.filter { it.domain.lowercase().contains(q) }
+        val filteredRules = allRules.filter { rule ->
+            val matchesQuery = q.isBlank() || rule.domain.lowercase().contains(q)
+            val host = DomainBlockStore.hostPart(rule.domain) ?: rule.domain
+            val matchesCategory = suggestionCategory == WebsiteSuggestionCategory.ALL ||
+                WebsiteSuggestions.categoryOf(host) == suggestionCategory
+            matchesQuery && matchesCategory
         }
-        adapter.submit(displayed)
-        emptyCard?.visibility =
-            if (allRules.isEmpty() || (displayed.isEmpty() && q.isBlank())) View.VISIBLE else View.GONE
+        val groups = buildGroups(filteredRules)
+        val savedHosts = allRules.mapNotNull { DomainBlockStore.hostPart(it.domain) }.toSet()
+        val suggestions = if (suggestionsVisible()) {
+            WebsiteSuggestions.search(q, suggestionCategory).filterNot { it.host in savedHosts }
+        } else {
+            emptyList()
+        }
+        adapter.submit(buildTiles(groups, suggestions, searchQuery.trim()))
+        // Never overlay the grid: the empty card only shows when there is nothing below it
+        // (no rules, no suggestions, no add-custom tile), so suggestions stay tappable.
+        val showEmptyCard = allRules.isEmpty() && suggestions.isEmpty() && searchQuery.isBlank()
+        emptyCard?.visibility = if (showEmptyCard) View.VISIBLE else View.GONE
+        // With the suggestion section hidden the empty card offers to bring it back; the
+        // grid button is reserved for when rules already exist (no overlap with the card).
+        findViewById<View>(R.id.btnEmptyShowSuggestions)?.visibility =
+            if (showEmptyCard && !suggestionsVisible()) View.VISIBLE else View.GONE
     }
+
+    private data class WebsiteRuleGroup(
+        val host: String,
+        val hostRule: DomainRule?,
+        val pathRules: List<DomainRule>,
+    )
+
+    private fun buildGroups(rules: List<DomainRule>): List<WebsiteRuleGroup> {
+        val byHost = LinkedHashMap<String, MutableList<DomainRule>>()
+        for (rule in rules) {
+            val host = DomainBlockStore.hostPart(rule.domain) ?: continue
+            byHost.getOrPut(host) { mutableListOf() }.add(rule)
+        }
+        return byHost.map { (host, rs) ->
+            val hostRule = rs.firstOrNull { !DomainBlockStore.isPathRule(it.domain) }
+            val paths = rs.filter { DomainBlockStore.isPathRule(it.domain) }.sortedBy { it.domain }
+            WebsiteRuleGroup(host, hostRule, paths)
+        }
+    }
+
+    private fun buildTiles(
+        groups: List<WebsiteRuleGroup>,
+        suggestions: List<WebsiteSuggestion>,
+        query: String,
+    ): List<WebsiteTile> {
+        val tiles = mutableListOf<WebsiteTile>()
+
+        if (groups.isNotEmpty()) {
+            tiles += WebsiteTile.SectionHeader("rules", getString(R.string.website_section_your_rules))
+            for (group in groups) {
+                val totalRules = (if (group.hostRule != null) 1 else 0) + group.pathRules.size
+                val hostRule = group.hostRule
+                val limitMin = hostRule?.limitMin
+                    ?: DomainLimitStore.getLimitMinutesForProfile(this, currentProfile(), group.host)
+                val sessionLimitMin = hostRule?.sessionLimitMin
+                    ?: DomainVisitLimitStore.getSessionLimitMinutesForProfile(this, currentProfile(), group.host)
+                val visitLimit = hostRule?.visitLimit
+                    ?: DomainVisitLimitStore.getVisitLimitCountForProfile(this, currentProfile(), group.host)
+                // A group is "on" when anything in it is active. The host switch itself is
+                // tracked separately so the label can say "Paths only" when the host rule is
+                // off while path rules remain on.
+                val hostEnabled = hostRule?.enabled ?: true
+                val pathsActive = group.pathRules.any { it.enabled }
+                val enabled = if (hostRule != null) (hostEnabled || pathsActive) else pathsActive
+                val pending = hostRule?.let { isRulePending(it.domain) }
+                    ?: group.pathRules.any { isRulePending(it.domain) }
+                tiles += WebsiteTile.HostTile(
+                    key = "host:${group.host}",
+                    host = group.host,
+                    hostRule = hostRule?.domain,
+                    pathRuleCount = group.pathRules.size,
+                    totalRuleCount = totalRules,
+                    isHardBlocked = hostRule?.isHardBlocked ?: group.pathRules.any { it.isHardBlocked },
+                    limitMin = limitMin,
+                    sessionLimitMin = sessionLimitMin,
+                    visitLimit = visitLimit,
+                    enabled = enabled,
+                    pathsActive = pathsActive,
+                    hostEnabled = hostEnabled,
+                    pending = pending,
+                    expanded = false,
+                )
+            }
+        }
+
+        if (suggestions.isNotEmpty()) {
+            tiles += WebsiteTile.SectionHeader(
+                "suggestions",
+                getString(R.string.website_section_suggestions),
+                actionLabel = getString(R.string.website_hide_suggestions),
+            )
+            for (suggestion in suggestions) {
+                tiles += WebsiteTile.HostTile(
+                    key = "sug:${suggestion.host}",
+                    host = suggestion.host,
+                    hostRule = null,
+                    pathRuleCount = suggestion.quickPaths.size,
+                    totalRuleCount = 0,
+                    isHardBlocked = true,
+                    limitMin = 0,
+                    enabled = false,
+                    pending = false,
+                    expanded = false,
+                    suggestion = suggestion,
+                )
+            }
+        }
+
+        if (!suggestionsVisible() && query.isBlank() && groups.isNotEmpty()) {
+            tiles += WebsiteTile.ShowSuggestions()
+        }
+
+        if (query.isNotBlank() && groups.isEmpty()) {
+            tiles += WebsiteTile.AddCustom(query = query)
+        }
+        return tiles
+    }
+
+    private fun isRulePending(rule: String): Boolean {
+        val profile = currentProfile()
+        return ProtectionChangeGate.pendingWebsiteEnabled(this, profile).containsKey(rule) ||
+            rule in ProtectionChangeGate.pendingWebsiteRemovals(this, profile)
+    }
+
+    /**
+     * Host tile toggle:
+     * - host rule present: toggles only the whole-site rule (path rules stay independent).
+     * - path-only group: toggles every path rule together (any disabled -> enable all,
+     *   otherwise disable all), so the group switch matches what the tile shows.
+     */
+    private fun handleHostToggle(host: String) {
+        if (denyWebsiteEditWithPopoverIfNeeded()) return
+        val group = buildGroups(allRules).find { it.host == host } ?: return
+        val hostRule = group.hostRule
+        if (hostRule != null) {
+            setRuleEnabled(hostRule.domain, !hostRule.enabled)
+            return
+        }
+        if (group.pathRules.isEmpty()) return
+        val enableAll = group.pathRules.any { !it.enabled }
+        setRulesEnabled(group.pathRules.map { it.domain }, enableAll)
+    }
+
+    /**
+     * Long-press selects a tile. Saved rules and suggestions are separate selections and can
+     * never be mixed: rule selection surfaces Delete, suggestion selection surfaces Add.
+     */
+    private fun handleHostLongPress(host: String, isSuggestion: Boolean) {
+        if (isSelectionMode) {
+            if (selectionIsSuggestion != isSuggestion) return
+            toggleSelection(host, isSuggestion)
+            return
+        }
+        enterSelectionMode(preselect = host, forSuggestions = isSuggestion)
+    }
+
+    private fun handleHostEdit(host: String) {
+        if (denyWebsiteEditWithPopoverIfNeeded()) return
+        val hostRule = allRules.find {
+            DomainBlockStore.hostPart(it.domain) == host && !DomainBlockStore.isPathRule(it.domain)
+        }
+        if (hostRule != null) {
+            showEditDialog(hostRule.domain)
+        } else {
+            showAddDialog(host)
+        }
+    }
+
+    /** Limit button: comprehensive limits editor for the whole-site (host-keyed) limits. */
+    private fun handleHostLimit(host: String) {
+        if (denyWebsiteEditWithPopoverIfNeeded()) return
+        buildGroups(allRules).find { it.host == host } ?: return
+        showWebsiteLimitsDialog(host)
+    }
+
+    private fun handlePathToggle(rule: String, enabled: Boolean) {
+        if (allRules.none { it.domain == rule }) return
+        if (denyWebsiteEditWithPopoverIfNeeded()) return
+        setRuleEnabled(rule, enabled)
+    }
+
+    private fun handlePathEdit(rule: String) {
+        if (allRules.none { it.domain == rule }) {
+            quickAddRule(rule)
+            return
+        }
+        if (denyWebsiteEditWithPopoverIfNeeded()) return
+        showEditDialog(rule)
+    }
+
+    private fun denyWebsiteEditWithPopoverIfNeeded(): Boolean {
+        return websiteEditingLocked() && denyWebsiteEditWithPopover().let { true }
+    }
+
+    private fun showPathsSheet(host: String) {
+        val group = buildGroups(allRules).find { it.host == host } ?: return
+        val hostRule = group.hostRule
+        val rows = group.pathRules.map {
+            WebsitePathRow(
+                rule = it.domain,
+                isHardBlocked = it.isHardBlocked,
+                limitMin = it.limitMin,
+                sessionLimitMin = it.sessionLimitMin,
+                visitLimit = it.visitLimit,
+                enabled = it.enabled,
+                pending = isRulePending(it.domain),
+            )
+        }
+        // Label for the root rule when it is on. When the root has no rule yet the sheet
+        // shows "Not added"; toggling it adds the whole-site rule.
+        val hostStateLabel = WebsiteRuleTileAdapter.limitSummary(
+            this,
+            hostRule?.limitMin ?: 0,
+            hostRule?.sessionLimitMin ?: 0,
+            hostRule?.visitLimit ?: 0,
+        ).ifEmpty {
+            getString(if (isAllowMode()) R.string.rule_allowed else R.string.rule_blocked)
+        }
+        WebsitePathsSheet.show(
+            activity = this,
+            host = host,
+            hostRule = hostRule?.domain,
+            hostEnabled = hostRule?.enabled == true,
+            hostPending = hostRule?.let { isRulePending(it.domain) } ?: false,
+            hostStateLabel = hostStateLabel,
+            rows = rows,
+            listener = object : WebsitePathsSheet.Listener {
+                override fun onRootRuleToggle(host: String, enabled: Boolean) {
+                    val existing = allRules.find {
+                        !DomainBlockStore.isPathRule(it.domain) &&
+                            DomainBlockStore.hostPart(it.domain) == host
+                    }
+                    when {
+                        existing != null -> setRuleEnabled(existing.domain, enabled)
+                        enabled -> quickAddRule(host)
+                    }
+                }
+
+                override fun onRootEdit(host: String) = handleHostEdit(host)
+                override fun onPathToggle(rule: String, enabled: Boolean) = handlePathToggle(rule, enabled)
+                override fun onPathEdit(rule: String) = handlePathEdit(rule)
+                override fun onAddPath(host: String) {
+                    if (!canAddBlockedWebsite()) {
+                        denyWebsiteEditWithPopover()
+                        return
+                    }
+                    showAddDialog(host)
+                }
+
+                override fun isReadOnly(): Boolean = websiteEditingLocked()
+            },
+        )
+    }
+
+    private fun handleSectionAction(key: String) {
+        when (key) {
+            "suggestions" -> {
+                WebsiteSuggestionsVisibilityStore.setVisible(this, false)
+                setupSuggestionChips()
+                applyListFilter()
+                invalidateOptionsMenu()
+            }
+            "suggestions_show" -> {
+                WebsiteSuggestionsVisibilityStore.setVisible(this, true)
+                setupSuggestionChips()
+                applyListFilter()
+                invalidateOptionsMenu()
+            }
+        }
+    }
+
+    /**
+     * Readable multi-select picker: the whole site is always an explicit option (checked by
+     * default) and quick paths can be added alongside it.
+     */
+    private fun handleSuggestionAdd(suggestion: WebsiteSuggestion) {
+        if (!canAddBlockedWebsite()) {
+            denyWebsiteEditWithPopover()
+            return
+        }
+        val options = mutableListOf(suggestion.host)
+        if (!isAllowMode()) options.addAll(suggestion.quickPaths)
+
+        val density = resources.displayMetrics.density
+        fun dp(value: Int): Int = (value * density).toInt()
+
+        val onSurface = ContextCompat.getColor(this, R.color.foqos_on_surface)
+        val onSurfaceSoft = ContextCompat.getColor(this, R.color.foqos_on_surface_variant)
+        val container = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(20), dp(4), dp(20), dp(0))
+        }
+        val checkBoxes = mutableListOf<android.widget.CheckBox>()
+
+        options.forEachIndexed { index, rule ->
+            val isHost = rule == suggestion.host
+            val row = LinearLayout(this).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                setPadding(0, dp(8), 0, dp(8))
+                isClickable = true
+                isFocusable = true
+            }
+            val cb = android.widget.CheckBox(this).apply {
+                isChecked = index == 0
+                minWidth = 0
+                minHeight = 0
+            }
+            checkBoxes += cb
+            val texts = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                    marginStart = dp(10)
+                }
+            }
+            texts.addView(TextView(this).apply {
+                text = if (isHost) suggestion.host else (DomainBlockStore.pathPart(rule) ?: rule)
+                textSize = 15f
+                setTypeface(typeface, android.graphics.Typeface.BOLD)
+                setTextColor(onSurface)
+            })
+            texts.addView(TextView(this).apply {
+                text = if (isHost) {
+                    getString(R.string.website_tile_whole_site)
+                } else {
+                    rule
+                }
+                textSize = 12.5f
+                setTextColor(onSurfaceSoft)
+            })
+            row.addView(cb)
+            row.addView(texts)
+            row.setOnClickListener { cb.isChecked = !cb.isChecked }
+            container.addView(row)
+        }
+
+        AlertDialog.Builder(this)
+            .setTitle(suggestion.host)
+            .setView(container)
+            .setNegativeButton(R.string.cancel, null)
+            .setPositiveButton(android.R.string.ok) { _, _ ->
+                options.forEachIndexed { i, rule ->
+                    if (checkBoxes[i].isChecked) quickAddRule(rule)
+                }
+            }
+            .show()
+            .styleLoqInDialogButtons()
+    }
+
+    private fun quickAddRule(rule: String) {
+        if (!canAddBlockedWebsite()) {
+            denyWebsiteEditWithPopover()
+            return
+        }
+        val normalized = DomainBlockStore.normalize(rule) ?: return
+        if (isAllowMode() && DomainBlockStore.isPathRule(normalized)) {
+            findViewById<View>(android.R.id.content)
+                .showWarnPill(R.string.website_rule_path_allow_mode_error)
+            return
+        }
+        val profile = currentProfile()
+        DomainBlockStore.addDomainForProfile(this, profile, normalized)
+        DomainBlockStore.setDomainEnabledForProfile(this, profile, normalized, true)
+        BlockingRuntime.ensureRunning(this)
+        findViewById<View>(android.R.id.content)
+            .showWarnPill(getString(R.string.website_quick_path_added, normalized))
+        refreshList()
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // List plumbing / menus / selection
+    // ---------------------------------------------------------------------------------------------
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         menuInflater.inflate(R.menu.menu_manage_blocked_websites, menu)
@@ -419,11 +869,13 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         val hasItems = adapter.itemCount > 0
         menu.findItem(R.id.action_browser_support)?.isVisible = true
         menu.findItem(R.id.action_select)?.isVisible = !readOnly && !isSelectionMode && hasItems
-        menu.findItem(R.id.action_cancel_selection)?.isVisible = !readOnly && isSelectionMode
-        menu.findItem(R.id.action_delete_selected)?.isVisible = !readOnly && isSelectionMode
-
+        menu.findItem(R.id.action_cancel_selection)?.isVisible = isSelectionMode
+        val selectingSuggestions = isSelectionMode && selectionIsSuggestion
+        menu.findItem(R.id.action_delete_selected)?.isVisible = !readOnly && isSelectionMode && !selectionIsSuggestion
+        menu.findItem(R.id.action_add_selected)?.isVisible = selectingSuggestions
         val deleteItem = menu.findItem(R.id.action_delete_selected)
         deleteItem?.isEnabled = selectedDomains.isNotEmpty()
+        menu.findItem(R.id.action_add_selected)?.isEnabled = selectedDomains.isNotEmpty()
         return super.onPrepareOptionsMenu(menu)
     }
 
@@ -440,6 +892,12 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
             }
             R.id.action_browser_support -> {
                 showSupportedBrowsersInfo()
+                true
+            }
+            R.id.action_add_selected -> {
+                val toAdd = selectedDomains.toList()
+                exitSelectionMode()
+                toAdd.forEach { quickAddRule(it) }
                 true
             }
             R.id.action_select -> {
@@ -460,7 +918,8 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
 
     private fun updateMenuState() {
         invalidateOptionsMenu()
-        findViewById<MaterialButton>(R.id.btnAddWebsite)?.visibility = if (isSelectionMode) View.GONE else View.VISIBLE
+        findViewById<MaterialButton>(R.id.btnAddWebsite)?.visibility =
+            if (isSelectionMode) View.GONE else View.VISIBLE
         toolbar.updateSelectionSubtitle(
             selectionMode = isSelectionMode,
             selectedCount = selectedDomains.size,
@@ -481,10 +940,16 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
             .styleLoqInDialogButtons()
     }
 
-    private fun enterSelectionMode(preselect: String? = null) {
-        if (websiteEditingLocked()) {
+    private fun enterSelectionMode(preselect: String? = null, forSuggestions: Boolean = false) {
+        if (forSuggestions) {
+            if (!canAddBlockedWebsite()) {
+                denyWebsiteEditWithPopover()
+                return
+            }
+        } else if (websiteEditingLocked()) {
             return
         }
+        selectionIsSuggestion = forSuggestions
         isSelectionMode = true
         selectedDomains.clear()
         preselect?.let { selectedDomains.add(it) }
@@ -494,29 +959,39 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
 
     private fun exitSelectionMode() {
         isSelectionMode = false
+        selectionIsSuggestion = false
         selectedDomains.clear()
         adapter.notifyItemRangeChanged(0, adapter.itemCount)
         updateMenuState()
     }
 
-    private fun toggleSelection(domain: String) {
-        if (!isSelectionMode) {
+    private fun toggleSelection(host: String, isSuggestion: Boolean) {
+        if (!isSelectionMode || selectionIsSuggestion != isSuggestion) {
             return
         }
-        if (selectedDomains.contains(domain)) {
-            selectedDomains.remove(domain)
-        } else {
-            selectedDomains.add(domain)
+        if (!selectedDomains.remove(host)) {
+            selectedDomains.add(host)
+        }
+        if (selectedDomains.isEmpty()) {
+            // Deselecting the last website leaves selection mode entirely.
+            exitSelectionMode()
+            return
         }
         adapter.notifyItemRangeChanged(0, adapter.itemCount)
         updateMenuState()
     }
 
+    /** Every saved rule owned by [host] (its host rule plus all of its path rules). */
+    private fun rulesForHost(host: String): List<String> =
+        allRules.filter { DomainBlockStore.hostPart(it.domain) == host }.map { it.domain }
+
     private fun confirmDeleteSelected() {
         if (selectedDomains.isEmpty()) {
             return
         }
-        val count = selectedDomains.size
+        val rules = selectedDomains.flatMap { rulesForHost(it) }.distinct()
+        if (rules.isEmpty()) return
+        val count = rules.size
         val dlg = AlertDialog.Builder(this)
             .setTitle(getString(R.string.delete))
             .setMessage(resources.getQuantityString(R.plurals.delete_websites_confirm, count, count) + "\n\n" + getString(R.string.destructive_cannot_be_undone))
@@ -530,13 +1005,14 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
                 val profile = currentProfile()
                 var queued = 0
                 var denied = 0
-                selectedDomains.toList().forEach { domain ->
-                    when (ProtectionChangeGate.requestWebsiteRemoval(this@ManageBlockedWebsitesActivity, profile, domain)) {
+                rules.forEach { rule ->
+                    when (ProtectionChangeGate.requestWebsiteRemoval(this@ManageBlockedWebsitesActivity, profile, rule)) {
                         ProtectionChangePolicy.Result.APPLIED -> Unit
                         ProtectionChangePolicy.Result.QUEUED -> queued++
                         ProtectionChangePolicy.Result.DENIED -> denied++
                     }
                 }
+                rules.forEach { clearLimitIfNoRulesRemainForHost(profile, it) }
                 exitSelectionMode()
                 refreshList()
                 dlg.dismiss()
@@ -552,9 +1028,12 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         dlg.show()
     }
 
-    private fun removeRule(domain: String) {
-        when (ProtectionChangeGate.requestWebsiteRemoval(this, currentProfile(), domain)) {
-            ProtectionChangePolicy.Result.APPLIED -> refreshList()
+    private fun removeRule(rule: String) {
+        when (ProtectionChangeGate.requestWebsiteRemoval(this, currentProfile(), rule)) {
+            ProtectionChangePolicy.Result.APPLIED -> {
+                clearLimitIfNoRulesRemainForHost(currentProfile(), rule)
+                refreshList()
+            }
 
             ProtectionChangePolicy.Result.QUEUED -> {
                 ProtectionFeedback.showQueued(this)
@@ -581,71 +1060,103 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         }
         if (!remaining) {
             DomainLimitStore.clearForProfile(this, profile, host)
+            DomainVisitLimitStore.clearForProfile(this, profile, host)
+        }
+        DomainVisitLimitStore.clearForProfile(this, profile, normalized)
+    }
+
+    private fun setRuleEnabled(rule: String, enabled: Boolean) {
+        setRulesEnabled(listOf(rule), enabled)
+    }
+
+    private fun setRulesEnabled(rules: List<String>, enabled: Boolean) {
+        var queued = 0
+        var denied = 0
+        rules.forEach { rule ->
+            when (ProtectionChangeGate.requestWebsiteEnabled(
+                context = this,
+                profile = currentProfile(),
+                rule = rule,
+                currentEnabled = !enabled,
+                requestedEnabled = enabled,
+            )) {
+                ProtectionChangePolicy.Result.APPLIED -> Unit
+                ProtectionChangePolicy.Result.QUEUED -> queued++
+                ProtectionChangePolicy.Result.DENIED -> denied++
+            }
+        }
+        refreshList()
+        when {
+            denied > 0 -> findViewById<View>(android.R.id.content)
+                .showWarnPill(R.string.edit_locked_manage_websites)
+
+            queued > 0 -> ProtectionFeedback.showQueued(this)
         }
     }
 
-    private fun setRuleEnabled(domain: String, enabled: Boolean) {
-        when (ProtectionChangeGate.requestWebsiteEnabled(
-            context = this,
-            profile = currentProfile(),
-            rule = domain,
-            currentEnabled = !enabled,
-            requestedEnabled = enabled,
-        )) {
-            ProtectionChangePolicy.Result.APPLIED -> refreshList()
-
-            ProtectionChangePolicy.Result.QUEUED -> {
-                ProtectionFeedback.showQueued(this)
-                refreshList()
-            }
-
-            ProtectionChangePolicy.Result.DENIED -> {
-                findViewById<View>(android.R.id.content)
-                    .showWarnPill(R.string.edit_locked_manage_websites)
-                refreshList()
-            }
+    private fun confirmDeleteSingle(rule: String) {
+        val isPath = DomainBlockStore.isPathRule(rule)
+        val host = DomainBlockStore.hostPart(rule) ?: rule
+        // Deleting a root rule removes its whole group (root + all of its pages) so no
+        // orphaned subpages are left stuck on the screen. A page rule deletes only itself.
+        val rules = if (isPath) listOf(rule) else rulesForHost(host)
+        val count = rules.size
+        val message = if (count > 1) {
+            resources.getQuantityString(R.plurals.delete_websites_confirm, count, count) +
+                "\n\n" + getString(R.string.destructive_cannot_be_undone)
+        } else {
+            rule + "\n\n" + getString(R.string.destructive_cannot_be_undone)
         }
-    }
-
-    private fun confirmDeleteSingle(domain: String) {
         AlertDialog.Builder(this)
             .setTitle(R.string.delete)
-            .setMessage(
-                domain + "\n\n" + getString(R.string.destructive_cannot_be_undone)
-            )
+            .setMessage(message)
             .setNegativeButton(R.string.cancel, null)
-            .setPositiveButton(R.string.delete) { _, _ -> removeRule(domain) }
+            .setPositiveButton(R.string.delete) { _, _ ->
+                rules.forEach { removeRule(it) }
+            }
             .showDestructiveAccented()
     }
 
-    private fun showAddDialog() {
+    private fun showAddDialog(prefill: String = "") {
         if (!canAddBlockedWebsite()) {
             return
         }
         showRuleDialog(
             title = getString(R.string.add_website_rule_title),
-            initialDomain = "",
+            initialDomain = prefill,
             initialHardBlock = true,
             initialLimit = 0,
             allowDomainEdit = true
         )
     }
 
-    private fun showEditDialog(domain: String) {
+    private fun showEditDialog(rule: String) {
         if (websiteEditingLocked()) {
             return
         }
         val profile = currentProfile()
-        val hard = DomainBlockStore.getDomainsForProfileAndMode(this, profile).contains(domain)
-        val limit = DomainLimitStore.getLimitMinutesForProfile(this, profile, domain)
+        val hard = DomainBlockStore.getDomainsForProfileAndMode(this, profile).contains(rule)
+        val limit = DomainLimitStore.getLimitMinutesForProfile(this, profile, rule)
 
         showRuleDialog(
-            title = domain,
-            initialDomain = domain,
+            title = rule,
+            initialDomain = rule,
             initialHardBlock = hard,
             initialLimit = limit,
             allowDomainEdit = false
         )
+    }
+
+    /** Limits for one rule: same dialog as the app block page (daily / opens / per-visit). */
+    private fun showWebsiteLimitsDialog(rule: String) {
+        if (websiteEditingLocked()) return
+        val normalized = DomainBlockStore.normalize(rule) ?: return
+        QuickLimitDialogs.showWebsiteLimitEditor(
+            activity = this,
+            profile = currentProfile(),
+            rule = normalized,
+            label = normalized,
+        ) { refreshList() }
     }
 
     private fun showRuleDialog(
@@ -676,10 +1187,12 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         }
 
         val modeAlways = getString(if (isAllowMode()) R.string.rule_allowed_always else R.string.rule_block_always)
-        val modeLimit = getString(R.string.rule_daily_limit)
+        val modeLimit = getString(R.string.website_mode_limits)
 
         val modeAdapter = LoqInDropdownAdapter(this, listOf(modeAlways, modeLimit))
         acMode.setAdapter(modeAdapter)
+        acMode.threshold = 0
+        acMode.setOnClickListener { acMode.showDropDown() }
         val tightenOnlyAdd = websiteEditingLocked() && allowDomainEdit && !isAllowMode()
         acMode.setText(if (tightenOnlyAdd || initialHardBlock) modeAlways else modeLimit, false)
         acMode.isEnabled = !tightenOnlyAdd
@@ -689,8 +1202,9 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         etLimit.setText(if (initialLimit > 0) initialLimit.toString() else "")
 
         fun applyMode() {
+            // Values are edited in the limits screen; this dialog only picks the mode.
             val hard = acMode.text?.toString() == modeAlways
-            tilLimit.visibility = if (hard) View.GONE else View.VISIBLE
+            tilLimit.visibility = View.GONE
             if (hard) etLimit.setText("")
         }
         applyMode()
@@ -699,17 +1213,27 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
             applyMode()
         }
 
-        val dlg = AlertDialog.Builder(this)
+        val builder = AlertDialog.Builder(this)
             .setTitle(title)
             .setView(v)
             .setPositiveButton(android.R.string.ok, null)
             .setNegativeButton(android.R.string.cancel, null)
-            .create()
+        if (!allowDomainEdit) {
+            builder.setNeutralButton(R.string.website_delete_rule, null)
+        }
+        val dlg = builder.create()
 
         dlg.setOnShowListener {
             dlg.styleLoqInDialogButtons()
             if (CustomAccentApplier.isCustomAccentEnabled(this)) {
                 runCatching { CustomAccentApplier.applyToDialog(dlg) }
+            }
+
+            if (!allowDomainEdit) {
+                dlg.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
+                    dlg.dismiss()
+                    confirmDeleteSingle(initialDomain)
+                }
             }
 
             dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
@@ -737,41 +1261,38 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
                 tilDomain.error = null
 
                 val hardBlock = acMode.text?.toString() == modeAlways
-                val limitMin = etLimit.text?.toString()?.trim()?.toIntOrNull()?.coerceAtLeast(0) ?: 0
 
                 if (tightenOnlyAdd && (!hardBlock || isAllowMode())) {
                     return@setOnClickListener
                 }
 
-                if (!hardBlock && limitMin <= 0) {
-                    tilLimit.error = getString(R.string.domain_limit_required)
-                    return@setOnClickListener
-                } else {
-                    tilLimit.error = null
-                }
-
                 val profile = currentProfile()
-                if (isAllowMode()) {
-                    DomainBlockStore.addDomainForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
-                    DomainBlockStore.setDomainEnabledForProfile(this@ManageBlockedWebsitesActivity, profile, normalized, true)
-                    if (hardBlock) {
+                if (hardBlock) {
+                    if (isAllowMode()) {
+                        DomainBlockStore.addDomainForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
+                        DomainBlockStore.setDomainEnabledForProfile(this@ManageBlockedWebsitesActivity, profile, normalized, true)
                         DomainLimitStore.clearForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
                     } else {
-                        DomainLimitStore.setLimitMinutesForProfile(this@ManageBlockedWebsitesActivity, profile, normalized, limitMin)
+                        DomainLimitStore.clearForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
+                        DomainBlockStore.addDomainForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
+                        DomainBlockStore.setDomainEnabledForProfile(this@ManageBlockedWebsitesActivity, profile, normalized, true)
                     }
-                } else if (hardBlock) {
-                    DomainLimitStore.clearForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
-                    DomainBlockStore.addDomainForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
-                    DomainBlockStore.setDomainEnabledForProfile(this@ManageBlockedWebsitesActivity, profile, normalized, true)
+                    BlockingRuntime.ensureRunning(this@ManageBlockedWebsitesActivity)
+                    refreshList()
+                    dlg.dismiss()
                 } else {
-                    DomainBlockStore.removeDomainForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
-                    DomainLimitStore.setLimitMinutesForProfile(this@ManageBlockedWebsitesActivity, profile, normalized, limitMin)
+                    // Limits mode: create the rule shell and open the limits screen.
+                    if (isAllowMode()) {
+                        DomainBlockStore.addDomainForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
+                    } else {
+                        DomainBlockStore.removeDomainForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
+                    }
                     DomainBlockStore.setDomainEnabledForProfile(this@ManageBlockedWebsitesActivity, profile, normalized, true)
+                    BlockingRuntime.ensureRunning(this@ManageBlockedWebsitesActivity)
+                    refreshList()
+                    dlg.dismiss()
+                    showWebsiteLimitsDialog(normalized)
                 }
-
-                BlockingRuntime.ensureRunning(this@ManageBlockedWebsitesActivity)
-                refreshList()
-                dlg.dismiss()
             }
         }
 
@@ -782,155 +1303,8 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         val domain: String,
         val isHardBlocked: Boolean,
         val limitMin: Int,
+        val sessionLimitMin: Int,
+        val visitLimit: Int,
         val enabled: Boolean
     )
-
-    private inner class DomainRuleAdapter(
-        private val onEdit: (String) -> Unit,
-        private val onToggleEnabled: (String, Boolean) -> Unit,
-        private val pendingEnabledProvider: () -> Map<String, Boolean> = { emptyMap() },
-        private val pendingRemovalsProvider: () -> Set<String> = { emptySet() },
-        private val onToggleSelection: (String) -> Unit,
-        private val isSelectionMode: () -> Boolean,
-        private val isSelected: (String) -> Boolean,
-    ) : RecyclerView.Adapter<DomainRuleAdapter.VH>() {
-
-        private val items = mutableListOf<DomainRule>()
-
-        fun submit(newItems: List<DomainRule>) {
-            val oldSize = items.size
-            items.clear()
-            items.addAll(newItems)
-            if (oldSize == 0 && newItems.isNotEmpty()) {
-                notifyItemRangeInserted(0, newItems.size)
-            } else if (newItems.isEmpty() && oldSize > 0) {
-                notifyItemRangeRemoved(0, oldSize)
-            } else {
-                notifyItemRangeChanged(0, minOf(oldSize, newItems.size))
-                if (newItems.size > oldSize) notifyItemRangeInserted(oldSize, newItems.size - oldSize)
-                if (oldSize > newItems.size) notifyItemRangeRemoved(newItems.size, oldSize - newItems.size)
-            }
-        }
-
-        override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
-            val v = layoutInflater.inflate(R.layout.item_blocked_domain, parent, false)
-            return VH(v)
-        }
-
-        override fun onBindViewHolder(holder: VH, position: Int) {
-            holder.bind(items[position])
-        }
-
-        override fun getItemCount(): Int = items.size
-
-        fun itemAt(position: Int): DomainRule? = items.getOrNull(position)
-
-        inner class VH(itemView: View) : RecyclerView.ViewHolder(itemView) {
-            private val tvDomain: TextView = itemView.findViewById(R.id.tvDomain)
-            private val tvMeta: TextView = itemView.findViewById(R.id.tvMeta)
-            private val cbSelect: MaterialCheckBox = itemView.findViewById(R.id.cbSelect)
-            private val swRuleEnabled: SwitchCompat = itemView.findViewById(R.id.swRuleEnabled)
-            private val btnLimit: ImageButton = itemView.findViewById(R.id.btnLimit)
-            private val ivDomainIcon: ImageView = itemView.findViewById(R.id.ivDomainIcon)
-
-            fun bind(rule: DomainRule) {
-                val readOnly = websiteEditingLocked()
-                val accent = AccentColor.getAccentColorInt(this@ManageBlockedWebsitesActivity)
-                tvDomain.text = rule.domain
-
-                val baseMeta = when {
-                    rule.limitMin > 0 -> getString(R.string.daily_limit_value_format, rule.limitMin)
-                    rule.isHardBlocked && isAllowMode() -> getString(R.string.rule_allowed)
-                    rule.isHardBlocked -> getString(R.string.rule_blocked)
-                    else -> ""
-                }
-                val pendingEnabled = pendingEnabledProvider()[rule.domain]
-                val pendingRemoval = rule.domain in pendingRemovalsProvider()
-                val pending = pendingEnabled != null || pendingRemoval
-                tvMeta.text = if (pending) {
-                    getString(R.string.website_rule_pending)
-                } else {
-                    listOfNotNull(
-                        if (rule.enabled) null else getString(R.string.website_rule_disabled),
-                        baseMeta.takeIf { it.isNotBlank() }
-                    ).joinToString(" · ")
-                }
-                val contentAlpha = when {
-                    pending -> 0.62f
-                    rule.enabled -> 1f
-                    else -> 0.52f
-                }
-                tvDomain.alpha = contentAlpha
-                tvMeta.alpha = if (rule.enabled) 0.70f else 0.56f
-                ivDomainIcon.alpha = contentAlpha
-                ivDomainIcon.imageTintList = ColorStateList.valueOf(accent)
-
-                val selecting = isSelectionMode()
-                val selected = selecting && isSelected(rule.domain)
-                cbSelect.visibility = if (selecting) View.VISIBLE else View.GONE
-                swRuleEnabled.visibility = if (selecting) View.GONE else View.VISIBLE
-                btnLimit.visibility = if (selecting) View.GONE else View.VISIBLE
-
-                cbSelect.buttonTintList = CustomAccentApplier.buildCheckableTint(this@ManageBlockedWebsitesActivity, accent)
-                cbSelect.isChecked = selected
-                cbSelect.isEnabled = !readOnly
-
-                (itemView as? MaterialCardView)?.let { card ->
-                    val defaultStroke = ContextCompat.getColor(this@ManageBlockedWebsitesActivity, R.color.foqos_outline_variant)
-                    val defaultBg = ContextCompat.getColor(this@ManageBlockedWebsitesActivity, R.color.foqos_surface)
-                    card.strokeColor = if (selected) accent else defaultStroke
-                    card.setCardBackgroundColor(
-                        if (selected) ColorUtils.setAlphaComponent(accent, 0x18)
-                        else defaultBg
-                    )
-                }
-
-                CustomAccentApplier.tintSwitch(swRuleEnabled)
-                swRuleEnabled.setOnCheckedChangeListener(null)
-                // A queued change previews its target state in a faded switch instead of reverting.
-                swRuleEnabled.isChecked = pendingEnabled ?: rule.enabled
-                // Stay tappable (dimmed) so locked taps warn via popover instead of doing nothing.
-                swRuleEnabled.isEnabled = true
-                swRuleEnabled.alpha = when {
-                    pending -> 0.55f
-                    readOnly -> 0.45f
-                    else -> 1f
-                }
-                swRuleEnabled.setOnCheckedChangeListener { _, isChecked ->
-                    // The gate decides (apply / queue / deny) and refreshList() restores the
-                    // switch when the change was queued or denied.
-                    onToggleEnabled(rule.domain, isChecked)
-                }
-
-                btnLimit.imageTintList = ColorStateList.valueOf(accent)
-                btnLimit.isEnabled = true
-                btnLimit.alpha = if (readOnly) 0.45f else 1f
-                btnLimit.setOnClickListener {
-                    if (websiteEditingLocked()) {
-                        denyWebsiteEditWithPopover()
-                        return@setOnClickListener
-                    }
-                    onEdit(rule.domain)
-                }
-
-                itemView.setOnLongClickListener {
-                    if (websiteEditingLocked()) {
-                        denyWebsiteEditWithPopover()
-                        return@setOnLongClickListener true
-                    }
-                    if (!isSelectionMode()) {
-                        enterSelectionMode(rule.domain)
-                        true
-                    } else {
-                        false
-                    }
-                }
-
-                itemView.setOnClickListener {
-                    if (websiteEditingLocked()) return@setOnClickListener
-                    if (isSelectionMode()) onToggleSelection(rule.domain) else onEdit(rule.domain)
-                }
-            }
-        }
-    }
 }

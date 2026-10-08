@@ -56,6 +56,9 @@ Do not use `open_in_new` for ordinary in-app navigation. Do not use a chevron fo
 
 ## Segmented controls
 - Use `SegmentedToggleUi` for the shared two-option segmented pattern.
+- Square grid tiles: `SquareCardView` (see `grid_app_tile.xml`) or `StackSquareCardView` (see `grid_website_tile.xml`, which paints stacked "paper edges" when a host owns more than one rule). Website rules group per host — one `WebsiteTile.HostTile` per host plus a full-width `WebsiteTile.PathsPanel` beneath it while expanded (span 3 in the `GridLayoutManager` span lookup); section headers also span all 3 columns.
+- Square grid tiles use `SquareCardView` (`grid_app_tile.xml`, `grid_hidden_app_tile.xml`, `grid_shortcut_tile.xml`) or `StackSquareCardView` (`grid_website_tile.xml`, which paints stacked "paper edges" when a host owns more than one rule). Keep tile label/sub centered and leave the bottom strip clear on stacked tiles.
+- Website rule tiles are grouped per host: one `WebsiteTile.HostTile` per host with a full-width `WebsiteTile.PathsPanel` beneath it while expanded (span 3 in the `GridLayoutManager` span lookup). Section headers also span all 3 columns.
 - Prefer `wrap_content` with a minimum touch height of 48dp. Do not force a fixed 40dp layout height.
 - Use `app:singleSelection="true"` and `app:selectionRequired="true"` when one mode must always remain selected.
 - Keep labels short enough for German and large-font layouts.

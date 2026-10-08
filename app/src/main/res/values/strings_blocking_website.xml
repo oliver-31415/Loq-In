@@ -19,6 +19,8 @@
     <string name="blocked_websites_empty_body">Add a website this profile should block.</string>
     <string name="empty_action_add_first_website">Add first website</string>
     <string name="website_rules_info_title">Website rules</string>
+    <string name="website_menu_info">Info</string>
+    <string name="website_add_selected">Add</string>
     <string name="website_rules_info_body">Website rules apply only to the selected profile.\n\nChoose a mode:\n• Block selected: Enabled domains are blocked.\n• Allow selected: Enabled domains stay available; other detected websites are blocked.\n\nUse the checkbox next to a domain to pause or resume its rule without deleting it. Loq In detects visible URLs in supported browsers using Accessibility. Browser updates and privacy features can affect detection.\n\nThe current compatibility list and troubleshooting steps are available in Help.</string>
     <string name="website_rule_mode_title">Website rule mode</string>
     <string name="website_rule_mode_block_summary">Selected enabled websites are blocked while this profile is active.</string>
@@ -37,6 +39,7 @@
     <string name="rule_type">Rule type</string>
     <string name="rule_block_always">Block always</string>
     <string name="rule_daily_limit">Daily limit</string>
+    <string name="website_mode_limits">Set limits</string>
     <string name="website_rule_pending">Pending — applies after the delay</string>
     <string name="website_rule_disabled">Rule disabled</string>
     <string name="website_rule_toggle">Enable website rule</string>
@@ -70,5 +73,53 @@
     <string name="blocked_websites_profile_subtitle">Rules for: %1$s</string>
     <string name="rule_allowed">Allowed</string>
     <string name="rule_allowed_always">Allowed always</string>
+
+    <!-- ====================================================== -->
+    <!-- Website tiles / suggestions -->
+    <!-- ====================================================== -->
+    <string name="website_tile_open_pages">Show path rules</string>
+    <string name="website_tile_suggested">Suggested</string>
+    <string name="website_tile_whole_site">Whole site</string>
+    <string name="website_tile_paths_only">Paths only</string>
+    <plurals name="website_tile_page_count">
+        <item quantity="one">%1$d page</item>
+        <item quantity="other">%1$d pages</item>
+    </plurals>
+    <string name="website_section_your_rules">Your rules</string>
+    <string name="website_section_suggestions">Suggestions</string>
+    <string name="website_add_custom_tile">Add \"%1$s\"</string>
+    <string name="website_quick_paths_title">Quick paths</string>
+    <string name="website_quick_path_added">Added %1$s</string>
+    <string name="website_delete_rule">Delete rule</string>
+    <string name="website_category_all">All</string>
+    <string name="website_category_social">Social</string>
+    <string name="website_category_video">Video</string>
+    <string name="website_category_news">News</string>
+    <string name="website_category_shopping">Shopping</string>
+    <string name="website_category_gaming">Gaming</string>
+    <string name="website_tile_edit_hint">Long-press to edit or delete</string>
+
+    <!-- ====================================================== -->
+    <!-- Path overlay / comprehensive limits -->
+    <!-- ====================================================== -->
+    <string name="website_visit_limit_value_format">%1$d visits/day</string>
+    <string name="website_root_not_added">Not added</string>
+    <string name="website_hide_suggestions">Hide suggestions</string>
+    <string name="website_show_suggestions">Show suggestions</string>
+    <string name="website_paths_sheet_title">Path rules</string>
+    <string name="website_add_path">Add path rule</string>
+    <string name="website_limits_title">Limits: %1$s</string>
+    <string name="website_limit_daily_hint">Minutes per day</string>
+    <string name="website_limit_session_hint">Minutes per visit</string>
+    <string name="website_limit_visits_hint">Visits per day</string>
+    <string name="website_limits_summary">Combine limits, e.g. 4 visits per day with 8 minutes per visit. Leave empty for no limit.</string>
+    <string name="website_limit_section_visits">Website visits</string>
+    <string name="website_limit_visits_subtitle">How often the website can be visited per day</string>
+    <string name="website_limit_attempts_hint">Visits per day</string>
+    <string name="website_limit_sentence_none">No limits set. This website can be visited without restrictions.</string>
+    <string name="website_limit_sentence_fully_blocked">This website is fully blocked by this profile. Add a limit to allow restricted use.</string>
+    <string name="website_limit_sentence_split_fmt">\u0020\u00b7 split across at most %1$d visits</string>
+    <string name="website_limit_sentence_opens_only_fmt">Up to %1$d visits per day</string>
+    <string name="website_limit_required">Enter at least one limit or choose Block always.</string>
 
 </resources>

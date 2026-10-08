@@ -387,6 +387,7 @@
                         android:orientation="vertical">
 
                         <TextView
+                            android:id="@+id/tvAppLimitOpensTitle"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/app_limit_section_opens"
@@ -395,6 +396,7 @@
                             android:textStyle="bold" />
 
                         <TextView
+                            android:id="@+id/tvAppLimitOpensSubtitle"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/app_limit_opens_subtitle"

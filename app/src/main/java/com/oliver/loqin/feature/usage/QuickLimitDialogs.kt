@@ -33,6 +33,8 @@ import com.oliver.loqin.blocking.BlockingRuntime
 import com.oliver.loqin.data.prefs.AttemptLimitStore
 import com.oliver.loqin.data.prefs.DomainBlockStore
 import com.oliver.loqin.data.prefs.DomainLimitStore
+import com.oliver.loqin.data.prefs.DomainVisitLimitStore
+import com.oliver.loqin.feature.websites.WebsiteIconCache
 import com.oliver.loqin.data.prefs.LimitReachedStore
 import com.oliver.loqin.data.prefs.OpenCountStore
 import com.oliver.loqin.data.prefs.ProfileRuleModeStore
@@ -607,47 +609,425 @@ object QuickLimitDialogs {
         dlg.show()
     }
 
-    fun showForWebsite(activity: AppCompatActivity, domain: String, label: String, onChanged: (() -> Unit)? = null) {
-        // Websites support: time limit OR always-block rule. The gate decides whether the edit
-        // applies now, queues, or is denied.
-        val normalized = DomainBlockStore.normalize(domain) ?: domain
-        val isAllowMode = ProfileStore.getCurrent(activity)?.let { ProfileRuleModeStore.isAllowMode(activity, it) } == true
-        val isAlways = DomainBlockStore.getDomains(activity).contains(normalized)
-        val current = DomainLimitStore.getLimitMinutes(activity, normalized)
+    /**
+     * Website limit editor. Reuses the same dialog as the app block page
+     * (daily time / opens per day / minutes per visit).
+     */
+    fun showWebsiteLimitEditor(
+        activity: AppCompatActivity,
+        profile: String,
+        rule: String,
+        label: String,
+        onChanged: (() -> Unit)? = null,
+    ) {
+        val normalized = DomainBlockStore.normalize(rule) ?: rule
+        val v = LayoutInflater.from(activity).inflate(R.layout.dialog_app_limits, FrameLayout(activity), false)
+        val ivIcon = v.findViewById<android.widget.ImageView>(R.id.ivAppLimitIcon)
+        val tvTitle = v.findViewById<TextView>(R.id.tvAppLimitTitle)
+        val tvSubtitle = v.findViewById<TextView>(R.id.tvAppLimitSubtitle)
+        val tvSentence = v.findViewById<TextView>(R.id.tvAppLimitSentence)
+        val swTime = v.findViewById<androidx.appcompat.widget.SwitchCompat>(R.id.swAppLimitTime)
+        val swOpens = v.findViewById<androidx.appcompat.widget.SwitchCompat>(R.id.swAppLimitOpens)
+        val swVisit = v.findViewById<androidx.appcompat.widget.SwitchCompat>(R.id.swAppLimitVisit)
+        val tilTime = v.findViewById<TextInputLayout>(R.id.tilAppLimitTime)
+        val etTime = v.findViewById<TextInputEditText>(R.id.etAppLimitTime)
+        val tilAttempts = v.findViewById<TextInputLayout>(R.id.tilAppLimitAttempts)
+        val etAttempts = v.findViewById<TextInputEditText>(R.id.etAppLimitAttempts)
+        val tilPerVisit = v.findViewById<TextInputLayout>(R.id.tilAppLimitPerVisit)
+        val etPerVisit = v.findViewById<TextInputEditText>(R.id.etAppLimitPerVisit)
+        val tvVisitWarning = v.findViewById<TextView>(R.id.tvVisitWarning)
+        val rowTimeControls = v.findViewById<View>(R.id.rowLimitTimeControls)
+        val rowOpensControls = v.findViewById<View>(R.id.rowLimitOpensControls)
+        val rowVisitControls = v.findViewById<View>(R.id.rowLimitVisitControls)
+        v.findViewById<View>(R.id.containerAppLimitReset)?.visibility = View.GONE
+        v.findViewById<TextView>(R.id.tvAppLimitResetHint)?.visibility = View.GONE
+        val btnClear = v.findViewById<MaterialButton>(R.id.btnAppLimitClear)
+        val btnCancel = v.findViewById<MaterialButton>(R.id.btnAppLimitCancel)
+        val btnSave = v.findViewById<MaterialButton>(R.id.btnAppLimitSave)
 
-        showCompactLimitDialog(
-            activity = activity,
-            title = activity.getString(R.string.edit_limits),
-            subtitle = label,
-            supportedModes = intArrayOf(MODE_TIME, MODE_ALWAYS_BLOCK),
-            initialMode = if (isAlways) MODE_ALWAYS_BLOCK else MODE_TIME,
-            initialValueProvider = { current }
-        ) { mode, value, _ ->
-            val profile = ProfileStore.getCurrent(activity)
-            if (profile.isNullOrBlank()) {
-                onChanged?.invoke()
-                return@showCompactLimitDialog
+        val currentTime = DomainLimitStore.getLimitMinutesForProfile(activity, profile, normalized)
+        val currentOpens = DomainVisitLimitStore.getVisitLimitCountForProfile(activity, profile, normalized)
+        val currentPerVisit = DomainVisitLimitStore.getSessionLimitMinutesForProfile(activity, profile, normalized)
+        val hardBlocked = DomainBlockStore.getDomainsForProfileAndMode(activity, profile).contains(normalized)
+
+        tvTitle.text = label
+        tvSubtitle.text = activity.getString(R.string.profile_active_fmt, profile)
+        // The dialog is shared with the app block page; swap the app wording for websites.
+        v.findViewById<TextView>(R.id.tvAppLimitOpensTitle)
+            ?.setText(R.string.website_limit_section_visits)
+        v.findViewById<TextView>(R.id.tvAppLimitOpensSubtitle)
+            ?.setText(R.string.website_limit_visits_subtitle)
+        tilAttempts.hint = activity.getString(R.string.website_limit_attempts_hint)
+        val host = DomainBlockStore.hostPart(normalized) ?: normalized
+        WebsiteIconCache.load(activity, host) { drawable -> ivIcon.setImageDrawable(drawable) }
+
+        fun fmtInt(value: Int): String =
+            if (value > 0) String.format(Locale.getDefault(), "%d", value) else ""
+
+        etTime.setText(fmtInt(currentTime))
+        etAttempts.setText(fmtInt(currentOpens))
+        etPerVisit.setText(fmtInt(currentPerVisit))
+        swTime.isChecked = currentTime > 0
+        swOpens.isChecked = currentOpens > 0
+        swVisit.isChecked = currentPerVisit > 0
+
+        val accent = AccentColor.getAccentColorInt(activity)
+        val accentList = ColorStateList.valueOf(accent)
+        listOf(tilTime, tilAttempts, tilPerVisit).forEach { til ->
+            til.boxStrokeColor = accent
+            til.hintTextColor = accentList
+            til.defaultHintTextColor = accentList
+        }
+        listOf(swTime, swOpens, swVisit).forEach { CustomAccentApplier.tintSwitch(it) }
+
+        val onAccent = if (androidx.core.graphics.ColorUtils.calculateLuminance(accent) > 0.5) {
+            android.graphics.Color.BLACK
+        } else {
+            android.graphics.Color.WHITE
+        }
+
+        runCatching {
+            val surfaceVariant = androidx.core.content.ContextCompat.getColor(activity, R.color.foqos_surface_variant)
+            v.findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardAppLimitSummary)
+                .setCardBackgroundColor(
+                    androidx.core.graphics.ColorUtils.compositeColors(
+                        androidx.core.graphics.ColorUtils.setAlphaComponent(accent, 0x1F),
+                        surfaceVariant,
+                    )
+                )
+        }
+
+        fun setSectionEnabled(container: View, enabled: Boolean) {
+            container.visibility = if (enabled) View.VISIBLE else View.GONE
+            fun apply(view: View) {
+                view.isEnabled = enabled
+                if (view is android.view.ViewGroup) {
+                    for (index in 0 until view.childCount) {
+                        apply(view.getChildAt(index))
+                    }
+                }
             }
-            val alwaysBlock = mode == MODE_ALWAYS_BLOCK
-            val minutes = value.coerceAtLeast(0)
-            when (ProtectionChangeGate.requestWebsiteLimit(
-                context = activity,
-                profile = profile,
-                rule = normalized,
-                currentlyAlwaysBlocked = isAlways,
-                currentMinutes = current,
-                requestedAlwaysBlock = alwaysBlock,
-                requestedMinutes = minutes,
-            )) {
-                ProtectionChangePolicy.Result.APPLIED -> Unit
+            apply(container)
+        }
 
-                ProtectionChangePolicy.Result.QUEUED -> ProtectionFeedback.showQueued(activity)
+        btnCancel.setTextColor(accent)
+        btnCancel.isAllCaps = false
+        btnCancel.backgroundTintList = null
+        runCatching { btnCancel.setBackgroundColor(android.graphics.Color.TRANSPARENT) }
 
-                ProtectionChangePolicy.Result.DENIED -> activity.findViewById<View>(android.R.id.content)
-                    .showWarnPill(R.string.toast_disable_loqin_to_edit_websites)
+        val error = android.graphics.Color.rgb(186, 26, 26)
+        btnClear.setTextColor(error)
+        btnClear.isAllCaps = false
+        btnClear.backgroundTintList = null
+        runCatching { btnClear.setBackgroundColor(android.graphics.Color.TRANSPARENT) }
+        btnClear.visibility =
+            if (currentTime > 0 || currentOpens > 0 || currentPerVisit > 0) View.VISIBLE else View.GONE
+
+        btnSave.setTextColor(onAccent)
+        btnSave.isAllCaps = false
+        btnSave.backgroundTintList = AccentColor.getActiveColor(activity)
+
+        fun rawInt(field: TextInputEditText): Int =
+            field.text?.toString()?.trim()?.toIntOrNull() ?: 0
+
+        fun effectiveValues(): Triple<Int, Int, Int> {
+            val time = if (swTime.isChecked) rawInt(etTime) else 0
+            val opens = if (swOpens.isChecked) rawInt(etAttempts) else 0
+            val visit = if (swVisit.isChecked) rawInt(etPerVisit) else 0
+            return Triple(time, opens, visit)
+        }
+
+        fun refreshSentence() {
+            val (time, opens, visit) = effectiveValues()
+            tvSentence.text = when {
+                time <= 0 && opens <= 0 && visit <= 0 ->
+                    activity.getString(
+                        if (hardBlocked) R.string.website_limit_sentence_fully_blocked
+                        else R.string.website_limit_sentence_none
+                    )
+                time > 0 -> buildString {
+                    append(activity.getString(R.string.app_limit_sentence_time_fmt, time))
+                    if (opens > 0) {
+                        append(activity.getString(R.string.website_limit_sentence_split_fmt, opens))
+                    }
+                    if (visit > 0) append(activity.getString(R.string.app_limit_sentence_visit_fmt, visit))
+                }
+                opens > 0 -> buildString {
+                    append(activity.getString(R.string.website_limit_sentence_opens_only_fmt, opens))
+                    if (visit > 0) append(activity.getString(R.string.app_limit_sentence_visit_fmt, visit))
+                }
+                else -> activity.getString(R.string.app_limit_sentence_visit_only_fmt, visit)
             }
+            if (time > 0 && visit > time) {
+                tvVisitWarning.text = activity.getString(
+                    R.string.app_limit_visit_exceeds_daily_fmt, visit, time
+                )
+                tvVisitWarning.visibility = View.VISIBLE
+            } else {
+                tvVisitWarning.visibility = View.GONE
+            }
+        }
+
+        fun parseField(
+            enabled: Boolean,
+            field: TextInputEditText,
+            layout: TextInputLayout,
+            max: Int,
+            rangeError: String
+        ): Int? {
+            if (!enabled) {
+                layout.error = null
+                return 0
+            }
+            val raw = field.text?.toString()?.trim().orEmpty()
+            if (raw.isBlank()) {
+                layout.error = null
+                return 0
+            }
+            val value = raw.toIntOrNull()
+            if (value == null) {
+                layout.error = activity.getString(R.string.app_limit_error_not_number)
+                return null
+            }
+            if (value < 0 || value > max) {
+                layout.error = rangeError
+                return null
+            }
+            layout.error = null
+            return value
+        }
+
+        fun validateAll(focusInvalid: Boolean): Triple<Int, Int, Int>? {
+            val time = parseField(
+                swTime.isChecked, etTime, tilTime, MAX_TIME_MINUTES,
+                activity.getString(R.string.app_limit_error_range_minutes_fmt, MAX_TIME_MINUTES)
+            )
+            val visit = parseField(
+                swVisit.isChecked, etPerVisit, tilPerVisit, MAX_TIME_MINUTES,
+                activity.getString(R.string.app_limit_error_range_minutes_fmt, MAX_TIME_MINUTES)
+            )
+            val opens = parseField(
+                swOpens.isChecked, etAttempts, tilAttempts, MAX_ATTEMPTS,
+                activity.getString(R.string.app_limit_error_range_attempts_fmt, MAX_ATTEMPTS)
+            )
+            if (time == null || visit == null || opens == null) {
+                if (focusInvalid) {
+                    when {
+                        time == null -> etTime.requestFocus()
+                        visit == null -> etPerVisit.requestFocus()
+                        else -> etAttempts.requestFocus()
+                    }
+                }
+                return null
+            }
+            return Triple(time, visit, opens)
+        }
+
+        fun refreshSaveState() {
+            val valid = validateAll(focusInvalid = false) != null
+            btnSave.isEnabled = valid
+            btnSave.alpha = if (valid) 1f else 0.5f
+        }
+
+        fun refreshAll() {
+            refreshSentence()
+            refreshSaveState()
+        }
+
+        etTime.addTextChangedListener { tilTime.error = null; refreshAll() }
+        etAttempts.addTextChangedListener { tilAttempts.error = null; refreshAll() }
+        etPerVisit.addTextChangedListener { tilPerVisit.error = null; refreshAll() }
+
+        swTime.setOnCheckedChangeListener { _, checked ->
+            if (!checked) tilTime.error = null
+            setSectionEnabled(rowTimeControls, checked)
+            refreshAll()
+        }
+        swOpens.setOnCheckedChangeListener { _, checked ->
+            if (!checked) tilAttempts.error = null
+            setSectionEnabled(rowOpensControls, checked)
+            refreshAll()
+        }
+        swVisit.setOnCheckedChangeListener { _, checked ->
+            if (!checked) tilPerVisit.error = null
+            setSectionEnabled(rowVisitControls, checked)
+            refreshAll()
+        }
+
+        setSectionEnabled(rowTimeControls, swTime.isChecked)
+        setSectionEnabled(rowOpensControls, swOpens.isChecked)
+        setSectionEnabled(rowVisitControls, swVisit.isChecked)
+        refreshAll()
+
+        fun setTimeValue(value: Int) {
+            etTime.setText(fmtInt(value))
+            etTime.setSelection(etTime.text?.length ?: 0)
+        }
+
+        fun stepTime(delta: Int) {
+            if (!swTime.isChecked && delta <= 0) return
+            if (!swTime.isChecked) {
+                setTimeValue(delta.coerceIn(1, MAX_TIME_MINUTES))
+                swTime.isChecked = true
+                return
+            }
+            val next = rawInt(etTime) + delta
+            if (next < 1) {
+                etTime.setText("")
+                swTime.isChecked = false
+                return
+            }
+            setTimeValue(next.coerceAtMost(MAX_TIME_MINUTES))
+        }
+
+        fun stepOpens(delta: Int) {
+            if (!swOpens.isChecked && delta <= 0) return
+            if (!swOpens.isChecked) {
+                etAttempts.setText(fmtInt(delta.coerceIn(1, MAX_ATTEMPTS)))
+                swOpens.isChecked = true
+                return
+            }
+            val next = rawInt(etAttempts) + delta
+            if (next < 1) {
+                etAttempts.setText("")
+                swOpens.isChecked = false
+                return
+            }
+            etAttempts.setText(fmtInt(next.coerceAtMost(MAX_ATTEMPTS)))
+        }
+
+        fun stepVisit(delta: Int) {
+            if (!swVisit.isChecked && delta <= 0) return
+            if (!swVisit.isChecked) {
+                etPerVisit.setText(fmtInt(delta.coerceIn(1, MAX_TIME_MINUTES)))
+                swVisit.isChecked = true
+                return
+            }
+            val next = rawInt(etPerVisit) + delta
+            if (next < 1) {
+                etPerVisit.setText("")
+                swVisit.isChecked = false
+                return
+            }
+            etPerVisit.setText(fmtInt(next.coerceAtMost(MAX_TIME_MINUTES)))
+        }
+
+        v.findViewById<MaterialButton>(R.id.btnTimeMinus).setOnClickListener { stepTime(-STEP_TIME_MINUTES) }
+        v.findViewById<MaterialButton>(R.id.btnTimePlus).setOnClickListener { stepTime(STEP_TIME_MINUTES) }
+        v.findViewById<MaterialButton>(R.id.btnOpensMinus).setOnClickListener { stepOpens(-1) }
+        v.findViewById<MaterialButton>(R.id.btnOpensPlus).setOnClickListener { stepOpens(1) }
+        v.findViewById<MaterialButton>(R.id.btnVisitMinus).setOnClickListener { stepVisit(-STEP_VISIT_MINUTES) }
+        v.findViewById<MaterialButton>(R.id.btnVisitPlus).setOnClickListener { stepVisit(STEP_VISIT_MINUTES) }
+
+        val pillValues = mapOf(
+            R.id.pillTime15 to 15,
+            R.id.pillTime30 to 30,
+            R.id.pillTime60 to 60,
+            R.id.pillTime120 to 120,
+        )
+        pillValues.forEach { (id, minutes) ->
+            v.findViewById<MaterialButton>(id).setOnClickListener {
+                setTimeValue(minutes)
+                if (!swTime.isChecked) swTime.isChecked = true
+                refreshAll()
+            }
+        }
+
+        val dlgDismissHolder = arrayOf<(() -> Unit)?>(null)
+        btnClear.setOnClickListener {
+            AlertDialog.Builder(activity)
+                .setTitle(R.string.app_limit_remove_confirm_title)
+                .setMessage(activity.getString(R.string.app_limit_remove_confirm_message, label))
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(R.string.app_limit_remove) { _, _ ->
+                    applyWebsiteLimits(
+                        activity, profile, normalized,
+                        hardBlocked, timeMinutes = 0, opens = 0, perVisit = 0,
+                    )
+                    dlgDismissHolder[0]?.invoke()
+                    onChanged?.invoke()
+                }
+                .showAccented()
+        }
+
+        btnCancel.setOnClickListener { dlgDismissHolder[0]?.invoke() }
+        btnSave.setOnClickListener {
+            val validated = validateAll(focusInvalid = true) ?: return@setOnClickListener
+            val (time, visit, opens) = validated
+            applyWebsiteLimits(
+                activity, profile, normalized,
+                hardBlocked, timeMinutes = time, opens = opens, perVisit = visit,
+            )
+            dlgDismissHolder[0]?.invoke()
             onChanged?.invoke()
         }
+
+        val dlg = Dialogs.builder(activity)
+            .setView(v)
+            .create()
+        dlgDismissHolder[0] = { dlg.dismiss() }
+        dlg.applyLoqInDialogWidth(0.94f)
+        dlg.setOnShowListener {
+            runCatching { CustomAccentApplier.applyToDialog(dlg) }
+        }
+        dlg.show()
+    }
+
+    private fun applyWebsiteLimits(
+        activity: AppCompatActivity,
+        profile: String,
+        rule: String,
+        currentlyAlwaysBlocked: Boolean,
+        timeMinutes: Int,
+        opens: Int,
+        perVisit: Int,
+    ) {
+        val curDaily = DomainLimitStore.getLimitMinutesForProfile(activity, profile, rule)
+        val curSession = DomainVisitLimitStore.getSessionLimitMinutesForProfile(activity, profile, rule)
+        val curVisits = DomainVisitLimitStore.getVisitLimitCountForProfile(activity, profile, rule)
+        val keepHardBlock = currentlyAlwaysBlocked && timeMinutes <= 0 && opens <= 0 && perVisit <= 0
+
+        when (ProtectionChangeGate.requestWebsiteLimit(
+            context = activity,
+            profile = profile,
+            rule = rule,
+            currentlyAlwaysBlocked = currentlyAlwaysBlocked,
+            currentMinutes = curDaily,
+            requestedAlwaysBlock = keepHardBlock,
+            requestedMinutes = timeMinutes,
+        )) {
+            ProtectionChangePolicy.Result.APPLIED -> Unit
+            ProtectionChangePolicy.Result.QUEUED -> ProtectionFeedback.showQueued(activity)
+            ProtectionChangePolicy.Result.DENIED -> {
+                activity.findViewById<View>(android.R.id.content)
+                    .showWarnPill(R.string.toast_disable_loqin_to_edit_websites)
+                return
+            }
+        }
+        when (ProtectionChangeGate.requestWebsiteVisitLimits(
+            context = activity,
+            profile = profile,
+            rule = rule,
+            currentSessionMinutes = curSession,
+            currentVisitCount = curVisits,
+            requestedSessionMinutes = perVisit,
+            requestedVisitCount = opens,
+        )) {
+            ProtectionChangePolicy.Result.APPLIED -> Unit
+            ProtectionChangePolicy.Result.QUEUED -> ProtectionFeedback.showQueued(activity)
+            ProtectionChangePolicy.Result.DENIED -> activity.findViewById<View>(android.R.id.content)
+                .showWarnPill(R.string.toast_disable_loqin_to_edit_websites)
+        }
+    }
+
+    fun showForWebsite(activity: AppCompatActivity, domain: String, label: String, onChanged: (() -> Unit)? = null) {
+        val normalized = DomainBlockStore.normalize(domain) ?: domain
+        val profile = ProfileStore.getCurrent(activity)
+        if (profile.isNullOrBlank()) {
+            onChanged?.invoke()
+            return
+        }
+        showWebsiteLimitEditor(activity, profile, normalized, label, onChanged)
     }
     private fun ensureManaged(activity: AppCompatActivity, profile: String, pkg: String) {
         if (AppBlockSafety.isAlwaysExcluded(activity, pkg)) {
