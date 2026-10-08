@@ -92,6 +92,7 @@
     <!-- Profile result toasts -->
     <!-- ====================================================== -->
     <string name="profile_created_open_apps">Profile “%1$s” created. Choose its app list next.</string>
+    <string name="profile_created_not_switched">Profile “%1$s” created. Turn off Loq In to switch to it.</string>
     <string name="profile_saved">Profile “%1$s” saved.</string>
     <string name="profile_duplicated">Profile “%1$s” duplicated.</string>
     <string name="profile_set_active_toast">“%1$s” is now active.</string>

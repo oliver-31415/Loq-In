@@ -321,10 +321,13 @@ object AutomationModeStore {
 
     /**
      * Optional exception while LoqIn is enabled.
-     * Locked by default; can be enabled regardless of the active control mode.
+     *
+     * Switching to a laxer (or empty) profile is equivalent to turning protection off, so the
+     * exception only applies while the manual button could disable Loq In anyway. In a
+     * single-channel mode (QR, barcode, NFC, schedule) switching stays locked.
      */
     fun isProfileSwitchingAllowedWhileEnabled(context: Context): Boolean =
-        isMixedAllowProfileSwitching(context)
+        isMixedAllowProfileSwitching(context) && isButtonAllowed(context)
 
     /**
      * Optional exception while LoqIn is enabled.

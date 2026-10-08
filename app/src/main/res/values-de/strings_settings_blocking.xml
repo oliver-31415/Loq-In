@@ -96,7 +96,7 @@
     <string name="pref_mixed_allow_app_picking_summary">Erlaubt das Öffnen der App-Regeln, während Loq In aktiv ist. Es sind nur Änderungen erlaubt, die den Schutz verstärken.</string>
     <string name="toggle_detail_mixed_allow_app_picking">Wenn aktiviert, können App-Regeln auch bei aktivem Loq In geöffnet werden. Bestehender Schutz kann weiterhin nicht entfernt werden: Bei Ausgewählte blockieren sind nur Ergänzungen möglich, bei Ausgewählte erlauben nur das Entfernen erlaubter Ausnahmen.</string>
     <string name="pref_mixed_allow_profile_switching_title">Profile verwalten/wechseln erlauben</string>
-    <string name="pref_mixed_allow_profile_switching_summary">Erlaubt das Verwalten oder Wechseln von Profilen, während Loq In aktiv ist.</string>
+    <string name="pref_mixed_allow_profile_switching_summary">Erlaubt das Wechseln von Profilen, während Loq In aktiv ist, wenn auch die manuelle Steuerung Loq In ausschalten darf.</string>
     <string name="toggle_detail_mixed_allow_profile_switching">Standardmäßig gesperrt, solange Loq In aktiv ist. Aktiviere das nur, wenn Profile bewusst während aktivem Schutz verwaltet oder gewechselt werden dürfen.</string>
     <string name="pref_mixed_allow_schedule_editing_title">Zeitplan-Bearbeitung erlauben</string>
     <string name="pref_mixed_allow_schedule_editing_summary">Erlaubt das Hinzufügen, Bearbeiten, Löschen und Umschalten von Zeitplänen, während Loq In aktiv ist.</string>
@@ -286,6 +286,7 @@
     <string name="edit_locked_manage_temp_pauses">Deaktiviere Loq In, um Pausenlimits zu ändern.</string>
     <string name="toast_disable_loqin_to_edit_blocked_apps">Deaktiviere Loq In, um App-Regeln zu bearbeiten.</string>
     <string name="toast_disable_loqin_to_switch_profiles">Deaktiviere Loq In, bevor du Profile wechselst.</string>
+    <string name="toast_disable_loqin_to_delete_profiles">Deaktiviere Loq In, bevor du ein Profil löschst.</string>
     <string name="toast_disable_loqin_to_edit_websites">Deaktiviere Loq In, bevor du Website-Regeln bearbeitest.</string>
     <string name="toast_disable_loqin_to_edit_app_limits">Deaktiviere Loq In, bevor du App-Limits bearbeitest.</string>
     <string name="home_custom_protection_control">Schutzsteuerung</string>

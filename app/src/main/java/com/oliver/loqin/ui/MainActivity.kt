@@ -1907,11 +1907,8 @@ class MainActivity : AppCompatActivity() {
         newRow.addView(newIcon)
         newRow.addView(newLabel)
         newRow.setOnClickListener {
-            // Creating a profile also activates it: blocked while switching is locked.
-            // Anchor to the sheet window so the pill is visible above it.
-            if (!ensureCanSwitchProfiles(showFeedback = true, anchor = newRow)) {
-                return@setOnClickListener
-            }
+            // Creating is allowed while active (as in Manage profiles); showCreateProfileDialog
+            // only activates the new profile when switching is unlocked.
             sheet.dismiss()
             showCreateProfileDialog()
         }
@@ -2075,6 +2072,10 @@ class MainActivity : AppCompatActivity() {
                 ).applyLoqInStyle().show()
                 return@setOnClickListener
             }
+            if (!ProtectionChangeGate.isEditingUnlocked(this)) {
+                it.showWarnPill(R.string.toast_disable_loqin_to_delete_profiles)
+                return@setOnClickListener
+            }
             MaterialAlertDialogBuilder(this)
                 .setTitle(getString(R.string.profile_sheet_delete))
                 .setMessage(getString(R.string.profile_sheet_delete_confirm, profile))
@@ -2097,8 +2098,16 @@ class MainActivity : AppCompatActivity() {
             title = getString(R.string.profile_sheet_new_profile),
             hint = getString(R.string.profile_sheet_rename_hint),
             onConfirm = { name ->
-                if (name.isNotEmpty() && ProfileStore.addProfile(this, name)) {
-                    ProfileStore.setCurrent(this, name)
+                if (name.isNotEmpty() && ProfileStore.getProfiles(this).contains(name)) {
+                    snackRoot().showWarnPill(getString(R.string.profile_name_exists, name))
+                } else if (name.isNotEmpty() && ProfileStore.addProfile(this, name)) {
+                    // Creating is harmless; making the new (empty) profile current is a switch
+                    // and must respect the same lock as picking an existing profile.
+                    if (ensureCanSwitchProfiles(showFeedback = false)) {
+                        ProfileStore.setCurrent(this, name)
+                    } else {
+                        snackRoot().showWarnPill(getString(R.string.profile_created_not_switched, name))
+                    }
                     refreshProfileRowsUi()
                     refreshBlockedList()
                     updateSwitchState()
