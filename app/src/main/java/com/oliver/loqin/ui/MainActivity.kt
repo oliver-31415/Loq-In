@@ -129,6 +129,7 @@ import com.oliver.loqin.feature.tools.ActivityHubActivity
 import com.oliver.loqin.feature.usage.ActiveTimeActivity
 import com.oliver.loqin.feature.usage.AppWebsiteUsageActivity
 import com.oliver.loqin.feature.usage.QuickLimitDialogs
+import com.oliver.loqin.feature.usage.UsageStatsRepo
 import com.oliver.loqin.feature.stats.StatsFormat
 import com.oliver.loqin.nfc.NfcWriterActivity
 import com.oliver.loqin.theme.AccentColor
@@ -2450,6 +2451,11 @@ class MainActivity : AppCompatActivity() {
                     else R.string.permissions_accessibility_title
                 )
             )
+        }
+
+        // Usage access powers limits and stats; Permissions marks it Required, so count it here too.
+        if (!UsageStatsRepo.hasUsageAccess(this)) {
+            missing.add(getString(R.string.permissions_usage_access_title))
         }
 
         // allow notifications (optional, but recommended for tips + status)

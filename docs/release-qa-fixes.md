@@ -103,3 +103,12 @@ Both use `TimeFormatPrefs.formatMinutesOfDay`. The preview gets a `TIME` line ki
 
 **Verified.** Schedule row shows "9:31 PM–9:34 PM"; `SchedulePreviewFormatterTest` updated and passing.
 
+## 11. Count usage access on the Home setup card
+
+**Problem.** Home said "3 missing" while the Permissions re-check said 4: Home did not count App usage access, which Permissions marks Required (bug 12).
+
+**Fix.**
+The Home setup card also lists App usage access when it is missing.
+
+**Verified.** Revoked usage access: Home shows "1 missing · App usage access".
+
