@@ -34,3 +34,12 @@ Hiding an app from blocking is a weakening change: it is checked with `Protectio
 
 **Verified.** QR mode, active: tapping Facebook shows the pill and the tile stays visible; Facebook remains blocked.
 
+## 4. End Emergency Unlock when Loq In is explicitly enabled
+
+**Problem.** Tapping Enable during an Emergency Unlock cleared the temporary disable but left the emergency window running. Home showed "Active now" while the accessibility service skipped every rule for the rest of the window (bug 3).
+
+**Fix.**
+`SwitchModeStore.setEnabled(true)` cancels an active emergency and logs it. Covers the Home button, tile, NFC/QR/barcode and widgets, which all go through `setEnabled`.
+
+**Verified.** Started an emergency (Facebook opens), tapped Enable: Facebook is blocked and the tile shows "Already used today".
+
