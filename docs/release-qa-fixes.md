@@ -76,3 +76,12 @@ Hiding an app from blocking is a weakening change: it is checked with `Protectio
 
 **Verified.** Checked Facebook (app list), Chrome (open limit), youtube.com (website rule) and YouTube Shorts (in-app rule) block screens.
 
+## 8. Ask what "Remove limits" should do with the app
+
+**Problem.** A limited app is stored in the profile's block list. Removing all its limits left that entry, which means "always blocked", so the app became fully blocked without saying so (bug 13).
+
+**Fix.**
+When the app is in the block list, "Remove limits" offers **Stop limiting** (remove limits and take it off the list; a weakening change, refused while protection is active) or **Block completely** (previous behaviour). Apps outside the list keep the simple confirmation.
+
+**Verified.** Limited Chrome > Remove limits > Stop limiting: the tile becomes "not selected" and Chrome opens.
+

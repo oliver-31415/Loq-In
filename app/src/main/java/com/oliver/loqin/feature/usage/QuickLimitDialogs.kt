@@ -579,12 +579,47 @@ object QuickLimitDialogs {
             .create()
 
         btnClear.setOnClickListener {
+            // A limited app lives in the block list; without limits that entry means "always
+            // blocked". Make the outcome a choice instead of silently hard-blocking the app.
+            val inBlockList = !ProfileRuleModeStore.isAllowMode(activity, profile) &&
+                pkg in ProfileStore.getSelectedForProfileMode(activity, profile)
+            if (!inBlockList) {
+                AlertDialog.Builder(activity)
+                    .setTitle(R.string.app_limit_remove_confirm_title)
+                    .setMessage(activity.getString(R.string.app_limit_remove_confirm_message, label))
+                    .setNegativeButton(android.R.string.cancel, null)
+                    .setPositiveButton(R.string.app_limit_remove) { _, _ ->
+                        applyValues(0, 0, 0)
+                        dlg.dismiss()
+                    }
+                    .showAccented()
+                return@setOnClickListener
+            }
             AlertDialog.Builder(activity)
                 .setTitle(R.string.app_limit_remove_confirm_title)
-                .setMessage(activity.getString(R.string.app_limit_remove_confirm_message, label))
+                .setMessage(activity.getString(R.string.app_limit_remove_choice_message, label))
                 .setNegativeButton(android.R.string.cancel, null)
-                .setPositiveButton(R.string.app_limit_remove) { _, _ ->
+                .setNeutralButton(R.string.app_limit_remove_block_completely) { _, _ ->
                     applyValues(0, 0, 0)
+                    dlg.dismiss()
+                }
+                .setPositiveButton(R.string.app_limit_remove_stop_limiting) { _, _ ->
+                    val unblock = ProtectionChangeGate.decision(
+                        activity,
+                        ProtectionChangePolicy.Direction.WEAKER,
+                    )
+                    if (unblock != ProtectionChangePolicy.Decision.APPLY_NOW) {
+                        activity.findViewById<View>(android.R.id.content)
+                            .showWarnPill(R.string.app_limit_remove_stop_limiting_locked)
+                        return@setPositiveButton
+                    }
+                    applyValues(0, 0, 0)
+                    ProfileStore.setSelectedForProfileMode(
+                        activity,
+                        profile,
+                        ProfileStore.getSelectedForProfileMode(activity, profile) - pkg,
+                    )
+                    onChanged?.invoke()
                     dlg.dismiss()
                 }
                 .showAccented()

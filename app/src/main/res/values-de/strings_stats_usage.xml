@@ -84,6 +84,10 @@
     <string name="app_limit_remove">Limits entfernen</string>
     <string name="app_limit_remove_confirm_title">Limits entfernen?</string>
     <string name="app_limit_remove_confirm_message">Dadurch werden alle Limits für %1$s gelöscht und die heutigen Zähler zurückgesetzt.</string>
+    <string name="app_limit_remove_choice_message">Was soll mit %1$s passieren, wenn die Limits entfernt sind?\n\nNicht mehr begrenzen: Die App ist wieder frei nutzbar.\nVollständig blockieren: Die App ist immer blockiert, solange Loq In aktiv ist.</string>
+    <string name="app_limit_remove_stop_limiting">Nicht mehr begrenzen</string>
+    <string name="app_limit_remove_block_completely">Vollständig blockieren</string>
+    <string name="app_limit_remove_stop_limiting_locked">Deaktiviere Loq In, um das Limit für diese App aufzuheben.</string>
     <string name="app_limit_sentence_none">Keine Limits festgelegt. Diese App kann ohne Einschränkungen geöffnet werden.</string>
     <string name="app_limit_sentence_fully_blocked">Diese App ist im aktuellen Profil vollständig blockiert. Füge ein Limit hinzu, um eine eingeschränkte Nutzung zu erlauben.</string>
     <string name="app_limit_sentence_time_fmt">Bis zu %1$d Min./Tag erlaubt</string>

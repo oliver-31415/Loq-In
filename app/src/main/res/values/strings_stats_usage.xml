@@ -84,6 +84,10 @@
     <string name="app_limit_remove">Remove limits</string>
     <string name="app_limit_remove_confirm_title">Remove limits?</string>
     <string name="app_limit_remove_confirm_message">This clears all limits for %1$s and resets today’s counters.</string>
+    <string name="app_limit_remove_choice_message">What should happen to %1$s once its limits are removed?\n\nStop limiting: it can be used freely again.\nBlock completely: it is always blocked while Loq In is active.</string>
+    <string name="app_limit_remove_stop_limiting">Stop limiting</string>
+    <string name="app_limit_remove_block_completely">Block completely</string>
+    <string name="app_limit_remove_stop_limiting_locked">Turn off Loq In to stop limiting this app.</string>
     <string name="app_limit_sentence_none">No limits set. This app can be opened without restrictions.</string>
     <string name="app_limit_sentence_fully_blocked">This app is fully blocked by this profile. Add a limit to allow restricted use.</string>
     <string name="app_limit_sentence_time_fmt">Allow up to %1$d min/day</string>
