@@ -149,3 +149,12 @@ Home and Settings use "Start emergency unlock?" / "Loq In turns off for 15 minut
 
 **Verified.** UI dump shows the new labels; tiles look unchanged with a larger touch area.
 
+## 16. Correct website path suggestions
+
+**Problem.** The youtube.com suggestion offered `/reels/*`, which YouTube does not have; single Instagram/Facebook reels open at `/reel/<id>`, which `/reels/*` missed (bug 27).
+
+**Fix.**
+YouTube offers `/shorts/*` only; Instagram adds `/reel/*`; Facebook adds `/reel/*`.
+
+**Verified.** Suggestion catalog reviewed; paths dialog shows the new options.
+

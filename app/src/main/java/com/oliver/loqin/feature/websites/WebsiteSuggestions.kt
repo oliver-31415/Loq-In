@@ -30,7 +30,7 @@ enum class WebsiteSuggestionCategory {
 
 /**
  * One curated suggestion. [quickPaths] are optional one-tap path rules offered alongside the
- * host, e.g. "youtube.com/shorts/..." or "youtube.com/reels/...".
+ * host, e.g. "youtube.com/shorts/..." or "instagram.com/reels/...".
  */
 data class WebsiteSuggestion(
     val host: String,
@@ -48,7 +48,7 @@ object WebsiteSuggestions {
         WebsiteSuggestion(
             host = "youtube.com",
             category = WebsiteSuggestionCategory.VIDEO,
-            quickPaths = listOf("youtube.com/shorts/*", "youtube.com/reels/*"),
+            quickPaths = listOf("youtube.com/shorts/*"),
         ),
         WebsiteSuggestion("tiktok.com", WebsiteSuggestionCategory.VIDEO),
         WebsiteSuggestion("twitch.tv", WebsiteSuggestionCategory.VIDEO),
@@ -56,12 +56,12 @@ object WebsiteSuggestions {
         WebsiteSuggestion(
             host = "instagram.com",
             category = WebsiteSuggestionCategory.SOCIAL,
-            quickPaths = listOf("instagram.com/reels/*"),
+            quickPaths = listOf("instagram.com/reels/*", "instagram.com/reel/*"),
         ),
         WebsiteSuggestion(
             host = "facebook.com",
             category = WebsiteSuggestionCategory.SOCIAL,
-            quickPaths = listOf("facebook.com/reels/*", "facebook.com/watch/*"),
+            quickPaths = listOf("facebook.com/reel/*", "facebook.com/reels/*", "facebook.com/watch/*"),
         ),
         WebsiteSuggestion("x.com", WebsiteSuggestionCategory.SOCIAL),
         WebsiteSuggestion("twitter.com", WebsiteSuggestionCategory.SOCIAL),
