@@ -158,3 +158,12 @@ YouTube offers `/shorts/*` only; Instagram adds `/reel/*`; Facebook adds `/reel/
 
 **Verified.** Suggestion catalog reviewed; paths dialog shows the new options.
 
+## 17. Clearer website rule dialog
+
+**Problem.** Typing an invalid domain said "Please enter a domain."; the dialog button said OK for both adding and editing (bug 28).
+
+**Fix.**
+Invalid input says "Enter a valid domain, like example.com."; the button reads "Add" when adding and "Save" when editing (EN/DE).
+
+**Verified.** Entered "not a url": the new error appears.
+
