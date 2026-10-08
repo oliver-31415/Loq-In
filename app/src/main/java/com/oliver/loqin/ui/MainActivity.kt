@@ -678,7 +678,7 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 while (currentCoroutineContext().isActive) {
-                    updateSwitchState()
+                    tickSwitchState()
                     delay(1000)
                 }
             }
@@ -3332,6 +3332,35 @@ class MainActivity : AppCompatActivity() {
      * - active profile label
      * - NFC lock UI
      */
+    /**
+     * Once-a-second refresh for time-based state (timers, expiry). A full [updateSwitchState]
+     * rebuilds texts, spans and drawables, and every rebuild fires accessibility events that the
+     * in-process accessibility service answers on this thread; running it every second kept the
+     * main thread busy enough to ANR. Only refresh when something visible actually changed.
+     */
+    private fun tickSwitchState() {
+        SwitchModeStore.finishTemporaryDisableIfExpired(this)
+        SwitchModeStore.finishTemporaryEnableIfExpired(this)
+        val signature = listOf(
+            SwitchModeStore.isEnabled(this),
+            SwitchModeStore.isBaseEnabled(this),
+            SwitchModeStore.getTemporaryRemainingMillis(this) / 1000L,
+            SwitchModeStore.getTemporaryEnableRemainingMillis(this) / 1000L,
+            EmergencyBypassStore.isActive(this),
+            EmergencyBypassStore.isPaused(this),
+            EmergencyBypassStore.minutesRemaining(this),
+            EmergencyBypassStore.hasUsedToday(this),
+            formatActiveDuration(SwitchModeStore.getActiveDurationMillis(this)),
+            ActiveDurationStore.todayMs(this) / 60_000L,
+            ProfileStore.getCurrent(this),
+        ).joinToString("|")
+        if (signature == lastTickSignature) return
+        lastTickSignature = signature
+        updateSwitchState()
+    }
+
+    private var lastTickSignature: String? = null
+
     private fun updateSwitchState() {
         SwitchModeStore.finishTemporaryDisableIfExpired(this)
         SwitchModeStore.finishTemporaryEnableIfExpired(this)

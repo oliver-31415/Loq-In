@@ -54,3 +54,13 @@ Hiding an app from blocking is a weakening change: it is checked with `Protectio
 
 **Verified.** QR mode with no code: Disable works as the fallback; picking QR mode shows the prompt; after copying a `loqin://toggle` code, Disable is refused again.
 
+## 6. Stop the Home screen from redrawing every second
+
+**Problem.** Home called the full `updateSwitchState()` every second: new drawables, spans and texts each tick, each firing accessibility events that the in-process accessibility service answered on the main thread. Home never went idle and the app ANR'd reproducibly when returning to it. The hero artwork also redrew at 60 fps (bug 6).
+
+**Fix.**
+- `tickSwitchState()` computes a cheap signature of the time-dependent values and only runs the full refresh when it changes (once a minute normally, once a second during countdowns). Explicit refreshes are unchanged.
+- `HeroArtDrawable` throttles its invalidations to ~20 fps; its 26 s drift looks identical.
+
+**Verified.** Inactive Home: 0 frames in 10 s (was ~1/s). Active: 198 frames in 10 s (was 599). `uiautomator dump` now succeeds on Home. The ANR steps (Account > Privacy & data > Back x3 > relaunch > Settings > search) no longer freeze, twice.
+
