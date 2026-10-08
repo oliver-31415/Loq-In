@@ -94,3 +94,12 @@ When the app is in the block list, "Remove limits" offers **Stop limiting** (rem
 
 **Verified.** Active: the Schedules row shows the new dialog and opens the list.
 
+## 10. Use the time-format setting in schedules
+
+**Problem.** The schedule list and the save preview always printed 24-hour times (21:31-21:34) even with a 12-hour device and Appearance set to Auto (bug 15).
+
+**Fix.**
+Both use `TimeFormatPrefs.formatMinutesOfDay`. The preview gets a `TIME` line kind that keeps the canonical 24 h text for tests and formats with the user's setting when rendered. Ranges use an en dash.
+
+**Verified.** Schedule row shows "9:31 PM–9:34 PM"; `SchedulePreviewFormatterTest` updated and passing.
+

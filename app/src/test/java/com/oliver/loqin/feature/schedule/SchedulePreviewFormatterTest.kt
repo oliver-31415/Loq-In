@@ -88,8 +88,10 @@ class SchedulePreviewFormatterTest {
         assertEquals(SchedulePreviewFormatter.ValueKind.ACTION, lines[1].kind)
         assertEquals(R.string.schedules_action_enable, lines[1].detailRes)
         assertEquals(SchedulePreviewFormatter.ValueKind.WEEKLY, lines[2].kind)
-        assertEquals(SchedulePreviewFormatter.ValueKind.TEXT, lines[3].kind)
+        assertEquals(SchedulePreviewFormatter.ValueKind.TIME, lines[3].kind)
         assertEquals("09:00-17:00", lines[3].text)
+        assertEquals(9 * 60, lines[3].startMinutes)
+        assertEquals(17 * 60, lines[3].endMinutes)
         assertEquals("bedtime", lines[4].text)
     }
 
