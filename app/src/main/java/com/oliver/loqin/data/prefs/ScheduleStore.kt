@@ -152,6 +152,22 @@ object ScheduleStore {
         return max + 1
     }
 
+    /** Keeps schedules pointing at the right profile when a profile is renamed. */
+    fun onProfileRenamed(ctx: Context, oldProfile: String, newProfile: String) {
+        if (oldProfile.isBlank() || oldProfile == newProfile) return
+        val all = getAll(ctx)
+        if (all.none { it.profile == oldProfile }) return
+        saveAll(ctx, all.map { if (it.profile == oldProfile) it.copy(profile = newProfile) else it })
+    }
+
+    /** Removes schedules that belonged to a deleted profile so they can never fire again. */
+    fun onProfileRemoved(ctx: Context, profile: String) {
+        if (profile.isBlank()) return
+        val all = getAll(ctx)
+        if (all.none { it.profile == profile }) return
+        saveAll(ctx, all.filterNot { it.profile == profile })
+    }
+
     fun getAll(context: Context): List<Schedule> {
         val sp = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val arrStr = sp.getString(KEY_SCHEDULES, "[]") ?: "[]"

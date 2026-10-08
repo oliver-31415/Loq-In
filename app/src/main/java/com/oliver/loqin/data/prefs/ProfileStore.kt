@@ -109,6 +109,8 @@ object ProfileStore {
         WebsiteRuleModeStore.onProfileRemoved(context, name)
         ProfileRuleModeStore.onProfileRemoved(context, name)
         TempPauseStore.onProfileRemoved(context, name)
+        ScheduleStore.onProfileRemoved(context, name)
+        DomainVisitLimitStore.onProfileRemoved(context, name)
         PersistentStatusNotifier.refresh(context)
     }
 
@@ -166,6 +168,8 @@ object ProfileStore {
         WebsiteRuleModeStore.onProfileRenamed(context, old, new)
         ProfileRuleModeStore.onProfileRenamed(context, old, new)
         TempPauseStore.onProfileRenamed(context, old, new)
+        ScheduleStore.onProfileRenamed(context, old, new)
+        DomainVisitLimitStore.onProfileRenamed(context, old, new)
         PersistentStatusNotifier.refresh(context)
         return true
     }
@@ -202,14 +206,19 @@ object ProfileStore {
         return first
     }
 
-    // Sets the currently active profile (only if it exists).
-    fun setCurrent(context: Context, name: String) {
+    // True when the named profile exists (rules and schedules can outlive a removed profile).
+    fun profileExists(context: Context, name: String): Boolean = name in getProfiles(context)
+
+    // Sets the currently active profile (only if it exists). Returns whether it was applied.
+    fun setCurrent(context: Context, name: String): Boolean {
         val sp = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val all = getProfiles(context)
         if (name in all) {
             sp.edit { putString(KEY_CURRENT, name) }
             PersistentStatusNotifier.refresh(context)
+            return true
         }
+        return false
     }
 
     private fun getRawBlockedForProfile(context: Context, profile: String): Set<String> {
