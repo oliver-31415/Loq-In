@@ -1221,11 +1221,11 @@ class MainActivity : AppCompatActivity() {
 
     private fun toggleSwitchIfAllowed() {
         val enabled = SwitchModeStore.isEnabled(this)
-        val allowMissingBarcodeSafetyDisable =
-            enabled && AutomationModeStore.shouldAllowManualDisableForMissingBarcodeSetup(this)
+        val allowMissingScanSafetyDisable =
+            enabled && AutomationModeStore.shouldAllowManualDisableForMissingScanSetup(this)
 
         val canChange = if (enabled) {
-            AutomationModeStore.isButtonAllowed(this) || allowMissingBarcodeSafetyDisable
+            AutomationModeStore.isButtonAllowed(this) || allowMissingScanSafetyDisable
         } else {
             AutomationModeStore.canButtonEnable(this)
         }
@@ -1239,8 +1239,8 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        if (allowMissingBarcodeSafetyDisable) {
-            AppLogStore.append(this, "Safety", "Allowing manual disable because only barcode control is enabled but no managed barcodes exist")
+        if (allowMissingScanSafetyDisable) {
+            AppLogStore.append(this, "Safety", "Allowing manual disable because the only disable channel is a scan channel with no code set up")
         }
 
         if (enabled && isNfcLocked()) {

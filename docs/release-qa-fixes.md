@@ -43,3 +43,14 @@ Hiding an app from blocking is a weakening change: it is checked with `Protectio
 
 **Verified.** Started an emergency (Facebook opens), tapped Enable: Facebook is blocked and the tile shows "Already used today".
 
+## 5. Prevent QR-mode lockouts
+
+**Problem.** QR mode could be selected and enabled with no QR code. Disable was then refused, creating a code is blocked while active, schedules do not run in QR mode, and Emergency Unlock is once a day, so the user could be locked out. Barcode mode already had a fallback; QR did not (bug 4).
+
+**Fix.**
+- `AutomationModeStore.hasQrDisableCode` treats QR as set up once a disable-capable code was copied or shared from the generator, a QR scan was ever recorded (covers codes printed by older versions), or a managed QR code exists.
+- `shouldAllowManualDisableForMissingScanSetup` (was barcode-only) keeps manual Disable available while the only disable channel is a scan channel with no code.
+- The Blocking method sheet asks to create a QR code (or add a barcode) right after picking a scan-only mode without one.
+
+**Verified.** QR mode with no code: Disable works as the fallback; picking QR mode shows the prompt; after copying a `loqin://toggle` code, Disable is refused again.
+

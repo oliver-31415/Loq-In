@@ -262,6 +262,12 @@
     <string name="blocking_mode_qr_desc">Only QR scans can change Loq In</string>
     <string name="blocking_mode_barcode">Barcode mode</string>
     <string name="blocking_mode_barcode_desc">Only barcode scans can change Loq In</string>
+    <string name="blocking_mode_qr_setup_title">Create your QR code first</string>
+    <string name="blocking_mode_qr_setup_message">In QR mode, only a Loq In QR code can turn protection off. Create one and save or share it somewhere you can reach. Until you do, the Disable button stays available so you can’t get locked out.</string>
+    <string name="blocking_mode_qr_setup_action">Create QR code</string>
+    <string name="blocking_mode_barcode_setup_title">Add your barcode first</string>
+    <string name="blocking_mode_barcode_setup_message">In barcode mode, only a linked barcode can turn protection off. Add one now. Until you do, the Disable button stays available so you can’t get locked out.</string>
+    <string name="blocking_mode_barcode_setup_action">Add barcode</string>
     <string name="blocking_mode_schedule">Schedule mode</string>
     <string name="blocking_mode_schedule_desc">Only schedules can change Loq In</string>
     <string name="blocking_mode_unsupported">Not available on this device</string>

@@ -263,6 +263,12 @@
     <string name="blocking_mode_qr_desc">Nur QR-Codes können Loq In ändern</string>
     <string name="blocking_mode_barcode">Barcode-Modus</string>
     <string name="blocking_mode_barcode_desc">Nur Barcodes können Loq In ändern</string>
+    <string name="blocking_mode_qr_setup_title">Erstelle zuerst deinen QR-Code</string>
+    <string name="blocking_mode_qr_setup_message">Im QR-Modus kann nur ein Loq-In-QR-Code den Schutz ausschalten. Erstelle einen und speichere oder teile ihn an einem Ort, den du erreichst. Bis dahin bleibt die Schaltfläche „Deaktivieren“ verfügbar, damit du dich nicht aussperrst.</string>
+    <string name="blocking_mode_qr_setup_action">QR-Code erstellen</string>
+    <string name="blocking_mode_barcode_setup_title">Füge zuerst deinen Barcode hinzu</string>
+    <string name="blocking_mode_barcode_setup_message">Im Barcode-Modus kann nur ein verknüpfter Barcode den Schutz ausschalten. Füge jetzt einen hinzu. Bis dahin bleibt die Schaltfläche „Deaktivieren“ verfügbar, damit du dich nicht aussperrst.</string>
+    <string name="blocking_mode_barcode_setup_action">Barcode hinzufügen</string>
     <string name="blocking_mode_schedule">Zeitplan-Modus</string>
     <string name="blocking_mode_schedule_desc">Nur Zeitpläne können Loq In ändern</string>
     <string name="blocking_mode_unsupported">Auf diesem Gerät nicht verfügbar</string>

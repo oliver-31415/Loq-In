@@ -186,10 +186,12 @@ class QrGenerateActivity : AppCompatActivity() {
             val uri = b.tvUri.text?.toString().orEmpty()
             if (uri.isBlank()) return@setOnClickListener
             copyToClipboard(uri)
+            markIfDisableCode(uri)
             b.btnCopy.showWarnPill(R.string.copied)
         }
 
         b.btnShare.setOnClickListener {
+            markIfDisableCode(b.tvUri.text?.toString().orEmpty())
             shareQrAsPng()
         }
 
@@ -391,6 +393,14 @@ class QrGenerateActivity : AppCompatActivity() {
                 .ifBlank { getString(R.string.qr_profile_fallback) }
 
             NfcSchema.uriForProfileAction(profile, action.id)
+        }
+    }
+
+    // A kept code that can turn protection off is what makes QR mode safe to select.
+    private fun markIfDisableCode(uri: String) {
+        val action = NfcSchema.parseCommandUri(Uri.parse(uri))?.action ?: return
+        if (action == "toggle" || action == "disable" || action.startsWith("temp_disable")) {
+            AutomationModeStore.markQrDisableCodeReady(this)
         }
     }
 
