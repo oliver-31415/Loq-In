@@ -90,7 +90,8 @@
             android:minWidth="90dp"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
-            android:text="@android:string/ok"
+            android:text="@string/close"
+            android:textAllCaps="false"
             android:textColor="@android:color/white" />
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

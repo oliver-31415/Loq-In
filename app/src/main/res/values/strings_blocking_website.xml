@@ -56,8 +56,9 @@
     <!-- ====================================================== -->
     <!-- Blocked screen -->
     <!-- ====================================================== -->
-    <string name="blocking_website_blocked_title">Website is blocked!</string>
-    <string name="blocking_website_limit_reached_title">Website limit reached!</string>
+    <string name="blocking_website_blocked_title">Website blocked</string>
+    <string name="blocking_website_limit_reached_title">Website limit reached</string>
+    <string name="blocking_website_blocked_message_fmt">%1$s is blocked while Loq In is active.</string>
 
     <!-- ====================================================== -->
     <!-- Allow mode, deletion and session limits -->

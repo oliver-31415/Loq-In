@@ -64,3 +64,15 @@ Hiding an app from blocking is a weakening change: it is checked with `Protectio
 
 **Verified.** Inactive Home: 0 frames in 10 s (was ~1/s). Active: 198 frames in 10 s (was 599). `uiautomator dump` now succeeds on Home. The ANR steps (Account > Privacy & data > Back x3 > relaunch > Settings > search) no longer freeze, twice.
 
+## 7. Make the block screen say what was blocked
+
+**Problem.** Website blocks showed the browser name with "You can't use this app"; app limits showed the generic blocked text; in-app blocks repeated their title as the reason ("Blocked by: Shorts is blocked!"); titles mixed styles and the button said OK (bugs 9, 10, 18).
+
+**Fix.**
+- Website blocks name the site: "youtube.com is blocked while Loq In is active."
+- App-limit blocks use "Limit reached" with the specific limit (opens, daily time, per visit), derived from the fresh block-reason snapshot.
+- In-app blocks record "In-app rule" as the reason.
+- Titles drop exclamation marks; the button reads "Close" (EN/DE).
+
+**Verified.** Checked Facebook (app list), Chrome (open limit), youtube.com (website rule) and YouTube Shorts (in-app rule) block screens.
+

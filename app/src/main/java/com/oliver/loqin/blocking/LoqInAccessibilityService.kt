@@ -2374,7 +2374,7 @@ class LoqInAccessibilityService : AccessibilityService() {
                 pkg = pkg,
                 label = appLabel,
                 profile = ProfileStore.getCurrent(this),
-                rule = title,
+                rule = getString(R.string.block_reason_source_in_app),
                 source = getString(R.string.block_reason_source_in_app),
                 matched = title,
                 result = getString(R.string.block_reason_result_surface_blocked)
@@ -2546,7 +2546,7 @@ class LoqInAccessibilityService : AccessibilityService() {
             pkg = pkg,
             label = appLabel,
             profile = ProfileStore.getCurrent(this),
-            rule = title,
+            rule = getString(R.string.block_reason_source_in_app),
             source = getString(R.string.block_reason_source_in_app),
             matched = surfaceKey,
             result = getString(R.string.block_reason_result_surface_blocked)
@@ -4284,7 +4284,8 @@ class LoqInAccessibilityService : AccessibilityService() {
 
         val appLabel = safeAppLabel(pkg)
         val title = if (hardBlocked) getString(R.string.blocking_website_blocked_title) else getString(R.string.blocking_website_limit_reached_title)
-        val msg = domainUsageLine(host, limitMin)
+        // Name the site: without it the screen falls back to the generic "this app" text and only shows the browser.
+        val msg = domainUsageLine(host, limitMin).ifBlank { getString(R.string.blocking_website_blocked_message_fmt, host) }
 
         // Prefer redirecting the current browser task to a safe page so the browser stays open without dropping the user out of the whole app.
         // Fall back to a single BACK only if the redirect is not supported by the current browser build.
@@ -4420,7 +4421,7 @@ class LoqInAccessibilityService : AccessibilityService() {
 
         val appLabel = safeAppLabel(pkg)
         val title = if (hardBlocked) getString(R.string.blocking_website_blocked_title) else getString(R.string.blocking_website_limit_reached_title)
-        val msg = domainUsageLine(visibleHost, limitMin)
+        val msg = domainUsageLine(visibleHost, limitMin).ifBlank { getString(R.string.blocking_website_blocked_message_fmt, visibleHost) }
 
         appendBlockingLog(
             category = "website_followup",

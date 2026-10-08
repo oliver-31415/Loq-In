@@ -258,16 +258,29 @@ class BlockerActivity : ComponentActivity() {
         val title = intent?.getStringExtra(EXTRA_TITLE).orEmpty()
         val msg = intent?.getStringExtra(EXTRA_MESSAGE).orEmpty()
 
-        if (title.isNotBlank()) {
-            titleView.text = title
-        } else {
-            titleView.text = getString(R.string.blocked_app_default)
+        val snapshot = LastBlockReasonStore.snapshot(this)
+            ?.takeIf { it.isFresh(maxAgeMs = 10L * 60L * 1000L) }
+            ?.takeIf { pkg.isBlank() || it.pkg == pkg }
+
+        // App-limit blocks arrive without a title/message; say which limit was hit instead of
+        // the generic "can't use this app" text.
+        val limitMessageRes = when (snapshot?.rule) {
+            getString(R.string.block_reason_rule_open_limit) -> R.string.blocked_message_open_limit
+            getString(R.string.block_reason_rule_daily_time_limit) -> R.string.blocked_message_time_limit
+            getString(R.string.block_reason_rule_per_visit_limit) -> R.string.blocked_message_visit_limit
+            else -> null
         }
 
-        if (msg.isNotBlank()) {
-            messageView.text = msg
-        } else {
-            messageView.text = getString(R.string.blocked_message)
+        titleView.text = when {
+            title.isNotBlank() -> title
+            limitMessageRes != null -> getString(R.string.blocked_title_limit_reached)
+            else -> getString(R.string.blocked_app_default)
+        }
+
+        messageView.text = when {
+            msg.isNotBlank() -> msg
+            limitMessageRes != null -> getString(limitMessageRes)
+            else -> getString(R.string.blocked_message)
         }
 
         if (label.isNotBlank()) {
@@ -282,9 +295,6 @@ class BlockerActivity : ComponentActivity() {
             }
         }
 
-        val snapshot = LastBlockReasonStore.snapshot(this)
-            ?.takeIf { it.isFresh(maxAgeMs = 10L * 60L * 1000L) }
-            ?.takeIf { pkg.isBlank() || it.pkg == pkg }
         if (snapshot == null) {
             blockReasonSnapshot = null
             reasonSummaryView.visibility = View.GONE
