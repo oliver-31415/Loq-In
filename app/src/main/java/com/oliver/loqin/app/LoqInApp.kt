@@ -70,7 +70,9 @@ class LoqInApp : Application() {
         // theme
         val prefs = PreferenceManager.getDefaultSharedPreferences(this)
 
-        when (prefs.getString("pref_theme", "system")) {
+        // Appearance writes "pref_theme_mode"; "pref_theme" is the legacy key from older installs.
+        val themeMode = prefs.getString("pref_theme_mode", null) ?: prefs.getString("pref_theme", "system")
+        when (themeMode) {
             "light" -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)
             "dark"  -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
             else    -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM)
