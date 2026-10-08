@@ -121,3 +121,12 @@ The opens sentence and split hint are plurals; tiles reuse the existing `daily_a
 
 **Verified.** Limits dialog with 1 open: "Up to 1 open per day".
 
+## 13. Disable Save in name dialogs while the name is empty
+
+**Problem.** Saving a new profile with an empty name closed the dialog with no feedback (bug 21).
+
+**Fix.**
+`showLoqInInputDialog` keeps its positive button disabled while the trimmed input is blank.
+
+**Verified.** New profile: Save is disabled until a name is typed.
+

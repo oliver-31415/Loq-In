@@ -42,6 +42,7 @@ import androidx.core.graphics.ColorUtils
 import androidx.core.view.isVisible
 import androidx.core.widget.CompoundButtonCompat
 import androidx.core.widget.ImageViewCompat
+import androidx.core.widget.doAfterTextChanged
 import androidx.core.widget.TextViewCompat
 import com.oliver.loqin.R
 import com.oliver.loqin.theme.AccentColor
@@ -137,6 +138,10 @@ fun Context.showLoqInInputDialog(
     )
     dialog.setOnShowListener {
         dialog.styleLoqInDialogButtons()
+        // An empty name can't be saved; keep the action disabled instead of closing silently.
+        val positive = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+        positive?.isEnabled = input.text.toString().isNotBlank()
+        input.doAfterTextChanged { positive?.isEnabled = !it.isNullOrBlank() }
         input.requestFocus()
     }
     dialog.show()
