@@ -139,3 +139,13 @@ Home and Settings use "Start emergency unlock?" / "Loq In turns off for 15 minut
 
 **Verified.** Home > Emergency > PIN shows the new dialog; starting shows the confirmation pill.
 
+## 15. Accessibility labels and 48dp limit buttons
+
+**Problem.** TalkBack read the hero pencil as "Switch profile", every website-tile icon as "Website rules", settings/account icons repeated their row titles, the limit +/- buttons had no label, and sheet close buttons were a bare "✕". The clock limit button on tiles was 28dp (bugs 24, 25).
+
+**Fix.**
+- Labels: hero pencil "Edit profile"; decorative icons in Settings, Account and website tiles use `@null`; limit +/- buttons get descriptive labels (EN/DE); sheet close buttons are labelled "Close" with the glyph hidden from TalkBack.
+- The tile limit button is 48dp with 14dp padding and a -10dp overlay offset, so the glyph stays where it was.
+
+**Verified.** UI dump shows the new labels; tiles look unchanged with a larger touch area.
+

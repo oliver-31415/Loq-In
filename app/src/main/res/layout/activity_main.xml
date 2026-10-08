@@ -344,7 +344,7 @@
                                 android:layout_height="36dp"
                                 android:padding="8dp"
                                 android:background="@drawable/bg_round_white"
-                                android:contentDescription="@string/profile_rows_manage"
+                                android:contentDescription="@string/profile_sheet_edit_profile"
                                 android:src="@drawable/edit_24"
                                 app:tint="#FFFFFFFF" />
                         </LinearLayout>

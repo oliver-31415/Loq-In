@@ -225,9 +225,11 @@ object BlockingModeSheet {
                 background = roundelBg()
                 isClickable = true
                 isFocusable = true
+                contentDescription = activity.getString(R.string.close)
                 setOnClickListener { onClose?.invoke() }
                 addView(TextView(activity).apply {
                     text = "\u2715"
+                    importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
                     textSize = 14f
                     setTextColor(onSurface)
                     layoutParams = FrameLayout.LayoutParams(

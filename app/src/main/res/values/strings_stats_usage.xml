@@ -81,6 +81,12 @@
     <string name="app_limit_visit_subtitle">Longest single visit</string>
     <string name="app_limit_save">Save limits</string>
     <string name="app_limit_remove">Remove limits</string>
+    <string name="app_limit_a11y_time_decrease">Decrease daily minutes</string>
+    <string name="app_limit_a11y_time_increase">Increase daily minutes</string>
+    <string name="app_limit_a11y_opens_decrease">Decrease opens per day</string>
+    <string name="app_limit_a11y_opens_increase">Increase opens per day</string>
+    <string name="app_limit_a11y_visit_decrease">Decrease minutes per visit</string>
+    <string name="app_limit_a11y_visit_increase">Increase minutes per visit</string>
     <string name="app_limit_remove_confirm_title">Remove limits?</string>
     <string name="app_limit_remove_confirm_message">This clears all limits for %1$s and resets today’s counters.</string>
     <string name="app_limit_remove_choice_message">What should happen to %1$s once its limits are removed?\n\nStop limiting: it can be used freely again.\nBlock completely: it is always blocked while Loq In is active.</string>

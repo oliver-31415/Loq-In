@@ -78,7 +78,7 @@
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
-                            android:contentDescription="@string/account_overview_title"
+                            android:contentDescription="@null"
                             android:src="@drawable/dashboard_24"
                             app:tint="?attr/colorPrimary" />
 
@@ -109,7 +109,7 @@
                             android:layout_width="18dp"
                             android:layout_height="18dp"
                             android:alpha="0.7"
-                            android:contentDescription="@string/open"
+                            android:contentDescription="@null"
                             android:src="@drawable/keyboard_arrow_right_24"
                             app:tint="?android:attr/textColorSecondary" />
                     </LinearLayout>
@@ -139,7 +139,7 @@
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
-                            android:contentDescription="@string/activity_entry_screen_unlocks"
+                            android:contentDescription="@null"
                             android:src="@drawable/lock_open_24"
                             app:tint="?attr/colorPrimary" />
 
@@ -170,7 +170,7 @@
                             android:layout_width="18dp"
                             android:layout_height="18dp"
                             android:alpha="0.7"
-                            android:contentDescription="@string/open"
+                            android:contentDescription="@null"
                             android:src="@drawable/keyboard_arrow_right_24"
                             app:tint="?android:attr/textColorSecondary" />
                     </LinearLayout>
@@ -201,7 +201,7 @@
                             android:id="@+id/ivAccountBlockedNotificationsIcon"
                             android:layout_width="24dp"
                             android:layout_height="24dp"
-                            android:contentDescription="@string/blocked_inbox_title"
+                            android:contentDescription="@null"
                             android:src="@drawable/notifications_24"
                             app:tint="?attr/colorPrimary" />
 
@@ -232,7 +232,7 @@
                             android:layout_width="18dp"
                             android:layout_height="18dp"
                             android:alpha="0.7"
-                            android:contentDescription="@string/open"
+                            android:contentDescription="@null"
                             android:src="@drawable/keyboard_arrow_right_24"
                             app:tint="?android:attr/textColorSecondary" />
                     </LinearLayout>
@@ -278,7 +278,7 @@
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
-                            android:contentDescription="@string/pref_app_lock_title"
+                            android:contentDescription="@null"
                             android:src="@drawable/lock_24"
                             app:tint="?attr/colorPrimary" />
 
@@ -309,7 +309,7 @@
                             android:layout_width="18dp"
                             android:layout_height="18dp"
                             android:alpha="0.7"
-                            android:contentDescription="@string/open"
+                            android:contentDescription="@null"
                             android:src="@drawable/keyboard_arrow_right_24"
                             app:tint="?android:attr/textColorSecondary" />
                     </LinearLayout>
@@ -339,7 +339,7 @@
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
-                            android:contentDescription="@string/account_keys_codes_title"
+                            android:contentDescription="@null"
                             android:src="@drawable/nfc_24"
                             app:tint="?attr/colorPrimary" />
 
@@ -370,7 +370,7 @@
                             android:layout_width="18dp"
                             android:layout_height="18dp"
                             android:alpha="0.7"
-                            android:contentDescription="@string/open"
+                            android:contentDescription="@null"
                             android:src="@drawable/keyboard_arrow_right_24"
                             app:tint="?android:attr/textColorSecondary" />
                     </LinearLayout>
@@ -416,7 +416,7 @@
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
-                            android:contentDescription="@string/pref_tutorial_title"
+                            android:contentDescription="@null"
                             android:src="@drawable/play_arrow_24"
                             app:tint="?attr/colorPrimary" />
 
@@ -447,7 +447,7 @@
                             android:layout_width="18dp"
                             android:layout_height="18dp"
                             android:alpha="0.7"
-                            android:contentDescription="@string/open"
+                            android:contentDescription="@null"
                             android:src="@drawable/keyboard_arrow_right_24"
                             app:tint="?android:attr/textColorSecondary" />
                     </LinearLayout>
@@ -477,7 +477,7 @@
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
-                            android:contentDescription="@string/privacy_report_title"
+                            android:contentDescription="@null"
                             android:src="@drawable/security_24"
                             app:tint="?attr/colorPrimary" />
 
@@ -508,7 +508,7 @@
                             android:layout_width="18dp"
                             android:layout_height="18dp"
                             android:alpha="0.7"
-                            android:contentDescription="@string/open"
+                            android:contentDescription="@null"
                             android:src="@drawable/keyboard_arrow_right_24"
                             app:tint="?android:attr/textColorSecondary" />
                     </LinearLayout>
