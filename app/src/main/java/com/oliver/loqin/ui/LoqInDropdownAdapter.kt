@@ -24,19 +24,38 @@ import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
+import android.widget.Filter
 import android.widget.TextView
 import com.google.android.material.color.MaterialColors
 
 class LoqInDropdownAdapter(
     context: Context,
     items: List<String>
-) : ArrayAdapter<String>(context, 0, items) {
+) : ArrayAdapter<String>(context, 0, items.toMutableList()) {
+
+    private val unfiltered = items.toList()
 
     override fun getView(position: Int, convertView: View?, parent: ViewGroup): View =
         row(position, convertView, parent)
 
     override fun getDropDownView(position: Int, convertView: View?, parent: ViewGroup): View =
         row(position, convertView, parent)
+
+    /** Mode pickers must always list every option, even while one of them is typed in. */
+    override fun getFilter(): Filter = object : Filter() {
+        override fun performFiltering(constraint: CharSequence?): FilterResults =
+            FilterResults().apply {
+                values = unfiltered
+                count = unfiltered.size
+            }
+
+        @Suppress("UNCHECKED_CAST")
+        override fun publishResults(constraint: CharSequence?, results: FilterResults?) {
+            clear()
+            addAll(unfiltered)
+            notifyDataSetChanged()
+        }
+    }
 
     private fun row(position: Int, convertView: View?, parent: ViewGroup): TextView {
         val textView = convertView as? TextView ?: TextView(context).apply {
