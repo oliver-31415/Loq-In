@@ -339,11 +339,11 @@ object QuickLimitDialogs {
                             time
                         )
                     )
-                    if (opens > 0) append(activity.getString(R.string.app_limit_sentence_split_fmt, opens))
+                    if (opens > 0) append(activity.resources.getQuantityString(R.plurals.app_limit_sentence_split, opens, opens))
                     if (visit > 0) append(activity.getString(R.string.app_limit_sentence_visit_fmt, visit))
                 }
                 opens > 0 -> buildString {
-                    append(activity.getString(R.string.app_limit_sentence_opens_only_fmt, opens))
+                    append(activity.resources.getQuantityString(R.plurals.app_limit_sentence_opens_only, opens, opens))
                     if (visit > 0) append(activity.getString(R.string.app_limit_sentence_visit_fmt, visit))
                 }
                 else -> activity.getString(R.string.app_limit_sentence_visit_only_fmt, visit)

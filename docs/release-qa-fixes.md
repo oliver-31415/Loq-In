@@ -112,3 +112,12 @@ The Home setup card also lists App usage access when it is missing.
 
 **Verified.** Revoked usage access: Home shows "1 missing · App usage access".
 
+## 12. Fix "1 opens" plurals in limits
+
+**Problem.** The limits dialog and tiles showed "Up to 1 opens per day" and "1 opens/day" (bug 20).
+
+**Fix.**
+The opens sentence and split hint are plurals; tiles reuse the existing `daily_attempt_limit_value_format` plural; the unused `limit_tile_attempts_fmt` is removed (EN/DE).
+
+**Verified.** Limits dialog with 1 open: "Up to 1 open per day".
+
