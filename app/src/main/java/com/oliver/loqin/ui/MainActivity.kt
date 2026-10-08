@@ -1745,17 +1745,22 @@ class MainActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    private fun openRulesDestination(intent: Intent) {
+    private fun openRulesDestination(
+        intent: Intent,
+        @StringRes titleRes: Int = R.string.loqin_rules_locked_title,
+        @StringRes messageRes: Int = R.string.rules_restricted_open_message,
+        @StringRes actionRes: Int = R.string.rules_open_restricted,
+    ) {
         if (!EditingLockGuard.isLocked(this) || EditingLockGuard.isSuppressed(this)) {
             startActivity(intent)
             return
         }
 
         val builder = AlertDialog.Builder(this)
-            .setTitle(R.string.loqin_rules_locked_title)
-            .setMessage(R.string.rules_restricted_open_message)
+            .setTitle(titleRes)
+            .setMessage(messageRes)
         val persistChoice = EditingLockGuard.addDontShowAgain(builder, this)
-        builder.setPositiveButton(R.string.rules_open_restricted) { _, _ ->
+        builder.setPositiveButton(actionRes) { _, _ ->
                 persistChoice()
                 startActivity(intent)
             }
@@ -2041,7 +2046,13 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent(this, SchedulesActivity::class.java).apply {
                 putExtra(SchedulesActivity.EXTRA_PROFILE_NAME, profile)
             }
-            openRulesDestination(intent)
+            // Unlike rule editors, schedules can't be added while active, so don't promise it.
+            openRulesDestination(
+                intent,
+                titleRes = R.string.schedules_locked_open_title,
+                messageRes = R.string.schedules_locked_open_message,
+                actionRes = R.string.schedules_locked_open_action,
+            )
         }
         val tvTempPausesSummary = view.findViewById<TextView>(R.id.tvSheetTempPausesSummary)
         fun refreshTempPausesSummary() {

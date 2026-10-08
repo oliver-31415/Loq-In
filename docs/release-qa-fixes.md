@@ -85,3 +85,12 @@ When the app is in the block list, "Remove limits" offers **Stop limiting** (rem
 
 **Verified.** Limited Chrome > Remove limits > Stop limiting: the tile becomes "not selected" and Chrome opens.
 
+## 9. Explain that schedules are read-only while active
+
+**Problem.** Opening Schedules while active showed "Open Rules? You can still add protection", but adding a schedule was then refused with "Turn off Loq In to manage schedules". The empty state also said "Tap +" when the + was hidden (bugs 11, 28).
+
+**Fix.**
+`openRulesDestination` takes optional title/message/action; Schedules uses "Open Schedules? You can view schedules, but adding or changing them is locked until Loq In is off." The empty state no longer refers to the + button (EN/DE).
+
+**Verified.** Active: the Schedules row shows the new dialog and opens the list.
+

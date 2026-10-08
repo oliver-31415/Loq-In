@@ -11,7 +11,7 @@
     <string name="schedules_next_none">Kein kommender Zeitplan</string>
     <string name="schedules_next_inactive_control_mode">Inaktiv — der Steuerungsmodus blockiert Zeitpläne</string>
     <string name="schedules_empty_title">Noch keine Zeitpläne</string>
-    <string name="schedules_empty_body">Tippe auf +, um deinen ersten Zeit-, WLAN-, Bluetooth- oder Standort-Zeitplan hinzuzufügen.</string>
+    <string name="schedules_empty_body">Füge einen Zeit-, WLAN-, Bluetooth- oder Standort-Zeitplan hinzu, um den Schutz automatisch ein- oder auszuschalten.</string>
     <string name="empty_action_add_first_schedule">Ersten Zeitplan hinzufügen</string>
 
     <!-- ====================================================== -->

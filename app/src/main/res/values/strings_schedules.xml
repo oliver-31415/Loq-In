@@ -11,7 +11,7 @@
     <string name="schedules_next_none">No upcoming schedule</string>
     <string name="schedules_next_inactive_control_mode">Inactive — control mode blocks schedules</string>
     <string name="schedules_empty_title">No schedules yet</string>
-    <string name="schedules_empty_body">Tap + to add your first time, Wi‑Fi, Bluetooth or location schedule.</string>
+    <string name="schedules_empty_body">Add a time, Wi‑Fi, Bluetooth or location schedule to turn protection on or off automatically.</string>
     <string name="empty_action_add_first_schedule">Add first schedule</string>
 
     <!-- ====================================================== -->

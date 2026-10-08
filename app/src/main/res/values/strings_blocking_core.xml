@@ -9,6 +9,9 @@
     <string name="rules_hub_categories_section">Rules for this profile</string>
     <string name="loqin_rules_locked_title">Open Rules?</string>
     <string name="rules_restricted_open_message">Loq In is active. You can still add protection to the active profile. Changes that remove protection, widen allowed exceptions, switch rule modes, or edit protected settings remain locked.</string>
+    <string name="schedules_locked_open_title">Open Schedules?</string>
+    <string name="schedules_locked_open_message">Loq In is active. You can view schedules, but adding or changing them is locked until Loq In is off.</string>
+    <string name="schedules_locked_open_action">Open Schedules</string>
     <string name="rules_open_restricted">Open Rules</string>
     <string name="rules_apps_title">App rules</string>
     <string name="rules_apps_summary">Choose blocked or allowed apps, limits, and app rules</string>
