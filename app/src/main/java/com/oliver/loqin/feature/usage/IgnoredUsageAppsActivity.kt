@@ -48,6 +48,8 @@ import com.oliver.loqin.ui.dialog.showAccented
 import com.oliver.loqin.ui.showWarnPill
 import com.oliver.loqin.util.PackageLaunchIntentCompat
 import com.oliver.loqin.util.PackageManagerApiCompat
+import com.oliver.loqin.util.ProtectionChangeGate
+import com.oliver.loqin.util.ProtectionChangePolicy
 import com.oliver.loqin.util.LocaleHelper
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
@@ -125,7 +127,16 @@ class IgnoredUsageAppsActivity : AppCompatActivity() {
         adapter = IgnoredUsageAppsAdapter(currentSelection()) { selection ->
             when (currentSection) {
                 Section.USAGE_INSIGHTS -> usageSelection = selection
-                Section.APP_PICKERS -> appPickerSelection = selection
+                Section.APP_PICKERS -> {
+                    // Hiding an app from blocking weakens protection; unhiding is always allowed.
+                    val added = selection - initialAppPickerSelection
+                    if (added.isNotEmpty() && isHidingFromBlockingLocked()) {
+                        rv.showWarnPill(R.string.hidden_apps_locked_hide)
+                        adapter.replaceSelection(selection - added)
+                        return@IgnoredUsageAppsAdapter
+                    }
+                    appPickerSelection = selection
+                }
             }
             updateCount(selection.size)
             // The "Hidden" filter depends on the selection, so refresh it live.
@@ -146,6 +157,10 @@ class IgnoredUsageAppsActivity : AppCompatActivity() {
 
         findViewById<MaterialButton>(R.id.btnSaveIgnoredApps).setOnClickListener {
             IgnoredUsageAppsStore.setIgnoredPackages(this, usageSelection)
+            if (isHidingFromBlockingLocked()) {
+                // Protection may have turned on while this screen was open.
+                appPickerSelection = appPickerSelection.filterTo(mutableSetOf()) { it in initialAppPickerSelection }
+            }
             IgnoredUsageAppsStore.setAppPickerHiddenPackages(this, appPickerSelection)
             val changedCount = setDifferenceCount(initialUsageSelection, usageSelection) +
                 setDifferenceCount(initialAppPickerSelection, appPickerSelection)
@@ -166,6 +181,10 @@ class IgnoredUsageAppsActivity : AppCompatActivity() {
         updateCount(currentSelection().size)
         loadApps(usageSelection + appPickerSelection)
     }
+
+    private fun isHidingFromBlockingLocked(): Boolean =
+        ProtectionChangeGate.decision(this, ProtectionChangePolicy.Direction.WEAKER) !=
+            ProtectionChangePolicy.Decision.APPLY_NOW
 
     private fun setupSearch() {
         val etSearch = findViewById<TextInputEditText>(R.id.etSearch)

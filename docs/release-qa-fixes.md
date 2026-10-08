@@ -25,3 +25,12 @@ to the QA report's bug table.
 
 **Verified.** QR mode, active: switching to Work is refused, creating "Test" keeps Default current and Facebook stays blocked, Delete profile shows the pill.
 
+## 3. Refuse hiding apps from blocking while protection is active
+
+**Problem.** Settings > Hidden apps (Blocking / Protection) saved immediately while Loq In was active, so hiding a blocked app unblocked it at once (bug 2).
+
+**Fix.**
+Hiding an app from blocking is a weakening change: it is checked with `ProtectionChangeGate.decision(WEAKER)` on tap (the tile is reverted with an explanation) and again on Save in case protection turned on while the screen was open. Unhiding and the Screen time / Stats tab are unaffected.
+
+**Verified.** QR mode, active: tapping Facebook shows the pill and the tile stays visible; Facebook remains blocked.
+
