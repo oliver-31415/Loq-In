@@ -3671,13 +3671,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun showEmergencyUnlockStartDialog() {
         MaterialAlertDialogBuilder(this)
-            .setTitle(getString(R.string.pref_emergency_title))
-            .setMessage(getString(R.string.emergency_action_start_15))
+            .setTitle(R.string.emergency_start_confirm_title)
+            .setMessage(getString(R.string.emergency_start_confirm_message, 15))
             .setNegativeButton(R.string.cancel, null)
-            .setPositiveButton(R.string.ok) { _, dialog ->
+            .setPositiveButton(R.string.emergency_start_confirm_action) { _, _ ->
                 val ok = EmergencyBypassStore.enableIfAllowed(this, 15)
-                // Anchor to the dialog window so the pill is visible above it.
-                val pillAnchor = (dialog as? AlertDialog)?.window?.decorView ?: snackRoot()
+                val pillAnchor = snackRoot()
                 if (ok) {
                     AppLogStore.append(this, "Emergency", "Emergency mode started from Home for 15m")
                     SwitchModeStore.setTemporarilyDisabled(this, 15 * 60_000L, isEmergency = true)

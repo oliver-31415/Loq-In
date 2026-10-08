@@ -130,3 +130,12 @@ The opens sentence and split hint are plurals; tiles reuse the existing `daily_a
 
 **Verified.** New profile: Save is disabled until a name is typed.
 
+## 14. Clarify the Emergency Unlock confirmation
+
+**Problem.** The confirmation was titled "Emergency unlock feature" with an OK button, and its click handler named the button index `dialog`, so the intended pill anchor never resolved (bug 23).
+
+**Fix.**
+Home and Settings use "Start emergency unlock?" / "Loq In turns off for 15 minutes. You can use this once a day." / "Start". The dead anchor code is removed (the screen anchor was always used); the unused `emergency_action_start_15` string is dropped (EN/DE).
+
+**Verified.** Home > Emergency > PIN shows the new dialog; starting shows the confirmation pill.
+

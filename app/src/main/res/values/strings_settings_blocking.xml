@@ -167,7 +167,9 @@
     <string name="pref_emergency_summary_used">You already used Emergency Unlock today.</string>
     <string name="pref_emergency_summary_active_with_time">Emergency unlock is active (%1$d min left). Loq In is temporarily disabled.</string>
     <string name="pref_emergency_summary_paused">Emergency unlock is paused (%1$d min left). Tap for resume/end.</string>
-    <string name="emergency_action_start_15">Start emergency unlock &amp; disable Loq In (15 min)</string>
+    <string name="emergency_start_confirm_title">Start emergency unlock?</string>
+    <string name="emergency_start_confirm_message">Loq In turns off for %1$d minutes. You can use this once a day.</string>
+    <string name="emergency_start_confirm_action">Start</string>
     <string name="emergency_paused_inline">Emergency paused (%1$d min)</string>
     <string name="emergency_enabled_inline">Emergency unlock (%1$d min)</string>
     <string name="emergency_manage_title_active">Emergency unlock active (%1$d min)</string>

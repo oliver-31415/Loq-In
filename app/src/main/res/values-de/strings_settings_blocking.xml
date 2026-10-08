@@ -167,7 +167,9 @@
     <string name="pref_emergency_summary_used">Du hast die Notfall-Entsperrung heute bereits verwendet.</string>
     <string name="pref_emergency_summary_active_with_time">Notfall-Entsperrung ist aktiv (%1$d Min übrig). Loq In ist temporär deaktiviert.</string>
     <string name="pref_emergency_summary_paused">Notfall-Entsperrung ist pausiert (%1$d Min übrig). Tippe für Fortsetzen/Ende.</string>
-    <string name="emergency_action_start_15">Notfall-Entsperrung starten &amp; Loq In deaktivieren (15 Min)</string>
+    <string name="emergency_start_confirm_title">Notfall-Entsperrung starten?</string>
+    <string name="emergency_start_confirm_message">Loq In wird für %1$d Minuten ausgeschaltet. Du kannst das einmal pro Tag nutzen.</string>
+    <string name="emergency_start_confirm_action">Starten</string>
     <string name="emergency_paused_inline">Notfall pausiert (%1$d Min)</string>
     <string name="emergency_enabled_inline">Notfall-Entsperrung (%1$d Min)</string>
     <string name="emergency_manage_title_active">Notfall-Entsperrung aktiv (%1$d Min)</string>
