@@ -72,6 +72,7 @@
                 android:id="@+id/tvAppLimitSentence"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:minLines="2"
                 android:paddingHorizontal="12dp"
                 android:paddingVertical="10dp"
                 android:textColor="@color/foqos_on_surface"

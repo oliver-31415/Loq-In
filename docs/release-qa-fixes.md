@@ -213,3 +213,11 @@ Invalid input says "Enter a valid domain, like example.com."; the button reads "
 
 **Verified (Haiku agent).** Facebook blocked: "1 / Apps". After adding a 5-opens limit to Chrome: "1 / Apps · 1 limited". After Remove limits > Stop limiting: back to "1 / Apps". No crashes.
 
+## 23. Limits dialog no longer jumps while editing
+
+**Problem.** The limits dialog was vertically centred: turning on a limit expanded its section, the dialog re-centred, and every control (including the switch just tapped) moved under the finger. The summary line above also changed between one and two lines. Even the test agent's taps missed because of it.
+
+**Fix.** `pinLoqInDialogToTop` pins the app and website limit editors to the top of the screen so content only grows downward (no offset: the window manager drops one once the content needs the full height), and the summary sentence reserves two lines.
+
+**Verified (Haiku agent).** Turning on Screen time then App opens: the title and both switches keep their exact positions; the dialog stays below the status bar and Save/Cancel remain visible; no crashes.
+

@@ -923,6 +923,18 @@ fun AlertDialog.applyLoqInDialogWidth(widthFraction: Float = 0.94f) {
     window?.setLayout(targetWidth, ViewGroup.LayoutParams.WRAP_CONTENT)
 }
 
+/**
+ * Pins a dialog whose content grows while it is open (expanding sections) near the top of the
+ * screen. A centred dialog re-centres on every size change, moving the control the user just
+ * tapped; pinned to the top, content only grows downward. A non-zero [topDp] is dropped by the
+ * window manager once the content needs the full height, so the default keeps no offset.
+ */
+fun AlertDialog.pinLoqInDialogToTop(topDp: Int = 0) {
+    val w = window ?: return
+    w.setGravity(Gravity.TOP or Gravity.CENTER_HORIZONTAL)
+    w.attributes = w.attributes.apply { y = (topDp * context.resources.displayMetrics.density).toInt() }
+}
+
 // Backwards-compat alias used in older code paths.
 fun AlertDialog.accentButtons() = styleLoqInDialogButtons()
 

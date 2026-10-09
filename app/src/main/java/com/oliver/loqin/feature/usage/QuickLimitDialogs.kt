@@ -50,6 +50,7 @@ import com.oliver.loqin.ui.showWarnPill
 import com.oliver.loqin.ui.dialog.Dialogs
 import com.oliver.loqin.ui.dialog.showAccented
 import com.oliver.loqin.ui.dialog.applyLoqInDialogWidth
+import com.oliver.loqin.ui.dialog.pinLoqInDialogToTop
 import com.oliver.loqin.util.AppBlockSafety
 import com.oliver.loqin.util.EditingLockGuard
 import com.google.android.material.button.MaterialButton
@@ -633,6 +634,7 @@ object QuickLimitDialogs {
         }
 
         dlg.applyLoqInDialogWidth(0.94f)
+        dlg.pinLoqInDialogToTop()
         dlg.setOnShowListener {
             runCatching { CustomAccentApplier.applyToDialog(dlg) }
             val focus = if (focusAttempts) etAttempts else etTime
@@ -1002,6 +1004,7 @@ object QuickLimitDialogs {
             .create()
         dlgDismissHolder[0] = { dlg.dismiss() }
         dlg.applyLoqInDialogWidth(0.94f)
+        dlg.pinLoqInDialogToTop()
         dlg.setOnShowListener {
             runCatching { CustomAccentApplier.applyToDialog(dlg) }
         }
