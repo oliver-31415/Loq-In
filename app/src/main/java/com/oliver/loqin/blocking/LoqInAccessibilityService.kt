@@ -1973,11 +1973,42 @@ class LoqInAccessibilityService : AccessibilityService() {
      * We count an "open" when the app becomes the foreground package.
      * To avoid noisy OEM foreground flapping, we apply a short per-package cooldown.
      */
+    private var cachedImePackage: String? = null
+    private var cachedHomePackages: Set<String> = emptySet()
+    private var surfaceCacheAt = 0L
+
+    private fun refreshSurfaceCacheIfStale() {
+        val now = SystemClock.elapsedRealtime()
+        if (surfaceCacheAt != 0L && now - surfaceCacheAt < 60_000L) return
+        surfaceCacheAt = now
+        cachedImePackage = runCatching { AppBlockSafety.getDefaultInputMethodPackage(this) }.getOrNull()
+        cachedHomePackages = runCatching {
+            val home = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+            packageManager.queryIntentActivities(home, 0).map { it.activityInfo.packageName }.toSet()
+        }.getOrDefault(emptySet())
+    }
+
+    private fun isTransientSystemSurface(pkg: String): Boolean {
+        if (pkg == "com.android.systemui") return true
+        refreshSurfaceCacheIfStale()
+        return pkg == cachedImePackage
+    }
+
+    private fun isHomeLauncherPackage(pkg: String): Boolean {
+        refreshSurfaceCacheIfStale()
+        return pkg in cachedHomePackages
+    }
+
     private fun maybeCountOpenAndEnforceAttemptLimit(pkg: String, now: Long) {
         if (pkg.isBlank() || pkg == packageName) {
             return
         }
         if (AppBlockSafety.isAlwaysExcluded(this, pkg)) {
+            return
+        }
+        // System UI and the keyboard flash up during block transitions and typing; treating them
+        // as the foreground app split one visit into several "opens" (e.g. each Shorts block).
+        if (isTransientSystemSurface(pkg)) {
             return
         }
 
@@ -2000,6 +2031,11 @@ class LoqInAccessibilityService : AccessibilityService() {
             return
         }
         if (km?.isKeyguardLocked == true) {
+            return
+        }
+
+        // Going home ends the visit (handled above) but the launcher itself is not an app open.
+        if (isHomeLauncherPackage(pkg)) {
             return
         }
 
@@ -4147,6 +4183,14 @@ class LoqInAccessibilityService : AccessibilityService() {
         }
 
         val host = hostSignal?.first
+            ?: hostFromOtherBrowserWindows(pkg, root)?.also { otherHost ->
+                appendBlockingLog(
+                    category = "website_detect",
+                    key = "web-other-window|$pkg|$otherHost",
+                    message = "pkg=$pkg result=host_from_other_window host=${sanitizeWebsiteSignal(otherHost)} event=${eventTypeLabel(event)}",
+                    throttleMs = 1_500L
+                )
+            }
             ?: run {
                 if (isFirefoxFamily(pkg) && (loadedFirefoxPageEvent || !recentEditing)) {
                     browserWebsiteState.currentPendingDomain(pkg, now)?.let { pendingHost ->
@@ -4342,6 +4386,25 @@ class LoqInAccessibilityService : AccessibilityService() {
             blockCategory = BlockCategoryCountStore.Category.WEBSITE,
             prePopupPhoneHome = !redirected
         )
+    }
+
+    /**
+     * A browser dialog or popup (first-run promos, permission prompts, context menus) can own the
+     * active window while the page under it keeps loading, so the address bar is not in [activeRoot]
+     * and the page stayed usable. Read the browser's other windows instead; only a trusted
+     * address-bar signal counts.
+     */
+    private fun hostFromOtherBrowserWindows(pkg: String, activeRoot: AccessibilityNodeInfo): String? {
+        val activeWindowId = runCatching { activeRoot.windowId }.getOrDefault(-1)
+        val browserWindows = runCatching { windows }.getOrNull().orEmpty()
+        for (window in browserWindows) {
+            if (window.type != AccessibilityWindowInfo.TYPE_APPLICATION || window.id == activeWindowId) continue
+            val root = runCatching { window.root }.getOrNull() ?: continue
+            if (root.packageName?.toString() != pkg) continue
+            val signal = runCatching { tryExtractDomainFromBrowser(root, pkg, null) }.getOrNull() ?: continue
+            if (signal.second) return signal.first
+        }
+        return null
     }
 
     private fun scheduleStableWebsiteCandidateProbe(pkg: String, host: String) {

@@ -26,6 +26,7 @@ import android.content.Intent
 import android.os.Looper
 import com.oliver.loqin.data.prefs.OpenCountStore
 import com.oliver.loqin.data.prefs.UsageStore
+import com.oliver.loqin.feature.blocker.BlockerActivity
 import com.oliver.loqin.util.AppBlockSafety
 import com.oliver.loqin.util.PackageManagerApiCompat
 import java.util.Calendar
@@ -458,6 +459,9 @@ object UsageStatsRepo {
      * Android can emit several ACTIVITY_RESUMED events while the user remains inside one app, for example during internal Activity changes, tab navigation or OEM window updates. 
      * Those events are not separate app launches and must not inflate the daily counter.
      */
+    private fun isLoqInBlockScreen(className: String?): Boolean =
+        className == BlockerActivity::class.java.name
+
     fun getSessionCountMapForWindow(ctx: Context, from: Long, to: Long): Map<String, Int> {
         if (isMainThread()) {
             return emptyMap()
@@ -496,7 +500,11 @@ object UsageStatsRepo {
                         normalized.contains("quickstep")
 
                     if (UsageInsightsAppFilter.isLoqInPackage(packageName) || isHomeSurface) {
-                        foregroundPackage = null
+                        // Loq In's own block screen sits on top of the blocked app; returning from
+                        // it is the same visit, not a new open (the live counter treats it the same).
+                        if (!isLoqInBlockScreen(event.className)) {
+                            foregroundPackage = null
+                        }
                         continue
                     }
                     if (packageName == "com.android.systemui" ||
