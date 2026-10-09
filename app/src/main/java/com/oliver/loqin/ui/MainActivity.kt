@@ -1228,6 +1228,12 @@ class MainActivity : AppCompatActivity() {
             AutomationModeStore.canButtonEnable(this)
         }
         if (!canChange) {
+            // In a scan mode the code is the way off: open the scanner instead of a dead-end toast.
+            if (enabled && (AutomationModeStore.isQrAllowed(this) || AutomationModeStore.isBarcodeAllowed(this))) {
+                snackRoot().showWarnPill(R.string.home_scan_to_disable)
+                openHeaderScanner()
+                return
+            }
             val msg = if (enabled && AutomationModeStore.isButtonEnableAllowed(this)) {
                 R.string.mode_blocked_button_disable_enable_only
             } else {
@@ -3570,7 +3576,15 @@ class MainActivity : AppCompatActivity() {
             }
             SwitchModeStore.isEnabled(this) -> {
                 tvTempTileTitle.text = getString(R.string.tile_temp_title_pause)
-                tvTempTileSubtitle.text = getString(R.string.tile_temp_subtitle_choose)
+                // Breaks use the manual channel; say so instead of inviting a tap that is refused.
+                tvTempTileSubtitle.text = if (AutomationModeStore.isButtonAllowed(this)) {
+                    getString(R.string.tile_temp_subtitle_choose)
+                } else {
+                    getString(
+                        R.string.tile_temp_subtitle_mode_locked,
+                        blockingModeLabel(AutomationModeStore.getMode(this)),
+                    )
+                }
             }
             else -> {
                 val currentProfile = ProfileStore.getCurrent(this).orEmpty().trim()

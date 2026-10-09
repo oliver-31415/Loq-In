@@ -189,3 +189,11 @@ Invalid input says "Enter a valid domain, like example.com."; the button reads "
 
 **Verified.** Light theme: Home and Keys & codes show dark status bar icons.
 
+## 20. Locked Home controls point to the way off
+
+**Problem.** In QR or barcode mode the Disable button and the Take a break tile looked available but only answered with a toast ("Manual buttons can only enable Loq In right now…"); the tile still said "Choose duration" (bug 22).
+
+**Fix.** When Disable is refused and a scan channel is the way off, Home says "Scan your code to turn Loq In off." and opens the scanner directly. The Take a break tile reads "Locked in <mode>" while the manual channel can't pause protection (EN/DE).
+
+**Verified.** QR mode, active, code kept: the tile shows "Locked in QR mode"; Disable opens the scanner (after the camera permission prompt) and Loq In stays on.
+
