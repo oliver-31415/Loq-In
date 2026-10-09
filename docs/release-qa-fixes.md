@@ -205,3 +205,11 @@ Invalid input says "Enter a valid domain, like example.com."; the button reads "
 
 **Verified.** QR mode, active: Disable > scanner > Don't allow shows the dialog; Open settings opens the app page; Back returns to Home; no crash.
 
+## 22. Home counts limited apps separately
+
+**Problem.** The Home profile card's "Apps" number counted every selected app, so adding a limit to an app raised the "blocked" count even though the app was only limited (bug 13).
+
+**Fix.** In Block selected mode the number shows fully blocked apps only; when some selected apps have limits the label reads "Apps · N limited" (EN/DE). Allow selected mode is unchanged.
+
+**Verified (Haiku agent).** Facebook blocked: "1 / Apps". After adding a 5-opens limit to Chrome: "1 / Apps · 1 limited". After Remove limits > Stop limiting: back to "1 / Apps". No crashes.
+

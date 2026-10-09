@@ -2208,9 +2208,24 @@ class MainActivity : AppCompatActivity() {
         }
         tvHeroProfileName.text = profile
 
-        val appCount = ProfileStore.getSelectedForProfileMode(this, profile).size
+        // In block mode a selected app with limits is limited, not blocked: count them apart.
+        val selectedApps = ProfileStore.getSelectedForProfileMode(this, profile)
+        val limitedCount = if (ProfileRuleModeStore.isAllowMode(this, profile)) {
+            0
+        } else {
+            selectedApps.count { pkg ->
+                UsageLimitStore.getLimitMinutes(this, profile, pkg) > 0 ||
+                    AttemptLimitStore.getLimitAttempts(this, profile, pkg) > 0 ||
+                    SessionLimitStore.getLimitMinutes(this, profile, pkg) > 0
+            }
+        }
         val domainCount = DomainBlockStore.getDomainsForProfile(this, profile).size
-        tvHeroStatApps.text = appCount.toString()
+        tvHeroStatApps.text = (selectedApps.size - limitedCount).toString()
+        findViewById<TextView>(R.id.tvHeroStatAppsLabel)?.text = if (limitedCount > 0) {
+            getString(R.string.hero_stat_apps_with_limited_fmt, limitedCount)
+        } else {
+            getString(R.string.hero_stat_apps)
+        }
         tvHeroStatDomains.text = domainCount.toString()
         thread {
             val blocks28d = BlockCountStore.getTotalForLastNDays(this, 28)
