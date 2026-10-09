@@ -80,14 +80,7 @@ class BarcodeScanActivity : AppCompatActivity() {
     ) { granted ->
         if (granted) startCamera()
         else {
-            ScanFeedback.error(
-                this,
-                "Barcode",
-                "permission_missing",
-                getString(R.string.scan_error_camera_permission_barcode),
-                long = true,
-            )
-            finish()
+            ScanFeedback.cameraPermissionDenied(this, "Barcode", R.string.scan_error_camera_permission_barcode)
         }
     }
 

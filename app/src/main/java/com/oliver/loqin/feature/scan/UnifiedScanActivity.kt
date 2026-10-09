@@ -78,14 +78,7 @@ class UnifiedScanActivity : AppCompatActivity() {
         if (granted) {
             startCamera()
         } else {
-            ScanFeedback.error(
-                this,
-                "Scanner",
-                "permission_missing",
-                getString(R.string.scan_error_camera_permission_code),
-                long = true,
-            )
-            finish()
+            ScanFeedback.cameraPermissionDenied(this, "Scanner", R.string.scan_error_camera_permission_code)
         }
     }
 

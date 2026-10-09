@@ -67,14 +67,7 @@ class QrScanActivity : AppCompatActivity() {
     ) { granted ->
         if (granted) startCamera()
         else {
-            ScanFeedback.error(
-                this,
-                "QR",
-                "permission_missing",
-                getString(R.string.scan_error_camera_permission_qr),
-                long = true,
-            )
-            finish()
+            ScanFeedback.cameraPermissionDenied(this, "QR", R.string.scan_error_camera_permission_qr)
         }
     }
 

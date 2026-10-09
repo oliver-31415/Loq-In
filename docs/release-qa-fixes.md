@@ -197,3 +197,11 @@ Invalid input says "Enter a valid domain, like example.com."; the button reads "
 
 **Verified.** QR mode, active, code kept: the tile shows "Locked in QR mode"; Disable opens the scanner (after the camera permission prompt) and Loq In stays on.
 
+## 21. Camera permission denial offers Android settings
+
+**Problem.** Denying camera access showed a toast cut off at two lines that said "Enable it in Permissions" — but Loq In's Permissions page has no camera row and is locked while protection is active (bug 19).
+
+**Fix.** All three scanners call `ScanFeedback.cameraPermissionDenied`, a dialog ("Camera access needed") with **Open settings**, which opens Android's app details page; the scanner closes when the dialog does. Messages updated (EN/DE).
+
+**Verified.** QR mode, active: Disable > scanner > Don't allow shows the dialog; Open settings opens the app page; Back returns to Home; no crash.
+
