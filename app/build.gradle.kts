@@ -9,6 +9,11 @@ plugins {
 val loqinVersionCode = 230
 val loqinVersionName = "2.3.0"
 
+// Nightly builds (CI) pass a monotonically increasing code (e.g. yyMMddHH) and a suffix such as
+// "-nightly.20261009+abc1234". Local nightly builds fall back to the release values.
+val loqinNightlyVersionCode = providers.gradleProperty("loqinNightlyVersionCode").orNull?.toIntOrNull()
+val loqinNightlyVersionSuffix = providers.gradleProperty("loqinNightlyVersionSuffix").orElse("-nightly")
+
 val loqinSecretPropertiesFile = rootProject.file("signing.properties")
 val loqinSecretProperties = Properties().apply {
     if (loqinSecretPropertiesFile.isFile) {
@@ -97,6 +102,14 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro",
             )
         }
+        create("nightly") {
+            // Release-optimised build with its own app id so testers can install it next to the
+            // stable app. Signed with the release key; unsigned when signing is not configured.
+            initWith(getByName("release"))
+            applicationIdSuffix = ".nightly"
+            versionNameSuffix = loqinNightlyVersionSuffix.get()
+            matchingFallbacks += listOf("release")
+        }
     }
 
     compileOptions {
@@ -107,6 +120,14 @@ android {
     kotlin {
         compilerOptions {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_17)
+        }
+    }
+}
+
+androidComponents {
+    onVariants(selector().withBuildType("nightly")) { variant ->
+        loqinNightlyVersionCode?.let { code ->
+            variant.outputs.forEach { output -> output.versionCode.set(code) }
         }
     }
 }
