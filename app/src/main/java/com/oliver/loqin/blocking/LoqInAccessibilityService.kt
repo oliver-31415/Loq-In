@@ -504,6 +504,7 @@ class LoqInAccessibilityService : AccessibilityService() {
     private val MAX_NODE_SCAN_COUNT = 120
     // Main-thread wait for a root lookup; on slow devices the lookup is abandoned and its result
     // dropped rather than blocking the accessibility callback.
+    private val IDLE_PIP_CHECK_INTERVAL_MS = 3_000L
     private val ACCESSIBILITY_BINDER_MAIN_WAIT_MS = 12L
     // The Firefox URL-bar scan is breadth-first and needs a larger budget than the shared
     // depth-first scans: on real pages the page-content subtree is huge, and a 120-node budget
@@ -1000,6 +1001,7 @@ class LoqInAccessibilityService : AccessibilityService() {
                 maybeScheduleMinuteTick()
                 enforceCurrentForegroundIfNeeded()
                 usageTick()
+                maybeCheckIdleYouTubePip()
                 maybeFlushPerfCounters()
             } catch (_: Throwable) {
                 // ignore
@@ -9398,6 +9400,42 @@ class LoqInAccessibilityService : AccessibilityService() {
             false
         }
         return bestBounds
+    }
+
+    private var lastIdlePipCheckAt = 0L
+
+    /**
+     * A Short already playing in picture-in-picture sends no accessibility events, so turning
+     * protection on (or enabling the Shorts rule) never re-evaluated it and it kept playing.
+     * Check the PiP window from the service tick instead.
+     */
+    private fun maybeCheckIdleYouTubePip() {
+        val now = SystemClock.elapsedRealtime()
+        if (now - lastIdlePipCheckAt < IDLE_PIP_CHECK_INTERVAL_MS) return
+        lastIdlePipCheckAt = now
+        if (!SwitchModeStore.isEnabled(this)) return
+        if (!inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_SHORTS) &&
+            !inAppSurfaceRuleEnabled(BlockingToggleKeys.KEY_BLOCK_YT_PIP)
+        ) {
+            return
+        }
+        val pipRoot = findYouTubePictureInPictureRoot() ?: return
+        maybeBlockYouTubeFloatingPlayer(event = null, reason = "idle_pip_tick", rootOverride = pipRoot)
+    }
+
+    private fun findYouTubePictureInPictureRoot(): AccessibilityNodeInfo? {
+        val activeWindows = runCatching { windows }.getOrNull().orEmpty()
+        for (window in activeWindows) {
+            val inPip = runCatching {
+                (AccessibilityWindowInfo::class.java
+                    .getMethod("isInPictureInPictureMode")
+                    .invoke(window) as? Boolean) == true
+            }.getOrDefault(false)
+            if (!inPip) continue
+            val root = runCatching { window.root }.getOrNull() ?: continue
+            if (isYouTubeRootNode(root) || containsYouTubePackageNode(root)) return root
+        }
+        return null
     }
 
     private fun isYouTubePictureInPictureWindowVisible(): Boolean {

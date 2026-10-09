@@ -247,3 +247,11 @@ Invalid input says "Enter a valid domain, like example.com."; the button reads "
 
 **Follow-up noticed.** YouTube's "opens" rose by 7 across two launches, suggesting returning from a block screen counts as a new open. Not changed here.
 
+## 27. Re-check a Short already playing in picture-in-picture
+
+**Problem.** With the Block Shorts rule on, a Short that was already playing in picture-in-picture when protection turned on kept playing: the floating-player check only ran on YouTube accessibility events, and an idle PiP window sends none (bug 16).
+
+**Fix.** The service tick (every 3 s, only while protection is on and a Shorts or PiP rule is enabled) looks for a YouTube PiP window and runs the existing floating-player check against that window's tree, which pauses and closes a Shorts PiP.
+
+**Verified.** **Not verified on the emulator**: YouTube on the test image never reported playback for Shorts, so no PiP window could be created (two Haiku attempts). The change reuses the existing detection path and is inert without a YouTube PiP window. Check on a real phone: play a Short, send it to PiP, enable protection, expect it to close within a few seconds.
+
