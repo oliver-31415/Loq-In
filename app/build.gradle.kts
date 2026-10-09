@@ -6,8 +6,8 @@ plugins {
     id("com.google.devtools.ksp")
 }
 
-val loqinVersionCode = 228
-val loqinVersionName = "2.2.8"
+val loqinVersionCode = 230
+val loqinVersionName = "2.3.0"
 
 val loqinSecretPropertiesFile = rootProject.file("signing.properties")
 val loqinSecretProperties = Properties().apply {

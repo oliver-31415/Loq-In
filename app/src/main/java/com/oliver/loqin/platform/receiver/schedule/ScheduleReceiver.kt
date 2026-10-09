@@ -311,6 +311,12 @@ class ScheduleReceiver : BroadcastReceiver() {
                 }
             }
 
+            // A schedule whose profile no longer exists is a leftover (renames/removals used to
+            // leave schedules behind) — never let it drive enable/disable.
+            if (s.profile.isNotBlank() && !ProfileStore.profileExists(ctx, s.profile)) {
+                dbg("Skipping schedule with missing profile id=${s.id} profile=${s.profile}")
+                continue
+            }
             if (ok) matches += s
         }
 
@@ -548,7 +554,8 @@ class ScheduleReceiver : BroadcastReceiver() {
     private fun handleLocationTransition(ctx: Context, scheduleId: Int, transition: Int) {
 
         val schedule = ScheduleStore.getAll(ctx).firstOrNull {
-            it.id == scheduleId && it.enabled && it.isLocationSchedule()
+            it.id == scheduleId && it.enabled && it.isLocationSchedule() &&
+                (it.profile.isBlank() || ProfileStore.profileExists(ctx, it.profile))
         } ?: return
 
         val transitionKey = when (transition) {
@@ -862,8 +869,18 @@ class ScheduleReceiver : BroadcastReceiver() {
             return false
         }
 
+        // setCurrent is a no-op for unknown profile names: only count the switch when it really
+        // happened, otherwise a schedule pointing at a missing profile would re-"apply" forever.
+        var profileApplied = false
         if (profileChanged) {
-            ProfileStore.setCurrent(ctx, s.profile)
+            profileApplied = ProfileStore.setCurrent(ctx, s.profile)
+            if (!profileApplied) {
+                AppLogStore.append(
+                    ctx,
+                    "Schedule",
+                    "Match failed reason=profile_missing id=${s.id} name=${ScheduleInsights.scheduleDisplayName(s)} profile=${s.profile}"
+                )
+            }
         } else if (tempOverrideActive && currentProfile != s.profile) {
             if (SwitchModeStore.hasActiveTemporaryEnable(ctx)) {
                 SwitchModeStore.setTemporaryEnableRestoreProfileFromSchedule(ctx, s.profile)
@@ -873,7 +890,7 @@ class ScheduleReceiver : BroadcastReceiver() {
             }
         }
 
-        if (profileChanged || (stateActuallyChanged && baseEnabledAfter)) {
+        if (profileApplied || (stateActuallyChanged && baseEnabledAfter)) {
             BlockingRuntime.ensureRunning(ctx)
         }
 
@@ -896,7 +913,7 @@ class ScheduleReceiver : BroadcastReceiver() {
             ScheduleRuntimeStore.setHadDisableAndEnable(ctx, isRangeDisableEnable)
         }
 
-        if (!stateActuallyChanged && !profileChanged) {
+        if (!stateActuallyChanged && !profileApplied) {
             val noopReason = when (s.action) {
                 ScheduleStore.Action.ENABLE, ScheduleStore.Action.ENABLE_AND_DISABLE, ScheduleStore.Action.DISCONNECT_ENABLE ->
                     if (baseEnabledAfter) "already_enabled" else "unchanged"
@@ -912,12 +929,12 @@ class ScheduleReceiver : BroadcastReceiver() {
         AppLogStore.append(
             ctx,
             "Schedule",
-            "schedule_apply id=${s.id} name=${ScheduleInsights.scheduleDisplayName(s)} action=${s.action.name} profile=${s.profile.ifBlank { "-" }} source=$source enabledBefore=$baseEnabledBefore enabledAfter=$baseEnabledAfter profileChanged=$profileChanged"
+            "schedule_apply id=${s.id} name=${ScheduleInsights.scheduleDisplayName(s)} action=${s.action.name} profile=${s.profile.ifBlank { "-" }} source=$source enabledBefore=$baseEnabledBefore enabledAfter=$baseEnabledAfter profileChanged=$profileApplied"
         )
         AppLogStore.append(
             ctx,
             "Schedule",
-            "action_result action=${s.action.name.lowercase()} result=changed reason=applied id=${s.id} profile=${s.profile.ifBlank { "-" }} source=$source enabledBefore=$baseEnabledBefore enabledAfter=$baseEnabledAfter profileChanged=$profileChanged"
+            "action_result action=${s.action.name.lowercase()} result=changed reason=applied id=${s.id} profile=${s.profile.ifBlank { "-" }} source=$source enabledBefore=$baseEnabledBefore enabledAfter=$baseEnabledAfter profileChanged=$profileApplied"
         )
 
         updateNextAlarmAndNotifyIfChanged(ctx)

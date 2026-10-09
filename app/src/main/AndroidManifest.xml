@@ -167,7 +167,7 @@
         </receiver>
 
         <!-- Main launcher activity -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".ui.MainActivity"
             android:exported="true">
             <intent-filter>
@@ -177,7 +177,7 @@
         </activity>
 
         <!-- Transparent entry point for QR, barcode, NFC-write, and blocked-notification shortcuts -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.entry.ScanLauncherActivity"
             android:exported="true"
             android:excludeFromRecents="true"
@@ -186,87 +186,87 @@
             android:theme="@android:style/Theme.Translucent.NoTitleBar" />
 
         <!-- Settings root screen -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.settings.SettingsActivity"
             android:exported="false"
             android:label="@string/settings" />
 
         <!-- Protection change delay + pending queue -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.settings.ProtectionChangesActivity"
             android:exported="false"
             android:parentActivityName=".feature.settings.SettingsActivity" />
 
         <!-- Appearance screen -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.settings.AppearanceActivity"
             android:exported="false"
             android:label="@string/settings_theme_title" />
 
         <!-- Info hub screen -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.about.InfoActivity"
             android:exported="false"
             android:label="@string/settings_section_info" />
 
         <!-- Rules hub screen -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.tools.RulesHubActivity"
             android:exported="false"
             android:label="@string/nav_rules" />
 
         <!-- Activity hub screen -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.tools.ActivityHubActivity"
             android:exported="false"
             android:label="@string/nav_activity" />
 
         <!-- Schedule management screen -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.schedule.SchedulesActivity"
             android:exported="false"
             android:label="@string/schedules_title"
             android:parentActivityName=".feature.settings.SettingsActivity" />
 
         <!-- Map picker for location-based schedules -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.schedule.LocationMapPickerActivity"
             android:exported="false"
             android:label="@string/schedules_location_map_picker_title"
             android:parentActivityName=".feature.schedule.SchedulesActivity" />
 
         <!-- First-run onboarding flow -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.onboarding.OnboardingActivity"
             android:exported="true" />
 
         <!-- Profile management screen -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.profiles.ManageProfilesActivity"
             android:exported="false" />
 
         <!-- App rules picker screen -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.picker.AppPickerActivity"
             android:exported="false" />
 
         <!-- Key/code management hub -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.tools.ManageKeysActivity"
             android:exported="false" />
 
         <!-- NFC action tag writer -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".nfc.NfcWriterActivity"
             android:exported="false" />
 
         <!-- NFC write waiting screen -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".nfc.NfcWriteWaitingActivity"
             android:exported="false" />
 
         <!-- NFC dispatch activity for LoqIn NDEF and fallback tag scans -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".nfc.NfcEntryActivity"
             android:exported="true"
             android:launchMode="singleTop">
@@ -302,7 +302,7 @@
         </activity>
 
         <!-- Fullscreen blocker shown when a blocked app or website is opened -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.blocker.BlockerActivity"
             android:exported="false"
             android:excludeFromRecents="true"
@@ -312,61 +312,61 @@
             tools:ignore="DiscouragedApi" />
 
         <!-- Support log viewer -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.support.SupportLogActivity"
             android:exported="false"
             android:label="@string/support_logs_view_title" />
 
         <!-- Advanced mode information screen -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.about.AdvancedModeActivity"
             android:exported="false"
             android:label="@string/advanced_mode_title" />
 
         <!-- FAQ screen -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.faq.FaqActivity"
             android:exported="false"
             android:label="@string/faq_screen_title" />
 
         <!-- Permission setup screen -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.settings.PermissionsActivity"
             android:exported="false"
             android:parentActivityName=".feature.settings.SettingsActivity" />
 
         <!-- Home display/toggle options screen -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.settings.ToggleOptionsActivity"
             android:exported="false" />
 
         <!-- Blocking mode settings screen -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.settings.BlockingModesActivity"
             android:exported="false"
             android:parentActivityName=".feature.settings.SettingsActivity" />
 
         <!-- Blocking feature settings screen -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.settings.BlockingFeaturesActivity"
             android:exported="false"
             android:parentActivityName=".feature.settings.SettingsActivity" />
 
         <!-- Control modes page (shared blocking-mode picker design) -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.settings.ControlModesActivity"
             android:exported="false"
             android:parentActivityName=".feature.settings.SettingsActivity" />
 
         <!-- Blocked notification inbox -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.inbox.BlockedInboxActivity"
             android:exported="false"
             android:label="@string/blocked_inbox_title"
             android:parentActivityName=".feature.settings.SettingsActivity" />
 
         <!-- External QR/deep-link confirmation entry point -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.qr.ExternalQrActionActivity"
             android:exported="true"
             android:excludeFromRecents="true"
@@ -380,156 +380,156 @@
         </activity>
 
         <!-- QR scanner screen -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.qr.QrScanActivity"
             android:exported="false" />
 
         <!-- Barcode scanner screen -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.barcode.BarcodeScanActivity"
             android:exported="false" />
 
         <!-- Unified QR + barcode scanner screen -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.scan.UnifiedScanActivity"
             android:exported="false" />
 
         <!-- QR action generator screen -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.qr.QrGenerateActivity"
             android:exported="false" />
 
         <!-- What's new/release notes screen -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.about.WhatsNewActivity"
             android:exported="false"
             android:label="@string/settings_changelog_title"
             android:parentActivityName=".feature.settings.SettingsActivity" />
 
         <!-- Legal disclaimer screen -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.about.DisclaimerActivity"
             android:exported="false" />
 
         <!-- Support screen -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.support.SupportActivity"
             android:exported="false"
             android:label="@string/support_title"
             android:parentActivityName=".feature.settings.SettingsActivity" />
 
         <!-- LoqIn action and input overview -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.usage.LoqInOverviewActivity"
             android:exported="false" />
 
         <!-- Active time overview -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.usage.ActiveTimeActivity"
             android:exported="false" />
 
         <!-- Active time detail screen for sessions and monthly totals -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.usage.ActiveTimeDetailActivity"
             android:exported="false" />
 
         <!-- Recent LoqIn activity timeline -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.usage.ActivityHistoryActivity"
             android:exported="false" />
 
         <!-- App and website usage overview -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.usage.AppWebsiteUsageActivity"
             android:exported="false" />
 
         <!-- App usage detail screen -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.usage.AppUsageDetailActivity"
             android:exported="false" />
 
         <!-- Most-used app screen-time distribution -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.usage.MostUsedAppsActivity"
             android:exported="false" />
 
         <!-- App launch statistics and timeline screens -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.usage.AppLaunchesActivity"
             android:exported="false" />
 
         <!-- App launch timeline screen (Opens tab deep-link target) -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.usage.AppLaunchDetailActivity"
             android:exported="false" />
 
         <!-- Apps excluded from usage statistics -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.usage.IgnoredUsageAppsActivity"
             android:exported="false" />
 
         <!-- Screen unlock statistics and detail timeline screens -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.usage.ScreenUnlocksActivity"
             android:exported="false" />
 
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.usage.ScreenUnlockDetailActivity"
             android:exported="false" />
 
         <!-- Website usage detail screen -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.usage.WebsiteUsageDetailActivity"
             android:exported="false" />
 
         <!-- Website rules management screen -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.settings.ManageBlockedWebsitesActivity"
             android:exported="false" />
 
         <!-- In-app rules setup screen -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.settings.InAppRulesActivity"
             android:exported="false" />
 
         <!-- Paired NFC tag management screen -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.settings.ManagePairedTagsActivity"
             android:exported="false" />
 
         <!-- Barcode action management screen -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.settings.ManageBarcodesActivity"
             android:exported="false" />
 
         <!-- App lock settings screen -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.settings.AppLockSettingsActivity"
             android:exported="false" />
 
         <!-- App lock challenge screen -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.settings.AppLockActivity"
             android:exported="false"
             android:excludeFromRecents="true"
             android:launchMode="singleTop" />
 
         <!-- App information screen -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.about.AppInfoActivity"
             android:exported="false" />
 
         <!-- Device information screen -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.about.DeviceInfoActivity"
             android:exported="false" />
 
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.about.PrivacyReportActivity"
             android:exported="false" />
 
         <!-- Account hub (top-right button on Home) -->
-        <activity
+        <activity android:screenOrientation="portrait"
             android:name=".feature.account.AccountActivity"
             android:exported="false" />
 

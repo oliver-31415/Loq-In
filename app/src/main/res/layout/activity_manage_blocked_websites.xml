@@ -32,8 +32,8 @@
         android:layout_weight="1">
 
     <!-- Collapsing header: the rule-mode card is the FIRST child so it gets a
-         real collapse range and scrolls 1:1; search + add have no flags so they
-         pin beneath it. -->
+         real collapse range and scrolls 1:1; search + add + chips have no flags
+         so they pin beneath it. -->
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
@@ -139,6 +139,24 @@
                 app:iconPadding="0dp"
                 app:strokeWidth="0dp" />
         </LinearLayout>
+
+        <!-- Sticky suggestion category chips: no scroll flags, so they pin with search -->
+        <HorizontalScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:scrollbars="none"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:paddingBottom="4dp">
+
+            <com.google.android.material.chip.ChipGroup
+                android:id="@+id/chipCategories"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:chipSpacingHorizontal="4dp"
+                app:singleSelection="true"
+                app:selectionRequired="true" />
+        </HorizontalScrollView>
     </com.google.android.material.appbar.AppBarLayout>
 
     <!-- Content -->
@@ -158,9 +176,9 @@
                 android:id="@+id/list"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:paddingStart="16dp"
-                android:paddingTop="8dp"
-                android:paddingEnd="16dp"
+                android:paddingStart="8dp"
+                android:paddingTop="4dp"
+                android:paddingEnd="8dp"
                 android:paddingBottom="24dp"
                 android:clipToPadding="false" />
 
@@ -221,10 +239,18 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="14dp"
-                        android:text="@string/empty_action_add_first_website"
-                        android:textAllCaps="false"
-                        app:icon="@drawable/add_24"
-                        app:iconGravity="textStart" />
+                        android:minHeight="40dp"
+                        android:text="@string/empty_action_add_first_website" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btnEmptyShowSuggestions"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:minHeight="40dp"
+                        android:text="@string/website_show_suggestions"
+                        android:visibility="gone" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
         </FrameLayout>

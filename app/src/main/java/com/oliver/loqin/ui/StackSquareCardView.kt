@@ -20,19 +20,25 @@ package com.oliver.loqin.ui
 
 import android.content.Context
 import android.util.AttributeSet
-import com.google.android.material.card.MaterialCardView
 
 /**
- * Card that always measures square (height follows width), for grid tiles
- * like the app picker where every cell must be a true square.
+ * Square grid tile (website rules) for hosts that group more than one rule. The stacked
+ * "paper edges" read as stray outlines on the tile and are not drawn; the page count and
+ * layers badge on the tile content already communicate the grouping.
  */
-open class SquareCardView @JvmOverloads constructor(
+class StackSquareCardView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0
-) : MaterialCardView(context, attrs, defStyleAttr) {
+) : SquareCardView(context, attrs, defStyleAttr) {
 
-    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        super.onMeasure(widthMeasureSpec, widthMeasureSpec)
+    var stackDepth: Int = 0
+        set(value) {
+            field = value.coerceIn(0, MAX_DEPTH)
+            invalidate()
+        }
+
+    companion object {
+        const val MAX_DEPTH = 3
     }
 }

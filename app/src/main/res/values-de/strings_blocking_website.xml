@@ -19,6 +19,8 @@
     <string name="blocked_websites_empty_body">Füge eine Website hinzu, die dieses Profil blockieren soll.</string>
     <string name="empty_action_add_first_website">Erste Website hinzufügen</string>
     <string name="website_rules_info_title">Website-Regeln</string>
+    <string name="website_menu_info">Info</string>
+    <string name="website_add_selected">Hinzufügen</string>
     <string name="website_rules_info_body">Website-Regeln gelten nur für das ausgewählte Profil.\n\nWähle einen Modus:\n• Ausgewählte blockieren: Aktivierte Domains werden blockiert.\n• Ausgewählte erlauben: Aktivierte Domains bleiben verfügbar; andere erkannte Websites werden blockiert.\n\nMit der Checkbox neben einer Domain kannst du ihre Regel pausieren oder fortsetzen, ohne sie zu löschen. Loq In erkennt sichtbare URLs in unterstützten Browsern mithilfe der Bedienungshilfe. Browser-Updates und Datenschutzfunktionen können die Erkennung beeinflussen.\n\nDie aktuelle Kompatibilitätsliste und Hilfe zur Fehlerbehebung findest du im Hilfebereich.</string>
     <string name="website_rule_mode_title">Website-Regelmodus</string>
     <string name="website_rule_mode_block_summary">Ausgewählte aktivierte Websites werden blockiert, solange dieses Profil aktiv ist.</string>
@@ -37,6 +39,7 @@
     <string name="rule_type">Regeltyp</string>
     <string name="rule_block_always">Immer blockieren</string>
     <string name="rule_daily_limit">Tägliches Limit</string>
+    <string name="website_mode_limits">Limits festlegen</string>
     <string name="website_rule_pending">Vorgemerkt — wird nach der Verzögerung angewendet</string>
     <string name="website_rule_disabled">Regel deaktiviert</string>
     <string name="website_rule_toggle">Website-Regel aktivieren</string>
@@ -70,5 +73,53 @@
     <string name="blocked_websites_profile_subtitle">Regeln für: %1$s</string>
     <string name="rule_allowed">Erlaubt</string>
     <string name="rule_allowed_always">Immer erlaubt</string>
+
+    <!-- ====================================================== -->
+    <!-- Website tiles / suggestions -->
+    <!-- ====================================================== -->
+    <string name="website_tile_open_pages">Pfadregeln anzeigen</string>
+    <string name="website_tile_suggested">Vorschlag</string>
+    <string name="website_tile_whole_site">Ganze Website</string>
+    <string name="website_tile_paths_only">Nur Pfade</string>
+    <plurals name="website_tile_page_count">
+        <item quantity="one">%1$d Seite</item>
+        <item quantity="other">%1$d Seiten</item>
+    </plurals>
+    <string name="website_section_your_rules">Deine Regeln</string>
+    <string name="website_section_suggestions">Vorschläge</string>
+    <string name="website_add_custom_tile">„%1$s“ hinzufügen</string>
+    <string name="website_quick_paths_title">Schnellpfade</string>
+    <string name="website_quick_path_added">%1$s hinzugefügt</string>
+    <string name="website_delete_rule">Regel löschen</string>
+    <string name="website_category_all">Alle</string>
+    <string name="website_category_social">Sozial</string>
+    <string name="website_category_video">Video</string>
+    <string name="website_category_news">Nachrichten</string>
+    <string name="website_category_shopping">Einkaufen</string>
+    <string name="website_category_gaming">Spiele</string>
+    <string name="website_tile_edit_hint">Zum Bearbeiten oder Löschen lange drücken</string>
+
+    <!-- ====================================================== -->
+    <!-- Path overlay / comprehensive limits -->
+    <!-- ====================================================== -->
+    <string name="website_visit_limit_value_format">%1$d Besuche/Tag</string>
+    <string name="website_root_not_added">Nicht hinzugefügt</string>
+    <string name="website_hide_suggestions">Vorschläge ausblenden</string>
+    <string name="website_show_suggestions">Vorschläge anzeigen</string>
+    <string name="website_paths_sheet_title">Pfadregeln</string>
+    <string name="website_add_path">Pfadregel hinzufügen</string>
+    <string name="website_limits_title">Limits: %1$s</string>
+    <string name="website_limit_daily_hint">Minuten pro Tag</string>
+    <string name="website_limit_session_hint">Minuten pro Besuch</string>
+    <string name="website_limit_visits_hint">Besuche pro Tag</string>
+    <string name="website_limits_summary">Kombiniere Limits, z. B. 4 Besuche pro Tag mit 8 Minuten pro Besuch. Leer lassen für kein Limit.</string>
+    <string name="website_limit_section_visits">Website-Besuche</string>
+    <string name="website_limit_visits_subtitle">Wie oft die Website pro Tag besucht werden kann</string>
+    <string name="website_limit_attempts_hint">Besuche pro Tag</string>
+    <string name="website_limit_sentence_none">Keine Limits gesetzt. Diese Website kann ohne Einschränkungen besucht werden.</string>
+    <string name="website_limit_sentence_fully_blocked">Diese Website wird von diesem Profil vollständig blockiert. Füge ein Limit hinzu, um eine eingeschränkte Nutzung zu erlauben.</string>
+    <string name="website_limit_sentence_split_fmt">\u0020\u00b7 aufgeteilt auf höchstens %1$d Besuche</string>
+    <string name="website_limit_sentence_opens_only_fmt">Bis zu %1$d Besuche pro Tag</string>
+    <string name="website_limit_required">Gib mindestens ein Limit ein oder wähle „Immer blockieren“.</string>
 
 </resources>

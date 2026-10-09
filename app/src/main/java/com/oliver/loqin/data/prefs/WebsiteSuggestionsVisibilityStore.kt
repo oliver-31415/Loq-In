@@ -16,23 +16,24 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-package com.oliver.loqin.ui
+package com.oliver.loqin.data.prefs
 
 import android.content.Context
-import android.util.AttributeSet
-import com.google.android.material.card.MaterialCardView
+import androidx.core.content.edit
+import androidx.preference.PreferenceManager
 
-/**
- * Card that always measures square (height follows width), for grid tiles
- * like the app picker where every cell must be a true square.
- */
-open class SquareCardView @JvmOverloads constructor(
-    context: Context,
-    attrs: AttributeSet? = null,
-    defStyleAttr: Int = 0
-) : MaterialCardView(context, attrs, defStyleAttr) {
+/** Visibility of the website suggestion section on the website rules screen. */
+object WebsiteSuggestionsVisibilityStore {
+    const val KEY_SHOW_WEBSITE_SUGGESTIONS = "pref_show_website_suggestions"
 
-    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        super.onMeasure(widthMeasureSpec, widthMeasureSpec)
+    fun isVisible(ctx: Context): Boolean {
+        return PreferenceManager.getDefaultSharedPreferences(ctx)
+            .getBoolean(KEY_SHOW_WEBSITE_SUGGESTIONS, true)
+    }
+
+    fun setVisible(ctx: Context, visible: Boolean) {
+        PreferenceManager.getDefaultSharedPreferences(ctx).edit(commit = true) {
+            putBoolean(KEY_SHOW_WEBSITE_SUGGESTIONS, visible)
+        }
     }
 }

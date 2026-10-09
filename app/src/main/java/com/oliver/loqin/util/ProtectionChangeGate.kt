@@ -31,6 +31,7 @@ import com.oliver.loqin.data.prefs.AutomationModeStore
 import com.oliver.loqin.data.prefs.DiagnosticsTimelineStore
 import com.oliver.loqin.data.prefs.DomainBlockStore
 import com.oliver.loqin.data.prefs.DomainLimitStore
+import com.oliver.loqin.data.prefs.DomainVisitLimitStore
 import com.oliver.loqin.data.prefs.EmergencyBypassStore
 import com.oliver.loqin.data.prefs.InAppRuleStore
 import com.oliver.loqin.data.prefs.LimitReachedStore
@@ -527,6 +528,63 @@ object ProtectionChangeGate {
         }
     }
 
+    /**
+     * Per-visit minutes and visits-per-day for a website rule. Lowering either value (or leaving
+     * it unchanged) is at least as restrictive and applies immediately; raising one queues (or is
+     * denied with delay 0).
+     */
+    fun requestWebsiteVisitLimits(
+        context: Context,
+        profile: String,
+        rule: String,
+        currentSessionMinutes: Int,
+        currentVisitCount: Int,
+        requestedSessionMinutes: Int,
+        requestedVisitCount: Int,
+    ): ProtectionChangePolicy.Result {
+        if (profile.isBlank() || rule.isBlank()) return ProtectionChangePolicy.Result.DENIED
+        val curSession = if (currentSessionMinutes <= 0) Int.MAX_VALUE else currentSessionMinutes
+        val reqSession = if (requestedSessionMinutes <= 0) Int.MAX_VALUE else requestedSessionMinutes
+        val curVisits = if (currentVisitCount <= 0) Int.MAX_VALUE else currentVisitCount
+        val reqVisits = if (requestedVisitCount <= 0) Int.MAX_VALUE else requestedVisitCount
+        val tightening = reqSession <= curSession && reqVisits <= curVisits
+        val unchanged = reqSession == curSession && reqVisits == curVisits
+        if (unchanged) return ProtectionChangePolicy.Result.APPLIED
+        val direction = if (tightening) {
+            ProtectionChangePolicy.Direction.STRICTER
+        } else {
+            ProtectionChangePolicy.Direction.WEAKER
+        }
+        return when (decision(context, direction)) {
+            ProtectionChangePolicy.Decision.APPLY_NOW -> {
+                applyWebsiteVisitLimits(
+                    context,
+                    profile,
+                    rule,
+                    requestedSessionMinutes,
+                    requestedVisitCount,
+                )
+                ProtectionChangePolicy.Result.APPLIED
+            }
+
+            ProtectionChangePolicy.Decision.QUEUE_DELAYED -> {
+                queue(
+                    context = context,
+                    type = PendingChangeType.WEBSITE_LIMIT,
+                    data = JSONObject()
+                        .put("profile", profile)
+                        .put("rule", rule)
+                        .put("visitLimitsOnly", true)
+                        .put("sessionMinutes", requestedSessionMinutes)
+                        .put("visitCount", requestedVisitCount),
+                )
+                ProtectionChangePolicy.Result.QUEUED
+            }
+
+            ProtectionChangePolicy.Decision.DENY -> ProtectionChangePolicy.Result.DENIED
+        }
+    }
+
     // ---------------------------------------------------------------------------------------------
     // Control mode
     // ---------------------------------------------------------------------------------------------
@@ -937,12 +995,11 @@ object ProtectionChangeGate {
         minutes: Int,
     ) {
         when {
-            alwaysBlock && minutes > 0 -> {
+            alwaysBlock -> {
                 DomainLimitStore.clearForProfile(context, profile, rule)
                 DomainBlockStore.addDomainForProfile(context, profile, rule)
+                DomainBlockStore.setDomainEnabledForProfile(context, profile, rule, true)
             }
-
-            alwaysBlock -> DomainBlockStore.removeDomainForProfile(context, profile, rule)
 
             minutes <= 0 -> {
                 DomainLimitStore.clearForProfile(context, profile, rule)
@@ -956,7 +1013,27 @@ object ProtectionChangeGate {
                     DomainBlockStore.removeDomainForProfile(context, profile, rule)
                 }
                 DomainLimitStore.setLimitMinutesForProfile(context, profile, rule, minutes)
+                DomainBlockStore.setDomainEnabledForProfile(context, profile, rule, true)
             }
+        }
+        BlockingRuntime.ensureRunning(context)
+    }
+
+    private fun applyWebsiteVisitLimits(
+        context: Context,
+        profile: String,
+        rule: String,
+        sessionMinutes: Int,
+        visitCount: Int,
+    ) {
+        DomainVisitLimitStore.setSessionLimitMinutesForProfile(
+            context, profile, rule, sessionMinutes.coerceAtLeast(0)
+        )
+        DomainVisitLimitStore.setVisitLimitCountForProfile(
+            context, profile, rule, visitCount.coerceAtLeast(0)
+        )
+        if (sessionMinutes > 0 || visitCount > 0) {
+            DomainBlockStore.setDomainEnabledForProfile(context, profile, rule, true)
         }
         BlockingRuntime.ensureRunning(context)
     }
@@ -980,6 +1057,8 @@ object ProtectionChangeGate {
         }
         if (!remaining) {
             DomainLimitStore.clearForProfile(context, profile, host)
+            DomainVisitLimitStore.clearForProfile(context, profile, host)
+            DomainVisitLimitStore.clearForProfile(context, profile, normalized)
         }
     }
 
