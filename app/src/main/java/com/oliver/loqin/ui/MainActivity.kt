@@ -136,6 +136,7 @@ import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.ui.dialog.ClockDurationDialSheet
 import com.oliver.loqin.ui.dialog.Dialogs
 import com.oliver.loqin.ui.dialog.EmergencyPinDialog
+import com.oliver.loqin.ui.dialog.padForNavigationBar
 import com.oliver.loqin.ui.dialog.styledDialogEditText
 import com.oliver.loqin.ui.dialog.applyLoqInDialogWidth
 import com.oliver.loqin.ui.dialog.showAccented
@@ -1608,6 +1609,7 @@ class MainActivity : AppCompatActivity() {
             layoutPresetsSection.visibility = View.GONE
             layoutMoreOptionsSection.visibility = View.GONE
         }
+        sheet.padForNavigationBar()
         sheet.show()
         return true
     }
@@ -1969,6 +1971,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         sheet.setContentView(list)
+        sheet.padForNavigationBar()
         sheet.show()
     }
 
@@ -1979,7 +1982,9 @@ class MainActivity : AppCompatActivity() {
         val sheet = BottomSheetDialog(this)
         val view = layoutInflater.inflate(R.layout.sheet_profile_edit, null)
         sheet.setContentView(view)
-        sheet.behavior.peekHeight = resources.displayMetrics.heightPixels / 2
+        // Open fully: a half-height peek hid "Delete profile" under the gesture bar until scrolled.
+        sheet.behavior.skipCollapsed = true
+        sheet.behavior.state = BottomSheetBehavior.STATE_EXPANDED
 
         // Row icons + green labels follow the live accent (?attr/colorPrimary would fall
         // back to the compile-time green since Home never applies an accent theme variant).
@@ -2107,6 +2112,7 @@ class MainActivity : AppCompatActivity() {
                 .showDestructiveAccented()
         }
 
+        sheet.padForNavigationBar()
         sheet.show()
     }
 
@@ -4811,6 +4817,7 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, BlockedInboxActivity::class.java))
         }
 
+        sheet.padForNavigationBar()
         sheet.show()
     }
 

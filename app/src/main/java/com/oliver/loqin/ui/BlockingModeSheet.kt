@@ -44,6 +44,7 @@ import com.oliver.loqin.feature.schedule.SchedulesActivity
 import com.oliver.loqin.feature.settings.ManageBarcodesActivity
 import com.oliver.loqin.nfc.NfcWriterActivity
 import com.oliver.loqin.theme.AccentColor
+import com.oliver.loqin.ui.dialog.padForNavigationBar
 import com.oliver.loqin.ui.dialog.showAccented
 import com.oliver.loqin.util.EditingLockGuard
 import com.oliver.loqin.util.LoqInAppAccessGuard
@@ -72,6 +73,10 @@ object BlockingModeSheet {
                 onModeChanged = onModeChanged,
             )
         )
+        // Tall sheet: open expanded so as many modes as possible are visible without dragging.
+        sheet.behavior.skipCollapsed = true
+        sheet.behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+        sheet.padForNavigationBar()
         sheet.show()
     }
 

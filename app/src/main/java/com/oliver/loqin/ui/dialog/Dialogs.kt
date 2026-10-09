@@ -1041,3 +1041,23 @@ private tailrec fun Context.findActivity(): Activity? {
         else -> null
     }
 }
+
+/**
+ * Bottom sheets draw edge-to-edge, so their last row sat under the gesture/navigation bar
+ * ("Delete profile"). Adds the navigation bar inset to the sheet content's bottom padding once
+ * the sheet is attached. Call before show().
+ */
+fun com.google.android.material.bottomsheet.BottomSheetDialog.padForNavigationBar() {
+    val container = findViewById<ViewGroup>(com.google.android.material.R.id.design_bottom_sheet) ?: return
+    container.post {
+        val content = container.getChildAt(0) ?: return@post
+        if (content.getTag(R.id.tag_nav_bar_padded) == true) return@post
+        val nav = androidx.core.view.ViewCompat.getRootWindowInsets(container)
+            ?.getInsets(androidx.core.view.WindowInsetsCompat.Type.navigationBars())
+            ?.bottom ?: 0
+        if (nav > 0) {
+            content.setPadding(content.paddingLeft, content.paddingTop, content.paddingRight, content.paddingBottom + nav)
+            content.setTag(R.id.tag_nav_bar_padded, true)
+        }
+    }
+}

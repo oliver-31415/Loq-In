@@ -43,6 +43,7 @@ import com.oliver.loqin.theme.CustomAccentApplier
 import com.oliver.loqin.ui.EdgeToEdgeUtils
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.dialog.LoqInDialogOption
+import com.oliver.loqin.ui.dialog.padForNavigationBar
 import com.oliver.loqin.ui.dialog.showAccented
 import com.oliver.loqin.ui.dialog.showLoqInOptionDialog
 import com.oliver.loqin.ui.dialog.styleLoqInDialogButtons
@@ -400,6 +401,7 @@ class ProtectionChangesActivity : AppCompatActivity() {
             ).apply { topMargin = dp(8) },
         )
         sheet.setContentView(content)
+        sheet.padForNavigationBar()
         sheet.show()
     }
 

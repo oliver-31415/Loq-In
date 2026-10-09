@@ -229,3 +229,11 @@ Invalid input says "Enter a valid domain, like example.com."; the button reads "
 
 **Verified (Haiku agent).** German: no English left on Home, the profile sheet or the switch-profile sheet; header, stats row and both tiles fully visible. English Home unchanged and unclipped. No crashes.
 
+## 25. Bottom sheets clear the gesture bar
+
+**Problem.** Bottom sheets draw edge-to-edge, so their last row sat under the gesture/navigation bar ("Delete profile" on the profile sheet); the profile sheet also opened at half height, hiding the row until scrolled (bug 26).
+
+**Fix.** `BottomSheetDialog.padForNavigationBar()` adds the navigation bar inset to the sheet content's bottom padding once attached; all eight bottom sheets call it before `show()`. The profile and Blocking method sheets open fully expanded.
+
+**Verified (Haiku agent).** Profile, switch-profile, Blocking method and Take a break sheets: the last row sits ~150 px above the home indicator at open, tops stay below the status bar, no crashes.
+

@@ -35,6 +35,7 @@ import com.google.android.material.button.MaterialButton
 import com.oliver.loqin.R
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.theme.CustomAccentApplier
+import com.oliver.loqin.ui.dialog.padForNavigationBar
 
 /**
  * Bottom-sheet overlay listing a host's path rules (and its whole-site rule) with per-rule
@@ -80,6 +81,7 @@ object WebsitePathsSheet {
                 },
             )
         )
+        sheet.padForNavigationBar()
         sheet.show()
     }
 
