@@ -6,6 +6,7 @@
     <!-- ====================================================== -->
     <string name="scan_error_nfc_not_linked">Dieser NFC-Tag ist mit keiner Loq In-Aktion verknüpft.</string>
     <string name="scan_error_qr_not_linked">Dieser QR-Code ist mit keiner Loq In-Aktion verknüpft.</string>
+    <string name="scan_error_code_not_from_this_install">Kein Code von diesem Loq In. Erstelle einen neuen unter „Meine Schlüssel und Codes“.</string>
     <string name="scan_error_barcode_not_linked">Dieser Barcode ist mit keiner Loq In-Aktion verknüpft.</string>
     <string name="scan_error_camera_permission_qr">Zum Scannen von QR-Codes wird die Kameraberechtigung benötigt. Aktiviere sie unter Berechtigungen und versuche es erneut.</string>
     <string name="scan_error_camera_permission_barcode">Zum Scannen von Barcodes wird die Kameraberechtigung benötigt. Aktiviere sie unter Berechtigungen und versuche es erneut.</string>

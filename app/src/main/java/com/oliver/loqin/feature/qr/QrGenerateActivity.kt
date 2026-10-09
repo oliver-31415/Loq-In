@@ -46,6 +46,7 @@ import com.oliver.loqin.data.prefs.AutomationModeStore
 import com.oliver.loqin.data.prefs.ProfileStore
 import com.oliver.loqin.databinding.ActivityQrGenerateBinding
 import com.oliver.loqin.feature.settings.ControlModeGuidance
+import com.oliver.loqin.nfc.LoqInCodeSecret
 import com.oliver.loqin.nfc.NfcSchema
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.ui.ThemeUtils
@@ -364,7 +365,8 @@ class QrGenerateActivity : AppCompatActivity() {
         val actionLabel = b.actionDropdown.text?.toString().orEmpty()
         val action = actions.firstOrNull { getString(it.labelRes) == actionLabel } ?: defaultAction()
 
-        val uri = buildLoqInUri(action)
+        // Codes carry this install's secret; unsigned loqin:// links are rejected when scanned.
+        val uri = LoqInCodeSecret.sign(this, buildLoqInUri(action))
         b.tvUri.text = uri
 
         val bmp = generateQrBitmap(uri, 900)

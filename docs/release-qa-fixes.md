@@ -48,7 +48,7 @@ Hiding an app from blocking is a weakening change: it is checked with `Protectio
 **Problem.** QR mode could be selected and enabled with no QR code. Disable was then refused, creating a code is blocked while active, schedules do not run in QR mode, and Emergency Unlock is once a day, so the user could be locked out. Barcode mode already had a fallback; QR did not (bug 4).
 
 **Fix.**
-- `AutomationModeStore.hasQrDisableCode` treats QR as set up once a disable-capable code was copied or shared from the generator, a QR scan was ever recorded (covers codes printed by older versions), or a managed QR code exists.
+- `AutomationModeStore.hasQrDisableCode` treats QR as set up once a disable-capable code was copied or shared from the generator, or a managed QR code exists. (Past scans no longer count since section 18: older codes stop working.)
 - `shouldAllowManualDisableForMissingScanSetup` (was barcode-only) keeps manual Disable available while the only disable channel is a scan channel with no code.
 - The Blocking method sheet asks to create a QR code (or add a barcode) right after picking a scan-only mode without one.
 
@@ -166,4 +166,18 @@ YouTube offers `/shorts/*` only; Instagram adds `/reel/*`; Facebook adds `/reel/
 Invalid input says "Enter a valid domain, like example.com."; the button reads "Add" when adding and "Save" when editing (EN/DE).
 
 **Verified.** Entered "not a url": the new error appears.
+
+## 18. Require this install's secret on QR codes and loqin:// links
+
+**Problem.** QR mode accepted any `loqin://` code, and the exported `ExternalQrActionActivity` accepted any `loqin://` link from a website or app (after one confirmation). Anyone could make a working "disable" code with a web QR generator, which removed the friction QR mode is meant to add (bug 7).
+
+**Fix.**
+- `LoqInCodeSecret` keeps a random per-install secret (`qr_code_secret` in `loqin_prefs`, backed up with Keys and codes). The QR generator appends it as `k=<secret>`.
+- `NfcEntryActivity` rejects unmanaged QR/barcode dispatches whose URI does not carry the secret ("Not a code from this Loq In. Create a new one in My keys and codes."). Codes linked in My keys and codes stay trusted; NFC tags are unchanged.
+- `ExternalQrActionActivity` rejects unsigned links before showing its confirmation.
+- `hasQrDisableCode` no longer counts past scans, and its flag moved to `qr_disable_code_ready` (Keys backup category), so the lockout fallback stays available until a new signed code is kept.
+
+**Upgrade note (strict, by decision).** QR codes created by earlier versions stop working and must be created again. Users in QR mode keep manual Disable as a fallback until they copy or share a new code. Mention this in the 2.3.0 release notes.
+
+**Verified.** Unsigned `loqin://toggle` link: rejected with the toast, no dialog. Wrong secret: rejected. Signed link from the generator: confirmation shown, Loq In toggled on. `LoqInCodeSecretTest` covers the comparison.
 

@@ -51,7 +51,7 @@ object AutomationModeStore {
     private const val KEY_MIXED_ALLOW_SCHEDULE_EDITING = "automation_mixed_allow_schedule_editing"
     private const val KEY_MIXED_ALLOW_NFC_TAG_WRITING = "automation_mixed_allow_nfc_tag_writing"
     private const val KEY_UNINSTALL_FRICTION = "pref_uninstall_friction"
-    private const val KEY_QR_DISABLE_CODE_READY = "automation_qr_disable_code_ready"
+    private const val KEY_QR_DISABLE_CODE_READY = "qr_disable_code_ready"
 
     enum class Mode(val raw: String) {
         SCHEDULE("schedule"),
@@ -254,14 +254,13 @@ object AutomationModeStore {
     }
 
     /**
-     * Loq In QR codes are stateless `loqin://` links, so "set up" means the user has kept a code
-     * that can turn protection off: copied or shared one from the generator, scanned one before
-     * (covers codes printed by earlier versions), or linked a managed QR code.
+     * QR is "set up" once the user has kept a code that can turn protection off: copied or shared
+     * a signed code from the generator, or linked a managed QR code. Codes from earlier versions
+     * carry no install secret and no longer work, so past scans don't count.
      */
     fun hasQrDisableCode(context: Context): Boolean =
         getBool(context, KEY_QR_DISABLE_CODE_READY, false) ||
-            ScanCodeStore.hasEntries(context, ScanCodeStore.Kind.QR) ||
-            ScanActionHistoryStore.get(context, ScanActionHistoryStore.Source.QR) != null
+            ScanCodeStore.hasEntries(context, ScanCodeStore.Kind.QR)
 
     fun markQrDisableCodeReady(context: Context) {
         putBool(context, KEY_QR_DISABLE_CODE_READY, true)

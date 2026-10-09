@@ -6,6 +6,7 @@
     <!-- ====================================================== -->
     <string name="scan_error_nfc_not_linked">This NFC tag is not linked to a Loq In action.</string>
     <string name="scan_error_qr_not_linked">This QR code is not linked to a Loq In action.</string>
+    <string name="scan_error_code_not_from_this_install">Not a code from this Loq In. Create a new one in My keys and codes.</string>
     <string name="scan_error_barcode_not_linked">This barcode is not linked to a Loq In action.</string>
     <string name="scan_error_camera_permission_qr">Camera permission is required to scan QR codes. Enable it in Permissions and try again.</string>
     <string name="scan_error_camera_permission_barcode">Camera permission is required to scan barcodes. Enable it in Permissions and try again.</string>
