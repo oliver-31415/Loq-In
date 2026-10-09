@@ -221,3 +221,11 @@ Invalid input says "Enter a valid domain, like example.com."; the button reads "
 
 **Verified (Haiku agent).** Turning on Screen time then App opens: the title and both switches keep their exact positions; the dialog stays below the status bar and Save/Cancel remain visible; no crashes.
 
+## 24. Translate the German Home screen and fit long labels
+
+**Problem.** 150 strings in `values-de/strings_home.xml` (Home, profile sheet, block reasons, quick actions, tiles) were still English, so the most visible screen was half-English for German users; the Switch profile pill read "Manage". With German text, the activity header, the 28-day blocks label and both bottom tiles were cut off (bug 26 / localisation).
+
+**Fix.** Translated the Home strings using the terms already used elsewhere in the German UI (App-Regeln, Notfall-Entsperrung, Ausgewählte blockieren…). The activity title and the two bottom tiles' titles/subtitles autosize down to fit (helps English at large font sizes too); the German header is "Aktivität" and the blocks label "Sperren · 28 T.".
+
+**Verified (Haiku agent).** German: no English left on Home, the profile sheet or the switch-profile sheet; header, stats row and both tiles fully visible. English Home unchanged and unclipped. No crashes.
+
