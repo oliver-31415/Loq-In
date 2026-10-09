@@ -1,0 +1,140 @@
+name: Release
+
+# Manual release: builds the signed APK and AAB for the version in app/build.gradle.kts, tags
+# v<versionName> and creates a GitHub Release (a draft by default, so it can be reviewed before
+# publishing). Release notes come from app/src/main/res/raw/changelog.json. See docs/RELEASING.md.
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch, tag or commit to release
+        type: string
+        default: main
+      draft:
+        description: Create the release as a draft (publish it by hand after checking)
+        type: boolean
+        default: true
+      prerelease:
+        description: Mark the release as a pre-release
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Check out ${{ inputs.ref }}
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+
+      - name: Read the version and check the tag is free
+        id: version
+        run: |
+          read -r name code < <(scripts/ci/read-version.sh)
+          tag="v$name"
+          if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null; then
+            echo "::error::Tag $tag already exists. Bump loqinVersionName/loqinVersionCode in app/build.gradle.kts first."
+            exit 1
+          fi
+          {
+            echo "name=$name"
+            echo "code=$code"
+            echo "tag=$tag"
+            echo "sha=$(git rev-parse HEAD)"
+          } >> "$GITHUB_OUTPUT"
+          echo "Releasing **$tag** (versionCode $code) from \`$(git rev-parse --short HEAD)\`." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Set up release signing
+        env:
+          LOQIN_RELEASE_KEYSTORE_BASE64: ${{ secrets.LOQIN_RELEASE_KEYSTORE_BASE64 }}
+          LOQIN_RELEASE_STORE_PASSWORD: ${{ secrets.LOQIN_RELEASE_STORE_PASSWORD }}
+          LOQIN_RELEASE_KEY_ALIAS: ${{ secrets.LOQIN_RELEASE_KEY_ALIAS }}
+          LOQIN_RELEASE_KEY_PASSWORD: ${{ secrets.LOQIN_RELEASE_KEY_PASSWORD }}
+        run: scripts/ci/setup-signing.sh
+
+      - name: Test, lint and build
+        env:
+          LOQIN_RELEASE_STORE_PASSWORD: ${{ secrets.LOQIN_RELEASE_STORE_PASSWORD }}
+          LOQIN_RELEASE_KEY_ALIAS: ${{ secrets.LOQIN_RELEASE_KEY_ALIAS }}
+          LOQIN_RELEASE_KEY_PASSWORD: ${{ secrets.LOQIN_RELEASE_KEY_PASSWORD }}
+          MAPS_API_KEY: ${{ secrets.MAPS_API_KEY }}
+        run: ./gradlew :app:testDebugUnitTest :app:lintRelease :app:assembleRelease :app:bundleRelease
+
+      - name: Verify and collect the artifacts
+        env:
+          NAME: ${{ steps.version.outputs.name }}
+          CODE: ${{ steps.version.outputs.code }}
+        run: |
+          build_tools=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
+          apk=app/build/outputs/apk/release/app-release.apk
+          "$build_tools/apksigner" verify --print-certs "$apk"
+          # The APK must carry exactly the version being tagged.
+          badging=$("$build_tools/aapt2" dump badging "$apk" | head -1)
+          echo "$badging"
+          case "$badging" in
+            *"name='com.oliver.loqin' versionCode='$CODE' versionName='$NAME'"*) ;;
+            *) echo "::error::APK version does not match $NAME ($CODE)"; exit 1 ;;
+          esac
+          mkdir -p dist
+          cp "$apk" "dist/loqin-v$NAME.apk"
+          cp app/build/outputs/bundle/release/app-release.aab "dist/loqin-v$NAME.aab"
+          gzip -9 -c app/build/outputs/mapping/release/mapping.txt > "dist/loqin-v$NAME-mapping.txt.gz"
+          (cd dist && sha256sum "loqin-v$NAME.apk" "loqin-v$NAME.aab" > SHA256SUMS)
+
+      - name: Write release notes
+        id: notes
+        env:
+          NAME: ${{ steps.version.outputs.name }}
+        run: |
+          set +e
+          python3 scripts/ci/release-notes.py "$NAME" > dist/notes.md
+          status=$?
+          set -e
+          if [ "$status" -eq 3 ]; then
+            echo "::warning::changelog.json has no entry for v$NAME; using GitHub's generated notes. Add one so the in-app What's new matches."
+            echo "generated=true" >> "$GITHUB_OUTPUT"
+          elif [ "$status" -ne 0 ]; then
+            exit "$status"
+          else
+            echo "generated=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ steps.version.outputs.tag }}
+          NAME: ${{ steps.version.outputs.name }}
+          SHA: ${{ steps.version.outputs.sha }}
+          DRAFT: ${{ inputs.draft }}
+          PRERELEASE: ${{ inputs.prerelease }}
+          GENERATED: ${{ steps.notes.outputs.generated }}
+        run: |
+          args=(--target "$SHA" --title "Loq In v$NAME")
+          if [ "$DRAFT" = "true" ]; then args+=(--draft); fi
+          if [ "$PRERELEASE" = "true" ]; then args+=(--prerelease); fi
+          if [ "$GENERATED" = "true" ]; then args+=(--generate-notes); else args+=(--notes-file dist/notes.md); fi
+          # gh prints the release URL; drafts have no tag yet, so it can't be looked up afterwards.
+          url=$(gh release create "$TAG" "${args[@]}" \
+            "dist/loqin-v$NAME.apk" "dist/loqin-v$NAME.aab" dist/SHA256SUMS \
+            "dist/loqin-v$NAME-mapping.txt.gz")
+          echo "Release: $url" >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,159 @@
+name: Nightly
+
+# Builds the default branch every night and publishes it to a single rolling "nightly"
+# pre-release. Nightly APKs use the app id com.oliver.loqin.nightly, so they install next to the
+# stable app. See docs/RELEASING.md.
+
+on:
+  schedule:
+    - cron: "0 2 * * *" # 02:00 UTC
+  workflow_dispatch:
+    inputs:
+      force:
+        description: Build even if the default branch has not changed since the last nightly
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+
+jobs:
+  nightly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Check out the default branch
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 0
+
+      - name: Skip when nothing changed
+        id: changes
+        env:
+          FORCE: ${{ inputs.force }}
+        run: |
+          head=$(git rev-parse HEAD)
+          last=$(git rev-parse -q --verify 'refs/tags/nightly^{commit}' || true)
+          echo "head=$head" >> "$GITHUB_OUTPUT"
+          echo "last=$last" >> "$GITHUB_OUTPUT"
+          if [ "$head" = "$last" ] && [ "$FORCE" != "true" ]; then
+            echo "build=false" >> "$GITHUB_OUTPUT"
+            echo "No new commits since the last nightly (${last:0:7}); skipping." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "build=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up JDK 17
+        if: steps.changes.outputs.build == 'true'
+        uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Set up Gradle
+        if: steps.changes.outputs.build == 'true'
+        uses: gradle/actions/setup-gradle@v6
+
+      - name: Set up release signing
+        if: steps.changes.outputs.build == 'true'
+        env:
+          LOQIN_RELEASE_KEYSTORE_BASE64: ${{ secrets.LOQIN_RELEASE_KEYSTORE_BASE64 }}
+          LOQIN_RELEASE_STORE_PASSWORD: ${{ secrets.LOQIN_RELEASE_STORE_PASSWORD }}
+          LOQIN_RELEASE_KEY_ALIAS: ${{ secrets.LOQIN_RELEASE_KEY_ALIAS }}
+          LOQIN_RELEASE_KEY_PASSWORD: ${{ secrets.LOQIN_RELEASE_KEY_PASSWORD }}
+        run: scripts/ci/setup-signing.sh
+
+      - name: Compute nightly version
+        if: steps.changes.outputs.build == 'true'
+        id: version
+        run: |
+          read -r name _ < <(scripts/ci/read-version.sh)
+          short=$(git rev-parse --short=7 HEAD)
+          day=$(date -u +%Y%m%d)
+          # yyMMddHH grows every build and stays far below Android's 2.1e9 versionCode limit.
+          code=$(date -u +%y%m%d%H)
+          {
+            echo "code=$code"
+            echo "suffix=-nightly.$day+$short"
+            echo "label=$name-nightly.$day+$short"
+            echo "file=loqin-nightly-$day-$short.apk"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Test and build
+        if: steps.changes.outputs.build == 'true'
+        env:
+          LOQIN_RELEASE_STORE_PASSWORD: ${{ secrets.LOQIN_RELEASE_STORE_PASSWORD }}
+          LOQIN_RELEASE_KEY_ALIAS: ${{ secrets.LOQIN_RELEASE_KEY_ALIAS }}
+          LOQIN_RELEASE_KEY_PASSWORD: ${{ secrets.LOQIN_RELEASE_KEY_PASSWORD }}
+          MAPS_API_KEY: ${{ secrets.MAPS_API_KEY }}
+        run: >
+          ./gradlew :app:testDebugUnitTest :app:assembleNightly
+          -PloqinNightlyVersionCode=${{ steps.version.outputs.code }}
+          -PloqinNightlyVersionSuffix=${{ steps.version.outputs.suffix }}
+
+      - name: Verify signature and collect the APK
+        if: steps.changes.outputs.build == 'true'
+        env:
+          APK_NAME: ${{ steps.version.outputs.file }}
+        run: |
+          build_tools=$(find "$ANDROID_HOME/build-tools" -mindepth 1 -maxdepth 1 -type d | sort -V | tail -1)
+          mkdir -p dist
+          cp app/build/outputs/apk/nightly/app-nightly.apk "dist/$APK_NAME"
+          "$build_tools/apksigner" verify --print-certs "dist/$APK_NAME"
+          (cd dist && sha256sum "$APK_NAME" > SHA256SUMS)
+
+      - name: Write release notes
+        if: steps.changes.outputs.build == 'true'
+        env:
+          HEAD_SHA: ${{ steps.changes.outputs.head }}
+          LAST_SHA: ${{ steps.changes.outputs.last }}
+          LABEL: ${{ steps.version.outputs.label }}
+        run: |
+          {
+            echo "Automated build of \`${HEAD_SHA:0:7}\` (version \`$LABEL\`)."
+            echo
+            echo "Nightly builds install as **Loq In Nightly** (\`com.oliver.loqin.nightly\`) next to the stable app. They are untested; expect bugs."
+            echo
+            if [ -n "$LAST_SHA" ] && [ "$LAST_SHA" != "$HEAD_SHA" ]; then
+              echo "### Changes since the previous nightly"
+              git log --no-merges --format='- %s (%h)' "$LAST_SHA..$HEAD_SHA"
+            else
+              echo "### Latest commits"
+              git log --no-merges --format='- %s (%h)' -n 20 "$HEAD_SHA"
+            fi
+          } > dist/notes.md
+
+      - name: Publish the nightly pre-release
+        if: steps.changes.outputs.build == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ steps.changes.outputs.head }}
+          LABEL: ${{ steps.version.outputs.label }}
+          APK_NAME: ${{ steps.version.outputs.file }}
+        run: |
+          # One rolling release: replace the previous nightly, then move its tag to this commit.
+          gh release delete nightly --yes || true
+          git tag -f nightly "$HEAD_SHA"
+          git push -f origin refs/tags/nightly
+          gh release create nightly \
+            --verify-tag \
+            --prerelease \
+            --latest=false \
+            --title "Nightly $LABEL" \
+            --notes-file dist/notes.md \
+            "dist/$APK_NAME" dist/SHA256SUMS
+
+      - name: Keep the APK and R8 mapping as a workflow artifact
+        if: steps.changes.outputs.build == 'true'
+        uses: actions/upload-artifact@v7
+        with:
+          name: loqin-${{ steps.version.outputs.label }}
+          path: |
+            dist/*.apk
+            app/build/outputs/mapping/nightly/mapping.txt
+          retention-days: 14

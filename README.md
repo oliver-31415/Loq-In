@@ -41,6 +41,13 @@ The same keys can be provided via `~/.gradle/gradle.properties`, `-P...`, or env
 variables. Release builds enable R8 minification and resource shrinking. Never commit
 `signing.properties`, keystores, or passwords.
 
+### Nightly builds and GitHub releases
+
+GitHub Actions publishes a signed **nightly** pre-release every night (app id
+`com.oliver.loqin.nightly`, installs next to the stable app) and builds signed releases on
+demand. Setup, required secrets and the release checklist are in
+[`docs/RELEASING.md`](./docs/RELEASING.md).
+
 ---
 
 ## Localization
@@ -68,6 +75,7 @@ Please read:
 - [`docs/ARCHITECTURE.md`](./docs/ARCHITECTURE.md)
 - [`docs/UI_CONVENTIONS.md`](./docs/UI_CONVENTIONS.md)
 - [`docs/DRAWABLE_CONVENTIONS.md`](./docs/DRAWABLE_CONVENTIONS.md)
+- [`docs/RELEASING.md`](./docs/RELEASING.md)
 
 ---
 
