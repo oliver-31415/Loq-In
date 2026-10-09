@@ -255,3 +255,11 @@ Invalid input says "Enter a valid domain, like example.com."; the button reads "
 
 **Verified.** **Not verified on the emulator**: YouTube on the test image never reported playback for Shorts, so no PiP window could be created (two Haiku attempts). The change reuses the existing detection path and is inert without a YouTube PiP window. Check on a real phone: play a Short, send it to PiP, enable protection, expect it to close within a few seconds.
 
+## 28. "Blocked N times today" on the block screen
+
+**Problem.** Feature from the competitor research (`docs/feature-research.md`, #1): seeing how often you've already tried is what most often makes people stop retrying (one sec reviewers), and Loq In already counts blocks per app per day.
+
+**Fix.** The block screen shows "Blocked N times today" (accent colour, EN/DE plural) under the app name for app and in-app blocks; website blocks are skipped because they aren't counted per site.
+
+**Verified (Haiku agent).** Three Shorts blocks in one YouTube visit showed "Blocked 1 time today", "2 times", "3 times"; Close returned to YouTube each time; no crashes.
+
