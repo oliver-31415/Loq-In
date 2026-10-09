@@ -2415,6 +2415,11 @@ class LoqInAccessibilityService : AccessibilityService() {
         lastGlobalBlockTs = now
         BlockCountStore.incrementToday(this, pkg)
         BlockCategoryCountStore.incrementToday(this, blockCategory)
+        // App usage insights read per-app "blocks" from BlockAttemptStore; without this an in-app
+        // block (e.g. Shorts) never showed on the app's row. Website blocks have their own tab.
+        if (blockCategory == BlockCategoryCountStore.Category.IN_APP) {
+            BlockAttemptStore.incrementToday(this, pkg)
+        }
         perf.blocksShown++
 
         if (!deferNavigationUntilAcknowledge) {

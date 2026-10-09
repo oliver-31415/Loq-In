@@ -206,7 +206,7 @@
     <string name="dashboard_pause_until_tomorrow">Pause until tomorrow</string>
 
     <!-- Activity heatmap (Foqos-style habit tracker) -->
-    <string name="activity_section_title">4 Week Activity</string>
+    <string name="activity_section_title">Focus time</string>
     <string name="activity_heatmap_content_desc">Heatmap of blocked focus time for the last 28 days</string>
     <string name="profile_row_meta_fmt">%1$s | %2$s</string>
     <string name="activity_day_detail_fmt">%1$s · %2$s blocked</string>

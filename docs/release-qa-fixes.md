@@ -237,3 +237,13 @@ Invalid input says "Enter a valid domain, like example.com."; the button reads "
 
 **Verified (Haiku agent).** Profile, switch-profile, Blocking method and Take a break sheets: the last row sits ~150 px above the home indicator at open, tops stay below the status bar, no crashes.
 
+## 26. Insights count in-app blocks; heatmap called "Focus time"
+
+**Problem.** App usage insights showed "0 blocks" for YouTube right after Shorts was blocked: per-app blocks come from `BlockAttemptStore`, which only app blocks updated. The Home heatmap, which shows protected focus time, was titled "4 Week Activity", so its "15m" read like screen time and contradicted the insights screen's "2m 23s" (bug 14).
+
+**Fix.** In-app (surface) blocks also increment `BlockAttemptStore` for the app (website blocks keep their own tab). The heatmap is titled "Focus time" / "Fokuszeit".
+
+**Verified (Haiku agent).** Two Shorts blocks moved YouTube from 0 to 2 blocks; Home header reads "Focus time"; no crashes.
+
+**Follow-up noticed.** YouTube's "opens" rose by 7 across two launches, suggesting returning from a block screen counts as a new open. Not changed here.
+
