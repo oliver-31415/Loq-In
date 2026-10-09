@@ -151,8 +151,7 @@ class MostUsedAppsActivity : AppCompatActivity() {
 
         setContentView(root)
         EdgeToEdgeUtils.setupClassic(activity = this, toolbar = toolbar)
-        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
-        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightNavigationBars = false
+        EdgeToEdgeUtils.applyThemedSystemBars(this)
 
         load()
     }

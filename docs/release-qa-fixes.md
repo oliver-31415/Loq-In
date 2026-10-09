@@ -181,3 +181,11 @@ Invalid input says "Enter a valid domain, like example.com."; the button reads "
 
 **Verified.** Unsigned `loqin://toggle` link: rejected with the toast, no dialog. Wrong secret: rejected. Signed link from the generator: confirmation shown, Loq In toggled on. `LoqInCodeSecretTest` covers the comparison.
 
+## 19. Theme-aware status bar icons
+
+**Problem.** Home and eight other screens forced light status/navigation bar icons (a leftover from the dark-only design), so in the Light theme the clock, battery and notification icons were white on a light background.
+
+**Fix.** `EdgeToEdgeUtils.applyThemedSystemBars` picks dark icons on light surfaces and light icons in night mode; every screen that hard-coded light icons now calls it. The blocker keeps its own background-based logic.
+
+**Verified.** Light theme: Home and Keys & codes show dark status bar icons.
+

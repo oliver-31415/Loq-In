@@ -403,11 +403,8 @@ class MainActivity : AppCompatActivity() {
         // Match Schedules look: keep BottomNav slightly above the gesture area on all devices
         EdgeToEdgeUtils.applyBottomNavGestureInset(bottomNav)
 
-        // Keep status/navigation bars neutral (no accent bleed into system bar)
-        WindowInsetsControllerCompat(window, window.decorView).apply {
-            isAppearanceLightStatusBars = false
-            isAppearanceLightNavigationBars = false
-        }
+        // System bar icons follow the theme (no accent bleed into the bars).
+        EdgeToEdgeUtils.applyThemedSystemBars(this)
 
         setSupportActionBar(toolbar)
         applyHomeWordmarkTitle(toolbar)

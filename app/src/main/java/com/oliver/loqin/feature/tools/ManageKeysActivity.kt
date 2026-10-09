@@ -60,8 +60,7 @@ class ManageKeysActivity : AppCompatActivity() {
 
         toolbar = findViewById(R.id.toolbar)
         EdgeToEdgeUtils.setupClassic(activity = this, toolbar = toolbar, bottomNav = null)
-        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
-        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightNavigationBars = false
+        EdgeToEdgeUtils.applyThemedSystemBars(this)
 
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)

@@ -337,7 +337,7 @@ class SchedulesActivity : AppCompatActivity() {
             activity = this,
             toolbar = toolbar
         )
-        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
+        EdgeToEdgeUtils.applyThemedSystemBars(this)
         setSupportActionBar(toolbar)
         toolbar.subtitle = targetProfile ?: getString(R.string.schedules_profile_subtitle)
         toolbar.setNavigationOnClickListener {

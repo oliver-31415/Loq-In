@@ -21,6 +21,7 @@ package com.oliver.loqin.ui
 import android.view.View
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import com.oliver.loqin.util.FrameworkApi34Compat
@@ -123,6 +124,20 @@ object EdgeToEdgeUtils {
             insets
         }
         ViewCompat.requestApplyInsets(root)
+    }
+
+    /**
+     * Status/navigation bar icons follow the app theme: dark icons on light surfaces, light icons
+     * in night mode. Screens used to force light icons, which vanished in the Light theme.
+     */
+    fun applyThemedSystemBars(activity: android.app.Activity) {
+        val night = (activity.resources.configuration.uiMode and
+            android.content.res.Configuration.UI_MODE_NIGHT_MASK) ==
+            android.content.res.Configuration.UI_MODE_NIGHT_YES
+        WindowInsetsControllerCompat(activity.window, activity.window.decorView).apply {
+            isAppearanceLightStatusBars = !night
+            isAppearanceLightNavigationBars = !night
+        }
     }
 
     /**
