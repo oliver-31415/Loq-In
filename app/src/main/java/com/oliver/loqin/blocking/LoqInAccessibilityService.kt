@@ -182,8 +182,14 @@ class LoqInAccessibilityService : AccessibilityService() {
     private val lastWebsiteFollowUpAt = HashMap<String, Long>()
     private val lastFirefoxShortcutProbeAt = HashMap<String, Long>()
     private val lastOpenCountAt = HashMap<String, Long>()
-    private var lastOpenSessionPkg: String? = null
-    private var lastOpenSessionAt: Long = 0L
+    // Process-wide (see OpenSessionState): Android may recreate the service mid-visit, and a fresh
+    // instance with an empty session counted the user's current app as a new open.
+    private var lastOpenSessionPkg: String?
+        get() = OpenSessionState.pkg
+        set(value) { OpenSessionState.pkg = value }
+    private var lastOpenSessionAt: Long
+        get() = OpenSessionState.at
+        set(value) { OpenSessionState.at = value }
     private val inAppSurfaceEvidence = InAppSurfaceEvidence()
     // Package-wide post-block grace. It intentionally suppresses ALL surfaces in a package for a
     // short window: per-surface grace was evaluated but keeping it package-wide avoids re-entering
@@ -9625,4 +9631,10 @@ class LoqInAccessibilityService : AccessibilityService() {
         }.getOrDefault(false)
     }
 
+}
+
+/** Foreground-visit tracking shared by every instance of the service in this process. */
+private object OpenSessionState {
+    @Volatile var pkg: String? = null
+    @Volatile var at: Long = 0L
 }
