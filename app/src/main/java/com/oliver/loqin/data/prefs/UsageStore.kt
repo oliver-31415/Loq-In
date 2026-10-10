@@ -244,6 +244,30 @@ object UsageStore {
         return sum
     }
 
+    /** Screen time summed over all packages for the given yyyymmdd days, including buffered writes. */
+    fun getUsageMsTotalForDays(ctx: Context, ymds: Set<Int>): Long {
+        if (ymds.isEmpty()) {
+            return 0L
+        }
+        flush(ctx)
+        return getUsageMsMapMatching(ctx) { ymd, _ -> ymd in ymds }.values.sum()
+    }
+
+    /** Number of distinct days that have at least one stored screen-time record above zero. */
+    fun getDaysWithUsageCount(ctx: Context): Int {
+        flush(ctx)
+        val sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val days = HashSet<Int>()
+        for ((k, v) in sp.all) {
+            if (!k.startsWith(PREFIX_DAY)) continue
+            val ms = (v as? Number)?.toLong() ?: 0L
+            if (ms <= 0L) continue
+            val ymd = k.removePrefix(PREFIX_DAY).substringBefore('_').toIntOrNull() ?: continue
+            days += ymd
+        }
+        return days.size
+    }
+
     fun getTrackedPackages(ctx: Context): Set<String> {
         flush(ctx)
         val sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)

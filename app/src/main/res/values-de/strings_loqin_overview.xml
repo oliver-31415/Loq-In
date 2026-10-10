@@ -50,4 +50,19 @@
     <string name="loqin_streak_status_limit_reached">Limit erreicht</string>
     <string name="loqin_streak_status_no_protection">kein Schutz aktiv</string>
 
+    <!-- Weekly summary notification -->
+    <string name="weekly_summary_channel_name">Wochenrückblick</string>
+    <string name="weekly_summary_channel_desc">Jeden Montagmorgen ein kurzer Blick auf deine Woche.</string>
+    <string name="weekly_summary_title">Deine Woche mit Loq In</string>
+    <string name="weekly_summary_body_fmt">Letzte Woche: %1$s Bildschirmzeit%2$s · %3$s · %4$s Fokuszeit</string>
+    <string name="weekly_summary_less_fmt">\u0020(%1$d %% weniger als in der Woche davor)</string>
+    <string name="weekly_summary_more_fmt">\u0020(%1$d %% mehr als in der Woche davor)</string>
+    <plurals name="weekly_summary_blocks">
+        <item quantity="one">%1$d Blockierung</item>
+        <item quantity="other">%1$d Blockierungen</item>
+    </plurals>
+    <string name="weekly_summary_duration_hm_fmt">%1$d Std. %2$d Min.</string>
+    <string name="weekly_summary_duration_m_fmt">%1$d Min.</string>
+    <string name="weekly_summary_toggle_title">Wochenrückblick als Benachrichtigung</string>
+    <string name="weekly_summary_toggle_summary">Jeden Montag um 9:00 ein kurzer Blick auf deine Woche.</string>
 </resources>

@@ -78,6 +78,8 @@ class LoqInApp : Application() {
 
         AppLockManager.register(this)
 
+        runCatching { com.oliver.loqin.feature.usage.WeeklySummaryWorker.ensureScheduled(this) }
+
         // ShortcutManagerCompat uses ShortcutService binder calls.
         // Keep it off the main startup path and only refresh when the app/shortcut spec changed.
         QuickShortcutRegistrar.refreshAsync(this)

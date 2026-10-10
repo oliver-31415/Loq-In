@@ -34,6 +34,8 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.setPadding
+import androidx.preference.PreferenceManager
+import com.google.android.material.switchmaterial.SwitchMaterial
 import com.oliver.loqin.R
 import com.oliver.loqin.data.prefs.ActiveDurationStore
 import com.oliver.loqin.data.prefs.AppLaunchCountStore
@@ -50,6 +52,7 @@ import com.oliver.loqin.data.prefs.LoqInActionCountStore
 import com.oliver.loqin.data.prefs.TempEnableCountStore
 import com.oliver.loqin.feature.stats.StatsFormat
 import com.oliver.loqin.theme.AccentColor
+import com.oliver.loqin.theme.CustomAccentApplier
 import com.oliver.loqin.ui.EdgeToEdgeUtils
 import com.oliver.loqin.ui.SegmentedToggleUi
 import com.oliver.loqin.ui.ThemeUtils
@@ -201,6 +204,8 @@ class LoqInOverviewActivity : AppCompatActivity() {
         })
         actionsGrid = newStatGrid()
         content.addView(actionsGrid)
+
+        content.addView(buildWeeklySummaryToggle())
 
         content.addView(TextView(this).apply {
             text = getString(R.string.loqin_overview_storage_note)
@@ -752,6 +757,43 @@ class LoqInOverviewActivity : AppCompatActivity() {
     }
 
     private fun primaryColor(): Int = AccentColor.getAccentColorInt(this)
+
+    // Opt-out for the Monday summary notification; the worker checks the same preference.
+    private fun buildWeeklySummaryToggle(): View {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        val switch = SwitchMaterial(this).apply {
+            isChecked = WeeklySummaryWorker.isEnabled(this@LoqInOverviewActivity)
+            contentDescription = getString(R.string.weekly_summary_toggle_title)
+            setOnCheckedChangeListener { _, checked ->
+                prefs.edit().putBoolean(WeeklySummaryWorker.PREF_ENABLED, checked).apply()
+            }
+        }
+        CustomAccentApplier.tintSwitch(switch)
+        val texts = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            addView(TextView(this@LoqInOverviewActivity).apply {
+                text = getString(R.string.weekly_summary_toggle_title)
+                textSize = 15f
+                setTextColor(onSurfaceColor())
+            })
+            addView(TextView(this@LoqInOverviewActivity).apply {
+                text = getString(R.string.weekly_summary_toggle_summary)
+                textSize = 13f
+                alpha = 0.72f
+            })
+        }
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            minimumHeight = dp(56)
+            setPadding(0, dp(20), 0, 0)
+            isClickable = true
+            setOnClickListener { switch.toggle() }
+            addView(texts)
+            addView(switch)
+        }
+    }
 
     private fun sectionTitle(textRes: Int): TextView {
         return TextView(this).apply {
