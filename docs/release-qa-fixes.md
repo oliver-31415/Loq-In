@@ -291,3 +291,11 @@ Invalid input says "Enter a valid domain, like example.com."; the button reads "
 
 **Verified (Haiku agent).** "Undo (60 s)" after Enable; undo at ~11 s turned protection off; after 65 s the button read "Disable" and opened the scanner instead.
 
+
+## 33. Reels and Shorts block again when you go straight back in
+
+**Problem.** After closing a Facebook Reels block and going back into Reels, a reel could play for a long time before the next block. A playing reel emits almost no accessibility events, so only the once-a-second check looks at it, and a surface needed two matches inside 850 ms, which two checks a second apart never give.
+
+**Fix.** Checks from the 1 s tick get a 1.8 s confirmation window (any miss still clears the evidence), for every in-app surface. That exposed two Facebook false positives, both fixed: the scrolled Home feed (bars hidden, full-screen tab pager, each post's Like/Share row) matched the Reels pattern, so the action buttons must now sit in the right-hand rail where the Reels viewer stacks them; and a feed photo's comment composer matched the Reels composer, so the composer only counts inside the Reels viewer's pager or rail.
+
+**Verified (Haiku agent + emulator).** Facebook Reels: going straight back in after closing was blocked again in 4–6 s in every round (one 10 s), including just watching without touching, one block screen each time. YouTube Shorts: 1–5 s. Feed browsing with scrolling, comments and photos: no Reels block after the fixes (two before). Not tested: Instagram, X and Snapchat (not installed on the emulator); a Facebook reel opened from a feed tile (none appeared).
