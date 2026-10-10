@@ -9,7 +9,7 @@ Loq In ships two kinds of GitHub builds, both produced by GitHub Actions:
 | Built from | The default branch | Any branch, tag or commit (default `main`) |
 | App id / name | `com.oliver.loqin.nightly`, "Loq In Nightly" (installs next to the stable app) | `com.oliver.loqin`, "Loq In" |
 | Version | `<versionName>-nightly.<yyyyMMdd>+<sha>`, versionCode `yyMMddHH` | `versionName` / `versionCode` from `app/build.gradle.kts` |
-| Output | One rolling pre-release tagged `nightly` (replaced each night) with the APK and `SHA256SUMS` | Release `v<versionName>` with the APK, the AAB, the gzipped R8 mapping and `SHA256SUMS` |
+| Output | One pre-release per build, tagged `nightly-<yyyyMMdd>-<sha>`, with the APK and `SHA256SUMS`; the newest 30 are kept | Release `v<versionName>` with the APK, the AAB, the gzipped R8 mapping and `SHA256SUMS` |
 | Checks | Unit tests | Unit tests and release lint |
 
 Both builds are minified with R8 and signed with the release key. Neither workflow will publish an unsigned build: they fail early if a signing secret is missing.
@@ -67,10 +67,11 @@ Keep the `-mapping.txt.gz` asset: it turns obfuscated crash stack traces from th
 
 ## Nightly builds
 
-- Download the latest from the **nightly** pre-release on the Releases page. It is never marked "Latest", so the stable release stays the default download.
+- Download the newest **Nightly** pre-release from the Releases page; older builds stay listed below it. It is never marked "Latest", so the stable release stays the default download.
 - Run it by hand with **Actions → Nightly → Run workflow**; tick **force** to rebuild even when nothing changed.
-- The rolling `nightly` tag moves to the built commit each time. Each run also keeps the APK and R8 mapping as a workflow artifact for 14 days.
-- To test a branch before merging, run the workflow by hand with **Use workflow from** set to that branch (`gh workflow run nightly.yml --ref <branch>`). It builds the branch and keeps the APK as a workflow artifact only; the public `nightly` release is not touched.
+- Each build gets its own `nightly-<yyyyMMdd>-<sha>` tag and release; when there are more than 30, the oldest release and its tag are deleted. A run is skipped when `main` has not moved since the newest nightly tag (use **force** to rebuild). Each run also keeps the APK and R8 mapping as a workflow artifact for 14 days.
+- The schedule is 02:00 UTC daily, but GitHub often starts scheduled runs late (hours, at busy times).
+- To test a branch before merging, run the workflow by hand with **Use workflow from** set to that branch (`gh workflow run nightly.yml --ref <branch>`). It builds the branch and keeps the APK as a workflow artifact only; no nightly release or tag is created.
 
 ## Building locally
 
