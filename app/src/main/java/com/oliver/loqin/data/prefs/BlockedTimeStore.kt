@@ -67,6 +67,15 @@ object BlockedTimeStore {
         return (persisted + buffered).coerceAtMost(86_400_000L)
     }
 
+    /** Persisted + buffered protection total for [ymd] (yyyymmdd), capped at 24h. */
+    fun getProtectionMsForDay(ctx: Context, ymd: Int): Long {
+        val key = PREFIX_PROT + ymd
+        val sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val persisted = sp.getLong(key, 0L)
+        val buffered = synchronized(lock) { pending[key] ?: 0L }
+        return (persisted + buffered).coerceAtMost(86_400_000L)
+    }
+
     /**
      * Lifts today's protection total to at least [minMs] without ever reducing it —
      * reconciles time the tick accrual missed (app reinstalls, paused accrual) so the
