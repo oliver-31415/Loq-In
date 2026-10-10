@@ -46,6 +46,7 @@ class ProtectedBarsView @JvmOverloads constructor(
 
     private var days: List<ProtectionDay?> = emptyList()
     private var dayLabels: List<String> = emptyList()
+    private var noDataLabel: String = ""
 
     private val protectedPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
     private val restPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.FILL }
@@ -55,11 +56,12 @@ class ProtectedBarsView @JvmOverloads constructor(
 
     /**
      * [days] holds one entry per day, oldest first. A null entry means no stored segments for that
-     * day. [dayLabels] are drawn under each column.
+     * day and shows [noDataLabel] in its column. [dayLabels] are drawn under each column.
      */
-    fun setData(days: List<ProtectionDay?>, dayLabels: List<String>) {
+    fun setData(days: List<ProtectionDay?>, dayLabels: List<String>, noDataLabel: String) {
         this.days = days
         this.dayLabels = dayLabels
+        this.noDataLabel = noDataLabel
         invalidate()
     }
 
@@ -90,7 +92,7 @@ class ProtectedBarsView @JvmOverloads constructor(
                 canvas.save()
                 canvas.rotate(-90f, cx, cy)
                 labelPaint.textAlign = Paint.Align.CENTER
-                canvas.drawText(NO_DATA, cx, cy - (fm.ascent + fm.descent) / 2f, labelPaint)
+                canvas.drawText(noDataLabel, cx, cy - (fm.ascent + fm.descent) / 2f, labelPaint)
                 canvas.restore()
             } else {
                 val protectedFrac = (day.protectedMinutes / fullDay).coerceIn(0.0, 1.0).toFloat()
@@ -114,6 +116,5 @@ class ProtectedBarsView @JvmOverloads constructor(
 
     private companion object {
         const val FULL_DAY_MINUTES = 24.0 * 60.0
-        const val NO_DATA = "no data"
     }
 }
