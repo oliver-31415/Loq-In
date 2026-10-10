@@ -112,6 +112,8 @@
     <string name="tile_temp_subtitle_locked">Nicht verfügbar, solange NFC-Entsperrung aktiv ist</string>
     <string name="tile_temp_subtitle_mode_locked">Gesperrt (%1$s)</string>
     <string name="home_scan_to_disable">Scanne deinen Code, um Loq In auszuschalten.</string>
+    <string name="home_enable_undo_fmt">Rückgängig (%1$d s)</string>
+    <string name="home_enable_undo_hint">Der Schutz ist an. Du kannst das in der nächsten Minute rückgängig machen.</string>
     <string name="tile_emergency_title">Notfall-Entsperrung</string>
     <string name="tile_emergency_title_active">Notfall aktiv</string>
     <string name="tile_emergency_title_paused">Notfall pausiert</string>

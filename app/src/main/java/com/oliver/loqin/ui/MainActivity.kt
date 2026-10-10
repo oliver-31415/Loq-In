@@ -89,6 +89,7 @@ import com.oliver.loqin.data.prefs.AttemptLimitStore
 import com.oliver.loqin.data.prefs.AutomationModeStore
 import com.oliver.loqin.data.prefs.EmergencyBypassStore
 import com.oliver.loqin.data.prefs.EmergencyPinStore
+import com.oliver.loqin.data.prefs.EnableUndoWindow
 import com.oliver.loqin.data.prefs.ExactAlarmPermissionSync
 import com.oliver.loqin.data.prefs.InAppRuleStore
 import com.oliver.loqin.data.prefs.LimitReachedStore
@@ -1223,8 +1224,10 @@ class MainActivity : AppCompatActivity() {
         val allowMissingScanSafetyDisable =
             enabled && AutomationModeStore.shouldAllowManualDisableForMissingScanSetup(this)
 
+        // First minute after a manual enable in a strict mode: undo without the unlock method.
+        val undoAvailable = enabled && EnableUndoWindow.remainingMs(this) > 0L
         val canChange = if (enabled) {
-            AutomationModeStore.isButtonAllowed(this) || allowMissingScanSafetyDisable
+            AutomationModeStore.isButtonAllowed(this) || allowMissingScanSafetyDisable || undoAvailable
         } else {
             AutomationModeStore.canButtonEnable(this)
         }
@@ -1248,17 +1251,24 @@ class MainActivity : AppCompatActivity() {
             AppLogStore.append(this, "Safety", "Allowing manual disable because the only disable channel is a scan channel with no code set up")
         }
 
-        if (enabled && isNfcLocked()) {
+        if (enabled && isNfcLocked() && !undoAvailable) {
             snackRoot().showWarnPill(R.string.toast_cannot_disable_while_locked)
             return
         }
         val nextEnabled = !enabled
-        if (SwitchModeStore.setEnabled(this, nextEnabled, allowNfcBypass = false)) {
+        if (SwitchModeStore.setEnabled(this, nextEnabled, allowNfcBypass = undoAvailable)) {
             AppLogStore.append(
                 this,
                 "Profiles",
-                "Manual toggle action=${if (nextEnabled) "enable" else "disable"} profile=${ProfileStore.getCurrent(this)}"
+                "Manual toggle action=${if (nextEnabled) "enable" else "disable"} profile=${ProfileStore.getCurrent(this)}" +
+                    if (undoAvailable) " via=undo_window" else ""
             )
+            if (nextEnabled && !AutomationModeStore.isButtonAllowed(this)) {
+                EnableUndoWindow.start(this)
+                snackRoot().showWarnPill(R.string.home_enable_undo_hint)
+            } else {
+                EnableUndoWindow.clear(this)
+            }
         }
         updateSwitchState()
     }
@@ -3396,6 +3406,7 @@ class MainActivity : AppCompatActivity() {
             formatActiveDuration(SwitchModeStore.getActiveDurationMillis(this)),
             ActiveDurationStore.todayMs(this) / 60_000L,
             ProfileStore.getCurrent(this),
+            EnableUndoWindow.remainingMs(this) / 1000L,
         ).joinToString("|")
         if (signature == lastTickSignature) return
         lastTickSignature = signature
@@ -3440,7 +3451,12 @@ class MainActivity : AppCompatActivity() {
 
         // Icon + button
         ivStatusIcon.setImageResource(if (enabled) R.drawable.lock_24 else R.drawable.lock_open_24)
-        btnToggle.text = if (enabled) getString(R.string.dashboard_toggle_disable) else getString(R.string.dashboard_toggle_enable)
+        val undoSeconds = if (enabled) ((EnableUndoWindow.remainingMs(this) + 999) / 1000).toInt() else 0
+        btnToggle.text = when {
+            undoSeconds > 0 -> getString(R.string.home_enable_undo_fmt, undoSeconds)
+            enabled -> getString(R.string.dashboard_toggle_disable)
+            else -> getString(R.string.dashboard_toggle_enable)
+        }
 
         val locked = enabled && !emergencyActive && SwitchModeStore.isNfcRequiredForDisable(this)
         tvNfcLockedHint.visibility = if (locked) View.VISIBLE else View.GONE

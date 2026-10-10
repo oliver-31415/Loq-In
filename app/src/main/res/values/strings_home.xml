@@ -112,6 +112,8 @@
     <string name="tile_temp_subtitle_locked">Unavailable while NFC unlock is on</string>
     <string name="tile_temp_subtitle_mode_locked">Locked in %1$s</string>
     <string name="home_scan_to_disable">Scan your code to turn Loq In off.</string>
+    <string name="home_enable_undo_fmt">Undo (%1$d s)</string>
+    <string name="home_enable_undo_hint">Protection is on. You can undo it for the next minute.</string>
     <string name="tile_emergency_title">Emergency unlock</string>
     <string name="tile_emergency_title_active">Emergency active</string>
     <string name="tile_emergency_title_paused">Emergency paused</string>
