@@ -44,8 +44,11 @@ object EnableUndoWindow {
 
     fun remainingMs(context: Context, now: Long = System.currentTimeMillis()): Long {
         val until = prefs(context).getLong(KEY_UNTIL, 0L)
+        if (until == 0L) return 0L
         val remaining = until - now
         // A clock moved backwards must not stretch the window beyond its length.
-        return if (remaining in 1..WINDOW_MS) remaining else 0L
+        if (remaining in 1..WINDOW_MS) return remaining
+        clear(context)
+        return 0L
     }
 }
