@@ -28,6 +28,15 @@
     <string name="blocked_message_open_limit">You’ve used all of today’s opens for this app.</string>
     <string name="blocked_message_time_limit">You’ve used today’s screen time for this app.</string>
     <string name="blocked_message_visit_limit">This visit reached the per-visit limit for this app.</string>
+    <string name="pause_title">Take a breath</string>
+    <string name="pause_leave">Leave</string>
+    <string name="pause_continue_wait_fmt">Open %1$s in %2$d s</string>
+    <string name="pause_continue_fmt">Open %1$s</string>
+    <plurals name="pause_opens_today">
+        <item quantity="one">You’ve opened %1$s %2$d time today.</item>
+        <item quantity="other">You’ve opened %1$s %2$d times today.</item>
+    </plurals>
+    <string name="pause_first_open_fmt">Do you really want to open %1$s?</string>
     <plurals name="blocked_attempts_today">
         <item quantity="one">Blocked %1$d time today</item>
         <item quantity="other">Blocked %1$d times today</item>

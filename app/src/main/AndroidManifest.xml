@@ -311,6 +311,16 @@
             android:theme="@style/Theme.LoqIn.Blocker"
             tools:ignore="DiscouragedApi" />
 
+        <!-- "Pause before opening" countdown shown in front of apps with a pause rule -->
+        <activity android:screenOrientation="portrait"
+            android:name=".feature.pause.PauseActivity"
+            android:exported="false"
+            android:excludeFromRecents="true"
+            android:taskAffinity=""
+            android:launchMode="singleTask"
+            android:theme="@style/Theme.LoqIn.Blocker"
+            tools:ignore="DiscouragedApi" />
+
         <!-- Support log viewer -->
         <activity android:screenOrientation="portrait"
             android:name=".feature.support.SupportLogActivity"
