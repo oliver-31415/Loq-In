@@ -36,12 +36,10 @@
     <string name="charts_opens_a11y">Tägliche Öffnungen als Balken, blockierte Versuche sind darüber markiert.</string>
 
     <!-- Pause results card on the app detail page -->
-    <string name="charts_pause_title">Pausen-Ergebnisse</string>
     <plurals name="charts_pause_summary">
         <item quantity="one">%1$d von %2$d Mal zurückgetreten</item>
         <item quantity="other">%1$d von %2$d Malen zurückgetreten</item>
     </plurals>
-    <string name="charts_pause_legend_left">Zurückgetreten</string>
     <string name="charts_pause_legend_opened">Geöffnet</string>
     <string name="charts_pause_a11y">Tägliche Pausen-Ergebnisse als gestapelte Balken, aufgeteilt in zurückgetreten und geöffnet.</string>
 
@@ -61,4 +59,5 @@
     <string name="charts_session_hint_short">Die meisten Sitzungen dauern unter 5 Minuten.</string>
     <string name="charts_session_hint_long">Sitzungen dauern oft länger als 15 Minuten.</string>
     <string name="charts_sessions_a11y">Histogramm der Sitzungsdauern in fünf Bereichen, von unter einer Minute bis über dreißig.</string>
+    <string name="charts_pause_none_range">Keine Pausen in diesem Zeitraum</string>
 </resources>

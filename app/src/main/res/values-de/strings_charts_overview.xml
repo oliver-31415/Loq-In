@@ -33,7 +33,7 @@
     <string name="charts_pause_summary_up">Diese Woche bist du in %1$d%% der Fälle weggegangen, gestiegen von %2$d%%</string>
     <string name="charts_pause_summary_down">Diese Woche bist du in %1$d%% der Fälle weggegangen, gesunken von %2$d%%</string>
     <string name="charts_pause_none">Keine Pausen diese Woche</string>
-    <string name="charts_pause_legend_left">Weggegangen</string>
+    <string name="charts_pause_legend_left">Verzichtet</string>
     <string name="charts_pause_legend_continued">Weitergemacht</string>
     <string name="charts_pause_chart_description">Pausen der letzten 7 Tage: %1$d weggegangen, %2$d weitergemacht</string>
 

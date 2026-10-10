@@ -581,7 +581,11 @@ class AppUsageDetailActivity : AppCompatActivity() {
         val showPause = d.pauseRuleActive || pauseTotal > 0
         b.cardPauseResults.visibility = if (showPause) View.VISIBLE else View.GONE
         if (showPause) {
-            b.tvPauseSummary.text = resources.getQuantityString(R.plurals.charts_pause_summary, pauseTotal, pauseLeft, pauseTotal)
+            b.tvPauseSummary.text = if (pauseTotal > 0) {
+                resources.getQuantityString(R.plurals.charts_pause_summary, pauseTotal, pauseLeft, pauseTotal)
+            } else {
+                getString(R.string.charts_pause_none_range)
+            }
             b.chartPauseSplit.setData(d.pauseLeft, d.pauseContinued, d.labels)
         }
 

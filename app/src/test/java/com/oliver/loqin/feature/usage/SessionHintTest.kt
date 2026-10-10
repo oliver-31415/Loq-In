@@ -63,7 +63,7 @@ class SessionHintTest {
 
     @Test
     fun negativeCountsAreTreatedAsZero() {
-        assertEquals(Hint.OFTEN_LONG, SessionHint.forBuckets(listOf(-3, 0, 0, 1, 1)))
+        assertEquals(Hint.OFTEN_LONG, SessionHint.forBuckets(listOf(-3, 0, 3, 1, 1)))
     }
 
     @Test
@@ -71,5 +71,11 @@ class SessionHintTest {
         assertThrows(IllegalArgumentException::class.java) {
             SessionHint.forBuckets(listOf(1, 2, 3))
         }
+    }
+
+    @Test
+    fun longRuleNeedsAFewSessions() {
+        // Two long videos are not a pattern.
+        assertNull(SessionHint.forBuckets(listOf(0, 0, 0, 1, 1)))
     }
 }

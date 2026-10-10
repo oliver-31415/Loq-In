@@ -36,12 +36,10 @@
     <string name="charts_opens_a11y">Daily opens as bars, with blocked attempts marked above each day.</string>
 
     <!-- Pause results card on the app detail page -->
-    <string name="charts_pause_title">Pause results</string>
     <plurals name="charts_pause_summary">
         <item quantity="one">Stepped away %1$d of %2$d time</item>
         <item quantity="other">Stepped away %1$d of %2$d times</item>
     </plurals>
-    <string name="charts_pause_legend_left">Stepped away</string>
     <string name="charts_pause_legend_opened">Opened</string>
     <string name="charts_pause_a11y">Daily pause outcomes as stacked bars, split between stepped away and opened.</string>
 
@@ -61,4 +59,5 @@
     <string name="charts_session_hint_short">Most sessions are under 5 minutes.</string>
     <string name="charts_session_hint_long">Sessions often run past 15 minutes.</string>
     <string name="charts_sessions_a11y">Histogram of session lengths in five ranges, from under one minute to over thirty.</string>
+    <string name="charts_pause_none_range">No pauses in this period</string>
 </resources>

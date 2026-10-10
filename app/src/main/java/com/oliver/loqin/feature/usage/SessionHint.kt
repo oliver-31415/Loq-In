@@ -29,13 +29,16 @@ object SessionHint {
     /** Short-session hint needs at least this many sessions, so a couple of quick opens never trigger it. */
     const val MIN_SESSIONS_FOR_SHORT = 10
 
+    /** The long-session hint needs a few sessions too; two long videos are not a pattern. */
+    const val MIN_SESSIONS_FOR_LONG = 5
+
     private const val SHORT_SHARE_PERCENT = 70L
     private const val LONG_SHARE_PERCENT = 40L
 
     /**
      * [counts] is laid out as [SessionLengthBuckets]. Most sessions under 5 minutes (with at least
      * [MIN_SESSIONS_FOR_SHORT] sessions) gives [Hint.MOSTLY_SHORT]. At least 40% of sessions at 15
-     * minutes or longer gives [Hint.OFTEN_LONG]. Otherwise null.
+     * minutes or longer (with at least [MIN_SESSIONS_FOR_LONG] sessions) gives [Hint.OFTEN_LONG]. Otherwise null.
      */
     fun forBuckets(counts: List<Int>): Hint? {
         require(counts.size == SessionLengthBuckets.BUCKET_COUNT) { "Expected ${SessionLengthBuckets.BUCKET_COUNT} buckets" }
@@ -47,7 +50,7 @@ object SessionHint {
         if (total >= MIN_SESSIONS_FOR_SHORT && short * 100L >= total * SHORT_SHARE_PERCENT) {
             return Hint.MOSTLY_SHORT
         }
-        if (long * 100L >= total * LONG_SHARE_PERCENT) {
+        if (total >= MIN_SESSIONS_FOR_LONG && long * 100L >= total * LONG_SHARE_PERCENT) {
             return Hint.OFTEN_LONG
         }
         return null

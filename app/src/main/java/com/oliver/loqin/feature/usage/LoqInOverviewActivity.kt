@@ -97,7 +97,7 @@ class LoqInOverviewActivity : AppCompatActivity() {
     private lateinit var scansGrid: LinearLayout
     private lateinit var activityGrid: LinearLayout
     private lateinit var actionsGrid: LinearLayout
-private var insightsCards: LoqInInsightsCards? = null
+    private var insightsCards: LoqInInsightsCards? = null
 
     private val rangeButtons: MutableMap<Range, MaterialButton> = linkedMapOf()
     private var selectedRange: Range = Range.TODAY
