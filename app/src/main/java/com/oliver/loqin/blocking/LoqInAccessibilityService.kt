@@ -8829,7 +8829,9 @@ class LoqInAccessibilityService : AccessibilityService() {
         // trustworthy and the structural fallback must not fire on it.
         val scanTruncated = queue.isNotEmpty() || visited >= 400 || SystemClock.uptimeMillis() >= deadline
 
-        if (composerSeen) {
+        // The comment composer of a feed photo viewer carries the same sticker/GIF attachment
+        // components, so the composer only counts inside the Reels viewer's own structure.
+        if (composerSeen && (fullScreenViewPager || reelsActionSignal)) {
             return FbReelsSignals(true, "composer", fullScreenViewPager, reelsActionSignal, fbNavPresent, nonReelsTabSelected, homeSelected, reelsSelected, reelsViewerCue, scanTruncated)
         }
         // A selected Home tab vetoes Reels: preloaded off-screen pager pages can report a selected
