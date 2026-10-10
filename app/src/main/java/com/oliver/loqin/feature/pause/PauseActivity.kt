@@ -144,7 +144,7 @@ class PauseActivity : AppCompatActivity() {
     private fun leave() {
         if (!decided) {
             decided = true
-            PauseRuleStore.recordOutcome(this, PauseRuleStore.Outcome.LEFT)
+            PauseRuleStore.recordOutcome(this, PauseRuleStore.Outcome.LEFT, intent.getStringExtra(EXTRA_PKG).orEmpty())
         }
         runCatching {
             startActivity(
@@ -158,7 +158,7 @@ class PauseActivity : AppCompatActivity() {
     private fun openApp(pkg: String) {
         if (!decided) {
             decided = true
-            PauseRuleStore.recordOutcome(this, PauseRuleStore.Outcome.CONTINUED)
+            PauseRuleStore.recordOutcome(this, PauseRuleStore.Outcome.CONTINUED, pkg)
         }
         PauseGrants.grant(pkg)
         // The app's task is right underneath; finishing returns to it.

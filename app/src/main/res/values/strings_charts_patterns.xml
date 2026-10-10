@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- ====================================================== -->
+    <!-- Patterns screen -->
+    <!-- ====================================================== -->
+    <string name="patterns_row_title">Patterns</string>
+    <string name="patterns_row_summary">When and how you use your phone</string>
+    <string name="patterns_title">Patterns</string>
+    <string name="patterns_scope_distracting">Distracting apps</string>
+    <string name="patterns_scope_all">All apps</string>
+    <string name="patterns_allow_mode_note">In allow mode, distracting means any app outside your allowed list.</string>
+
+    <string name="patterns_empty_title">Patterns appear after a few days of use</string>
+    <string name="patterns_empty_progress">%1$d of %2$d days collected</string>
+
+    <string name="patterns_heatmap_title">When you use your phone</string>
+    <string name="patterns_heatmap_desc">Average minutes of use per weekday and hour over the last 4 weeks</string>
+    <string name="patterns_heatmap_description">Heatmap of average use by weekday and hour</string>
+    <string name="patterns_heatmap_marks_note">Dots mark hours when a block fired.</string>
+    <string name="patterns_peak_weekdays">Most use: weekdays %1$s–%2$s</string>
+    <string name="patterns_peak_weekends">Most use: weekends %1$s–%2$s</string>
+    <string name="patterns_peak_every_day">Most use: every day %1$s–%2$s</string>
+    <string name="patterns_peak_none">No use recorded in the last 4 weeks yet</string>
+
+    <string name="patterns_pickup_title">First pickup</string>
+    <string name="patterns_pickup_desc">The first session each day over the last 14 days, for the apps selected above. Times are counted from 04:00, so late-night use stays with the day it started on.</string>
+    <string name="patterns_pickup_description">Dot chart of the time of your first pickup each day for the last 14 days</string>
+    <string name="patterns_pickup_average">First pickup: %1$s on average this week</string>
+    <string name="patterns_pickup_none">No pickups this week yet</string>
+
+    <string name="patterns_protection_title">Protected time</string>
+    <string name="patterns_protection_desc">Minutes under a block each day, over the last 14 days</string>
+    <string name="patterns_protection_description">Stacked bars of protected and unprotected time for the last 14 days</string>
+    <string name="patterns_protection_no_data">no data</string>
+    <string name="patterns_legend_protected">Protected</string>
+    <string name="patterns_legend_unprotected">Not protected</string>
+
+</resources>

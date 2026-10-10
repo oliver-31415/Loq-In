@@ -51,6 +51,7 @@ object StatsPersistence {
     private const val SESSION_APP = "app"
     private const val SESSION_SCREEN_UNLOCK = "screen_unlock"
     private const val SESSION_WEBSITE = "website"
+    private const val BLOCK_EVENT = "block_event"
     private const val IO_TIMEOUT_SECONDS = 120L
 
     private val ioExecutor = Executors.newSingleThreadExecutor { runnable ->
@@ -747,6 +748,30 @@ object StatsPersistence {
             clear()
             set(year, month - 1, dayOfMonth, 0, 0, 0)
         }.timeInMillis
+    }
+
+    /** Archives one block shown or attempted for [packageName] so block history outlives the live counters. */
+    fun archiveBlockEvent(context: Context, packageName: String, timeMs: Long = System.currentTimeMillis()) {
+        if (packageName.isBlank() || timeMs <= 0L) {
+            return
+        }
+        initialize(context)
+        val entity = StatSessionEntity(
+            id = sessionId(BLOCK_EVENT, packageName, timeMs),
+            category = BLOCK_EVENT,
+            day = ymd(timeMs),
+            subject = packageName,
+            startMs = timeMs,
+            endMs = timeMs,
+            updatedAtMs = System.currentTimeMillis(),
+        )
+        executeIo {
+            dao().upsertSessions(listOf(entity))
+        }
+    }
+
+    fun blockEventsForRange(context: Context, startMs: Long, endMs: Long): List<ArchivedSession> {
+        return archivedSessionsForRange(context, BLOCK_EVENT, null, startMs, endMs)
     }
 
     private fun valueId(prefsName: String, key: String): String = "$prefsName:$key"
