@@ -86,6 +86,10 @@ object PauseRuleStore {
     fun outcomesToday(context: Context, outcome: Outcome): Int =
         prefs(context).getInt(KEY_OUTCOME + outcome.key + "_" + todayYmd(), 0)
 
+    /** Count of [outcome] recorded on the given local day (YYYYMMDD). */
+    fun outcomesForDay(context: Context, outcome: Outcome, ymd: Int): Int =
+        prefs(context).getInt(KEY_OUTCOME + outcome.key + "_" + ymd, 0)
+
     /** Sum of [outcome] over the last [days] days, today included. */
     fun outcomesForLastDays(context: Context, outcome: Outcome, days: Int = 7): Int {
         val sp = prefs(context)
