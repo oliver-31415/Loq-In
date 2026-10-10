@@ -8760,9 +8760,19 @@ class LoqInAccessibilityService : AccessibilityService() {
                     }
                     val lowerCd = cd.lowercase(Locale.ROOT)
                     val lowerText = nodeText.lowercase(Locale.ROOT)
-                    if (lowerCd.contains("like button") ||
-                        lowerCd.contains("share button") ||
-                        lowerCd == "comment"
+                    // The Reels viewer stacks its Like/Comment/Share buttons down the right edge;
+                    // a feed post lays the same buttons out in a row across the left half. With
+                    // the feed scrolled, Facebook hides both bars and the tab pager is full
+                    // screen, so without the right-rail check a plain post matched as Reels.
+                    // Rail labels vary by build ("Like button", "2.4K reactions", "30 comments",
+                    // "Share, 12 shares"); the rail position is what makes them decisive.
+                    if ((lowerCd.contains("like button") ||
+                            lowerCd.contains("share button") ||
+                            lowerCd == "comment" ||
+                            lowerCd.endsWith(" reactions") ||
+                            lowerCd.endsWith(" comments") ||
+                            lowerCd.startsWith("share,")) &&
+                        isNodeInRightRail(node, rootBounds)
                     ) {
                         reelsActionSignal = true
                     }
@@ -8841,6 +8851,15 @@ class LoqInAccessibilityService : AccessibilityService() {
             fullScreenViewPager, reelsActionSignal, fbNavPresent, nonReelsTabSelected,
             homeSelected, reelsSelected, reelsViewerCue, scanTruncated
         )
+    }
+
+    /** True when [node]'s centre sits in the right fifth of the window (the Reels action rail). */
+    private fun isNodeInRightRail(node: AccessibilityNodeInfo, rootBounds: Rect): Boolean {
+        if (rootBounds.width() <= 0) return false
+        val b = Rect()
+        runCatching { node.getBoundsInScreen(b) }.getOrNull()
+        if (b.isEmpty) return false
+        return (b.exactCenterX() - rootBounds.left) / rootBounds.width().toFloat() >= 0.8f
     }
 
     /** True when [node] sits in the bottom ~14% of the app window (Facebook's tab-shell band). */
