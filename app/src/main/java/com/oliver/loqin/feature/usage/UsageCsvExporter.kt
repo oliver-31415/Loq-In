@@ -77,6 +77,8 @@ object UsageCsvExporter {
                         val openCount = opens[packageName] ?: 0
                         val blockCount = blocks[packageName] ?: 0
                         if (!UsageCsvExport.hasData(ms, openCount, blockCount)) continue
+                        // Same app set as the insights screen (no System UI, launchers, hidden apps).
+                        if (UsageInsightsAppFilter.shouldHide(context, packageName)) continue
                         out.write(
                             UsageCsvExport.row(
                                 date = dateLabel,

@@ -253,7 +253,8 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
             },
             rowDeltaProvider = { item ->
                 val comparison = currentComparison
-                if (isWebMode || currentRange != Range.WEEK || comparison == null) {
+                // Same rule as the total card: no row changes against an empty previous week.
+                if (isWebMode || currentRange != Range.WEEK || comparison == null || comparison.previousMs <= 0L) {
                     null
                 } else {
                     UsageComparison.rowDeltaMinutes(

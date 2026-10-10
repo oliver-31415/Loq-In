@@ -144,8 +144,8 @@ class AppUsageAdapter(
             deltaText.isVisible = delta != null
             if (delta != null) {
                 deltaText.text = when {
-                    delta > 0 -> ctx.getString(R.string.usage_row_delta_up, delta)
-                    delta < 0 -> ctx.getString(R.string.usage_row_delta_down, -delta)
+                    delta > 0 -> ctx.getString(R.string.usage_row_delta_up, formatDeltaMinutes(ctx, delta))
+                    delta < 0 -> ctx.getString(R.string.usage_row_delta_down, formatDeltaMinutes(ctx, -delta))
                     else -> ctx.getString(R.string.usage_row_delta_same)
                 }
                 // Sign carries the meaning; colour only reinforces it.
@@ -213,5 +213,16 @@ class AppUsageAdapter(
                 )
             }
         }
+    }
+}
+
+// "17h 5m" / "45m", matching the h/m style of the screen time next to it.
+private fun formatDeltaMinutes(ctx: android.content.Context, minutes: Int): String {
+    val hours = minutes / 60
+    val rest = minutes % 60
+    return when {
+        hours == 0 -> ctx.getString(R.string.usage_row_delta_m_fmt, rest)
+        rest == 0 -> ctx.getString(R.string.usage_row_delta_h_fmt, hours)
+        else -> ctx.getString(R.string.usage_row_delta_hm_fmt, hours, rest)
     }
 }

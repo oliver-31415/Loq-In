@@ -203,9 +203,12 @@
     <string name="usage_comparison_base_week">die vorherigen 7 Tage</string>
     <string name="usage_comparison_base_month">die vorherigen 30 Tage</string>
     <string name="usage_comparison_base_year">das letzte Jahr</string>
-    <string name="usage_row_delta_up">+%1$dm</string>
-    <string name="usage_row_delta_down">−%1$dm</string>
+    <string name="usage_row_delta_up">+%1$s</string>
+    <string name="usage_row_delta_down">−%1$s</string>
     <string name="usage_row_delta_same">±0m</string>
+    <string name="usage_row_delta_hm_fmt">%1$dh %2$dm</string>
+    <string name="usage_row_delta_h_fmt">%1$dh</string>
+    <string name="usage_row_delta_m_fmt">%1$dm</string>
     <string name="usage_app_placeholder">App</string>
     <string name="statistics_usage_subtitle_web">Webseiten</string>
     <string name="usage_launch_stats_title">Öffnungen</string>
