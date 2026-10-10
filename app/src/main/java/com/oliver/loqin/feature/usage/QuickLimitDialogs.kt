@@ -34,6 +34,7 @@ import com.oliver.loqin.data.prefs.AttemptLimitStore
 import com.oliver.loqin.data.prefs.DomainBlockStore
 import com.oliver.loqin.data.prefs.DomainLimitStore
 import com.oliver.loqin.data.prefs.DomainVisitLimitStore
+import com.oliver.loqin.data.prefs.PauseRuleStore
 import com.oliver.loqin.feature.websites.WebsiteIconCache
 import com.oliver.loqin.data.prefs.LimitReachedStore
 import com.oliver.loqin.data.prefs.OpenCountStore
@@ -232,6 +233,34 @@ object QuickLimitDialogs {
             til.defaultHintTextColor = accentList
         }
         listOf(swTime, swOpens, swVisit).forEach { CustomAccentApplier.tintSwitch(it) }
+
+        // "Pause before opening" (soft friction): separate from limits, applied on Save.
+        val swPause = v.findViewById<androidx.appcompat.widget.SwitchCompat>(R.id.swAppPause)
+        v.findViewById<View>(R.id.cardAppPause).visibility = View.VISIBLE
+        val pauseBase = PauseRuleStore.getBaseSeconds(activity, profile)
+        val pauseStep = PauseRuleStore.getStepSeconds(activity, profile)
+        v.findViewById<TextView>(R.id.tvAppPauseSubtitle).text = if (pauseStep > 0) {
+            activity.getString(R.string.app_limit_pause_subtitle_fmt, pauseBase, pauseStep)
+        } else {
+            activity.getString(R.string.app_limit_pause_subtitle_fixed_fmt, pauseBase)
+        }
+        val pausedBefore = PauseRuleStore.isPaused(activity, profile, pkg)
+        swPause.isChecked = pausedBefore
+        CustomAccentApplier.tintSwitch(swPause)
+
+        fun applyPauseChange() {
+            val requested = swPause.isChecked
+            if (requested == pausedBefore) return
+            // Adding a pause adds friction; removing one weakens protection and goes through the gate.
+            if (!requested && ProtectionChangeGate.decision(activity, ProtectionChangePolicy.Direction.WEAKER) !=
+                ProtectionChangePolicy.Decision.APPLY_NOW
+            ) {
+                activity.findViewById<View>(android.R.id.content).showWarnPill(R.string.app_limit_pause_remove_locked)
+                return
+            }
+            PauseRuleStore.setPaused(activity, profile, pkg, requested)
+            onChanged?.invoke()
+        }
 
         var sessionResetMode =
             UsageLimitResetStore.getMode(activity, profile, pkg) == UsageLimitResetStore.MODE_SESSION
@@ -630,6 +659,7 @@ object QuickLimitDialogs {
             val validated = validateAll(focusInvalid = true) ?: return@setOnClickListener
             val (time, visit, opens) = validated
             applyValues(time, opens, visit)
+            applyPauseChange()
             dlg.dismiss()
         }
 

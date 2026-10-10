@@ -81,6 +81,10 @@
     <string name="app_limit_visit_subtitle">Längster einzelner Besuch</string>
     <string name="app_limit_save">Limits speichern</string>
     <string name="app_limit_remove">Limits entfernen</string>
+    <string name="app_limit_section_pause">Vor dem Öffnen pausieren</string>
+    <string name="app_limit_pause_subtitle_fmt">Erst %1$d s warten, jedes Mal heute %2$d s länger</string>
+    <string name="app_limit_pause_subtitle_fixed_fmt">%1$d s warten, bevor die App öffnet</string>
+    <string name="app_limit_pause_remove_locked">Deaktiviere Loq In, um die Pause für diese App zu entfernen.</string>
     <string name="app_limit_a11y_time_decrease">Tägliche Minuten verringern</string>
     <string name="app_limit_a11y_time_increase">Tägliche Minuten erhöhen</string>
     <string name="app_limit_a11y_opens_decrease">Öffnungen pro Tag verringern</string>
