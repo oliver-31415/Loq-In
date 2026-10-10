@@ -209,6 +209,21 @@
     <string name="usage_row_basic_a11y">%1$s, %2$s, %3$s.</string>
     <string name="usage_total_screen_time">Total Screen Time</string>
     <string name="usage_total_screen_time_web">Total website time (while blocking active)</string>
+    <string name="usage_comparison_percent_less">%1$d%% less than %2$s</string>
+    <string name="usage_comparison_percent_more">%1$d%% more than %2$s</string>
+    <string name="usage_comparison_minutes_less">%1$dm less than %2$s</string>
+    <string name="usage_comparison_minutes_more">%1$dm more than %2$s</string>
+    <string name="usage_comparison_same">Same as %1$s</string>
+    <string name="usage_comparison_base_today">yesterday</string>
+    <string name="usage_comparison_base_week">the previous 7 days</string>
+    <string name="usage_comparison_base_month">the previous 30 days</string>
+    <string name="usage_comparison_base_year">last year</string>
+    <string name="usage_row_delta_up">+%1$s</string>
+    <string name="usage_row_delta_down">−%1$s</string>
+    <string name="usage_row_delta_same">±0m</string>
+    <string name="usage_row_delta_hm_fmt">%1$dh %2$dm</string>
+    <string name="usage_row_delta_h_fmt">%1$dh</string>
+    <string name="usage_row_delta_m_fmt">%1$dm</string>
     <string name="usage_app_placeholder">App</string>
     <string name="statistics_usage_subtitle_web">Websites</string>
     <string name="usage_launch_stats_title">Opens</string>
@@ -460,4 +475,8 @@
     <string name="app_limit_state_limited_unselected">Limited. Removing all limits frees the app again.</string>
     <string name="app_limit_state_allowed_allow_mode">Allowed. A limit restricts how much it can be used.</string>
     <string name="app_limit_state_blocked_allow_mode">Blocked. Adding a limit allows it until the limit is reached.</string>
+    <string name="usage_menu_export_csv">Export CSV</string>
+    <string name="usage_export_progress">Exporting usage data…</string>
+    <string name="usage_export_done">Usage data exported.</string>
+    <string name="usage_export_failed">Usage data could not be exported.</string>
 </resources>
