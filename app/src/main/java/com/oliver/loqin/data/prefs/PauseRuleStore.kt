@@ -38,6 +38,7 @@ object PauseRuleStore {
     const val DEFAULT_BASE_SECONDS = 10
     const val DEFAULT_STEP_SECONDS = 5
     const val MAX_SECONDS = 60
+    private const val MIN_PAUSES_FOR_SUMMARY = 3
 
     enum class Outcome(val key: String) { CONTINUED("continued"), LEFT("left") }
 
@@ -85,6 +86,21 @@ object PauseRuleStore {
     fun outcomesToday(context: Context, outcome: Outcome): Int =
         prefs(context).getInt(KEY_OUTCOME + outcome.key + "_" + todayYmd(), 0)
 
+    /** Sum of [outcome] over the last [days] days, today included. */
+    fun outcomesForLastDays(context: Context, outcome: Outcome, days: Int = 7): Int {
+        val sp = prefs(context)
+        val c = Calendar.getInstance()
+        var total = 0
+        repeat(days.coerceAtLeast(1)) {
+            total += sp.getInt(KEY_OUTCOME + outcome.key + "_" + ymd(c), 0)
+            c.add(Calendar.DAY_OF_YEAR, -1)
+        }
+        return total
+    }
+
+    /** Whether there are enough pauses this week for "you left N of M times" to mean something. */
+    fun shouldShowWeeklyOutcome(left: Int, continued: Int): Boolean = left + continued >= MIN_PAUSES_FOR_SUMMARY
+
     fun onProfileRenamed(context: Context, old: String, new: String) {
         if (old == new) return
         val sp = prefs(context)
@@ -109,8 +125,8 @@ object PauseRuleStore {
         }
     }
 
-    private fun todayYmd(): Int {
-        val c = Calendar.getInstance()
-        return c.get(Calendar.YEAR) * 10_000 + (c.get(Calendar.MONTH) + 1) * 100 + c.get(Calendar.DAY_OF_MONTH)
-    }
+    private fun todayYmd(): Int = ymd(Calendar.getInstance())
+
+    private fun ymd(c: Calendar): Int =
+        c.get(Calendar.YEAR) * 10_000 + (c.get(Calendar.MONTH) + 1) * 100 + c.get(Calendar.DAY_OF_MONTH)
 }

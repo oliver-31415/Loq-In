@@ -27,6 +27,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
 import com.google.android.material.button.MaterialButton
 import com.oliver.loqin.R
 import com.oliver.loqin.blocking.PauseGrants
@@ -66,6 +67,19 @@ class PauseActivity : AppCompatActivity() {
             resources.getQuantityString(R.plurals.pause_opens_today, opensToday, label, opensToday)
         } else {
             getString(R.string.pause_first_open_fmt, label)
+        }
+        val leftThisWeek = PauseRuleStore.outcomesForLastDays(this, PauseRuleStore.Outcome.LEFT)
+        val continuedThisWeek = PauseRuleStore.outcomesForLastDays(this, PauseRuleStore.Outcome.CONTINUED)
+        if (PauseRuleStore.shouldShowWeeklyOutcome(leftThisWeek, continuedThisWeek)) {
+            findViewById<TextView>(R.id.pauseWeeklyOutcome).apply {
+                text = resources.getQuantityString(
+                    R.plurals.pause_weekly_outcome,
+                    leftThisWeek + continuedThisWeek,
+                    leftThisWeek,
+                    leftThisWeek + continuedThisWeek,
+                )
+                isVisible = true
+            }
         }
         val countdown = findViewById<TextView>(R.id.pauseCountdown).apply { setTextColor(accent) }
         val leave = findViewById<MaterialButton>(R.id.pauseLeave).apply {

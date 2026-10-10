@@ -48,4 +48,11 @@ class PauseRuleStoreTest {
     fun `invalid inputs are clamped`() {
         assertEquals(1, PauseRuleStore.waitSeconds(0, 0, -3))
     }
+
+    @Test
+    fun `weekly outcome needs a few pauses first`() {
+        assertEquals(false, PauseRuleStore.shouldShowWeeklyOutcome(1, 1))
+        assertEquals(true, PauseRuleStore.shouldShowWeeklyOutcome(0, 3))
+        assertEquals(true, PauseRuleStore.shouldShowWeeklyOutcome(2, 1))
+    }
 }

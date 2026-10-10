@@ -35,6 +35,16 @@
         android:textSize="15sp" />
 
     <TextView
+        android:id="@+id/pauseWeeklyOutcome"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:gravity="center"
+        android:textColor="@color/loqin_text_secondary"
+        android:textSize="13sp"
+        android:visibility="gone" />
+
+    <TextView
         android:id="@+id/pauseCountdown"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

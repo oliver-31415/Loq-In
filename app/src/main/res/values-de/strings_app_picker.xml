@@ -36,6 +36,10 @@
         <item quantity="one">Du hast %1$s heute %2$d-mal geöffnet.</item>
         <item quantity="other">Du hast %1$s heute %2$d-mal geöffnet.</item>
     </plurals>
+    <plurals name="pause_weekly_outcome">
+        <item quantity="one">Diese Woche hast du %1$d von %2$d Mal verzichtet.</item>
+        <item quantity="other">Diese Woche hast du %1$d von %2$d Malen verzichtet.</item>
+    </plurals>
     <string name="pause_first_open_fmt">Willst du %1$s wirklich öffnen?</string>
     <plurals name="blocked_attempts_today">
         <item quantity="one">Heute %1$d-mal blockiert</item>
