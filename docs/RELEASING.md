@@ -70,6 +70,7 @@ Keep the `-mapping.txt.gz` asset: it turns obfuscated crash stack traces from th
 - Download the latest from the **nightly** pre-release on the Releases page. It is never marked "Latest", so the stable release stays the default download.
 - Run it by hand with **Actions → Nightly → Run workflow**; tick **force** to rebuild even when nothing changed.
 - The rolling `nightly` tag moves to the built commit each time. Each run also keeps the APK and R8 mapping as a workflow artifact for 14 days.
+- To test a branch before merging, run the workflow by hand with **Use workflow from** set to that branch (`gh workflow run nightly.yml --ref <branch>`). It builds the branch and keeps the APK as a workflow artifact only; the public `nightly` release is not touched.
 
 ## Building locally
 

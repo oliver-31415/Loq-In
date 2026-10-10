@@ -489,7 +489,8 @@ object BackupCategoryFilter {
             key.startsWith("session_limit_min__") ||
             key.startsWith("session_limit_ever__") ||
             key.startsWith("attempt_limit__") ||
-            key.startsWith("attempt_limit_ever__") -> setOf(BackupCategory.BLOCKED_APPS)
+            key.startsWith("attempt_limit_ever__") ||
+            key.startsWith("pause_rule_") -> setOf(BackupCategory.BLOCKED_APPS)
 
         key.startsWith("usage_limit_session_runtime__") ||
             key.startsWith("usage_day_") ||
@@ -516,6 +517,7 @@ object BackupCategoryFilter {
             key.startsWith("temp_enable_count_") ||
             key.startsWith("scan_code_last_used_") ||
             key.startsWith("scan_code_count_") ||
+            key.startsWith("pause_outcome_") ||
             key == "blocked_inbox_events" ||
             key == "blocked_inbox_events_updated_at" -> setOf(BackupCategory.STATISTICS)
 

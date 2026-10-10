@@ -59,6 +59,7 @@ import com.oliver.loqin.data.prefs.InAppDetectionStore
 import com.oliver.loqin.data.prefs.LimitReachedStore
 import com.oliver.loqin.data.prefs.LastBlockReasonStore
 import com.oliver.loqin.data.prefs.OpenCountStore
+import com.oliver.loqin.data.prefs.PauseRuleStore
 import com.oliver.loqin.data.prefs.ProfileStore
 import com.oliver.loqin.data.prefs.ProfileRuleModeStore
 import com.oliver.loqin.data.prefs.WebsiteRuleModeStore
@@ -74,6 +75,7 @@ import com.oliver.loqin.data.prefs.UsageLimitSessionRuntimeStore
 import com.oliver.loqin.data.prefs.UsageStore
 import com.oliver.loqin.data.prefs.WebUsageStore
 import com.oliver.loqin.feature.blocker.BlockerActivity
+import com.oliver.loqin.feature.pause.PauseActivity
 import com.oliver.loqin.platform.receiver.schedule.ScheduleReceiver
 import com.oliver.loqin.util.AndroidSystemPackages
 import com.oliver.loqin.util.AppBlockSafety
@@ -182,8 +184,14 @@ class LoqInAccessibilityService : AccessibilityService() {
     private val lastWebsiteFollowUpAt = HashMap<String, Long>()
     private val lastFirefoxShortcutProbeAt = HashMap<String, Long>()
     private val lastOpenCountAt = HashMap<String, Long>()
-    private var lastOpenSessionPkg: String? = null
-    private var lastOpenSessionAt: Long = 0L
+    // Process-wide (see OpenSessionState): Android may recreate the service mid-visit, and a fresh
+    // instance with an empty session counted the user's current app as a new open.
+    private var lastOpenSessionPkg: String?
+        get() = OpenSessionState.pkg
+        set(value) { OpenSessionState.pkg = value }
+    private var lastOpenSessionAt: Long
+        get() = OpenSessionState.at
+        set(value) { OpenSessionState.at = value }
     private val inAppSurfaceEvidence = InAppSurfaceEvidence()
     // Package-wide post-block grace. It intentionally suppresses ALL surfaces in a package for a
     // short window: per-surface grace was evaluated but keeping it package-wide avoids re-entering
@@ -1973,11 +1981,55 @@ class LoqInAccessibilityService : AccessibilityService() {
      * We count an "open" when the app becomes the foreground package.
      * To avoid noisy OEM foreground flapping, we apply a short per-package cooldown.
      */
+    private var cachedImePackage: String? = null
+    private var cachedHomePackages: Set<String> = emptySet()
+    private var surfaceCacheAt = 0L
+
+    private fun refreshSurfaceCacheIfStale() {
+        val now = SystemClock.elapsedRealtime()
+        if (surfaceCacheAt != 0L && now - surfaceCacheAt < 60_000L) return
+        surfaceCacheAt = now
+        cachedImePackage = runCatching { AppBlockSafety.getDefaultInputMethodPackage(this) }.getOrNull()
+        cachedHomePackages = runCatching {
+            val home = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME)
+            packageManager.queryIntentActivities(home, 0).map { it.activityInfo.packageName }.toSet()
+        }.getOrDefault(emptySet())
+    }
+
+    private val launchableCache = HashMap<String, Boolean>()
+
+    /**
+     * Overlays that sit on top of the app the user is in rather than replacing it: System UI,
+     * the keyboard, and packages with no launcher entry (permission prompts, Google's account
+     * picker). Counting them as an app switch split one visit into several "opens" and ended
+     * pause grants mid-visit.
+     */
+    private fun isTransientSystemSurface(pkg: String): Boolean {
+        if (pkg == "com.android.systemui") return true
+        refreshSurfaceCacheIfStale()
+        if (pkg == cachedImePackage) return true
+        if (isHomeLauncherPackage(pkg)) return false
+        val launchable = launchableCache.getOrPut(pkg) {
+            runCatching { packageManager.getLaunchIntentForPackage(pkg) != null }.getOrDefault(true)
+        }
+        return !launchable
+    }
+
+    private fun isHomeLauncherPackage(pkg: String): Boolean {
+        refreshSurfaceCacheIfStale()
+        return pkg in cachedHomePackages
+    }
+
     private fun maybeCountOpenAndEnforceAttemptLimit(pkg: String, now: Long) {
         if (pkg.isBlank() || pkg == packageName) {
             return
         }
         if (AppBlockSafety.isAlwaysExcluded(this, pkg)) {
+            return
+        }
+        // System UI and the keyboard flash up during block transitions and typing; treating them
+        // as the foreground app split one visit into several "opens" (e.g. each Shorts block).
+        if (isTransientSystemSurface(pkg)) {
             return
         }
 
@@ -1987,6 +2039,7 @@ class LoqInAccessibilityService : AccessibilityService() {
         // Track every observed foreground package, even if that package has no attempt limit.
         // This lets the next limited app count as a new open after the user really switched away.
         lastOpenSessionPkg = pkg
+        PauseGrants.onVisitChanged(pkg)
         lastOpenSessionAt = now
 
         if (sameForegroundSession) {
@@ -2000,6 +2053,11 @@ class LoqInAccessibilityService : AccessibilityService() {
             return
         }
         if (km?.isKeyguardLocked == true) {
+            return
+        }
+
+        // Going home ends the visit (handled above) but the launcher itself is not an app open.
+        if (isHomeLauncherPackage(pkg)) {
             return
         }
 
@@ -2184,6 +2242,7 @@ class LoqInAccessibilityService : AccessibilityService() {
                 reason = if (managed) "decision_allow" else "not_managed_for_profile",
                 details = "profile=$profile blockedCount=${blocked.size} hardBlocked=$hardBlocked allowModeListed=$allowModeListed essentialAllowed=$essentialAllowed limitMin=$limitMin attemptLimit=$attemptLimit opensExceeded=$opensExceeded limitUsageMs=$effectiveUsageMsToday perVisitLimitMin=$perVisitLimitMin perVisitUsageMs=$perVisitUsageMs force=$force event=${eventTypeLabel(event)}"
             )
+            maybeShowPause(profile, pkg)
             return
         }
         markRuntimeBlockCheck(
@@ -2214,6 +2273,34 @@ class LoqInAccessibilityService : AccessibilityService() {
         )
         blockNow(pkg, immediate = decision.immediate)
     }
+
+    /** Soft friction: apps with a pause rule get a countdown screen instead of a block. */
+    private fun maybeShowPause(profile: String, pkg: String) {
+        if (!PauseRuleStore.isPaused(this, profile, pkg)) return
+        if (PauseGrants.isGranted(pkg)) return
+        if (!PauseGrants.shouldShowPause(pkg)) return
+        val opensToday = AppLaunchCountStore.getForDateRange(this, pkg, startOfTodayMs(), System.currentTimeMillis())
+            .coerceAtLeast(1)
+        val wait = PauseRuleStore.waitSeconds(
+            PauseRuleStore.getBaseSeconds(this, profile),
+            PauseRuleStore.getStepSeconds(this, profile),
+            opensBeforeToday = opensToday - 1,
+        )
+        appendBlockingLog(
+            category = "pause",
+            key = "pause|$pkg",
+            message = "pkg=$pkg profile=$profile wait=${wait}s opensToday=$opensToday",
+            throttleMs = 1_000L
+        )
+        runCatching { PauseActivity.show(this, pkg, safeAppLabel(pkg), wait, opensToday) }
+    }
+
+    private fun startOfTodayMs(): Long = java.util.Calendar.getInstance().apply {
+        set(java.util.Calendar.HOUR_OF_DAY, 0)
+        set(java.util.Calendar.MINUTE, 0)
+        set(java.util.Calendar.SECOND, 0)
+        set(java.util.Calendar.MILLISECOND, 0)
+    }.timeInMillis
 
     private fun isBlockSuppressed(pkg: String, now: Long = System.currentTimeMillis()): Boolean {
         val until = suppressedBlockingUntilByPkg[pkg] ?: return false
@@ -4147,6 +4234,14 @@ class LoqInAccessibilityService : AccessibilityService() {
         }
 
         val host = hostSignal?.first
+            ?: hostFromOtherBrowserWindows(pkg, root)?.also { otherHost ->
+                appendBlockingLog(
+                    category = "website_detect",
+                    key = "web-other-window|$pkg|$otherHost",
+                    message = "pkg=$pkg result=host_from_other_window host=${sanitizeWebsiteSignal(otherHost)} event=${eventTypeLabel(event)}",
+                    throttleMs = 1_500L
+                )
+            }
             ?: run {
                 if (isFirefoxFamily(pkg) && (loadedFirefoxPageEvent || !recentEditing)) {
                     browserWebsiteState.currentPendingDomain(pkg, now)?.let { pendingHost ->
@@ -4344,6 +4439,25 @@ class LoqInAccessibilityService : AccessibilityService() {
         )
     }
 
+    /**
+     * A browser dialog or popup (first-run promos, permission prompts, context menus) can own the
+     * active window while the page under it keeps loading, so the address bar is not in [activeRoot]
+     * and the page stayed usable. Read the browser's other windows instead; only a trusted
+     * address-bar signal counts.
+     */
+    private fun hostFromOtherBrowserWindows(pkg: String, activeRoot: AccessibilityNodeInfo): String? {
+        val activeWindowId = runCatching { activeRoot.windowId }.getOrDefault(-1)
+        val browserWindows = runCatching { windows }.getOrNull().orEmpty()
+        for (window in browserWindows) {
+            if (window.type != AccessibilityWindowInfo.TYPE_APPLICATION || window.id == activeWindowId) continue
+            val root = runCatching { window.root }.getOrNull() ?: continue
+            if (root.packageName?.toString() != pkg) continue
+            val signal = runCatching { tryExtractDomainFromBrowser(root, pkg, null) }.getOrNull() ?: continue
+            if (signal.second) return signal.first
+        }
+        return null
+    }
+
     private fun scheduleStableWebsiteCandidateProbe(pkg: String, host: String) {
         pendingWebsiteCandidateProbeHostByPkg[pkg] = host
         handler.postDelayed({
@@ -4458,6 +4572,24 @@ class LoqInAccessibilityService : AccessibilityService() {
         message: String,
         redirected: Boolean
     ) {
+        // The safe-page redirect is an intent to the browser; if the browser handles it after the
+        // block screen started, the browser lands on top and the block screen stays hidden behind
+        // it (seen on re-opening a blocked site). Bring it back in front once things settle.
+        // After the redirect follow-ups below (650 ms / 1.9 s), which can re-launch the browser.
+        for (delayMs in longArrayOf(1_000L, 2_200L, 3_400L)) {
+            handler.postDelayed({
+                val root = currentRoot(null)
+                if (BlockerActivity.isAliveButHidden() && root != null && isRootFromPackage(root, pkg)) {
+                    appendBlockingLog(
+                        category = "website_block",
+                        key = "web-block-reassert|$pkg",
+                        message = "pkg=$pkg host=${sanitizeWebsiteSignal(host)} action=bring_blocker_to_front delayMs=$delayMs",
+                        throttleMs = 500L
+                    )
+                    runCatching { BlockerActivity.bringToFront(this) }
+                }
+            }, delayMs)
+        }
         // Some Chromium/OEM combinations can restore the blocked tab immediately after our safe-page redirect.
         // Re-check shortly after a successful website block and enforce once more if the same blocked host is still visible.
         val now = System.currentTimeMillis()
@@ -9562,4 +9694,10 @@ class LoqInAccessibilityService : AccessibilityService() {
         }.getOrDefault(false)
     }
 
+}
+
+/** Foreground-visit tracking shared by every instance of the service in this process. */
+private object OpenSessionState {
+    @Volatile var pkg: String? = null
+    @Volatile var at: Long = 0L
 }

@@ -89,6 +89,7 @@ import com.oliver.loqin.data.prefs.AttemptLimitStore
 import com.oliver.loqin.data.prefs.AutomationModeStore
 import com.oliver.loqin.data.prefs.EmergencyBypassStore
 import com.oliver.loqin.data.prefs.EmergencyPinStore
+import com.oliver.loqin.data.prefs.EnableUndoWindow
 import com.oliver.loqin.data.prefs.ExactAlarmPermissionSync
 import com.oliver.loqin.data.prefs.InAppRuleStore
 import com.oliver.loqin.data.prefs.LimitReachedStore
@@ -434,7 +435,11 @@ class MainActivity : AppCompatActivity() {
         tvActiveDuration.isClickable = true
         tvActiveDuration.isFocusable = true
         tvActiveDuration.setOnClickListener {
-            startActivity(ActiveTimeActivity.intent(this))
+            if (protectionNotRunning) {
+                startActivity(Intent(this, PermissionsActivity::class.java))
+            } else {
+                startActivity(ActiveTimeActivity.intent(this))
+            }
         }
         tvActiveProfile = findViewById(R.id.tvActiveProfile)
         rowActiveProfile = findViewById(R.id.rowActiveProfile)
@@ -1223,8 +1228,10 @@ class MainActivity : AppCompatActivity() {
         val allowMissingScanSafetyDisable =
             enabled && AutomationModeStore.shouldAllowManualDisableForMissingScanSetup(this)
 
+        // First minute after a manual enable in a strict mode: undo without the unlock method.
+        val undoAvailable = enabled && EnableUndoWindow.remainingMs(this) > 0L
         val canChange = if (enabled) {
-            AutomationModeStore.isButtonAllowed(this) || allowMissingScanSafetyDisable
+            AutomationModeStore.isButtonAllowed(this) || allowMissingScanSafetyDisable || undoAvailable
         } else {
             AutomationModeStore.canButtonEnable(this)
         }
@@ -1248,17 +1255,24 @@ class MainActivity : AppCompatActivity() {
             AppLogStore.append(this, "Safety", "Allowing manual disable because the only disable channel is a scan channel with no code set up")
         }
 
-        if (enabled && isNfcLocked()) {
+        if (enabled && isNfcLocked() && !undoAvailable) {
             snackRoot().showWarnPill(R.string.toast_cannot_disable_while_locked)
             return
         }
         val nextEnabled = !enabled
-        if (SwitchModeStore.setEnabled(this, nextEnabled, allowNfcBypass = false)) {
+        if (SwitchModeStore.setEnabled(this, nextEnabled, allowNfcBypass = undoAvailable)) {
             AppLogStore.append(
                 this,
                 "Profiles",
-                "Manual toggle action=${if (nextEnabled) "enable" else "disable"} profile=${ProfileStore.getCurrent(this)}"
+                "Manual toggle action=${if (nextEnabled) "enable" else "disable"} profile=${ProfileStore.getCurrent(this)}" +
+                    if (undoAvailable) " via=undo_window" else ""
             )
+            if (nextEnabled && !AutomationModeStore.isButtonAllowed(this)) {
+                EnableUndoWindow.start(this)
+                snackRoot().showWarnPill(R.string.home_enable_undo_hint)
+            } else {
+                EnableUndoWindow.clear(this)
+            }
         }
         updateSwitchState()
     }
@@ -2415,14 +2429,19 @@ class MainActivity : AppCompatActivity() {
     /**
      * Active-session timer pill next to the launcher pill inside the hero card.
      * Only shown while blocking is active (saturated hero art), so it is styled
-     * as a frosted translucent white pill — color-independent.
+     * as a frosted translucent white pill — color-independent. [warning] switches it to a
+     * solid warning pill for "Not protecting".
      */
-    private fun styleActiveDurationPill() {
+    private fun styleActiveDurationPill(warning: Boolean = false) {
         val bg = GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
             cornerRadius = homeDp(999f).toFloat()
-            setColor(ColorUtils.setAlphaComponent(Color.WHITE, 0x2B))
-            setStroke(homeDp(1f), ColorUtils.setAlphaComponent(Color.WHITE, 0x55))
+            if (warning) {
+                setColor(ContextCompat.getColor(this@MainActivity, R.color.status_warning))
+            } else {
+                setColor(ColorUtils.setAlphaComponent(Color.WHITE, 0x2B))
+                setStroke(homeDp(1f), ColorUtils.setAlphaComponent(Color.WHITE, 0x55))
+            }
         }
         tvActiveDuration.background = bg
         tvActiveDuration.setTextColor(Color.WHITE)
@@ -3396,6 +3415,8 @@ class MainActivity : AppCompatActivity() {
             formatActiveDuration(SwitchModeStore.getActiveDurationMillis(this)),
             ActiveDurationStore.todayMs(this) / 60_000L,
             ProfileStore.getCurrent(this),
+            EnableUndoWindow.remainingMs(this) / 1000L,
+            BlockingRuntime.isAccessibilityActive(this),
         ).joinToString("|")
         if (signature == lastTickSignature) return
         lastTickSignature = signature
@@ -3403,6 +3424,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private var lastTickSignature: String? = null
+    private var protectionNotRunning = false
 
     private fun updateSwitchState() {
         SwitchModeStore.finishTemporaryDisableIfExpired(this)
@@ -3440,7 +3462,12 @@ class MainActivity : AppCompatActivity() {
 
         // Icon + button
         ivStatusIcon.setImageResource(if (enabled) R.drawable.lock_24 else R.drawable.lock_open_24)
-        btnToggle.text = if (enabled) getString(R.string.dashboard_toggle_disable) else getString(R.string.dashboard_toggle_enable)
+        val undoSeconds = if (enabled) ((EnableUndoWindow.remainingMs(this) + 999) / 1000).toInt() else 0
+        btnToggle.text = when {
+            undoSeconds > 0 -> getString(R.string.home_enable_undo_fmt, undoSeconds)
+            enabled -> getString(R.string.dashboard_toggle_disable)
+            else -> getString(R.string.dashboard_toggle_enable)
+        }
 
         val locked = enabled && !emergencyActive && SwitchModeStore.isNfcRequiredForDisable(this)
         tvNfcLockedHint.visibility = if (locked) View.VISIBLE else View.GONE
@@ -3503,14 +3530,19 @@ class MainActivity : AppCompatActivity() {
         tvSwitchMode.text = span
         updateControlModeHint(enabled)
 
-        val showActiveTimerOnHome = enabled && shouldShowHomeActiveTimer()
+        // "Active now" while the accessibility service isn't running would claim protection that
+        // isn't happening (the most common blocker complaint); say so and link to the fix.
+        protectionNotRunning = enabled && !BlockingRuntime.isAccessibilityActive(this)
+        val showActiveTimerOnHome = enabled && (shouldShowHomeActiveTimer() || protectionNotRunning)
         val activeDurationMs = SwitchModeStore.getActiveDurationMillis(this)
         tvActiveDuration.isVisible = showActiveTimerOnHome
         if (showActiveTimerOnHome) {
-            tvActiveDuration.text = getString(
-                R.string.dashboard_active_duration_fmt,
-                formatActiveDuration(activeDurationMs)
-            )
+            styleActiveDurationPill(warning = protectionNotRunning)
+            tvActiveDuration.text = if (protectionNotRunning) {
+                getString(R.string.home_protection_not_running)
+            } else {
+                getString(R.string.dashboard_active_duration_fmt, formatActiveDuration(activeDurationMs))
+            }
         }
 
         // The heatmap's "today" must never read BELOW the running session: tick accrual

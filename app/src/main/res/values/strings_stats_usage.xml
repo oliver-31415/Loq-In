@@ -81,6 +81,10 @@
     <string name="app_limit_visit_subtitle">Longest single visit</string>
     <string name="app_limit_save">Save limits</string>
     <string name="app_limit_remove">Remove limits</string>
+    <string name="app_limit_section_pause">Pause before opening</string>
+    <string name="app_limit_pause_subtitle_fmt">Wait %1$d s first, %2$d s longer each time today</string>
+    <string name="app_limit_pause_subtitle_fixed_fmt">Wait %1$d s before it opens</string>
+    <string name="app_limit_pause_remove_locked">Turn off Loq In to remove the pause for this app.</string>
     <string name="app_limit_a11y_time_decrease">Decrease daily minutes</string>
     <string name="app_limit_a11y_time_increase">Increase daily minutes</string>
     <string name="app_limit_a11y_opens_decrease">Decrease opens per day</string>
