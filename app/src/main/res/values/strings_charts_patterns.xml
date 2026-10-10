@@ -25,7 +25,7 @@
 
     <string name="patterns_pickup_title">First pickup</string>
     <string name="patterns_pickup_desc">The first session each day over the last 14 days, for the apps selected above. Times are counted from 04:00, so late-night use stays with the day it started on.</string>
-    <string name="patterns_pickup_description">Dot chart of the first distracting app each day for the last 14 days</string>
+    <string name="patterns_pickup_description">Dot chart of the time of your first pickup each day for the last 14 days</string>
     <string name="patterns_pickup_average">First pickup: %1$s on average this week</string>
     <string name="patterns_pickup_none">No pickups this week yet</string>
 

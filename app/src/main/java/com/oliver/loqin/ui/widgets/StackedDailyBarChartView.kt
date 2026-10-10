@@ -29,6 +29,7 @@ import android.util.AttributeSet
 import android.util.TypedValue
 import android.view.View
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
 import com.oliver.loqin.R
 import com.oliver.loqin.feature.usage.DailyStackedUsage
 import com.oliver.loqin.theme.AccentColor
@@ -98,7 +99,7 @@ class StackedDailyBarChartView @JvmOverloads constructor(
         if (key == DailyStackedUsage.OTHER_KEY) return withAlpha(onSurface, OTHER_ALPHA)
         val index = result.legendKeys.indexOf(key)
         if (index < 0) return withAlpha(onSurface, OTHER_ALPHA)
-        return withAlpha(AccentColor.getAccentColorInt(context), accentAlphaFor(index))
+        return seriesColor(index, AccentColor.getAccentColorInt(context), onSurface)
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
@@ -189,10 +190,20 @@ class StackedDailyBarChartView @JvmOverloads constructor(
     private fun colorForKeyInternal(key: String, accent: Int, onSurface: Int): Int {
         if (key == DailyStackedUsage.OTHER_KEY) return withAlpha(onSurface, OTHER_ALPHA)
         val index = result.legendKeys.indexOf(key).let { if (it < 0) 0 else it }
-        return withAlpha(accent, accentAlphaFor(index))
+        return seriesColor(index, accent, onSurface)
     }
 
-    private fun accentAlphaFor(index: Int): Int = ACCENT_ALPHAS[min(index, ACCENT_ALPHAS.size - 1)]
+    /**
+     * Opaque, clearly separated series: the accent, a dark and a light shade of it, then a
+     * neutral grey. Differ in lightness rather than hue, so they stay apart for colour-blind
+     * users; "Other" is a fainter grey still.
+     */
+    private fun seriesColor(index: Int, accent: Int, onSurface: Int): Int = when (index) {
+        0 -> accent
+        1 -> ColorUtils.blendARGB(accent, Color.BLACK, 0.45f)
+        2 -> ColorUtils.blendARGB(accent, Color.WHITE, 0.55f)
+        else -> withAlpha(onSurface, NEUTRAL_SERIES_ALPHA)
+    }
 
     private fun withAlpha(color: Int, alpha: Int): Int =
         Color.argb(alpha, Color.red(color), Color.green(color), Color.blue(color))
@@ -208,8 +219,8 @@ class StackedDailyBarChartView @JvmOverloads constructor(
     }
 
     private companion object {
-        val ACCENT_ALPHAS = intArrayOf(255, 176, 112, 64)
-        const val OTHER_ALPHA = 96
+        const val NEUTRAL_SERIES_ALPHA = 150
+        const val OTHER_ALPHA = 64
         const val LABEL_ALPHA = 160
         const val PREVIOUS_OUTLINE_ALPHA = 89 // about 35 percent
         const val GOAL_ALPHA = 170

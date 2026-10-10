@@ -25,7 +25,7 @@
 
     <string name="patterns_pickup_title">Erstes Aufnehmen</string>
     <string name="patterns_pickup_desc">Die erste Sitzung jedes Tages in den letzten 14 Tagen, für die oben gewählten Apps. Zeiten werden ab 04:00 gezählt, sodass späte Nutzung beim Tag bleibt, an dem sie begann.</string>
-    <string name="patterns_pickup_description">Punktdiagramm der ersten ablenkenden App jedes Tages für die letzten 14 Tage</string>
+    <string name="patterns_pickup_description">Punktdiagramm der Uhrzeit, zu der du dein Handy an den letzten 14 Tagen zuerst genutzt hast</string>
     <string name="patterns_pickup_average">Erstes Aufnehmen: im Schnitt %1$s diese Woche</string>
     <string name="patterns_pickup_none">Diese Woche noch kein Aufnehmen erfasst</string>
 

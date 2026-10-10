@@ -26,7 +26,6 @@ import android.text.InputType
 import android.view.Gravity
 import android.view.View
 import android.widget.FrameLayout
-import android.widget.HorizontalScrollView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
@@ -82,7 +81,7 @@ class LoqInInsightsCards(private val activity: AppCompatActivity) {
     private lateinit var emptyText: TextView
     private lateinit var chartGroup: LinearLayout
     private lateinit var chart: StackedDailyBarChartView
-    private lateinit var legend: LinearLayout
+    private lateinit var legend: ChipGroup
     private lateinit var goalSlot: FrameLayout
     private lateinit var ringColumn: LinearLayout
     private lateinit var ring: BudgetRingView
@@ -212,19 +211,17 @@ class LoqInInsightsCards(private val activity: AppCompatActivity) {
         chart = StackedDailyBarChartView(ctx).apply {
             layoutParams = matchWrap().apply { height = dp(168) }
         }
-        legend = LinearLayout(ctx).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
+        // Wraps onto a second line instead of running off the card.
+        legend = ChipGroup(ctx).apply {
+            chipSpacingHorizontal = 0
+            chipSpacingVertical = dp(6)
+            layoutParams = matchWrap().apply { topMargin = dp(8) }
         }
         chartGroup = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
             layoutParams = matchWrap().apply { topMargin = dp(16) }
             addView(chart)
-            addView(HorizontalScrollView(ctx).apply {
-                isHorizontalScrollBarEnabled = false
-                layoutParams = matchWrap().apply { topMargin = dp(8) }
-                addView(legend)
-            })
+            addView(legend)
         }
         col.addView(chartGroup)
         return card
@@ -273,6 +270,8 @@ class LoqInInsightsCards(private val activity: AppCompatActivity) {
         val result: DailyStackedUsage.Result,
         val labels: List<String>,
         val currentMs: Long,
+        val currentDaysWithData: Int,
+        val previousDaysWithData: Int,
         val previousMs: Long,
         val todayMs: Long,
         val goalMin: Int,
@@ -310,6 +309,8 @@ class LoqInInsightsCards(private val activity: AppCompatActivity) {
             result = result,
             labels = labels,
             currentMs = current.sum(),
+            currentDaysWithData = current.count { it > 0L },
+            previousDaysWithData = previous.count { it > 0L },
             previousMs = previous.sum(),
             todayMs = current.last(),
             goalMin = InsightsGoalStore.getDailyGoalMin(ctx),
@@ -326,9 +327,12 @@ class LoqInInsightsCards(private val activity: AppCompatActivity) {
 
         headline.text = ctx.getString(
             R.string.charts_headline_per_day,
-            StatsFormat.prettyMs(data.currentMs / data.days)
+            StatsFormat.prettyMs(averagePerDay(data.currentMs, data.currentDaysWithData))
         )
-        val subText = changeText(UsageComparison.summaryChange(data.currentMs, data.previousMs), data.days)
+        val subText = changeText(UsageComparison.summaryChange(
+                averagePerDay(data.currentMs, data.currentDaysWithData),
+                averagePerDay(data.previousMs, data.previousDaysWithData),
+            ), data.days)
         subline.text = subText
         subline.visibility = if (subText == null) View.GONE else View.VISIBLE
 
@@ -596,6 +600,11 @@ class LoqInInsightsCards(private val activity: AppCompatActivity) {
         return runCatching { pm.getApplicationInfo(pkg, 0).loadLabel(pm).toString() }
             .getOrDefault(pkg)
     }
+
+    // Days without any recorded use (before install, or with usage access off) would drag the
+    // average down, so average over the days that have data.
+    private fun averagePerDay(totalMs: Long, daysWithData: Int): Long =
+        if (daysWithData <= 0) 0L else totalMs / daysWithData
 
     private fun legendItem(color: Int, labelText: String): LinearLayout {
         return LinearLayout(ctx).apply {

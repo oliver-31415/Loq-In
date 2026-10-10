@@ -24,6 +24,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.graphics.ColorUtils
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
+import com.oliver.loqin.ui.SegmentedToggleUi
 import com.oliver.loqin.R
 import com.oliver.loqin.data.prefs.ActiveDurationStore
 import com.oliver.loqin.data.prefs.AttemptLimitStore
@@ -111,11 +112,23 @@ class PatternsActivity : AppCompatActivity() {
         b.toolbar.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
         EdgeToEdgeUtils.applyThemedSystemBars(this)
 
+        b.scopeToggle.check(R.id.btnScopeDistracting)
+        syncScopeButtons()
         b.scopeToggle.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (!isChecked) return@addOnButtonCheckedListener
             scope = if (checkedId == R.id.btnScopeAll) Scope.ALL else Scope.DISTRACTING
+            syncScopeButtons()
             render()
         }
+    }
+
+    // Same segmented style as the other insights range selectors.
+    private fun syncScopeButtons() {
+        SegmentedToggleUi.apply(
+            this,
+            listOf(b.btnScopeDistracting, b.btnScopeAll),
+            if (scope == Scope.ALL) R.id.btnScopeAll else R.id.btnScopeDistracting,
+        )
     }
 
     override fun onResume() {
@@ -131,6 +144,7 @@ class PatternsActivity : AppCompatActivity() {
             if (!loaded.hasDistracting && scope == Scope.DISTRACTING) {
                 scope = Scope.ALL
                 b.scopeToggle.check(R.id.btnScopeAll)
+                syncScopeButtons()
             }
             render()
         }

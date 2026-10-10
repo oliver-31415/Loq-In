@@ -587,6 +587,7 @@ class AppUsageDetailActivity : AppCompatActivity() {
                 getString(R.string.charts_pause_none_range)
             }
             b.chartPauseSplit.setData(d.pauseLeft, d.pauseContinued, d.labels)
+            b.chartPauseSplit.visibility = if (pauseTotal > 0) View.VISIBLE else View.GONE
         }
 
         val sessionTotal = d.sessionCounts.sum()
