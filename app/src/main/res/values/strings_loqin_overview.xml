@@ -32,4 +32,22 @@
     <string name="loqin_overview_schedule_enables">Schedules that enabled Loq In</string>
     <string name="loqin_overview_schedule_disables">Schedules that disabled Loq In</string>
 
+    <!-- Days within limits streak -->
+    <string name="loqin_streak_title">Days within limits</string>
+    <plurals name="loqin_streak_days">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+    <string name="loqin_streak_subtitle">within your limits</string>
+    <plurals name="loqin_streak_best">
+        <item quantity="one">Best: %1$d day</item>
+        <item quantity="other">Best: %1$d days</item>
+    </plurals>
+    <string name="loqin_streak_empty">Stay within your limits today to start a streak</string>
+    <string name="loqin_streak_day_description">%1$s: %2$s</string>
+    <string name="loqin_streak_status_within_limits">within limits</string>
+    <string name="loqin_streak_status_grace">limit reached, streak kept</string>
+    <string name="loqin_streak_status_limit_reached">limit reached</string>
+    <string name="loqin_streak_status_no_protection">no protection</string>
+
 </resources>
