@@ -263,3 +263,31 @@ Invalid input says "Enter a valid domain, like example.com."; the button reads "
 
 **Verified (Haiku agent).** Three Shorts blocks in one YouTube visit showed "Blocked 1 time today", "2 times", "3 times"; Close returned to YouTube each time; no crashes.
 
+## 29. Opens counted once per visit
+
+**Problem.** One YouTube visit with block screens counted as many "opens" (up to +10). The visit was tracked inside the accessibility service instance, which Android re-creates mid-visit (OEM kills; on the emulator whenever a UiAutomation client attaches), and System UI, the keyboard, permission prompts and Google's account picker counted as switching apps.
+
+**Fix.** The current visit lives in a process-wide object; System UI, the keyboard and packages with no launcher entry are overlays, not app switches; the launcher ends a visit but isn't an open; the UsageEvents backfill treats the block screen as part of the visit.
+
+**Verified (Haiku agent).** Three Reddit launches (two through a pause screen) raised Reddit's opens by exactly 3.
+
+## 30. Re-opening a blocked website always shows the block screen
+
+**Problem.** Re-opening a blocked site sometimes left Chrome on `about:blank` with no block screen: the safe-page redirect landed on top of the block screen.
+
+**Fix.** After a website block, at 1.0, 2.2 and 3.4 s (after the redirect follow-ups), a block screen that is alive but covered while the browser is in front is reordered to the front without re-rendering.
+
+**Verified (Haiku agent).** 8 of 8 re-open attempts showed the block screen within 4 s; after Close, Chrome shows a blank page. (The earlier round: apps, Shorts and open limits already re-blocked cleanly, one block screen per attempt, including from recents.)
+
+## 31. Pause before opening
+
+**What.** Soft friction from `docs/feature-research.md` #2: an app's limits dialog has a "Pause before opening" switch. Opening that app shows a pause screen — "Take a breath", how many times it was opened today, and a countdown (10 s, +5 s per earlier open today, max 60 s). **Leave** (the default, also Back) goes home; **Open** unlocks when the countdown ends and lasts for that visit. The countdown only runs while the pause screen is on top. Removing a pause is a weakening change (refused while protection is on). Each pause records whether the user left or continued.
+
+**Verified (Haiku agent).** Pause appears on launch; Leave goes home; the wait grows with opens; Open goes to the app and the pause doesn't return during that visit; a new visit pauses again.
+
+## 32. 60-second undo after enabling in a strict mode
+
+**What.** After turning protection on from Home in QR, barcode, NFC or schedule mode, the button reads "Undo (NN s)" for a minute and turns protection off without the unlock method; afterwards Disable needs the code again.
+
+**Verified (Haiku agent).** "Undo (60 s)" after Enable; undo at ~11 s turned protection off; after 65 s the button read "Disable" and opened the scanner instead.
+
