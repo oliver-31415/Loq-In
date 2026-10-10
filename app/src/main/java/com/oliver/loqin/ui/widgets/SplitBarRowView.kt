@@ -103,7 +103,7 @@ class SplitBarRowView @JvmOverloads constructor(
                 canvas.drawRoundRect(rect, radius, radius, trackPaint)
             } else {
                 val leftFraction = day.left.toFloat() / day.total
-                val splitY = barBottom - barHeight * (1f - leftFraction)
+                val splitY = barBottom - barHeight * leftFraction
                 // Continued sits on top, stepped-away at the bottom.
                 if (day.continued > 0) {
                     rect.set(left, barTop, right, barBottom)

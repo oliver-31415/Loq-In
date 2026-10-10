@@ -213,7 +213,7 @@ class LoqInInsightsCards(private val activity: AppCompatActivity) {
         }
         // Wraps onto a second line instead of running off the card.
         legend = ChipGroup(ctx).apply {
-            chipSpacingHorizontal = 0
+            chipSpacingHorizontal = dp(12)
             chipSpacingVertical = dp(6)
             layoutParams = matchWrap().apply { topMargin = dp(8) }
         }
