@@ -435,7 +435,11 @@ class MainActivity : AppCompatActivity() {
         tvActiveDuration.isClickable = true
         tvActiveDuration.isFocusable = true
         tvActiveDuration.setOnClickListener {
-            startActivity(ActiveTimeActivity.intent(this))
+            if (protectionNotRunning) {
+                startActivity(Intent(this, PermissionsActivity::class.java))
+            } else {
+                startActivity(ActiveTimeActivity.intent(this))
+            }
         }
         tvActiveProfile = findViewById(R.id.tvActiveProfile)
         rowActiveProfile = findViewById(R.id.rowActiveProfile)
@@ -2425,14 +2429,19 @@ class MainActivity : AppCompatActivity() {
     /**
      * Active-session timer pill next to the launcher pill inside the hero card.
      * Only shown while blocking is active (saturated hero art), so it is styled
-     * as a frosted translucent white pill — color-independent.
+     * as a frosted translucent white pill — color-independent. [warning] switches it to a
+     * solid warning pill for "Not protecting".
      */
-    private fun styleActiveDurationPill() {
+    private fun styleActiveDurationPill(warning: Boolean = false) {
         val bg = GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
             cornerRadius = homeDp(999f).toFloat()
-            setColor(ColorUtils.setAlphaComponent(Color.WHITE, 0x2B))
-            setStroke(homeDp(1f), ColorUtils.setAlphaComponent(Color.WHITE, 0x55))
+            if (warning) {
+                setColor(ContextCompat.getColor(this@MainActivity, R.color.status_warning))
+            } else {
+                setColor(ColorUtils.setAlphaComponent(Color.WHITE, 0x2B))
+                setStroke(homeDp(1f), ColorUtils.setAlphaComponent(Color.WHITE, 0x55))
+            }
         }
         tvActiveDuration.background = bg
         tvActiveDuration.setTextColor(Color.WHITE)
@@ -3407,6 +3416,7 @@ class MainActivity : AppCompatActivity() {
             ActiveDurationStore.todayMs(this) / 60_000L,
             ProfileStore.getCurrent(this),
             EnableUndoWindow.remainingMs(this) / 1000L,
+            BlockingRuntime.isAccessibilityActive(this),
         ).joinToString("|")
         if (signature == lastTickSignature) return
         lastTickSignature = signature
@@ -3414,6 +3424,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private var lastTickSignature: String? = null
+    private var protectionNotRunning = false
 
     private fun updateSwitchState() {
         SwitchModeStore.finishTemporaryDisableIfExpired(this)
@@ -3519,14 +3530,19 @@ class MainActivity : AppCompatActivity() {
         tvSwitchMode.text = span
         updateControlModeHint(enabled)
 
-        val showActiveTimerOnHome = enabled && shouldShowHomeActiveTimer()
+        // "Active now" while the accessibility service isn't running would claim protection that
+        // isn't happening (the most common blocker complaint); say so and link to the fix.
+        protectionNotRunning = enabled && !BlockingRuntime.isAccessibilityActive(this)
+        val showActiveTimerOnHome = enabled && (shouldShowHomeActiveTimer() || protectionNotRunning)
         val activeDurationMs = SwitchModeStore.getActiveDurationMillis(this)
         tvActiveDuration.isVisible = showActiveTimerOnHome
         if (showActiveTimerOnHome) {
-            tvActiveDuration.text = getString(
-                R.string.dashboard_active_duration_fmt,
-                formatActiveDuration(activeDurationMs)
-            )
+            styleActiveDurationPill(warning = protectionNotRunning)
+            tvActiveDuration.text = if (protectionNotRunning) {
+                getString(R.string.home_protection_not_running)
+            } else {
+                getString(R.string.dashboard_active_duration_fmt, formatActiveDuration(activeDurationMs))
+            }
         }
 
         // The heatmap's "today" must never read BELOW the running session: tick accrual
