@@ -329,6 +329,7 @@ class FaqActivity : AppCompatActivity() {
                 iconRes = R.drawable.battery_24,
                 items = listOf(
                     item(R.string.faq_q_background_access_checklist, R.string.faq_a_background_access_checklist, R.drawable.battery_24),
+                    item(R.string.faq_q_restricted_setting, R.string.faq_a_restricted_setting, R.drawable.info_24),
                     item(R.string.faq_q_android_battery_popup, R.string.faq_a_android_battery_popup, R.drawable.battery_24),
                     item(R.string.faq_q_device_background_steps, R.string.faq_a_device_background_steps, R.drawable.battery_24),
                     item(R.string.faq_q_vivo_iqoo_background, R.string.faq_a_vivo_iqoo_background, R.drawable.battery_24),
