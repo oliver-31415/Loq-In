@@ -4559,6 +4559,23 @@ class LoqInAccessibilityService : AccessibilityService() {
         message: String,
         redirected: Boolean
     ) {
+        // The safe-page redirect is an intent to the browser; if the browser handles it after the
+        // block screen started, the browser lands on top and the block screen stays hidden behind
+        // it (seen on re-opening a blocked site). Bring it back in front once things settle.
+        for (delayMs in longArrayOf(700L, 1_600L)) {
+            handler.postDelayed({
+                val root = currentRoot(null)
+                if (BlockerActivity.isAliveButHidden() && root != null && isRootFromPackage(root, pkg)) {
+                    appendBlockingLog(
+                        category = "website_block",
+                        key = "web-block-reassert|$pkg",
+                        message = "pkg=$pkg host=${sanitizeWebsiteSignal(host)} action=bring_blocker_to_front delayMs=$delayMs",
+                        throttleMs = 500L
+                    )
+                    runCatching { BlockerActivity.bringToFront(this) }
+                }
+            }, delayMs)
+        }
         // Some Chromium/OEM combinations can restore the blocked tab immediately after our safe-page redirect.
         // Re-check shortly after a successful website block and enforce once more if the same blocked host is still visible.
         val now = System.currentTimeMillis()

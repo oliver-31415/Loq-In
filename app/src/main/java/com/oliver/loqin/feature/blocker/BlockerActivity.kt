@@ -163,6 +163,10 @@ class BlockerActivity : ComponentActivity() {
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
+        // A bring-to-front request only reorders the task; keep the block content as it is.
+        if (intent.getBooleanExtra(EXTRA_BRING_TO_FRONT, false)) {
+            return
+        }
         setIntent(intent)
 
         if (!SwitchModeStore.isEnabled(this)) {
@@ -517,6 +521,7 @@ class BlockerActivity : ComponentActivity() {
 
     companion object {
         private const val EXTRA_PKG = "pkg"
+        private const val EXTRA_BRING_TO_FRONT = "bring_to_front"
         private const val EXTRA_LABEL = "label"
         private const val EXTRA_TITLE = "title"
         private const val EXTRA_MESSAGE = "message"
@@ -555,6 +560,29 @@ class BlockerActivity : ComponentActivity() {
 
         @Volatile
         private var currentActivityRef: WeakReference<BlockerActivity>? = null
+
+        /** The block screen exists but another window (e.g. the browser) covers it. */
+        fun isAliveButHidden(): Boolean {
+            val activity = currentActivityRef?.get() ?: return false
+            return !activity.isFinishing && !activity.isDestroyed && !isVisible
+        }
+
+        /**
+         * Brings an existing, covered block screen back in front without re-rendering it.
+         * Used after website blocks, where the browser's safe-page redirect can land on top.
+         */
+        fun bringToFront(context: Context) {
+            if (!isAliveButHidden()) return
+            context.startActivity(
+                Intent(context, BlockerActivity::class.java)
+                    .addFlags(
+                        Intent.FLAG_ACTIVITY_NEW_TASK or
+                            Intent.FLAG_ACTIVITY_NO_ANIMATION or
+                            Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
+                    )
+                    .putExtra(EXTRA_BRING_TO_FRONT, true)
+            )
+        }
 
         fun clearVisibilityState(reason: String = "cleared") {
             isVisible = false
