@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- ====================================================== -->
+    <!-- Übersichts-Diagramme: Tageswerte, Ziel, Pausen -->
+    <!-- ====================================================== -->
+    <string name="charts_empty_insights">Auswertungen erscheinen nach einem Tag Nutzung</string>
+    <string name="charts_range_7_days">7 Tage</string>
+    <string name="charts_range_30_days">30 Tage</string>
+    <string name="charts_headline_per_day">%1$s pro Tag</string>
+    <string name="charts_change_down_percent">%1$d%% weniger als in den vorherigen %2$d Tagen</string>
+    <string name="charts_change_up_percent">%1$d%% mehr als in den vorherigen %2$d Tagen</string>
+    <string name="charts_change_down_minutes">%1$s weniger als in den vorherigen %2$d Tagen</string>
+    <string name="charts_change_up_minutes">%1$s mehr als in den vorherigen %2$d Tagen</string>
+    <string name="charts_change_same">Etwa so viel wie in den vorherigen %1$d Tagen</string>
+    <string name="charts_chart_description">Tägliche Bildschirmzeit der letzten %1$d Tage, nach App gestapelt. Die vorherigen %1$d Tage sind als Umriss dargestellt.</string>
+    <string name="charts_legend_other">Andere</string>
+
+    <string name="charts_goal_set">Tagesziel festlegen</string>
+    <string name="charts_goal_ring_description">Heute %1$s bei einem Tagesziel von %2$s. Tippen, um das Ziel zu ändern.</string>
+    <string name="charts_goal_over">%1$s über dem Ziel</string>
+    <string name="charts_goal_left">%1$s übrig</string>
+    <string name="charts_goal_dialog_title">Tagesziel</string>
+    <string name="charts_goal_dialog_message">Vergleiche die heutige Bildschirmzeit mit einem Ziel. Das Ziel ist nur eine Erinnerung und blockiert nichts.</string>
+    <string name="charts_goal_preset">%1$d h</string>
+    <string name="charts_goal_custom_hint">Eigene Minuten</string>
+    <string name="charts_goal_invalid">Gib 1 bis 1440 Minuten ein</string>
+    <string name="charts_goal_save">Speichern</string>
+    <string name="charts_goal_remove">Ziel entfernen</string>
+
+    <string name="charts_pause_title">Pausen-Ergebnisse</string>
+    <string name="charts_pause_summary">Diese Woche bist du in %1$d%% der Fälle weggegangen</string>
+    <string name="charts_pause_summary_up">Diese Woche bist du in %1$d%% der Fälle weggegangen, gestiegen von %2$d%%</string>
+    <string name="charts_pause_summary_down">Diese Woche bist du in %1$d%% der Fälle weggegangen, gesunken von %2$d%%</string>
+    <string name="charts_pause_none">Keine Pausen diese Woche</string>
+    <string name="charts_pause_legend_left">Weggegangen</string>
+    <string name="charts_pause_legend_continued">Weitergemacht</string>
+    <string name="charts_pause_chart_description">Pausen der letzten 7 Tage: %1$d weggegangen, %2$d weitergemacht</string>
+
+</resources>

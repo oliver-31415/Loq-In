@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- ====================================================== -->
+    <!-- Overview charts: daily usage hero card, goal, pauses -->
+    <!-- ====================================================== -->
+    <string name="charts_empty_insights">Insights appear after a day of use</string>
+    <string name="charts_range_7_days">7 days</string>
+    <string name="charts_range_30_days">30 days</string>
+    <string name="charts_headline_per_day">%1$s a day</string>
+    <string name="charts_change_down_percent">down %1$d%% from the previous %2$d days</string>
+    <string name="charts_change_up_percent">up %1$d%% from the previous %2$d days</string>
+    <string name="charts_change_down_minutes">down %1$s from the previous %2$d days</string>
+    <string name="charts_change_up_minutes">up %1$s from the previous %2$d days</string>
+    <string name="charts_change_same">About the same as the previous %1$d days</string>
+    <string name="charts_chart_description">Daily screen time for the last %1$d days, stacked by app. The previous %1$d days are outlined.</string>
+    <string name="charts_legend_other">Other</string>
+
+    <string name="charts_goal_set">Set a daily goal</string>
+    <string name="charts_goal_ring_description">Today %1$s against a daily goal of %2$s. Tap to change the goal.</string>
+    <string name="charts_goal_over">%1$s over</string>
+    <string name="charts_goal_left">%1$s left</string>
+    <string name="charts_goal_dialog_title">Daily goal</string>
+    <string name="charts_goal_dialog_message">Compare today\'s screen time with a goal. The goal is a reminder only and never blocks anything.</string>
+    <string name="charts_goal_preset">%1$d h</string>
+    <string name="charts_goal_custom_hint">Custom minutes</string>
+    <string name="charts_goal_invalid">Enter 1 to 1440 minutes</string>
+    <string name="charts_goal_save">Save</string>
+    <string name="charts_goal_remove">Remove goal</string>
+
+    <string name="charts_pause_title">Pause results</string>
+    <string name="charts_pause_summary">Stepped away %1$d%% of the time this week</string>
+    <string name="charts_pause_summary_up">Stepped away %1$d%% of the time this week, up from %2$d%%</string>
+    <string name="charts_pause_summary_down">Stepped away %1$d%% of the time this week, down from %2$d%%</string>
+    <string name="charts_pause_none">No pauses this week</string>
+    <string name="charts_pause_legend_left">Stepped away</string>
+    <string name="charts_pause_legend_continued">Continued</string>
+    <string name="charts_pause_chart_description">Pauses for each of the last 7 days: %1$d stepped away and %2$d continued</string>
+
+</resources>
