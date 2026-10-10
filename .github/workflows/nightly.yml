@@ -26,10 +26,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:
-      - name: Check out the default branch
+      # Scheduled runs build the default branch. A manual run started on another branch
+      # ("Use workflow from") builds that branch and keeps the APK as an artifact only.
+      - name: Check out the branch to build
         uses: actions/checkout@v7
         with:
-          ref: ${{ github.event.repository.default_branch }}
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.ref || github.event.repository.default_branch }}
           fetch-depth: 0
 
       - name: Skip when nothing changed
@@ -129,7 +131,7 @@ jobs:
           } > dist/notes.md
 
       - name: Publish the nightly pre-release
-        if: steps.changes.outputs.build == 'true'
+        if: steps.changes.outputs.build == 'true' && (github.event_name != 'workflow_dispatch' || github.ref_name == github.event.repository.default_branch)
         env:
           GH_TOKEN: ${{ github.token }}
           HEAD_SHA: ${{ steps.changes.outputs.head }}
