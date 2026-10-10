@@ -32,24 +32,6 @@
     <string name="loqin_overview_schedule_enables">Zeitpläne, die Loq In aktiviert haben</string>
     <string name="loqin_overview_schedule_disables">Zeitpläne, die Loq In deaktiviert haben</string>
 
-    <!-- Days within limits streak -->
-    <string name="loqin_streak_title">Tage innerhalb der Limits</string>
-    <plurals name="loqin_streak_days">
-        <item quantity="one">%1$d Tag</item>
-        <item quantity="other">%1$d Tage</item>
-    </plurals>
-    <string name="loqin_streak_subtitle">innerhalb deiner Limits</string>
-    <plurals name="loqin_streak_best">
-        <item quantity="one">Bestwert: %1$d Tag</item>
-        <item quantity="other">Bestwert: %1$d Tage</item>
-    </plurals>
-    <string name="loqin_streak_empty">Bleib heute innerhalb deiner Limits, um eine Serie zu starten</string>
-    <string name="loqin_streak_day_description">%1$s: %2$s</string>
-    <string name="loqin_streak_status_within_limits">innerhalb der Limits</string>
-    <string name="loqin_streak_status_grace">Limit erreicht, Serie bleibt erhalten</string>
-    <string name="loqin_streak_status_limit_reached">Limit erreicht</string>
-    <string name="loqin_streak_status_no_protection">kein Schutz aktiv</string>
-
     <!-- Weekly summary notification -->
     <string name="weekly_summary_channel_name">Wochenrückblick</string>
     <string name="weekly_summary_channel_desc">Jeden Montagmorgen ein kurzer Blick auf deine Woche.</string>
