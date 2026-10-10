@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Loq In
+  Copyright (C) 2026 Loq In Contributors
+
+  This program is free software: you can redistribute it and/or modify
+  it under the terms of the GNU General Public License as published by
+  the Free Software Foundation, either version 3 of the License, or
+  (at your option) any later version.
+
+  This program is distributed in the hope that it will be useful,
+  but WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+  GNU General Public License for more details.
+
+  You should have received a copy of the GNU General Public License
+  along with this program. If not, see <https://www.gnu.org/licenses/>.
+-->
+<resources>
+    <!-- Opens vs blocks card on the app detail page -->
+    <string name="charts_opens_title">Öffnungen und Blockaden</string>
+    <plurals name="charts_opened_count">
+        <item quantity="one">%d-mal geöffnet</item>
+        <item quantity="other">%d-mal geöffnet</item>
+    </plurals>
+    <plurals name="charts_blocked_count">
+        <item quantity="one">%d-mal blockiert</item>
+        <item quantity="other">%d-mal blockiert</item>
+    </plurals>
+    <string name="charts_opens_headline_fmt">%1$s · %2$s</string>
+    <string name="charts_opens_trend_down">Öffnungen um %1$d%% unter den vorherigen %2$d Tagen</string>
+    <string name="charts_opens_trend_up">Öffnungen um %1$d%% über den vorherigen %2$d Tagen</string>
+    <string name="charts_opens_trend_flat">Öffnungen wie in den vorherigen %1$d Tagen</string>
+    <string name="charts_range_week">7 Tage</string>
+    <string name="charts_range_month">30 Tage</string>
+    <string name="charts_opens_a11y">Tägliche Öffnungen als Balken, blockierte Versuche sind darüber markiert.</string>
+
+    <!-- Pause results card on the app detail page -->
+    <string name="charts_pause_title">Pausen-Ergebnisse</string>
+    <plurals name="charts_pause_summary">
+        <item quantity="one">%1$d von %2$d Mal zurückgetreten</item>
+        <item quantity="other">%1$d von %2$d Malen zurückgetreten</item>
+    </plurals>
+    <string name="charts_pause_legend_left">Zurückgetreten</string>
+    <string name="charts_pause_legend_opened">Geöffnet</string>
+    <string name="charts_pause_a11y">Tägliche Pausen-Ergebnisse als gestapelte Balken, aufgeteilt in zurückgetreten und geöffnet.</string>
+
+    <!-- Session lengths card on the app detail page -->
+    <string name="charts_sessions_title">Sitzungsdauer</string>
+    <plurals name="charts_sessions_count">
+        <item quantity="one">%d Sitzung</item>
+        <item quantity="other">%d Sitzungen</item>
+    </plurals>
+    <string-array name="charts_session_buckets">
+        <item>&lt;1 Min.</item>
+        <item>1–5</item>
+        <item>5–15</item>
+        <item>15–30</item>
+        <item>30+</item>
+    </string-array>
+    <string name="charts_session_hint_short">Die meisten Sitzungen dauern unter 5 Minuten.</string>
+    <string name="charts_session_hint_long">Sitzungen dauern oft länger als 15 Minuten.</string>
+    <string name="charts_sessions_a11y">Histogramm der Sitzungsdauern in fünf Bereichen, von unter einer Minute bis über dreißig.</string>
+</resources>
