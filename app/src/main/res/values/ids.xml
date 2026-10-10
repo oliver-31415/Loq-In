@@ -14,4 +14,7 @@
     <item name="rowWidgetNextSchedule" type="id" />
     <item name="rowWidgetActiveTimer" type="id" />
     <item name="rowWidgetBlockedNotifications" type="id" />
+
+    <!-- Marks a bottom sheet's content as already padded for the navigation bar. -->
+    <item name="tag_nav_bar_padded" type="id" />
 </resources>

@@ -63,6 +63,16 @@
             android:textStyle="bold" />
 
         <TextView
+            android:id="@+id/blocker_attempts"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:gravity="center"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
+        <TextView
             android:id="@+id/blocker_message"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -90,7 +100,8 @@
             android:minWidth="90dp"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
-            android:text="@android:string/ok"
+            android:text="@string/close"
+            android:textAllCaps="false"
             android:textColor="@android:color/white" />
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

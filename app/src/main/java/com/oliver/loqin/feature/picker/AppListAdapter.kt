@@ -358,7 +358,7 @@ class AppListAdapter(
                     }
                     if (hasAttemptLimit) {
                         if (isNotEmpty()) append(" · ")
-                        append(ctx.getString(R.string.limit_tile_attempts_fmt, attemptLimit))
+                        append(ctx.resources.getQuantityString(R.plurals.daily_attempt_limit_value_format, attemptLimit, attemptLimit))
                     }
                 }
             } else {

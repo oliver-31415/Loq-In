@@ -30,6 +30,7 @@ import android.graphics.PixelFormat
 import android.graphics.Rect
 import android.graphics.Shader
 import android.graphics.drawable.Drawable
+import android.os.SystemClock
 import android.view.animation.LinearInterpolator
 import kotlin.math.PI
 import kotlin.math.cos
@@ -126,6 +127,7 @@ class HeroArtDrawable(
     )
 
     private var phase = staticPhase ?: 0f
+    private var lastInvalidateMs = 0L
     private var animator: ValueAnimator? = null
     private var builtBounds = false
 
@@ -260,7 +262,13 @@ class HeroArtDrawable(
                 interpolator = LinearInterpolator()
                 addUpdateListener {
                     phase = it.animatedValue as Float
-                    invalidateSelf()
+                    // The drift takes 26 s per cycle; ~20 fps looks identical to 60 fps and
+                    // keeps the path-heavy redraw off two of every three frames.
+                    val now = SystemClock.uptimeMillis()
+                    if (now - lastInvalidateMs >= MIN_FRAME_INTERVAL_MS) {
+                        lastInvalidateMs = now
+                        invalidateSelf()
+                    }
                 }
                 start()
             }
@@ -297,4 +305,8 @@ class HeroArtDrawable(
     override fun getOpacity(): Int = PixelFormat.TRANSLUCENT
     override fun getIntrinsicWidth(): Int = -1
     override fun getIntrinsicHeight(): Int = -1
+
+    private companion object {
+        const val MIN_FRAME_INTERVAL_MS = 50L
+    }
 }

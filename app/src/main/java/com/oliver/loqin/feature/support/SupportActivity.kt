@@ -146,7 +146,7 @@ class SupportActivity : AppCompatActivity() {
         val toolbarIconColor = toolbarForegroundColor()
         toolbar.navigationIcon?.mutate()?.setTint(toolbarIconColor)
         toolbar.setTitleTextColor(toolbarIconColor)
-        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
+        EdgeToEdgeUtils.applyThemedSystemBars(this)
 
         findViewById<View>(R.id.rowViewLogs).setOnClickListener {
             startActivity(Intent(this, SupportLogActivity::class.java))

@@ -1433,12 +1433,11 @@ class SettingsFragment : PreferenceFragmentCompat() {
     private fun showEmergencyUnlockStartDialog() {
         val ctx = requireContext()
         val dialog = AlertDialog.Builder(ctx)
-            .setTitle(getString(R.string.pref_emergency_title))
-            .setMessage(getString(R.string.emergency_action_start_15))
+            .setTitle(R.string.emergency_start_confirm_title)
+            .setMessage(getString(R.string.emergency_start_confirm_message, 15))
             .setNegativeButton(getString(R.string.cancel), null)
-            .setPositiveButton(getString(R.string.ok)) { _, dialog ->
-                // Anchor to the dialog window so the pill is visible above it.
-                triggerEmergencyUnlock((dialog as? AlertDialog)?.window?.decorView)
+            .setPositiveButton(R.string.emergency_start_confirm_action) { _, _ ->
+                triggerEmergencyUnlock()
             }
             .create()
 

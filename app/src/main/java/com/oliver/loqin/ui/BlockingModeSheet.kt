@@ -38,11 +38,13 @@ import androidx.core.graphics.ColorUtils
 import androidx.core.view.isVisible
 import com.oliver.loqin.R
 import com.oliver.loqin.data.prefs.AutomationModeStore
+import com.oliver.loqin.data.prefs.ScanCodeStore
 import com.oliver.loqin.feature.qr.QrGenerateActivity
 import com.oliver.loqin.feature.schedule.SchedulesActivity
 import com.oliver.loqin.feature.settings.ManageBarcodesActivity
 import com.oliver.loqin.nfc.NfcWriterActivity
 import com.oliver.loqin.theme.AccentColor
+import com.oliver.loqin.ui.dialog.padForNavigationBar
 import com.oliver.loqin.ui.dialog.showAccented
 import com.oliver.loqin.util.EditingLockGuard
 import com.oliver.loqin.util.LoqInAppAccessGuard
@@ -71,6 +73,10 @@ object BlockingModeSheet {
                 onModeChanged = onModeChanged,
             )
         )
+        // Tall sheet: open expanded so as many modes as possible are visible without dragging.
+        sheet.behavior.skipCollapsed = true
+        sheet.behavior.state = com.google.android.material.bottomsheet.BottomSheetBehavior.STATE_EXPANDED
+        sheet.padForNavigationBar()
         sheet.show()
     }
 
@@ -224,9 +230,11 @@ object BlockingModeSheet {
                 background = roundelBg()
                 isClickable = true
                 isFocusable = true
+                contentDescription = activity.getString(R.string.close)
                 setOnClickListener { onClose?.invoke() }
                 addView(TextView(activity).apply {
                     text = "\u2715"
+                    importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
                     textSize = 14f
                     setTextColor(onSurface)
                     layoutParams = FrameLayout.LayoutParams(
@@ -524,6 +532,34 @@ object BlockingModeSheet {
             onEdit = ::editBarcode,
         )
 
+        // A scan-only mode without a code is a lockout waiting to happen: ask for the code now.
+        fun promptScanSetupIfMissing(mode: AutomationModeStore.Mode) {
+            val (titleRes, messageRes, actionRes, onSetup) = when {
+                mode == AutomationModeStore.Mode.QR && !AutomationModeStore.hasQrDisableCode(activity) ->
+                    ScanSetupPrompt(
+                        R.string.blocking_mode_qr_setup_title,
+                        R.string.blocking_mode_qr_setup_message,
+                        R.string.blocking_mode_qr_setup_action,
+                        ::editQr,
+                    )
+                mode == AutomationModeStore.Mode.BARCODE &&
+                    !ScanCodeStore.hasEntries(activity, ScanCodeStore.Kind.BARCODE) ->
+                    ScanSetupPrompt(
+                        R.string.blocking_mode_barcode_setup_title,
+                        R.string.blocking_mode_barcode_setup_message,
+                        R.string.blocking_mode_barcode_setup_action,
+                        ::editBarcode,
+                    )
+                else -> return
+            }
+            AlertDialog.Builder(activity)
+                .setTitle(titleRes)
+                .setMessage(messageRes)
+                .setPositiveButton(actionRes) { _, _ -> onSetup() }
+                .setNegativeButton(R.string.not_now, null)
+                .showAccented()
+        }
+
         fun selectMode(mode: AutomationModeStore.Mode, anchor: View? = null) {
             if (mode == current) return
             // Changing the control mode is a protection-sensitive edit: it must go
@@ -539,6 +575,7 @@ object BlockingModeSheet {
                 rowView.background = rowBg(m == mode)
             }
             applyMixedChannelsVisibility()
+            promptScanSetupIfMissing(mode)
         }
 
         mixedRow.setOnClickListener { selectMode(AutomationModeStore.Mode.MIXED, mixedRow) }
@@ -610,6 +647,13 @@ object BlockingModeSheet {
 
         return list
     }
+
+    private data class ScanSetupPrompt(
+        val titleRes: Int,
+        val messageRes: Int,
+        val actionRes: Int,
+        val onSetup: () -> Unit,
+    )
 
     private fun openRulesDestination(activity: Activity, intent: Intent) {
         if (!EditingLockGuard.isLocked(activity) || EditingLockGuard.isSuppressed(activity)) {

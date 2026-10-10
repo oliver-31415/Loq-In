@@ -11,7 +11,6 @@
     <string name="attempt_limit_label">Open limit: %1$d/day</string>
     <string name="limit_tile_daily_fmt">%1$d min/day</string>
     <string name="limit_tile_visit_fmt">%1$d min/visit</string>
-    <string name="limit_tile_attempts_fmt">%1$d opens/day</string>
     <plurals name="daily_attempt_limit_value_format">
         <item quantity="one">%1$d open/day</item>
         <item quantity="other">%1$d opens/day</item>
@@ -82,14 +81,30 @@
     <string name="app_limit_visit_subtitle">Longest single visit</string>
     <string name="app_limit_save">Save limits</string>
     <string name="app_limit_remove">Remove limits</string>
+    <string name="app_limit_a11y_time_decrease">Decrease daily minutes</string>
+    <string name="app_limit_a11y_time_increase">Increase daily minutes</string>
+    <string name="app_limit_a11y_opens_decrease">Decrease opens per day</string>
+    <string name="app_limit_a11y_opens_increase">Increase opens per day</string>
+    <string name="app_limit_a11y_visit_decrease">Decrease minutes per visit</string>
+    <string name="app_limit_a11y_visit_increase">Increase minutes per visit</string>
     <string name="app_limit_remove_confirm_title">Remove limits?</string>
     <string name="app_limit_remove_confirm_message">This clears all limits for %1$s and resets today’s counters.</string>
+    <string name="app_limit_remove_choice_message">What should happen to %1$s once its limits are removed?\n\nStop limiting: it can be used freely again.\nBlock completely: it is always blocked while Loq In is active.</string>
+    <string name="app_limit_remove_stop_limiting">Stop limiting</string>
+    <string name="app_limit_remove_block_completely">Block completely</string>
+    <string name="app_limit_remove_stop_limiting_locked">Turn off Loq In to stop limiting this app.</string>
     <string name="app_limit_sentence_none">No limits set. This app can be opened without restrictions.</string>
     <string name="app_limit_sentence_fully_blocked">This app is fully blocked by this profile. Add a limit to allow restricted use.</string>
     <string name="app_limit_sentence_time_fmt">Allow up to %1$d min/day</string>
-    <string name="app_limit_sentence_split_fmt">\u0020\u00b7 split across at most %1$d opens</string>
+    <plurals name="app_limit_sentence_split">
+        <item quantity="one">\u0020\u00b7 split across at most %1$d open</item>
+        <item quantity="other">\u0020\u00b7 split across at most %1$d opens</item>
+    </plurals>
     <string name="app_limit_sentence_visit_fmt">\u0020\u00b7 max %1$d min per visit</string>
-    <string name="app_limit_sentence_opens_only_fmt">Up to %1$d opens per day</string>
+    <plurals name="app_limit_sentence_opens_only">
+        <item quantity="one">Up to %1$d open per day</item>
+        <item quantity="other">Up to %1$d opens per day</item>
+    </plurals>
     <string name="app_limit_sentence_visit_only_fmt">Up to %1$d min per visit</string>
     <string name="app_limit_error_required">Enter a value</string>
     <string name="app_limit_error_not_number">Enter a whole number</string>
@@ -422,6 +437,7 @@
     <string name="hidden_apps_tile_unselected_desc">%1$s, visible. Double tap to hide.</string>
     <string name="hidden_apps_select_all">Select all</string>
     <string name="hidden_apps_clear_all">Clear all</string>
+    <string name="hidden_apps_locked_hide">Turn off Loq In to hide apps from blocking. You can still unhide apps.</string>
     <plurals name="hidden_apps_saved_notice">
         <item quantity="one">Saved %1$d change.</item>
         <item quantity="other">Saved %1$d changes.</item>

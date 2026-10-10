@@ -40,10 +40,12 @@ import androidx.activity.OnBackPressedCallback
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isVisible
 import androidx.core.view.updatePadding
 import androidx.core.view.WindowInsetsControllerCompat
 import com.oliver.loqin.R
 import com.oliver.loqin.blocking.BlockingRuntime
+import com.oliver.loqin.data.prefs.BlockAttemptStore
 import com.oliver.loqin.data.prefs.SwitchModeStore
 import com.oliver.loqin.data.prefs.LastBlockReasonStore
 import com.oliver.loqin.theme.AccentColor
@@ -61,6 +63,7 @@ class BlockerActivity : ComponentActivity() {
     private lateinit var titleView: TextView
     private lateinit var appNameView: TextView
     private lateinit var messageView: TextView
+    private lateinit var attemptsView: TextView
     private lateinit var reasonSummaryView: TextView
     private lateinit var debugInfoButton: ImageButton
     private lateinit var btnClose: Button
@@ -136,6 +139,7 @@ class BlockerActivity : ComponentActivity() {
         appNameView = findViewById(R.id.blocker_app_name)
         messageView = findViewById(R.id.blocker_message)
         reasonSummaryView = findViewById(R.id.blocker_reason_summary)
+        attemptsView = findViewById(R.id.blocker_attempts)
         debugInfoButton = findViewById(R.id.blocker_debug_info)
         btnClose = findViewById(R.id.btn_close)
 
@@ -258,16 +262,29 @@ class BlockerActivity : ComponentActivity() {
         val title = intent?.getStringExtra(EXTRA_TITLE).orEmpty()
         val msg = intent?.getStringExtra(EXTRA_MESSAGE).orEmpty()
 
-        if (title.isNotBlank()) {
-            titleView.text = title
-        } else {
-            titleView.text = getString(R.string.blocked_app_default)
+        val snapshot = LastBlockReasonStore.snapshot(this)
+            ?.takeIf { it.isFresh(maxAgeMs = 10L * 60L * 1000L) }
+            ?.takeIf { pkg.isBlank() || it.pkg == pkg }
+
+        // App-limit blocks arrive without a title/message; say which limit was hit instead of
+        // the generic "can't use this app" text.
+        val limitMessageRes = when (snapshot?.rule) {
+            getString(R.string.block_reason_rule_open_limit) -> R.string.blocked_message_open_limit
+            getString(R.string.block_reason_rule_daily_time_limit) -> R.string.blocked_message_time_limit
+            getString(R.string.block_reason_rule_per_visit_limit) -> R.string.blocked_message_visit_limit
+            else -> null
         }
 
-        if (msg.isNotBlank()) {
-            messageView.text = msg
-        } else {
-            messageView.text = getString(R.string.blocked_message)
+        titleView.text = when {
+            title.isNotBlank() -> title
+            limitMessageRes != null -> getString(R.string.blocked_title_limit_reached)
+            else -> getString(R.string.blocked_app_default)
+        }
+
+        messageView.text = when {
+            msg.isNotBlank() -> msg
+            limitMessageRes != null -> getString(limitMessageRes)
+            else -> getString(R.string.blocked_message)
         }
 
         if (label.isNotBlank()) {
@@ -282,9 +299,21 @@ class BlockerActivity : ComponentActivity() {
             }
         }
 
-        val snapshot = LastBlockReasonStore.snapshot(this)
-            ?.takeIf { it.isFresh(maxAgeMs = 10L * 60L * 1000L) }
-            ?.takeIf { pkg.isBlank() || it.pkg == pkg }
+        // "Blocked 3 times today": seeing the count is often what makes people stop retrying.
+        // Website blocks are counted per site elsewhere, not against the browser.
+        val attemptsToday = if (pkg.isNotBlank() &&
+            snapshot?.source != getString(R.string.block_reason_source_website)
+        ) {
+            BlockAttemptStore.getToday(this, pkg)
+        } else {
+            0
+        }
+        attemptsView.isVisible = attemptsToday > 0
+        if (attemptsToday > 0) {
+            attemptsView.text = resources.getQuantityString(R.plurals.blocked_attempts_today, attemptsToday, attemptsToday)
+            attemptsView.setTextColor(AccentColor.getAccentColorInt(this))
+        }
+
         if (snapshot == null) {
             blockReasonSnapshot = null
             reasonSummaryView.visibility = View.GONE

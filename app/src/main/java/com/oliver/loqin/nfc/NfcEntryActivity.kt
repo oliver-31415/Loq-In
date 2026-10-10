@@ -226,6 +226,20 @@ class NfcEntryActivity : Activity() {
             return
         }
 
+        // loqin:// links are public: an unmanaged QR/barcode (or external link) must carry this
+        // install's secret, otherwise any QR generator could produce a working "disable" code.
+        if (!fromNfc && !isManagedScanDispatch(fromBarcode) && !LoqInCodeSecret.isSigned(this, data)) {
+            ScanFeedback.error(
+                this,
+                if (fromBarcode) "Barcode" else "QR",
+                "unsigned_code",
+                getString(R.string.scan_error_code_not_from_this_install),
+                long = true,
+            )
+            finish()
+            return
+        }
+
         if (fromNfc) {
             // At this point NFC has been positively identified as a Loq In action.
             // Only now should the selected control mode be allowed to reject it with user-visible feedback.
@@ -253,6 +267,13 @@ class NfcEntryActivity : Activity() {
         }
 
         if (finishAfterHandling) finish()
+    }
+
+    /** A code the user linked in My keys and codes; its stored action is trusted as-is. */
+    private fun isManagedScanDispatch(fromBarcode: Boolean): Boolean {
+        val raw = intent?.getStringExtra(EXTRA_MANAGED_SCAN_RAW_VALUE)?.takeIf { it.isNotBlank() } ?: return false
+        val kind = if (fromBarcode) ScanCodeStore.Kind.BARCODE else ScanCodeStore.Kind.QR
+        return ScanCodeStore.findEntry(this, kind, raw) != null
     }
 
     private fun resolvePairedWritableTagAction(tag: android.nfc.Tag?): Uri? {

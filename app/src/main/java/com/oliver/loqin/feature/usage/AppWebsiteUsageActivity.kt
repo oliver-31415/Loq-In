@@ -156,8 +156,7 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
         b.webPlaceholder.compoundDrawableTintList = ColorStateList.valueOf(accent)
 
         // Keep system bars dark for readability (matches Stats/Schedules).
-        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
-        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightNavigationBars = false
+        EdgeToEdgeUtils.applyThemedSystemBars(this)
 
         adapter = AppUsageAdapter(
             onClick = { item ->

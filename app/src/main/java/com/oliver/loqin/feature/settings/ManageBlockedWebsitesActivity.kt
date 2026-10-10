@@ -1216,7 +1216,7 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         val builder = AlertDialog.Builder(this)
             .setTitle(title)
             .setView(v)
-            .setPositiveButton(android.R.string.ok, null)
+            .setPositiveButton(if (allowDomainEdit) R.string.website_add_selected else R.string.save, null)
             .setNegativeButton(android.R.string.cancel, null)
         if (!allowDomainEdit) {
             builder.setNeutralButton(R.string.website_delete_rule, null)
@@ -1251,7 +1251,7 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
 
                 val normalized = DomainBlockStore.normalize(domainRaw)
                 if (normalized.isNullOrBlank()) {
-                    tilDomain.error = getString(R.string.domain_required)
+                    tilDomain.error = getString(R.string.domain_invalid)
                     return@setOnClickListener
                 }
                 if (isAllowMode() && DomainBlockStore.isPathRule(normalized)) {

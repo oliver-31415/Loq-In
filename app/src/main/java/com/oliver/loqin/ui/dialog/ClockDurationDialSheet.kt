@@ -164,6 +164,7 @@ object ClockDurationDialSheet {
         sheet.setOnDismissListener {
             if (!picked) onDismissed?.invoke()
         }
+        sheet.padForNavigationBar()
         sheet.show()
     }
 

@@ -51,6 +51,7 @@ object AutomationModeStore {
     private const val KEY_MIXED_ALLOW_SCHEDULE_EDITING = "automation_mixed_allow_schedule_editing"
     private const val KEY_MIXED_ALLOW_NFC_TAG_WRITING = "automation_mixed_allow_nfc_tag_writing"
     private const val KEY_UNINSTALL_FRICTION = "pref_uninstall_friction"
+    private const val KEY_QR_DISABLE_CODE_READY = "qr_disable_code_ready"
 
     enum class Mode(val raw: String) {
         SCHEDULE("schedule"),
@@ -253,13 +254,34 @@ object AutomationModeStore {
     }
 
     /**
+     * QR is "set up" once the user has kept a code that can turn protection off: copied or shared
+     * a signed code from the generator, or linked a managed QR code. Codes from earlier versions
+     * carry no install secret and no longer work, so past scans don't count.
+     */
+    fun hasQrDisableCode(context: Context): Boolean =
+        getBool(context, KEY_QR_DISABLE_CODE_READY, false) ||
+            ScanCodeStore.hasEntries(context, ScanCodeStore.Kind.QR)
+
+    fun markQrDisableCodeReady(context: Context) {
+        putBool(context, KEY_QR_DISABLE_CODE_READY, true)
+    }
+
+    /** Setup helper: QR control is enabled, but the user has never kept a disabling QR code. */
+    fun isQrSetupMissing(context: Context): Boolean =
+        isQrChannelAllowed(context) && !hasQrDisableCode(context)
+
+    /**
      * Lockout safety fallback for manual disabling.
      *
-     * Only allow the manual button to disable LoqIn when barcode is the only configured disable channel, the manual button itself is disabled, and no barcode has been added yet.
-     * If NFC, QR, schedules, or the manual button are available, there is no need to relax the disable restriction just because barcode setup is incomplete.
+     * Only allow the manual button to disable LoqIn when a scan channel (QR or barcode) is the only
+     * configured disable channel, the manual button itself is disabled, and that scan channel has
+     * no code yet. If NFC, schedules, a usable scan channel, or the manual button are available,
+     * there is no need to relax the disable restriction.
      */
-    fun shouldAllowManualDisableForMissingBarcodeSetup(context: Context): Boolean {
-        if (!isBarcodeSetupMissing(context)) {
+    fun shouldAllowManualDisableForMissingScanSetup(context: Context): Boolean {
+        val qrMissing = isQrSetupMissing(context)
+        val barcodeMissing = isBarcodeSetupMissing(context)
+        if (!qrMissing && !barcodeMissing) {
             return false
         }
         if (isButtonAllowed(context)) {
@@ -269,7 +291,8 @@ object AutomationModeStore {
         val hasOtherDisableChannel =
             isScheduleAllowed(context) ||
                 isNfcAllowed(context) ||
-                isQrAllowed(context)
+                (isQrAllowed(context) && !qrMissing) ||
+                (isBarcodeChannelAllowed(context) && !barcodeMissing)
 
         return !hasOtherDisableChannel
     }
@@ -321,10 +344,13 @@ object AutomationModeStore {
 
     /**
      * Optional exception while LoqIn is enabled.
-     * Locked by default; can be enabled regardless of the active control mode.
+     *
+     * Switching to a laxer (or empty) profile is equivalent to turning protection off, so the
+     * exception only applies while the manual button could disable Loq In anyway. In a
+     * single-channel mode (QR, barcode, NFC, schedule) switching stays locked.
      */
     fun isProfileSwitchingAllowedWhileEnabled(context: Context): Boolean =
-        isMixedAllowProfileSwitching(context)
+        isMixedAllowProfileSwitching(context) && isButtonAllowed(context)
 
     /**
      * Optional exception while LoqIn is enabled.

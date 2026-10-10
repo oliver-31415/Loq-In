@@ -42,6 +42,7 @@ import androidx.core.graphics.ColorUtils
 import androidx.core.view.isVisible
 import androidx.core.widget.CompoundButtonCompat
 import androidx.core.widget.ImageViewCompat
+import androidx.core.widget.doAfterTextChanged
 import androidx.core.widget.TextViewCompat
 import com.oliver.loqin.R
 import com.oliver.loqin.theme.AccentColor
@@ -137,6 +138,10 @@ fun Context.showLoqInInputDialog(
     )
     dialog.setOnShowListener {
         dialog.styleLoqInDialogButtons()
+        // An empty name can't be saved; keep the action disabled instead of closing silently.
+        val positive = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
+        positive?.isEnabled = input.text.toString().isNotBlank()
+        input.doAfterTextChanged { positive?.isEnabled = !it.isNullOrBlank() }
         input.requestFocus()
     }
     dialog.show()
@@ -918,6 +923,18 @@ fun AlertDialog.applyLoqInDialogWidth(widthFraction: Float = 0.94f) {
     window?.setLayout(targetWidth, ViewGroup.LayoutParams.WRAP_CONTENT)
 }
 
+/**
+ * Pins a dialog whose content grows while it is open (expanding sections) near the top of the
+ * screen. A centred dialog re-centres on every size change, moving the control the user just
+ * tapped; pinned to the top, content only grows downward. A non-zero [topDp] is dropped by the
+ * window manager once the content needs the full height, so the default keeps no offset.
+ */
+fun AlertDialog.pinLoqInDialogToTop(topDp: Int = 0) {
+    val w = window ?: return
+    w.setGravity(Gravity.TOP or Gravity.CENTER_HORIZONTAL)
+    w.attributes = w.attributes.apply { y = (topDp * context.resources.displayMetrics.density).toInt() }
+}
+
 // Backwards-compat alias used in older code paths.
 fun AlertDialog.accentButtons() = styleLoqInDialogButtons()
 
@@ -1022,5 +1039,25 @@ private tailrec fun Context.findActivity(): Activity? {
         is Activity -> this
         is ContextWrapper -> baseContext.findActivity()
         else -> null
+    }
+}
+
+/**
+ * Bottom sheets draw edge-to-edge, so their last row sat under the gesture/navigation bar
+ * ("Delete profile"). Adds the navigation bar inset to the sheet content's bottom padding once
+ * the sheet is attached. Call before show().
+ */
+fun com.google.android.material.bottomsheet.BottomSheetDialog.padForNavigationBar() {
+    val container = findViewById<ViewGroup>(com.google.android.material.R.id.design_bottom_sheet) ?: return
+    container.post {
+        val content = container.getChildAt(0) ?: return@post
+        if (content.getTag(R.id.tag_nav_bar_padded) == true) return@post
+        val nav = androidx.core.view.ViewCompat.getRootWindowInsets(container)
+            ?.getInsets(androidx.core.view.WindowInsetsCompat.Type.navigationBars())
+            ?.bottom ?: 0
+        if (nav > 0) {
+            content.setPadding(content.paddingLeft, content.paddingTop, content.paddingRight, content.paddingBottom + nav)
+            content.setTag(R.id.tag_nav_bar_padded, true)
+        }
     }
 }

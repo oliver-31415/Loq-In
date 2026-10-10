@@ -11,7 +11,7 @@
     <string name="schedules_next_none">No upcoming schedule</string>
     <string name="schedules_next_inactive_control_mode">Inactive — control mode blocks schedules</string>
     <string name="schedules_empty_title">No schedules yet</string>
-    <string name="schedules_empty_body">Tap + to add your first time, Wi‑Fi, Bluetooth or location schedule.</string>
+    <string name="schedules_empty_body">Add a time, Wi‑Fi, Bluetooth or location schedule to turn protection on or off automatically.</string>
     <string name="empty_action_add_first_schedule">Add first schedule</string>
 
     <!-- ====================================================== -->
@@ -55,7 +55,7 @@
     <string name="day_short_fri">Fr</string>
     <string name="day_short_sat">Sa</string>
     <string name="day_short_sun">Su</string>
-    <string name="schedules_time_range_fmt">%1$s-%2$s</string>
+    <string name="schedules_time_range_fmt">%1$s–%2$s</string>
     <string name="schedules_bt_enable_bt">Please turn on Bluetooth first.</string>
     <string name="schedules_bt_name_hint">Bluetooth device name (exact)</string>
     <string name="schedules_bt_pick_paired">Pick paired device</string>

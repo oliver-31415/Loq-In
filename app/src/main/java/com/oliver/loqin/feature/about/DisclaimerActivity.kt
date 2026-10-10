@@ -52,7 +52,7 @@ class DisclaimerActivity : AppCompatActivity() {
         toolbar.setTitleTextColor(toolbarColor)
 
         // Keep status bar neutral (like other screens)
-        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
+        EdgeToEdgeUtils.applyThemedSystemBars(this)
 
         findViewById<MaterialButton>(R.id.btnSourceCode).setOnClickListener {
             runCatching {

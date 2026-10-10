@@ -337,7 +337,7 @@ class SchedulesActivity : AppCompatActivity() {
             activity = this,
             toolbar = toolbar
         )
-        WindowInsetsControllerCompat(window, window.decorView).isAppearanceLightStatusBars = false
+        EdgeToEdgeUtils.applyThemedSystemBars(this)
         setSupportActionBar(toolbar)
         toolbar.subtitle = targetProfile ?: getString(R.string.schedules_profile_subtitle)
         toolbar.setNavigationOnClickListener {
@@ -4046,11 +4046,7 @@ private class ScheduleViewHolder(
     private fun dp(value: Int): Int =
         (value * itemView.resources.displayMetrics.density + 0.5f).toInt()
 
-    private fun fmtMinutes(m: Int): String {
-        val h = m / 60
-        val mm = m % 60
-        return String.format(Locale.getDefault(), "%02d:%02d", h, mm)
-    }
+    private fun fmtMinutes(m: Int): String = TimeFormatPrefs.formatMinutesOfDay(itemView.context, m)
 
     fun bind(s: ScheduleStore.Schedule, rank: Int) {
         current = s

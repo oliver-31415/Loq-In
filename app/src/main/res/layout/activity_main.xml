@@ -150,7 +150,10 @@
                     android:maxLines="1"
                     android:text="@string/activity_section_title"
                     android:textSize="20sp"
-                    android:textStyle="bold" />
+                    android:textStyle="bold"
+                    app:autoSizeMaxTextSize="20sp"
+                    app:autoSizeMinTextSize="14sp"
+                    app:autoSizeTextType="uniform" />
 
                 <LinearLayout
                     android:id="@+id/btnActivityHide"
@@ -344,7 +347,7 @@
                                 android:layout_height="36dp"
                                 android:padding="8dp"
                                 android:background="@drawable/bg_round_white"
-                                android:contentDescription="@string/profile_rows_manage"
+                                android:contentDescription="@string/profile_sheet_edit_profile"
                                 android:src="@drawable/edit_24"
                                 app:tint="#FFFFFFFF" />
                         </LinearLayout>
@@ -704,7 +707,10 @@
                                     android:textStyle="bold"
                                     android:textColor="?attr/colorOnSurface"
                                     android:maxLines="1"
-                                    tools:text="Take a break" />
+                                    tools:text="Take a break"
+                                    app:autoSizeMaxTextSize="13.5sp"
+                                    app:autoSizeMinTextSize="10sp"
+                                    app:autoSizeTextType="uniform" />
 
                                 <TextView
                                     android:id="@+id/tvTempTileSubtitle"
@@ -716,7 +722,10 @@
                                     android:textColor="?attr/colorOnSurface"
                                     android:maxLines="1"
                                     android:ellipsize="end"
-                                    tools:text="Choose duration" />
+                                    tools:text="Choose duration"
+                                    app:autoSizeMaxTextSize="11sp"
+                                    app:autoSizeMinTextSize="9sp"
+                                    app:autoSizeTextType="uniform" />
                             </LinearLayout>
                         </LinearLayout>
 
@@ -771,7 +780,10 @@
                                     android:textStyle="bold"
                                     android:textColor="?attr/colorOnSurface"
                                     android:maxLines="1"
-                                    tools:text="Emergency" />
+                                    tools:text="Emergency"
+                                    app:autoSizeMaxTextSize="13.5sp"
+                                    app:autoSizeMinTextSize="10sp"
+                                    app:autoSizeTextType="uniform" />
 
                                 <TextView
                                     android:id="@+id/tvEmergencyTileSubtitle"
@@ -783,7 +795,10 @@
                                     android:textColor="?attr/colorOnSurface"
                                     android:maxLines="1"
                                     android:ellipsize="end"
-                                    tools:text="Ready · once a day" />
+                                    tools:text="Ready · once a day"
+                                    app:autoSizeMaxTextSize="11sp"
+                                    app:autoSizeMinTextSize="9sp"
+                                    app:autoSizeTextType="uniform" />
                             </LinearLayout>
                         </LinearLayout>
                     </LinearLayout>

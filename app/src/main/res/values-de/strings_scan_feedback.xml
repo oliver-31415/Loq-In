@@ -6,10 +6,13 @@
     <!-- ====================================================== -->
     <string name="scan_error_nfc_not_linked">Dieser NFC-Tag ist mit keiner Loq In-Aktion verknüpft.</string>
     <string name="scan_error_qr_not_linked">Dieser QR-Code ist mit keiner Loq In-Aktion verknüpft.</string>
+    <string name="scan_error_code_not_from_this_install">Kein Code von diesem Loq In. Erstelle einen neuen unter „Meine Schlüssel und Codes“.</string>
     <string name="scan_error_barcode_not_linked">Dieser Barcode ist mit keiner Loq In-Aktion verknüpft.</string>
-    <string name="scan_error_camera_permission_qr">Zum Scannen von QR-Codes wird die Kameraberechtigung benötigt. Aktiviere sie unter Berechtigungen und versuche es erneut.</string>
-    <string name="scan_error_camera_permission_barcode">Zum Scannen von Barcodes wird die Kameraberechtigung benötigt. Aktiviere sie unter Berechtigungen und versuche es erneut.</string>
-    <string name="scan_error_camera_permission_code">Zum Scannen von QR-Codes und Barcodes wird die Kameraberechtigung benötigt. Aktiviere sie unter Berechtigungen und versuche es erneut.</string>
+    <string name="scan_error_camera_permission_qr">Loq In braucht Kamerazugriff, um QR-Codes zu scannen. Erlaube ihn in den Android-Einstellungen und versuche es erneut.</string>
+    <string name="scan_error_camera_permission_barcode">Loq In braucht Kamerazugriff, um Barcodes zu scannen. Erlaube ihn in den Android-Einstellungen und versuche es erneut.</string>
+    <string name="scan_error_camera_permission_code">Loq In braucht Kamerazugriff, um QR-Codes und Barcodes zu scannen. Erlaube ihn in den Android-Einstellungen und versuche es erneut.</string>
+    <string name="scan_camera_permission_title">Kamerazugriff nötig</string>
+    <string name="scan_camera_permission_open_settings">Einstellungen öffnen</string>
     <string name="scan_error_camera_unavailable">Zum Scannen ist keine verwendbare Kamera verfügbar.</string>
     <string name="scan_error_invalid_payload">Der gescannte Code enthält keine gültige Loq In-Aktion.</string>
     <string name="scan_error_unsupported_action">Diese Loq In-Aktion wird von dieser Version nicht unterstützt.</string>

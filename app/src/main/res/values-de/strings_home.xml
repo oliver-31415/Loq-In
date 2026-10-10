@@ -4,102 +4,102 @@
     <!-- ====================================================== -->
     <!-- Dashboard profile state -->
     <!-- ====================================================== -->
-    <string name="dashboard_active_profile_fmt">Active profile: %1$s</string>
+    <string name="dashboard_active_profile_fmt">Aktives Profil: %1$s</string>
     <!-- Needed by the in-progress widget refactor. -->
     <string name="dashboard_status_enabled">Schutz ist aktiv</string>
-    <string name="dashboard_active_profile_unknown">Active profile: —</string>
-    <string name="dashboard_unavailable_hint_pick_apps">Not installed on this device.\nOpen “App rules” to remove.</string>
+    <string name="dashboard_active_profile_unknown">Aktives Profil: —</string>
+    <string name="dashboard_unavailable_hint_pick_apps">Auf diesem Gerät nicht installiert.\nÖffne „App-Regeln“, um sie zu entfernen.</string>
 
     <!-- ====================================================== -->
     <!-- Blocked app list actions -->
     <!-- ====================================================== -->
-    <string name="dashboard_blocked_app_action_edit_limits">Edit limits</string>
-    <string name="dashboard_blocked_app_action_edit_limits_summary">Set time or open limits for %1$s.</string>
-    <string name="dashboard_blocked_app_action_remove">Remove app</string>
-    <string name="dashboard_blocked_app_action_remove_summary">Remove %1$s from the current profile.</string>
-    <string name="dashboard_blocked_app_remove_title">Remove app</string>
-    <string name="dashboard_blocked_app_remove_message">Remove %1$s from the current profile?</string>
-    <string name="dashboard_blocked_app_removed">%1$s removed</string>
+    <string name="dashboard_blocked_app_action_edit_limits">Limits bearbeiten</string>
+    <string name="dashboard_blocked_app_action_edit_limits_summary">Zeit- oder Öffnungslimits für %1$s festlegen.</string>
+    <string name="dashboard_blocked_app_action_remove">App entfernen</string>
+    <string name="dashboard_blocked_app_action_remove_summary">%1$s aus dem aktuellen Profil entfernen.</string>
+    <string name="dashboard_blocked_app_remove_title">App entfernen</string>
+    <string name="dashboard_blocked_app_remove_message">%1$s aus dem aktuellen Profil entfernen?</string>
+    <string name="dashboard_blocked_app_removed">%1$s entfernt</string>
 
     <!-- ====================================================== -->
     <!-- Emergency and active timer hints -->
     <!-- ====================================================== -->
-    <string name="dashboard_emergency_hint_ready">Emergency unlock - use once a day</string>
-    <string name="dashboard_emergency_hint_active">Emergency active (%1$d min) — tap to pause or end</string>
-    <string name="dashboard_emergency_hint_paused">Emergency paused (%1$d min) — tap to resume or end</string>
-    <string name="dashboard_emergency_hint_used_today">Emergency unlock already used today</string>
-    <string name="dashboard_emergency_hint_disabled">Emergency unlock is off — open Loq In controls</string>
-    <string name="widget_active_timer_title">Active timer</string>
-    <string name="widget_active_timer_inactive">Not active</string>
-    <string name="widget_active_timer_desc">Shows the current active timer.</string>
+    <string name="dashboard_emergency_hint_ready">Notfall-Entsperrung – einmal pro Tag</string>
+    <string name="dashboard_emergency_hint_active">Notfall aktiv (%1$d Min.) – tippen zum Pausieren oder Beenden</string>
+    <string name="dashboard_emergency_hint_paused">Notfall pausiert (%1$d Min.) – tippen zum Fortsetzen oder Beenden</string>
+    <string name="dashboard_emergency_hint_used_today">Notfall-Entsperrung heute bereits genutzt</string>
+    <string name="dashboard_emergency_hint_disabled">Notfall-Entsperrung ist aus – Loq-In-Steuerung öffnen</string>
+    <string name="widget_active_timer_title">Aktiv-Timer</string>
+    <string name="widget_active_timer_inactive">Nicht aktiv</string>
+    <string name="widget_active_timer_desc">Zeigt den aktuellen Aktiv-Timer.</string>
 
     <!-- ====================================================== -->
     <!-- Control mode labels -->
     <!-- ====================================================== -->
-    <string name="dashboard_control_mode_hint_placeholder">Control mode: —</string>
-    <string name="dashboard_control_mode_hint_fmt">Control mode: %1$s</string>
-    <string name="dashboard_control_method_schedule">Schedules</string>
+    <string name="dashboard_control_mode_hint_placeholder">Steuerungsmodus: —</string>
+    <string name="dashboard_control_mode_hint_fmt">Steuerungsmodus: %1$s</string>
+    <string name="dashboard_control_method_schedule">Zeitpläne</string>
     <string name="dashboard_control_method_nfc">NFC</string>
     <string name="dashboard_control_method_qr">QR</string>
     <string name="dashboard_control_method_barcode">Barcode</string>
-    <string name="dashboard_control_method_manual">manual controls</string>
-    <string name="dashboard_control_method_configured">configured method</string>
-    <string name="dashboard_control_mode_hint_mixed_fmt">Control mode: %1$s\nChannels: %2$s</string>
-    <string name="dashboard_control_mode_schedule">Schedules</string>
+    <string name="dashboard_control_method_manual">manuelle Steuerung</string>
+    <string name="dashboard_control_method_configured">eingestellte Methode</string>
+    <string name="dashboard_control_mode_hint_mixed_fmt">Steuerungsmodus: %1$s\nKanäle: %2$s</string>
+    <string name="dashboard_control_mode_schedule">Zeitpläne</string>
     <string name="dashboard_control_mode_nfc">NFC</string>
     <string name="dashboard_control_mode_qr">QR</string>
     <string name="dashboard_control_mode_barcode">Barcode</string>
-    <string name="dashboard_control_mode_mixed">Mixed</string>
+    <string name="dashboard_control_mode_mixed">Gemischt</string>
 
     <!-- ====================================================== -->
     <!-- Dashboard setup and state -->
     <!-- ====================================================== -->
-    <string name="dashboard_nfc_locked_hint">Locked: disable Loq In via NFC tag</string>
-    <string name="dashboard_setup_title">Almost ready</string>
-    <string name="dashboard_setup_subtitle">Enable these items so blocking works reliably.</string>
+    <string name="dashboard_nfc_locked_hint">Gesperrt: Loq In per NFC-Tag deaktivieren</string>
+    <string name="dashboard_setup_title">Fast fertig</string>
+    <string name="dashboard_setup_subtitle">Aktiviere diese Punkte, damit das Blockieren zuverlässig funktioniert.</string>
     <plurals name="dashboard_setup_subtitle_missing">
-        <item quantity="one">Enable this item so blocking works reliably.</item>
-        <item quantity="other">Enable these items so blocking works reliably.</item>
+        <item quantity="one">Aktiviere diesen Punkt, damit das Blockieren zuverlässig funktioniert.</item>
+        <item quantity="other">Aktiviere diese Punkte, damit das Blockieren zuverlässig funktioniert.</item>
     </plurals>
-    <string name="dashboard_setup_desc">Finish the required permissions so Loq In can block apps reliably.</string>
-    <string name="dashboard_setup_cta">Finish setup</string>
-    <string name="dashboard_blocked_now_title">Blocked right now</string>
-    <string name="dashboard_blocked_now_reason_profile">Blocked by profile</string>
-    <string name="dashboard_blocked_now_reason_limit">Limit reached</string>
-    <string name="dashboard_blocked_now_reason_attempts">Open limit reached</string>
+    <string name="dashboard_setup_desc">Erteile die nötigen Berechtigungen, damit Loq In Apps zuverlässig blockieren kann.</string>
+    <string name="dashboard_setup_cta">Einrichtung abschließen</string>
+    <string name="dashboard_blocked_now_title">Gerade blockiert</string>
+    <string name="dashboard_blocked_now_reason_profile">Vom Profil blockiert</string>
+    <string name="dashboard_blocked_now_reason_limit">Limit erreicht</string>
+    <string name="dashboard_blocked_now_reason_attempts">Öffnungslimit erreicht</string>
     <plurals name="dashboard_badge_missing">
-        <item quantity="one">%1$d missing</item>
-        <item quantity="other">%1$d missing</item>
+        <item quantity="one">%1$d fehlt</item>
+        <item quantity="other">%1$d fehlen</item>
     </plurals>
-    <string name="dashboard_active_duration_placeholder">Active now · —</string>
-    <string name="dashboard_active_duration_fmt">Active now · %1$s</string>
-    <string name="dashboard_active_duration_less_than_minute">under 1m</string>
+    <string name="dashboard_active_duration_placeholder">Aktiv · —</string>
+    <string name="dashboard_active_duration_fmt">Aktiv · %1$s</string>
+    <string name="dashboard_active_duration_less_than_minute">unter 1 Min.</string>
 
     <!-- ====================================================== -->
     <!-- Temporary mode -->
     <!-- ====================================================== -->
-    <string name="dashboard_temp_remaining_fmt">Remaining: %1$s</string>
-    <string name="dashboard_temp_remaining_placeholder">Remaining: 00:00</string>
-    <string name="dashboard_temp_status_enabled">Temporarily enabled • %1$s left</string>
-    <string name="dashboard_temp_status_disabled">Temporarily paused • %1$s left</string>
-    <string name="dashboard_temp_sheet_sub_enable">Enable blocking for a short time</string>
-    <string name="dashboard_temp_sheet_sub_enable_profile">Enable %1$s for a short time</string>
-    <string name="dashboard_temp_sheet_sub_disable">Pause Loq In for a short time</string>
-    <string name="dashboard_temp_sheet_sub_disable_locked">Temporary disable is locked (NFC lock is active). Use Emergency Unlock if needed.</string>
-    <string name="dashboard_temp_sheet_cancel_timer">Cancel timer</string>
+    <string name="dashboard_temp_remaining_fmt">Verbleibend: %1$s</string>
+    <string name="dashboard_temp_remaining_placeholder">Verbleibend: 00:00</string>
+    <string name="dashboard_temp_status_enabled">Vorübergehend aktiviert • noch %1$s</string>
+    <string name="dashboard_temp_status_disabled">Vorübergehend pausiert • noch %1$s</string>
+    <string name="dashboard_temp_sheet_sub_enable">Blockieren für kurze Zeit aktivieren</string>
+    <string name="dashboard_temp_sheet_sub_enable_profile">%1$s für kurze Zeit aktivieren</string>
+    <string name="dashboard_temp_sheet_sub_disable">Loq In für kurze Zeit pausieren</string>
+    <string name="dashboard_temp_sheet_sub_disable_locked">Vorübergehendes Deaktivieren ist gesperrt (NFC-Sperre aktiv). Nutze bei Bedarf die Notfall-Entsperrung.</string>
+    <string name="dashboard_temp_sheet_cancel_timer">Timer abbrechen</string>
     <string name="dashboard_temp_ends_at">Endet um %1$s</string>
             <string name="minutes">Minuten</string>
     <string name="dashboard_action_lock_in">Fokussieren</string>
     <string name="dashboard_action_lock_in_duration">Fokussieren für %1$s</string>
     <string name="dashboard_action_enable_duration">Aktivieren für %1$s</string>
-    <string name="dashboard_temp_hint">Temporary mode - choose action</string>
-    <string name="dashboard_temp_hint_enable">Temporary enable - choose duration</string>
-    <string name="dashboard_temp_hint_enable_profile">Temporarily enable %1$s</string>
-    <string name="dashboard_temp_hint_disable">Temporary pause - choose duration</string>
-    <string name="dashboard_temp_hint_locked_nfc">Temporary mode unavailable while NFC-required unlock is enabled.</string>
-    <string name="dashboard_temp_nudge">Tip:\nUse temporary mode for quick 5–60 minute sessions.</string>
-    <string name="dashboard_temp_active_changes_locked">This timer is protected. Home cannot replace or shorten it. A temporary pause can still be ended early to restore protection.</string>
-    <string name="dashboard_temp_discovery_done">Temporary mode is ready. Open it from the status card anytime.</string>
+    <string name="dashboard_temp_hint">Vorübergehender Modus – Aktion wählen</string>
+    <string name="dashboard_temp_hint_enable">Vorübergehend aktivieren – Dauer wählen</string>
+    <string name="dashboard_temp_hint_enable_profile">%1$s vorübergehend aktivieren</string>
+    <string name="dashboard_temp_hint_disable">Vorübergehend pausieren – Dauer wählen</string>
+    <string name="dashboard_temp_hint_locked_nfc">Der vorübergehende Modus ist nicht verfügbar, solange zum Entsperren NFC nötig ist.</string>
+    <string name="dashboard_temp_nudge">Tipp:\nNutze den vorübergehenden Modus für kurze Sitzungen von 5–60 Minuten.</string>
+    <string name="dashboard_temp_active_changes_locked">Dieser Timer ist geschützt. Home kann ihn nicht ersetzen oder verkürzen. Eine vorübergehende Pause kann trotzdem früher beendet werden, um den Schutz wiederherzustellen.</string>
+    <string name="dashboard_temp_discovery_done">Der vorübergehende Modus ist bereit. Öffne ihn jederzeit über die Statuskarte.</string>
 
     <!-- Quick-entry action tiles (temporary timer / emergency bypass) -->
     <string name="tile_temp_title_plain">Zeitmodus</string>
@@ -110,6 +110,8 @@
     <string name="tile_temp_subtitle_choose">Dauer wählen</string>
     <string name="tile_temp_subtitle_time">%1$s übrig</string>
     <string name="tile_temp_subtitle_locked">Nicht verfügbar, solange NFC-Entsperrung aktiv ist</string>
+    <string name="tile_temp_subtitle_mode_locked">Gesperrt (%1$s)</string>
+    <string name="home_scan_to_disable">Scanne deinen Code, um Loq In auszuschalten.</string>
     <string name="tile_emergency_title">Notfall-Entsperrung</string>
     <string name="tile_emergency_title_active">Notfall aktiv</string>
     <string name="tile_emergency_title_paused">Notfall pausiert</string>
@@ -122,136 +124,137 @@
     <!-- ====================================================== -->
     <!-- Home actions and tiles -->
     <!-- ====================================================== -->
-    <string name="dashboard_toggle_enable">Enable</string>
-    <string name="dashboard_toggle_disable">Disable</string>
-    <string name="dashboard_quick_actions">Quick actions</string>
+    <string name="dashboard_toggle_enable">Aktivieren</string>
+    <string name="dashboard_toggle_disable">Deaktivieren</string>
+    <string name="dashboard_quick_actions">Schnellaktionen</string>
     <plurals name="dashboard_quick_actions_count">
-        <item quantity="one">Quick actions • %1$d selected</item>
-        <item quantity="other">Quick actions • %1$d selected</item>
+        <item quantity="one">Schnellaktionen • %1$d ausgewählt</item>
+        <item quantity="other">Schnellaktionen • %1$d ausgewählt</item>
     </plurals>
-    <string name="dashboard_tile_apps">App rules</string>
-    <string name="dashboard_tile_apps_sub">Choose blocked apps</string>
-    <string name="dashboard_tile_profiles">Profiles</string>
-    <string name="dashboard_tile_profiles_sub">Create &amp; edit</string>
-    <string name="dashboard_tile_blocked_websites">Website rules</string>
-    <string name="dashboard_tile_blocked_websites_sub">Domains for this profile</string>
-    <string name="dashboard_tile_in_app">In-app blocking</string>
-    <string name="dashboard_tile_in_app_sub">Feeds &amp; surfaces</string>
-    <string name="dashboard_quick_actions_edit">Edit quick actions</string>
-    <string name="dashboard_quick_actions_customize">Customize quick actions</string>
-    <string name="dashboard_tile_qr">QR scanner</string>
-    <string name="dashboard_tile_qr_sub">Tap to scan\nHold for options</string>
-    <string name="dashboard_tile_barcode">Barcode scanner</string>
-    <string name="dashboard_tile_barcode_sub">Tap to scan\nHold for options</string>
-    <string name="dashboard_tile_write_nfc">Write NFC tag</string>
-    <string name="dashboard_tile_write_nfc_sub">Write or manage paired tags</string>
-    <string name="dashboard_tile_blocked_notifications">Blocked notifications</string>
-    <string name="dashboard_tile_blocked_notifications_sub">Inbox &amp; activity</string>
-    <string name="dashboard_quick_actions_expand">Expand quick actions</string>
-    <string name="dashboard_quick_actions_collapse">Collapse quick actions</string>
-    <string name="dashboard_blocked_apps_expand">Expand app list</string>
-    <string name="dashboard_blocked_apps_collapse">Collapse app list</string>
+    <string name="dashboard_tile_apps">App-Regeln</string>
+    <string name="dashboard_tile_apps_sub">Blockierte Apps wählen</string>
+    <string name="dashboard_tile_profiles">Profile</string>
+    <string name="dashboard_tile_profiles_sub">Erstellen &amp; bearbeiten</string>
+    <string name="dashboard_tile_blocked_websites">Website-Regeln</string>
+    <string name="dashboard_tile_blocked_websites_sub">Domains für dieses Profil</string>
+    <string name="dashboard_tile_in_app">In-App-Blockierung</string>
+    <string name="dashboard_tile_in_app_sub">Feeds &amp; Bereiche</string>
+    <string name="dashboard_quick_actions_edit">Schnellaktionen bearbeiten</string>
+    <string name="dashboard_quick_actions_customize">Schnellaktionen anpassen</string>
+    <string name="dashboard_tile_qr">QR-Scanner</string>
+    <string name="dashboard_tile_qr_sub">Tippen zum Scannen\nHalten für Optionen</string>
+    <string name="dashboard_tile_barcode">Barcode-Scanner</string>
+    <string name="dashboard_tile_barcode_sub">Tippen zum Scannen\nHalten für Optionen</string>
+    <string name="dashboard_tile_write_nfc">NFC-Tag beschreiben</string>
+    <string name="dashboard_tile_write_nfc_sub">Gekoppelte Tags beschreiben oder verwalten</string>
+    <string name="dashboard_tile_blocked_notifications">Blockierte Benachrichtigungen</string>
+    <string name="dashboard_tile_blocked_notifications_sub">Posteingang &amp; Aktivität</string>
+    <string name="dashboard_quick_actions_expand">Schnellaktionen ausklappen</string>
+    <string name="dashboard_quick_actions_collapse">Schnellaktionen einklappen</string>
+    <string name="dashboard_blocked_apps_expand">App-Liste ausklappen</string>
+    <string name="dashboard_blocked_apps_collapse">App-Liste einklappen</string>
 
     <!-- ====================================================== -->
     <!-- Development notice and Home modes -->
     <!-- ====================================================== -->
-    <string name="scanner_choice_title">Scan a code</string>
-    <string name="home_layout_default">Default</string>
-    <string name="home_layout_minimal">Simple</string>
-    <string name="home_layout_detailed">Advanced</string>
-    <string name="home_layout_custom">Custom</string>
+    <string name="scanner_choice_title">Code scannen</string>
+    <string name="home_layout_default">Standard</string>
+    <string name="home_layout_minimal">Einfach</string>
+    <string name="home_layout_detailed">Erweitert</string>
+    <string name="home_layout_custom">Benutzerdefiniert</string>
 
     <!-- ====================================================== -->
     <!-- Block reason info -->
     <!-- ====================================================== -->
-    <string name="block_reason_info_title">Why was this blocked?</string>
-    <string name="block_reason_info_button_desc">Show why this was blocked</string>
-    <string name="block_reason_info_empty">No recent block reason is available.</string>
-    <string name="block_reason_summary_fmt">Blocked by: %1$s</string>
+    <string name="block_reason_info_title">Warum wurde das blockiert?</string>
+    <string name="block_reason_info_button_desc">Grund für die Blockierung anzeigen</string>
+    <string name="block_reason_info_empty">Kein aktueller Blockiergrund verfügbar.</string>
+    <string name="block_reason_summary_fmt">Blockiert durch: %1$s</string>
     <string name="block_reason_field_profile">Profile</string>
-    <string name="block_reason_field_rule">Rule</string>
-    <string name="block_reason_field_mode">Mode</string>
-    <string name="block_reason_field_source">Source</string>
-    <string name="block_reason_field_matched">Matched</string>
-    <string name="block_reason_field_result">Result</string>
+    <string name="block_reason_field_rule">Regel</string>
+    <string name="block_reason_field_mode">Modus</string>
+    <string name="block_reason_field_source">Quelle</string>
+    <string name="block_reason_field_matched">Treffer</string>
+    <string name="block_reason_field_result">Ergebnis</string>
     <string name="block_reason_field_details">Details</string>
-    <string name="block_reason_rule_allow_selected">Allow selected mode</string>
-    <string name="block_reason_rule_daily_time_limit">Daily time limit</string>
-    <string name="block_reason_rule_open_limit">Daily open limit</string>
-    <string name="block_reason_rule_per_visit_limit">Minutes per visit limit</string>
-    <string name="block_reason_rule_strict_lock">Strict/NFC lock protection</string>
-    <string name="block_reason_rule_blocked_apps">Blocked app list</string>
-    <string name="block_reason_rule_website_rule">Website rule</string>
-    <string name="block_reason_rule_website_limit">Website time limit</string>
-    <string name="block_reason_rule_settings_bypass">Settings bypass protection</string>
-    <string name="block_reason_mode_block_selected">Block selected: item is selected</string>
-    <string name="block_reason_mode_allow_not_allowed">Allow selected: item is not allowed</string>
-    <string name="block_reason_mode_website_block_selected">Block selected: domain is selected</string>
-    <string name="block_reason_mode_website_allow_not_allowed">Allow selected: domain is not allowed</string>
-    <string name="block_reason_source_app_blocking">App blocking</string>
-    <string name="block_reason_source_website">Website rule</string>
-    <string name="block_reason_source_in_app">In-app rule</string>
-    <string name="block_reason_source_strict_mode">Strict mode</string>
-    <string name="block_reason_result_blocked">Blocked</string>
-    <string name="block_reason_result_surface_blocked">Surface blocked</string>
+    <string name="block_reason_rule_allow_selected">Modus „Ausgewählte erlauben“</string>
+    <string name="block_reason_rule_daily_time_limit">Tägliches Zeitlimit</string>
+    <string name="block_reason_rule_open_limit">Tägliches Öffnungslimit</string>
+    <string name="block_reason_rule_per_visit_limit">Limit pro Besuch</string>
+    <string name="block_reason_rule_strict_lock">Strikter Schutz / NFC-Sperre</string>
+    <string name="block_reason_rule_blocked_apps">Liste blockierter Apps</string>
+    <string name="block_reason_rule_website_rule">Website-Regel</string>
+    <string name="block_reason_rule_website_limit">Website-Zeitlimit</string>
+    <string name="block_reason_rule_settings_bypass">Schutz vor Einstellungs-Umgehung</string>
+    <string name="block_reason_mode_block_selected">Ausgewählte blockieren: Eintrag ist ausgewählt</string>
+    <string name="block_reason_mode_allow_not_allowed">Ausgewählte erlauben: Eintrag ist nicht erlaubt</string>
+    <string name="block_reason_mode_website_block_selected">Ausgewählte blockieren: Domain ist ausgewählt</string>
+    <string name="block_reason_mode_website_allow_not_allowed">Ausgewählte erlauben: Domain ist nicht erlaubt</string>
+    <string name="block_reason_source_app_blocking">App-Blockierung</string>
+    <string name="block_reason_source_website">Website-Regel</string>
+    <string name="block_reason_source_in_app">In-App-Regel</string>
+    <string name="block_reason_source_strict_mode">Strikter Modus</string>
+    <string name="block_reason_result_blocked">Blockiert</string>
+    <string name="block_reason_result_surface_blocked">Bereich blockiert</string>
 
     <!-- ====================================================== -->
     <!-- Pause until actions -->
     <!-- ====================================================== -->
-    <string name="dashboard_pause_until_title">Pause until…</string>
-    <string name="dashboard_pause_until_next_schedule">Pause until next schedule change</string>
-    <string name="dashboard_pause_until_leave_location">Pause until I leave this location</string>
-    <string name="dashboard_pause_until_tomorrow">Pause until tomorrow</string>
+    <string name="dashboard_pause_until_title">Pausieren bis …</string>
+    <string name="dashboard_pause_until_next_schedule">Bis zur nächsten Zeitplanänderung pausieren</string>
+    <string name="dashboard_pause_until_leave_location">Pausieren, bis ich diesen Ort verlasse</string>
+    <string name="dashboard_pause_until_tomorrow">Bis morgen pausieren</string>
 
     <!-- Activity heatmap (Foqos-style habit tracker) -->
-    <string name="activity_section_title">4 Week Activity</string>
-    <string name="activity_heatmap_content_desc">Heatmap of blocked focus time for the last 28 days</string>
+    <string name="activity_section_title">Fokuszeit</string>
+    <string name="activity_heatmap_content_desc">Heatmap der blockierten Fokuszeit der letzten 28 Tage</string>
     <string name="profile_row_meta_fmt">%1$s | %2$s</string>
-    <string name="activity_day_detail_fmt">%1$s · %2$s blocked</string>
-    <string name="activity_day_none_fmt">%1$s · nothing blocked</string>
+    <string name="activity_day_detail_fmt">%1$s · %2$s blockiert</string>
+    <string name="activity_day_none_fmt">%1$s · nichts blockiert</string>
 
-    <string name="settings_title">Settings</string>
+    <string name="settings_title">Einstellungen</string>
 
     <!-- Profile edit sheet (SPA) -->
-    <string name="profile_sheet_edit_profile">Edit profile</string>
-    <string name="profile_sheet_rename">Rename</string>
-    <string name="profile_sheet_mode_title">Rule mode</string>
+    <string name="profile_sheet_edit_profile">Profil bearbeiten</string>
+    <string name="profile_sheet_rename">Umbenennen</string>
+    <string name="profile_sheet_mode_title">Regelmodus</string>
     <string name="profile_sheet_apps">Apps</string>
-    <string name="profile_sheet_apps_summary">Choose blocked or allowed apps</string>
+    <string name="profile_sheet_apps_summary">Blockierte oder erlaubte Apps wählen</string>
     <string name="profile_sheet_websites">Websites</string>
-    <string name="profile_sheet_websites_summary">Blocked or allowed domains</string>
-    <string name="profile_sheet_inapp">In-app rules</string>
-    <string name="profile_sheet_inapp_summary">Shorts, Reels, feeds and more</string>
-    <string name="profile_sheet_schedules">Schedules</string>
-    <string name="profile_sheet_schedules_summary">Time, Wi-Fi, Bluetooth and location</string>
+    <string name="profile_sheet_websites_summary">Blockierte oder erlaubte Domains</string>
+    <string name="profile_sheet_inapp">In-App-Regeln</string>
+    <string name="profile_sheet_inapp_summary">Shorts, Reels, Feeds und mehr</string>
+    <string name="profile_sheet_schedules">Zeitpläne</string>
+    <string name="profile_sheet_schedules_summary">Zeit, WLAN, Bluetooth und Standort</string>
     <string name="profile_sheet_pauses">Pausen</string>
     <string name="profile_sheet_pauses_summary">Limits zum Pausieren des Schutzes</string>
-    <string name="profile_sheet_insights">Insights &amp; history</string>
-    <string name="profile_sheet_insights_summary">Statistics, events and sessions</string>
-    <string name="profile_sheet_delete">Delete profile</string>
-    <string name="profile_sheet_delete_confirm">Delete profile \"%1$s\"? Its rules and limits are removed.</string>
+    <string name="profile_sheet_insights">Statistiken &amp; Verlauf</string>
+    <string name="profile_sheet_insights_summary">Statistiken, Ereignisse und Sitzungen</string>
+    <string name="profile_sheet_delete">Profil löschen</string>
+    <string name="profile_sheet_delete_confirm">Profil „%1$s“ löschen? Seine Regeln und Limits werden entfernt.</string>
     <string name="profile_sheet_last_profile">Dies ist das einzige Profil — erstelle ein neues, bevor du es löschst.</string>
-    <string name="profile_sheet_rename_hint">Profile name</string>
+    <string name="profile_sheet_rename_hint">Profilname</string>
 
     <string name="profile_sheet_tap_to_rename">Tippen zum Umbenennen</string>
 
     <!-- Foqos-style profile rows on Home -->
     <string name="profile_rows_title">Profil</string>
-    <string name="profile_rows_manage">Manage</string>
+    <string name="profile_rows_manage">Profil wechseln</string>
     <string name="profile_row_active">Active</string>
-    <string name="activity_hide">Hide</string>
-    <string name="activity_show">Show</string>
-    <string name="activity_more_insights">More insights</string>
-    <string name="emergency_manage_subtitle">Once per day · 15 minutes · protection pauses while active</string>
+    <string name="activity_hide">Ausblenden</string>
+    <string name="activity_show">Einblenden</string>
+    <string name="activity_more_insights">Mehr Statistiken</string>
+    <string name="emergency_manage_subtitle">Einmal pro Tag · 15 Minuten · Schutz pausiert, solange aktiv</string>
     <string name="hero_stat_apps">Apps</string>
+    <string name="hero_stat_apps_with_limited_fmt">Apps · %1$d begrenzt</string>
     <string name="hero_stat_domains">Domains</string>
-    <string name="hero_stat_blocks">Blocks · 28d</string>
-    <string name="hero_strategy_manual">Manual Blocking</string>
-    <string name="hero_chip_mode_block">Block selected</string>
-    <string name="hero_chip_mode_allow">Allow selected</string>
-    <string name="hero_chip_autoblock">Auto-block new apps</string>
-    <string name="hero_chip_temporary">Temporary</string>
-    <string name="hero_chip_emergency">Emergency</string>
+    <string name="hero_stat_blocks">Sperren · 28 T.</string>
+    <string name="hero_strategy_manual">Manuelles Blockieren</string>
+    <string name="hero_chip_mode_block">Ausgewählte blockieren</string>
+    <string name="hero_chip_mode_allow">Ausgewählte erlauben</string>
+    <string name="hero_chip_autoblock">Neue Apps automatisch blockieren</string>
+    <string name="hero_chip_temporary">Vorübergehend</string>
+    <string name="hero_chip_emergency">Notfall</string>
     
     <!-- Blocking mode picker (hero strategy row) -->
     <string name="blocking_mode_title">Blocking-Methode</string>
@@ -263,6 +266,12 @@
     <string name="blocking_mode_qr_desc">Nur QR-Codes können Loq In ändern</string>
     <string name="blocking_mode_barcode">Barcode-Modus</string>
     <string name="blocking_mode_barcode_desc">Nur Barcodes können Loq In ändern</string>
+    <string name="blocking_mode_qr_setup_title">Erstelle zuerst deinen QR-Code</string>
+    <string name="blocking_mode_qr_setup_message">Im QR-Modus kann nur ein Loq-In-QR-Code den Schutz ausschalten. Erstelle einen und speichere oder teile ihn an einem Ort, den du erreichst. Bis dahin bleibt die Schaltfläche „Deaktivieren“ verfügbar, damit du dich nicht aussperrst.</string>
+    <string name="blocking_mode_qr_setup_action">QR-Code erstellen</string>
+    <string name="blocking_mode_barcode_setup_title">Füge zuerst deinen Barcode hinzu</string>
+    <string name="blocking_mode_barcode_setup_message">Im Barcode-Modus kann nur ein verknüpfter Barcode den Schutz ausschalten. Füge jetzt einen hinzu. Bis dahin bleibt die Schaltfläche „Deaktivieren“ verfügbar, damit du dich nicht aussperrst.</string>
+    <string name="blocking_mode_barcode_setup_action">Barcode hinzufügen</string>
     <string name="blocking_mode_schedule">Zeitplan-Modus</string>
     <string name="blocking_mode_schedule_desc">Nur Zeitpläne können Loq In ändern</string>
     <string name="blocking_mode_unsupported">Auf diesem Gerät nicht verfügbar</string>

@@ -22,6 +22,7 @@ import android.content.Context
 import androidx.annotation.StringRes
 import com.oliver.loqin.R
 import com.oliver.loqin.data.prefs.ScheduleStore
+import com.oliver.loqin.util.TimeFormatPrefs
 import java.util.Locale
 
 /**
@@ -40,6 +41,7 @@ object SchedulePreviewFormatter {
         LOCATION,
         ONE_TIME,
         WEEKLY,
+        TIME,
     }
 
     data class Line(
@@ -47,6 +49,8 @@ object SchedulePreviewFormatter {
         val kind: ValueKind,
         val text: String = "",
         @param:StringRes val detailRes: Int? = null,
+        val startMinutes: Int? = null,
+        val endMinutes: Int? = null,
     )
 
     fun lines(schedule: ScheduleStore.Schedule): List<Line> {
@@ -64,8 +68,10 @@ object SchedulePreviewFormatter {
             triggerLine(schedule),
             Line(
                 labelRes = R.string.schedules_preview_time,
-                kind = ValueKind.TEXT,
+                kind = ValueKind.TIME,
                 text = timeLabel(schedule),
+                startMinutes = schedule.startMinutes,
+                endMinutes = schedule.endMinutes,
             ),
         )
         if (schedule.note.isNotBlank()) {
@@ -161,5 +167,19 @@ object SchedulePreviewFormatter {
         ValueKind.ONE_TIME -> context.getString(R.string.schedules_preview_once)
         ValueKind.WEEKLY -> context.getString(R.string.schedules_preview_weekly)
         ValueKind.TEXT -> line.text
+        // Rendered with the user's time format (Appearance > Time format), not the 24 h label.
+        ValueKind.TIME -> {
+            val start = line.startMinutes
+            val end = line.endMinutes
+            when {
+                start == null -> line.text
+                end == null || end == start -> TimeFormatPrefs.formatMinutesOfDay(context, start)
+                else -> context.getString(
+                    R.string.schedules_time_range_fmt,
+                    TimeFormatPrefs.formatMinutesOfDay(context, start),
+                    TimeFormatPrefs.formatMinutesOfDay(context, end),
+                )
+            }
+        }
     }
 }

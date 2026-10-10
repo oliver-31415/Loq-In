@@ -110,6 +110,8 @@
     <string name="tile_temp_subtitle_choose">Choose duration</string>
     <string name="tile_temp_subtitle_time">%1$s left</string>
     <string name="tile_temp_subtitle_locked">Unavailable while NFC unlock is on</string>
+    <string name="tile_temp_subtitle_mode_locked">Locked in %1$s</string>
+    <string name="home_scan_to_disable">Scan your code to turn Loq In off.</string>
     <string name="tile_emergency_title">Emergency unlock</string>
     <string name="tile_emergency_title_active">Emergency active</string>
     <string name="tile_emergency_title_paused">Emergency paused</string>
@@ -204,7 +206,7 @@
     <string name="dashboard_pause_until_tomorrow">Pause until tomorrow</string>
 
     <!-- Activity heatmap (Foqos-style habit tracker) -->
-    <string name="activity_section_title">4 Week Activity</string>
+    <string name="activity_section_title">Focus time</string>
     <string name="activity_heatmap_content_desc">Heatmap of blocked focus time for the last 28 days</string>
     <string name="profile_row_meta_fmt">%1$s | %2$s</string>
     <string name="activity_day_detail_fmt">%1$s · %2$s blocked</string>
@@ -242,6 +244,7 @@
     <string name="activity_more_insights">More insights</string>
     <string name="emergency_manage_subtitle">Once per day · 15 minutes · protection pauses while active</string>
     <string name="hero_stat_apps">Apps</string>
+    <string name="hero_stat_apps_with_limited_fmt">Apps · %1$d limited</string>
     <string name="hero_stat_domains">Domains</string>
     <string name="hero_stat_blocks">Blocks · 28d</string>
     <string name="hero_strategy_manual">Manual Blocking</string>
@@ -262,6 +265,12 @@
     <string name="blocking_mode_qr_desc">Only QR scans can change Loq In</string>
     <string name="blocking_mode_barcode">Barcode mode</string>
     <string name="blocking_mode_barcode_desc">Only barcode scans can change Loq In</string>
+    <string name="blocking_mode_qr_setup_title">Create your QR code first</string>
+    <string name="blocking_mode_qr_setup_message">In QR mode, only a Loq In QR code can turn protection off. Create one and save or share it somewhere you can reach. Until you do, the Disable button stays available so you can’t get locked out.</string>
+    <string name="blocking_mode_qr_setup_action">Create QR code</string>
+    <string name="blocking_mode_barcode_setup_title">Add your barcode first</string>
+    <string name="blocking_mode_barcode_setup_message">In barcode mode, only a linked barcode can turn protection off. Add one now. Until you do, the Disable button stays available so you can’t get locked out.</string>
+    <string name="blocking_mode_barcode_setup_action">Add barcode</string>
     <string name="blocking_mode_schedule">Schedule mode</string>
     <string name="blocking_mode_schedule_desc">Only schedules can change Loq In</string>
     <string name="blocking_mode_unsupported">Not available on this device</string>

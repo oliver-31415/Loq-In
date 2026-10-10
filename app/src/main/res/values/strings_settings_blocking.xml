@@ -96,7 +96,7 @@
     <string name="pref_mixed_allow_app_picking_summary">Lets you open App rules while Loq In is active. Only changes that increase protection are allowed.</string>
     <string name="toggle_detail_mixed_allow_app_picking">When enabled, App rules can be opened while Loq In is active. Existing protection still cannot be removed: Block selected only allows additions, while Allow selected only allows removing allowed exceptions.</string>
     <string name="pref_mixed_allow_profile_switching_title">Allow managing profiles</string>
-    <string name="pref_mixed_allow_profile_switching_summary">Lets you manage or switch profiles while Loq In is active.</string>
+    <string name="pref_mixed_allow_profile_switching_summary">Lets you switch profiles while Loq In is active, when manual controls can also turn it off.</string>
     <string name="toggle_detail_mixed_allow_profile_switching">Safety default is locked while Loq In is enabled. Enable this only if you intentionally want profile management or switching while protection is active.</string>
     <string name="pref_mixed_allow_schedule_editing_title">Allow schedule editing</string>
     <string name="pref_mixed_allow_schedule_editing_summary">Lets you add, edit, delete, and toggle schedules while Loq In is active.</string>
@@ -167,7 +167,9 @@
     <string name="pref_emergency_summary_used">You already used Emergency Unlock today.</string>
     <string name="pref_emergency_summary_active_with_time">Emergency unlock is active (%1$d min left). Loq In is temporarily disabled.</string>
     <string name="pref_emergency_summary_paused">Emergency unlock is paused (%1$d min left). Tap for resume/end.</string>
-    <string name="emergency_action_start_15">Start emergency unlock &amp; disable Loq In (15 min)</string>
+    <string name="emergency_start_confirm_title">Start emergency unlock?</string>
+    <string name="emergency_start_confirm_message">Loq In turns off for %1$d minutes. You can use this once a day.</string>
+    <string name="emergency_start_confirm_action">Start</string>
     <string name="emergency_paused_inline">Emergency paused (%1$d min)</string>
     <string name="emergency_enabled_inline">Emergency unlock (%1$d min)</string>
     <string name="emergency_manage_title_active">Emergency unlock active (%1$d min)</string>
@@ -286,6 +288,7 @@
     <string name="edit_locked_manage_temp_pauses">Turn off Loq In to change break limits.</string>
     <string name="toast_disable_loqin_to_edit_blocked_apps">Turn off Loq In to edit app rules.</string>
     <string name="toast_disable_loqin_to_switch_profiles">Turn off Loq In before switching profiles.</string>
+    <string name="toast_disable_loqin_to_delete_profiles">Turn off Loq In before deleting a profile.</string>
     <string name="toast_disable_loqin_to_edit_websites">Turn off Loq In before editing website rules.</string>
     <string name="toast_disable_loqin_to_edit_app_limits">Turn off Loq In before editing app limits.</string>
     <string name="home_custom_protection_control">Protection control</string>

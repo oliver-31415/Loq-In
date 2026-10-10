@@ -74,15 +74,15 @@
     <!-- Shared actions and blocking messages -->
     <!-- ====================================================== -->
     <string name="edit">Edit</string>
-    <string name="blocking_in_app_limit_reached_title">In-app limit reached!</string>
+    <string name="blocking_in_app_limit_reached_title">In-app limit reached</string>
     <string name="blocking_instagram_comments_blocked_message">Instagram comments are blocked by Loq In.</string>
     <string name="blocking_daily_limit_duration_fmt">Daily limit: %1$s</string>
 
     <!-- ====================================================== -->
     <!-- Surface limits and messages -->
     <!-- ====================================================== -->
-    <string name="blocking_surface_blocked_title">%1$s is blocked!</string>
-    <string name="blocking_comments_blocked_title">Comments are blocked!</string>
+    <string name="blocking_surface_blocked_title">%1$s blocked</string>
+    <string name="blocking_comments_blocked_title">Comments blocked</string>
     <string name="blocking_surface_base_message">You can’t use this app’s feature while Loq In is active.</string>
 
     <string name="in_app_rules_active_summary_block">%1$d of %2$d sections blocked</string>

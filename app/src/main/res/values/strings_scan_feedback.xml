@@ -6,10 +6,13 @@
     <!-- ====================================================== -->
     <string name="scan_error_nfc_not_linked">This NFC tag is not linked to a Loq In action.</string>
     <string name="scan_error_qr_not_linked">This QR code is not linked to a Loq In action.</string>
+    <string name="scan_error_code_not_from_this_install">Not a code from this Loq In. Create a new one in My keys and codes.</string>
     <string name="scan_error_barcode_not_linked">This barcode is not linked to a Loq In action.</string>
-    <string name="scan_error_camera_permission_qr">Camera permission is required to scan QR codes. Enable it in Permissions and try again.</string>
-    <string name="scan_error_camera_permission_barcode">Camera permission is required to scan barcodes. Enable it in Permissions and try again.</string>
-    <string name="scan_error_camera_permission_code">Camera permission is required to scan QR codes and barcodes. Enable it in Permissions and try again.</string>
+    <string name="scan_error_camera_permission_qr">Loq In needs camera access to scan QR codes. Allow it in Android settings, then try again.</string>
+    <string name="scan_error_camera_permission_barcode">Loq In needs camera access to scan barcodes. Allow it in Android settings, then try again.</string>
+    <string name="scan_error_camera_permission_code">Loq In needs camera access to scan QR codes and barcodes. Allow it in Android settings, then try again.</string>
+    <string name="scan_camera_permission_title">Camera access needed</string>
+    <string name="scan_camera_permission_open_settings">Open settings</string>
     <string name="scan_error_camera_unavailable">No usable camera is available for scanning.</string>
     <string name="scan_error_invalid_payload">The scanned code does not contain a valid Loq In action.</string>
     <string name="scan_error_unsupported_action">This Loq In action is not supported by this version.</string>

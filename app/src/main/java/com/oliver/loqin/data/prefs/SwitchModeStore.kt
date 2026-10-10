@@ -229,6 +229,13 @@ object SwitchModeStore {
             return false
         }
 
+        if (enabled && EmergencyBypassStore.isActive(ctx)) {
+            // An explicit enable ends Emergency Unlock. Otherwise blocking keeps skipping every
+            // rule for the rest of the window while Home already reports protection as active.
+            EmergencyBypassStore.cancel(ctx)
+            AppLogStore.append(ctx, "Emergency", "Emergency mode ended by explicit enable")
+        }
+
         val sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val baseBefore = sp.getBoolean(KEY_ENABLED, false)
         val now = System.currentTimeMillis()

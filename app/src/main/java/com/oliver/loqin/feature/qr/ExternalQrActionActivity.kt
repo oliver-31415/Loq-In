@@ -28,6 +28,7 @@ import com.oliver.loqin.data.prefs.AutomationModeStore
 import com.oliver.loqin.data.prefs.ScanCodeStore
 import com.oliver.loqin.feature.settings.ControlModeGuidance
 import com.oliver.loqin.nfc.InternalScanDispatchGuard
+import com.oliver.loqin.nfc.LoqInCodeSecret
 import com.oliver.loqin.nfc.NfcEntryActivity
 import com.oliver.loqin.nfc.NfcSchema
 import com.oliver.loqin.ui.ThemeUtils
@@ -49,6 +50,13 @@ class ExternalQrActionActivity : AppCompatActivity() {
         val uri = intent?.data
         if (!NfcSchema.isSupportedCommandUri(uri)) {
             Toast.makeText(this, R.string.invalid_qr_code, Toast.LENGTH_SHORT).show()
+            finish()
+            return
+        }
+
+        // Web links and third-party scanners must carry this install's code secret.
+        if (!LoqInCodeSecret.isSigned(this, uri)) {
+            Toast.makeText(this, R.string.scan_error_code_not_from_this_install, Toast.LENGTH_LONG).show()
             finish()
             return
         }

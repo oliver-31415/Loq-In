@@ -129,12 +129,14 @@ import com.oliver.loqin.feature.tools.ActivityHubActivity
 import com.oliver.loqin.feature.usage.ActiveTimeActivity
 import com.oliver.loqin.feature.usage.AppWebsiteUsageActivity
 import com.oliver.loqin.feature.usage.QuickLimitDialogs
+import com.oliver.loqin.feature.usage.UsageStatsRepo
 import com.oliver.loqin.feature.stats.StatsFormat
 import com.oliver.loqin.nfc.NfcWriterActivity
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.ui.dialog.ClockDurationDialSheet
 import com.oliver.loqin.ui.dialog.Dialogs
 import com.oliver.loqin.ui.dialog.EmergencyPinDialog
+import com.oliver.loqin.ui.dialog.padForNavigationBar
 import com.oliver.loqin.ui.dialog.styledDialogEditText
 import com.oliver.loqin.ui.dialog.applyLoqInDialogWidth
 import com.oliver.loqin.ui.dialog.showAccented
@@ -402,11 +404,8 @@ class MainActivity : AppCompatActivity() {
         // Match Schedules look: keep BottomNav slightly above the gesture area on all devices
         EdgeToEdgeUtils.applyBottomNavGestureInset(bottomNav)
 
-        // Keep status/navigation bars neutral (no accent bleed into system bar)
-        WindowInsetsControllerCompat(window, window.decorView).apply {
-            isAppearanceLightStatusBars = false
-            isAppearanceLightNavigationBars = false
-        }
+        // System bar icons follow the theme (no accent bleed into the bars).
+        EdgeToEdgeUtils.applyThemedSystemBars(this)
 
         setSupportActionBar(toolbar)
         applyHomeWordmarkTitle(toolbar)
@@ -678,7 +677,7 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 while (currentCoroutineContext().isActive) {
-                    updateSwitchState()
+                    tickSwitchState()
                     delay(1000)
                 }
             }
@@ -1221,15 +1220,21 @@ class MainActivity : AppCompatActivity() {
 
     private fun toggleSwitchIfAllowed() {
         val enabled = SwitchModeStore.isEnabled(this)
-        val allowMissingBarcodeSafetyDisable =
-            enabled && AutomationModeStore.shouldAllowManualDisableForMissingBarcodeSetup(this)
+        val allowMissingScanSafetyDisable =
+            enabled && AutomationModeStore.shouldAllowManualDisableForMissingScanSetup(this)
 
         val canChange = if (enabled) {
-            AutomationModeStore.isButtonAllowed(this) || allowMissingBarcodeSafetyDisable
+            AutomationModeStore.isButtonAllowed(this) || allowMissingScanSafetyDisable
         } else {
             AutomationModeStore.canButtonEnable(this)
         }
         if (!canChange) {
+            // In a scan mode the code is the way off: open the scanner instead of a dead-end toast.
+            if (enabled && (AutomationModeStore.isQrAllowed(this) || AutomationModeStore.isBarcodeAllowed(this))) {
+                snackRoot().showWarnPill(R.string.home_scan_to_disable)
+                openHeaderScanner()
+                return
+            }
             val msg = if (enabled && AutomationModeStore.isButtonEnableAllowed(this)) {
                 R.string.mode_blocked_button_disable_enable_only
             } else {
@@ -1239,8 +1244,8 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
-        if (allowMissingBarcodeSafetyDisable) {
-            AppLogStore.append(this, "Safety", "Allowing manual disable because only barcode control is enabled but no managed barcodes exist")
+        if (allowMissingScanSafetyDisable) {
+            AppLogStore.append(this, "Safety", "Allowing manual disable because the only disable channel is a scan channel with no code set up")
         }
 
         if (enabled && isNfcLocked()) {
@@ -1604,6 +1609,7 @@ class MainActivity : AppCompatActivity() {
             layoutPresetsSection.visibility = View.GONE
             layoutMoreOptionsSection.visibility = View.GONE
         }
+        sheet.padForNavigationBar()
         sheet.show()
         return true
     }
@@ -1745,17 +1751,22 @@ class MainActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    private fun openRulesDestination(intent: Intent) {
+    private fun openRulesDestination(
+        intent: Intent,
+        @StringRes titleRes: Int = R.string.loqin_rules_locked_title,
+        @StringRes messageRes: Int = R.string.rules_restricted_open_message,
+        @StringRes actionRes: Int = R.string.rules_open_restricted,
+    ) {
         if (!EditingLockGuard.isLocked(this) || EditingLockGuard.isSuppressed(this)) {
             startActivity(intent)
             return
         }
 
         val builder = AlertDialog.Builder(this)
-            .setTitle(R.string.loqin_rules_locked_title)
-            .setMessage(R.string.rules_restricted_open_message)
+            .setTitle(titleRes)
+            .setMessage(messageRes)
         val persistChoice = EditingLockGuard.addDontShowAgain(builder, this)
-        builder.setPositiveButton(R.string.rules_open_restricted) { _, _ ->
+        builder.setPositiveButton(actionRes) { _, _ ->
                 persistChoice()
                 startActivity(intent)
             }
@@ -1857,9 +1868,11 @@ class MainActivity : AppCompatActivity() {
             background = roundelBg()
             isClickable = true
             isFocusable = true
+            contentDescription = this@MainActivity.getString(R.string.close)
             setOnClickListener { sheet.dismiss() }
             addView(TextView(this@MainActivity).apply {
                 text = "\u2715"
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
                 textSize = 14f
                 setTextColor(onSurface)
                 layoutParams = FrameLayout.LayoutParams(
@@ -1907,11 +1920,8 @@ class MainActivity : AppCompatActivity() {
         newRow.addView(newIcon)
         newRow.addView(newLabel)
         newRow.setOnClickListener {
-            // Creating a profile also activates it: blocked while switching is locked.
-            // Anchor to the sheet window so the pill is visible above it.
-            if (!ensureCanSwitchProfiles(showFeedback = true, anchor = newRow)) {
-                return@setOnClickListener
-            }
+            // Creating is allowed while active (as in Manage profiles); showCreateProfileDialog
+            // only activates the new profile when switching is unlocked.
             sheet.dismiss()
             showCreateProfileDialog()
         }
@@ -1961,6 +1971,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         sheet.setContentView(list)
+        sheet.padForNavigationBar()
         sheet.show()
     }
 
@@ -1971,7 +1982,9 @@ class MainActivity : AppCompatActivity() {
         val sheet = BottomSheetDialog(this)
         val view = layoutInflater.inflate(R.layout.sheet_profile_edit, null)
         sheet.setContentView(view)
-        sheet.behavior.peekHeight = resources.displayMetrics.heightPixels / 2
+        // Open fully: a half-height peek hid "Delete profile" under the gesture bar until scrolled.
+        sheet.behavior.skipCollapsed = true
+        sheet.behavior.state = BottomSheetBehavior.STATE_EXPANDED
 
         // Row icons + green labels follow the live accent (?attr/colorPrimary would fall
         // back to the compile-time green since Home never applies an accent theme variant).
@@ -2044,7 +2057,13 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent(this, SchedulesActivity::class.java).apply {
                 putExtra(SchedulesActivity.EXTRA_PROFILE_NAME, profile)
             }
-            openRulesDestination(intent)
+            // Unlike rule editors, schedules can't be added while active, so don't promise it.
+            openRulesDestination(
+                intent,
+                titleRes = R.string.schedules_locked_open_title,
+                messageRes = R.string.schedules_locked_open_message,
+                actionRes = R.string.schedules_locked_open_action,
+            )
         }
         val tvTempPausesSummary = view.findViewById<TextView>(R.id.tvSheetTempPausesSummary)
         fun refreshTempPausesSummary() {
@@ -2075,6 +2094,10 @@ class MainActivity : AppCompatActivity() {
                 ).applyLoqInStyle().show()
                 return@setOnClickListener
             }
+            if (!ProtectionChangeGate.isEditingUnlocked(this)) {
+                it.showWarnPill(R.string.toast_disable_loqin_to_delete_profiles)
+                return@setOnClickListener
+            }
             MaterialAlertDialogBuilder(this)
                 .setTitle(getString(R.string.profile_sheet_delete))
                 .setMessage(getString(R.string.profile_sheet_delete_confirm, profile))
@@ -2089,6 +2112,7 @@ class MainActivity : AppCompatActivity() {
                 .showDestructiveAccented()
         }
 
+        sheet.padForNavigationBar()
         sheet.show()
     }
 
@@ -2097,8 +2121,16 @@ class MainActivity : AppCompatActivity() {
             title = getString(R.string.profile_sheet_new_profile),
             hint = getString(R.string.profile_sheet_rename_hint),
             onConfirm = { name ->
-                if (name.isNotEmpty() && ProfileStore.addProfile(this, name)) {
-                    ProfileStore.setCurrent(this, name)
+                if (name.isNotEmpty() && ProfileStore.getProfiles(this).contains(name)) {
+                    snackRoot().showWarnPill(getString(R.string.profile_name_exists, name))
+                } else if (name.isNotEmpty() && ProfileStore.addProfile(this, name)) {
+                    // Creating is harmless; making the new (empty) profile current is a switch
+                    // and must respect the same lock as picking an existing profile.
+                    if (ensureCanSwitchProfiles(showFeedback = false)) {
+                        ProfileStore.setCurrent(this, name)
+                    } else {
+                        snackRoot().showWarnPill(getString(R.string.profile_created_not_switched, name))
+                    }
                     refreshProfileRowsUi()
                     refreshBlockedList()
                     updateSwitchState()
@@ -2182,9 +2214,24 @@ class MainActivity : AppCompatActivity() {
         }
         tvHeroProfileName.text = profile
 
-        val appCount = ProfileStore.getSelectedForProfileMode(this, profile).size
+        // In block mode a selected app with limits is limited, not blocked: count them apart.
+        val selectedApps = ProfileStore.getSelectedForProfileMode(this, profile)
+        val limitedCount = if (ProfileRuleModeStore.isAllowMode(this, profile)) {
+            0
+        } else {
+            selectedApps.count { pkg ->
+                UsageLimitStore.getLimitMinutes(this, profile, pkg) > 0 ||
+                    AttemptLimitStore.getLimitAttempts(this, profile, pkg) > 0 ||
+                    SessionLimitStore.getLimitMinutes(this, profile, pkg) > 0
+            }
+        }
         val domainCount = DomainBlockStore.getDomainsForProfile(this, profile).size
-        tvHeroStatApps.text = appCount.toString()
+        tvHeroStatApps.text = (selectedApps.size - limitedCount).toString()
+        findViewById<TextView>(R.id.tvHeroStatAppsLabel)?.text = if (limitedCount > 0) {
+            getString(R.string.hero_stat_apps_with_limited_fmt, limitedCount)
+        } else {
+            getString(R.string.hero_stat_apps)
+        }
         tvHeroStatDomains.text = domainCount.toString()
         thread {
             val blocks28d = BlockCountStore.getTotalForLastNDays(this, 28)
@@ -2430,6 +2477,11 @@ class MainActivity : AppCompatActivity() {
                     else R.string.permissions_accessibility_title
                 )
             )
+        }
+
+        // Usage access powers limits and stats; Permissions marks it Required, so count it here too.
+        if (!UsageStatsRepo.hasUsageAccess(this)) {
+            missing.add(getString(R.string.permissions_usage_access_title))
         }
 
         // allow notifications (optional, but recommended for tips + status)
@@ -3323,6 +3375,35 @@ class MainActivity : AppCompatActivity() {
      * - active profile label
      * - NFC lock UI
      */
+    /**
+     * Once-a-second refresh for time-based state (timers, expiry). A full [updateSwitchState]
+     * rebuilds texts, spans and drawables, and every rebuild fires accessibility events that the
+     * in-process accessibility service answers on this thread; running it every second kept the
+     * main thread busy enough to ANR. Only refresh when something visible actually changed.
+     */
+    private fun tickSwitchState() {
+        SwitchModeStore.finishTemporaryDisableIfExpired(this)
+        SwitchModeStore.finishTemporaryEnableIfExpired(this)
+        val signature = listOf(
+            SwitchModeStore.isEnabled(this),
+            SwitchModeStore.isBaseEnabled(this),
+            SwitchModeStore.getTemporaryRemainingMillis(this) / 1000L,
+            SwitchModeStore.getTemporaryEnableRemainingMillis(this) / 1000L,
+            EmergencyBypassStore.isActive(this),
+            EmergencyBypassStore.isPaused(this),
+            EmergencyBypassStore.minutesRemaining(this),
+            EmergencyBypassStore.hasUsedToday(this),
+            formatActiveDuration(SwitchModeStore.getActiveDurationMillis(this)),
+            ActiveDurationStore.todayMs(this) / 60_000L,
+            ProfileStore.getCurrent(this),
+        ).joinToString("|")
+        if (signature == lastTickSignature) return
+        lastTickSignature = signature
+        updateSwitchState()
+    }
+
+    private var lastTickSignature: String? = null
+
     private fun updateSwitchState() {
         SwitchModeStore.finishTemporaryDisableIfExpired(this)
         SwitchModeStore.finishTemporaryEnableIfExpired(this)
@@ -3516,7 +3597,15 @@ class MainActivity : AppCompatActivity() {
             }
             SwitchModeStore.isEnabled(this) -> {
                 tvTempTileTitle.text = getString(R.string.tile_temp_title_pause)
-                tvTempTileSubtitle.text = getString(R.string.tile_temp_subtitle_choose)
+                // Breaks use the manual channel; say so instead of inviting a tap that is refused.
+                tvTempTileSubtitle.text = if (AutomationModeStore.isButtonAllowed(this)) {
+                    getString(R.string.tile_temp_subtitle_choose)
+                } else {
+                    getString(
+                        R.string.tile_temp_subtitle_mode_locked,
+                        blockingModeLabel(AutomationModeStore.getMode(this)),
+                    )
+                }
             }
             else -> {
                 val currentProfile = ProfileStore.getCurrent(this).orEmpty().trim()
@@ -3616,13 +3705,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun showEmergencyUnlockStartDialog() {
         MaterialAlertDialogBuilder(this)
-            .setTitle(getString(R.string.pref_emergency_title))
-            .setMessage(getString(R.string.emergency_action_start_15))
+            .setTitle(R.string.emergency_start_confirm_title)
+            .setMessage(getString(R.string.emergency_start_confirm_message, 15))
             .setNegativeButton(R.string.cancel, null)
-            .setPositiveButton(R.string.ok) { _, dialog ->
+            .setPositiveButton(R.string.emergency_start_confirm_action) { _, _ ->
                 val ok = EmergencyBypassStore.enableIfAllowed(this, 15)
-                // Anchor to the dialog window so the pill is visible above it.
-                val pillAnchor = (dialog as? AlertDialog)?.window?.decorView ?: snackRoot()
+                val pillAnchor = snackRoot()
                 if (ok) {
                     AppLogStore.append(this, "Emergency", "Emergency mode started from Home for 15m")
                     SwitchModeStore.setTemporarilyDisabled(this, 15 * 60_000L, isEmergency = true)
@@ -4729,6 +4817,7 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, BlockedInboxActivity::class.java))
         }
 
+        sheet.padForNavigationBar()
         sheet.show()
     }
 

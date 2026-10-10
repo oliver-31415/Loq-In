@@ -11,7 +11,6 @@
     <string name="attempt_limit_label">Öffnen-Limit: %1$d/Tag</string>
     <string name="limit_tile_daily_fmt">%1$d Min./Tag</string>
     <string name="limit_tile_visit_fmt">%1$d Min./Besuch</string>
-    <string name="limit_tile_attempts_fmt">%1$d Öffnungen/Tag</string>
     <plurals name="daily_attempt_limit_value_format">
         <item quantity="one">%1$d Öffnung/Tag</item>
         <item quantity="other">%1$d Öffnungen/Tag</item>
@@ -82,14 +81,30 @@
     <string name="app_limit_visit_subtitle">Längster einzelner Besuch</string>
     <string name="app_limit_save">Limits speichern</string>
     <string name="app_limit_remove">Limits entfernen</string>
+    <string name="app_limit_a11y_time_decrease">Tägliche Minuten verringern</string>
+    <string name="app_limit_a11y_time_increase">Tägliche Minuten erhöhen</string>
+    <string name="app_limit_a11y_opens_decrease">Öffnungen pro Tag verringern</string>
+    <string name="app_limit_a11y_opens_increase">Öffnungen pro Tag erhöhen</string>
+    <string name="app_limit_a11y_visit_decrease">Minuten pro Besuch verringern</string>
+    <string name="app_limit_a11y_visit_increase">Minuten pro Besuch erhöhen</string>
     <string name="app_limit_remove_confirm_title">Limits entfernen?</string>
     <string name="app_limit_remove_confirm_message">Dadurch werden alle Limits für %1$s gelöscht und die heutigen Zähler zurückgesetzt.</string>
+    <string name="app_limit_remove_choice_message">Was soll mit %1$s passieren, wenn die Limits entfernt sind?\n\nNicht mehr begrenzen: Die App ist wieder frei nutzbar.\nVollständig blockieren: Die App ist immer blockiert, solange Loq In aktiv ist.</string>
+    <string name="app_limit_remove_stop_limiting">Nicht mehr begrenzen</string>
+    <string name="app_limit_remove_block_completely">Vollständig blockieren</string>
+    <string name="app_limit_remove_stop_limiting_locked">Deaktiviere Loq In, um das Limit für diese App aufzuheben.</string>
     <string name="app_limit_sentence_none">Keine Limits festgelegt. Diese App kann ohne Einschränkungen geöffnet werden.</string>
     <string name="app_limit_sentence_fully_blocked">Diese App ist im aktuellen Profil vollständig blockiert. Füge ein Limit hinzu, um eine eingeschränkte Nutzung zu erlauben.</string>
     <string name="app_limit_sentence_time_fmt">Bis zu %1$d Min./Tag erlaubt</string>
-    <string name="app_limit_sentence_split_fmt">\u0020\u00b7 aufgeteilt auf höchstens %1$d Öffnungen</string>
+    <plurals name="app_limit_sentence_split">
+        <item quantity="one">\u0020\u00b7 aufgeteilt auf höchstens %1$d Öffnung</item>
+        <item quantity="other">\u0020\u00b7 aufgeteilt auf höchstens %1$d Öffnungen</item>
+    </plurals>
     <string name="app_limit_sentence_visit_fmt">\u0020\u00b7 max. %1$d Min. pro Besuch</string>
-    <string name="app_limit_sentence_opens_only_fmt">Bis zu %1$d Öffnungen pro Tag</string>
+    <plurals name="app_limit_sentence_opens_only">
+        <item quantity="one">Bis zu %1$d Öffnung pro Tag</item>
+        <item quantity="other">Bis zu %1$d Öffnungen pro Tag</item>
+    </plurals>
     <string name="app_limit_sentence_visit_only_fmt">Bis zu %1$d Min. pro Besuch</string>
     <string name="app_limit_error_required">Gib einen Wert ein</string>
     <string name="app_limit_error_not_number">Gib eine ganze Zahl ein</string>
@@ -422,6 +437,7 @@
     <string name="hidden_apps_tile_unselected_desc">%1$s, sichtbar. Doppeltippen zum Ausblenden.</string>
     <string name="hidden_apps_select_all">Alle auswählen</string>
     <string name="hidden_apps_clear_all">Alle zurücksetzen</string>
+    <string name="hidden_apps_locked_hide">Deaktiviere Loq In, um Apps von der Blockierung auszunehmen. Einblenden ist weiterhin möglich.</string>
     <plurals name="hidden_apps_saved_notice">
         <item quantity="one">%1$d Änderung gespeichert.</item>
         <item quantity="other">%1$d Änderungen gespeichert.</item>

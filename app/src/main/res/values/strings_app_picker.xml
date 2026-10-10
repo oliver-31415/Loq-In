@@ -24,6 +24,14 @@
     <string name="no_blocked_apps">No blocked apps</string>
     <string name="no_allowed_apps">No allowed apps</string>
     <string name="blocked_message">You can’t use this app while Loq In is active.</string>
+    <string name="blocked_title_limit_reached">Limit reached</string>
+    <string name="blocked_message_open_limit">You’ve used all of today’s opens for this app.</string>
+    <string name="blocked_message_time_limit">You’ve used today’s screen time for this app.</string>
+    <string name="blocked_message_visit_limit">This visit reached the per-visit limit for this app.</string>
+    <plurals name="blocked_attempts_today">
+        <item quantity="one">Blocked %1$d time today</item>
+        <item quantity="other">Blocked %1$d times today</item>
+    </plurals>
     <string name="search_apps">Search apps</string>
 
     <!-- ====================================================== -->
