@@ -31,10 +31,13 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.preference.PreferenceManager
 import androidx.work.ExistingPeriodicWorkPolicy
+import androidx.work.OneTimeWorkRequestBuilder
 import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.Worker
 import androidx.work.WorkerParameters
+import androidx.work.workDataOf
+import com.oliver.loqin.BuildConfig
 import com.oliver.loqin.R
 import com.oliver.loqin.data.prefs.BlockCountStore
 import com.oliver.loqin.data.prefs.BlockedTimeStore
@@ -64,7 +67,10 @@ class WeeklySummaryWorker(context: Context, params: WorkerParameters) : Worker(c
             blocks = BlockCountStore.getTotalForDays(ctx, lastWeek),
             focusMs = lastWeek.sumOf { BlockedTimeStore.getProtectionMsForDay(ctx, it) },
         )
-        if (!WeeklySummary.shouldSend(UsageStore.getDaysWithUsageCount(ctx), totals)) {
+        // Debug builds can force a run that ignores the 7-days-of-data minimum (testing only).
+        val forced = BuildConfig.DEBUG && inputData.getBoolean(KEY_FORCE, false)
+        val daysWithUsage = if (forced) WeeklySummary.MIN_DAYS_WITH_USAGE else UsageStore.getDaysWithUsageCount(ctx)
+        if (!WeeklySummary.shouldSend(daysWithUsage, totals)) {
             return Result.success()
         }
         post(ctx, bodyText(ctx, totals))
@@ -126,12 +132,23 @@ class WeeklySummaryWorker(context: Context, params: WorkerParameters) : Worker(c
 
     companion object {
         const val PREF_ENABLED = "pref_weekly_summary_enabled"
+        private const val KEY_FORCE = "force"
         private const val CHANNEL_ID = "weekly_summary"
         private const val NOTIFICATION_ID = 41_007
         private const val WORK_NAME = "weekly_summary"
 
         fun isEnabled(ctx: Context): Boolean =
             PreferenceManager.getDefaultSharedPreferences(ctx).getBoolean(PREF_ENABLED, true)
+
+        /** Debug builds only: runs the summary now, without the 7-day minimum. */
+        fun runNowForDebug(ctx: Context) {
+            if (!BuildConfig.DEBUG) return
+            WorkManager.getInstance(ctx).enqueue(
+                OneTimeWorkRequestBuilder<WeeklySummaryWorker>()
+                    .setInputData(workDataOf(KEY_FORCE to true))
+                    .build()
+            )
+        }
 
         /** Schedules the weekly job (Mondays ~09:00); keeps an existing schedule. */
         fun ensureScheduled(ctx: Context) {

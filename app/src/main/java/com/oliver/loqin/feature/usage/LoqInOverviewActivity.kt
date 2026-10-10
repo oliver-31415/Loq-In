@@ -36,6 +36,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.view.setPadding
 import androidx.preference.PreferenceManager
 import com.google.android.material.switchmaterial.SwitchMaterial
+import com.oliver.loqin.BuildConfig
 import com.oliver.loqin.R
 import com.oliver.loqin.data.prefs.ActiveDurationStore
 import com.oliver.loqin.data.prefs.AppLaunchCountStore
@@ -790,6 +791,13 @@ class LoqInOverviewActivity : AppCompatActivity() {
             setPadding(0, dp(20), 0, 0)
             isClickable = true
             setOnClickListener { switch.toggle() }
+            if (BuildConfig.DEBUG) {
+                // Test hook: long-press sends the summary now (debug builds only).
+                setOnLongClickListener {
+                    WeeklySummaryWorker.runNowForDebug(this@LoqInOverviewActivity)
+                    true
+                }
+            }
             addView(texts)
             addView(switch)
         }
