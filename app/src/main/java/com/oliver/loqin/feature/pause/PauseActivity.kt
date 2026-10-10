@@ -120,6 +120,16 @@ class PauseActivity : AppCompatActivity() {
         finish()
     }
 
+    override fun onStart() {
+        super.onStart()
+        PauseGrants.onPauseVisible(intent.getStringExtra(EXTRA_PKG))
+    }
+
+    override fun onStop() {
+        PauseGrants.onPauseVisible(null)
+        super.onStop()
+    }
+
     override fun onDestroy() {
         timer?.cancel()
         super.onDestroy()

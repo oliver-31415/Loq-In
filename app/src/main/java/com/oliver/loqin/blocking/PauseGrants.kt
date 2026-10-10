@@ -47,10 +47,20 @@ object PauseGrants {
         if (grantedPkg != null && grantedPkg != pkg) grantedPkg = null
     }
 
-    /** Debounces repeated events so one open shows one pause screen. */
-    fun shouldShowPause(pkg: String, windowMs: Long = 2_000L): Boolean {
+    @Volatile private var visiblePkg: String? = null
+
+    fun onPauseVisible(pkg: String?) {
+        visiblePkg = pkg
+    }
+
+    /**
+     * One open shows one pause screen: not while it is already showing for [pkg], and not again
+     * during the short gap between launching it and it becoming visible.
+     */
+    fun shouldShowPause(pkg: String, launchGapMs: Long = 1_000L): Boolean {
+        if (visiblePkg == pkg) return false
         val now = SystemClock.elapsedRealtime()
-        if (lastPauseShownPkg == pkg && now - lastPauseShownAt < windowMs) return false
+        if (lastPauseShownPkg == pkg && now - lastPauseShownAt < launchGapMs) return false
         lastPauseShownPkg = pkg
         lastPauseShownAt = now
         return true

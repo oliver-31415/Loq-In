@@ -59,6 +59,7 @@ import com.oliver.loqin.data.prefs.InAppDetectionStore
 import com.oliver.loqin.data.prefs.LimitReachedStore
 import com.oliver.loqin.data.prefs.LastBlockReasonStore
 import com.oliver.loqin.data.prefs.OpenCountStore
+import com.oliver.loqin.data.prefs.PauseRuleStore
 import com.oliver.loqin.data.prefs.ProfileStore
 import com.oliver.loqin.data.prefs.ProfileRuleModeStore
 import com.oliver.loqin.data.prefs.WebsiteRuleModeStore
@@ -74,6 +75,7 @@ import com.oliver.loqin.data.prefs.UsageLimitSessionRuntimeStore
 import com.oliver.loqin.data.prefs.UsageStore
 import com.oliver.loqin.data.prefs.WebUsageStore
 import com.oliver.loqin.feature.blocker.BlockerActivity
+import com.oliver.loqin.feature.pause.PauseActivity
 import com.oliver.loqin.platform.receiver.schedule.ScheduleReceiver
 import com.oliver.loqin.util.AndroidSystemPackages
 import com.oliver.loqin.util.AppBlockSafety
@@ -2024,6 +2026,7 @@ class LoqInAccessibilityService : AccessibilityService() {
         // Track every observed foreground package, even if that package has no attempt limit.
         // This lets the next limited app count as a new open after the user really switched away.
         lastOpenSessionPkg = pkg
+        PauseGrants.onVisitChanged(pkg)
         lastOpenSessionAt = now
 
         if (sameForegroundSession) {
@@ -2226,6 +2229,7 @@ class LoqInAccessibilityService : AccessibilityService() {
                 reason = if (managed) "decision_allow" else "not_managed_for_profile",
                 details = "profile=$profile blockedCount=${blocked.size} hardBlocked=$hardBlocked allowModeListed=$allowModeListed essentialAllowed=$essentialAllowed limitMin=$limitMin attemptLimit=$attemptLimit opensExceeded=$opensExceeded limitUsageMs=$effectiveUsageMsToday perVisitLimitMin=$perVisitLimitMin perVisitUsageMs=$perVisitUsageMs force=$force event=${eventTypeLabel(event)}"
             )
+            maybeShowPause(profile, pkg)
             return
         }
         markRuntimeBlockCheck(
@@ -2256,6 +2260,34 @@ class LoqInAccessibilityService : AccessibilityService() {
         )
         blockNow(pkg, immediate = decision.immediate)
     }
+
+    /** Soft friction: apps with a pause rule get a countdown screen instead of a block. */
+    private fun maybeShowPause(profile: String, pkg: String) {
+        if (!PauseRuleStore.isPaused(this, profile, pkg)) return
+        if (PauseGrants.isGranted(pkg)) return
+        if (!PauseGrants.shouldShowPause(pkg)) return
+        val opensToday = AppLaunchCountStore.getForDateRange(this, pkg, startOfTodayMs(), System.currentTimeMillis())
+            .coerceAtLeast(1)
+        val wait = PauseRuleStore.waitSeconds(
+            PauseRuleStore.getBaseSeconds(this, profile),
+            PauseRuleStore.getStepSeconds(this, profile),
+            opensBeforeToday = opensToday - 1,
+        )
+        appendBlockingLog(
+            category = "pause",
+            key = "pause|$pkg",
+            message = "pkg=$pkg profile=$profile wait=${wait}s opensToday=$opensToday",
+            throttleMs = 1_000L
+        )
+        runCatching { PauseActivity.show(this, pkg, safeAppLabel(pkg), wait, opensToday) }
+    }
+
+    private fun startOfTodayMs(): Long = java.util.Calendar.getInstance().apply {
+        set(java.util.Calendar.HOUR_OF_DAY, 0)
+        set(java.util.Calendar.MINUTE, 0)
+        set(java.util.Calendar.SECOND, 0)
+        set(java.util.Calendar.MILLISECOND, 0)
+    }.timeInMillis
 
     private fun isBlockSuppressed(pkg: String, now: Long = System.currentTimeMillis()): Boolean {
         val until = suppressedBlockingUntilByPkg[pkg] ?: return false
