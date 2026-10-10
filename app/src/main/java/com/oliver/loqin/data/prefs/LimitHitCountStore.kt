@@ -37,6 +37,11 @@ object LimitHitCountStore {
         return readIntCompat(prefs(context), key(todayYmdInt()))
     }
 
+    /** Limit hits recorded for [ymd] (yyyymmdd). */
+    fun getForDay(context: Context, ymd: Int): Int {
+        return readIntCompat(prefs(context), key(ymd))
+    }
+
     fun getForLastNDays(context: Context, days: Int): Int {
         if (days <= 0) {
             return 0

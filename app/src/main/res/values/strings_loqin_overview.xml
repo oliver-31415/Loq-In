@@ -32,4 +32,37 @@
     <string name="loqin_overview_schedule_enables">Schedules that enabled Loq In</string>
     <string name="loqin_overview_schedule_disables">Schedules that disabled Loq In</string>
 
+    <!-- Days within limits streak -->
+    <string name="loqin_streak_title">Days within limits</string>
+    <plurals name="loqin_streak_days">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+    <string name="loqin_streak_subtitle">within your limits</string>
+    <plurals name="loqin_streak_best">
+        <item quantity="one">Best: %1$d day</item>
+        <item quantity="other">Best: %1$d days</item>
+    </plurals>
+    <string name="loqin_streak_empty">Stay within your limits today to start a streak</string>
+    <string name="loqin_streak_day_description">%1$s: %2$s</string>
+    <string name="loqin_streak_status_within_limits">within limits</string>
+    <string name="loqin_streak_status_grace">limit reached, streak kept</string>
+    <string name="loqin_streak_status_limit_reached">limit reached</string>
+    <string name="loqin_streak_status_no_protection">no protection</string>
+
+    <!-- Weekly summary notification -->
+    <string name="weekly_summary_channel_name">Weekly summary</string>
+    <string name="weekly_summary_channel_desc">A short look back at your week, every Monday morning.</string>
+    <string name="weekly_summary_title">Your week with Loq In</string>
+    <string name="weekly_summary_body_fmt">Last week: %1$s screen time%2$s · %3$s · %4$s focus time</string>
+    <string name="weekly_summary_less_fmt">\u0020(%1$d%% less than the week before)</string>
+    <string name="weekly_summary_more_fmt">\u0020(%1$d%% more than the week before)</string>
+    <plurals name="weekly_summary_blocks">
+        <item quantity="one">%1$d block</item>
+        <item quantity="other">%1$d blocks</item>
+    </plurals>
+    <string name="weekly_summary_duration_hm_fmt">%1$dh %2$dm</string>
+    <string name="weekly_summary_duration_m_fmt">%1$dm</string>
+    <string name="weekly_summary_toggle_title">Weekly summary notification</string>
+    <string name="weekly_summary_toggle_summary">Every Monday at 9:00, a short look back at your week.</string>
 </resources>

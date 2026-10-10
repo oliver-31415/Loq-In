@@ -23,8 +23,10 @@ import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Bundle
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -32,12 +34,16 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.view.setPadding
+import androidx.preference.PreferenceManager
+import com.google.android.material.switchmaterial.SwitchMaterial
+import com.oliver.loqin.BuildConfig
 import com.oliver.loqin.R
 import com.oliver.loqin.data.prefs.ActiveDurationStore
 import com.oliver.loqin.data.prefs.AppLaunchCountStore
 import com.oliver.loqin.data.prefs.BarcodeScanCountStore
 import com.oliver.loqin.data.prefs.BlockCategoryCountStore
 import com.oliver.loqin.data.prefs.BlockCountStore
+import com.oliver.loqin.data.prefs.BlockedTimeStore
 import com.oliver.loqin.data.prefs.EmergencyUnlockCountStore
 import com.oliver.loqin.data.prefs.LimitHitCountStore
 import com.oliver.loqin.data.prefs.NfcScanCountStore
@@ -47,6 +53,7 @@ import com.oliver.loqin.data.prefs.LoqInActionCountStore
 import com.oliver.loqin.data.prefs.TempEnableCountStore
 import com.oliver.loqin.feature.stats.StatsFormat
 import com.oliver.loqin.theme.AccentColor
+import com.oliver.loqin.theme.CustomAccentApplier
 import com.oliver.loqin.ui.EdgeToEdgeUtils
 import com.oliver.loqin.ui.SegmentedToggleUi
 import com.oliver.loqin.ui.ThemeUtils
@@ -55,10 +62,13 @@ import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
+import com.google.android.material.card.MaterialCardView
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.text.NumberFormat
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Locale
 
 /**
  * Loq In Stats: counters for scans, protection activity, actions and schedules.
@@ -89,6 +99,11 @@ class LoqInOverviewActivity : AppCompatActivity() {
     private lateinit var scansGrid: LinearLayout
     private lateinit var activityGrid: LinearLayout
     private lateinit var actionsGrid: LinearLayout
+    private lateinit var streakValue: TextView
+    private lateinit var streakSubtitle: TextView
+    private lateinit var streakBest: TextView
+    private val streakMarkerColumns = mutableListOf<LinearLayout>()
+    private val streakMarkerDots = mutableListOf<View>()
 
     private val rangeButtons: MutableMap<Range, MaterialButton> = linkedMapOf()
     private var selectedRange: Range = Range.TODAY
@@ -156,6 +171,8 @@ class LoqInOverviewActivity : AppCompatActivity() {
             )
         )
 
+        content.addView(buildStreakCard())
+
         rangeGroup = MaterialButtonToggleGroup(this).apply {
             isSingleSelection = true
             isSelectionRequired = true
@@ -189,6 +206,8 @@ class LoqInOverviewActivity : AppCompatActivity() {
         actionsGrid = newStatGrid()
         content.addView(actionsGrid)
 
+        content.addView(buildWeeklySummaryToggle())
+
         content.addView(TextView(this).apply {
             text = getString(R.string.loqin_overview_storage_note)
             textSize = 13f
@@ -203,11 +222,13 @@ class LoqInOverviewActivity : AppCompatActivity() {
         rangeGroup.check(todayButton.id)
         syncRangeButtonUi()
         refresh()
+        refreshStreakCard()
     }
 
     override fun onResume() {
         super.onResume()
         refresh()
+        refreshStreakCard()
         syncStatsArchive()
     }
 
@@ -547,6 +568,238 @@ class LoqInOverviewActivity : AppCompatActivity() {
             )
             Range.YEAR -> year(calendar.get(Calendar.YEAR))
             Range.OVERALL -> overall()
+        }
+    }
+
+    private fun buildStreakCard(): View {
+        val card = MaterialCardView(this).apply {
+            setCardBackgroundColor(ContextCompat.getColor(this@LoqInOverviewActivity, R.color.foqos_surface))
+            strokeColor = ContextCompat.getColor(this@LoqInOverviewActivity, R.color.foqos_outline_variant)
+            strokeWidth = dp(1)
+            radius = dp(18).toFloat()
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { bottomMargin = dp(14) }
+        }
+
+        val column = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            setPadding(dp(16), dp(14), dp(16), dp(16))
+        }
+        column.addView(TextView(this).apply {
+            text = getString(R.string.loqin_streak_title)
+            textSize = 13f
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(onSurfaceColor())
+            alpha = 0.72f
+        })
+        streakValue = TextView(this).apply {
+            typeface = Typeface.DEFAULT_BOLD
+            setTextColor(primaryColor())
+            setPadding(0, dp(6), 0, 0)
+        }
+        column.addView(streakValue)
+        streakSubtitle = TextView(this).apply {
+            textSize = 14f
+            setTextColor(onSurfaceColor())
+            text = getString(R.string.loqin_streak_subtitle)
+        }
+        column.addView(streakSubtitle)
+        streakBest = TextView(this).apply {
+            textSize = 13f
+            setTextColor(onSurfaceColor())
+            alpha = 0.72f
+            setPadding(0, dp(2), 0, 0)
+        }
+        column.addView(streakBest)
+
+        val markerRow = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { topMargin = dp(14) }
+        }
+        streakMarkerColumns.clear()
+        streakMarkerDots.clear()
+        repeat(LimitStreak.MARKER_DAYS) {
+            val markerColumn = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = Gravity.CENTER_HORIZONTAL
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_YES
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            }
+            val dot = View(this).apply {
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                layoutParams = LinearLayout.LayoutParams(dp(20), dp(20))
+            }
+            val label = TextView(this).apply {
+                textSize = 11f
+                alpha = 0.72f
+                gravity = Gravity.CENTER_HORIZONTAL
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                setTextColor(onSurfaceColor())
+            }
+            markerColumn.addView(dot)
+            markerColumn.addView(label, LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply { topMargin = dp(4) })
+            markerRow.addView(markerColumn)
+            streakMarkerColumns.add(markerColumn)
+            streakMarkerDots.add(dot)
+        }
+        column.addView(markerRow)
+
+        card.addView(
+            column,
+            FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.WRAP_CONTENT
+            )
+        )
+        return card
+    }
+
+    private fun refreshStreakCard() {
+        if (!::streakValue.isInitialized) {
+            return
+        }
+        val records = ArrayList<LimitStreak.DayRecord>(LimitStreak.HISTORY_DAYS)
+        val days = ArrayList<Calendar>(LimitStreak.HISTORY_DAYS)
+        val cursor = Calendar.getInstance()
+        cursor.add(Calendar.DAY_OF_YEAR, -(LimitStreak.HISTORY_DAYS - 1))
+        repeat(LimitStreak.HISTORY_DAYS) {
+            val ymd = ymdOf(cursor)
+            records.add(
+                LimitStreak.DayRecord(
+                    protectionMs = BlockedTimeStore.getProtectionMsForDay(this, ymd),
+                    limitHits = LimitHitCountStore.getForDay(this, ymd),
+                )
+            )
+            days.add(cursor.clone() as Calendar)
+            cursor.add(Calendar.DAY_OF_YEAR, 1)
+        }
+        val result = LimitStreak.evaluate(records)
+
+        if (result.current == 0) {
+            streakValue.text = getString(R.string.loqin_streak_empty)
+            streakValue.textSize = 17f
+            streakSubtitle.visibility = View.GONE
+        } else {
+            streakValue.text = resources.getQuantityString(
+                R.plurals.loqin_streak_days,
+                result.current,
+                result.current
+            )
+            streakValue.textSize = 34f
+            streakSubtitle.visibility = View.VISIBLE
+        }
+        if (result.best > 0) {
+            streakBest.visibility = View.VISIBLE
+            streakBest.text = resources.getQuantityString(
+                R.plurals.loqin_streak_best,
+                result.best,
+                result.best
+            )
+        } else {
+            streakBest.visibility = View.GONE
+        }
+
+        val shortDay = SimpleDateFormat("EEE", Locale.getDefault())
+        val recentDays = days.takeLast(result.recentStatuses.size)
+        result.recentStatuses.forEachIndexed { index, status ->
+            val dot = streakMarkerDots[index]
+            val markerColumn = streakMarkerColumns[index]
+            val dayName = shortDay.format(recentDays[index].time)
+            val statusRes = when (status) {
+                LimitStreak.DayStatus.WITHIN_LIMITS -> R.string.loqin_streak_status_within_limits
+                LimitStreak.DayStatus.GRACE -> R.string.loqin_streak_status_grace
+                LimitStreak.DayStatus.LIMIT_REACHED -> R.string.loqin_streak_status_limit_reached
+                LimitStreak.DayStatus.NO_PROTECTION -> R.string.loqin_streak_status_no_protection
+            }
+            when (status) {
+                LimitStreak.DayStatus.WITHIN_LIMITS -> {
+                    dot.setBackgroundResource(R.drawable.bg_round_filled)
+                    dot.alpha = 1f
+                }
+                LimitStreak.DayStatus.GRACE -> {
+                    dot.setBackgroundResource(R.drawable.bg_round_filled)
+                    dot.alpha = 0.4f
+                }
+                LimitStreak.DayStatus.LIMIT_REACHED,
+                LimitStreak.DayStatus.NO_PROTECTION -> {
+                    dot.setBackgroundResource(R.drawable.bg_streak_day_outline)
+                    dot.alpha = 1f
+                }
+            }
+            (markerColumn.getChildAt(1) as TextView).text = dayName
+            markerColumn.contentDescription = getString(
+                R.string.loqin_streak_day_description,
+                dayName,
+                getString(statusRes)
+            )
+        }
+    }
+
+    private fun ymdOf(calendar: Calendar): Int {
+        return calendar.get(Calendar.YEAR) * 10000 +
+            (calendar.get(Calendar.MONTH) + 1) * 100 +
+            calendar.get(Calendar.DAY_OF_MONTH)
+    }
+
+    private fun onSurfaceColor(): Int {
+        return MaterialColors.getColor(
+            this,
+            com.google.android.material.R.attr.colorOnSurface,
+            Color.GRAY
+        )
+    }
+
+    private fun primaryColor(): Int = AccentColor.getAccentColorInt(this)
+
+    // Opt-out for the Monday summary notification; the worker checks the same preference.
+    private fun buildWeeklySummaryToggle(): View {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(this)
+        val switch = SwitchMaterial(this).apply {
+            isChecked = WeeklySummaryWorker.isEnabled(this@LoqInOverviewActivity)
+            contentDescription = getString(R.string.weekly_summary_toggle_title)
+            setOnCheckedChangeListener { _, checked ->
+                prefs.edit().putBoolean(WeeklySummaryWorker.PREF_ENABLED, checked).apply()
+            }
+        }
+        CustomAccentApplier.tintSwitch(switch)
+        val texts = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            addView(TextView(this@LoqInOverviewActivity).apply {
+                text = getString(R.string.weekly_summary_toggle_title)
+                textSize = 15f
+                setTextColor(onSurfaceColor())
+            })
+            addView(TextView(this@LoqInOverviewActivity).apply {
+                text = getString(R.string.weekly_summary_toggle_summary)
+                textSize = 13f
+                alpha = 0.72f
+            })
+        }
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            minimumHeight = dp(56)
+            setPadding(0, dp(20), 0, 0)
+            isClickable = true
+            setOnClickListener { switch.toggle() }
+            if (BuildConfig.DEBUG) {
+                // Test hook: long-press sends the summary now (debug builds only).
+                setOnLongClickListener {
+                    WeeklySummaryWorker.runNowForDebug(this@LoqInOverviewActivity)
+                    true
+                }
+            }
+            addView(texts)
+            addView(switch)
         }
     }
 

@@ -141,6 +141,9 @@ dependencies {
     add("implementation", "androidx.appcompat:appcompat:1.7.1")
     add("implementation", "com.google.android.material:material:1.13.0")
 
+    // WorkManager for the Monday weekly summary notification
+    add("implementation", "androidx.work:work-runtime-ktx:2.12.0")
+
     // Local statistics archive (Room). SharedPreferences remain the compatibility cache while
     // Room stores the durable, structured copy used for long-range history and backup/restore.
     val roomVersion = "2.8.4"

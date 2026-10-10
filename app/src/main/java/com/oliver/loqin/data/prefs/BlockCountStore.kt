@@ -141,6 +141,9 @@ object BlockCountStore {
         return totalForDays(context, wantedDays)
     }
 
+    /** Total blocks recorded for the given yyyymmdd days. */
+    fun getTotalForDays(context: Context, ymds: Set<Int>): Int = totalForDays(context, ymds)
+
     fun getTotalForMonth(context: Context, year: Int, month1Based: Int): Int {
         val calendar = Calendar.getInstance().apply {
             set(Calendar.YEAR, year)
