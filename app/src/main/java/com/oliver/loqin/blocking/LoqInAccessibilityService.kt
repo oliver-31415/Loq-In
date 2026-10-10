@@ -1996,10 +1996,23 @@ class LoqInAccessibilityService : AccessibilityService() {
         }.getOrDefault(emptySet())
     }
 
+    private val launchableCache = HashMap<String, Boolean>()
+
+    /**
+     * Overlays that sit on top of the app the user is in rather than replacing it: System UI,
+     * the keyboard, and packages with no launcher entry (permission prompts, Google's account
+     * picker). Counting them as an app switch split one visit into several "opens" and ended
+     * pause grants mid-visit.
+     */
     private fun isTransientSystemSurface(pkg: String): Boolean {
         if (pkg == "com.android.systemui") return true
         refreshSurfaceCacheIfStale()
-        return pkg == cachedImePackage
+        if (pkg == cachedImePackage) return true
+        if (isHomeLauncherPackage(pkg)) return false
+        val launchable = launchableCache.getOrPut(pkg) {
+            runCatching { packageManager.getLaunchIntentForPackage(pkg) != null }.getOrDefault(true)
+        }
+        return !launchable
     }
 
     private fun isHomeLauncherPackage(pkg: String): Boolean {
@@ -4562,7 +4575,8 @@ class LoqInAccessibilityService : AccessibilityService() {
         // The safe-page redirect is an intent to the browser; if the browser handles it after the
         // block screen started, the browser lands on top and the block screen stays hidden behind
         // it (seen on re-opening a blocked site). Bring it back in front once things settle.
-        for (delayMs in longArrayOf(700L, 1_600L)) {
+        // After the redirect follow-ups below (650 ms / 1.9 s), which can re-launch the browser.
+        for (delayMs in longArrayOf(1_000L, 2_200L, 3_400L)) {
             handler.postDelayed({
                 val root = currentRoot(null)
                 if (BlockerActivity.isAliveButHidden() && root != null && isRootFromPackage(root, pkg)) {

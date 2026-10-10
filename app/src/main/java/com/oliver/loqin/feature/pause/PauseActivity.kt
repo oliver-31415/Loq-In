@@ -42,6 +42,8 @@ class PauseActivity : AppCompatActivity() {
 
     private var timer: CountDownTimer? = null
     private var decided = false
+    private var remainingMs = 0L
+    private var renderer: ((Int) -> Unit)? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -88,12 +90,41 @@ class PauseActivity : AppCompatActivity() {
                 getString(R.string.pause_continue_fmt, label)
             }
         }
-        render(waitSeconds)
+        renderer = ::render
+        remainingMs = savedInstanceState?.getLong(STATE_REMAINING_MS) ?: (waitSeconds * 1_000L)
+        render(((remainingMs + 999) / 1_000).toInt())
         leave.requestFocus()
-        timer = object : CountDownTimer(waitSeconds * 1_000L, 250L) {
-            override fun onTick(millisUntilFinished: Long) = render(((millisUntilFinished + 999) / 1_000).toInt())
-            override fun onFinish() = render(0)
+    }
+
+    // The wait only counts down while the pause is actually on screen: apps that open their own
+    // screens on launch (intro pages, account pickers) can cover it, and the countdown used to
+    // finish underneath them.
+    override fun onResume() {
+        super.onResume()
+        if (remainingMs <= 0L) return
+        timer?.cancel()
+        timer = object : CountDownTimer(remainingMs, 250L) {
+            override fun onTick(millisUntilFinished: Long) {
+                remainingMs = millisUntilFinished
+                renderer?.invoke(((millisUntilFinished + 999) / 1_000).toInt())
+            }
+
+            override fun onFinish() {
+                remainingMs = 0L
+                renderer?.invoke(0)
+            }
         }.start()
+    }
+
+    override fun onPause() {
+        timer?.cancel()
+        timer = null
+        super.onPause()
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putLong(STATE_REMAINING_MS, remainingMs)
     }
 
     private fun leave() {
@@ -140,6 +171,7 @@ class PauseActivity : AppCompatActivity() {
         private const val EXTRA_LABEL = "label"
         private const val EXTRA_WAIT_SECONDS = "wait_seconds"
         private const val EXTRA_OPENS_TODAY = "opens_today"
+        private const val STATE_REMAINING_MS = "remaining_ms"
 
         fun show(context: Context, pkg: String, label: String, waitSeconds: Int, opensToday: Int) {
             context.startActivity(
