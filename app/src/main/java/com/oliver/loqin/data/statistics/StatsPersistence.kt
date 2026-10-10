@@ -51,7 +51,7 @@ object StatsPersistence {
     private const val SESSION_APP = "app"
     private const val SESSION_SCREEN_UNLOCK = "screen_unlock"
     private const val SESSION_WEBSITE = "website"
-private const val BLOCK_EVENT = "block_event"
+    private const val BLOCK_EVENT = "block_event"
     private const val IO_TIMEOUT_SECONDS = 120L
 
     private val ioExecutor = Executors.newSingleThreadExecutor { runnable ->
