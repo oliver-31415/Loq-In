@@ -42,6 +42,7 @@ import com.oliver.loqin.data.prefs.AttemptLimitStore
 import com.oliver.loqin.data.prefs.BlockAttemptStore
 import com.oliver.loqin.data.prefs.LimitReachedStore
 import com.oliver.loqin.data.prefs.AppLaunchCountStore
+import com.oliver.loqin.data.prefs.PauseRuleStore
 import com.oliver.loqin.data.prefs.ProfileStore
 import com.oliver.loqin.data.prefs.SwitchModeStore
 import com.oliver.loqin.data.prefs.UsageLimitStore
@@ -60,6 +61,9 @@ import com.oliver.loqin.ui.dialog.showAccented
 import com.oliver.loqin.ui.dialog.LoqInDialogOption
 import com.oliver.loqin.ui.dialog.showLoqInOptionDialog
 import com.oliver.loqin.ui.dialog.styleLoqInDialogButtons
+import com.oliver.loqin.ui.widgets.OpensBlocksChartView
+import com.oliver.loqin.ui.widgets.PauseSplitBarView
+import com.oliver.loqin.ui.widgets.SessionLengthHistogramView
 import com.oliver.loqin.ui.widgets.UsageDetailChartView
 import com.oliver.loqin.util.AppBlockSafety
 import com.google.android.material.button.MaterialButton
@@ -131,6 +135,25 @@ class AppUsageDetailActivity : AppCompatActivity() {
     private var customRangePickerShowing = false
 
     private enum class Range { TODAY, WEEK, MONTH, YEAR, CUSTOM }
+
+    // Detail cards below the chart. The opens card has its own 7/30 toggle unless the page was
+    // opened with an explicit range, in which case all cards follow that range.
+    private var hasExplicitRange = false
+    private var cardsDays = 7
+    private var cardsJob: Job? = null
+
+    /** Everything the detail cards need, read off the main thread in one pass. */
+    private data class ChartCardsData(
+        val labels: List<String>,
+        val opens: List<Int>,
+        val blocks: List<Int>,
+        val trendPercent: Int?,
+        val pauseRuleActive: Boolean,
+        val pauseLeft: List<Int>,
+        val pauseContinued: List<Int>,
+        val sessionCounts: List<Int>,
+        val sessionHint: SessionHint.Hint?
+    )
 
     override fun onCreate(savedInstanceState: Bundle?) {
         ThemeUtils.applyAccentTheme(this)
@@ -233,6 +256,7 @@ class AppUsageDetailActivity : AppCompatActivity() {
         }
 
         // If opened from a specific Stats range, default the chart to the most relevant view.
+        hasExplicitRange = intent.hasExtra(EXTRA_INITIAL_RANGE)
         val requestedInitialRange = when (intent.getStringExtra(EXTRA_INITIAL_RANGE)) {
             RANGE_TODAY -> Range.TODAY
             RANGE_MONTH -> Range.MONTH
@@ -280,6 +304,15 @@ class AppUsageDetailActivity : AppCompatActivity() {
             applyRange(pkg, Range.TODAY)
         }
 
+        // The cards get their own 7/30 toggle only when the page was not opened with a range.
+        b.toggleOpensBlocksRange.visibility = if (hasExplicitRange) View.GONE else View.VISIBLE
+        b.toggleOpensBlocksRange.check(if (cardsDays == 30) b.btnOpensBlocksMonth.id else b.btnOpensBlocksWeek.id)
+        b.toggleOpensBlocksRange.addOnButtonCheckedListener { _, checkedId, isChecked ->
+            if (!isChecked) return@addOnButtonCheckedListener
+            cardsDays = if (checkedId == b.btnOpensBlocksMonth.id) 30 else 7
+            loadChartCards(pkg)
+        }
+
         lifecycleScope.launch {
             val changed = withContext(Dispatchers.IO) { UsageHistoryBackfill.maybeRun(this@AppUsageDetailActivity) }
             if (changed) {
@@ -302,6 +335,7 @@ class AppUsageDetailActivity : AppCompatActivity() {
         refreshDailyLimit(pkg)
         refreshAttemptLimit(pkg)
         updateMetricChips(pkg, currentRange)
+        loadChartCards(pkg)
         syncLimitEditingUi()
     }
 
@@ -323,6 +357,7 @@ class AppUsageDetailActivity : AppCompatActivity() {
         currentRange = range
         updateCustomRangeSummary()
         updateMetricChips(pkg, range)
+        loadChartCards(pkg)
         syncRangeToggleUi()
         when (range) {
             Range.TODAY -> {
@@ -427,14 +462,7 @@ class AppUsageDetailActivity : AppCompatActivity() {
         metricJob?.cancel()
         metricJob = lifecycleScope.launch {
             val (opens, attempts) = withContext(Dispatchers.IO) {
-                val (start, end) = when (range) {
-                    Range.TODAY -> UsageTimelineRepo.windowForRange("today")
-                    Range.WEEK -> UsageTimelineRepo.windowForRange("week")
-                    Range.MONTH -> UsageTimelineRepo.windowForRange("month")
-                    Range.YEAR -> UsageTimelineRepo.windowForRange("year")
-                    Range.CUSTOM -> (customRangeStartMillis ?: startOfTodayMillis()) to
-                        (customRangeEndMillis ?: System.currentTimeMillis())
-                }
+                val (start, end) = rangeWindow(range)
                 val selectedOpens = AppLaunchCountStore.getForDateRange(
                     this@AppUsageDetailActivity,
                     pkg,
@@ -462,6 +490,114 @@ class AppUsageDetailActivity : AppCompatActivity() {
             } else {
                 resources.getQuantityString(R.plurals.attempts_format, attempts, attempts)
             }
+        }
+    }
+
+    /** Window for the page's chart range. Custom uses the picked dates, defaulting to today. */
+    private fun rangeWindow(range: Range): Pair<Long, Long> = when (range) {
+        Range.TODAY -> UsageTimelineRepo.windowForRange("today")
+        Range.WEEK -> UsageTimelineRepo.windowForRange("week")
+        Range.MONTH -> UsageTimelineRepo.windowForRange("month")
+        Range.YEAR -> UsageTimelineRepo.windowForRange("year")
+        Range.CUSTOM -> (customRangeStartMillis ?: startOfTodayMillis()) to
+            (customRangeEndMillis ?: System.currentTimeMillis())
+    }
+
+    /** Window for the detail cards: the page range when one was passed in, else the cards' own 7 or 30 days. */
+    private fun cardWindow(): Pair<Long, Long> {
+        if (hasExplicitRange) return rangeWindow(currentRange)
+        val start = Calendar.getInstance().apply {
+            add(Calendar.DAY_OF_YEAR, -(cardsDays - 1))
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }.timeInMillis
+        return start to System.currentTimeMillis()
+    }
+
+    /** Reloads the three detail cards for the current window. Reads run off the main thread. */
+    private fun loadChartCards(pkg: String) {
+        cardsJob?.cancel()
+        val (start, end) = cardWindow()
+        cardsJob = lifecycleScope.launch {
+            val data = withContext(Dispatchers.IO) { readChartCards(pkg, start, end) }
+            bindChartCards(data)
+        }
+    }
+
+    private fun readChartCards(pkg: String, start: Long, end: Long): ChartCardsData {
+        val ymds = OpensBlocks.dayYmds(start, end)
+        val opens = ymds.map { AppLaunchCountStore.getForDay(this, pkg, it) }
+        val blocks = ymds.map { BlockAttemptStore.getForDay(this, pkg, it) }
+        val previousOpens = OpensBlocks.previousYmds(ymds).sumOf { AppLaunchCountStore.getForDay(this, pkg, it) }
+        val trend = OpensBlocks.trendPercent(ymds.size, opens.sum(), previousOpens)
+
+        val pauseRuleActive = ProfileStore.getProfiles(this).any { PauseRuleStore.isPaused(this, it, pkg) }
+        val pauseLeft = PauseRuleStore.appOutcomesForDays(this, pkg, PauseRuleStore.Outcome.LEFT, ymds)
+        val pauseContinued = PauseRuleStore.appOutcomesForDays(this, pkg, PauseRuleStore.Outcome.CONTINUED, ymds)
+
+        val sessions = UsageTimelineRepo.appSessions(this, pkg, start, end, limit = 0)
+        val sessionCounts = SessionLengthBuckets.countsFor(sessions.map { it.durationMs })
+
+        return ChartCardsData(
+            labels = buildCustomDateLabels(start, ymds.size),
+            opens = opens,
+            blocks = blocks,
+            trendPercent = trend,
+            pauseRuleActive = pauseRuleActive,
+            pauseLeft = pauseLeft,
+            pauseContinued = pauseContinued,
+            sessionCounts = sessionCounts,
+            sessionHint = SessionHint.forBuckets(sessionCounts)
+        )
+    }
+
+    /** Shows each card only when it has data, and fills it. Runs on the main thread. */
+    private fun bindChartCards(d: ChartCardsData) {
+        val opens = d.opens.sum()
+        val blocks = d.blocks.sum()
+        val showOpens = opens > 0 || blocks > 0
+        b.cardOpensBlocks.visibility = if (showOpens) View.VISIBLE else View.GONE
+        if (showOpens) {
+            val openedText = resources.getQuantityString(R.plurals.charts_opened_count, opens, opens)
+            val blockedText = resources.getQuantityString(R.plurals.charts_blocked_count, blocks, blocks)
+            b.tvOpensBlocksHeadline.text = getString(R.string.charts_opens_headline_fmt, openedText, blockedText)
+            val days = d.labels.size
+            val trend = d.trendPercent
+            b.tvOpensBlocksTrend.visibility = if (trend == null) View.GONE else View.VISIBLE
+            if (trend != null) {
+                b.tvOpensBlocksTrend.text = when {
+                    trend > 0 -> getString(R.string.charts_opens_trend_up, trend, days)
+                    trend < 0 -> getString(R.string.charts_opens_trend_down, -trend, days)
+                    else -> getString(R.string.charts_opens_trend_flat, days)
+                }
+            }
+            b.chartOpensBlocks.setData(d.opens, d.blocks, d.labels)
+        }
+
+        val pauseLeft = d.pauseLeft.sum()
+        val pauseTotal = pauseLeft + d.pauseContinued.sum()
+        val showPause = d.pauseRuleActive || pauseTotal > 0
+        b.cardPauseResults.visibility = if (showPause) View.VISIBLE else View.GONE
+        if (showPause) {
+            b.tvPauseSummary.text = resources.getQuantityString(R.plurals.charts_pause_summary, pauseTotal, pauseLeft, pauseTotal)
+            b.chartPauseSplit.setData(d.pauseLeft, d.pauseContinued, d.labels)
+        }
+
+        val sessionTotal = d.sessionCounts.sum()
+        val showSessions = sessionTotal > 0
+        b.cardSessionLengths.visibility = if (showSessions) View.VISIBLE else View.GONE
+        if (showSessions) {
+            b.tvSessionsCount.text = resources.getQuantityString(R.plurals.charts_sessions_count, sessionTotal, sessionTotal)
+            b.chartSessions.setData(d.sessionCounts, resources.getStringArray(R.array.charts_session_buckets).toList())
+            val hintRes = when (d.sessionHint) {
+                SessionHint.Hint.MOSTLY_SHORT -> R.string.charts_session_hint_short
+                SessionHint.Hint.OFTEN_LONG -> R.string.charts_session_hint_long
+                null -> null
+            }
+            b.tvSessionsHint.visibility = if (hintRes == null) View.GONE else View.VISIBLE
+            if (hintRes != null) b.tvSessionsHint.setText(hintRes)
         }
     }
 
