@@ -97,6 +97,7 @@ class LoqInOverviewActivity : AppCompatActivity() {
     private lateinit var scansGrid: LinearLayout
     private lateinit var activityGrid: LinearLayout
     private lateinit var actionsGrid: LinearLayout
+private var insightsCards: LoqInInsightsCards? = null
 
     private val rangeButtons: MutableMap<Range, MaterialButton> = linkedMapOf()
     private var selectedRange: Range = Range.TODAY
@@ -164,6 +165,11 @@ class LoqInOverviewActivity : AppCompatActivity() {
             )
         )
 
+        val cards = LoqInInsightsCards(this)
+        insightsCards = cards
+        content.addView(cards.heroView, insightsCardParams())
+        content.addView(cards.pauseView, insightsCardParams())
+
         rangeGroup = MaterialButtonToggleGroup(this).apply {
             isSingleSelection = true
             isSelectionRequired = true
@@ -218,7 +224,15 @@ class LoqInOverviewActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         refresh()
+        insightsCards?.refresh()
         syncStatsArchive()
+    }
+
+    private fun insightsCardParams(): LinearLayout.LayoutParams = LinearLayout.LayoutParams(
+        LinearLayout.LayoutParams.MATCH_PARENT,
+        LinearLayout.LayoutParams.WRAP_CONTENT
+    ).apply {
+        bottomMargin = dp(14)
     }
 
     private fun syncStatsArchive() {
