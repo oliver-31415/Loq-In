@@ -105,6 +105,13 @@ object AppLaunchCountStore {
     fun getForDateRange(context: Context, packageName: String, startMs: Long, endMs: Long): Int =
         getMapForDateRange(context, startMs, endMs)[packageName] ?: 0
 
+    /** Opens of [packageName] on the local day [ymd] (yyyymmdd). */
+    fun getForDay(context: Context, packageName: String, ymd: Int): Int {
+        if (packageName.isBlank()) return 0
+        val prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        return readInt(prefs, key(ymd, packageName))
+    }
+
     fun getMapOverall(context: Context): Map<String, Int> {
         val prefs = context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val out = linkedMapOf<String, Int>()
