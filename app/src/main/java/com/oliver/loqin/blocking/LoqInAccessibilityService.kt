@@ -74,6 +74,7 @@ import com.oliver.loqin.data.prefs.UsageLimitResetStore
 import com.oliver.loqin.data.prefs.UsageLimitSessionRuntimeStore
 import com.oliver.loqin.data.prefs.UsageStore
 import com.oliver.loqin.data.prefs.WebUsageStore
+import com.oliver.loqin.data.statistics.StatsPersistence
 import com.oliver.loqin.feature.blocker.BlockerActivity
 import com.oliver.loqin.feature.pause.PauseActivity
 import com.oliver.loqin.platform.receiver.schedule.ScheduleReceiver
@@ -2508,6 +2509,7 @@ class LoqInAccessibilityService : AccessibilityService() {
         // block (e.g. Shorts) never showed on the app's row. Website blocks have their own tab.
         if (blockCategory == BlockCategoryCountStore.Category.IN_APP) {
             BlockAttemptStore.incrementToday(this, pkg)
+            StatsPersistence.archiveBlockEvent(this, pkg)
         }
         perf.blocksShown++
 
@@ -3180,6 +3182,7 @@ class LoqInAccessibilityService : AccessibilityService() {
         if (countAttempt) {
             lastAttemptAt[pkg] = now
             BlockAttemptStore.incrementToday(this, pkg)
+            StatsPersistence.archiveBlockEvent(this, pkg)
         }
         if (countAsBlock) {
             lastBlockShownAt[pkg] = now

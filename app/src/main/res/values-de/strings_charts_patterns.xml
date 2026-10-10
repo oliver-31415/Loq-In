@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- ====================================================== -->
+    <!-- Patterns screen -->
+    <!-- ====================================================== -->
+    <string name="patterns_row_title">Muster</string>
+    <string name="patterns_row_summary">Wann und wie du dein Handy benutzt</string>
+    <string name="patterns_title">Muster</string>
+    <string name="patterns_scope_distracting">Ablenkende Apps</string>
+    <string name="patterns_scope_all">Alle Apps</string>
+    <string name="patterns_allow_mode_note">Im Erlaubt-Modus gelten alle Apps außerhalb deiner Erlaubt-Liste als ablenkend.</string>
+
+    <string name="patterns_empty_title">Muster erscheinen nach ein paar Tagen Nutzung</string>
+    <string name="patterns_empty_progress">%1$d von %2$d Tagen erfasst</string>
+
+    <string name="patterns_heatmap_title">Wann du dein Handy benutzt</string>
+    <string name="patterns_heatmap_desc">Durchschnittliche Nutzungsminuten pro Wochentag und Stunde in den letzten 4 Wochen</string>
+    <string name="patterns_heatmap_description">Heatmap der durchschnittlichen Nutzung nach Wochentag und Stunde</string>
+    <string name="patterns_heatmap_marks_note">Punkte markieren Stunden, in denen eine Sperre ausgelöst wurde.</string>
+    <string name="patterns_peak_weekdays">Meiste Nutzung: werktags %1$s–%2$s</string>
+    <string name="patterns_peak_weekends">Meiste Nutzung: am Wochenende %1$s–%2$s</string>
+    <string name="patterns_peak_every_day">Meiste Nutzung: jeden Tag %1$s–%2$s</string>
+    <string name="patterns_peak_none">In den letzten 4 Wochen wurde noch keine Nutzung erfasst</string>
+
+    <string name="patterns_pickup_title">Erstes Aufnehmen</string>
+    <string name="patterns_pickup_desc">Die erste Sitzung jedes Tages in den letzten 14 Tagen, für die oben gewählten Apps. Zeiten werden ab 04:00 gezählt, sodass späte Nutzung beim Tag bleibt, an dem sie begann.</string>
+    <string name="patterns_pickup_description">Punktdiagramm der ersten ablenkenden App jedes Tages für die letzten 14 Tage</string>
+    <string name="patterns_pickup_average">Erstes Aufnehmen: im Schnitt %1$s diese Woche</string>
+    <string name="patterns_pickup_none">Diese Woche noch kein Aufnehmen erfasst</string>
+
+    <string name="patterns_protection_title">Geschützte Zeit</string>
+    <string name="patterns_protection_desc">Minuten unter einer Sperre pro Tag, in den letzten 14 Tagen</string>
+    <string name="patterns_protection_description">Gestapelte Balken für geschützte und ungeschützte Zeit der letzten 14 Tage</string>
+    <string name="patterns_protection_no_data">keine Daten</string>
+    <string name="patterns_legend_protected">Geschützt</string>
+    <string name="patterns_legend_unprotected">Nicht geschützt</string>
+
+</resources>
