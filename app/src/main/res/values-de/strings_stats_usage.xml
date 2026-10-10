@@ -194,6 +194,18 @@
     <string name="usage_row_basic_a11y">%1$s, %2$s, %3$s.</string>
     <string name="usage_total_screen_time">Gesamte Bildschirmzeit</string>
     <string name="usage_total_screen_time_web">Gesamte Website-Zeit (während Blockierung aktiv)</string>
+    <string name="usage_comparison_percent_less">%1$d%% weniger als %2$s</string>
+    <string name="usage_comparison_percent_more">%1$d%% mehr als %2$s</string>
+    <string name="usage_comparison_minutes_less">%1$dm weniger als %2$s</string>
+    <string name="usage_comparison_minutes_more">%1$dm mehr als %2$s</string>
+    <string name="usage_comparison_same">Wie %1$s</string>
+    <string name="usage_comparison_base_today">gestern</string>
+    <string name="usage_comparison_base_week">die vorherigen 7 Tage</string>
+    <string name="usage_comparison_base_month">die vorherigen 30 Tage</string>
+    <string name="usage_comparison_base_year">das letzte Jahr</string>
+    <string name="usage_row_delta_up">+%1$dm</string>
+    <string name="usage_row_delta_down">−%1$dm</string>
+    <string name="usage_row_delta_same">±0m</string>
     <string name="usage_app_placeholder">App</string>
     <string name="statistics_usage_subtitle_web">Webseiten</string>
     <string name="usage_launch_stats_title">Öffnungen</string>
@@ -444,4 +456,8 @@
     <string name="app_limit_state_limited_unselected">Limitiert. Wenn alle Limits entfernt werden, ist die App wieder frei.</string>
     <string name="app_limit_state_allowed_allow_mode">Erlaubt. Ein Limit schränkt die Nutzung ein.</string>
     <string name="app_limit_state_blocked_allow_mode">Blockiert. Ein Limit erlaubt die App bis zum Erreichen des Limits.</string>
+    <string name="usage_menu_export_csv">CSV exportieren</string>
+    <string name="usage_export_progress">Nutzungsdaten werden exportiert…</string>
+    <string name="usage_export_done">Nutzungsdaten exportiert.</string>
+    <string name="usage_export_failed">Nutzungsdaten konnten nicht exportiert werden.</string>
 </resources>

@@ -22,11 +22,15 @@ import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
+import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.LinearLayout
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
@@ -55,6 +59,7 @@ import com.oliver.loqin.ui.EdgeToEdgeUtils
 import com.oliver.loqin.ui.SegmentedToggleUi
 import com.oliver.loqin.ui.LoqInDropdownAdapter
 import com.oliver.loqin.ui.ThemeUtils
+import com.oliver.loqin.ui.showWarnPillOnContent
 import com.oliver.loqin.ui.dialog.showAccented
 import com.oliver.loqin.util.PermissionUtils
 import com.google.android.material.button.MaterialButton
@@ -67,8 +72,10 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.text.DateFormat
+import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
+import java.util.Locale
 import java.util.TimeZone
 
 class AppWebsiteUsageActivity : AppCompatActivity() {
@@ -80,6 +87,32 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
         } else {
             Color.WHITE
         }
+    }
+
+    // CSV export of the last 90 days (date, package, app, minutes, opens, blocks) via the system file picker.
+    private val exportCsv = registerForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri: Uri? ->
+        uri ?: return@registerForActivityResult
+        showWarnPillOnContent(R.string.usage_export_progress)
+        lifecycleScope.launch {
+            val ok = withContext(Dispatchers.IO) {
+                runCatching { UsageCsvExporter.writeLastDays(applicationContext, uri) }.getOrDefault(false)
+            }
+            showWarnPillOnContent(if (ok) R.string.usage_export_done else R.string.usage_export_failed)
+        }
+    }
+
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menuInflater.inflate(R.menu.menu_usage_export, menu)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        if (item.itemId == R.id.action_export_csv) {
+            val date = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(System.currentTimeMillis())
+            exportCsv.launch("loqin-usage-$date.csv")
+            return true
+        }
+        return super.onOptionsItemSelected(item)
     }
 
     private fun showStatisticsInfo() {
@@ -103,6 +136,7 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
     private var currentBlockedSet: Set<String> = emptySet()
     private var currentWebsiteRuleSet: Set<String> = emptySet()
     private var currentMetricsByPackage: Map<String, AppUsageMetrics> = emptyMap()
+    private var currentComparison: PeriodComparison? = null
     private var isWebMode: Boolean = false
     private var currentRange: Range = Range.TODAY
     private var currentProfileName: String? = null
@@ -124,7 +158,14 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
         val profile: String?,
         val blockedSet: Set<String> = emptySet(),
         val websiteRuleSet: Set<String> = emptySet(),
-        val metricsByPackage: Map<String, AppUsageMetrics> = emptyMap()
+        val metricsByPackage: Map<String, AppUsageMetrics> = emptyMap(),
+        val comparison: PeriodComparison? = null
+    )
+
+    // Totals of the equal-length period before the selected range, used for the comparison line and Week row deltas.
+    private data class PeriodComparison(
+        val previousMs: Long,
+        val previousMsByPackage: Map<String, Long>
     )
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -209,6 +250,17 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
             },
             usageMetricsProvider = { item ->
                 if (isWebMode) null else currentMetricsByPackage[item.packageName]
+            },
+            rowDeltaProvider = { item ->
+                val comparison = currentComparison
+                if (isWebMode || currentRange != Range.WEEK || comparison == null) {
+                    null
+                } else {
+                    UsageComparison.rowDeltaMinutes(
+                        currentMs = item.timeMs,
+                        previousMs = comparison.previousMsByPackage[item.packageName] ?: 0L
+                    )
+                }
             }
         )
 
@@ -667,13 +719,111 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
             addAll(blockedSet)
         }
         val metrics = buildAppUsageMetricsMap(metricPackages, range)
+        // Device-fallback totals come from a different source than the local store, so they are not compared.
+        val comparison = if (range == Range.CUSTOM || fallbackDeviceRange == range) {
+            null
+        } else {
+            buildPeriodComparison(range)
+        }
         return RefreshData(
             summary = summary,
             hasAccessibility = hasA11y,
             profile = profile,
             blockedSet = blockedSet,
-            metricsByPackage = metrics
+            metricsByPackage = metrics,
+            comparison = comparison
         )
+    }
+
+    private fun buildPeriodComparison(range: Range): PeriodComparison? {
+        val (startMs, endMs) = previousPeriodBounds(range) ?: return null
+        // Only Week needs per-app totals; other ranges just need the overall figure.
+        val summary = AppUsageRepo.getDateRangeSummary(
+            this,
+            startMs,
+            endMs,
+            topN = if (range == Range.WEEK) Int.MAX_VALUE else 0
+        )
+        return PeriodComparison(
+            previousMs = summary.totalTimeMs,
+            previousMsByPackage = summary.topApps.associate { it.packageName to it.timeMs }
+        )
+    }
+
+    // Equal-length window before the selected range. Year compares against the whole previous calendar year.
+    private fun previousPeriodBounds(range: Range): Pair<Long, Long>? {
+        val todayStart = Calendar.getInstance().apply {
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        fun daysAgo(days: Int): Long = (todayStart.clone() as Calendar).apply {
+            add(Calendar.DAY_OF_YEAR, -days)
+        }.timeInMillis
+
+        return when (range) {
+            Range.TODAY -> daysAgo(1) to daysAgo(0) - 1L
+            // Mirrors rangeBounds(): Week starts 6 days back, Month 29 days back.
+            Range.WEEK -> daysAgo(13) to daysAgo(6) - 1L
+            Range.MONTH -> daysAgo(59) to daysAgo(29) - 1L
+            Range.YEAR -> {
+                val thisYearStart = (todayStart.clone() as Calendar).apply {
+                    set(Calendar.MONTH, Calendar.JANUARY)
+                    set(Calendar.DAY_OF_MONTH, 1)
+                }.timeInMillis
+                val previousYearStart = (Calendar.getInstance().apply {
+                    timeInMillis = thisYearStart
+                    add(Calendar.YEAR, -1)
+                }).timeInMillis
+                previousYearStart to thisYearStart - 1L
+            }
+            Range.CUSTOM -> null
+        }
+    }
+
+    private fun applyComparisonUi(range: Range, isWeb: Boolean, currentMs: Long, comparison: PeriodComparison?) {
+        val change = if (isWeb || comparison == null) {
+            null
+        } else {
+            UsageComparison.summaryChange(currentMs, comparison.previousMs)
+        }
+        if (change == null) {
+            b.totalComparison.isVisible = false
+            return
+        }
+
+        val baseline = getString(
+            when (range) {
+                Range.WEEK -> R.string.usage_comparison_base_week
+                Range.MONTH -> R.string.usage_comparison_base_month
+                Range.YEAR -> R.string.usage_comparison_base_year
+                else -> R.string.usage_comparison_base_today
+            }
+        )
+        val (text, delta) = when (change) {
+            UsageComparison.Change.Same -> getString(R.string.usage_comparison_same, baseline) to 0
+            is UsageComparison.Change.Percent -> if (change.value < 0) {
+                getString(R.string.usage_comparison_percent_less, -change.value, baseline) to change.value
+            } else {
+                getString(R.string.usage_comparison_percent_more, change.value, baseline) to change.value
+            }
+            is UsageComparison.Change.Minutes -> if (change.value < 0) {
+                getString(R.string.usage_comparison_minutes_less, -change.value, baseline) to change.value
+            } else {
+                getString(R.string.usage_comparison_minutes_more, change.value, baseline) to change.value
+            }
+        }
+        b.totalComparison.text = text
+        // Calm accent for less screen time, the existing warning colour for more. The words carry the meaning too.
+        b.totalComparison.setTextColor(
+            when {
+                delta > 0 -> ContextCompat.getColor(this, R.color.status_warning)
+                delta < 0 -> AccentColor.getAccentColorInt(this)
+                else -> MaterialColors.getColor(b.totalComparison, com.google.android.material.R.attr.colorOnSurface)
+            }
+        )
+        b.totalComparison.isVisible = true
     }
 
     private fun applyRefreshData(range: Range, isWeb: Boolean, data: RefreshData) {
@@ -684,6 +834,8 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
         b.statsPageSubtitle.isVisible = false
         b.totalTime.text = if (data.summary.totalTimeMs <= 0L) "—" else StatsFormat.prettyMsWithSeconds(data.summary.totalTimeMs)
         b.totalLabel.text = if (isWeb) getString(R.string.usage_total_screen_time_web) else getString(R.string.usage_total_screen_time)
+        currentComparison = data.comparison
+        applyComparisonUi(range, isWeb, data.summary.totalTimeMs, data.comparison)
 
         if (isWeb) {
             b.rowTapHint.isVisible = true

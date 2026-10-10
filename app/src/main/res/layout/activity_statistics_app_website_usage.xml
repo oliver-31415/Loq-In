@@ -192,6 +192,15 @@
                         android:textSize="30sp"
                         android:textStyle="bold" />
 
+                    <TextView
+                        android:id="@+id/totalComparison"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="13sp"
+                        android:visibility="gone" />
+
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

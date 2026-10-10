@@ -25,12 +25,14 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.ProgressBar
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import com.oliver.loqin.R
 import com.oliver.loqin.feature.stats.StatsFormat
 import com.oliver.loqin.theme.AccentColor
 import com.google.android.material.chip.Chip
+import com.google.android.material.color.MaterialColors
 
 data class AppUsageMetrics(
     val opensLabel: String,
@@ -42,7 +44,9 @@ class AppUsageAdapter(
     private val onEditLimits: ((AppUsage) -> Unit)? = null,
     private val limitBadgeProvider: ((AppUsage) -> String?)? = null,
     private val usageMetricsProvider: ((AppUsage) -> AppUsageMetrics?)? = null,
-    private val sessionUsageProvider: ((AppUsage) -> SessionUsageGraph?)? = null
+    private val sessionUsageProvider: ((AppUsage) -> SessionUsageGraph?)? = null,
+    // Signed minutes versus the previous period, or null to hide the delta.
+    private val rowDeltaProvider: ((AppUsage) -> Int?)? = null
 ) : RecyclerView.Adapter<AppUsageAdapter.VH>() {
 
     data class SessionUsageGraph(
@@ -88,7 +92,8 @@ class AppUsageAdapter(
             detailsCtaEnabled,
             limitBadgeProvider,
             usageMetricsProvider,
-            sessionUsageProvider
+            sessionUsageProvider,
+            rowDeltaProvider
         )
     }
 
@@ -98,6 +103,7 @@ class AppUsageAdapter(
         private val icon = v.findViewById<ImageView>(R.id.icon)
         private val name = v.findViewById<TextView>(R.id.name)
         private val time = v.findViewById<TextView>(R.id.time)
+        private val deltaText = v.findViewById<TextView>(R.id.deltaText)
         private val percent = v.findViewById<TextView>(R.id.percent)
         private val details = v.findViewById<TextView>(R.id.details)
         private val progress = v.findViewById<ProgressBar>(R.id.progress)
@@ -117,7 +123,8 @@ class AppUsageAdapter(
             detailsCtaEnabled: Boolean,
             limitBadgeProvider: ((AppUsage) -> String?)?,
             usageMetricsProvider: ((AppUsage) -> AppUsageMetrics?)?,
-            sessionUsageProvider: ((AppUsage) -> SessionUsageGraph?)?
+            sessionUsageProvider: ((AppUsage) -> SessionUsageGraph?)?,
+            rowDeltaProvider: ((AppUsage) -> Int?)?
         ) {
             val ctx = itemView.context
 
@@ -132,6 +139,24 @@ class AppUsageAdapter(
             progress.progressTintList = ColorStateList.valueOf(accent)
             details.setTextColor(accent)
             btnEditLimits.imageTintList = ColorStateList.valueOf(accent)
+
+            val delta = rowDeltaProvider?.invoke(item)
+            deltaText.isVisible = delta != null
+            if (delta != null) {
+                deltaText.text = when {
+                    delta > 0 -> ctx.getString(R.string.usage_row_delta_up, delta)
+                    delta < 0 -> ctx.getString(R.string.usage_row_delta_down, -delta)
+                    else -> ctx.getString(R.string.usage_row_delta_same)
+                }
+                // Sign carries the meaning; colour only reinforces it.
+                deltaText.setTextColor(
+                    when {
+                        delta > 0 -> ContextCompat.getColor(ctx, R.color.status_warning)
+                        delta < 0 -> accent
+                        else -> MaterialColors.getColor(deltaText, com.google.android.material.R.attr.colorOnSurface)
+                    }
+                )
+            }
 
             val metrics = usageMetricsProvider?.invoke(item)
             usageMetricRow.isVisible = metrics != null
