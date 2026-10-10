@@ -506,6 +506,7 @@ object LocalBackupPayload {
     private fun shouldStoreAsInt(key: String): Boolean {
         return key == "onboarding_version" ||
             key == "primary_toggle_tap_count" ||
+            key == "insights_daily_goal_min" ||
             key.startsWith("usage_limit_min__") ||
             key.startsWith("session_limit_min__") ||
             key.startsWith("attempt_limit__") ||

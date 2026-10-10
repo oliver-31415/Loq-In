@@ -19,10 +19,10 @@
     <string name="loqin_overview_barcode_scans">Barcode-Scans</string>
     <string name="loqin_overview_active_time">Aktive Zeit</string>
     <string name="loqin_overview_app_launches">Öffnungen</string>
-    <string name="loqin_overview_blocks">Blockierungen</string>
-    <string name="loqin_overview_in_app_blocks">In-App-Blockierungen</string>
-    <string name="loqin_overview_website_blocks">Website-Blockierungen</string>
-    <string name="loqin_overview_app_blocks">App-Blockierungen</string>
+    <string name="loqin_overview_blocks">Sperren</string>
+    <string name="loqin_overview_in_app_blocks">In-App-Sperren</string>
+    <string name="loqin_overview_website_blocks">Website-Sperren</string>
+    <string name="loqin_overview_app_blocks">App-Sperren</string>
     <string name="loqin_overview_limits_reached">Erreichte Limits</string>
     <string name="loqin_overview_enabled">Loq In aktiviert</string>
     <string name="loqin_overview_disabled">Loq In deaktiviert</string>

@@ -453,6 +453,11 @@
             android:name=".feature.usage.AppWebsiteUsageActivity"
             android:exported="false" />
 
+        <!-- Patterns: when and how the phone is used -->
+        <activity android:screenOrientation="portrait"
+            android:name=".feature.usage.PatternsActivity"
+            android:exported="false" />
+
         <!-- App usage detail screen -->
         <activity android:screenOrientation="portrait"
             android:name=".feature.usage.AppUsageDetailActivity"

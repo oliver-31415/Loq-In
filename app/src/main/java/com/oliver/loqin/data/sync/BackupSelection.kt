@@ -457,6 +457,9 @@ object BackupCategoryFilter {
 
         key == "protection_change_delay_minutes" -> setOf(BackupCategory.CONTROL_SETTINGS)
 
+        // Insights display settings (daily goal) are user preferences, not counters.
+        key.startsWith("insights_") -> setOf(BackupCategory.APP_PREFERENCES)
+
         else -> setOf(BackupCategory.APP_PREFERENCES)
     }
 

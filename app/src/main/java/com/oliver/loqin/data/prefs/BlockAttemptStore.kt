@@ -168,6 +168,13 @@ object BlockAttemptStore {
         return total.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
     }
 
+    /** Blocked attempts for [pkg] on the local day [ymd] (yyyymmdd). */
+    fun getForDay(ctx: Context, pkg: String, ymd: Int): Int {
+        if (pkg.isBlank()) return 0
+        val sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        return readIntCompat(sp, key(ymd, pkg))
+    }
+
     fun getMapForDateRange(
         ctx: Context,
         startMs: Long,

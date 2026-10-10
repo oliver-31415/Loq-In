@@ -44,6 +44,7 @@ import com.oliver.loqin.data.prefs.ProfileRuleModeStore
 import com.oliver.loqin.data.prefs.ProfileStore
 import com.oliver.loqin.data.prefs.SwitchModeStore
 import com.oliver.loqin.data.prefs.TempAllowStore
+import com.oliver.loqin.data.statistics.StatsPersistence
 import com.oliver.loqin.feature.blocker.BlockerActivity
 import com.oliver.loqin.ui.MainActivity
 import com.oliver.loqin.util.AppBlockSafety
@@ -209,6 +210,7 @@ class UsageAccessFallbackBlockingService : Service() {
 
         if (firstLaunchForEvent) {
             BlockAttemptStore.incrementToday(this, pkg)
+            StatsPersistence.archiveBlockEvent(this, pkg)
         }
 
         val label = runCatching {

@@ -97,6 +97,7 @@ class LoqInOverviewActivity : AppCompatActivity() {
     private lateinit var scansGrid: LinearLayout
     private lateinit var activityGrid: LinearLayout
     private lateinit var actionsGrid: LinearLayout
+    private var insightsCards: LoqInInsightsCards? = null
 
     private val rangeButtons: MutableMap<Range, MaterialButton> = linkedMapOf()
     private var selectedRange: Range = Range.TODAY
@@ -164,6 +165,11 @@ class LoqInOverviewActivity : AppCompatActivity() {
             )
         )
 
+        val cards = LoqInInsightsCards(this)
+        insightsCards = cards
+        content.addView(cards.heroView, insightsCardParams())
+        content.addView(cards.pauseView, insightsCardParams())
+
         rangeGroup = MaterialButtonToggleGroup(this).apply {
             isSingleSelection = true
             isSelectionRequired = true
@@ -197,6 +203,8 @@ class LoqInOverviewActivity : AppCompatActivity() {
         actionsGrid = newStatGrid()
         content.addView(actionsGrid)
 
+        content.addView(buildPatternsRow())
+
         content.addView(buildWeeklySummaryToggle())
 
         content.addView(TextView(this).apply {
@@ -218,7 +226,15 @@ class LoqInOverviewActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         refresh()
+        insightsCards?.refresh()
         syncStatsArchive()
+    }
+
+    private fun insightsCardParams(): LinearLayout.LayoutParams = LinearLayout.LayoutParams(
+        LinearLayout.LayoutParams.MATCH_PARENT,
+        LinearLayout.LayoutParams.WRAP_CONTENT
+    ).apply {
+        bottomMargin = dp(14)
     }
 
     private fun syncStatsArchive() {
@@ -566,6 +582,42 @@ class LoqInOverviewActivity : AppCompatActivity() {
             com.google.android.material.R.attr.colorOnSurface,
             Color.GRAY
         )
+    }
+
+    // Entry row to the Patterns screen (weekday heatmap, first pickup and protection charts).
+    private fun buildPatternsRow(): View {
+        val texts = LinearLayout(this).apply {
+            orientation = LinearLayout.VERTICAL
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+            addView(TextView(this@LoqInOverviewActivity).apply {
+                text = getString(R.string.patterns_row_title)
+                textSize = 15f
+                setTextColor(onSurfaceColor())
+            })
+            addView(TextView(this@LoqInOverviewActivity).apply {
+                text = getString(R.string.patterns_row_summary)
+                textSize = 13f
+                alpha = 0.72f
+            })
+        }
+        val arrow = ImageView(this).apply {
+            setImageResource(R.drawable.keyboard_arrow_right_24)
+            imageTintList = android.content.res.ColorStateList.valueOf(onSurfaceColor())
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        }
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            minimumHeight = dp(56)
+            setPadding(0, dp(20), 0, 0)
+            isClickable = true
+            isFocusable = true
+            setOnClickListener {
+                startActivity(Intent(this@LoqInOverviewActivity, PatternsActivity::class.java))
+            }
+            addView(texts)
+            addView(arrow)
+        }
     }
 
     // Opt-out for the Monday summary notification; the worker checks the same preference.
