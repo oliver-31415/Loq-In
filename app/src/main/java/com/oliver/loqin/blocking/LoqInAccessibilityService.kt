@@ -234,6 +234,12 @@ class LoqInAccessibilityService : AccessibilityService() {
     // and never reach the required two samples. A slightly wider window keeps the debounce real
     // without delaying a tap (tap/hint paths use required=1).
     private val FB_SURFACE_CONFIRM_MS = 1_800L
+    // The foreground tick probes once a second with no event. On a quiet surface (a Reel or Short
+    // just playing) those probes are the only samples, so a confirmation window shorter than the
+    // tick never collects two of them and the surface stays unblocked until some unrelated event
+    // happens to land close to a tick. Tick samples therefore get at least this window.
+    private val TICK_SURFACE_CONFIRM_MS = 1_800L
+    private var inAppProbeFromTick = false
     // After tapping any non-Reels Facebook bottom tab the destination page may briefly look like
     // the Reels viewer (full-screen pager, hidden nav). Suppress the structural Reels check for
     // this window after such a tap.
@@ -6673,6 +6679,7 @@ class LoqInAccessibilityService : AccessibilityService() {
         }
 
         val eventType = event?.eventType ?: 0
+        inAppProbeFromTick = event == null
         captureSurfaceHintFromEvent(pkg, event, now)
         val isTransitionEvent =
             eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
@@ -7900,7 +7907,7 @@ class LoqInAccessibilityService : AccessibilityService() {
         return inAppSurfaceEvidence.surfaceConfirmed(
             key = key,
             required = required,
-            confirmMs = confirmMs,
+            confirmMs = if (inAppProbeFromTick) maxOf(confirmMs, TICK_SURFACE_CONFIRM_MS) else confirmMs,
             now = System.currentTimeMillis()
         )
     }
@@ -8753,9 +8760,19 @@ class LoqInAccessibilityService : AccessibilityService() {
                     }
                     val lowerCd = cd.lowercase(Locale.ROOT)
                     val lowerText = nodeText.lowercase(Locale.ROOT)
-                    if (lowerCd.contains("like button") ||
-                        lowerCd.contains("share button") ||
-                        lowerCd == "comment"
+                    // The Reels viewer stacks its Like/Comment/Share buttons down the right edge;
+                    // a feed post lays the same buttons out in a row across the left half. With
+                    // the feed scrolled, Facebook hides both bars and the tab pager is full
+                    // screen, so without the right-rail check a plain post matched as Reels.
+                    // Rail labels vary by build ("Like button", "2.4K reactions", "30 comments",
+                    // "Share, 12 shares"); the rail position is what makes them decisive.
+                    if ((lowerCd.contains("like button") ||
+                            lowerCd.contains("share button") ||
+                            lowerCd == "comment" ||
+                            lowerCd.endsWith(" reactions") ||
+                            lowerCd.endsWith(" comments") ||
+                            lowerCd.startsWith("share,")) &&
+                        isNodeInRightRail(node, rootBounds)
                     ) {
                         reelsActionSignal = true
                     }
@@ -8812,7 +8829,9 @@ class LoqInAccessibilityService : AccessibilityService() {
         // trustworthy and the structural fallback must not fire on it.
         val scanTruncated = queue.isNotEmpty() || visited >= 400 || SystemClock.uptimeMillis() >= deadline
 
-        if (composerSeen) {
+        // The comment composer of a feed photo viewer carries the same sticker/GIF attachment
+        // components, so the composer only counts inside the Reels viewer's own structure.
+        if (composerSeen && (fullScreenViewPager || reelsActionSignal)) {
             return FbReelsSignals(true, "composer", fullScreenViewPager, reelsActionSignal, fbNavPresent, nonReelsTabSelected, homeSelected, reelsSelected, reelsViewerCue, scanTruncated)
         }
         // A selected Home tab vetoes Reels: preloaded off-screen pager pages can report a selected
@@ -8834,6 +8853,15 @@ class LoqInAccessibilityService : AccessibilityService() {
             fullScreenViewPager, reelsActionSignal, fbNavPresent, nonReelsTabSelected,
             homeSelected, reelsSelected, reelsViewerCue, scanTruncated
         )
+    }
+
+    /** True when [node]'s centre sits in the right fifth of the window (the Reels action rail). */
+    private fun isNodeInRightRail(node: AccessibilityNodeInfo, rootBounds: Rect): Boolean {
+        if (rootBounds.width() <= 0) return false
+        val b = Rect()
+        runCatching { node.getBoundsInScreen(b) }.getOrNull()
+        if (b.isEmpty) return false
+        return (b.exactCenterX() - rootBounds.left) / rootBounds.width().toFloat() >= 0.8f
     }
 
     /** True when [node] sits in the bottom ~14% of the app window (Facebook's tab-shell band). */
