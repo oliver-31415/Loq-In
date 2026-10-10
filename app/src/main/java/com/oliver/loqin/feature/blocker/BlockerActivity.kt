@@ -43,6 +43,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import androidx.core.view.updatePadding
 import androidx.core.view.WindowInsetsControllerCompat
+import com.oliver.loqin.BuildConfig
 import com.oliver.loqin.R
 import com.oliver.loqin.blocking.BlockingRuntime
 import com.oliver.loqin.data.prefs.BlockAttemptStore
@@ -312,6 +313,15 @@ class BlockerActivity : ComponentActivity() {
         if (attemptsToday > 0) {
             attemptsView.text = resources.getQuantityString(R.plurals.blocked_attempts_today, attemptsToday, attemptsToday)
             attemptsView.setTextColor(AccentColor.getAccentColorInt(this))
+        }
+
+        if (BuildConfig.DEBUG) {
+            // Test hook: the block screen is FLAG_SECURE (black in screenshots) and UI dumps restart
+            // the accessibility service, so debug builds log what the screen shows.
+            android.util.Log.d(
+                "LoqInBlocker",
+                "shown pkg=$pkg title=${titleView.text} message=${messageView.text} attempts=${attemptsView.text.takeIf { attemptsView.isVisible }} task=$taskId",
+            )
         }
 
         if (snapshot == null) {
