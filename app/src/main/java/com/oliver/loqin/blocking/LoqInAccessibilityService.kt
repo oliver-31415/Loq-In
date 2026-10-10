@@ -234,6 +234,12 @@ class LoqInAccessibilityService : AccessibilityService() {
     // and never reach the required two samples. A slightly wider window keeps the debounce real
     // without delaying a tap (tap/hint paths use required=1).
     private val FB_SURFACE_CONFIRM_MS = 1_800L
+    // The foreground tick probes once a second with no event. On a quiet surface (a Reel or Short
+    // just playing) those probes are the only samples, so a confirmation window shorter than the
+    // tick never collects two of them and the surface stays unblocked until some unrelated event
+    // happens to land close to a tick. Tick samples therefore get at least this window.
+    private val TICK_SURFACE_CONFIRM_MS = 1_800L
+    private var inAppProbeFromTick = false
     // After tapping any non-Reels Facebook bottom tab the destination page may briefly look like
     // the Reels viewer (full-screen pager, hidden nav). Suppress the structural Reels check for
     // this window after such a tap.
@@ -6673,6 +6679,7 @@ class LoqInAccessibilityService : AccessibilityService() {
         }
 
         val eventType = event?.eventType ?: 0
+        inAppProbeFromTick = event == null
         captureSurfaceHintFromEvent(pkg, event, now)
         val isTransitionEvent =
             eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED ||
@@ -7900,7 +7907,7 @@ class LoqInAccessibilityService : AccessibilityService() {
         return inAppSurfaceEvidence.surfaceConfirmed(
             key = key,
             required = required,
-            confirmMs = confirmMs,
+            confirmMs = if (inAppProbeFromTick) maxOf(confirmMs, TICK_SURFACE_CONFIRM_MS) else confirmMs,
             now = System.currentTimeMillis()
         )
     }
