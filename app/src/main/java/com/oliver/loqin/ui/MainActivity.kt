@@ -4619,7 +4619,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Replaces the Home toolbar title text with the "loq in" wordmark, keeping the same toolbar
+     * Replaces the Home toolbar title text with the "LOQ IN" wordmark, keeping the same toolbar
      * title line height (so the header layout is unchanged) and following the surface text color.
      */
     private fun applyHomeWordmarkTitle(toolbar: MaterialToolbar) {
