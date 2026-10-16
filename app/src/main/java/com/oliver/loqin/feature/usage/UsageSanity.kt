@@ -24,7 +24,8 @@ import java.util.Calendar
 import kotlin.math.floor
 
 object UsageSanity {
-    enum class RangeCap { TODAY, WEEK, MONTH, YEAR, OVERALL }
+    /** WEEK and LAST_30_DAYS are trailing windows ending today; MONTH and YEAR are calendar ones. */
+    enum class RangeCap { TODAY, WEEK, MONTH, LAST_30_DAYS, YEAR, OVERALL }
 
     fun capMapToRange(ctx: Context, raw: Map<String, Long>, range: RangeCap): Map<String, Long> {
         if (raw.isEmpty()) {
@@ -104,16 +105,10 @@ object UsageSanity {
                 set(Calendar.SECOND, 0)
                 set(Calendar.MILLISECOND, 0)
             }.timeInMillis
-            RangeCap.WEEK -> (cal.clone() as Calendar).apply {
-                firstDayOfWeek = Calendar.MONDAY
-                set(Calendar.HOUR_OF_DAY, 0)
-                set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-                val currentDow = get(Calendar.DAY_OF_WEEK)
-                val shift = (currentDow - Calendar.MONDAY + 7) % 7
-                add(Calendar.DAY_OF_YEAR, -shift)
-            }.timeInMillis
+            // Every WEEK caller shows the last 7 days (today and the 6 before), not the calendar
+            // week; capping to Monday scaled those totals down early in the week.
+            RangeCap.WEEK -> startOfDayDaysAgo(cal, 6)
+            RangeCap.LAST_30_DAYS -> startOfDayDaysAgo(cal, 29)
             RangeCap.MONTH -> (cal.clone() as Calendar).apply {
                 set(Calendar.DAY_OF_MONTH, 1)
                 set(Calendar.HOUR_OF_DAY, 0)
@@ -133,4 +128,12 @@ object UsageSanity {
         }
         return (nowMs - startMs).coerceAtLeast(0L)
     }
+
+    private fun startOfDayDaysAgo(cal: Calendar, days: Int): Long = (cal.clone() as Calendar).apply {
+        set(Calendar.HOUR_OF_DAY, 0)
+        set(Calendar.MINUTE, 0)
+        set(Calendar.SECOND, 0)
+        set(Calendar.MILLISECOND, 0)
+        add(Calendar.DAY_OF_YEAR, -days)
+    }.timeInMillis
 }

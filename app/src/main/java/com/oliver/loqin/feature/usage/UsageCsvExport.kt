@@ -29,6 +29,13 @@ object UsageCsvExport {
         return if (needsQuotes) "\"" + field.replace("\"", "\"\"") + "\"" else field
     }
 
+    /**
+     * App names come from other apps; a leading = + - @ (or tab/CR) would run as a spreadsheet
+     * formula, so such names get a leading apostrophe.
+     */
+    fun neutralizeFormula(text: String): String =
+        if (text.isNotEmpty() && text[0] in "=+-@\t\r") "'$text" else text
+
     // A row is written only when at least one measure is non-zero.
     fun hasData(screenTimeMs: Long, opens: Int, blocks: Int): Boolean =
         screenTimeMs > 0L || opens > 0 || blocks > 0
@@ -44,7 +51,7 @@ object UsageCsvExport {
     ): String = listOf(
         date,
         packageName,
-        appName,
+        neutralizeFormula(appName),
         (screenTimeMs / 60_000L).toString(),
         opens.toString(),
         blocks.toString()

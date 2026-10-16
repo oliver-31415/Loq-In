@@ -69,6 +69,14 @@ class UsageCsvExportTest {
     }
 
     @Test
+    fun appNameStartingLikeAFormulaIsNeutralized() {
+        val line = UsageCsvExport.row("2026-10-01", "p", "=HYPERLINK(\"x\")", 0L, 1, 0)
+        assertEquals("2026-10-01,p,\"'=HYPERLINK(\"\"x\"\")\",0,1,0", line)
+        assertEquals("Maps", UsageCsvExport.neutralizeFormula("Maps"))
+        assertEquals("'-1", UsageCsvExport.neutralizeFormula("-1"))
+    }
+
+    @Test
     fun screenTimeIsTruncatedToWholeMinutes() {
         val line = UsageCsvExport.row("2026-10-01", "p", "P", 40_000L, 0, 1)
         assertEquals("2026-10-01,p,P,0,0,1", line)

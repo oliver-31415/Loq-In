@@ -59,7 +59,7 @@ object AppUsageRepo {
         val from = now - java.util.concurrent.TimeUnit.DAYS.toMillis(29)
         val local = UsageStore.getUsageMsMapForDateRange(ctx, from, now)
         return if (local.isNotEmpty()) {
-            buildSummary(ctx, local, topN, UsageSanity.RangeCap.MONTH)
+            buildSummary(ctx, local, topN, UsageSanity.RangeCap.LAST_30_DAYS)
         } else {
             UsageSummary(0L, emptyList())
         }
