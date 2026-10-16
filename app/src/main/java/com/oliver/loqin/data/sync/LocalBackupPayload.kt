@@ -493,7 +493,7 @@ object LocalBackupPayload {
         }
     }
 
-    private fun hasBackupPayload(payload: Map<*, *>): Boolean {
+    internal fun hasBackupPayload(payload: Map<*, *>): Boolean {
         return payload.containsKey(FIELD_PREFS) ||
             payload.containsKey(FIELD_LOQIN_PREFS) ||
             payload.containsKey(FIELD_SCHEDULES_PREFS) ||

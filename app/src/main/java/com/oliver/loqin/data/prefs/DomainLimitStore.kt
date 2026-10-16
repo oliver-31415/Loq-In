@@ -161,6 +161,22 @@ object DomainLimitStore {
         }
     }
 
+    fun copyProfile(ctx: Context, fromProfile: String, toProfile: String) {
+        val p = prefs(ctx)
+        val fromPrefix = PREFIX + PROFILE_SEGMENT + sanitizeProfile(fromProfile) + "__"
+        val toPrefix = PREFIX + PROFILE_SEGMENT + sanitizeProfile(toProfile) + "__"
+        if (fromPrefix == toPrefix) return
+        val entries = p.all.filterKeys { it.startsWith(fromPrefix) }
+        if (entries.isEmpty()) return
+        p.edit {
+            for ((key, value) in entries) {
+                val domain = key.removePrefix(fromPrefix)
+                val minutes = (value as? Number)?.toInt() ?: 0
+                if (domain.isNotBlank() && minutes > 0) putInt(toPrefix + domain, minutes)
+            }
+        }
+    }
+
     fun onProfileRemoved(ctx: Context, profile: String) {
         val p = prefs(ctx)
         val prefix = PREFIX + PROFILE_SEGMENT + sanitizeProfile(profile) + "__"

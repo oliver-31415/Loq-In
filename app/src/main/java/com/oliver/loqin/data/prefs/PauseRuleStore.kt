@@ -146,6 +146,20 @@ object PauseRuleStore {
         }
     }
 
+    fun copyProfile(context: Context, from: String, to: String) {
+        if (from == to) return
+        val sp = prefs(context)
+        sp.edit {
+            for (prefix in listOf(KEY_APPS, KEY_BASE_SECONDS, KEY_STEP_SECONDS)) {
+                @Suppress("UNCHECKED_CAST")
+                when (val value = sp.all[prefix + from]) {
+                    is Int -> putInt(prefix + to, value)
+                    is Set<*> -> putStringSet(prefix + to, (value as Set<String>).toSet())
+                }
+            }
+        }
+    }
+
     fun onProfileRemoved(context: Context, profile: String) {
         prefs(context).edit {
             remove(KEY_APPS + profile)

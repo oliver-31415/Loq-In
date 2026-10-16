@@ -40,6 +40,7 @@ import com.oliver.loqin.data.sync.BackupCategoryFilter
 import com.oliver.loqin.data.sync.BackupSelection
 import com.oliver.loqin.data.sync.BackupSelectionStore
 import com.oliver.loqin.data.sync.FileBackupRuntime
+import com.oliver.loqin.data.sync.NotALoqInBackupException
 import com.oliver.loqin.data.sync.inspectBackupCompatibility
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.ui.MainActivity
@@ -146,6 +147,16 @@ class BackupFlowActions(private val activity: ComponentActivity) {
             return
         }
         showResetAllDataDialog()
+    }
+
+    private fun restoreErrorMessage(error: Throwable): String {
+        if (error is NotALoqInBackupException) {
+            return activity.getString(R.string.file_restore_not_backup)
+        }
+        return activity.getString(
+            R.string.file_restore_error_fmt,
+            error.localizedMessage ?: activity.getString(R.string.error_unknown),
+        )
     }
 
     private fun alive(): Boolean = !activity.isFinishing && !activity.isDestroyed
@@ -323,16 +334,17 @@ class BackupFlowActions(private val activity: ComponentActivity) {
             }
             payloadResult
                 .onFailure { error ->
-                    activity.showWarnPillOnContent(
-                        activity.getString(
-                            R.string.file_restore_error_fmt,
-                            error.localizedMessage ?: activity.getString(R.string.error_unknown),
-                        )
-                    )
+                    activity.showWarnPillOnContent(restoreErrorMessage(error))
                 }
                 .onSuccess { payload ->
                     showRestoreSelectionDialog(activeCtx, payload) { selectedPayload ->
                         showBackupCompatibilityWarningIfNeeded(activeCtx, selectedPayload) {
+                            // Protection may have turned on (schedule, tag, widget) while the
+                            // picker and dialogs were open; a restore replaces the rules.
+                            if (isRestricted()) {
+                                activity.showWarnPillOnContent(R.string.settings_restricted_action_unavailable)
+                                return@showBackupCompatibilityWarningIfNeeded
+                            }
                             val restoreDialog = showProgressDialog(
                                 activeCtx,
                                 R.string.settings_confirm_file_restore_title,
@@ -350,12 +362,7 @@ class BackupFlowActions(private val activity: ComponentActivity) {
                                 }
                                 val message = result.fold(
                                     onSuccess = { activity.getString(R.string.file_restore_ok_restart) },
-                                    onFailure = { error ->
-                                        activity.getString(
-                                            R.string.file_restore_error_fmt,
-                                            error.localizedMessage ?: activity.getString(R.string.error_unknown),
-                                        )
-                                    },
+                                    onFailure = { error -> restoreErrorMessage(error) },
                                 )
                                 activity.showWarnPillOnContent(message)
                                 if (result.isSuccess) {

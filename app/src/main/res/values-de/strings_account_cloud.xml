@@ -32,6 +32,7 @@
     <string name="restore_applying">Daten werden wiederhergestellt…</string>
     <string name="file_backup_error_fmt">Datei-Backup fehlgeschlagen:\n%1$s</string>
     <string name="file_restore_error_fmt">Datei-Wiederherstellung fehlgeschlagen:\n%1$s</string>
+    <string name="file_restore_not_backup">Diese Datei ist kein Loq-In-Backup. Wähle eine Datei, die du aus Loq In exportiert hast.</string>
 
     <!-- ====================================================== -->
     <!-- Backup and restore dialogs -->

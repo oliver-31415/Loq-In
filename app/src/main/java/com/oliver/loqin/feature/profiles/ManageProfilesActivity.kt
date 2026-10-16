@@ -37,6 +37,10 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.oliver.loqin.R
+import com.oliver.loqin.data.prefs.DomainLimitStore
+import com.oliver.loqin.data.prefs.DomainVisitLimitStore
+import com.oliver.loqin.data.prefs.PauseRuleStore
+import com.oliver.loqin.data.prefs.ProfileLimitKeys
 import com.oliver.loqin.data.prefs.DomainBlockStore
 import com.oliver.loqin.data.prefs.InAppLimitStore
 import com.oliver.loqin.data.prefs.InAppRuleStore
@@ -403,6 +407,10 @@ class ManageProfilesActivity : AppCompatActivity() {
             SurfaceLimitStore.copyProfile(this, name, newName)
             InAppRuleStore.copyProfile(this, name, newName)
             TempPauseStore.copyProfile(this, name, newName)
+            DomainLimitStore.copyProfile(this, name, newName)
+            DomainVisitLimitStore.copyProfile(this, name, newName)
+            PauseRuleStore.copyProfile(this, name, newName)
+            ProfileLimitKeys.copyProfile(this, name, newName)
             snackRoot().showLoqInStatus(getString(R.string.profile_duplicated, newName))
             refresh()
         } else {
