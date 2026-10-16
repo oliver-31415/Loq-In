@@ -18,6 +18,7 @@
 
 package com.oliver.loqin.feature.blocker
 
+import androidx.core.graphics.ColorUtils
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
@@ -149,6 +150,15 @@ class BlockerActivity : ComponentActivity() {
         val accent = AccentColor.getActiveColor(this)
         debugInfoButton.imageTintList = accent
         btnClose.backgroundTintList = accent
+        // Light accents (amber, lime) need dark text; the layout's white was ~2:1 on amber.
+        val accentInt = accent.defaultColor
+        btnClose.setTextColor(
+            if (ColorUtils.calculateContrast(Color.BLACK, accentInt) > ColorUtils.calculateContrast(Color.WHITE, accentInt)) {
+                Color.BLACK
+            } else {
+                Color.WHITE
+            }
+        )
 
         titleView.text = getString(R.string.blocked_app_default)
         messageView.text = getString(R.string.blocked_message)

@@ -93,7 +93,7 @@
         <item quantity="other">Loq In für %1$d Minuten pausiert.</item>
     </plurals>
     <string name="widget_pause_already_disabled">Loq In ist bereits deaktiviert.</string>
-    <string name="widget_app_lock_open_app">Öffne Loq In, um eine Pause zu machen, solange die App-Sperre aktiv ist.</string>
+    <string name="widget_app_lock_open_app">Öffne Loq In, um bei aktiver App-Sperre eine Pause einzulegen.</string>
     <string name="widget_next_schedule_open">Zeitpläne öffnen</string>
     <string name="widget_qr_name">QR-Scanner</string>
     <string name="widget_barcode_name">Barcode-Scanner</string>
