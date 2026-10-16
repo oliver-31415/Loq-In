@@ -18,6 +18,7 @@
 
 package com.oliver.loqin.widget
 
+import com.oliver.loqin.security.AppLockStore
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
@@ -141,17 +142,28 @@ class PauseBlockerWidgetProvider : AppWidgetProvider() {
             action: String,
             requestCodeBase: Int,
         ) {
-            setOnClickPendingIntent(
-                viewId,
+            val data = "loqin://widget/pause/$minutes/$appWidgetId".toUri()
+            val pendingIntent = if (AppLockStore.isEnabled(context)) {
+                PendingIntent.getActivity(
+                    context,
+                    requestCodeBase + appWidgetId,
+                    QuickActionReceiver.openAppForAction(context) {
+                        setData(data)
+                        putExtra(QuickActionReceiver.EXTRA_PENDING_BREAK_MINUTES, minutes)
+                    },
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+            } else {
                 PendingIntent.getBroadcast(
                     context,
                     requestCodeBase + appWidgetId,
                     Intent(context, QuickActionReceiver::class.java)
                         .setAction(action)
-                        .setData("loqin://widget/pause/$minutes/$appWidgetId".toUri()),
+                        .setData(data),
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
-            )
+            }
+            setOnClickPendingIntent(viewId, pendingIntent)
         }
 
         private fun formatRemaining(remainingMs: Long): String {

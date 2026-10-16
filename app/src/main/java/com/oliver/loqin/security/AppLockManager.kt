@@ -97,6 +97,8 @@ object AppLockManager {
         return true
     }
 
+    fun isSessionUnlocked(): Boolean = sessionUnlocked.get()
+
     fun markUnlocked() {
         lastPromptActivityRef?.get()?.let { AppLogStore.append(it, "AppLock", "Unlock success method=pin_or_biometric") }
         sessionUnlocked.set(true)

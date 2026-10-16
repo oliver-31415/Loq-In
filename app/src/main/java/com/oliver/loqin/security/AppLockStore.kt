@@ -21,6 +21,7 @@ package com.oliver.loqin.security
 import android.content.Context
 import androidx.core.content.edit
 import com.oliver.loqin.util.ManagedDevicePolicyHelper
+import com.oliver.loqin.widget.PauseBlockerWidgetProvider
 
 // Persists and retrieves app lock state.
 object AppLockStore {
@@ -50,6 +51,8 @@ object AppLockStore {
         prefs(ctx).edit(commit = true) {
             putBoolean(KEY_ENABLED, enabled && hasPin(ctx))
         }
+        // Widget break buttons open the app instead of acting while App lock is on.
+        runCatching { PauseBlockerWidgetProvider.refreshAll(ctx) }
     }
 
     fun setPin(ctx: Context, pin: String) {
@@ -65,6 +68,7 @@ object AppLockStore {
             putBoolean(KEY_ENABLED, false)
             putBoolean(KEY_BIOMETRIC, false)
         }
+        runCatching { PauseBlockerWidgetProvider.refreshAll(ctx) }
     }
 
     /**

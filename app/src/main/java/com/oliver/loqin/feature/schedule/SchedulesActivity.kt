@@ -1661,7 +1661,7 @@ class SchedulesActivity : AppCompatActivity() {
     }
 
     private fun reapplySchedulesNow() {
-        ScheduleRuntimeStore.resetActiveScheduleState(this)
+        ScheduleRuntimeStore.clearFiredTokens(this)
         sendBroadcast(
             Intent(this, ScheduleReceiver::class.java).apply {
                 action = ScheduleReceiver.ACTION_TICK

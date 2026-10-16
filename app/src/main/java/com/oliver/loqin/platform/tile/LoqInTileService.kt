@@ -18,6 +18,11 @@
 
 package com.oliver.loqin.platform.tile
 
+import android.os.Build
+import android.app.PendingIntent
+import android.content.Intent
+import com.oliver.loqin.widget.QuickActionReceiver
+import com.oliver.loqin.security.AppLockStore
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
 import android.widget.Toast
@@ -87,6 +92,16 @@ class LoqInTileService : TileService() {
             return
         }
 
+        if (currentlyEnabled && AppLockStore.isEnabled(ctx)) {
+            AppLogStore.append(ctx, "QuickSettings", "action_result action=disable result=deferred reason=app_lock")
+            launchAndCollapse(
+                QuickActionReceiver.openAppForAction(ctx) {
+                    putExtra(QuickActionReceiver.EXTRA_PENDING_DISABLE, true)
+                }
+            )
+            return
+        }
+
         val target = !currentlyEnabled
         val before = SwitchModeStore.isEnabled(ctx)
         val accepted = SwitchModeStore.setEnabled(ctx, target, allowNfcBypass = false)
@@ -115,6 +130,25 @@ class LoqInTileService : TileService() {
         refreshTile()
     }
 
+    private fun launchAndCollapse(intent: Intent) {
+        if (Build.VERSION.SDK_INT >= 34) {
+            startActivityAndCollapse(
+                PendingIntent.getActivity(
+                    this,
+                    TILE_OPEN_APP_REQUEST_CODE,
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+            )
+        } else {
+            runCatching {
+                TileService::class.java
+                    .getMethod("startActivityAndCollapse", Intent::class.java)
+                    .invoke(this, intent)
+            }.getOrElse { startActivity(intent) }
+        }
+    }
+
     private fun refreshTile() {
         val enabled = SwitchModeStore.isEnabled(this)
         qsTile?.apply {
@@ -135,5 +169,9 @@ class LoqInTileService : TileService() {
             )
             updateTile()
         }
+    }
+
+    private companion object {
+        const val TILE_OPEN_APP_REQUEST_CODE = 1003
     }
 }

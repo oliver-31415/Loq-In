@@ -283,28 +283,17 @@ object ScheduleRuntimeStore {
         }
     }
 
-    fun resetActiveScheduleState(ctx: Context) {
+    /**
+     * After a schedule is edited or toggled: forget which one-shot schedules already fired so the
+     * new settings apply now. Keeps a manual "off" during a window and which window turned Loq In
+     * on or off; clearing those made an edit re-enable protection the user had turned off, and
+     * left a window unable to end what it started.
+     */
+    fun clearFiredTokens(ctx: Context) {
         val sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-        sp.edit {
-            putBoolean(KEY_ENABLED_BY_SCHEDULE, false)
-            putBoolean(KEY_DISABLED_BY_SCHEDULE, false)
-            putBoolean(KEY_HAD_ENABLE_AND_DISABLE, false)
-            putBoolean(KEY_HAD_DISABLE_AND_ENABLE, false)
-            putBoolean(KEY_MANUAL_OVERRIDE_ACTIVE, false)
-            remove(KEY_MANUAL_OVERRIDE_SCHEDULE_ID)
-            remove(KEY_ACTIVE_RANGE_SCHEDULE_ID)
-            remove(KEY_MANUAL_SCHEDULE_PAUSE_ACTIVE)
-            remove(KEY_MANUAL_SCHEDULE_PAUSE_SCHEDULE_ID)
-            remove(KEY_MANUAL_DISABLE_MS)
-            val keys = sp.all.keys.filter {
-                it.startsWith(KEY_LAST_FIRED_PREFIX) ||
-                    it.startsWith(KEY_LAST_CONN_ACTIVE_PREFIX) ||
-                    it.startsWith(KEY_CONN_ACTIVE_SINCE_PREFIX) ||
-                    it.startsWith(KEY_LAST_LOCATION_TRANSITION_PREFIX) ||
-                    it.startsWith(KEY_LOCATION_ARMED_PREFIX)
-            }
-            for (k in keys) remove(k)
-        }
+        val keys = sp.all.keys.filter { it.startsWith(KEY_LAST_FIRED_PREFIX) }
+        if (keys.isEmpty()) return
+        sp.edit { for (k in keys) remove(k) }
     }
 
 }
