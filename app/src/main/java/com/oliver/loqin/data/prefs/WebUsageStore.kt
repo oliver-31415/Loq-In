@@ -103,6 +103,27 @@ object WebUsageStore {
         return (base + extra).coerceAtLeast(0L)
     }
 
+    /** Today's usage of [ruleDomain] and every subdomain of it (youtube.com plus m.youtube.com). */
+    fun getUsageMsTodayIncludingSubdomains(ctx: Context, ruleDomain: String): Long {
+        val norm = DomainBlockStore.normalize(ruleDomain) ?: return 0L
+        if (norm.isBlank()) return 0L
+        val dayPrefix = PREFIX_DAY + dayKey(0) + "_"
+        fun covers(key: String): Boolean {
+            if (!key.startsWith(dayPrefix)) return false
+            val host = key.substring(dayPrefix.length)
+            return host == norm || host.endsWith(".$norm")
+        }
+        val prefs = PreferenceManager.getDefaultSharedPreferences(ctx)
+        var total = 0L
+        for ((key, value) in prefs.all) {
+            if (covers(key)) total += (value as? Number)?.toLong() ?: 0L
+        }
+        for ((key, value) in pending) {
+            if (covers(key)) total += value
+        }
+        return total.coerceAtLeast(0L)
+    }
+
     fun setUsageMsToday(ctx: Context, domain: String, valueMs: Long) {
         val norm = DomainBlockStore.normalize(domain) ?: return
         if (norm.isBlank()) {

@@ -227,6 +227,7 @@ class LoqInAccessibilityService : AccessibilityService() {
     // Count an "open" once per foreground session.
     // Apps such as Gmail and Instagram can emit multiple ACTIVITY_RESUMED events while the user is still inside the same app, so a short cooldown alone would incorrectly count one real open many times.
     private val OPEN_COUNT_COOLDOWN_MS = 800L
+    private val WEBSITE_LIMIT_USAGE_CACHE_MS = 2_000L
     private val BLOCK_SHOWN_COOLDOWN_MS = 800L
     private val SURFACE_CONFIRM_MS = 850L
     private val SURFACE_HINT_TTL_MS = 4_500L
@@ -3292,6 +3293,28 @@ class LoqInAccessibilityService : AccessibilityService() {
         return getString(R.string.blocking_daily_limit_duration_fmt, formatDuration(limitMin.toLong() * 60_000L))
     }
 
+    private class WebsiteLimit(val limitMin: Int, val usageMs: Long) {
+        val reached: Boolean get() = limitMin > 0 && usageMs >= limitMin.toLong() * 60_000L
+    }
+
+    // Short-lived so the usage scan doesn't run on every browser event.
+    private val websiteLimitUsageCache = HashMap<String, Pair<Long, Long>>()
+
+    private fun websiteLimitFor(host: String): WebsiteLimit {
+        if (!DomainBlockStore.isRuleEnabledForHost(this, host)) return WebsiteLimit(0, 0L)
+        val (ruleDomain, minutes) = DomainLimitStore.findLimitForHost(this, host) ?: return WebsiteLimit(0, 0L)
+        val now = SystemClock.elapsedRealtime()
+        val cached = websiteLimitUsageCache[ruleDomain]
+        val usage = if (cached != null && now - cached.first < WEBSITE_LIMIT_USAGE_CACHE_MS) {
+            cached.second
+        } else {
+            WebUsageStore.getUsageMsTodayIncludingSubdomains(this, ruleDomain).also {
+                websiteLimitUsageCache[ruleDomain] = now to it
+            }
+        }
+        return WebsiteLimit(minutes, usage)
+    }
+
     private fun domainUsageLine(domain: String, limitMin: Int): String {
         if (limitMin <= 0) {
             return ""
@@ -4378,13 +4401,10 @@ class LoqInAccessibilityService : AccessibilityService() {
             ?: host
         val hardBlocked = DomainBlockStore.shouldBlockHost(this, websiteTarget)
 
-        val limitMin = if (DomainBlockStore.isRuleEnabledForHost(this, host)) {
-            DomainLimitStore.getLimitMinutes(this, host)
-        } else {
-            0
-        }
-        val usageMs = if (limitMin > 0) WebUsageStore.getUsageMsToday(this, host) else 0L
-        val limitReached = limitMin > 0 && usageMs >= limitMin.toLong() * 60_000L
+        val websiteLimit = websiteLimitFor(host)
+        val limitMin = websiteLimit.limitMin
+        val usageMs = websiteLimit.usageMs
+        val limitReached = websiteLimit.reached
 
         if (!hardBlocked && !limitReached) {
             if (isFirefoxFamily(pkg)) {
@@ -4544,12 +4564,9 @@ class LoqInAccessibilityService : AccessibilityService() {
             ?.takeIf { DomainBlockStore.hostPart(it) == visibleHost }
             ?: visibleHost
         val hardBlocked = DomainBlockStore.shouldBlockHost(this, visibleTarget)
-        val limitMin = if (DomainBlockStore.isRuleEnabledForHost(this, visibleHost)) {
-            DomainLimitStore.getLimitMinutes(this, visibleHost)
-        } else {
-            0
-        }
-        val limitReached = limitMin > 0 && WebUsageStore.getUsageMsToday(this, visibleHost) >= limitMin.toLong() * 60_000L
+        val websiteLimit = websiteLimitFor(visibleHost)
+        val limitMin = websiteLimit.limitMin
+        val limitReached = websiteLimit.reached
         if (!hardBlocked && !limitReached) {
             return
         }
@@ -4646,12 +4663,9 @@ class LoqInAccessibilityService : AccessibilityService() {
             ?.takeIf { DomainBlockStore.hostPart(it) == visibleHost }
             ?: visibleHost
         val stillBlocked = DomainBlockStore.shouldBlockHost(this, visibleTarget)
-        val limitMin = if (DomainBlockStore.isRuleEnabledForHost(this, visibleHost)) {
-            DomainLimitStore.getLimitMinutes(this, visibleHost)
-        } else {
-            0
-        }
-        val limitReached = limitMin > 0 && WebUsageStore.getUsageMsToday(this, visibleHost) >= limitMin.toLong() * 60_000L
+        val websiteLimit = websiteLimitFor(visibleHost)
+        val limitMin = websiteLimit.limitMin
+        val limitReached = websiteLimit.reached
 
         if (!stillBlocked && !limitReached) {
             return

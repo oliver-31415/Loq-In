@@ -62,6 +62,21 @@ object DomainLimitStore {
     fun getLimitMinutes(ctx: Context, domain: String): Int =
         getLimitMinutesForProfile(ctx, currentProfile(ctx), domain)
 
+    /**
+     * The limit that applies to [host]: its own, else the closest parent domain's, so a limit on
+     * youtube.com also covers m.youtube.com. Returns the rule domain and its minutes.
+     */
+    fun findLimitForHost(ctx: Context, host: String): Pair<String, Int>? {
+        var candidate = DomainBlockStore.normalize(host) ?: return null
+        while (true) {
+            val minutes = getLimitMinutes(ctx, candidate)
+            if (minutes > 0) return candidate to minutes
+            val dot = candidate.indexOf('.')
+            if (dot < 0 || candidate.indexOf('.', dot + 1) < 0) return null
+            candidate = candidate.substring(dot + 1)
+        }
+    }
+
     fun getLimitMinutesForProfile(ctx: Context, profile: String, domain: String): Int {
         val d = DomainBlockStore.normalize(domain) ?: return 0
         val scoped = scopedKey(sanitizeProfile(profile), d)
