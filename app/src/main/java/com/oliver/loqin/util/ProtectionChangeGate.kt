@@ -25,6 +25,7 @@ import android.content.Intent
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import com.oliver.loqin.blocking.BlockingRuntime
+import com.oliver.loqin.data.prefs.ClockShiftGuard
 import com.oliver.loqin.data.prefs.AttemptLimitStore
 import com.oliver.loqin.data.prefs.AppLogStore
 import com.oliver.loqin.data.prefs.AutomationModeStore
@@ -752,7 +753,13 @@ object ProtectionChangeGate {
         return applied
     }
 
-    fun applyDueChanges(context: Context, nowMs: Long = System.currentTimeMillis()): Int {
+    fun applyDueChanges(context: Context): Int {
+        // A clock set forward can fire the alarm before TIME_SET is handled; shift first.
+        runCatching { ClockShiftGuard.reconcile(context) }
+        return applyDueChanges(context, System.currentTimeMillis())
+    }
+
+    fun applyDueChanges(context: Context, nowMs: Long): Int {
         val all = pendingChanges(context)
         if (all.isEmpty()) {
             cancelAlarm(context)
@@ -774,6 +781,17 @@ object ProtectionChangeGate {
 
     fun reschedulePending(context: Context) {
         scheduleNext(context, pendingChanges(context))
+    }
+
+    /** Moves every queued change by [deltaMs] after a clock change, so each keeps its real delay. */
+    fun shiftPending(context: Context, deltaMs: Long) {
+        val current = pendingChanges(context)
+        if (current.isEmpty() || deltaMs == 0L) return
+        val shifted = current.map {
+            it.copy(executeAtMs = it.executeAtMs + deltaMs, createdAtMs = it.createdAtMs + deltaMs)
+        }
+        savePending(context, shifted)
+        scheduleNext(context, shifted)
     }
 
     private fun queue(context: Context, type: String, data: JSONObject) {

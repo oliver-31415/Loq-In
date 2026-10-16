@@ -46,6 +46,7 @@ import com.oliver.loqin.data.prefs.ScheduleInsights
 import com.oliver.loqin.data.prefs.SchedulePlanner
 import com.oliver.loqin.data.prefs.ScheduleRuntimeStore
 import com.oliver.loqin.data.prefs.ScheduleStore
+import com.oliver.loqin.data.prefs.ScheduleWindow
 import com.oliver.loqin.data.prefs.SwitchModeStore
 import com.google.android.gms.location.Geofence
 import java.util.Calendar
@@ -216,16 +217,9 @@ class ScheduleReceiver : BroadcastReceiver() {
                 s.isLocationSchedule() -> false
 
                 !s.wifiSsid.isNullOrBlank() -> {
-                    val appliesToday = when (s.type) {
-                        ScheduleStore.Type.WEEKLY -> (s.daysMask and todayBit) != 0
-                        ScheduleStore.Type.ONE_TIME ->
-                            (s.startDate > 0 && s.endDate > 0 && todayYmd in s.startDate..s.endDate)
-                    }
+                    val inWindow = ScheduleWindow.covers(s, now)
 
-                    val timeOk = (s.startMinutes == 0 && s.endMinutes >= 1439) ||
-                        inTimeRange(nowMinutes, s.startMinutes, s.endMinutes)
-
-                    val active = appliesToday && timeOk && wifiConnected && ssidMatches(ssid, s.wifiSsid)
+                    val active = inWindow && wifiConnected && ssidMatches(ssid, s.wifiSsid)
                     if (active) {
                         trackConnActivePeriod(ctx, s.id, nowMs)
                     }
@@ -238,7 +232,7 @@ class ScheduleReceiver : BroadcastReceiver() {
                         if (isRangeAction(s.action)) true
                         else shouldFireOneShotConn(ctx, s, token = "WIFI:${s.wifiSsid}:${s.action.name}")
                     } else {
-                        val briefBlip = connScheduleTimeValid(s, nowMinutes, todayBit, todayYmd) &&
+                        val briefBlip = connScheduleTimeValid(s, now) &&
                             nowMs - ScheduleRuntimeStore.getLastConnActiveMs(ctx, s.id) < CONN_EXIT_GRACE_MS
                         if (!briefBlip) {
                             ScheduleRuntimeStore.clearLastFiredToken(ctx, s.id)
@@ -248,16 +242,9 @@ class ScheduleReceiver : BroadcastReceiver() {
                 }
 
                 !s.btDeviceName.isNullOrBlank() || !s.btDeviceAddress.isNullOrBlank() -> {
-                    val appliesToday = when (s.type) {
-                        ScheduleStore.Type.WEEKLY -> (s.daysMask and todayBit) != 0
-                        ScheduleStore.Type.ONE_TIME ->
-                            (s.startDate > 0 && s.endDate > 0 && todayYmd in s.startDate..s.endDate)
-                    }
+                    val inWindow = ScheduleWindow.covers(s, now)
 
-                    val timeOk = (s.startMinutes == 0 && s.endMinutes >= 1439) ||
-                        inTimeRange(nowMinutes, s.startMinutes, s.endMinutes)
-
-                    val active = appliesToday && timeOk && btConnected && bluetoothScheduleMatches(
+                    val active = inWindow && btConnected && bluetoothScheduleMatches(
                         scheduleName = s.btDeviceName,
                         scheduleAddress = s.btDeviceAddress,
                         currentName = btName,
@@ -275,7 +262,7 @@ class ScheduleReceiver : BroadcastReceiver() {
                         if (isRangeAction(s.action)) true
                         else shouldFireOneShotConn(ctx, s, token = "BT:${s.btDeviceAddress ?: s.btDeviceName}:${s.action.name}")
                     } else {
-                        val briefBlip = connScheduleTimeValid(s, nowMinutes, todayBit, todayYmd) &&
+                        val briefBlip = connScheduleTimeValid(s, now) &&
                             nowMs - ScheduleRuntimeStore.getLastConnActiveMs(ctx, s.id) < CONN_EXIT_GRACE_MS
                         if (!briefBlip) {
                             ScheduleRuntimeStore.clearLastFiredToken(ctx, s.id)
@@ -285,19 +272,16 @@ class ScheduleReceiver : BroadcastReceiver() {
                 }
 
                 else -> {
-                    val appliesToday = when (s.type) {
-                        ScheduleStore.Type.WEEKLY -> (s.daysMask and todayBit) != 0
-                        ScheduleStore.Type.ONE_TIME ->
-                            (s.startDate > 0 && s.endDate > 0 && todayYmd in s.startDate..s.endDate)
-                    }
+                    val appliesToday = ScheduleWindow.appliesOn(s, now)
 
-                    if (!appliesToday) {
+                    if (isRangeAction(s.action)) {
+                        if (!appliesToday) ScheduleRuntimeStore.clearLastFiredToken(ctx, s.id)
+                        ScheduleWindow.covers(s, now)
+                    } else if (!appliesToday) {
                         ScheduleRuntimeStore.clearLastFiredToken(ctx, s.id)
                         false
                     } else {
-                        if (isRangeAction(s.action)) {
-                            inTimeRange(nowMinutes, s.startMinutes, s.endMinutes)
-                        } else {
+                        run {
                             val targetMs = atMinutesToday(now, s.startMinutes)
                             val due = abs(nowMs - targetMs) <= SINGLE_FIRE_WINDOW_MS
                             if (!due) {
@@ -336,7 +320,7 @@ class ScheduleReceiver : BroadcastReceiver() {
             // sustained; genuine day/time-window ends still exit immediately.
             val prevConnBlip = previousActiveRange != null &&
                 isConnSchedule(previousActiveRange) &&
-                connScheduleTimeValid(previousActiveRange, nowMinutes, todayBit, todayYmd) &&
+                connScheduleTimeValid(previousActiveRange, now) &&
                 nowMs - ScheduleRuntimeStore.getLastConnActiveMs(ctx, previousActiveRange.id) < CONN_EXIT_GRACE_MS
             if (prevConnBlip) {
                 dbg("Previous conn schedule briefly inactive -> keep override/ownership (id=${previousActiveRange?.id})")
@@ -588,10 +572,7 @@ class ScheduleReceiver : BroadcastReceiver() {
             return
         }
 
-        val withinDayAndTime = (schedule.daysMask and todayBit) != 0 && (
-            (schedule.startMinutes == 0 && schedule.endMinutes >= 1439) ||
-                inTimeRange(nowMinutes, schedule.startMinutes, schedule.endMinutes)
-            )
+        val withinDayAndTime = ScheduleWindow.covers(schedule, now)
 
         if (isEnter && !withinDayAndTime) {
             return
@@ -1046,23 +1027,8 @@ class ScheduleReceiver : BroadcastReceiver() {
         ScheduleRuntimeStore.setLastConnActiveMs(ctx, scheduleId, nowMs)
     }
 
-    private fun connScheduleTimeValid(
-        s: ScheduleStore.Schedule,
-        nowMinutes: Int,
-        todayBit: Int,
-        todayYmd: Int
-    ): Boolean {
-        val appliesToday = when (s.type) {
-            ScheduleStore.Type.WEEKLY -> (s.daysMask and todayBit) != 0
-            ScheduleStore.Type.ONE_TIME ->
-                (s.startDate > 0 && s.endDate > 0 && todayYmd in s.startDate..s.endDate)
-        }
-        if (!appliesToday) {
-            return false
-        }
-        return (s.startMinutes == 0 && s.endMinutes >= 1439) ||
-            inTimeRange(nowMinutes, s.startMinutes, s.endMinutes)
-    }
+    private fun connScheduleTimeValid(s: ScheduleStore.Schedule, now: Calendar): Boolean =
+        ScheduleWindow.covers(s, now)
 
     private fun inTimeRange(nowMin: Int, startMin: Int, endMin: Int): Boolean {
         if (endMin == startMin) {

@@ -70,6 +70,8 @@ object LocalBackupPayload {
         "app_lock",
         "auth_token",
         "billing",
+        // Clock-change anchors describe this device's clocks.
+        "clock_guard_",
         "emergency_pin",
         "entitlement",
         "firebase",

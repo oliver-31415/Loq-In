@@ -24,6 +24,7 @@ import android.content.Context
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.preference.PreferenceManager
+import com.oliver.loqin.data.prefs.ClockShiftGuard
 import com.oliver.loqin.blocking.BlockingRuntime
 import com.oliver.loqin.data.prefs.SwitchModeStore
 import com.oliver.loqin.data.prefs.UsageStore
@@ -58,6 +59,9 @@ class LoqInApp : Application() {
 
         // Establish the versioned settings schema marker before any feature reads preferences.
         runCatching { SettingsSchemaMigration.ensureCurrent(this) }
+
+        // Catch clock changes made while the app was not running.
+        runCatching { ClockShiftGuard.reconcile(this) }
 
         // language
         LocaleHelper.setLanguage(this, LocaleHelper.getSavedLanguage(this))

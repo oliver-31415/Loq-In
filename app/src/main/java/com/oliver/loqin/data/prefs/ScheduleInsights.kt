@@ -113,15 +113,14 @@ object ScheduleInsights {
         if (!schedule.enabled || schedule.isLocationSchedule()) {
             return false
         }
+        if (isRangeLike(schedule)) {
+            return ScheduleWindow.covers(schedule, now)
+        }
         if (!appliesOnDay(schedule, now)) {
             return false
         }
         val minutes = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE)
-        return if (isRangeLike(schedule)) {
-            inTimeRange(minutes, schedule.startMinutes, schedule.endMinutes)
-        } else {
-            minutes == schedule.startMinutes
-        }
+        return minutes == schedule.startMinutes
     }
 
     fun scheduleDisplayName(schedule: ScheduleStore.Schedule): String {
