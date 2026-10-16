@@ -298,6 +298,7 @@ class AppLockSettingsActivity : AppCompatActivity() {
             incorrectRes = R.string.app_lock_pin_incorrect,
             verifyLength = AppLockStore.pinLength(this),
             validator = { AppLockStore.matchesPin(this, it) },
+            lockoutMessage = { pinLockoutMessage() },
             onCancel = { refreshUi() },
         ) { completeDisableStrictProtection() }
     }
@@ -369,6 +370,7 @@ class AppLockSettingsActivity : AppCompatActivity() {
                 incorrectRes = R.string.app_lock_pin_incorrect,
                 verifyLength = AppLockStore.pinLength(this),
                 validator = { AppLockStore.matchesPin(this, it) },
+                lockoutMessage = { pinLockoutMessage() },
             ) { createNewPin(R.string.app_lock_enter_new_pin_title, allowRemove = true) }
         } else {
             createNewPin(R.string.app_lock_set_pin_title, allowRemove = false)
@@ -385,4 +387,17 @@ class AppLockSettingsActivity : AppCompatActivity() {
         val authenticators = BiometricManager.Authenticators.BIOMETRIC_STRONG or BiometricManager.Authenticators.BIOMETRIC_WEAK
         return BiometricManager.from(this).canAuthenticate(authenticators) == BiometricManager.BIOMETRIC_SUCCESS
     }
+
+    private fun pinLockoutMessage(): String? {
+        val remaining = AppLockStore.lockoutRemainingMs(this)
+        if (remaining <= 0L) return null
+        val seconds = ((remaining + 999L) / 1000L).toInt()
+        return if (seconds < 60) {
+            resources.getQuantityString(R.plurals.app_lock_locked_seconds, seconds, seconds)
+        } else {
+            val minutes = (seconds + 59) / 60
+            resources.getQuantityString(R.plurals.app_lock_locked_minutes, minutes, minutes)
+        }
+    }
+
 }

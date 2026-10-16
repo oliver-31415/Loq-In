@@ -68,4 +68,12 @@
     <string name="app_lock_uninstall_use_pin">Use PIN</string>
     <string name="app_lock_uninstall_disable_action">Disable</string>
 
+    <plurals name="app_lock_locked_seconds">
+        <item quantity="one">Too many attempts. Try again in %d second.</item>
+        <item quantity="other">Too many attempts. Try again in %d seconds.</item>
+    </plurals>
+    <plurals name="app_lock_locked_minutes">
+        <item quantity="one">Too many attempts. Try again in %d minute.</item>
+        <item quantity="other">Too many attempts. Try again in %d minutes.</item>
+    </plurals>
 </resources>
