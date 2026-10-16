@@ -18,6 +18,7 @@
 
 package com.oliver.loqin.platform.tile
 
+import com.oliver.loqin.util.TimeFormatPrefs
 import android.os.Build
 import android.app.PendingIntent
 import android.content.Intent
@@ -160,6 +161,27 @@ class LoqInTileService : TileService() {
                 getString(R.string.qs_label_on)
             } else {
                 getString(R.string.qs_label_off)
+            }
+
+            // A break or Emergency Unlock is not the same as off: say so, like Home does.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val breakRemaining = SwitchModeStore.getTemporaryRemainingMillis(this@LoqInTileService)
+                subtitle = when {
+                    EmergencyBypassStore.isActive(this@LoqInTileService) -> getString(R.string.qs_subtitle_emergency)
+                    breakRemaining > 0L -> {
+                        val end = java.util.Calendar.getInstance().apply {
+                            timeInMillis = System.currentTimeMillis() + breakRemaining
+                        }
+                        getString(
+                            R.string.widget_breaks_ends_at_fmt,
+                            TimeFormatPrefs.formatMinutesOfDay(
+                                this@LoqInTileService,
+                                end.get(java.util.Calendar.HOUR_OF_DAY) * 60 + end.get(java.util.Calendar.MINUTE),
+                            ),
+                        )
+                    }
+                    else -> null
+                }
             }
 
             // Use a rendered monochrome bitmap so System UI does not need to resolve app-theme colors.

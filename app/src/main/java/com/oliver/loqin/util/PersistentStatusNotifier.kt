@@ -18,6 +18,7 @@
 
 package com.oliver.loqin.util
 
+import com.oliver.loqin.data.prefs.EmergencyBypassStore
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -160,6 +161,8 @@ object PersistentStatusNotifier {
             .setContentTitle(
                 ctx.getString(
                     when {
+                        // Emergency Unlock runs as a temporary disable; say which it is.
+                        tempDisableActive && EmergencyBypassStore.isActive(ctx) -> R.string.status_notification_emergency_title
                         tempDisableActive -> R.string.status_notification_temp_disable_title
                         tempEnableActive -> R.string.status_notification_temp_enable_title
                         enabled -> R.string.status_notification_enabled_title

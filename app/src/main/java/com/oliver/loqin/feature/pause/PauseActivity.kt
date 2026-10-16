@@ -105,7 +105,10 @@ class PauseActivity : AppCompatActivity() {
             }
         }
         renderer = ::render
-        remainingMs = savedInstanceState?.getLong(STATE_REMAINING_MS) ?: (waitSeconds * 1_000L)
+        remainingMs = savedInstanceState
+            ?.takeIf { it.getString(STATE_PKG) == pkg }
+            ?.getLong(STATE_REMAINING_MS)
+            ?: (waitSeconds * 1_000L)
         render(((remainingMs + 999) / 1_000).toInt())
         leave.requestFocus()
     }
@@ -139,6 +142,18 @@ class PauseActivity : AppCompatActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         outState.putLong(STATE_REMAINING_MS, remainingMs)
+        outState.putString(STATE_PKG, intent.getStringExtra(EXTRA_PKG))
+    }
+
+    // singleTask: a pause for another app arrives here while this one is still alive in the
+    // background. Rebuild for that app; otherwise Open would let in the earlier app.
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        val newPkg = intent.getStringExtra(EXTRA_PKG).orEmpty()
+        if (newPkg.isBlank() || newPkg == this.intent.getStringExtra(EXTRA_PKG)) return
+        setIntent(intent)
+        decided = false
+        recreate()
     }
 
     private fun leave() {
@@ -186,6 +201,7 @@ class PauseActivity : AppCompatActivity() {
         private const val EXTRA_WAIT_SECONDS = "wait_seconds"
         private const val EXTRA_OPENS_TODAY = "opens_today"
         private const val STATE_REMAINING_MS = "remaining_ms"
+        private const val STATE_PKG = "pkg"
 
         fun show(context: Context, pkg: String, label: String, waitSeconds: Int, opensToday: Int) {
             context.startActivity(

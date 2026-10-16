@@ -12,6 +12,7 @@
     <!-- ====================================================== -->
     <string name="qs_label_on">Loq In EIN</string>
     <string name="qs_label_off">Loq In AUS</string>
+    <string name="qs_subtitle_emergency">Notfall-Entsperrung</string>
     <string name="qs_added_ok">Kachel hinzugefügt</string>
     <string name="qs_added_already">Kachel ist bereits hinzugefügt</string>
     <string name="qs_added_cancel">Abgebrochen</string>

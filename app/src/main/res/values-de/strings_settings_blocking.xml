@@ -330,6 +330,7 @@
     <!-- Temporary status notification -->
     <!-- ====================================================== -->
     <string name="status_notification_temp_disable_title">Temporäre Pause</string>
+    <string name="status_notification_emergency_title">Notfall-Entsperrung</string>
     <string name="status_notification_temp_enable_title">Temporärer Schutz</string>
     <string name="status_notification_temp_disable_body">Der Schutz wird nach Ablauf des Timers wieder aktiviert</string>
     <string name="status_notification_temp_enable_body">Der temporäre Schutz endet nach Ablauf des Timers</string>

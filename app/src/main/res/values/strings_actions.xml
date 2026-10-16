@@ -12,6 +12,7 @@
     <!-- ====================================================== -->
     <string name="qs_label_on">Loq In ON</string>
     <string name="qs_label_off">Loq In OFF</string>
+    <string name="qs_subtitle_emergency">Emergency unlock</string>
     <string name="qs_added_ok">Tile added</string>
     <string name="qs_added_already">Tile is already added</string>
     <string name="qs_added_cancel">Canceled</string>
