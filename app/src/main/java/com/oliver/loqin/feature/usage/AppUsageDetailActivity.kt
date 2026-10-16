@@ -65,6 +65,7 @@ import com.oliver.loqin.ui.widgets.OpensBlocksChartView
 import com.oliver.loqin.ui.widgets.PauseSplitBarView
 import com.oliver.loqin.ui.widgets.SessionLengthHistogramView
 import com.oliver.loqin.ui.widgets.UsageDetailChartView
+import com.oliver.loqin.util.EditingLockGuard
 import com.oliver.loqin.util.AppBlockSafety
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.color.MaterialColors
@@ -1053,7 +1054,7 @@ class AppUsageDetailActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle(R.string.custom_minutes_title)
             .setView(input)
-            .setPositiveButton(R.string.ok) { _, _ ->
+            .setPositiveButton(R.string.custom_minutes_confirm) { _, _ ->
                 val m = input.text?.toString()?.trim()?.toIntOrNull()
                 if (m == null || m < 0) {
                     input.showWarnPill(R.string.invalid_value)
@@ -1066,7 +1067,8 @@ class AppUsageDetailActivity : AppCompatActivity() {
     }
 
     private fun applyDailyLimit(profile: String, pkg: String, minutes: Int) {
-        if (SwitchModeStore.isEnabled(this)) {
+        // Also locked during a break or other temporary override, like the other limit editors.
+        if (EditingLockGuard.isLocked(this)) {
             showWarnPillOnContent(R.string.toast_disable_loqin_to_edit_app_limits)
             return
         }

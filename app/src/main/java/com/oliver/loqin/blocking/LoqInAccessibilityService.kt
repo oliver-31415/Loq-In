@@ -1622,6 +1622,11 @@ class LoqInAccessibilityService : AccessibilityService() {
             return
         }
         ensureActiveLimitSession(profile, nowForCache)
+        // The notification shade, Quick Settings and the keyboard sit on top of the app; treating
+        // them as a new visit restarted the per-visit allowance each time the shade was pulled.
+        if (isTransientSystemSurface(pkg)) {
+            return
+        }
         ensurePerVisitSession(profile, pkg, nowForCache)
 
         if (TempAllowStore.isAllowed(this, pkg)) {

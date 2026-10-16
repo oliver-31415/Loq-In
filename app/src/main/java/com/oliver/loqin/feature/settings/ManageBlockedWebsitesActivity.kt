@@ -826,7 +826,7 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
             .setTitle(suggestion.host)
             .setView(container)
             .setNegativeButton(R.string.cancel, null)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
+            .setPositiveButton(R.string.website_add_selected) { _, _ ->
                 options.forEachIndexed { i, rule ->
                     if (checkBoxes[i].isChecked) quickAddRule(rule)
                 }

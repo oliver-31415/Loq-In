@@ -1744,7 +1744,7 @@ class MainActivity : AppCompatActivity() {
             .setTitle(R.string.custom_minutes_title)
             .setView(container)
             .setNegativeButton(R.string.cancel, null)
-            .setPositiveButton(R.string.ok) { _, _ ->
+            .setPositiveButton(R.string.custom_minutes_confirm) { _, _ ->
                 val m = input.text?.toString()?.trim()?.toIntOrNull()
                 if (m == null || m < 1 || m > 1440) {
                     input.showWarnPill(R.string.nfc_time_custom_invalid)
@@ -3188,7 +3188,7 @@ class MainActivity : AppCompatActivity() {
         Dialogs.builder(this)
             .setTitle(R.string.dashboard_quick_actions_customize)
             .setView(scroll)
-            .setPositiveButton(R.string.ok) { _, _ ->
+            .setPositiveButton(R.string.save) { _, _ ->
                 items.forEach { item -> setQuickActionTileEnabled(item.key, item.checked) }
                 saveQuickActionOrder(items.map { it.key })
                 syncScanQuickActions()

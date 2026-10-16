@@ -17,7 +17,7 @@
     <string name="nfc_arm_write">Write selected action</string>
     <string name="nfc_waiting_tag">Hold the tag to the phone…</string>
     <string name="nfc_writing">Writing tag…</string>
-    <string name="nfc_write_ok">Tag written successfully!</string>
+    <string name="nfc_write_ok">Tag written</string>
     <string name="nfc_write_error_generic">Could not write to NFC tag.</string>
     <string name="nfc_write_error_too_small">NFC tag is too small for this action. Use a larger-capacity tag.</string>
     <string name="nfc_write_error_too_small_title">Tag too small</string>

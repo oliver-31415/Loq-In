@@ -173,7 +173,7 @@
     <string name="block_reason_info_button_desc">Grund für die Blockierung anzeigen</string>
     <string name="block_reason_info_empty">Kein aktueller Blockiergrund verfügbar.</string>
     <string name="block_reason_summary_fmt">Blockiert durch: %1$s</string>
-    <string name="block_reason_field_profile">Profile</string>
+    <string name="block_reason_field_profile">Profil</string>
     <string name="block_reason_field_rule">Regel</string>
     <string name="block_reason_field_mode">Modus</string>
     <string name="block_reason_field_source">Quelle</string>

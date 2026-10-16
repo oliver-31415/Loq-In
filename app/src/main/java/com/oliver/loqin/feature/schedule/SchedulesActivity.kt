@@ -1702,7 +1702,7 @@ class SchedulesActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle(R.string.perm_location_title)
             .setMessage(R.string.perm_location_why_wifi_ssid)
-            .setPositiveButton(R.string.ok) { _, _ ->
+            .setPositiveButton(R.string.continue_label) { _, _ ->
                 requestLocationPermission.launch(wifiSsidPermissionName())
             }
             .setNeutralButton(R.string.schedules_health_action_permissions) { _, _ ->
@@ -1716,7 +1716,7 @@ class SchedulesActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle(R.string.perm_location_title)
             .setMessage(R.string.perm_location_why_geofence)
-            .setPositiveButton(R.string.ok) { _, _ ->
+            .setPositiveButton(R.string.continue_label) { _, _ ->
                 pendingAfterFineLocationGrant = onGranted
                 requestFineLocationPermission.launch(Manifest.permission.ACCESS_FINE_LOCATION)
             }
@@ -1742,7 +1742,7 @@ class SchedulesActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle(R.string.perm_bt_title)
             .setMessage(R.string.perm_bt_why_needed)
-            .setPositiveButton(R.string.ok) { _, _ ->
+            .setPositiveButton(R.string.continue_label) { _, _ ->
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     requestBluetoothPermission.launch(Manifest.permission.BLUETOOTH_CONNECT)
                 }
