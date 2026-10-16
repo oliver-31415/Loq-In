@@ -41,6 +41,9 @@ object FileBackupRuntime {
     private const val FIELD_PAYLOAD = "payload"
     private const val FIELD_SCHEMA = "schema"
     private const val SCHEMA = "loqin_backup_v1"
+
+    // Builds before the rebrand wrote this schema name with the same layout.
+    private val READABLE_SCHEMAS = setOf(SCHEMA, "switchly_backup_v1")
     private const val MAX_BACKUP_CHARS = 64 * 1024 * 1024
 
     fun writeLocalBackupToUri(ctx: Context, uri: Uri): Result<Unit> =
@@ -83,7 +86,7 @@ object FileBackupRuntime {
                 throw NotALoqInBackupException("Backup file is not JSON")
             }
             val schema = root.optString(FIELD_SCHEMA, "")
-            if (schema.isNotEmpty() && schema != SCHEMA) {
+            if (schema.isNotEmpty() && schema !in READABLE_SCHEMAS) {
                 throw NotALoqInBackupException("Unknown backup schema: $schema")
             }
             val payload = when {

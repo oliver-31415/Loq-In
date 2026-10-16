@@ -90,41 +90,49 @@ object ClockShiftGuard {
             if (abs(delta) <= TOLERANCE_MS) delta = 0L
         }
 
+        // Anchor and shifted deadlines go in one commit, so a crash can't record the new
+        // anchor while leaving the deadlines unshifted.
+        val all = sp.all
+        val autoTime = isAutoTimeOn(ctx)
         sp.edit(commit = true) {
             putLong(KEY_ANCHOR_WALL, wall)
             putLong(KEY_ANCHOR_ELAPSED, elapsed)
             putLong(KEY_ANCHOR_BOOT, boot)
+            if (delta != 0L) {
+                for (key in SHIFTED_DEADLINE_KEYS) {
+                    val until = (all[key] as? Long) ?: continue
+                    if (until > 0L) putLong(key, until + delta)
+                }
+                for ((key, value) in all) {
+                    if (!key.startsWith(TEMP_ALLOW_PREFIX)) continue
+                    val until = value as? Long ?: continue
+                    if (until > 0L) putLong(key, until + delta)
+                }
+            }
+            if (autoTime) {
+                putLong(KEY_OFFSET, 0L)
+            } else if (delta != 0L) {
+                putLong(KEY_OFFSET, sp.getLongCompat(KEY_OFFSET, 0L) + delta)
+            }
         }
-        if (delta != 0L) applyShift(ctx, delta)
+        if (delta != 0L) {
+            runCatching { ProtectionChangeGate.shiftPending(ctx, delta) }
+            runCatching {
+                DiagnosticsTimelineStore.record(
+                    ctx, "Protection", "Clock changed",
+                    "shift=${delta / 1000}s offset=${sp.getLongCompat(KEY_OFFSET, 0L) / 1000}s",
+                )
+            }
+        }
         return delta
     }
 
     /** Now on the real calendar: the wall clock minus manual jumps made while automatic time is off. */
     fun trustedToday(context: Context, zone: ZoneId = ZoneId.systemDefault()): LocalDate {
-        val offset = prefs(context.applicationContext).getLongCompat(KEY_OFFSET, 0L)
+        val ctx = context.applicationContext
+        // With automatic time on, the wall clock is network time.
+        val offset = if (isAutoTimeOn(ctx)) 0L else prefs(ctx).getLongCompat(KEY_OFFSET, 0L)
         return Instant.ofEpochMilli(System.currentTimeMillis() - offset).atZone(zone).toLocalDate()
-    }
-
-    private fun applyShift(ctx: Context, delta: Long) {
-        val sp = prefs(ctx)
-        val all = sp.all
-        val offset = if (isAutoTimeOn(ctx)) 0L else sp.getLongCompat(KEY_OFFSET, 0L) + delta
-        sp.edit(commit = true) {
-            for (key in SHIFTED_DEADLINE_KEYS) {
-                val until = (all[key] as? Long) ?: continue
-                if (until > 0L) putLong(key, until + delta)
-            }
-            for ((key, value) in all) {
-                if (!key.startsWith(TEMP_ALLOW_PREFIX)) continue
-                val until = value as? Long ?: continue
-                if (until > 0L) putLong(key, until + delta)
-            }
-            putLong(KEY_OFFSET, offset)
-        }
-        runCatching { ProtectionChangeGate.shiftPending(ctx, delta) }
-        runCatching {
-            DiagnosticsTimelineStore.record(ctx, "Protection", "Clock changed", "shift=${delta / 1000}s offset=${offset / 1000}s")
-        }
     }
 
     private fun isAutoTimeOn(ctx: Context): Boolean =

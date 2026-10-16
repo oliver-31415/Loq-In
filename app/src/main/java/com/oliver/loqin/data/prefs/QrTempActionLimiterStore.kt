@@ -24,7 +24,6 @@ import androidx.core.net.toUri
 import androidx.preference.PreferenceManager
 import com.oliver.loqin.nfc.NfcSchema
 import java.security.MessageDigest
-import java.time.LocalDate
 
 /**
  * Limits temporary QR actions by scanned QR payload.
@@ -65,15 +64,16 @@ object QrTempActionLimiterStore {
 
         val last = p.getLong("$KEY_LAST_PREFIX$bucket", 0L)
         if (last > 0L) {
-            val elapsed = now - last
-            if (elapsed in 0 until cooldownMs) {
+            // A clock set behind the last use must not end the cooldown.
+            val elapsed = (now - last).coerceAtLeast(0L)
+            if (elapsed < cooldownMs) {
                 val remainingMs = cooldownMs - elapsed
                 val mins = ((remainingMs + 59_999L) / 60_000L).toInt().coerceAtLeast(1)
                 return CheckResult.Cooldown(mins)
             }
         }
 
-        val day = LocalDate.now().toEpochDay()
+        val day = ClockShiftGuard.trustedToday(ctx).toEpochDay()
         val countKey = "$KEY_COUNT_PREFIX${bucket}_$day"
         val todayCount = p.getInt(countKey, 0)
         if (todayCount >= DEFAULT_DAILY_USES_PER_CODE) {
@@ -86,7 +86,7 @@ object QrTempActionLimiterStore {
     fun consume(rawUri: String, ctx: Context) {
         val bucket = bucketForRaw(rawUri)
         val p = prefs(ctx)
-        val day = LocalDate.now().toEpochDay()
+        val day = ClockShiftGuard.trustedToday(ctx).toEpochDay()
         val countKey = "$KEY_COUNT_PREFIX${bucket}_$day"
         val current = p.getInt(countKey, 0)
 

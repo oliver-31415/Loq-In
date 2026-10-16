@@ -38,13 +38,15 @@ internal object ProfileLimitKeys {
         "usage_limit_reset__",
     )
 
+    // "open_count_<yyyymmdd>__<profile>__<pkg>", profile name as is.
+    private const val OPEN_COUNT_PREFIX = "open_count_"
+
     // "<prefix><yyyymmdd>_<profile>_<pkg>", underscores inside each part doubled.
     private val DAY_PREFIXES = listOf(
         "profile_usage_day_",
         "limit_reached_",
     )
 
-    private const val SESSION_RUNTIME_PREFIX = "usage_limit_session_runtime__"
     private const val NFC_TAG_PROFILE_PREFIX = "nfc_tag_action_profile_"
 
     fun onProfileRenamed(context: Context, old: String, new: String) {
@@ -59,7 +61,6 @@ internal object ProfileLimitKeys {
                 remove(key)
                 put(renamed, value)
             }
-            removeSessionRuntime(all.keys, old)
             // Paired tags that switch to this profile follow the new name.
             for ((key, value) in all) {
                 if (key.startsWith(NFC_TAG_PROFILE_PREFIX) && value == old) putString(key, new)
@@ -73,11 +74,15 @@ internal object ProfileLimitKeys {
         val sp = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val others = ProfileStore.getProfiles(context) - profile
         val all = sp.all
+        val today = todayYmd()
         sp.edit {
             for (key in all.keys) {
-                if (renamedKey(key, profile, profile, others) != null) remove(key)
+                if (renamedKey(key, profile, profile, others) == null) continue
+                // Older days are history; only today's counters would carry over to a new
+                // profile with the same name.
+                val day = dayOf(key)
+                if (day == null || day == today) remove(key)
             }
-            removeSessionRuntime(all.keys, profile)
         }
     }
 
@@ -105,6 +110,19 @@ internal object ProfileLimitKeys {
             if (otherProfiles.any { it.length > old.length && key.startsWith("$prefix${it}__") }) return null
             return "$prefix${new}__" + key.removePrefix(head)
         }
+        if (key.startsWith(OPEN_COUNT_PREFIX)) {
+            val rest = key.removePrefix(OPEN_COUNT_PREFIX)
+            if (rest.length > 10 && rest.substring(0, 8).all(Char::isDigit) && rest.startsWith("__", 8)) {
+                val day = OPEN_COUNT_PREFIX + rest.substring(0, 8) + "__"
+                val head = "$day${old}__"
+                if (key.startsWith(head) &&
+                    otherProfiles.none { it.length > old.length && key.startsWith("$day${it}__") }
+                ) {
+                    return "$day${new}__" + key.removePrefix(head)
+                }
+            }
+            return null
+        }
         for (prefix in DAY_PREFIXES) {
             if (!key.startsWith(prefix)) continue
             val rest = key.removePrefix(prefix)
@@ -119,9 +137,23 @@ internal object ProfileLimitKeys {
         return null
     }
 
-    private fun android.content.SharedPreferences.Editor.removeSessionRuntime(keys: Set<String>, profile: String) {
-        val head = SESSION_RUNTIME_PREFIX + safe(profile) + "__"
-        keys.filter { it.startsWith(head) }.forEach { remove(it) }
+    /** The yyyymmdd of a per-day key, or null for limit settings. */
+    private fun dayOf(key: String): String? {
+        for (prefix in DAY_PREFIXES + OPEN_COUNT_PREFIX) {
+            if (!key.startsWith(prefix)) continue
+            return key.removePrefix(prefix).take(8).takeIf { it.length == 8 && it.all(Char::isDigit) }
+        }
+        return null
+    }
+
+    private fun todayYmd(): String {
+        val c = java.util.Calendar.getInstance()
+        return "%04d%02d%02d".format(
+            java.util.Locale.US,
+            c.get(java.util.Calendar.YEAR),
+            c.get(java.util.Calendar.MONTH) + 1,
+            c.get(java.util.Calendar.DAY_OF_MONTH),
+        )
     }
 
     private fun android.content.SharedPreferences.Editor.put(key: String, value: Any?) {

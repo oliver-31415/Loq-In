@@ -916,6 +916,12 @@ object ProtectionChangeGate {
                 val profile = change.data.getString("profile")
                 if (profile !in ProfileStore.getProfiles(context)) return@runCatching false
                 val rule = change.data.getString("rule")
+                // The rule was removed meanwhile: nothing to loosen.
+                if (DomainBlockStore.getDomainsForProfileAndMode(context, profile).none { it == rule } &&
+                    DomainBlockStore.getDisabledDomainsForProfile(context, profile).none { it == rule }
+                ) {
+                    return@runCatching true
+                }
                 // Stricter edit since? Leave the current values alone.
                 val currentSession = DomainVisitLimitStore.getSessionLimitMinutesForProfile(context, profile, rule)
                 val currentVisits = DomainVisitLimitStore.getVisitLimitCountForProfile(context, profile, rule)

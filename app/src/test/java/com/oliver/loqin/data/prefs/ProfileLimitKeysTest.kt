@@ -63,4 +63,16 @@ class ProfileLimitKeysTest {
         assertNull(ProfileLimitKeys.renamedKey("profile_usage_day_garbage", "Work", "Focus", emptySet()))
         assertNull(ProfileLimitKeys.renamedKey("unrelated_key", "Work", "Focus", emptySet()))
     }
+
+    @Test
+    fun `open counts move with the profile`() {
+        assertEquals(
+            "open_count_20261016__Focus__com.reddit.frontpage",
+            ProfileLimitKeys.renamedKey("open_count_20261016__Work__com.reddit.frontpage", "Work", "Focus", emptySet()),
+        )
+        assertNull(ProfileLimitKeys.renamedKey("open_count_20261016_com.reddit.frontpage", "Work", "Focus", emptySet()))
+        assertNull(
+            ProfileLimitKeys.renamedKey("open_count_20261016__Work__Home__com.x", "Work", "Focus", setOf("Work__Home")),
+        )
+    }
 }

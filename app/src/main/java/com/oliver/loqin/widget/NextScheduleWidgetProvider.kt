@@ -32,6 +32,7 @@ import com.oliver.loqin.R
 import com.oliver.loqin.data.prefs.AutomationModeStore
 import com.oliver.loqin.data.prefs.SchedulePlanner
 import com.oliver.loqin.data.prefs.ScheduleStore
+import com.oliver.loqin.data.prefs.ScheduleWindow
 import com.oliver.loqin.feature.entry.QuickActionIconFactory
 import com.oliver.loqin.feature.schedule.SchedulesActivity
 import com.oliver.loqin.feature.theme.AccentColor
@@ -216,26 +217,26 @@ class NextScheduleWidgetProvider : AppWidgetProvider() {
             schedules.forEach { schedule ->
                 when (schedule.type) {
                     ScheduleStore.Type.WEEKLY -> {
-                        repeat(14) { offset ->
+                        for (offset in -1 until 14) {
                             val day = Calendar.getInstance().apply {
                                 timeInMillis = nowMs
                                 add(Calendar.DAY_OF_YEAR, offset)
                             }
                             val bit = ScheduleStore.Days.fromCalendarDay(day.get(Calendar.DAY_OF_WEEK))
-                            if (schedule.daysMask and bit == 0) return@repeat
+                            if (schedule.daysMask and bit == 0) continue
                             considerBoundary(context, schedule, day)?.let(::consider)
                             considerBoundary(context, schedule, day, endBoundary = true)?.let(::consider)
                         }
                     }
                     ScheduleStore.Type.ONE_TIME -> {
                         if (schedule.startDate <= 0 || schedule.endDate <= 0) return@forEach
-                        repeat(30) { offset ->
+                        for (offset in -1 until 30) {
                             val day = Calendar.getInstance().apply {
                                 timeInMillis = nowMs
                                 add(Calendar.DAY_OF_YEAR, offset)
                             }
                             val ymd = day.get(Calendar.YEAR) * 10000 + (day.get(Calendar.MONTH) + 1) * 100 + day.get(Calendar.DAY_OF_MONTH)
-                            if (ymd !in schedule.startDate..schedule.endDate) return@repeat
+                            if (ymd !in schedule.startDate..schedule.endDate) continue
                             considerBoundary(context, schedule, day)?.let(::consider)
                             considerBoundary(context, schedule, day, endBoundary = true)?.let(::consider)
                         }
@@ -255,13 +256,17 @@ class NextScheduleWidgetProvider : AppWidgetProvider() {
             if (endBoundary && !isRangeAction(schedule.action)) {
                 return null
             }
-            val minutes = if (endBoundary) schedule.endMinutes else schedule.startMinutes
-            val timeMillis = (day.clone() as Calendar).apply {
-                set(Calendar.HOUR_OF_DAY, minutes / 60)
-                set(Calendar.MINUTE, minutes % 60)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-            }.timeInMillis
+            val timeMillis = if (endBoundary) {
+                // Next morning for overnight windows, next midnight for all-day ones.
+                ScheduleWindow.endOfWindowStartingOn(schedule, day).timeInMillis
+            } else {
+                (day.clone() as Calendar).apply {
+                    set(Calendar.HOUR_OF_DAY, schedule.startMinutes / 60)
+                    set(Calendar.MINUTE, schedule.startMinutes % 60)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }.timeInMillis
+            }
             return BoundaryInfo(
                 timeMillis = timeMillis,
                 label = schedule.title.ifBlank {

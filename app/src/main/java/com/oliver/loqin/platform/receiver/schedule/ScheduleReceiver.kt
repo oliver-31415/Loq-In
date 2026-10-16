@@ -275,8 +275,9 @@ class ScheduleReceiver : BroadcastReceiver() {
                     val appliesToday = ScheduleWindow.appliesOn(s, now)
 
                     if (isRangeAction(s.action)) {
-                        if (!appliesToday) ScheduleRuntimeStore.clearLastFiredToken(ctx, s.id)
-                        ScheduleWindow.covers(s, now)
+                        ScheduleWindow.covers(s, now).also { covered ->
+                            if (!covered) ScheduleRuntimeStore.clearLastFiredToken(ctx, s.id)
+                        }
                     } else if (!appliesToday) {
                         ScheduleRuntimeStore.clearLastFiredToken(ctx, s.id)
                         false
@@ -791,14 +792,19 @@ class ScheduleReceiver : BroadcastReceiver() {
         // Ownership flags
         // Range schedules: claim ownership while active only if the target state is currently true.
         // This prevents false ownership when a DISABLE write is blocked by NFC lock.
+        // A window only owns the state it caused: if Loq In was already on when an "on during"
+        // window started (turned on by hand, say), its end must not turn Loq In off, and the
+        // same for "off during" windows. Ownership already held carries over between ticks.
         if (isRangeEnableDisable) {
-            val ownsEnable = baseEnabledAfter
+            val ownsEnable = baseEnabledAfter &&
+                (stateActuallyChanged || ScheduleRuntimeStore.wasEnabledBySchedule(ctx))
             ScheduleRuntimeStore.setEnabledBySchedule(ctx, ownsEnable)
             if (ownsEnable) {
                 ScheduleRuntimeStore.setDisabledBySchedule(ctx, false)
             }
         } else if (isRangeDisableEnable) {
-            val ownsDisable = !baseEnabledAfter
+            val ownsDisable = !baseEnabledAfter &&
+                (stateActuallyChanged || ScheduleRuntimeStore.wasDisabledBySchedule(ctx))
             ScheduleRuntimeStore.setDisabledBySchedule(ctx, ownsDisable)
             if (ownsDisable) {
                 ScheduleRuntimeStore.setEnabledBySchedule(ctx, false)
@@ -963,6 +969,7 @@ class ScheduleReceiver : BroadcastReceiver() {
     }
 
     private fun activeStartSortKey(s: ScheduleStore.Schedule, nowMin: Int): Int {
+        if (ScheduleWindow.isAllDay(s)) return s.startMinutes
         if (!inTimeRange(nowMin, s.startMinutes, s.endMinutes)) {
             return Int.MIN_VALUE
         }
