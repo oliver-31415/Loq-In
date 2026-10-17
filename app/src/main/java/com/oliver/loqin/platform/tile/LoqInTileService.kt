@@ -18,6 +18,12 @@
 
 package com.oliver.loqin.platform.tile
 
+import com.oliver.loqin.util.TimeFormatPrefs
+import android.os.Build
+import android.app.PendingIntent
+import android.content.Intent
+import com.oliver.loqin.widget.QuickActionReceiver
+import com.oliver.loqin.security.AppLockStore
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
 import android.widget.Toast
@@ -87,6 +93,16 @@ class LoqInTileService : TileService() {
             return
         }
 
+        if (currentlyEnabled && AppLockStore.isEnabled(ctx)) {
+            AppLogStore.append(ctx, "QuickSettings", "action_result action=disable result=deferred reason=app_lock")
+            launchAndCollapse(
+                QuickActionReceiver.openAppForAction(ctx) {
+                    putExtra(QuickActionReceiver.EXTRA_PENDING_DISABLE, true)
+                }
+            )
+            return
+        }
+
         val target = !currentlyEnabled
         val before = SwitchModeStore.isEnabled(ctx)
         val accepted = SwitchModeStore.setEnabled(ctx, target, allowNfcBypass = false)
@@ -115,6 +131,25 @@ class LoqInTileService : TileService() {
         refreshTile()
     }
 
+    private fun launchAndCollapse(intent: Intent) {
+        if (Build.VERSION.SDK_INT >= 34) {
+            startActivityAndCollapse(
+                PendingIntent.getActivity(
+                    this,
+                    TILE_OPEN_APP_REQUEST_CODE,
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+            )
+        } else {
+            runCatching {
+                TileService::class.java
+                    .getMethod("startActivityAndCollapse", Intent::class.java)
+                    .invoke(this, intent)
+            }.getOrElse { startActivity(intent) }
+        }
+    }
+
     private fun refreshTile() {
         val enabled = SwitchModeStore.isEnabled(this)
         qsTile?.apply {
@@ -128,6 +163,27 @@ class LoqInTileService : TileService() {
                 getString(R.string.qs_label_off)
             }
 
+            // A break or Emergency Unlock is not the same as off: say so, like Home does.
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val breakRemaining = SwitchModeStore.getTemporaryRemainingMillis(this@LoqInTileService)
+                subtitle = when {
+                    EmergencyBypassStore.isActive(this@LoqInTileService) -> getString(R.string.qs_subtitle_emergency)
+                    breakRemaining > 0L -> {
+                        val end = java.util.Calendar.getInstance().apply {
+                            timeInMillis = System.currentTimeMillis() + breakRemaining
+                        }
+                        getString(
+                            R.string.widget_breaks_ends_at_fmt,
+                            TimeFormatPrefs.formatMinutesOfDay(
+                                this@LoqInTileService,
+                                end.get(java.util.Calendar.HOUR_OF_DAY) * 60 + end.get(java.util.Calendar.MINUTE),
+                            ),
+                        )
+                    }
+                    else -> null
+                }
+            }
+
             // Use a rendered monochrome bitmap so System UI does not need to resolve app-theme colors.
             icon = QuickActionIconFactory.createTileIcon(
                 this@LoqInTileService,
@@ -135,5 +191,9 @@ class LoqInTileService : TileService() {
             )
             updateTile()
         }
+    }
+
+    private companion object {
+        const val TILE_OPEN_APP_REQUEST_CODE = 1003
     }
 }

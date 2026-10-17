@@ -269,7 +269,7 @@ class ScreenUnlocksActivity : AppCompatActivity() {
             .setTitle(R.string.screen_unlocks_sort_filter_title)
             .setView(root)
             .setNegativeButton(android.R.string.cancel, null)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
+            .setPositiveButton(R.string.stats_apply) { _, _ ->
                 currentScope = selectedScope
                 currentSort = selectedSort
                 hideVeryShortUnlocks = hideShort.isChecked

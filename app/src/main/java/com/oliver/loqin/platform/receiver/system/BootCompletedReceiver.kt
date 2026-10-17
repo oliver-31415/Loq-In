@@ -24,6 +24,7 @@ import android.content.Context
 import android.content.Intent
 import android.util.Log
 import com.oliver.loqin.blocking.BlockingRuntime
+import com.oliver.loqin.data.prefs.ClockShiftGuard
 import com.oliver.loqin.data.prefs.AutostartStore
 import com.oliver.loqin.data.prefs.SchedulePlanner
 import com.oliver.loqin.data.prefs.SwitchModeStore
@@ -53,6 +54,8 @@ class BootCompletedReceiver : BroadcastReceiver() {
 
         // Ensure prefs/runtime initialized
         SwitchModeStore.ensureInit(ctx)
+
+        runCatching { ClockShiftGuard.reconcile(ctx) }
 
         // Apply any protection-weakening changes whose delay expired while the device was off,
         // then restore the next pending alarm if one remains.

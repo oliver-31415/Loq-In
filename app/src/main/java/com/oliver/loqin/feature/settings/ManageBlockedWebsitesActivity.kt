@@ -826,7 +826,7 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
             .setTitle(suggestion.host)
             .setView(container)
             .setNegativeButton(R.string.cancel, null)
-            .setPositiveButton(android.R.string.ok) { _, _ ->
+            .setPositiveButton(R.string.website_add_selected) { _, _ ->
                 options.forEachIndexed { i, rule ->
                     if (checkBoxes[i].isChecked) quickAddRule(rule)
                 }
@@ -1005,14 +1005,16 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
                 val profile = currentProfile()
                 var queued = 0
                 var denied = 0
+                val removed = mutableListOf<String>()
                 rules.forEach { rule ->
                     when (ProtectionChangeGate.requestWebsiteRemoval(this@ManageBlockedWebsitesActivity, profile, rule)) {
-                        ProtectionChangePolicy.Result.APPLIED -> Unit
+                        ProtectionChangePolicy.Result.APPLIED -> removed += rule
                         ProtectionChangePolicy.Result.QUEUED -> queued++
                         ProtectionChangePolicy.Result.DENIED -> denied++
                     }
                 }
-                rules.forEach { clearLimitIfNoRulesRemainForHost(profile, it) }
+                // Queued and refused rules keep their limits.
+                removed.forEach { clearLimitIfNoRulesRemainForHost(profile, it) }
                 exitSelectionMode()
                 refreshList()
                 dlg.dismiss()

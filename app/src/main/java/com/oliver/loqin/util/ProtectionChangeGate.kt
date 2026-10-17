@@ -25,6 +25,7 @@ import android.content.Intent
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
 import com.oliver.loqin.blocking.BlockingRuntime
+import com.oliver.loqin.data.prefs.ClockShiftGuard
 import com.oliver.loqin.data.prefs.AttemptLimitStore
 import com.oliver.loqin.data.prefs.AppLogStore
 import com.oliver.loqin.data.prefs.AutomationModeStore
@@ -570,11 +571,12 @@ object ProtectionChangeGate {
             ProtectionChangePolicy.Decision.QUEUE_DELAYED -> {
                 queue(
                     context = context,
-                    type = PendingChangeType.WEBSITE_LIMIT,
+                    type = PendingChangeType.WEBSITE_VISIT_LIMITS,
                     data = JSONObject()
                         .put("profile", profile)
                         .put("rule", rule)
-                        .put("visitLimitsOnly", true)
+                        .put("fromSessionMinutes", currentSessionMinutes)
+                        .put("fromVisitCount", currentVisitCount)
                         .put("sessionMinutes", requestedSessionMinutes)
                         .put("visitCount", requestedVisitCount),
                 )
@@ -751,7 +753,13 @@ object ProtectionChangeGate {
         return applied
     }
 
-    fun applyDueChanges(context: Context, nowMs: Long = System.currentTimeMillis()): Int {
+    fun applyDueChanges(context: Context): Int {
+        // A clock set forward can fire the alarm before TIME_SET is handled; shift first.
+        runCatching { ClockShiftGuard.reconcile(context) }
+        return applyDueChanges(context, System.currentTimeMillis())
+    }
+
+    fun applyDueChanges(context: Context, nowMs: Long): Int {
         val all = pendingChanges(context)
         if (all.isEmpty()) {
             cancelAlarm(context)
@@ -773,6 +781,17 @@ object ProtectionChangeGate {
 
     fun reschedulePending(context: Context) {
         scheduleNext(context, pendingChanges(context))
+    }
+
+    /** Moves every queued change by [deltaMs] after a clock change, so each keeps its real delay. */
+    fun shiftPending(context: Context, deltaMs: Long) {
+        val current = pendingChanges(context)
+        if (current.isEmpty() || deltaMs == 0L) return
+        val shifted = current.map {
+            it.copy(executeAtMs = it.executeAtMs + deltaMs, createdAtMs = it.createdAtMs + deltaMs)
+        }
+        savePending(context, shifted)
+        scheduleNext(context, shifted)
     }
 
     private fun queue(context: Context, type: String, data: JSONObject) {
@@ -888,6 +907,37 @@ object ProtectionChangeGate {
                 if (time != null || attempts != null || perVisit != null || reset != null) {
                     applyLimitValues(context, profile, packageName, time, attempts, perVisit, reset)
                 }
+            }
+
+            // Older builds queued visit limits as WEBSITE_LIMIT with this flag; applying them as a
+            // time limit would remove the website rule.
+            PendingChangeType.WEBSITE_VISIT_LIMITS,
+            PendingChangeType.WEBSITE_LIMIT.takeIf { change.data.optBoolean("visitLimitsOnly") } -> {
+                val profile = change.data.getString("profile")
+                if (profile !in ProfileStore.getProfiles(context)) return@runCatching false
+                val rule = change.data.getString("rule")
+                // The rule was removed meanwhile: nothing to loosen.
+                if (DomainBlockStore.getDomainsForProfileAndMode(context, profile).none { it == rule } &&
+                    DomainBlockStore.getDisabledDomainsForProfile(context, profile).none { it == rule }
+                ) {
+                    return@runCatching true
+                }
+                // Stricter edit since? Leave the current values alone.
+                val currentSession = DomainVisitLimitStore.getSessionLimitMinutesForProfile(context, profile, rule)
+                val currentVisits = DomainVisitLimitStore.getVisitLimitCountForProfile(context, profile, rule)
+                if (change.data.has("fromSessionMinutes") &&
+                    (currentSession != change.data.optInt("fromSessionMinutes") ||
+                        currentVisits != change.data.optInt("fromVisitCount"))
+                ) {
+                    return@runCatching true
+                }
+                applyWebsiteVisitLimits(
+                    context,
+                    profile,
+                    rule,
+                    change.data.optInt("sessionMinutes", 0),
+                    change.data.optInt("visitCount", 0),
+                )
             }
 
             PendingChangeType.WEBSITE_LIMIT -> {

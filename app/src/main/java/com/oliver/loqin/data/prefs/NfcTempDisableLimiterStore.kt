@@ -21,7 +21,6 @@ package com.oliver.loqin.data.prefs
 import android.content.Context
 import androidx.core.content.edit
 import androidx.preference.PreferenceManager
-import java.time.LocalDate
 
 /**
  * Stores per-tag unlock limits by NFC UID (falling back to a global bucket when no UID exists).
@@ -164,8 +163,9 @@ object NfcTempDisableLimiterStore {
             val cooldownMs = config.cooldownMinutes * 60_000L
             val last = p.getLong("$KEY_LAST_PREFIX$bucket", 0L)
             if (last > 0L) {
-                val elapsed = now - last
-                if (elapsed in 0 until cooldownMs) {
+                // A clock set behind the last use must not end the cooldown.
+                val elapsed = (now - last).coerceAtLeast(0L)
+                if (elapsed < cooldownMs) {
                     val remainingMs = cooldownMs - elapsed
                     val mins = ((remainingMs + 59_999L)/60_000L).toInt().coerceAtLeast(1)
                     return CheckResult.Cooldown(mins)
@@ -174,7 +174,7 @@ object NfcTempDisableLimiterStore {
         }
 
         if (!configuredOnly || config.hasDailyOverride) {
-            val day = LocalDate.now().toEpochDay()
+            val day = ClockShiftGuard.trustedToday(ctx).toEpochDay()
             val todayCount = p.getInt("$KEY_COUNT_PREFIX${bucket}_$day", 0)
             if (todayCount >= config.dailyLimit) {
                 return CheckResult.DailyLimitReached(todayCount, config.dailyLimit)
@@ -188,7 +188,7 @@ object NfcTempDisableLimiterStore {
         val bucket = bucketForUid(uidBucket)
         val p = prefs(ctx)
         val now = System.currentTimeMillis()
-        val day = LocalDate.now().toEpochDay()
+        val day = ClockShiftGuard.trustedToday(ctx).toEpochDay()
         val countKey = "$KEY_COUNT_PREFIX${bucket}_$day"
 
         val current = p.getInt(countKey, 0)

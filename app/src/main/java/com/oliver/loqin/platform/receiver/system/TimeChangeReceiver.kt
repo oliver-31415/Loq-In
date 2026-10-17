@@ -23,6 +23,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import com.oliver.loqin.data.prefs.ClockShiftGuard
 import com.oliver.loqin.data.prefs.SchedulePlanner
 import com.oliver.loqin.platform.receiver.schedule.ScheduleReceiver
 
@@ -37,6 +38,9 @@ class TimeChangeReceiver : BroadcastReceiver() {
             return
         }
         val ctx = context.applicationContext
+
+        // First, so breaks, Emergency Unlock and queued changes keep their real length.
+        runCatching { ClockShiftGuard.reconcile(ctx) }
 
         if (BuildConfig.DEBUG) Log.d(TAG, "time change event: $action -> replan next alarm")
         runCatching { SchedulePlanner.updateNextAlarm(ctx) }

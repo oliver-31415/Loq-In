@@ -30,6 +30,7 @@
     <string name="usage_attempts_zero">0 blocks</string>
     <string name="custom_minutes">Custom time…</string>
     <string name="custom_minutes_title">Custom minutes</string>
+    <string name="custom_minutes_confirm">Set</string>
     <string name="minutes_hint">Enter Time</string>
     <plurals name="minutes_format">
         <item quantity="one">%1$d minute</item>

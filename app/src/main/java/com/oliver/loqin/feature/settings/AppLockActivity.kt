@@ -84,6 +84,7 @@ class AppLockActivity : AppCompatActivity() {
             incorrectRes = R.string.app_lock_pin_incorrect,
             verifyLength = AppLockStore.pinLength(this),
             validator = { AppLockStore.matchesPin(this, it) },
+            lockoutMessage = { pinLockoutMessage() },
             neutralButtonRes = if (offerBiometric) R.string.app_lock_biometric_button else null,
             neutralAction = if (offerBiometric) ({ promptBiometric() }) else null,
             onCancel = {
@@ -146,4 +147,17 @@ class AppLockActivity : AppCompatActivity() {
         }
         super.onDestroy()
     }
+
+    private fun pinLockoutMessage(): String? {
+        val remaining = AppLockStore.lockoutRemainingMs(this)
+        if (remaining <= 0L) return null
+        val seconds = ((remaining + 999L) / 1000L).toInt()
+        return if (seconds < 60) {
+            resources.getQuantityString(R.plurals.app_lock_locked_seconds, seconds, seconds)
+        } else {
+            val minutes = (seconds + 59) / 60
+            resources.getQuantityString(R.plurals.app_lock_locked_minutes, minutes, minutes)
+        }
+    }
+
 }

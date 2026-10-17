@@ -75,6 +75,7 @@ import com.oliver.loqin.data.prefs.ScheduleInsights
 import com.oliver.loqin.data.prefs.SchedulePlanner
 import com.oliver.loqin.data.prefs.ScheduleRuntimeStore
 import com.oliver.loqin.data.prefs.ScheduleStore
+import com.oliver.loqin.data.prefs.ScheduleWindow
 import com.oliver.loqin.data.prefs.SwitchModeStore
 import com.oliver.loqin.data.prefs.LoqInActionCountStore
 import com.oliver.loqin.data.prefs.LoqInRuntimeStore
@@ -1597,31 +1598,8 @@ class SupportActivity : AppCompatActivity() {
         return calendar.get(Calendar.HOUR_OF_DAY) * 60 + calendar.get(Calendar.MINUTE)
     }
 
-    private fun isScheduleActiveNow(schedule: ScheduleStore.Schedule): Boolean {
-        if (!schedule.enabled) {
-            return false
-        }
-        val now = Calendar.getInstance()
-        val today = ScheduleStore.todayYmd()
-
-        if (schedule.type == ScheduleStore.Type.ONE_TIME) {
-            if (today < schedule.startDate || today > schedule.endDate) {
-                return false
-            }
-        } else {
-            val mask = ScheduleStore.Days.fromCalendarDay(now.get(Calendar.DAY_OF_WEEK))
-            if ((schedule.daysMask and mask) == 0) {
-                return false
-            }
-        }
-
-        val current = minutesOfDay(now)
-        return if (schedule.startMinutes <= schedule.endMinutes) {
-            current in schedule.startMinutes until schedule.endMinutes
-        } else {
-            current >= schedule.startMinutes || current < schedule.endMinutes
-        }
-    }
+    private fun isScheduleActiveNow(schedule: ScheduleStore.Schedule): Boolean =
+        schedule.enabled && ScheduleWindow.covers(schedule, Calendar.getInstance())
 
     private fun daysMaskSummary(mask: Int): String {
         if (mask == 0) {

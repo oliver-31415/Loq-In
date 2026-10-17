@@ -330,6 +330,7 @@
     <!-- Temporary status notification -->
     <!-- ====================================================== -->
     <string name="status_notification_temp_disable_title">Temporary break</string>
+    <string name="status_notification_emergency_title">Emergency unlock</string>
     <string name="status_notification_temp_enable_title">Temporary protection</string>
     <string name="status_notification_temp_disable_body">Protection resumes when the timer ends</string>
     <string name="status_notification_temp_enable_body">Temporary protection ends when the timer ends</string>

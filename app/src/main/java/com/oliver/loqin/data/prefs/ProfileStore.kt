@@ -112,6 +112,7 @@ object ProfileStore {
         ScheduleStore.onProfileRemoved(context, name)
         DomainVisitLimitStore.onProfileRemoved(context, name)
         PauseRuleStore.onProfileRemoved(context, name)
+        ProfileLimitKeys.onProfileRemoved(context, name)
         PersistentStatusNotifier.refresh(context)
     }
 
@@ -172,6 +173,7 @@ object ProfileStore {
         ScheduleStore.onProfileRenamed(context, old, new)
         DomainVisitLimitStore.onProfileRenamed(context, old, new)
         PauseRuleStore.onProfileRenamed(context, old, new)
+        ProfileLimitKeys.onProfileRenamed(context, old, new)
         PersistentStatusNotifier.refresh(context)
         return true
     }

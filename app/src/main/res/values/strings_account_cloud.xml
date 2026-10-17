@@ -32,6 +32,7 @@
     <string name="restore_applying">Restoring data…</string>
     <string name="file_backup_error_fmt">File backup failed:\n%1$s</string>
     <string name="file_restore_error_fmt">File restore failed:\n%1$s</string>
+    <string name="file_restore_not_backup">This file isn’t a Loq In backup. Choose a file you exported from Loq In.</string>
 
     <!-- ====================================================== -->
     <!-- Backup and restore dialogs -->

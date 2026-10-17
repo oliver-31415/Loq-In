@@ -70,6 +70,8 @@ object LocalBackupPayload {
         "app_lock",
         "auth_token",
         "billing",
+        // Clock-change anchors describe this device's clocks.
+        "clock_guard_",
         "emergency_pin",
         "entitlement",
         "firebase",
@@ -493,7 +495,7 @@ object LocalBackupPayload {
         }
     }
 
-    private fun hasBackupPayload(payload: Map<*, *>): Boolean {
+    internal fun hasBackupPayload(payload: Map<*, *>): Boolean {
         return payload.containsKey(FIELD_PREFS) ||
             payload.containsKey(FIELD_LOQIN_PREFS) ||
             payload.containsKey(FIELD_SCHEDULES_PREFS) ||

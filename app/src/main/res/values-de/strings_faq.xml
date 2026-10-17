@@ -185,7 +185,7 @@
         <item quantity="one">%1$d Artikel</item>
         <item quantity="other">%1$d Artikel</item>
     </plurals>
-    <string name="faq_category_getting_started">Loq In Basics</string>
+    <string name="faq_category_getting_started">Loq-In-Grundlagen</string>
     <string name="faq_category_getting_started_summary">Lerne die Grundlagen und richte dein erstes Profil ein</string>
     <string name="faq_category_background_access">Hintergrundzugriff</string>
     <string name="faq_category_background_access_summary">Akku, Hintergrundaktivität, Hersteller-Einstellungen und Zuverlässigkeit</string>

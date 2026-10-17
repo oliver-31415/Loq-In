@@ -18,6 +18,9 @@
 
 package com.oliver.loqin.ui
 
+import com.oliver.loqin.security.AppLockManager
+import com.oliver.loqin.security.AppLockStore
+import com.oliver.loqin.widget.QuickActionReceiver
 import android.Manifest
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -369,6 +372,11 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         ThemeUtils.applyAccentTheme(this)
         super.onCreate(savedInstanceState)
+        if (savedInstanceState != null) {
+            // Recreated (rotation, process restart): a deferred widget/tile action already ran.
+            intent?.removeExtra(QuickActionReceiver.EXTRA_PENDING_BREAK_MINUTES)
+            intent?.removeExtra(QuickActionReceiver.EXTRA_PENDING_DISABLE)
+        }
         setContentView(R.layout.activity_main)
 
         // Ensure the flow in SwitchModeStore reflects the current prefs
@@ -701,8 +709,30 @@ class MainActivity : AppCompatActivity() {
         setupBottomNav(bottomNav)
     }
 
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+    }
+
+    /** Runs a widget/tile action deferred by App lock, once the PIN has been entered. */
+    private fun runPendingQuickAction() {
+        val pending = intent ?: return
+        val breakMinutes = pending.getIntExtra(QuickActionReceiver.EXTRA_PENDING_BREAK_MINUTES, 0)
+        val disable = pending.getBooleanExtra(QuickActionReceiver.EXTRA_PENDING_DISABLE, false)
+        if (breakMinutes <= 0 && !disable) return
+        if (AppLockStore.isEnabled(this) && !AppLockManager.isSessionUnlocked()) return
+        pending.removeExtra(QuickActionReceiver.EXTRA_PENDING_BREAK_MINUTES)
+        pending.removeExtra(QuickActionReceiver.EXTRA_PENDING_DISABLE)
+        when {
+            breakMinutes > 0 -> QuickActionReceiver.handlePauseLoqIn(this, breakMinutes, fromUnlockedApp = true)
+            // Same checks as the Disable button on Home.
+            disable && SwitchModeStore.isEnabled(this) -> toggleSwitchIfAllowed()
+        }
+    }
+
     override fun onResume() {
         super.onResume()
+        runPendingQuickAction()
         syncScanQuickActions()
         refreshActivityHeatmap()
 
@@ -1744,7 +1774,7 @@ class MainActivity : AppCompatActivity() {
             .setTitle(R.string.custom_minutes_title)
             .setView(container)
             .setNegativeButton(R.string.cancel, null)
-            .setPositiveButton(R.string.ok) { _, _ ->
+            .setPositiveButton(R.string.custom_minutes_confirm) { _, _ ->
                 val m = input.text?.toString()?.trim()?.toIntOrNull()
                 if (m == null || m < 1 || m > 1440) {
                     input.showWarnPill(R.string.nfc_time_custom_invalid)
@@ -3188,7 +3218,7 @@ class MainActivity : AppCompatActivity() {
         Dialogs.builder(this)
             .setTitle(R.string.dashboard_quick_actions_customize)
             .setView(scroll)
-            .setPositiveButton(R.string.ok) { _, _ ->
+            .setPositiveButton(R.string.save) { _, _ ->
                 items.forEach { item -> setQuickActionTileEnabled(item.key, item.checked) }
                 saveQuickActionOrder(items.map { it.key })
                 syncScanQuickActions()

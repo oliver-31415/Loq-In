@@ -1419,7 +1419,7 @@ class AppPickerActivity : AppCompatActivity() {
                 .setTitle(R.string.custom_minutes_title)
                 .setView(container)
                 .setNegativeButton(R.string.cancel, null)
-                .setPositiveButton(android.R.string.ok) { _, _ ->
+                .setPositiveButton(R.string.custom_minutes_confirm) { _, _ ->
                     val m = input.text?.toString()?.trim()?.toIntOrNull()
                     if (m == null || m < 0) {
                         input.showWarnPill(R.string.invalid_value)

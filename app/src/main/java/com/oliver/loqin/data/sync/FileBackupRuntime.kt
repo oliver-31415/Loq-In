@@ -26,7 +26,11 @@ import java.io.BufferedReader
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
 import org.json.JSONArray
+import org.json.JSONException
 import org.json.JSONObject
+
+/** The picked file is not a Loq In backup (not JSON, another app's file, or too large). */
+class NotALoqInBackupException(message: String) : IllegalArgumentException(message)
 
 object FileBackupRuntime {
 
@@ -37,6 +41,10 @@ object FileBackupRuntime {
     private const val FIELD_PAYLOAD = "payload"
     private const val FIELD_SCHEMA = "schema"
     private const val SCHEMA = "loqin_backup_v1"
+
+    // Builds before the rebrand wrote this schema name with the same layout.
+    private val READABLE_SCHEMAS = setOf(SCHEMA, "switchly_backup_v1")
+    private const val MAX_BACKUP_CHARS = 64 * 1024 * 1024
 
     fun writeLocalBackupToUri(ctx: Context, uri: Uri): Result<Unit> =
         writeLocalBackupToUri(ctx, uri, BackupSelection.full())
@@ -68,16 +76,42 @@ object FileBackupRuntime {
         return runCatching {
             val raw = ctx.contentResolver.openInputStream(uri)?.use { stream ->
                 BufferedReader(InputStreamReader(stream, Charsets.UTF_8)).use { reader ->
-                    reader.readText()
+                    readCapped(reader)
                 }
             } ?: error("Could not open backup file")
 
-            val root = JSONObject(raw)
-            when {
+            val root = try {
+                JSONObject(raw)
+            } catch (e: JSONException) {
+                throw NotALoqInBackupException("Backup file is not JSON")
+            }
+            val schema = root.optString(FIELD_SCHEMA, "")
+            if (schema.isNotEmpty() && schema !in READABLE_SCHEMAS) {
+                throw NotALoqInBackupException("Unknown backup schema: $schema")
+            }
+            val payload = when {
                 root.has(FIELD_PAYLOAD) -> fromJsonValue(root.get(FIELD_PAYLOAD)) as? Map<*, *>
                 else -> fromJsonValue(root) as? Map<*, *>
-            } ?: error("Invalid backup file")
+            }
+            if (payload == null || !LocalBackupPayload.hasBackupPayload(payload)) {
+                throw NotALoqInBackupException("No Loq In backup data in file")
+            }
+            payload
         }.onFailure { AppLogStore.appendRateLimited(ctx, TAG, "Reading file backup preview failed", it) }
+    }
+
+    private fun readCapped(reader: BufferedReader): String {
+        val out = StringBuilder()
+        val buffer = CharArray(64 * 1024)
+        while (true) {
+            val read = reader.read(buffer)
+            if (read < 0) break
+            out.append(buffer, 0, read)
+            if (out.length > MAX_BACKUP_CHARS) {
+                throw NotALoqInBackupException("Backup file is too large")
+            }
+        }
+        return out.toString()
     }
 
     fun restoreBackupPayload(ctx: Context, payload: Map<*, *>): Result<Unit> {

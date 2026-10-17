@@ -18,6 +18,8 @@
 
 package com.oliver.loqin.util
 
+import com.oliver.loqin.data.prefs.InAppRuleStore
+import com.oliver.loqin.data.prefs.DomainBlockStore
 import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -193,11 +195,16 @@ object ProtectionStatusNotifier {
 
     private fun readState(ctx: Context): ProtectionState {
         val enabled = SwitchModeStore.isEnabled(ctx)
-        val hasBlockedApps = ProfileStore.getProfiles(ctx)
-            .any { ProfileStore.getSelectedForProfileMode(ctx, it).isNotEmpty() }
+        // Websites and in-app rules need the accessibility service too, not only blocked apps.
+        val profile = ProfileStore.getCurrent(ctx).orEmpty()
+        val hasRules = profile.isNotBlank() && (
+            ProfileStore.getSelectedForProfileMode(ctx, profile).isNotEmpty() ||
+                DomainBlockStore.getDomainsForProfileAndMode(ctx, profile).isNotEmpty() ||
+                InAppRuleStore.getPackagesWithEnabledRules(ctx, profile).isNotEmpty()
+            )
 
         return ProtectionState(
-            shouldMonitor = enabled && hasBlockedApps,
+            shouldMonitor = enabled && hasRules,
             accessibilityActive = BlockingRuntime.isAccessibilityActive(ctx)
         )
     }

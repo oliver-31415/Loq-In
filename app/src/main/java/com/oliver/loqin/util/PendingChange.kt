@@ -43,6 +43,7 @@ object PendingChangeType {
     const val WEBSITE_ENABLED = "website_enabled"
     const val APP_LIMITS = "app_limits"
     const val WEBSITE_LIMIT = "website_limit"
+    const val WEBSITE_VISIT_LIMITS = "website_visit_limits"
     const val AUTO_BLOCK_NEW_APPS = "auto_block_new_apps"
     const val CLEAR_APP_DATA = "clear_app_data"
 }
@@ -128,7 +129,14 @@ object PendingChangeQueue {
             "app-limits:${change.data.optString("profile")}:${change.data.optString("packageName")}"
 
         PendingChangeType.WEBSITE_LIMIT ->
-            "web-limit:${change.data.optString("profile")}:${change.data.optString("rule")}"
+            if (change.data.optBoolean("visitLimitsOnly")) {
+                websiteVisitLimitsKey(change)
+            } else {
+                "web-limit:${change.data.optString("profile")}:${change.data.optString("rule")}"
+            }
+
+        // Separate from the time limit: sharing its key would let one keep the other's timer.
+        PendingChangeType.WEBSITE_VISIT_LIMITS -> websiteVisitLimitsKey(change)
 
         PendingChangeType.AUTO_BLOCK_NEW_APPS ->
             "auto-block:${change.data.optString("profile")}"
@@ -170,6 +178,9 @@ object PendingChangeQueue {
 
     fun earliestDueAtMs(existing: List<PendingChange>): Long? =
         existing.minOfOrNull { it.executeAtMs }
+
+    private fun websiteVisitLimitsKey(change: PendingChange): String =
+        "web-visit:${change.data.optString("profile")}:${change.data.optString("rule")}"
 
     private fun packageList(data: JSONObject, key: String): List<String> {
         val array = data.optJSONArray(key) ?: return emptyList()

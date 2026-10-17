@@ -283,27 +283,32 @@ object ScheduleRuntimeStore {
         }
     }
 
-    fun resetActiveScheduleState(ctx: Context) {
+    /**
+     * After schedule [editedScheduleId] is edited or toggled: forget which one-shot schedules
+     * already fired so the new settings apply now. A manual "off" during a running window is kept
+     * unless that window's own schedule was edited: editing an unrelated schedule must not turn
+     * protection back on, while editing the running one brings it back into effect. Which window
+     * turned Loq In on or off is always kept, so the window can still end what it started.
+     */
+    fun onScheduleEdited(ctx: Context, editedScheduleId: Int?) {
         val sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        val firedKeys = sp.all.keys.filter { it.startsWith(KEY_LAST_FIRED_PREFIX) }
+        val manualOffActive = sp.getBoolean(KEY_MANUAL_OVERRIDE_ACTIVE, false) ||
+            sp.getBoolean(KEY_MANUAL_SCHEDULE_PAUSE_ACTIVE, false)
+        val manualOffOwner = sp.getIntCompat(KEY_MANUAL_SCHEDULE_PAUSE_SCHEDULE_ID, -1).takeIf { it >= 0 }
+            ?: sp.getIntCompat(KEY_MANUAL_OVERRIDE_SCHEDULE_ID, -1).takeIf { it >= 0 }
+            ?: sp.getIntCompat(KEY_ACTIVE_RANGE_SCHEDULE_ID, -1).takeIf { it >= 0 }
+        val clearManualOff = manualOffActive && editedScheduleId != null && editedScheduleId == manualOffOwner
+        if (firedKeys.isEmpty() && !clearManualOff) return
         sp.edit {
-            putBoolean(KEY_ENABLED_BY_SCHEDULE, false)
-            putBoolean(KEY_DISABLED_BY_SCHEDULE, false)
-            putBoolean(KEY_HAD_ENABLE_AND_DISABLE, false)
-            putBoolean(KEY_HAD_DISABLE_AND_ENABLE, false)
-            putBoolean(KEY_MANUAL_OVERRIDE_ACTIVE, false)
-            remove(KEY_MANUAL_OVERRIDE_SCHEDULE_ID)
-            remove(KEY_ACTIVE_RANGE_SCHEDULE_ID)
-            remove(KEY_MANUAL_SCHEDULE_PAUSE_ACTIVE)
-            remove(KEY_MANUAL_SCHEDULE_PAUSE_SCHEDULE_ID)
-            remove(KEY_MANUAL_DISABLE_MS)
-            val keys = sp.all.keys.filter {
-                it.startsWith(KEY_LAST_FIRED_PREFIX) ||
-                    it.startsWith(KEY_LAST_CONN_ACTIVE_PREFIX) ||
-                    it.startsWith(KEY_CONN_ACTIVE_SINCE_PREFIX) ||
-                    it.startsWith(KEY_LAST_LOCATION_TRANSITION_PREFIX) ||
-                    it.startsWith(KEY_LOCATION_ARMED_PREFIX)
+            for (k in firedKeys) remove(k)
+            if (clearManualOff) {
+                putBoolean(KEY_MANUAL_OVERRIDE_ACTIVE, false)
+                remove(KEY_MANUAL_OVERRIDE_SCHEDULE_ID)
+                remove(KEY_MANUAL_SCHEDULE_PAUSE_ACTIVE)
+                remove(KEY_MANUAL_SCHEDULE_PAUSE_SCHEDULE_ID)
+                remove(KEY_MANUAL_DISABLE_MS)
             }
-            for (k in keys) remove(k)
         }
     }
 

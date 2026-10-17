@@ -21,8 +21,6 @@ package com.oliver.loqin.data.prefs
 import android.content.Context
 import androidx.core.content.edit
 import com.oliver.loqin.util.getLongCompat
-import java.time.LocalDate
-import java.time.ZoneId
 
 // Persists and retrieves emergency bypass state.
 object EmergencyBypassStore {
@@ -53,7 +51,7 @@ object EmergencyBypassStore {
         }
 
         val lastUsedDay = sp.getLongCompat(KEY_LAST_USED_EPOCH_DAY, Long.MIN_VALUE)
-        val today = LocalDate.now(ZoneId.systemDefault()).toEpochDay()
+        val today = ClockShiftGuard.trustedToday(context).toEpochDay()
 
         if (lastUsedDay != today) {
             sp.edit {
@@ -92,7 +90,7 @@ object EmergencyBypassStore {
 
         val sp = prefs(context)
         val last = sp.getLongCompat(KEY_LAST_USED_EPOCH_DAY, Long.MIN_VALUE)
-        val today = LocalDate.now(ZoneId.systemDefault()).toEpochDay()
+        val today = ClockShiftGuard.trustedToday(context).toEpochDay()
         return last == today
     }
 
@@ -100,7 +98,7 @@ object EmergencyBypassStore {
     private fun canUseToday(context: Context): Boolean = isFeatureEnabled(context) && !hasUsedToday(context)
 
     private fun markUsedToday(context: Context) {
-        val today = LocalDate.now(ZoneId.systemDefault()).toEpochDay()
+        val today = ClockShiftGuard.trustedToday(context).toEpochDay()
         prefs(context).edit { putLong(KEY_LAST_USED_EPOCH_DAY, today) }
     }
 

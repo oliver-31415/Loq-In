@@ -55,15 +55,9 @@ object TempPauseStore {
 
     private fun key(profile: String, suffix: String) = "temp_pause_" + profile.trim() + "_" + suffix
 
-    private fun todayKey(): String {
-        val cal = Calendar.getInstance()
-        return String.format(
-            Locale.US,
-            "%04d%02d%02d",
-            cal.get(Calendar.YEAR),
-            cal.get(Calendar.MONTH) + 1,
-            cal.get(Calendar.DAY_OF_MONTH)
-        )
+    private fun todayKey(ctx: Context): String {
+        val today = ClockShiftGuard.trustedToday(ctx)
+        return String.format(Locale.US, "%04d%02d%02d", today.year, today.monthValue, today.dayOfMonth)
     }
 
     private fun readIntCompat(sp: android.content.SharedPreferences, k: String): Int {
@@ -105,7 +99,7 @@ object TempPauseStore {
     private fun usageRaw(ctx: Context, profile: String): Pair<Int, Int> {
         val sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val p = resolveProfile(ctx, profile)
-        if (sp.getString(key(p, KEY_DAY), null) != todayKey()) {
+        if (sp.getString(key(p, KEY_DAY), null) != todayKey(ctx)) {
             return 0 to 0
         }
         return readIntCompat(sp, key(p, KEY_USED_COUNT)) to readIntCompat(sp, key(p, KEY_USED_MIN))
@@ -191,7 +185,7 @@ object TempPauseStore {
         val sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val p = profile.trim()
         sp.edit {
-            putString(key(p, KEY_DAY), todayKey())
+            putString(key(p, KEY_DAY), todayKey(ctx))
             putInt(key(p, KEY_USED_COUNT), 0)
             putInt(key(p, KEY_USED_MIN), 0)
         }
@@ -230,7 +224,7 @@ object TempPauseStore {
         val sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         val (usedCount, usedMin) = usageRaw(ctx, p)
         sp.edit {
-            putString(key(p, KEY_DAY), todayKey())
+            putString(key(p, KEY_DAY), todayKey(ctx))
             putInt(key(p, KEY_USED_COUNT), usedCount + 1)
             putInt(key(p, KEY_USED_MIN), usedMin + minutes)
         }

@@ -715,7 +715,7 @@ class WebsiteUsageDetailActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle(R.string.custom_minutes_title)
             .setView(input)
-            .setPositiveButton(R.string.ok) { _, _ ->
+            .setPositiveButton(R.string.custom_minutes_confirm) { _, _ ->
                 val m = input.text?.toString()?.trim()?.toIntOrNull()
                 if (m == null || m < 0) {
                     input.showWarnPill(R.string.invalid_value)

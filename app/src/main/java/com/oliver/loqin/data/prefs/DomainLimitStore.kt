@@ -62,6 +62,21 @@ object DomainLimitStore {
     fun getLimitMinutes(ctx: Context, domain: String): Int =
         getLimitMinutesForProfile(ctx, currentProfile(ctx), domain)
 
+    /**
+     * The limit that applies to [host]: its own, else the closest parent domain's, so a limit on
+     * youtube.com also covers m.youtube.com. Returns the rule domain and its minutes.
+     */
+    fun findLimitForHost(ctx: Context, host: String): Pair<String, Int>? {
+        var candidate = DomainBlockStore.normalize(host) ?: return null
+        while (true) {
+            val minutes = getLimitMinutes(ctx, candidate)
+            if (minutes > 0) return candidate to minutes
+            val dot = candidate.indexOf('.')
+            if (dot < 0 || candidate.indexOf('.', dot + 1) < 0) return null
+            candidate = candidate.substring(dot + 1)
+        }
+    }
+
     fun getLimitMinutesForProfile(ctx: Context, profile: String, domain: String): Int {
         val d = DomainBlockStore.normalize(domain) ?: return 0
         val scoped = scopedKey(sanitizeProfile(profile), d)
@@ -157,6 +172,22 @@ object DomainLimitStore {
             for ((domain, minutes) in entries) {
                 if (minutes > 0) putInt(newPrefix + domain, minutes)
                 remove(oldPrefix + domain)
+            }
+        }
+    }
+
+    fun copyProfile(ctx: Context, fromProfile: String, toProfile: String) {
+        val p = prefs(ctx)
+        val fromPrefix = PREFIX + PROFILE_SEGMENT + sanitizeProfile(fromProfile) + "__"
+        val toPrefix = PREFIX + PROFILE_SEGMENT + sanitizeProfile(toProfile) + "__"
+        if (fromPrefix == toPrefix) return
+        val entries = p.all.filterKeys { it.startsWith(fromPrefix) }
+        if (entries.isEmpty()) return
+        p.edit {
+            for ((key, value) in entries) {
+                val domain = key.removePrefix(fromPrefix)
+                val minutes = (value as? Number)?.toInt() ?: 0
+                if (domain.isNotBlank() && minutes > 0) putInt(toPrefix + domain, minutes)
             }
         }
     }

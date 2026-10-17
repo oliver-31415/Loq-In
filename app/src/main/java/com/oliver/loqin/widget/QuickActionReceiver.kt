@@ -18,6 +18,8 @@
 
 package com.oliver.loqin.widget
 
+import com.oliver.loqin.ui.MainActivity
+import com.oliver.loqin.security.AppLockStore
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -91,7 +93,26 @@ class QuickActionReceiver : BroadcastReceiver() {
             return true
         }
 
-        fun handlePauseLoqIn(context: Context, minutes: Int): Boolean {
+        const val EXTRA_PENDING_BREAK_MINUTES = "com.oliver.loqin.extra.PENDING_BREAK_MINUTES"
+        const val EXTRA_PENDING_DISABLE = "com.oliver.loqin.extra.PENDING_DISABLE"
+
+        /**
+         * With App lock on, widget and tile actions that loosen protection open Loq In instead of
+         * acting in the background; Home runs the action once the PIN is entered.
+         */
+        fun openAppForAction(context: Context, extras: Intent.() -> Unit): Intent =
+            Intent(context, MainActivity::class.java)
+                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+                .apply(extras)
+
+        fun handlePauseLoqIn(context: Context, minutes: Int, fromUnlockedApp: Boolean = false): Boolean {
+            // A widget built before App lock was turned on still sends broadcasts.
+            if (!fromUnlockedApp && AppLockStore.isEnabled(context)) {
+                AppLogStore.append(context, "Widget", "action_result action=temp_disable result=blocked reason=app_lock")
+                Toast.makeText(context, context.getString(R.string.widget_app_lock_open_app), Toast.LENGTH_SHORT).show()
+                refreshWidgets(context)
+                return false
+            }
             if (!ensureProtectionReady(context, "temp_disable")) {
                 refreshWidgets(context)
                 return false

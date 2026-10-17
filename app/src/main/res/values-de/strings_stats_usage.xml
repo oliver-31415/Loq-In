@@ -30,6 +30,7 @@
     <string name="usage_attempts_zero">0 Blockierungen</string>
     <string name="custom_minutes">Benutzerdefinierte Zeit…</string>
     <string name="custom_minutes_title">Benutzerdefinierte Minuten</string>
+    <string name="custom_minutes_confirm">Festlegen</string>
     <string name="minutes_hint">Zeit eingeben</string>
     <plurals name="minutes_format">
         <item quantity="one">%1$d Minute</item>
@@ -299,7 +300,7 @@
     <string name="active_time_no_sessions">Für diesen Tag sind keine Sessions gespeichert.</string>
     <string name="active_time_session_title">Aktiv %1$d</string>
     <string name="active_time_details_total_label">Aktive Zeit gesamt</string>
-    <string name="active_time_sessions_title">Sessions</string>
+    <string name="active_time_sessions_title">Sitzungen</string>
     <string name="active_time_day_sessions_hint">Tippe den Tag in der Übersicht an, um Sessions zu sehen</string>
     <string name="active_time_graph_days">Tages-Graph</string>
     <string name="active_time_activity_history_title">Aktivitätsverlauf</string>

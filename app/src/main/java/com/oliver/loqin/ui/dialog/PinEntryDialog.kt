@@ -167,7 +167,10 @@ object PinEntryDialog {
             imm?.showSoftInput(input, InputMethodManager.SHOW_IMPLICIT)
         }
 
-        fun flashError(@StringRes messageRes: Int, errorView: TextView) {
+        fun flashError(@StringRes messageRes: Int, errorView: TextView) =
+            flashError(activity.getString(messageRes), errorView, 650L)
+
+        fun flashError(message: String, errorView: TextView, holdMs: Long) {
             boxes.animate()
                 .translationX(dp(12f).toFloat()).setDuration(50)
                 .withEndAction {
@@ -180,12 +183,12 @@ object PinEntryDialog {
                         }.start()
                 }.start()
             for (i in 0 until count) styleBox(i, 0, isError = true)
-            errorView.text = activity.getString(messageRes)
+            errorView.text = message
             errorView.visibility = View.VISIBLE
             Handler(Looper.getMainLooper()).postDelayed({
                 clear()
                 errorView.visibility = View.INVISIBLE
-            }, 650)
+            }, holdMs)
         }
 
         fun build(newCount: Int) {
@@ -274,6 +277,7 @@ object PinEntryDialog {
         @StringRes neutralButtonRes: Int? = null,
         neutralAction: (() -> Unit)? = null,
         onCancel: () -> Unit = {},
+        lockoutMessage: (() -> String?)? = null,
         onSuccess: () -> Unit,
     ): AlertDialog {
         val ui = PinUi(activity)
@@ -291,8 +295,13 @@ object PinEntryDialog {
             ui.rowsContainer.addView(row.root)
             row.onChanged = { entered ->
                 if (entered.length == length) {
-                    if (validator(entered)) ui.complete { onSuccess() }
-                    else row.flashError(incorrectRes, errorView)
+                    if (validator(entered)) {
+                        ui.complete { onSuccess() }
+                    } else {
+                        val locked = lockoutMessage?.invoke()
+                        if (locked != null) row.flashError(locked, errorView, 2_500L)
+                        else row.flashError(incorrectRes, errorView)
+                    }
                 }
             }
             hooks.focus = { row.focusInput() }

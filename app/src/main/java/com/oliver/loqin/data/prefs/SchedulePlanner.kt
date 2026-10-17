@@ -92,13 +92,6 @@ object SchedulePlanner {
             if (t > nowMs && (best == null || t < best!!)) best = t
         }
 
-        fun ymdOf(cal: Calendar): Int {
-            val y = cal.get(Calendar.YEAR)
-            val m = cal.get(Calendar.MONTH) + 1
-            val d = cal.get(Calendar.DAY_OF_MONTH)
-            return y * 10000 + m * 100 + d
-        }
-
         fun atMinutes(baseDay: Calendar, minutes: Int): Long {
             return (baseDay.clone() as Calendar).apply {
                 set(Calendar.HOUR_OF_DAY, minutes/60)
@@ -117,45 +110,24 @@ object SchedulePlanner {
         }
 
         for (s in timeBased) {
-            when (s.type) {
-                ScheduleStore.Type.WEEKLY -> {
-                    repeat(14) { offset ->
-                        val day = Calendar.getInstance().apply {
-                            timeInMillis = nowMs
-                            add(Calendar.DAY_OF_YEAR, offset)
-                        }
-
-                        val bit = ScheduleStore.Days.fromCalendarDay(day.get(Calendar.DAY_OF_WEEK))
-                        if (s.daysMask and bit == 0) return@repeat
-
-                        // Always consider start
-                        consider(atMinutes(day, s.startMinutes))
-
-                        // Only consider end for range schedules
-                        if (isRangeAction(s.action)) {
-                            consider(atMinutes(day, s.endMinutes))
-                        }
-                    }
+            val horizonDays = when (s.type) {
+                ScheduleStore.Type.WEEKLY -> 14
+                ScheduleStore.Type.ONE_TIME -> if (s.startDate <= 0 || s.endDate <= 0) continue else 30
+            }
+            // Start at yesterday: an overnight window that began then still ends this morning.
+            for (offset in -1 until horizonDays) {
+                val day = Calendar.getInstance().apply {
+                    timeInMillis = nowMs
+                    add(Calendar.DAY_OF_YEAR, offset)
                 }
+                if (!ScheduleWindow.appliesOn(s, day)) continue
 
-                ScheduleStore.Type.ONE_TIME -> {
-                    if (s.startDate <= 0 || s.endDate <= 0) continue
+                // Always consider start
+                consider(atMinutes(day, s.startMinutes))
 
-                    repeat(30) { offset ->
-                        val day = Calendar.getInstance().apply {
-                            timeInMillis = nowMs
-                            add(Calendar.DAY_OF_YEAR, offset)
-                        }
-
-                        val ymd = ymdOf(day)
-                        if (ymd !in s.startDate..s.endDate) return@repeat
-
-                        consider(atMinutes(day, s.startMinutes))
-
-                        if (isRangeAction(s.action)) {
-                            consider(atMinutes(day, s.endMinutes))
-                        }
-                    }
+                // Only consider end for range schedules
+                if (isRangeAction(s.action)) {
+                    consider(ScheduleWindow.endOfWindowStartingOn(s, day).timeInMillis)
                 }
             }
         }

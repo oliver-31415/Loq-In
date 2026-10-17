@@ -44,6 +44,27 @@ class PendingChangeQueueTest {
             .put("removePackages", org.json.JSONArray(remove)),
     )
 
+    @Test
+    fun `website visit limits do not share a timer with the website time limit`() {
+        val data = JSONObject().put("profile", "Default").put("rule", "example.com")
+        val timeLimit = PendingChange("t", PendingChangeType.WEBSITE_LIMIT, 1_000L, 0L, data)
+        val visitLimits = PendingChange("v", PendingChangeType.WEBSITE_VISIT_LIMITS, 9_000L, 8_000L, data)
+        val legacyVisitLimits = PendingChange(
+            "l",
+            PendingChangeType.WEBSITE_LIMIT,
+            9_000L,
+            8_000L,
+            JSONObject(data.toString()).put("visitLimitsOnly", true),
+        )
+
+        assertEquals("web-visit:Default:example.com", PendingChangeQueue.dedupeKey(visitLimits))
+        assertEquals("web-visit:Default:example.com", PendingChangeQueue.dedupeKey(legacyVisitLimits))
+
+        val queued = PendingChangeQueue.upsert(listOf(timeLimit), visitLimits)
+        assertEquals(2, queued.size)
+        assertEquals(9_000L, queued.single { it.id == "v" }.executeAtMs)
+    }
+
     // ---------------------------------------------------------------------------------------------
     // Codec
     // ---------------------------------------------------------------------------------------------

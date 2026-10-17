@@ -93,6 +93,7 @@ import com.oliver.loqin.data.prefs.ScheduleInsights
 import com.oliver.loqin.data.prefs.SchedulePlanner
 import com.oliver.loqin.data.prefs.ScheduleRuntimeStore
 import com.oliver.loqin.data.prefs.ScheduleStore
+import com.oliver.loqin.data.prefs.ScheduleWindow
 import com.oliver.loqin.data.prefs.ScheduleStore.Days
 import com.oliver.loqin.data.prefs.SwitchModeStore
 import com.oliver.loqin.feature.settings.PermissionsActivity
@@ -392,7 +393,7 @@ class SchedulesActivity : AppCompatActivity() {
                     }
                     ScheduleStore.saveAll(this, list)
                     LocationTriggerMonitor.syncAsync(this)
-                    reapplySchedulesNow()
+                    reapplySchedulesNow(schedule.id)
                     SchedulePlanner.updateNextAlarm(this)
                     SchedulePlanner.notifyNextChanged(this)
                     if (enabled) {
@@ -640,6 +641,16 @@ class SchedulesActivity : AppCompatActivity() {
         LocationTriggerMonitor.syncAsync(this)
         SchedulePlanner.updateNextAlarm(this)
         SchedulePlanner.notifyNextChanged(this)
+        // A deleted schedule that is running now (say, one that turned Loq In off for a window)
+        // has no end boundary left; a tick runs its exit and restores the state from before it.
+        if (ScheduleRuntimeStore.getActiveRangeScheduleId(this) in ids) {
+            sendBroadcast(
+                Intent(this, ScheduleReceiver::class.java).apply {
+                    action = ScheduleReceiver.ACTION_TICK
+                    putExtra("alarm_reason", "schedule_delete")
+                }
+            )
+        }
     }
 
     private fun rootContentView(): View? {
@@ -1392,22 +1403,16 @@ class SchedulesActivity : AppCompatActivity() {
     ): ScheduleTestSnapshot {
         val now = Calendar.getInstance()
         val nowMinutes = now.get(Calendar.HOUR_OF_DAY) * 60 + now.get(Calendar.MINUTE)
-        val todayBit = Days.fromCalendarDay(now.get(Calendar.DAY_OF_WEEK))
-        val ymd = now.get(Calendar.YEAR) * 10000 + (now.get(Calendar.MONTH) + 1) * 100 + now.get(Calendar.DAY_OF_MONTH)
-        val dayMatches = when (schedule.type) {
-            ScheduleStore.Type.WEEKLY -> schedule.daysMask and todayBit != 0
-            ScheduleStore.Type.ONE_TIME -> schedule.startDate > 0 && schedule.endDate > 0 && ymd in schedule.startDate..schedule.endDate
-        }
-        val allDay = schedule.startMinutes == 0 && schedule.endMinutes >= 1439
+        val allDay = ScheduleWindow.isAllDay(schedule)
         val rangeAction = schedule.action == ScheduleStore.Action.ENABLE_AND_DISABLE ||
             schedule.action == ScheduleStore.Action.DISABLE_AND_ENABLE
         val hasConnectionOrLocation = !schedule.wifiSsid.isNullOrBlank() ||
             !schedule.btDeviceName.isNullOrBlank() || !schedule.btDeviceAddress.isNullOrBlank() ||
             schedule.isLocationSchedule()
-        val timeMatches = when {
-            allDay -> true
-            rangeAction || hasConnectionOrLocation -> inScheduleTimeRange(nowMinutes, schedule.startMinutes, schedule.endMinutes)
-            else -> nowMinutes == schedule.startMinutes
+        val windowMatches = if (allDay || rangeAction || hasConnectionOrLocation) {
+            ScheduleWindow.covers(schedule, now)
+        } else {
+            ScheduleWindow.appliesOn(schedule, now) && nowMinutes == schedule.startMinutes
         }
 
         val missingPermission = missingPermissionOverride ?: when {
@@ -1426,7 +1431,7 @@ class SchedulesActivity : AppCompatActivity() {
             val ssid = currentWifiSsidForTest()
             val matches = !ssid.isNullOrBlank() && ssid.equals(schedule.wifiSsid, ignoreCase = true)
             return ScheduleTestSnapshot(
-                conditionMet = dayMatches && timeMatches && matches && missingPermission == null,
+                conditionMet = windowMatches && matches && missingPermission == null,
                 detected = if (ssid.isNullOrBlank()) getString(R.string.schedules_test_status_wifi_none)
                 else getString(R.string.schedules_test_status_wifi_fmt, ssid),
                 missingPermission = missingPermission,
@@ -1441,7 +1446,7 @@ class SchedulesActivity : AppCompatActivity() {
                 addressOk && nameOk
             }
             return ScheduleTestSnapshot(
-                conditionMet = dayMatches && timeMatches && match != null && missingPermission == null,
+                conditionMet = windowMatches && match != null && missingPermission == null,
                 detected = match?.let { (name, address) ->
                     getString(R.string.schedules_test_status_bt_fmt, name ?: address ?: "-")
                 } ?: getString(R.string.schedules_test_status_bt_none),
@@ -1469,7 +1474,7 @@ class SchedulesActivity : AppCompatActivity() {
                 ScheduleStore.LocationTrigger.ENTER_EXIT, null -> true
             }
             return ScheduleTestSnapshot(
-                conditionMet = dayMatches && timeMatches && triggerMatches && missingPermission == null,
+                conditionMet = windowMatches && triggerMatches && missingPermission == null,
                 detected = getString(
                     if (inside) R.string.schedules_test_status_location_inside_fmt else R.string.schedules_test_status_location_outside_fmt,
                     meters,
@@ -1479,7 +1484,7 @@ class SchedulesActivity : AppCompatActivity() {
         }
 
         return ScheduleTestSnapshot(
-            conditionMet = dayMatches && timeMatches && missingPermission == null,
+            conditionMet = windowMatches && missingPermission == null,
             detected = getString(R.string.schedules_test_status_time_fmt, TimeFormatPrefs.formatMinutesOfDay(this, nowMinutes)),
             missingPermission = missingPermission,
         )
@@ -1561,13 +1566,6 @@ class SchedulesActivity : AppCompatActivity() {
         ScheduleStore.Action.DISCONNECT_DISABLE -> getString(R.string.schedules_action_disconnect_disable)
     }
 
-    private fun inScheduleTimeRange(nowMinutes: Int, startMinutes: Int, endMinutes: Int): Boolean {
-        return if (startMinutes <= endMinutes) {
-            nowMinutes in startMinutes..endMinutes
-        } else {
-            nowMinutes >= startMinutes || nowMinutes <= endMinutes
-        }
-    }
 
     private fun currentWifiSsidForTest(): String? {
         if (!hasWifiSsidPermission()) return null
@@ -1662,8 +1660,8 @@ class SchedulesActivity : AppCompatActivity() {
         return out.toList()
     }
 
-    private fun reapplySchedulesNow() {
-        ScheduleRuntimeStore.resetActiveScheduleState(this)
+    private fun reapplySchedulesNow(editedScheduleId: Int?) {
+        ScheduleRuntimeStore.onScheduleEdited(this, editedScheduleId)
         sendBroadcast(
             Intent(this, ScheduleReceiver::class.java).apply {
                 action = ScheduleReceiver.ACTION_TICK
@@ -1704,7 +1702,7 @@ class SchedulesActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle(R.string.perm_location_title)
             .setMessage(R.string.perm_location_why_wifi_ssid)
-            .setPositiveButton(R.string.ok) { _, _ ->
+            .setPositiveButton(R.string.continue_label) { _, _ ->
                 requestLocationPermission.launch(wifiSsidPermissionName())
             }
             .setNeutralButton(R.string.schedules_health_action_permissions) { _, _ ->
@@ -1718,7 +1716,7 @@ class SchedulesActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle(R.string.perm_location_title)
             .setMessage(R.string.perm_location_why_geofence)
-            .setPositiveButton(R.string.ok) { _, _ ->
+            .setPositiveButton(R.string.continue_label) { _, _ ->
                 pendingAfterFineLocationGrant = onGranted
                 requestFineLocationPermission.launch(Manifest.permission.ACCESS_FINE_LOCATION)
             }
@@ -1744,7 +1742,7 @@ class SchedulesActivity : AppCompatActivity() {
         AlertDialog.Builder(this)
             .setTitle(R.string.perm_bt_title)
             .setMessage(R.string.perm_bt_why_needed)
-            .setPositiveButton(R.string.ok) { _, _ ->
+            .setPositiveButton(R.string.continue_label) { _, _ ->
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     requestBluetoothPermission.launch(Manifest.permission.BLUETOOTH_CONNECT)
                 }
@@ -3583,7 +3581,7 @@ class SchedulesActivity : AppCompatActivity() {
                 fun persistScheduleNow() {
                     ScheduleStore.saveAll(this@SchedulesActivity, newList)
                     LocationTriggerMonitor.syncAsync(this@SchedulesActivity)
-                    reapplySchedulesNow()
+                    reapplySchedulesNow(existing?.id)
                     SchedulePlanner.updateNextAlarm(this@SchedulesActivity)
                     SchedulePlanner.notifyNextChanged(this@SchedulesActivity)
                     refreshList()

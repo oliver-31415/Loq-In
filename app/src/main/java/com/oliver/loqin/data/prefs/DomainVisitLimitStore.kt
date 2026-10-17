@@ -157,6 +157,24 @@ object DomainVisitLimitStore {
         }
     }
 
+    fun copyProfile(ctx: Context, fromProfile: String, toProfile: String) {
+        val p = prefs(ctx)
+        val fromSafe = sanitizeProfile(fromProfile)
+        val toSafe = sanitizeProfile(toProfile)
+        if (fromSafe == toSafe) return
+        p.edit {
+            for (prefix in listOf(PREFIX_SESSION_MIN, PREFIX_VISIT_COUNT)) {
+                val fromPrefix = prefix + PROFILE_SEGMENT + fromSafe + "__"
+                val toPrefix = prefix + PROFILE_SEGMENT + toSafe + "__"
+                for ((key, value) in p.all.filterKeys { it.startsWith(fromPrefix) }) {
+                    val domain = key.removePrefix(fromPrefix)
+                    val v = (value as? Number)?.toInt() ?: 0
+                    if (domain.isNotBlank() && v > 0) putInt(toPrefix + domain, v)
+                }
+            }
+        }
+    }
+
     fun onProfileRemoved(ctx: Context, profile: String) {
         val p = prefs(ctx)
         val safe = sanitizeProfile(profile)

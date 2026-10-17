@@ -12,6 +12,7 @@
     <!-- ====================================================== -->
     <string name="qs_label_on">Loq In EIN</string>
     <string name="qs_label_off">Loq In AUS</string>
+    <string name="qs_subtitle_emergency">Notfall-Entsperrung</string>
     <string name="qs_added_ok">Kachel hinzugefügt</string>
     <string name="qs_added_already">Kachel ist bereits hinzugefügt</string>
     <string name="qs_added_cancel">Abgebrochen</string>
@@ -92,6 +93,7 @@
         <item quantity="other">Loq In für %1$d Minuten pausiert.</item>
     </plurals>
     <string name="widget_pause_already_disabled">Loq In ist bereits deaktiviert.</string>
+    <string name="widget_app_lock_open_app">Öffne Loq In, um bei aktiver App-Sperre eine Pause einzulegen.</string>
     <string name="widget_next_schedule_open">Zeitpläne öffnen</string>
     <string name="widget_qr_name">QR-Scanner</string>
     <string name="widget_barcode_name">Barcode-Scanner</string>

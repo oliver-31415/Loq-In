@@ -21,6 +21,7 @@ package com.oliver.loqin.security
 import android.content.Context
 import androidx.core.content.edit
 import com.oliver.loqin.util.ManagedDevicePolicyHelper
+import com.oliver.loqin.widget.PauseBlockerWidgetProvider
 
 // Persists and retrieves app lock state.
 object AppLockStore {
@@ -29,6 +30,13 @@ object AppLockStore {
     private const val KEY_PIN = "pref_app_lock_pin"
     private const val KEY_BIOMETRIC = "pref_app_lock_biometric"
     private const val KEY_STRICT_PROTECTION = "pref_app_lock_strict_protection"
+    private const val KEY_FAILED_ATTEMPTS = "pref_app_lock_failed_attempts"
+    private const val KEY_LOCKED_UNTIL = "pref_app_lock_locked_until_ms"
+
+    // After FREE_ATTEMPTS wrong PINs each further one locks entry: 30 s, doubling up to 15 min.
+    private const val FREE_ATTEMPTS = 5
+    private const val FIRST_LOCKOUT_MS = 30_000L
+    private const val MAX_LOCKOUT_MS = 15 * 60_000L
 
     private fun prefs(ctx: Context) = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
 
@@ -43,6 +51,8 @@ object AppLockStore {
         prefs(ctx).edit(commit = true) {
             putBoolean(KEY_ENABLED, enabled && hasPin(ctx))
         }
+        // Widget break buttons open the app instead of acting while App lock is on.
+        runCatching { PauseBlockerWidgetProvider.refreshAll(ctx) }
     }
 
     fun setPin(ctx: Context, pin: String) {
@@ -58,11 +68,42 @@ object AppLockStore {
             putBoolean(KEY_ENABLED, false)
             putBoolean(KEY_BIOMETRIC, false)
         }
+        runCatching { PauseBlockerWidgetProvider.refreshAll(ctx) }
     }
 
+    /**
+     * Checks [enteredPin], counting wrong entries. While locked out after repeated wrong PINs it
+     * returns false without checking.
+     */
     fun matchesPin(ctx: Context, enteredPin: String): Boolean {
+        if (lockoutRemainingMs(ctx) > 0L) return false
         val expected = prefs(ctx).getString(KEY_PIN, null)?.trim().orEmpty()
-        return expected.isNotBlank() && expected == enteredPin.trim()
+        val matches = expected.isNotBlank() && expected == enteredPin.trim()
+        val sp = prefs(ctx)
+        if (matches) {
+            sp.edit(commit = true) {
+                remove(KEY_FAILED_ATTEMPTS)
+                remove(KEY_LOCKED_UNTIL)
+            }
+        } else {
+            val failed = sp.getInt(KEY_FAILED_ATTEMPTS, 0) + 1
+            sp.edit(commit = true) {
+                putInt(KEY_FAILED_ATTEMPTS, failed)
+                if (failed >= FREE_ATTEMPTS) {
+                    val lockout = (FIRST_LOCKOUT_MS shl (failed - FREE_ATTEMPTS).coerceAtMost(5))
+                        .coerceAtMost(MAX_LOCKOUT_MS)
+                    putLong(KEY_LOCKED_UNTIL, System.currentTimeMillis() + lockout)
+                }
+            }
+        }
+        return matches
+    }
+
+    /** Time until another PIN may be tried; capped so a clock set back can't extend it. */
+    fun lockoutRemainingMs(ctx: Context): Long {
+        val until = prefs(ctx).getLong(KEY_LOCKED_UNTIL, 0L)
+        if (until <= 0L) return 0L
+        return (until - System.currentTimeMillis()).coerceIn(0L, MAX_LOCKOUT_MS)
     }
 
     fun isBiometricEnabled(ctx: Context): Boolean = prefs(ctx).getBoolean(KEY_BIOMETRIC, false)
