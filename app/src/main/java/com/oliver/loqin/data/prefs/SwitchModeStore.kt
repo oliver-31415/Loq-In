@@ -18,6 +18,8 @@
 
 package com.oliver.loqin.data.prefs
 
+import com.oliver.loqin.platform.tile.LoqInTileService
+import com.oliver.loqin.widget.PauseBlockerWidgetProvider
 import android.content.Context
 import androidx.core.content.edit
 import com.oliver.loqin.R
@@ -144,8 +146,7 @@ object SwitchModeStore {
                 if (!initialized) {
                     _enabledFlow.value = isEnabled(ctx)
                     ensureLimitSessionStartedAt(ctx)
-                    ActiveTimerWidgetProvider.updateAll(ctx)
-                    PersistentStatusNotifier.refresh(ctx)
+                    refreshStatusSurfaces(ctx)
                     syncActiveSinceForEffectiveState(ctx)
                     if (isEnabled(ctx)) {
                         BlockingRuntime.ensureRunning(ctx)
@@ -271,8 +272,7 @@ object SwitchModeStore {
 
         syncActiveSinceForEffectiveState(ctx, effectiveAfter)
         _enabledFlow.value = effectiveAfter
-        ActiveTimerWidgetProvider.updateAll(ctx)
-        PersistentStatusNotifier.refresh(ctx)
+        refreshStatusSurfaces(ctx)
 
         val rangeScheduleActive = ScheduleRuntimeStore.hadEnableAndDisable(ctx) || ScheduleRuntimeStore.hadDisableAndEnable(ctx)
         val activeRangeScheduleId = ScheduleRuntimeStore.getActiveRangeScheduleId(ctx)
@@ -360,8 +360,7 @@ object SwitchModeStore {
 
         syncActiveSinceForEffectiveState(ctx, effectiveAfter)
         _enabledFlow.value = effectiveAfter
-        ActiveTimerWidgetProvider.updateAll(ctx)
-        PersistentStatusNotifier.refresh(ctx)
+        refreshStatusSurfaces(ctx)
         ScheduleRuntimeStore.setEnabledBySchedule(ctx, enabled)
 
         if (effectiveAfter) {
@@ -421,8 +420,7 @@ object SwitchModeStore {
 
         syncActiveSinceForEffectiveState(ctx)
         _enabledFlow.value = effectivelyEnabledAfter
-        ActiveTimerWidgetProvider.updateAll(ctx)
-        PersistentStatusNotifier.refresh(ctx)
+        refreshStatusSurfaces(ctx)
         AppLogStore.append(ctx, "Profiles", "Temp disable started duration=${grantedMs}ms")
 
         // Clear any currently visible blocker UI/state while the temporary disable window is active.
@@ -529,8 +527,7 @@ object SwitchModeStore {
 
         syncActiveSinceForEffectiveState(ctx)
         _enabledFlow.value = effectivelyEnabledAfter
-        ActiveTimerWidgetProvider.updateAll(ctx)
-        PersistentStatusNotifier.refresh(ctx)
+        refreshStatusSurfaces(ctx)
         val loggedTargetProfile = targetProfileForLog ?: ProfileStore.getCurrent(ctx) ?: "-"
         AppLogStore.append(ctx, "Profiles", "Temp enable started profile=$loggedTargetProfile duration=${durationMs}ms restoreEnabled=$baseBefore")
         AppLogStore.append(ctx, "Profiles", "Stored previous profile id=${profileBefore ?: "-"}")
@@ -608,8 +605,7 @@ object SwitchModeStore {
         AppLogStore.append(ctx, "Profiles", "Temp enable expired")
         syncActiveSinceForEffectiveState(ctx, effectivelyEnabledAfter)
         _enabledFlow.value = effectivelyEnabledAfter
-        ActiveTimerWidgetProvider.updateAll(ctx)
-        PersistentStatusNotifier.refresh(ctx)
+        refreshStatusSurfaces(ctx)
         if (effectivelyEnabledAfter) {
             BlockingRuntime.ensureRunning(ctx)
         } else {
@@ -647,8 +643,7 @@ object SwitchModeStore {
         AppLogStore.append(ctx, "Profiles", "Temp disable expired")
         syncActiveSinceForEffectiveState(ctx)
         _enabledFlow.value = effectivelyEnabledAfter
-        ActiveTimerWidgetProvider.updateAll(ctx)
-        PersistentStatusNotifier.refresh(ctx)
+        refreshStatusSurfaces(ctx)
         if (effectivelyEnabledAfter) {
             BlockingRuntime.ensureRunning(ctx)
         } else {
@@ -668,8 +663,7 @@ object SwitchModeStore {
         }
         syncActiveSinceForEffectiveState(ctx, effectivelyEnabledAfter)
         _enabledFlow.value = effectivelyEnabledAfter
-        ActiveTimerWidgetProvider.updateAll(ctx)
-        PersistentStatusNotifier.refresh(ctx)
+        refreshStatusSurfaces(ctx)
         if (effectivelyEnabledAfter) {
             BlockingRuntime.ensureRunning(ctx)
         }
@@ -691,8 +685,7 @@ object SwitchModeStore {
         }
         syncActiveSinceForEffectiveState(ctx, effectivelyEnabledAfter)
         _enabledFlow.value = effectivelyEnabledAfter
-        ActiveTimerWidgetProvider.updateAll(ctx)
-        PersistentStatusNotifier.refresh(ctx)
+        refreshStatusSurfaces(ctx)
 
         if (effectivelyEnabledAfter) {
             BlockingRuntime.ensureRunning(ctx)
@@ -720,8 +713,7 @@ object SwitchModeStore {
         // TempReenableStore.clear(ctx)
         syncActiveSinceForEffectiveState(ctx)
         _enabledFlow.value = effectivelyEnabledAfter
-        ActiveTimerWidgetProvider.updateAll(ctx)
-        PersistentStatusNotifier.refresh(ctx)
+        refreshStatusSurfaces(ctx)
         BlockingRuntime.ensureRunning(ctx)
         ManagedDevicePolicyHelper.syncSelfUninstallBlock(ctx)
     }
@@ -758,8 +750,7 @@ object SwitchModeStore {
         }
         syncActiveSinceForEffectiveState(ctx, effectivelyEnabledAfter)
         _enabledFlow.value = effectivelyEnabledAfter
-        ActiveTimerWidgetProvider.updateAll(ctx)
-        PersistentStatusNotifier.refresh(ctx)
+        refreshStatusSurfaces(ctx)
         if (effectivelyEnabledAfter) {
             BlockingRuntime.ensureRunning(ctx)
         }
@@ -794,6 +785,23 @@ object SwitchModeStore {
         val sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
         sp.edit {
             putBoolean(KEY_REQUIRE_NFC_DISABLE, required)
+        }
+    }
+
+    /**
+     * Every place that shows protection state: Home's timer widget, the break widget, the status
+     * notification and the Quick Settings tile. The break widget and tile used to keep showing a
+     * break after it was ended from Home.
+     */
+    private fun refreshStatusSurfaces(ctx: Context) {
+        ActiveTimerWidgetProvider.updateAll(ctx)
+        PersistentStatusNotifier.refresh(ctx)
+        runCatching { PauseBlockerWidgetProvider.refreshAll(ctx) }
+        runCatching {
+            android.service.quicksettings.TileService.requestListeningState(
+                ctx,
+                android.content.ComponentName(ctx, LoqInTileService::class.java),
+            )
         }
     }
 }
