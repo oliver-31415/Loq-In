@@ -393,7 +393,7 @@ class SchedulesActivity : AppCompatActivity() {
                     }
                     ScheduleStore.saveAll(this, list)
                     LocationTriggerMonitor.syncAsync(this)
-                    reapplySchedulesNow()
+                    reapplySchedulesNow(schedule.id)
                     SchedulePlanner.updateNextAlarm(this)
                     SchedulePlanner.notifyNextChanged(this)
                     if (enabled) {
@@ -1660,8 +1660,8 @@ class SchedulesActivity : AppCompatActivity() {
         return out.toList()
     }
 
-    private fun reapplySchedulesNow() {
-        ScheduleRuntimeStore.clearFiredTokens(this)
+    private fun reapplySchedulesNow(editedScheduleId: Int?) {
+        ScheduleRuntimeStore.onScheduleEdited(this, editedScheduleId)
         sendBroadcast(
             Intent(this, ScheduleReceiver::class.java).apply {
                 action = ScheduleReceiver.ACTION_TICK
@@ -3581,7 +3581,7 @@ class SchedulesActivity : AppCompatActivity() {
                 fun persistScheduleNow() {
                     ScheduleStore.saveAll(this@SchedulesActivity, newList)
                     LocationTriggerMonitor.syncAsync(this@SchedulesActivity)
-                    reapplySchedulesNow()
+                    reapplySchedulesNow(existing?.id)
                     SchedulePlanner.updateNextAlarm(this@SchedulesActivity)
                     SchedulePlanner.notifyNextChanged(this@SchedulesActivity)
                     refreshList()
