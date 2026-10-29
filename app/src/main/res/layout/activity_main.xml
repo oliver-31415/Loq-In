@@ -422,7 +422,8 @@
                                     android:textSize="12sp"
                                     android:textColor="#CCFFFFFF" 
                                     android:maxLines="1"
-                                    android:ellipsize="end" />
+                                    android:ellipsize="end"
+                                    android:layout_marginEnd="8dp" />
 
                                 <TextView
                                     android:id="@+id/tvHeroStatApps"
@@ -448,7 +449,8 @@
                                     android:textSize="12sp"
                                     android:textColor="#CCFFFFFF" 
                                     android:maxLines="1"
-                                    android:ellipsize="end" />
+                                    android:ellipsize="end"
+                                    android:layout_marginEnd="8dp" />
 
                                 <TextView
                                     android:id="@+id/tvHeroStatDomains"
@@ -673,7 +675,7 @@
                         <LinearLayout
                             android:id="@+id/tvTempHint"
                             android:layout_width="0dp"
-                            android:layout_height="match_parent"
+                            android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:minHeight="54dp"
                             android:orientation="horizontal"
@@ -716,8 +718,12 @@
                                     android:textSize="13.5sp"
                                     android:textStyle="bold"
                                     android:textColor="?attr/colorOnSurface"
-                                    android:maxLines="2"
-                                    tools:text="Take a break" />
+                                    android:maxLines="1"
+                                    android:ellipsize="end"
+                                    tools:text="Take a break"
+                                    app:autoSizeMaxTextSize="13.5sp"
+                                    app:autoSizeMinTextSize="9sp"
+                                    app:autoSizeTextType="uniform" />
 
                                 <TextView
                                     android:id="@+id/tvTempTileSubtitle"
@@ -743,7 +749,7 @@
                         <LinearLayout
                             android:id="@+id/tvEmergencyHint"
                             android:layout_width="0dp"
-                            android:layout_height="match_parent"
+                            android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:minHeight="54dp"
                             android:orientation="horizontal"
@@ -786,8 +792,12 @@
                                     android:textSize="13.5sp"
                                     android:textStyle="bold"
                                     android:textColor="?attr/colorOnSurface"
-                                    android:maxLines="2"
-                                    tools:text="Emergency" />
+                                    android:maxLines="1"
+                                    android:ellipsize="end"
+                                    tools:text="Emergency"
+                                    app:autoSizeMaxTextSize="13.5sp"
+                                    app:autoSizeMinTextSize="9sp"
+                                    app:autoSizeTextType="uniform" />
 
                                 <TextView
                                     android:id="@+id/tvEmergencyTileSubtitle"
