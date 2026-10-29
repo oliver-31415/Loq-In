@@ -42,9 +42,9 @@ import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.showWarnPill
 import com.oliver.loqin.ui.showWarnPillOnContent
+import com.oliver.loqin.ui.widgets.ListGroupLayout
 import com.oliver.loqin.util.LocaleHelper
 import com.google.android.material.appbar.MaterialToolbar
-import com.google.android.material.card.MaterialCardView
 
 abstract class TilesInfoActivity : AppCompatActivity() {
 
@@ -130,13 +130,7 @@ abstract class TilesInfoActivity : AppCompatActivity() {
             .forEachIndexed { groupIndex, (section, groupTiles) ->
                 section?.let { rowsContainer.addView(createSectionTitle(it, groupIndex > 0)) }
 
-                val card = MaterialCardView(this).apply {
-                    radius = dp(16).toFloat()
-                    cardElevation = 0f
-                    useCompatPadding = false
-                    strokeWidth = dp(1)
-                    strokeColor = ContextCompat.getColor(this@TilesInfoActivity, R.color.foqos_outline_variant)
-                    setCardBackgroundColor(ContextCompat.getColor(this@TilesInfoActivity, R.color.foqos_surface))
+                val group = ListGroupLayout(this).apply {
                     layoutParams = LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
                         LinearLayout.LayoutParams.WRAP_CONTENT
@@ -145,21 +139,12 @@ abstract class TilesInfoActivity : AppCompatActivity() {
                         bottomMargin = dp(6)
                     }
                 }
-                val groupContainer = LinearLayout(this).apply {
-                    orientation = LinearLayout.VERTICAL
-                    setPadding(0, 0, 0, 0)
+
+                groupTiles.forEach { tile ->
+                    group.addView(createTileRow(inflater, tile))
                 }
 
-                groupTiles.forEachIndexed { index, tile ->
-                    groupContainer.addView(createTileRow(inflater, tile))
-
-                    if (index != groupTiles.lastIndex) {
-                        groupContainer.addView(inflater.inflate(R.layout.item_info_divider, groupContainer, false))
-                    }
-                }
-
-                card.addView(groupContainer)
-                rowsContainer.addView(card)
+                rowsContainer.addView(group)
             }
     }
 

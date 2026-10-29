@@ -44,224 +44,33 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <com.google.android.material.card.MaterialCardView
-                style="@style/LoqIn.Card"
+            <com.oliver.loqin.ui.widgets.ListGroupLayout
+                style="@style/LoqIn.ListGroup"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp">
 
+                <!-- Display mode -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical">
+                    android:orientation="vertical"
+                    android:paddingStart="20dp"
+                    android:paddingTop="14dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="14dp">
 
-                    <!-- Display mode -->
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:paddingStart="16dp"
-                        android:paddingTop="14dp"
-                        android:paddingEnd="16dp"
-                        android:paddingBottom="14dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <ImageView
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:contentDescription="@null"
-                                android:src="@drawable/toggle_on_24"
-                                app:tint="?attr/colorPrimary" />
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="14dp"
-                                android:layout_weight="1"
-                                android:orientation="vertical">
-
-                                <TextView
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:text="@string/pref_theme_mode_title"
-                                    android:textSize="15sp"
-                                    android:textStyle="bold" />
-
-                                <TextView
-                                    android:id="@+id/tvThemeModeSummary"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="2dp"
-                                    android:textColor="?android:attr/textColorSecondary"
-                                    android:textSize="13sp" />
-                            </LinearLayout>
-                        </LinearLayout>
-
-                        <com.google.android.material.button.MaterialButtonToggleGroup
-                            android:id="@+id/toggleThemeMode"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="12dp"
-                            app:selectionRequired="true"
-                            app:singleSelection="true">
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btnThemeSystem"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:maxLines="1"
-                                android:text="@string/pref_theme_mode_system_short"
-                                android:textAllCaps="false"
-                                app:cornerRadius="4dp" />
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btnThemeLight"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:maxLines="1"
-                                android:text="@string/pref_theme_mode_light"
-                                android:textAllCaps="false"
-                                app:cornerRadius="4dp" />
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btnThemeDark"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:maxLines="1"
-                                android:text="@string/pref_theme_mode_dark"
-                                android:textAllCaps="false"
-                                app:cornerRadius="4dp" />
-                        </com.google.android.material.button.MaterialButtonToggleGroup>
-                    </LinearLayout>
-
-                    <com.google.android.material.divider.MaterialDivider
-                        style="@style/LoqIn.Divider"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        app:dividerInsetStart="54dp" />
-
-                    <!-- Time format -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:paddingStart="16dp"
-                        android:paddingTop="14dp"
-                        android:paddingEnd="16dp"
-                        android:paddingBottom="14dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
-
-                            <ImageView
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:contentDescription="@null"
-                                android:src="@drawable/schedule_24"
-                                app:tint="?attr/colorPrimary" />
-
-                            <LinearLayout
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="14dp"
-                                android:layout_weight="1"
-                                android:orientation="vertical">
-
-                                <TextView
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:text="@string/pref_time_format_title"
-                                    android:textSize="15sp"
-                                    android:textStyle="bold" />
-
-                                <TextView
-                                    android:id="@+id/tvTimeFormatSummary"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="2dp"
-                                    android:textColor="?android:attr/textColorSecondary"
-                                    android:textSize="13sp" />
-                            </LinearLayout>
-                        </LinearLayout>
-
-                        <com.google.android.material.button.MaterialButtonToggleGroup
-                            android:id="@+id/toggleTimeFormat"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="12dp"
-                            app:selectionRequired="true"
-                            app:singleSelection="true">
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btnTimeAutomatic"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:maxLines="1"
-                                android:text="@string/pref_time_format_system_short"
-                                android:textAllCaps="false"
-                                app:cornerRadius="4dp" />
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btnTime24"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:maxLines="1"
-                                android:text="@string/pref_time_format_24h"
-                                android:textAllCaps="false"
-                                app:cornerRadius="4dp" />
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btnTime12"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:maxLines="1"
-                                android:text="@string/pref_time_format_12h"
-                                android:textAllCaps="false"
-                                app:cornerRadius="4dp" />
-                        </com.google.android.material.button.MaterialButtonToggleGroup>
-                    </LinearLayout>
-
-                    <com.google.android.material.divider.MaterialDivider
-                        style="@style/LoqIn.Divider"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        app:dividerInsetStart="54dp" />
-
-                    <!-- Theme color: tapping the row opens the colour overlay -->
-                    <LinearLayout
-                        android:id="@+id/rowThemeColor"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:minHeight="56dp"
-                        android:orientation="horizontal"
                         android:gravity="center_vertical"
-                        android:paddingStart="16dp"
-                        android:paddingTop="14dp"
-                        android:paddingEnd="16dp"
-                        android:paddingBottom="14dp"
-                        android:background="?attr/selectableItemBackground"
-                        android:clickable="true"
-                        android:focusable="true">
+                        android:orientation="horizontal">
 
                         <ImageView
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:contentDescription="@null"
-                            android:src="@drawable/palette_24"
+                            android:src="@drawable/toggle_on_24"
                             app:tint="?attr/colorPrimary" />
 
                         <LinearLayout
@@ -274,130 +83,289 @@
                             <TextView
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:text="@string/pref_theme_color_title"
-                                android:textSize="15sp"
-                                android:textStyle="bold" />
+                                android:text="@string/pref_theme_mode_title"
+                                android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
 
                             <TextView
-                                android:id="@+id/tvThemeColorSummary"
+                                android:id="@+id/tvThemeModeSummary"
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:layout_marginTop="2dp"
-                                android:textColor="?android:attr/textColorSecondary"
-                                android:textSize="13sp" />
+                                android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
                         </LinearLayout>
-
-                        <View
-                            android:id="@+id/accentPreviewDot"
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:layout_marginStart="8dp" />
-
-                        <ImageView
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:layout_marginStart="10dp"
-                            android:alpha="0.7"
-                            android:contentDescription="@string/open"
-                            android:src="@drawable/keyboard_arrow_right_24"
-                            app:tint="?android:attr/textColorSecondary" />
                     </LinearLayout>
 
-                    <com.google.android.material.divider.MaterialDivider
-                        style="@style/LoqIn.Divider"
+                    <com.google.android.material.button.MaterialButtonToggleGroup
+                        android:id="@+id/toggleThemeMode"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        app:dividerInsetStart="54dp" />
+                        android:layout_marginTop="12dp"
+                        app:selectionRequired="true"
+                        app:singleSelection="true">
 
-                    <!-- Language -->
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnThemeSystem"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:maxLines="1"
+                            android:text="@string/pref_theme_mode_system_short"
+                            android:textAllCaps="false"
+                            app:cornerRadius="4dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnThemeLight"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:maxLines="1"
+                            android:text="@string/pref_theme_mode_light"
+                            android:textAllCaps="false"
+                            app:cornerRadius="4dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnThemeDark"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:maxLines="1"
+                            android:text="@string/pref_theme_mode_dark"
+                            android:textAllCaps="false"
+                            app:cornerRadius="4dp" />
+                    </com.google.android.material.button.MaterialButtonToggleGroup>
+                </LinearLayout>
+
+
+                <!-- Time format -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingStart="20dp"
+                    android:paddingTop="14dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="14dp">
+
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:paddingStart="16dp"
-                        android:paddingTop="14dp"
-                        android:paddingEnd="16dp"
-                        android:paddingBottom="14dp">
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/schedule_24"
+                            app:tint="?attr/colorPrimary" />
 
                         <LinearLayout
-                            android:layout_width="match_parent"
+                            android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:gravity="center_vertical"
-                            android:orientation="horizontal">
+                            android:layout_marginStart="14dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
 
-                            <ImageView
-                                android:layout_width="24dp"
-                                android:layout_height="24dp"
-                                android:contentDescription="@null"
-                                android:src="@drawable/translate_24"
-                                app:tint="?attr/colorPrimary" />
-
-                            <LinearLayout
-                                android:layout_width="0dp"
+                            <TextView
+                                android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
-                                android:layout_marginStart="14dp"
-                                android:layout_weight="1"
-                                android:orientation="vertical">
+                                android:text="@string/pref_time_format_title"
+                                android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
 
-                                <TextView
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:text="@string/pref_language_title"
-                                    android:textSize="15sp"
-                                    android:textStyle="bold" />
-
-                                <TextView
-                                    android:id="@+id/tvLanguageSummary"
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:layout_marginTop="2dp"
-                                    android:textColor="?android:attr/textColorSecondary"
-                                    android:textSize="13sp" />
-                            </LinearLayout>
+                            <TextView
+                                android:id="@+id/tvTimeFormatSummary"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
                         </LinearLayout>
-
-                        <com.google.android.material.button.MaterialButtonToggleGroup
-                            android:id="@+id/toggleLanguage"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="12dp"
-                            app:selectionRequired="true"
-                            app:singleSelection="true">
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btnLanguageSystem"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:maxLines="1"
-                                android:text="@string/pref_theme_mode_system_short"
-                                android:textAllCaps="false"
-                                app:cornerRadius="4dp" />
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btnLanguageEnglish"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:maxLines="1"
-                                android:text="@string/pref_language_english"
-                                android:textAllCaps="false"
-                                app:cornerRadius="4dp" />
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btnLanguageGerman"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:maxLines="1"
-                                android:text="@string/pref_language_german"
-                                android:textAllCaps="false"
-                                app:cornerRadius="4dp" />
-                        </com.google.android.material.button.MaterialButtonToggleGroup>
                     </LinearLayout>
 
+                    <com.google.android.material.button.MaterialButtonToggleGroup
+                        android:id="@+id/toggleTimeFormat"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        app:selectionRequired="true"
+                        app:singleSelection="true">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnTimeAutomatic"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:maxLines="1"
+                            android:text="@string/pref_time_format_system_short"
+                            android:textAllCaps="false"
+                            app:cornerRadius="4dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnTime24"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:maxLines="1"
+                            android:text="@string/pref_time_format_24h"
+                            android:textAllCaps="false"
+                            app:cornerRadius="4dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnTime12"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:maxLines="1"
+                            android:text="@string/pref_time_format_12h"
+                            android:textAllCaps="false"
+                            app:cornerRadius="4dp" />
+                    </com.google.android.material.button.MaterialButtonToggleGroup>
                 </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+
+
+                <!-- Theme color: tapping the row opens the colour overlay -->
+                <LinearLayout
+                    android:id="@+id/rowThemeColor"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="72dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingStart="20dp"
+                    android:paddingTop="14dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="14dp"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/palette_24"
+                        app:tint="?attr/colorPrimary" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="14dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/pref_theme_color_title"
+                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
+
+                        <TextView
+                            android:id="@+id/tvThemeColorSummary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
+                    </LinearLayout>
+
+                    <View
+                        android:id="@+id/accentPreviewDot"
+                        android:layout_width="20dp"
+                        android:layout_height="20dp"
+                        android:layout_marginStart="8dp" />
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:layout_marginStart="10dp"
+                        android:contentDescription="@string/open"
+                        android:src="@drawable/keyboard_arrow_right_24"
+                        app:tint="?attr/colorOnSurfaceVariant" />
+                </LinearLayout>
+
+
+                <!-- Language -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingStart="20dp"
+                    android:paddingTop="14dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="14dp">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:contentDescription="@null"
+                            android:src="@drawable/translate_24"
+                            app:tint="?attr/colorPrimary" />
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="14dp"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="@string/pref_language_title"
+                                android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
+
+                            <TextView
+                                android:id="@+id/tvLanguageSummary"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <com.google.android.material.button.MaterialButtonToggleGroup
+                        android:id="@+id/toggleLanguage"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        app:selectionRequired="true"
+                        app:singleSelection="true">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnLanguageSystem"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:maxLines="1"
+                            android:text="@string/pref_theme_mode_system_short"
+                            android:textAllCaps="false"
+                            app:cornerRadius="4dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnLanguageEnglish"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:maxLines="1"
+                            android:text="@string/pref_language_english"
+                            android:textAllCaps="false"
+                            app:cornerRadius="4dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnLanguageGerman"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:maxLines="1"
+                            android:text="@string/pref_language_german"
+                            android:textAllCaps="false"
+                            app:cornerRadius="4dp" />
+                    </com.google.android.material.button.MaterialButtonToggleGroup>
+                </LinearLayout>
+            </com.oliver.loqin.ui.widgets.ListGroupLayout>
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
