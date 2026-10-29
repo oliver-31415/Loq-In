@@ -78,25 +78,25 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnHiddenAppPickers"
+                            style="@style/LoqIn.Segment"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:minHeight="42dp"
+                            android:minHeight="44dp"
                             android:maxLines="2"
                             android:text="@string/hidden_apps_tab_pickers"
-                            android:textSize="12sp"
-                            app:cornerRadius="16dp" />
+                            android:textSize="12sp" />
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnHiddenUsageInsights"
+                            style="@style/LoqIn.Segment"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:minHeight="42dp"
+                            android:minHeight="44dp"
                             android:maxLines="2"
                             android:text="@string/hidden_apps_tab_usage"
-                            android:textSize="12sp"
-                            app:cornerRadius="16dp" />
+                            android:textSize="12sp" />
                     </com.google.android.material.button.MaterialButtonToggleGroup>
 
                     <TextView
@@ -104,7 +104,7 @@
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="6dp"
-                        android:textColor="?android:attr/textColorSecondary"
+                        android:textColor="?attr/colorOnSurfaceVariant"
                         android:textSize="12sp"
                         android:lineSpacingExtra="2dp" />
                 </LinearLayout>
@@ -169,7 +169,7 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnSelectAll"
-                        style="@style/Widget.Material3.Button.TonalButton"
+                        style="@style/LoqIn.TonalButton"
                         android:layout_width="0dp"
                         android:layout_height="40dp"
                         android:layout_weight="1"
@@ -179,14 +179,12 @@
                         android:minHeight="40dp"
                         android:text="@string/hidden_apps_select_all"
                         android:textSize="12sp"
-                        app:cornerRadius="14dp"
                         app:icon="@drawable/check_circle_24"
-                        app:iconGravity="textStart"
-                        app:strokeWidth="0dp" />
+                        app:iconGravity="textStart" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnClearAll"
-                        style="@style/Widget.Material3.Button.TonalButton"
+                        style="@style/LoqIn.TonalButton"
                         android:layout_width="0dp"
                         android:layout_height="40dp"
                         android:layout_marginStart="8dp"
@@ -197,10 +195,8 @@
                         android:minHeight="40dp"
                         android:text="@string/hidden_apps_clear_all"
                         android:textSize="12sp"
-                        app:cornerRadius="14dp"
                         app:icon="@drawable/close_24"
-                        app:iconGravity="textStart"
-                        app:strokeWidth="0dp" />
+                        app:iconGravity="textStart" />
                 </LinearLayout>
 
                 <TextView
@@ -208,7 +204,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:textColor="?android:attr/textColorSecondary"
+                    android:textColor="?attr/colorOnSurfaceVariant"
                     android:textSize="13sp" />
             </LinearLayout>
         </com.google.android.material.appbar.AppBarLayout>

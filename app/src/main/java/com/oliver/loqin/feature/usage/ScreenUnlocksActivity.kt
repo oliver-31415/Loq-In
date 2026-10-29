@@ -416,8 +416,6 @@ class ScreenUnlocksActivity : AppCompatActivity() {
                 LinearLayout.LayoutParams.WRAP_CONTENT
             )
             radius = dp(22).toFloat()
-            strokeWidth = dp(1)
-            strokeColor = ContextCompat.getColor(this@ScreenUnlocksActivity, R.color.foqos_outline_variant)
             setCardBackgroundColor(ContextCompat.getColor(this@ScreenUnlocksActivity, R.color.foqos_surface))
         }
     }
@@ -668,8 +666,6 @@ class ScreenUnlocksActivity : AppCompatActivity() {
                 LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply { topMargin = dp(10) }
             radius = dp(22).toFloat()
-            strokeWidth = dp(1)
-            strokeColor = ContextCompat.getColor(this@ScreenUnlocksActivity, R.color.foqos_outline_variant)
             setCardBackgroundColor(ContextCompat.getColor(this@ScreenUnlocksActivity, R.color.foqos_surface))
         }
     }

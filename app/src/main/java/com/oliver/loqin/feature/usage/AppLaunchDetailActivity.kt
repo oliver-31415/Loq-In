@@ -205,8 +205,6 @@ class AppLaunchDetailActivity : AppCompatActivity() {
                     bottomMargin = dp(8)
                 }
                 radius = dp(22).toFloat()
-                strokeWidth = dp(1)
-                strokeColor = ContextCompat.getColor(this@AppLaunchDetailActivity, R.color.foqos_outline_variant)
                 setCardBackgroundColor(ContextCompat.getColor(this@AppLaunchDetailActivity, R.color.foqos_surface))
                 addView(LinearLayout(this@AppLaunchDetailActivity).apply {
                     gravity = Gravity.CENTER_VERTICAL
@@ -290,8 +288,6 @@ class AppLaunchDetailActivity : AppCompatActivity() {
                 LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply { topMargin = dp(10) }
             radius = dp(22).toFloat()
-            strokeWidth = dp(1)
-            strokeColor = ContextCompat.getColor(this@AppLaunchDetailActivity, R.color.foqos_outline_variant)
             setCardBackgroundColor(ContextCompat.getColor(this@AppLaunchDetailActivity, R.color.foqos_surface))
         }
     }
