@@ -488,7 +488,6 @@
         <item name="checkedIconVisible">false</item>
         <item name="chipIconVisible">false</item>
         <item name="closeIconVisible">false</item>
-        <item name="ensureMinTouchTargetSize">false</item>
     </style>
 
     <style name="LoqIn.LogFilterChip" parent="Widget.Material3.Chip.Filter">

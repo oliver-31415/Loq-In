@@ -127,6 +127,9 @@ class WeeklySummaryWorker(context: Context, params: WorkerParameters) : Worker(c
             .setContentIntent(open)
             .setAutoCancel(true)
             .build()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ContextCompat.checkSelfPermission(ctx, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
+        ) return
         runCatching { NotificationManagerCompat.from(ctx).notify(NOTIFICATION_ID, notification) }
     }
 

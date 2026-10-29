@@ -1554,7 +1554,9 @@ class LoqInAccessibilityService : AccessibilityService() {
 
         // Some apps produce very few accessibility events.
         // To avoid tracking the wrong foreground package (which would break real-time limits), prefer the active window package when available.
-        val rootPkg = runCatching { activeRootWithBudget("usage_tick")?.packageName?.toString() }.getOrNull()
+        // Screen off: nothing is in front, so skip the binder round-trip (it runs every second).
+        val rootPkg = if (!pm.isInteractive) null else
+            runCatching { activeRootWithBudget("usage_tick")?.packageName?.toString() }.getOrNull()
         if (!rootPkg.isNullOrBlank() && rootPkg != packageName && rootPkg != currentTopPkg) {
             currentTopPkg = rootPkg
             BlockingRuntime.markForegroundPackage(this, rootPkg, "active_window_root")

@@ -92,6 +92,8 @@
     <string name="temp_enable_duration_custom_hint">Enter minutes</string>
     <string name="temp_enable_duration_invalid">Enter minutes, max 24h.</string>
     <string name="temp_duration_quick_presets">Quick presets</string>
+    <string name="temp_duration_more_options">More options</string>
+    <string name="temp_duration_unit_hour">hour</string>
     <string name="temp_duration_preset_minutes">%1$dm</string>
     <string name="temp_duration_apply">Set for %1$s</string>
     <string name="nfc_time_5_min">5 minutes</string>

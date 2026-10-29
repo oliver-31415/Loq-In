@@ -59,10 +59,10 @@
 
         <FrameLayout
             android:id="@+id/btnSheetClose"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:layout_marginStart="12dp"
-            android:background="@drawable/bg_roundel_neutral"
+            android:background="@drawable/bg_roundel_neutral_close"
             android:clickable="true"
             android:focusable="true"
             tools:ignore="UseCompoundDrawables">

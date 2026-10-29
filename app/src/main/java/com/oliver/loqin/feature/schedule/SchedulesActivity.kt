@@ -50,7 +50,6 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
-import android.widget.ProgressBar
 import android.widget.FrameLayout
 import android.widget.GridLayout
 import android.widget.ImageButton
@@ -126,6 +125,7 @@ import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.loadingindicator.LoadingIndicator
 import com.google.android.material.chip.Chip
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -1814,9 +1814,8 @@ class SchedulesActivity : AppCompatActivity() {
         val btnLocationSearchInline = view.findViewById<MaterialButton>(R.id.btnLocationSearchInline)
         val btnUseCurrentLocation = view.findViewById<MaterialButton>(R.id.btnUseCurrentLocation)
         val btnOpenMapPicker = view.findViewById<MaterialButton>(R.id.btnOpenMapPicker)
-        val progressLocationSearchInline = view.findViewById<ProgressBar>(R.id.progressLocationSearchInline)
-        progressLocationSearchInline.indeterminateTintList =
-            android.content.res.ColorStateList.valueOf(AccentColor.getAccentColorInt(this))
+        val progressLocationSearchInline = view.findViewById<LoadingIndicator>(R.id.progressLocationSearchInline)
+        progressLocationSearchInline.setIndicatorColor(AccentColor.getAccentColorInt(this))
         val tvLocationSearchStatusInline = view.findViewById<TextView>(R.id.tvLocationSearchStatusInline)
         val rvLocationResultsInline = view.findViewById<RecyclerView>(R.id.rvLocationResultsInline)
         val chipRadius100 = view.findViewById<Chip>(R.id.chipRadius100)
