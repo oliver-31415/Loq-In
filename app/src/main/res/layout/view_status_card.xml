@@ -9,8 +9,7 @@
     app:cardCornerRadius="16dp"
     app:cardElevation="0dp"
     app:cardUseCompatPadding="false"
-    app:strokeColor="@color/foqos_outline_variant"
-    app:strokeWidth="1dp">
+    app:strokeWidth="0dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -92,7 +91,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnStatusAction"
-                style="@style/LoqIn.OutlinedButton"
+                style="@style/LoqIn.TonalButton"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
