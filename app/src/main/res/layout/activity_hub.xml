@@ -46,24 +46,25 @@
                 android:layout_height="wrap_content"
                 android:text="@string/activity_hub_section_overview" />
 
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardAppWebsiteUsage"
-                style="@style/LoqIn.Card"
+            <com.oliver.loqin.ui.widgets.ListGroupLayout
+                style="@style/LoqIn.ListGroup"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:foreground="?attr/selectableItemBackground"
-                android:clickable="true"
-                android:focusable="true"
-                app:cardElevation="1dp">
+                android:layout_marginTop="10dp">
 
                 <LinearLayout
+                    android:id="@+id/cardAppWebsiteUsage"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:minHeight="72dp"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:padding="16dp">
+                    android:minHeight="72dp"
+                    android:paddingStart="20dp"
+                    android:paddingTop="14dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="14dp"
+                    android:clickable="true"
+                    android:focusable="true">
 
                     <ImageView
                         android:id="@+id/ivAppWebsiteUsageIcon"
@@ -82,47 +83,38 @@
                         <TextView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="@string/activity_entry_app_website_usage"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
+                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
+                            android:text="@string/activity_entry_app_website_usage" />
 
                         <TextView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="3dp"
-                            android:text="@string/activity_entry_app_website_usage_summary"
-                            android:textColor="?android:attr/textColorSecondary"
-                            android:textSize="13sp" />
+                            android:layout_marginTop="2dp"
+                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
+                            android:text="@string/activity_entry_app_website_usage_summary" />
                     </LinearLayout>
 
                     <ImageView
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
-                        android:alpha="0.7"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:contentDescription="@string/activity_entry_app_website_usage"
                         android:src="@drawable/keyboard_arrow_right_24"
-                        app:tint="?android:attr/textColorSecondary" />
+                        app:tint="?attr/colorOnSurfaceVariant" />
                 </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardScreenUnlocks"
-                style="@style/LoqIn.Card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:foreground="?attr/selectableItemBackground"
-                android:clickable="true"
-                android:focusable="true"
-                app:cardElevation="1dp">
 
                 <LinearLayout
+                    android:id="@+id/cardScreenUnlocks"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:minHeight="72dp"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:padding="16dp">
+                    android:minHeight="72dp"
+                    android:paddingStart="20dp"
+                    android:paddingTop="14dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="14dp"
+                    android:clickable="true"
+                    android:focusable="true">
 
                     <ImageView
                         android:id="@+id/ivScreenUnlocksIcon"
@@ -141,28 +133,25 @@
                         <TextView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="@string/activity_entry_screen_unlocks"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
+                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
+                            android:text="@string/activity_entry_screen_unlocks" />
 
                         <TextView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="3dp"
-                            android:text="@string/activity_entry_screen_unlocks_summary"
-                            android:textColor="?android:attr/textColorSecondary"
-                            android:textSize="13sp" />
+                            android:layout_marginTop="2dp"
+                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
+                            android:text="@string/activity_entry_screen_unlocks_summary" />
                     </LinearLayout>
 
                     <ImageView
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
-                        android:alpha="0.7"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:contentDescription="@string/activity_entry_screen_unlocks"
                         android:src="@drawable/keyboard_arrow_right_24"
-                        app:tint="?android:attr/textColorSecondary" />
+                        app:tint="?attr/colorOnSurfaceVariant" />
                 </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+            </com.oliver.loqin.ui.widgets.ListGroupLayout>
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
