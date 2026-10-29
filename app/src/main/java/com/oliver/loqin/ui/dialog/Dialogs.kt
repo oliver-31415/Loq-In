@@ -70,12 +70,12 @@ fun Context.styledDialogEditText(): android.widget.EditText {
     val outlineColor = ColorUtils.setAlphaComponent(onSurface, 0x2E)
 
     val unFocusedBg = android.graphics.drawable.GradientDrawable().apply {
-        cornerRadius = dp(14).toFloat()
+        cornerRadius = dp(16).toFloat()
         setColor(surfaceVariant)
         setStroke(dp(1), outlineColor)
     }
     val focusedBg = android.graphics.drawable.GradientDrawable().apply {
-        cornerRadius = dp(14).toFloat()
+        cornerRadius = dp(16).toFloat()
         setColor(surfaceVariant)
         setStroke(dp(2), accent)
     }
@@ -396,10 +396,9 @@ private fun Context.showLoqInOptionDialogInternal(
         val option = options[index]
         val optionAccent = if (option.destructive) error else accent
         val selected = index == selectedIndex
-        optionCards[index].strokeWidth = dp(if (selected) 2 else 0)
-        optionCards[index].strokeColor = if (selected) optionAccent else Color.TRANSPARENT
+        optionCards[index].strokeWidth = 0
         optionCards[index].setCardBackgroundColor(
-            if (selected) ColorUtils.setAlphaComponent(optionAccent, 0x14) else surfaceVariant
+            if (selected) ColorUtils.setAlphaComponent(optionAccent, 0x24) else surfaceVariant
         )
         optionTitles[index].typeface = if (selected) Typeface.DEFAULT_BOLD else Typeface.DEFAULT
     }
@@ -415,9 +414,8 @@ private fun Context.showLoqInOptionDialogInternal(
             isFocusable = option.enabled
             isEnabled = option.enabled
             alpha = if (option.enabled) 1f else 0.55f
-            strokeWidth = dp(if (selected) 2 else 0)
-            strokeColor = if (selected) optionAccent else Color.TRANSPARENT
-            setCardBackgroundColor(if (selected) ColorUtils.setAlphaComponent(optionAccent, 0x14) else surfaceVariant)
+            strokeWidth = 0
+            setCardBackgroundColor(if (selected) ColorUtils.setAlphaComponent(optionAccent, 0x24) else surfaceVariant)
         }
 
         val row = LinearLayout(this).apply {
@@ -613,9 +611,8 @@ fun Context.showLoqInMultiChoiceDialog(
         val optionAccent = if (option.destructive) error else accent
         val isChecked = rowStates[index]
         box.isChecked = isChecked
-        card.strokeWidth = dp(if (isChecked) 2 else 0)
-        card.strokeColor = if (isChecked) optionAccent else Color.TRANSPARENT
-        card.setCardBackgroundColor(if (isChecked) ColorUtils.setAlphaComponent(optionAccent, 0x14) else surfaceVariant)
+        card.strokeWidth = 0
+        card.setCardBackgroundColor(if (isChecked) ColorUtils.setAlphaComponent(optionAccent, 0x24) else surfaceVariant)
     }
 
     options.forEachIndexed { index, option ->
@@ -628,6 +625,7 @@ fun Context.showLoqInMultiChoiceDialog(
             isFocusable = option.enabled
             isEnabled = option.enabled
             alpha = if (option.enabled) 1f else 0.55f
+            strokeWidth = 0
         }
         val row = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
@@ -702,7 +700,7 @@ fun Context.showLoqInMultiChoiceDialog(
         addView(scroll, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
 
         if (forceHorizontalButtons) {
-            val onAccent = if (ColorUtils.calculateLuminance(accent) > 0.5) Color.BLACK else Color.WHITE
+            val onAccent = if (AccentColor.prefersDarkText(accent)) Color.BLACK else Color.WHITE
             val footer = LinearLayout(this@showLoqInMultiChoiceDialog).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.END or Gravity.CENTER_VERTICAL
@@ -818,7 +816,7 @@ fun CheckBox.styleForDialog(context: Context) {
  */
 fun AlertDialog.styleLoqInDialogButtons() {
     val accent = AccentColor.getAccentColorInt(context)
-    val onAccent = if (ColorUtils.calculateLuminance(accent) > 0.5) Color.BLACK else Color.WHITE
+    val onAccent = if (AccentColor.prefersDarkText(accent)) Color.BLACK else Color.WHITE
     val onSurface = MaterialColors.getColor(
         context,
         com.google.android.material.R.attr.colorOnSurface,
@@ -896,7 +894,7 @@ fun AlertDialog.styleLoqInDialogButtons() {
     runCatching { applyLoqInDialogCorners() }
 }
 
-fun AlertDialog.applyLoqInDialogCorners(radiusDp: Float = 24f) {
+fun AlertDialog.applyLoqInDialogCorners(radiusDp: Float = 28f) {
     // Idempotent: styling may run both before show() and again from the show listener.
     // Re-setting the background after layout would re-measure the centered dialog and
     // make it jump, so only apply once per window.
@@ -947,7 +945,7 @@ fun Context.styleLoqInFormButtons(
     saveIsAdd: Boolean = false
 ) {
     val accent = AccentColor.getAccentColorInt(this)
-    val onAccent = if (ColorUtils.calculateLuminance(accent) > 0.5) Color.BLACK else Color.WHITE
+    val onAccent = if (AccentColor.prefersDarkText(accent)) Color.BLACK else Color.WHITE
     val error = Color.rgb(186, 26, 26)
 
     deleteButton?.let { button ->

@@ -42,12 +42,9 @@
 
             <!-- Form card -->
             <com.google.android.material.card.MaterialCardView
+                style="@style/LoqIn.Card"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                app:cardCornerRadius="18dp"
-                app:cardElevation="0dp"
-                app:strokeColor="@color/status_border"
-                app:strokeWidth="1dp">
+                android:layout_height="wrap_content">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -135,7 +132,7 @@
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:text="@string/nfc_action_hint_default"
-                            android:textColor="?android:attr/textColorSecondary"
+                            android:textColor="?attr/colorOnSurfaceVariant"
                             android:textSize="12sp" />
                     </LinearLayout>
                 </LinearLayout>
@@ -144,15 +141,14 @@
             <!-- Start/Cancel button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnArmWrite"
+                style="@style/LoqIn.Button"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:text="@string/nfc_arm_write"
-                android:textColor="@android:color/white"
                 app:icon="@drawable/nfc_24"
                 app:iconGravity="textStart"
-                app:iconPadding="10dp"
-                app:iconTint="@android:color/white" />
+                app:iconPadding="10dp" />
 
             <!-- Status -->
             <LinearLayout
@@ -162,7 +158,6 @@
                 android:layout_marginTop="14dp"
                 android:gravity="center_vertical"
                 android:padding="14dp"
-                android:elevation="2dp"
                 android:animateLayoutChanges="true"
                 android:visibility="gone">
 
@@ -172,15 +167,15 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="@string/nfc_waiting_tag"
-                    android:textColor="@color/status_neutral" />
+                    android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
+                    android:textColor="?attr/colorOnSurfaceVariant" />
 
-                <ProgressBar
+                <com.google.android.material.loadingindicator.LoadingIndicator
                     android:id="@+id/statusProgress"
-                    style="?android:attr/progressBarStyleSmall"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
+                    android:layout_width="28dp"
+                    android:layout_height="28dp"
                     android:layout_marginStart="10dp"
-                    android:indeterminate="true" />
+                    app:indicatorColor="?attr/colorPrimary" />
             </LinearLayout>
         </LinearLayout>
     </ScrollView>

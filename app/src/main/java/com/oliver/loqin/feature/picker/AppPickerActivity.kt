@@ -235,7 +235,7 @@ class AppPickerActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         toolbar.setNavigationOnClickListener { finish() }
-        toolbar.setBackgroundColor(AccentColor.getToolbarColor(this))
+        toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
         val toolbarIconColor = toolbarForegroundColor()
         toolbar.navigationIcon?.mutate()?.setTint(toolbarIconColor)
 

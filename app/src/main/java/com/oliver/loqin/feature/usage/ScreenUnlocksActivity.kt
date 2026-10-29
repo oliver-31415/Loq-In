@@ -114,7 +114,7 @@ class ScreenUnlocksActivity : AppCompatActivity() {
             title = getString(R.string.activity_entry_screen_unlocks)
             setNavigationIcon(R.drawable.keyboard_arrow_left_24)
             setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
-            setBackgroundColor(AccentColor.getToolbarColor(this@ScreenUnlocksActivity))
+            setBackgroundColor(AccentColor.getToolbarBackgroundColor(this@ScreenUnlocksActivity))
         }
         UsageInfoAction.attach(this, toolbar, R.string.screen_unlocks_info_title, R.string.screen_unlocks_info_body)
         ToolbarIconAction.attach(
@@ -416,8 +416,6 @@ class ScreenUnlocksActivity : AppCompatActivity() {
                 LinearLayout.LayoutParams.WRAP_CONTENT
             )
             radius = dp(22).toFloat()
-            strokeWidth = dp(1)
-            strokeColor = ContextCompat.getColor(this@ScreenUnlocksActivity, R.color.foqos_outline_variant)
             setCardBackgroundColor(ContextCompat.getColor(this@ScreenUnlocksActivity, R.color.foqos_surface))
         }
     }
@@ -668,8 +666,6 @@ class ScreenUnlocksActivity : AppCompatActivity() {
                 LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply { topMargin = dp(10) }
             radius = dp(22).toFloat()
-            strokeWidth = dp(1)
-            strokeColor = ContextCompat.getColor(this@ScreenUnlocksActivity, R.color.foqos_outline_variant)
             setCardBackgroundColor(ContextCompat.getColor(this@ScreenUnlocksActivity, R.color.foqos_surface))
         }
     }

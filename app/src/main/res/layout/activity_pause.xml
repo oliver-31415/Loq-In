@@ -21,8 +21,9 @@
         android:layout_marginTop="20dp"
         android:gravity="center"
         android:text="@string/pause_title"
-        android:textColor="@color/loqin_text_primary"
-        android:textSize="24sp"
+        android:textColor="?attr/colorOnSurface"
+        android:textSize="28sp"
+        android:fontFamily="sans-serif-medium"
         android:textStyle="bold" />
 
     <TextView
@@ -31,7 +32,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
         android:gravity="center"
-        android:textColor="@color/loqin_text_primary"
+        android:textColor="?attr/colorOnSurface"
         android:textSize="15sp" />
 
     <TextView
@@ -40,7 +41,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
         android:gravity="center"
-        android:textColor="@color/loqin_text_secondary"
+        android:textColor="?attr/colorOnSurfaceVariant"
         android:textSize="13sp"
         android:visibility="gone" />
 
@@ -50,26 +51,25 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="28dp"
         android:gravity="center"
-        android:textSize="48sp"
+        android:textSize="52sp"
+        android:fontFamily="sans-serif-medium"
         android:textStyle="bold" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/pauseLeave"
+        style="@style/LoqIn.Button"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="32dp"
         android:minHeight="56dp"
-        android:text="@string/pause_leave"
-        android:textAllCaps="false" />
+        android:text="@string/pause_leave" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/pauseContinue"
-        style="@style/Widget.Material3.Button.TextButton"
+        style="@style/LoqIn.TextButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="8dp"
         android:minHeight="48dp"
-        android:enabled="false"
-        android:textAllCaps="false"
-        app:cornerRadius="16dp" />
+        android:enabled="false" />
 </LinearLayout>

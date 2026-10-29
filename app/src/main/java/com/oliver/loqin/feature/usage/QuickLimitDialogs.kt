@@ -264,7 +264,7 @@ object QuickLimitDialogs {
 
         var sessionResetMode =
             UsageLimitResetStore.getMode(activity, profile, pkg) == UsageLimitResetStore.MODE_SESSION
-        val onAccent = if (androidx.core.graphics.ColorUtils.calculateLuminance(accent) > 0.5) {
+        val onAccent = if (AccentColor.prefersDarkText(accent)) {
             android.graphics.Color.BLACK
         } else {
             android.graphics.Color.WHITE
@@ -747,7 +747,7 @@ object QuickLimitDialogs {
         }
         listOf(swTime, swOpens, swVisit).forEach { CustomAccentApplier.tintSwitch(it) }
 
-        val onAccent = if (androidx.core.graphics.ColorUtils.calculateLuminance(accent) > 0.5) {
+        val onAccent = if (AccentColor.prefersDarkText(accent)) {
             android.graphics.Color.BLACK
         } else {
             android.graphics.Color.WHITE
@@ -1234,7 +1234,7 @@ object QuickLimitDialogs {
         // Match the global dialog button design:
         // - OK = filled accent
         // - Cancel/Clear = text-only accent
-        val onAccent = if (androidx.core.graphics.ColorUtils.calculateLuminance(accent) > 0.5) android.graphics.Color.BLACK else android.graphics.Color.WHITE
+        val onAccent = if (AccentColor.prefersDarkText(accent)) android.graphics.Color.BLACK else android.graphics.Color.WHITE
 
         btnCancel.setTextColor(accent)
         btnCancel.isAllCaps = false

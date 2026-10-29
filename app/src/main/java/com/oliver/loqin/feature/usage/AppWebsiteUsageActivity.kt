@@ -431,7 +431,7 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
         val accent = AccentColor.getAccentColorInt(this)
         val accentTint = ColorStateList.valueOf(accent)
 
-        b.toolbar.setBackgroundColor(AccentColor.getToolbarColor(this))
+        b.toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
         // Keep the back arrow readable on the accent toolbar.
         val bg = AccentColor.getToolbarColor(this)
         val navTint = if (MaterialColors.isColorLight(bg)) Color.BLACK else Color.WHITE
@@ -441,9 +441,6 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
         // Keep labels neutral (text-colored). Accent stays on toggles + progress bars.
         b.btnOpenSettings.backgroundTintList = accentTint
         b.totalTime.setTextColor(accent)
-        b.cardUsageTotal.setCardBackgroundColor(ContextCompat.getColor(this, R.color.loqin_card_bg))
-        b.cardUsageTotal.strokeColor = ContextCompat.getColor(this, R.color.loqin_card_stroke)
-        b.cardUsageTotal.strokeWidth = resources.displayMetrics.density.toInt().coerceAtLeast(1)
 
         syncTypeToggleUi()
     }

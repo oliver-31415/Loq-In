@@ -129,7 +129,7 @@ open class ToggleOptionsActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         toolbar.setNavigationOnClickListener { finish() }
-        toolbar.setBackgroundColor(AccentColor.getToolbarColor(this))
+        toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
 
         val ctx = this
         val sp = PreferenceManager.getDefaultSharedPreferences(ctx)
@@ -239,24 +239,18 @@ open class ToggleOptionsActivity : AppCompatActivity() {
         val rowAutostart = findViewById<View>(R.id.rowAutostart)
 
         val rowEmergency = findViewById<View>(R.id.rowEmergency)
-        val dividerBeforeEmergency = findViewById<View>(R.id.dividerAfterAutostart)
         val rowChangeEmergencyPin = findViewById<View>(R.id.rowChangeEmergencyPin)
-        val dividerAfterEmergency = findViewById<View>(R.id.dividerAfterEmergency)
         val rowShowQuickActions = findViewById<View>(R.id.rowShowQuickActions)
         val rowShowTemporaryMode = findViewById<View>(R.id.rowShowTemporaryMode)
         val rowLockActiveTemporaryTimer = findViewById<View>(R.id.rowLockActiveTemporaryTimer)
         val rowShowEmergencyUnlock = findViewById<View>(R.id.rowShowEmergencyUnlock)
         val rowPersistentStatusNotification = findViewById<View>(R.id.rowPersistentStatusNotification)
         val rowPersistentStatusNotificationMode = findViewById<View>(R.id.rowPersistentStatusNotificationMode)
-        val dividerPersistentStatusNotificationMode = findViewById<View>(R.id.dividerPersistentStatusNotificationMode)
         val tvPersistentStatusNotificationModeValue = findViewById<TextView>(R.id.tvPersistentStatusNotificationModeValue)
         val rowHomeLayoutDetailed = findViewById<View>(R.id.rowHomeLayoutDetailed)
-        val dividerAfterHomeLayoutDetailed = findViewById<View>(R.id.dividerAfterHomeLayoutDetailed)
         val rowHomeLayoutCustom = findViewById<View>(R.id.rowHomeLayoutCustom)
-        val dividerAfterHomeLayoutCustom = findViewById<View>(R.id.dividerAfterHomeLayoutCustom)
         val showHomeModeRowsInControls = false
         rowHomeLayoutDetailed.visibility = if (showHomeModeRowsInControls) View.VISIBLE else View.GONE
-        dividerAfterHomeLayoutDetailed.visibility = if (showHomeModeRowsInControls) View.VISIBLE else View.GONE
         val rowWidgetBarcode = findViewById<View>(R.id.rowWidgetBarcode)
         val rowWidgetQr = findViewById<View>(R.id.rowWidgetQr)
         val rowWidgetNextSchedule = findViewById<View>(R.id.rowWidgetNextSchedule)
@@ -493,7 +487,6 @@ open class ToggleOptionsActivity : AppCompatActivity() {
 
         SwitchModeStore.setNfcRequiredForDisable(ctx, false)
         rowRequireNfcUnlock.visibility = View.GONE
-        findViewById<View>(R.id.dividerRequireNfcUnlock)?.visibility = View.GONE
         switchRequireNfcUnlock.isChecked = false
 
         switchAllowButtonEnable.isChecked = AutomationModeStore.isButtonEnableAllowed(ctx)
@@ -544,7 +537,6 @@ open class ToggleOptionsActivity : AppCompatActivity() {
             rowPersistentStatusNotificationMode.isEnabled = enabled
             rowPersistentStatusNotificationMode.isClickable = enabled
             rowPersistentStatusNotificationMode.alpha = if (enabled) 1f else 0.5f
-            dividerPersistentStatusNotificationMode.alpha = if (enabled) 0.12f else 0.06f
         }
 
         fun showStatusNotificationModeDialog() {
@@ -601,9 +593,7 @@ open class ToggleOptionsActivity : AppCompatActivity() {
             tvHomeLayoutModeValue.text = homeLayoutModeLabel(mode)
             val customVisible = showHomeModeRowsInControls && mode == HOME_MODE_CUSTOM
             rowHomeLayoutDetailed.visibility = if (showHomeModeRowsInControls) View.VISIBLE else View.GONE
-            dividerAfterHomeLayoutDetailed.visibility = if (showHomeModeRowsInControls) View.VISIBLE else View.GONE
             rowHomeLayoutCustom.visibility = if (customVisible) View.VISIBLE else View.GONE
-            dividerAfterHomeLayoutCustom.visibility = if (customVisible) View.VISIBLE else View.GONE
         }
         refreshHomeLayoutModeValue()
 
@@ -623,10 +613,8 @@ open class ToggleOptionsActivity : AppCompatActivity() {
             // Emergency itself is a safety/feature option and should not be hidden by the
             // Home shortcut visibility toggle.
             rowEmergency.visibility = View.VISIBLE
-            dividerBeforeEmergency.visibility = View.VISIBLE
             val emergencyEnabled = switchEmergency.isChecked
             rowChangeEmergencyPin.visibility = if (emergencyEnabled) View.VISIBLE else View.GONE
-            dividerAfterEmergency.visibility = if (emergencyEnabled) View.VISIBLE else View.GONE
         }
         refreshEmergencyFeatureVisibility()
 
@@ -1899,23 +1887,6 @@ open class ToggleOptionsActivity : AppCompatActivity() {
             R.id.dividerAfterAllowButtonEnable,
             R.id.rowAllowButtonEnable,
             R.id.rowMixedAllowNfcTagWriting
-        )
-        setDividerAfter(
-            R.id.dividerRequireNfcUnlock,
-            R.id.rowRequireNfcUnlock,
-            R.id.rowEnablePairedUids,
-            R.id.rowAutoPairOnWrite,
-            R.id.rowQuickTile,
-            R.id.rowQrQuickTile,
-            R.id.rowBarcodeQuickTile
-        )
-        setDividerAfter(
-            R.id.dividerAfterEnablePairedUids,
-            R.id.rowEnablePairedUids,
-            R.id.rowAutoPairOnWrite,
-            R.id.rowQuickTile,
-            R.id.rowQrQuickTile,
-            R.id.rowBarcodeQuickTile
         )
     }
 

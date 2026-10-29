@@ -1085,7 +1085,7 @@ class MainActivity : AppCompatActivity() {
     private fun applyAccentToButtons() {
         val accent = AccentColor.getAccentColorInt(this)
         val tint = ColorStateList.valueOf(accent)
-        val onAccent = if (ColorUtils.calculateLuminance(accent) > 0.52) {
+        val onAccent = if (AccentColor.prefersDarkText(accent)) {
             Color.BLACK
         } else {
             Color.WHITE
@@ -1533,7 +1533,7 @@ class MainActivity : AppCompatActivity() {
             val canCancelActiveTimer = tempDisableRemaining > 0L || !lockActiveTimerChanges
             if (canCancelActiveTimer && !(lockedByNfc && tempDisableRemaining > 0L)) {
                 btnCancelTimer.visibility = View.VISIBLE
-                val onAccent = if (ColorUtils.calculateLuminance(accent) > 0.5) Color.BLACK else Color.WHITE
+                val onAccent = if (AccentColor.prefersDarkText(accent)) Color.BLACK else Color.WHITE
                 btnCancelTimer.backgroundTintList = ColorStateList.valueOf(accent)
                 btnCancelTimer.setTextColor(onAccent)
                 btnCancelTimer.text = getString(R.string.dashboard_temp_sheet_cancel_timer)
@@ -2329,9 +2329,9 @@ class MainActivity : AppCompatActivity() {
         val radius = homeDp(28f).toFloat()
         if (!active) {
             val gd = android.graphics.drawable.GradientDrawable().apply {
-                setColor(ContextCompat.getColor(this@MainActivity, com.oliver.loqin.R.color.foqos_surface_variant))
+                // Idle hero: a tonal container like the rest of the app, no outline.
+                setColor(ContextCompat.getColor(this@MainActivity, com.oliver.loqin.R.color.foqos_surface_container_high))
                 cornerRadius = radius
-                setStroke(homeDp(1f), ContextCompat.getColor(this@MainActivity, com.oliver.loqin.R.color.foqos_outline))
             }
             heroProfileRoot.background = gd
         } else {
@@ -2386,7 +2386,7 @@ class MainActivity : AppCompatActivity() {
             btnToggle.rippleColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(Color.WHITE, 0x40))
         } else {
             val accent = AccentColor.getAccentColorInt(this)
-            val onAccent = if (ColorUtils.calculateLuminance(accent) > 0.52) Color.BLACK else Color.WHITE
+            val onAccent = if (AccentColor.prefersDarkText(accent)) Color.BLACK else Color.WHITE
             btnToggle.backgroundTintList = ColorStateList.valueOf(accent)
             btnToggle.setTextColor(onAccent)
             btnToggle.rippleColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(onAccent, 0x33))
@@ -3735,7 +3735,7 @@ class MainActivity : AppCompatActivity() {
                 setColor(ColorUtils.setAlphaComponent(accent, 0x1F))
                 setStroke(homeDp(1f), ColorUtils.setAlphaComponent(accent, 0x55))
             } else {
-                setColor(ContextCompat.getColor(this@MainActivity, R.color.foqos_surface_variant))
+                setColor(ContextCompat.getColor(this@MainActivity, R.color.foqos_surface_container))
             }
         }
         tile.background = bg
@@ -4827,7 +4827,7 @@ class MainActivity : AppCompatActivity() {
         recycler?.adapter = MissedNotificationAdapter()
 
         val accent = AccentColor.getAccentColorInt(this)
-        val onAccent = if (ColorUtils.calculateLuminance(accent) > 0.5) Color.BLACK else Color.WHITE
+        val onAccent = if (AccentColor.prefersDarkText(accent)) Color.BLACK else Color.WHITE
 
         val cbNeverAgain = view.findViewById<MaterialCheckBox>(R.id.cbSessionMissedNeverAgain)
         cbNeverAgain?.let { cb ->

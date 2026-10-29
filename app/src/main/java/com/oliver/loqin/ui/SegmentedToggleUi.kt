@@ -32,6 +32,7 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.shape.AbsoluteCornerSize
+import com.google.android.material.shape.RelativeCornerSize
 import com.google.android.material.shape.ShapeAppearanceModel
 
 // Keeps two-option segmented controls visually consistent across LoqIn with modern capsule design.
@@ -57,35 +58,34 @@ object SegmentedToggleUi {
         // Style the parent track if it is a MaterialButtonToggleGroup
         val parent = (buttons.firstOrNull()?.parent as? ViewGroup)
         if (parent is MaterialButtonToggleGroup) {
+            // Expressive segmented control: a tonal pill track, no outline, with the
+            // selected segment as a filled pill in the accent container colour.
             val trackBg = GradientDrawable().apply {
-                cornerRadius = dp(context, 16).toFloat()
-                val bgColor = if (isDarkTheme) {
-                    ColorUtils.setAlphaComponent(onSurfaceColor, 0x14)
-                } else {
-                    ColorUtils.setAlphaComponent(onSurfaceColor, 0x0A)
-                }
-                setColor(bgColor)
-                setStroke(dp(context, 1), ColorUtils.setAlphaComponent(onSurfaceColor, 0x1E))
+                cornerRadius = dp(context, 100).toFloat()
+                setColor(
+                    MaterialColors.getColor(
+                        context,
+                        com.google.android.material.R.attr.colorSurfaceContainerHigh,
+                        ColorUtils.setAlphaComponent(onSurfaceColor, if (isDarkTheme) 0x14 else 0x0A),
+                    )
+                )
             }
             parent.background = trackBg
-            val p = dp(context, 3)
+            val p = dp(context, 4)
             parent.setPadding(p, p, p, p)
 
             // MaterialButtonGroup owns its children's corner shapes and rewrites them on
-            // the first onMeasure/onLayout via updateChildShapes(). Styling only the child
-            // buttons therefore shows square corners for the first frame and the correct
-            // radius afterwards. Give the group the shape + inner corner size so the shape
-            // it applies to children is already correct the first time it measures.
-            val cornerPx = dp(context, 13).toFloat()
-            val absoluteCorner = AbsoluteCornerSize(cornerPx)
+            // the first onMeasure/onLayout via updateChildShapes(). Give the group the
+            // shape + inner corner size so the first measure is already a full pill.
+            val pill = RelativeCornerSize(0.5f)
             parent.shapeAppearance = ShapeAppearanceModel.builder()
-                .setAllCornerSizes(cornerPx)
+                .setAllCornerSizes(pill)
                 .build()
-            parent.innerCornerSize = absoluteCorner
+            parent.innerCornerSize = pill
         }
 
-        val buttonCornerRadius = dp(context, 13)
-        val buttonHeight = dp(context, 42)
+        val buttonCornerRadius = dp(context, 100)
+        val buttonHeight = dp(context, 44)
 
         buttons.forEach { button ->
             val selected = button.id == selectedId
@@ -126,15 +126,17 @@ object SegmentedToggleUi {
             }
 
             if (selected) {
-                val selectedBg = if (isDarkTheme) {
-                    ColorUtils.compositeColors(ColorUtils.setAlphaComponent(accent, 0x36), 0xFF242628.toInt())
-                } else {
-                    ColorUtils.compositeColors(ColorUtils.setAlphaComponent(accent, 0x22), Color.WHITE)
-                }
+                // Concrete accent container: ?attr/colorPrimaryContainer doesn't follow a
+                // custom accent (see AccentColor.getAccentContainerColorInt).
+                val selectedBg = ColorUtils.compositeColors(
+                    AccentColor.getAccentContainerColorInt(context),
+                    surfaceColor,
+                )
+                val onSelected = onSurfaceColor
                 button.backgroundTintList = ColorStateList.valueOf(selectedBg)
-                button.strokeColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 0x88))
-                button.strokeWidth = dp(context, 1)
-                button.setTextColor(onSurfaceColor)
+                button.strokeColor = ColorStateList.valueOf(Color.TRANSPARENT)
+                button.strokeWidth = 0
+                button.setTextColor(onSelected)
                 button.iconTint = ColorStateList.valueOf(accent)
                 button.setTypeface(button.typeface, Typeface.BOLD)
                 button.rippleColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 0x25))
@@ -143,9 +145,13 @@ object SegmentedToggleUi {
                 button.backgroundTintList = ColorStateList.valueOf(Color.TRANSPARENT)
                 button.strokeColor = ColorStateList.valueOf(Color.TRANSPARENT)
                 button.strokeWidth = 0
-                val unselectedText = ColorUtils.setAlphaComponent(onSurfaceColor, 0x88)
+                val unselectedText = MaterialColors.getColor(
+                    context,
+                    com.google.android.material.R.attr.colorOnSurfaceVariant,
+                    ColorUtils.setAlphaComponent(onSurfaceColor, 0x88),
+                )
                 button.setTextColor(unselectedText)
-                button.iconTint = ColorStateList.valueOf(ColorUtils.setAlphaComponent(onSurfaceColor, 0x66))
+                button.iconTint = ColorStateList.valueOf(unselectedText)
                 button.setTypeface(Typeface.create(button.typeface, Typeface.NORMAL), Typeface.NORMAL)
                 button.rippleColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(onSurfaceColor, 0x1A))
                 button.alpha = 1f

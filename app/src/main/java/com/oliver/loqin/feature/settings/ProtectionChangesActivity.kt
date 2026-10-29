@@ -85,7 +85,7 @@ class ProtectionChangesActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         toolbar.setNavigationOnClickListener { finish() }
-        toolbar.setBackgroundColor(AccentColor.getToolbarColor(this))
+        toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
 
         tvChangeDelayValue = findViewById(R.id.tvChangeDelayValue)
         tvChangeDelaySummary = findViewById(R.id.tvChangeDelaySummary)

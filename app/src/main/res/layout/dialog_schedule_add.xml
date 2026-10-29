@@ -42,14 +42,12 @@
 
         <!-- 2A. ATTACHED PROFILE (When locked to a profile - no wireframe, no text saying 'locked') -->
         <com.google.android.material.card.MaterialCardView
+            style="@style/LoqIn.Card"
             android:id="@+id/cardAttachedProfile"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
             android:visibility="gone"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="0dp"
-            app:strokeWidth="0dp"
             app:cardBackgroundColor="@color/foqos_surface_variant"
             tools:visibility="visible">
 
@@ -548,13 +546,11 @@
 
         <!-- 8. UNIFIED TIMING & DAYS CARD (Tonal surface, no harsh wireframes) -->
         <com.google.android.material.card.MaterialCardView
+            style="@style/LoqIn.Card"
             android:id="@+id/cardTimingContainer"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginBottom="12dp"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="0dp"
-            app:strokeWidth="0dp"
             app:cardBackgroundColor="@color/foqos_surface_variant">
 
             <LinearLayout
@@ -705,17 +701,14 @@
 
                     <!-- Start Time Tile -->
                     <com.google.android.material.card.MaterialCardView
+                        style="@style/LoqIn.Card"
                         android:id="@+id/cardStartTime"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:clickable="true"
                         android:focusable="true"
-                        android:foreground="?attr/selectableItemBackground"
-                        app:cardCornerRadius="14dp"
-                        app:cardElevation="0dp"
-                        app:cardBackgroundColor="@color/foqos_surface"
-                        app:strokeWidth="0dp">
+                        android:foreground="?attr/selectableItemBackground">
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -775,17 +768,14 @@
 
                     <!-- End Time Tile -->
                     <com.google.android.material.card.MaterialCardView
+                        style="@style/LoqIn.Card"
                         android:id="@+id/cardEndTime"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:clickable="true"
                         android:focusable="true"
-                        android:foreground="?attr/selectableItemBackground"
-                        app:cardCornerRadius="14dp"
-                        app:cardElevation="0dp"
-                        app:cardBackgroundColor="@color/foqos_surface"
-                        app:strokeWidth="0dp">
+                        android:foreground="?attr/selectableItemBackground">
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -1070,17 +1060,14 @@
 
                         <!-- Start Date Tile -->
                         <com.google.android.material.card.MaterialCardView
+                            style="@style/LoqIn.Card"
                             android:id="@+id/cardStartDate"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:clickable="true"
                             android:focusable="true"
-                            android:foreground="?attr/selectableItemBackground"
-                            app:cardCornerRadius="14dp"
-                            app:cardElevation="0dp"
-                            app:cardBackgroundColor="@color/foqos_surface"
-                            app:strokeWidth="0dp">
+                            android:foreground="?attr/selectableItemBackground">
 
                             <LinearLayout
                                 android:layout_width="match_parent"
@@ -1138,17 +1125,14 @@
 
                         <!-- End Date Tile -->
                         <com.google.android.material.card.MaterialCardView
+                            style="@style/LoqIn.Card"
                             android:id="@+id/cardEndDate"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:clickable="true"
                             android:focusable="true"
-                            android:foreground="?attr/selectableItemBackground"
-                            app:cardCornerRadius="14dp"
-                            app:cardElevation="0dp"
-                            app:cardBackgroundColor="@color/foqos_surface"
-                            app:strokeWidth="0dp">
+                            android:foreground="?attr/selectableItemBackground">
 
                             <LinearLayout
                                 android:layout_width="match_parent"

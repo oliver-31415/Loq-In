@@ -112,7 +112,7 @@ object ClockDurationDialSheet {
         clockDialView.setDurationMinutes(initial, animate = false)
 
         val timeFormat = DateFormat.getTimeInstance(DateFormat.SHORT)
-        val onAccent = if (ColorUtils.calculateLuminance(accent) > 0.5) Color.BLACK else Color.WHITE
+        val onAccent = if (AccentColor.prefersDarkText(accent)) Color.BLACK else Color.WHITE
         btnApplyDuration.backgroundTintList = ColorStateList.valueOf(accent)
         btnApplyDuration.setTextColor(onAccent)
 

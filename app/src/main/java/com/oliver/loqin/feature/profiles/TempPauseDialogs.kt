@@ -123,7 +123,7 @@ object TempPauseDialogs {
         }
         listOf(swCount, swPerPause, swPerDay).forEach { CustomAccentApplier.tintSwitch(it) }
         runCatching {
-            val surfaceVariant = ContextCompat.getColor(activity, R.color.foqos_surface_variant)
+            val surfaceVariant = ContextCompat.getColor(activity, R.color.foqos_surface_container)
             content.findViewById<MaterialCardView>(R.id.cardTempPauseSummary)
                 .setCardBackgroundColor(
                     ColorUtils.compositeColors(ColorUtils.setAlphaComponent(accent, 0x1F), surfaceVariant)
@@ -316,7 +316,7 @@ object TempPauseDialogs {
         refreshAll()
 
         // Buttons follow the global dialog design: filled accent save, text cancel, red clear.
-        val onAccent = if (ColorUtils.calculateLuminance(accent) > 0.5) {
+        val onAccent = if (AccentColor.prefersDarkText(accent)) {
             android.graphics.Color.BLACK
         } else {
             android.graphics.Color.WHITE

@@ -84,11 +84,13 @@ object SetupCardRow {
         fun setState(status: CharSequence?, ok: Boolean, error: Boolean = false) {
             val accent = AccentColor.getAccentColorInt(context)
             val onSurface = resolveOnSurface(context)
-            val outline = ContextCompat.getColor(context, R.color.foqos_outline_variant)
             val softAccent = ColorUtils.setAlphaComponent(accent, 18)
 
-            card.strokeColor = if (ok) ColorUtils.setAlphaComponent(accent, 150) else outline
-            card.setCardBackgroundColor(if (ok) softAccent else ContextCompat.getColor(context, R.color.foqos_surface))
+            // Flat: a done step is a tonal accent container, a missing one the plain surface.
+            val surface = ContextCompat.getColor(context, R.color.foqos_surface)
+            card.setCardBackgroundColor(
+                if (ok) ColorUtils.compositeColors(AccentColor.getAccentContainerColorInt(context), surface) else surface
+            )
 
             iconBackground?.setColor(if (ok) ColorUtils.setAlphaComponent(accent, 38) else softAccent)
             iconView?.imageTintList = ColorStateList.valueOf(
@@ -161,7 +163,6 @@ object SetupCardRow {
         val accent = AccentColor.getAccentColorInt(context)
         val surface = ContextCompat.getColor(context, R.color.foqos_surface)
         val onSurface = resolveOnSurface(context)
-        val outline = ContextCompat.getColor(context, R.color.foqos_outline_variant)
 
         val ok = spec.statusOk
         val clickable = spec.onClick != null
@@ -172,9 +173,9 @@ object SetupCardRow {
                 LinearLayout.LayoutParams.WRAP_CONTENT,
             ).apply { topMargin = dp(spec.topMarginDp) }
             spec.minHeightDp?.let { minimumHeight = dp(it) }
-            radius = dp(16f).toFloat()
+            radius = dp(24f).toFloat()
             cardElevation = 0f
-            strokeWidth = dp(1f)
+            strokeWidth = 0
             setCardBackgroundColor(surface)
             isClickable = false
             isFocusable = false

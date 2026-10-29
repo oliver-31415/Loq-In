@@ -163,15 +163,14 @@
             <!-- Main Action Button -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnApplyDuration"
-                style="@style/Widget.Material3.Button"
+                style="@style/LoqIn.Button"
                 android:layout_width="match_parent"
                 android:layout_height="52dp"
                 android:layout_marginTop="8dp"
                 android:layout_marginBottom="8dp"
                 android:text="@string/dashboard_action_lock_in"
                 android:textSize="15sp"
-                android:textStyle="bold"
-                app:cornerRadius="16dp" />
+                android:textStyle="bold" />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 

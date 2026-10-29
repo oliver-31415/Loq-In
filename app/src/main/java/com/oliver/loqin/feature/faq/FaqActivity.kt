@@ -99,7 +99,7 @@ class FaqActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         toolbar.setNavigationOnClickListener { onSupportNavigateUp() }
-        toolbar.setBackgroundColor(AccentColor.getToolbarColor(this))
+        toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
         val toolbarColor = toolbarForegroundColor()
         toolbar.navigationIcon?.mutate()?.setTint(toolbarColor)
         toolbar.setTitleTextColor(toolbarColor)

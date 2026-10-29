@@ -30,7 +30,7 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="@string/stats_sort_filter"
                 android:src="@drawable/tune_24"
-                app:tint="@android:color/white" />
+                app:tint="?attr/colorOnSurface" />
 
             <ImageButton
                 android:id="@+id/btnStatsInfo"
@@ -41,7 +41,7 @@
                 android:background="?attr/selectableItemBackgroundBorderless"
                 android:contentDescription="@string/statistics_usage_info_title"
                 android:src="@drawable/info_24"
-                app:tint="@android:color/white" />
+                app:tint="?attr/colorOnSurface" />
         </com.google.android.material.appbar.MaterialToolbar>
     </com.google.android.material.appbar.AppBarLayout>
 
@@ -83,49 +83,49 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/chipToday"
+                    style="@style/LoqIn.Segment"
                     android:layout_width="0dp"
-                    android:layout_height="40dp"
+                    android:layout_height="44dp"
                     android:layout_weight="1"
                     android:text="@string/stats_range_today"
-                    android:textAllCaps="false"
-                    app:cornerRadius="4dp" />
+                    android:textAllCaps="false" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/chipWeek"
+                    style="@style/LoqIn.Segment"
                     android:layout_width="0dp"
-                    android:layout_height="40dp"
+                    android:layout_height="44dp"
                     android:layout_weight="1"
                     android:text="@string/stats_range_week"
-                    android:textAllCaps="false"
-                    app:cornerRadius="4dp" />
+                    android:textAllCaps="false" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/chipMonth"
+                    style="@style/LoqIn.Segment"
                     android:layout_width="0dp"
-                    android:layout_height="40dp"
+                    android:layout_height="44dp"
                     android:layout_weight="1"
                     android:text="@string/stats_range_month"
-                    android:textAllCaps="false"
-                    app:cornerRadius="4dp" />
+                    android:textAllCaps="false" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/chipYear"
+                    style="@style/LoqIn.Segment"
                     android:layout_width="0dp"
-                    android:layout_height="40dp"
+                    android:layout_height="44dp"
                     android:layout_weight="1"
                     android:text="@string/stats_range_year"
-                    android:textAllCaps="false"
-                    app:cornerRadius="4dp" />
+                    android:textAllCaps="false" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/chipCustom"
+                    style="@style/LoqIn.Segment"
                     android:layout_width="44dp"
-                    android:layout_height="40dp"
+                    android:layout_height="44dp"
                     android:minWidth="0dp"
                     android:gravity="center"
                     android:contentDescription="@string/activity_history_range_custom"
                     android:text=""
-                    app:cornerRadius="4dp"
                     app:icon="@drawable/calendar_month_24"
                     app:iconGravity="textStart"
                     app:iconPadding="0dp" />
@@ -214,21 +214,21 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnApps"
+                    style="@style/LoqIn.Segment"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:minHeight="48dp"
-                    android:text="@string/usage_apps_tab"
-                    app:cornerRadius="4dp" />
+                    android:text="@string/usage_apps_tab" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnWeb"
+                    style="@style/LoqIn.Segment"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:minHeight="48dp"
-                    android:text="@string/usage_websites_tab"
-                    app:cornerRadius="4dp" />
+                    android:text="@string/usage_websites_tab" />
             </com.google.android.material.button.MaterialButtonToggleGroup>
 
             <TextView

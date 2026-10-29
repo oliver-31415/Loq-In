@@ -355,7 +355,7 @@ class SchedulesActivity : AppCompatActivity() {
                 finish()
             }
         }
-        toolbar.setBackgroundColor(AccentColor.getToolbarColor(this))
+        toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
 
         val recycler = findViewById<RecyclerView>(R.id.recyclerSchedules)
         recycler.layoutManager = LinearLayoutManager(this)
@@ -1907,7 +1907,7 @@ class SchedulesActivity : AppCompatActivity() {
 
         fun applyRadiusChipColors(chip: Chip) {
             val primary = accent
-            val onPrimary = if (ColorUtils.calculateLuminance(accent) > 0.5) Color.BLACK else Color.WHITE
+            val onPrimary = if (AccentColor.prefersDarkText(accent)) Color.BLACK else Color.WHITE
             val onSurface = MaterialColors.getColor(chip, com.google.android.material.R.attr.colorOnSurface)
             val bgUnchecked = MaterialColors.compositeARGBWithAlpha(onSurface, 0x14)
 
@@ -1929,7 +1929,7 @@ class SchedulesActivity : AppCompatActivity() {
         val dayButtons = listOf(chipMon, chipTue, chipWed, chipThu, chipFri, chipSat, chipSun)
         val surfaceColor = ContextCompat.getColor(this, R.color.foqos_surface)
         val onSurfaceColor = ContextCompat.getColor(this, R.color.foqos_on_surface)
-        val onAccent = if (ColorUtils.calculateLuminance(accent) > 0.5) Color.BLACK else Color.WHITE
+        val onAccent = if (AccentColor.prefersDarkText(accent)) Color.BLACK else Color.WHITE
 
         // Time tiles + preset pills must stay neutral surface: set in code so no
         // theme tonal default (green secondary container) can bleed through.
@@ -4080,8 +4080,8 @@ private class ScheduleViewHolder(
             cardRoot.strokeColor = accent
             cardRoot.setCardBackgroundColor(ColorUtils.setAlphaComponent(accent, 0x22))
         } else {
-            cardRoot.strokeWidth = dp(1)
-            cardRoot.strokeColor = ContextCompat.getColor(ctx, R.color.foqos_outline_variant)
+            // Flat when unselected: no outline, selection carries the stroke.
+            cardRoot.strokeWidth = 0
             cardRoot.setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.foqos_surface))
         }
 

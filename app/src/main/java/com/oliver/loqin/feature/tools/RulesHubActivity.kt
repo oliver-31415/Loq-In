@@ -65,7 +65,7 @@ class RulesHubActivity : AppCompatActivity() {
         EdgeToEdgeUtils.applyBottomNavGestureInset(bottomNav)
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(false)
-        toolbar.setBackgroundColor(AccentColor.getToolbarColor(this))
+        toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
 
         setupCards()
         setupBottomNav()

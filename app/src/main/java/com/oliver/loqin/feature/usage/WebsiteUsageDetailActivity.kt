@@ -114,7 +114,7 @@ class WebsiteUsageDetailActivity : AppCompatActivity() {
         b = ActivityStatisticsWebsiteUsageDetailBinding.inflate(layoutInflater)
         setContentView(b.root)
 
-        b.toolbar.setBackgroundColor(AccentColor.getToolbarColor(this))
+        b.toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
         b.toolbar.navigationIcon?.mutate()?.setTint(toolbarIconColor())
         b.toolbar.setNavigationOnClickListener { finish() }
         // Explicit container wash: ?attr/colorPrimaryContainer in the roundel

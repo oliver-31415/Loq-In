@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Expressive button shape: a full pill that squares off a little while pressed (MaterialButton animates the morph). -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item android:state_pressed="true" app:shapeAppearance="@style/ShapeAppearance.LoqIn.ButtonPressed" />
+    <item app:shapeAppearance="@style/ShapeAppearance.LoqIn.Pill" />
+</selector>

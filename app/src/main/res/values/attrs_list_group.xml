@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="ListGroupLayout">
+        <attr name="listOuterCornerSize" format="dimension" />
+        <attr name="listInnerCornerSize" format="dimension" />
+        <attr name="listSegmentGap" format="dimension" />
+        <attr name="listSegmentColor" format="color" />
+    </declare-styleable>
+</resources>

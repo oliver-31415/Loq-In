@@ -121,7 +121,7 @@ class InAppRulesActivity : AppCompatActivity() {
 
 
         EdgeToEdgeUtils.setupClassic(activity = this, toolbar = toolbar)
-        toolbar.setBackgroundColor(AccentColor.getToolbarColor(this))
+        toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
         toolbar.subtitle = getString(R.string.in_app_rules_profile_subtitle, currentProfile())
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
@@ -396,9 +396,9 @@ class InAppRulesActivity : AppCompatActivity() {
                 LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply { topMargin = dp(10) }
             setCardBackgroundColor(ContextCompat.getColor(this@InAppRulesActivity, R.color.foqos_surface))
-            strokeColor = ContextCompat.getColor(this@InAppRulesActivity, R.color.foqos_outline_variant)
-            strokeWidth = dp(1)
-            radius = dp(16).toFloat()
+            // Flat tonal card: no outline, same 28dp shape as LoqIn.Card.
+            strokeWidth = 0
+            radius = dp(28).toFloat()
         }
 
         val cardLayout = LinearLayout(this).apply {
@@ -986,9 +986,9 @@ class InAppRulesActivity : AppCompatActivity() {
                 LinearLayout.LayoutParams.WRAP_CONTENT,
             ).apply { topMargin = dp(10) }
             setCardBackgroundColor(ContextCompat.getColor(this@InAppRulesActivity, R.color.foqos_surface))
-            strokeColor = ContextCompat.getColor(this@InAppRulesActivity, R.color.foqos_outline_variant)
-            strokeWidth = dp(1)
-            radius = dp(20).toFloat()
+            // Flat tonal card: no outline, same 28dp shape as LoqIn.Card.
+            strokeWidth = 0
+            radius = dp(28).toFloat()
             cardElevation = 0f
         }
         card.addView(LinearLayout(this).apply {

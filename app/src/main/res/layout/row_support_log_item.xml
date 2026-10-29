@@ -53,7 +53,7 @@
                 android:textSize="10sp"
                 android:textStyle="bold"
                 android:visibility="gone"
-                android:textColor="?android:attr/textColorSecondary" />
+                android:textColor="?attr/colorOnSurfaceVariant" />
 
             <Space
                 android:layout_width="0dp"
@@ -64,7 +64,7 @@
                 android:id="@+id/tvLogTimestamp"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textColor="?android:attr/textColorSecondary"
+                android:textColor="?attr/colorOnSurfaceVariant"
                 android:textSize="11.5sp" />
         </LinearLayout>
 

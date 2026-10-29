@@ -141,7 +141,7 @@ object UiConsistency {
                 val idName = resourceEntryName(view)
                 if (idName == "tvActiveBadge") {
                     // Filled profile badge owns both its accent background and readable foreground.
-                    val onAccent = if (ColorUtils.calculateLuminance(accent) > 0.5) Color.BLACK else Color.WHITE
+                    val onAccent = if (AccentColor.prefersDarkText(accent)) Color.BLACK else Color.WHITE
                     view.setTextColor(onAccent)
                 } else if (idName.contains("badge", ignoreCase = true) && view.isEnabled) {
                     view.setTextColor(accent)

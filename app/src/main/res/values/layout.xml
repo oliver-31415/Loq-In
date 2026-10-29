@@ -124,6 +124,17 @@
         <item name="cornerSize">28dp</item>
     </style>
 
+    <!-- Buttons: full pill at rest, squarer while pressed (see @xml/loqin_button_shape). -->
+    <style name="ShapeAppearance.LoqIn.Pill" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+
+    <style name="ShapeAppearance.LoqIn.ButtonPressed" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">12dp</item>
+    </style>
+
     <style name="Animation.LoqIn.None" parent="@android:style/Animation.Activity">        <item name="android:activityOpenEnterAnimation">@anim/loqin_no_animation</item>
         <item name="android:activityOpenExitAnimation">@anim/loqin_no_animation</item>
         <item name="android:activityCloseEnterAnimation">@anim/loqin_no_animation</item>
@@ -141,6 +152,13 @@
     <!-- =========================
          COMPONENT STYLES: Toolbar/buttons/cards/chips
          ========================= -->
+    <!-- App bar: page colour at rest, tonal surface container once content scrolls under it. -->
+    <style name="LoqIn.AppBar" parent="Widget.Material3.AppBarLayout">
+        <item name="android:background">@color/foqos_bg</item>
+        <item name="liftOnScroll">true</item>
+        <item name="liftOnScrollColor">@color/foqos_surface_container_high</item>
+    </style>
+
     <!-- Unified top bar: Foqos-flat (surface background, on-surface text) -->
     <style name="LoqIn.TopBar" parent="Widget.Material3.Toolbar">
         <!-- Background = page color (seamless, no floating band) -->
@@ -153,6 +171,49 @@
 
         <!-- Back arrow / icons follow surface text color -->
         <item name="navigationIconTint">?attr/colorOnSurface</item>
+        <item name="titleTextAppearance">@style/TextAppearance.LoqIn.TopBarTitle</item>
+    </style>
+
+    <!-- Screen titles: emphasized weight (M3 Expressive). 20sp so long German titles still fit. -->
+    <style name="TextAppearance.LoqIn.TopBarTitle" parent="TextAppearance.AppCompat.Widget.ActionBar.Title">
+        <item name="android:textSize">20sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textStyle">normal</item>
+        <item name="android:letterSpacing">0</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+
+    <!--
+        Default for TextViews without a text appearance. The framework default
+        (textAppearanceSmall) is secondary grey, which made every unstyled row title grey.
+    -->
+    <style name="LoqIn.TextView" parent="android:Widget.TextView">
+        <item name="android:textAppearance">@style/TextAppearance.LoqIn.Default</item>
+    </style>
+
+    <style name="TextAppearance.LoqIn.Default" parent="TextAppearance.AppCompat.Small">
+        <item name="android:textColor">?android:attr/textColorPrimary</item>
+    </style>
+
+    <!-- List rows (use inside LoqIn.ListGroup): title / summary. -->
+    <style name="TextAppearance.LoqIn.RowTitle" parent="TextAppearance.AppCompat.Medium">
+        <item name="android:textSize">16sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
+    </style>
+
+    <style name="TextAppearance.LoqIn.RowSummary" parent="TextAppearance.AppCompat.Small">
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+    </style>
+
+    <!-- Big numbers / hero values (stats, timers): Display Small, emphasized. -->
+    <style name="TextAppearance.LoqIn.HeroValue" parent="TextAppearance.AppCompat.Display1">
+        <item name="android:textSize">36sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">-0.01</item>
+        <item name="android:textColor">?attr/colorOnSurface</item>
     </style>
 
     <!-- Large title for the Home header (Foqos AppTitle style) -->
@@ -184,7 +245,8 @@
     <style name="LoqIn.Button" parent="Widget.Material3.Button">
         <item name="backgroundTint">?attr/colorPrimary</item>
         <item name="android:textColor">?attr/colorOnPrimary</item>
-        <item name="cornerRadius">100dp</item>
+        <item name="shapeAppearance">@xml/loqin_button_shape</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
         <item name="android:textAllCaps">false</item>
         <item name="android:insetTop">0dp</item>
         <item name="android:insetBottom">0dp</item>
@@ -198,7 +260,8 @@
         <item name="strokeColor">?attr/colorPrimary</item>
         <item name="android:textColor">?attr/colorPrimary</item>
         <item name="iconTint">?attr/colorPrimary</item>
-        <item name="cornerRadius">100dp</item>
+        <item name="shapeAppearance">@xml/loqin_button_shape</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
         <item name="android:textAllCaps">false</item>
         <item name="android:insetTop">0dp</item>
         <item name="android:insetBottom">0dp</item>
@@ -237,8 +300,7 @@
         <item name="shapeAppearance">@style/ShapeAppearance.LoqIn.Tile</item>
         <item name="android:stateListAnimator">@null</item>
         <item name="cardBackgroundColor">@color/foqos_surface</item>
-        <item name="strokeColor">@color/foqos_outline_variant</item>
-        <item name="strokeWidth">1dp</item>
+        <item name="strokeWidth">0dp</item>
         <item name="cardElevation">0dp</item>
         <item name="cardUseCompatPadding">false</item>
     </style>
@@ -250,7 +312,22 @@
         <item name="android:insetTop">0dp</item>
         <item name="android:insetBottom">0dp</item>
         <item name="android:minHeight">40dp</item>
-        <item name="cornerRadius">12dp</item>
+        <item name="shapeAppearance">@xml/loqin_button_shape</item>
+    </style>
+
+    <!-- Secondary action: tonal pill (accent container). -->
+    <style name="LoqIn.TonalButton" parent="Widget.Material3.Button.TonalButton">
+        <item name="shapeAppearance">@xml/loqin_button_shape</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:minHeight">48dp</item>
+    </style>
+
+    <!-- Switch: Expressive thumb shows a check when on. -->
+    <style name="LoqIn.Switch" parent="Widget.Material3.CompoundButton.MaterialSwitch">
+        <item name="thumbIcon">@drawable/loqin_switch_thumb_icon</item>
     </style>
 
     <!-- Floating Action Button -->
@@ -280,16 +357,16 @@
         -->
         <item name="android:stateListAnimator">@null</item>
         <item name="cardBackgroundColor">@color/foqos_surface</item>
-        <item name="strokeColor">@color/foqos_outline_variant</item>
-        <item name="strokeWidth">1dp</item>
-        <item name="cardElevation">1dp</item>
+        <!-- Expressive: tonal contrast against the page instead of a hairline + shadow. -->
+        <item name="strokeWidth">0dp</item>
+        <item name="cardElevation">0dp</item>
         <item name="cardUseCompatPadding">true</item>
     </style>
 
     <!-- Tile cards in the dashboard quick actions -->
     <style name="LoqIn.TileCard" parent="LoqIn.Card">
         <item name="shapeAppearance">@style/ShapeAppearance.LoqIn.Tile</item>
-        <item name="cardElevation">1dp</item>
+        <item name="cardElevation">0dp</item>
     </style>
 
     <!-- Accent-tinted icon roundel (onboarding hero, etc.): soft accent wash,
@@ -304,11 +381,44 @@
         <item name="cardUseCompatPadding">true</item>
     </style>
 
+    <!-- Section header: accent label aligned with the row text, as in Android Settings. -->
     <style name="LoqIn.SectionHeader">
-        <item name="android:textColor">?android:attr/textColorSecondary</item>
+        <item name="android:textColor">?attr/colorPrimary</item>
         <item name="android:textSize">14sp</item>
-        <item name="android:textStyle">bold</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textStyle">normal</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingEnd">16dp</item>
         <item name="android:includeFontPadding">false</item>
+    </style>
+
+    <!-- Grouped list (com.oliver.loqin.ui.widgets.ListGroupLayout): rows as rounded segments. -->
+    <style name="LoqIn.ListGroup">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:orientation">vertical</item>
+        <item name="listOuterCornerSize">24dp</item>
+        <item name="listInnerCornerSize">6dp</item>
+        <item name="listSegmentGap">2dp</item>
+        <item name="listSegmentColor">@color/foqos_surface</item>
+    </style>
+
+    <!-- Grouped list on a sheet or dialog (white surface): tonal segments so rows stay visible. -->
+    <style name="LoqIn.ListGroup.OnSurface">
+        <item name="listSegmentColor">@color/foqos_surface_container</item>
+    </style>
+
+    <!-- A row inside LoqIn.ListGroup. -->
+    <style name="LoqIn.ListRow">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:minHeight">72dp</item>
+        <item name="android:orientation">horizontal</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:paddingStart">20dp</item>
+        <item name="android:paddingEnd">16dp</item>
+        <item name="android:paddingTop">14dp</item>
+        <item name="android:paddingBottom">14dp</item>
     </style>
 
     <!-- Small divider inside cards -->
@@ -397,6 +507,17 @@
          DROPDOWNS: TextInputLayout
          ========================= -->
     <!-- Default (non-dropdown) TextInputLayout styling used globally via theme -->
+    <!-- Search fields: a filled pill in the high surface container, no underline (M3 Expressive search). -->
+    <style name="LoqIn.SearchField" parent="Widget.Material3.TextInputLayout.FilledBox">
+        <item name="boxBackgroundColor">@color/foqos_surface_container_high</item>
+        <item name="boxCornerRadiusTopStart">28dp</item>
+        <item name="boxCornerRadiusTopEnd">28dp</item>
+        <item name="boxCornerRadiusBottomStart">28dp</item>
+        <item name="boxCornerRadiusBottomEnd">28dp</item>
+        <item name="boxStrokeWidth">0dp</item>
+        <item name="boxStrokeWidthFocused">0dp</item>
+    </style>
+
     <style name="LoqIn.TextInputLayout" parent="Widget.Material3.TextInputLayout.OutlinedBox">
         <item name="enforceTextAppearance" tools:ignore="MissingId">false</item>
         <item name="boxStrokeWidth">1dp</item>

@@ -749,10 +749,10 @@ class OnboardingPagerAdapter(
                         }
                         radius = dp(17f).toFloat()
                         cardElevation = 0f
-                        strokeWidth = dp(if (selected) 2f else 1f)
+                        strokeWidth = 0
                         strokeColor = if (selected) accent else outline
                         setCardBackgroundColor(
-                            if (selected) ColorUtils.setAlphaComponent(accent, 22) else surface
+                            if (selected) ColorUtils.setAlphaComponent(accent, 36) else surface
                         )
                         isClickable = true
                         isFocusable = true
@@ -895,10 +895,10 @@ class OnboardingPagerAdapter(
             ).apply { marginStart = dp(10f) })
 
             fun refreshCard(enabled: Boolean) {
-                card.strokeWidth = dp(if (enabled) 2f else 1f)
+                card.strokeWidth = 0
                 card.strokeColor = if (enabled) accent else outline
                 card.setCardBackgroundColor(
-                    if (enabled) ColorUtils.setAlphaComponent(accent, 18) else surface
+                    if (enabled) ColorUtils.setAlphaComponent(accent, 36) else surface
                 )
             }
             refreshCard(checked)
@@ -998,10 +998,10 @@ class OnboardingPagerAdapter(
                 ).apply { topMargin = dp(8f) }
                 radius = dp(16f).toFloat()
                 cardElevation = 0f
-                strokeWidth = dp(if (choice.selected) 2f else 1f)
+                strokeWidth = 0
                 strokeColor = if (choice.selected) accent else outline
                 setCardBackgroundColor(
-                    if (choice.selected) ColorUtils.setAlphaComponent(accent, 0x12) else surface
+                    if (choice.selected) ColorUtils.setAlphaComponent(accent, 0x24) else surface
                 )
                 isClickable = true
                 isFocusable = true

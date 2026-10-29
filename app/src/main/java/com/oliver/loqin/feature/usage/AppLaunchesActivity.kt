@@ -119,7 +119,7 @@ class AppLaunchesActivity : AppCompatActivity() {
             title = getString(R.string.activity_entry_app_launches)
             setNavigationIcon(R.drawable.keyboard_arrow_left_24)
             setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
-            setBackgroundColor(AccentColor.getToolbarColor(this@AppLaunchesActivity))
+            setBackgroundColor(AccentColor.getToolbarBackgroundColor(this@AppLaunchesActivity))
         }
         UsageInfoAction.attach(this, toolbar, R.string.app_launches_info_title, R.string.app_launches_info_body)
         ToolbarIconAction.attach(
@@ -575,8 +575,6 @@ class AppLaunchesActivity : AppCompatActivity() {
                 LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply { topMargin = dp(10) }
             radius = dp(22).toFloat()
-            strokeWidth = dp(1)
-            strokeColor = ContextCompat.getColor(this@AppLaunchesActivity, R.color.foqos_outline_variant)
             setCardBackgroundColor(ContextCompat.getColor(this@AppLaunchesActivity, R.color.foqos_surface))
         }
     }

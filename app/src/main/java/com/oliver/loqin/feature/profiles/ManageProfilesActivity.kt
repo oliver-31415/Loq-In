@@ -109,7 +109,7 @@ class ManageProfilesActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         toolbar.setNavigationOnClickListener { finish() }
-        toolbar.setBackgroundColor(AccentColor.getToolbarColor(this))
+        toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
         ToolbarIconAction.attach(
             activity = this,
             toolbar = toolbar,
@@ -146,7 +146,7 @@ class ManageProfilesActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         findViewById<MaterialToolbar>(R.id.toolbar)
-            .setBackgroundColor(AccentColor.getToolbarColor(this))
+            .setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
         refresh()
         syncProfileLockUi()
     }
@@ -494,7 +494,7 @@ class ManageProfilesActivity : AppCompatActivity() {
                 val accent = AccentColor.getAccentColorInt(this@ManageProfilesActivity)
                 card.strokeWidth = if (isActive) dp(2) else dp(1)
                 card.strokeColor = if (isActive) accent else Color.TRANSPARENT
-                val onAccent = if (ColorUtils.calculateLuminance(accent) > 0.5) Color.BLACK else Color.WHITE
+                val onAccent = if (AccentColor.prefersDarkText(accent)) Color.BLACK else Color.WHITE
                 badge.setTextColor(onAccent)
                 badge.background = GradientDrawable().apply {
                     shape = GradientDrawable.RECTANGLE

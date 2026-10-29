@@ -102,7 +102,7 @@ class MostUsedAppsActivity : AppCompatActivity() {
             title = getString(R.string.most_used_apps_title)
             setNavigationIcon(R.drawable.keyboard_arrow_left_24)
             setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
-            setBackgroundColor(AccentColor.getToolbarColor(this@MostUsedAppsActivity))
+            setBackgroundColor(AccentColor.getToolbarBackgroundColor(this@MostUsedAppsActivity))
             navigationIcon?.mutate()?.setTint(toolbarIconColor())
             menu.add(R.string.most_used_apps_info_title).apply {
                 setIcon(R.drawable.info_24)

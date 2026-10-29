@@ -82,10 +82,22 @@ object AccentColor {
         }
     }
 
-    // Foqos restyle: toolbars are flat surface (no accent header). The accent stays on
-    // buttons/controls. All activities that tint their toolbar programmatically get the
-    // surface color here, so the whole app flips consistently.
-    fun getToolbarColor(context: Context): Int = ContextCompat.getColor(context, R.color.foqos_surface)
+    // The colour a toolbar sits on: the page colour. Screens pick black or white toolbar icons
+    // from it, so it must be opaque (a transparent colour reads as dark and gives white icons).
+    fun getToolbarColor(context: Context): Int = ContextCompat.getColor(context, R.color.foqos_bg)
+
+    // Toolbars themselves are see-through: the app bar behind them shows the page colour at rest
+    // and lifts to a tonal surface when content scrolls under it (LoqIn.AppBar).
+    @Suppress("UNUSED_PARAMETER")
+    fun getToolbarBackgroundColor(context: Context): Int = android.graphics.Color.TRANSPARENT
+
+    /**
+     * Whether text/icons on an [accent] fill should be dark rather than white, by contrast ratio.
+     * A luminance threshold put white text on Soft Blue, Orange, Amber and Pink (below 4:1).
+     */
+    fun prefersDarkText(accent: Int): Boolean =
+        androidx.core.graphics.ColorUtils.calculateContrast(0xFF1B1B18.toInt(), accent or 0xFF000000.toInt()) >
+            androidx.core.graphics.ColorUtils.calculateContrast(android.graphics.Color.WHITE, accent or 0xFF000000.toInt())
 
     fun getActiveColor(context: Context): ColorStateList = ColorStateList.valueOf(getAccentColorInt(context))
 

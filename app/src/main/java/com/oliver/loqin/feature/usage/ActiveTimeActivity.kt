@@ -111,7 +111,7 @@ class ActiveTimeActivity : AppCompatActivity() {
                     true
                 }
             }
-            setBackgroundColor(AccentColor.getToolbarColor(this@ActiveTimeActivity))
+            setBackgroundColor(AccentColor.getToolbarBackgroundColor(this@ActiveTimeActivity))
             navigationIcon?.mutate()?.setTint(toolbarIconColor())
         }
         root.addView(AppBarLayout(this).apply {

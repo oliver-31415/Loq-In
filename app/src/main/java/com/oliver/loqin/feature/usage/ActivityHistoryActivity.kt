@@ -111,7 +111,7 @@ class ActivityHistoryActivity : AppCompatActivity() {
             title = getString(R.string.active_time_activity_history_title)
             setNavigationIcon(R.drawable.keyboard_arrow_left_24)
             setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
-            setBackgroundColor(AccentColor.getToolbarColor(this@ActivityHistoryActivity))
+            setBackgroundColor(AccentColor.getToolbarBackgroundColor(this@ActivityHistoryActivity))
             navigationIcon?.mutate()?.setTint(toolbarIconColor())
             menu.add(Menu.NONE, MENU_INFO, Menu.NONE, R.string.activity_history_info_title).apply {
                 setIcon(R.drawable.info_24)

@@ -121,7 +121,7 @@ class LoqInOverviewActivity : AppCompatActivity() {
             title = getString(R.string.loqin_overview_title)
             setNavigationIcon(R.drawable.keyboard_arrow_left_24)
             setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
-            setBackgroundColor(AccentColor.getToolbarColor(this@LoqInOverviewActivity))
+            setBackgroundColor(AccentColor.getToolbarBackgroundColor(this@LoqInOverviewActivity))
             navigationIcon?.mutate()?.setTint(toolbarIconColor())
             menu.add(R.string.loqin_overview_info_title).apply {
                 setIcon(R.drawable.info_24)

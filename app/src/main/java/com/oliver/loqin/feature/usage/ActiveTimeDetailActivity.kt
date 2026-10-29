@@ -74,7 +74,7 @@ class ActiveTimeDetailActivity : AppCompatActivity() {
             title = label.ifBlank { getString(R.string.active_time_title) }
             setNavigationIcon(R.drawable.keyboard_arrow_left_24)
             setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
-            setBackgroundColor(AccentColor.getToolbarColor(this@ActiveTimeDetailActivity))
+            setBackgroundColor(AccentColor.getToolbarBackgroundColor(this@ActiveTimeDetailActivity))
         }
         UsageInfoAction.attach(this, toolbar, R.string.active_time_info_title, R.string.active_time_info_body)
 
@@ -208,7 +208,6 @@ class ActiveTimeDetailActivity : AppCompatActivity() {
     private fun totalCard(title: String, value: String): MaterialCardView {
         val card = MaterialCardView(this).apply {
             radius = dp(26).toFloat()
-            cardElevation = dp(2).toFloat()
             useCompatPadding = true
             applyLoqInCardColors()
         }
@@ -234,7 +233,6 @@ class ActiveTimeDetailActivity : AppCompatActivity() {
     private fun graphCard(title: String, entries: List<GraphEntry>): MaterialCardView {
         val card = MaterialCardView(this).apply {
             radius = dp(26).toFloat()
-            cardElevation = dp(2).toFloat()
             useCompatPadding = true
             applyLoqInCardColors()
         }
@@ -315,7 +313,6 @@ class ActiveTimeDetailActivity : AppCompatActivity() {
     ): MaterialCardView {
         val card = MaterialCardView(this).apply {
             radius = dp(26).toFloat()
-            cardElevation = dp(1).toFloat()
             useCompatPadding = true
             applyLoqInCardColors()
             if (onClick != null) {
@@ -382,8 +379,6 @@ class ActiveTimeDetailActivity : AppCompatActivity() {
 
     private fun MaterialCardView.applyLoqInCardColors() {
         setCardBackgroundColor(ContextCompat.getColor(this@ActiveTimeDetailActivity, R.color.foqos_surface))
-        strokeColor = ContextCompat.getColor(this@ActiveTimeDetailActivity, R.color.foqos_outline_variant)
-        strokeWidth = dp(1)
     }
 
     private fun resolveAttrColor(attr: Int): Int =

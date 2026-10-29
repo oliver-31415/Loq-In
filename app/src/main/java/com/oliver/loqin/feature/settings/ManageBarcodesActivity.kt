@@ -147,7 +147,7 @@ class ManageBarcodesActivity : AppCompatActivity() {
         toolbar.setNavigationOnClickListener {
             if (selectionMode) exitSelectionMode() else finish()
         }
-        toolbar.setBackgroundColor(AccentColor.getToolbarColor(this))
+        toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
 
         recycler = findViewById(R.id.recycler)
         empty = findViewById(R.id.tvEmpty)

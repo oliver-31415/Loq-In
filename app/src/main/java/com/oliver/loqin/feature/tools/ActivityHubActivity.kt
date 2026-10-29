@@ -60,7 +60,7 @@ class ActivityHubActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(false)
         toolbar.setNavigationIcon(R.drawable.keyboard_arrow_left_24)
         toolbar.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
-        toolbar.setBackgroundColor(AccentColor.getToolbarColor(this))
+        toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
         toolbar.title = getString(R.string.nav_activity)
         supportActionBar?.title = getString(R.string.nav_activity)
     }

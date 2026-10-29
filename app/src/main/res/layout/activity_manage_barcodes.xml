@@ -39,17 +39,14 @@
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/tvEmpty"
+            style="@style/LoqIn.Card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="24dp"
             android:layout_marginTop="20dp"
             android:layout_marginEnd="24dp"
             android:layout_gravity="top|center_horizontal"
-            android:visibility="gone"
-            app:cardCornerRadius="20dp"
-            app:cardElevation="0dp"
-            app:strokeColor="@color/status_border"
-            app:strokeWidth="1dp">
+            android:visibility="gone">
 
             <LinearLayout
                 android:layout_width="match_parent"

@@ -51,7 +51,7 @@
                     android:padding="16dp"
                     android:text="@string/disclaimer_body"
                     android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-                    android:textColor="@color/loqin_text_primary"
+                    android:textColor="?attr/colorOnSurface"
                     android:lineSpacingExtra="4dp"
                     android:breakStrategy="balanced"
                     android:hyphenationFrequency="normal" />

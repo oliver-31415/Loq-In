@@ -127,7 +127,7 @@ class BlockingFeaturesActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         toolbar.setNavigationOnClickListener { finish() }
-        toolbar.setBackgroundColor(AccentColor.getToolbarColor(this))
+        toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
 
         val ctx = this
         val sp = PreferenceManager.getDefaultSharedPreferences(ctx)
@@ -544,7 +544,6 @@ class BlockingFeaturesActivity : AppCompatActivity() {
             statusNotificationModeLabel(PersistentStatusNotifier.detailMode(this))
 
         applyLockedState()
-        syncDividers()
     }
 
     private fun applyLockedState() {
@@ -570,41 +569,6 @@ class BlockingFeaturesActivity : AppCompatActivity() {
             it.isEnabled = !locked
             it.alpha = switchAlpha
         }
-    }
-
-    private fun syncDividers() {
-        syncDivider(R.id.dividerAccessAppPicking, R.id.rowMixedAllowAppPicking, R.id.rowMixedAllowProfileSwitching)
-        syncDivider(
-            R.id.dividerAccessProfileSwitching,
-            R.id.rowMixedAllowProfileSwitching,
-            R.id.rowLockWarnings
-        )
-        syncDivider(
-            R.id.dividerAccessLockWarnings,
-            R.id.rowLockWarnings,
-            R.id.rowMixedAllowNfcTagWriting
-        )
-        syncDivider(R.id.dividerEnablePairedUids, R.id.rowEnablePairedUids, R.id.rowAutoPairOnWrite)
-        syncDivider(R.id.dividerBlockNotifications, R.id.rowBlockNotifications, R.id.rowSessionMissedNotifications)
-        syncDivider(
-            R.id.dividerSessionMissedNotifications,
-            R.id.rowSessionMissedNotifications,
-            R.id.rowAutostart
-        )
-        syncDivider(R.id.dividerAutostart, R.id.rowAutostart, R.id.rowEmergency)
-        syncDivider(R.id.dividerEmergency, R.id.rowEmergency, R.id.rowChangeEmergencyPin)
-        syncDivider(
-            R.id.dividerPersistentStatusNotification,
-            R.id.rowPersistentStatusNotification,
-            R.id.rowPersistentStatusNotificationMode
-        )
-    }
-
-    private fun syncDivider(dividerId: Int, aboveId: Int, belowId: Int) {
-        val aboveVisible = findViewById<View>(aboveId)?.visibility == View.VISIBLE
-        val belowVisible = findViewById<View>(belowId)?.visibility == View.VISIBLE
-        findViewById<View>(dividerId)?.visibility =
-            if (aboveVisible && belowVisible) View.VISIBLE else View.GONE
     }
 
     // ---------------------------------------------------------------------

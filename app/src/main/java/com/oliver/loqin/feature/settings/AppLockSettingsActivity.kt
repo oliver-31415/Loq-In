@@ -89,7 +89,7 @@ class AppLockSettingsActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         toolbar.setNavigationOnClickListener { finish() }
-        toolbar.setBackgroundColor(AccentColor.getToolbarColor(this))
+        toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
 
         switchEnabled = findViewById(R.id.switchAppLockEnabled)
         switchBiometric = findViewById(R.id.switchAppLockBiometric)
