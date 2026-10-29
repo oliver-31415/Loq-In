@@ -5,6 +5,7 @@
     <!-- Limit dialogs and quick edit -->
     <!-- ====================================================== -->
     <string name="set_daily_limit">Tägliches Limit festlegen</string>
+    <string name="set_daily_limit_for_fmt">Tägliches Limit für %1$s festlegen</string>
     <string name="set_daily_limit_title">Tägliches Limit: %1$s</string>
     <string name="daily_limit_label">Tägliches Limit: %1$d Min/Tag</string>
     <string name="daily_limit_10">Tägliches Limit: 10 Min</string>

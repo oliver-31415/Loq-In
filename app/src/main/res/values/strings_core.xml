@@ -25,6 +25,9 @@
     <!-- ====================================================== -->
     <string name="copied">Copied</string>
     <string name="info">Info</string>
+    <string name="info_about_fmt">About %1$s</string>
+    <string name="a11y_state_expanded">Expanded</string>
+    <string name="a11y_state_collapsed">Collapsed</string>
     <string name="settings">Settings</string>
     <string name="required">Required</string>
     <string name="invalid_value">Invalid value</string>

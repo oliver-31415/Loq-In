@@ -28,6 +28,7 @@ import android.view.Gravity
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import androidx.core.view.ViewCompat
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -622,6 +623,13 @@ class InAppRulesActivity : AppCompatActivity() {
             divider.visibility = View.VISIBLE
             ivChevron.rotation = 180f
         }
+        // TalkBack: announce whether the section is open (the chevron is decorative).
+        ivChevron.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+        fun announceExpanded(expanded: Boolean) = ViewCompat.setStateDescription(
+            header,
+            getString(if (expanded) R.string.a11y_state_expanded else R.string.a11y_state_collapsed)
+        )
+        announceExpanded(shouldExpand)
 
         header.setOnClickListener {
             val isExpanded = surfacesContainer.visibility == View.VISIBLE
@@ -629,6 +637,7 @@ class InAppRulesActivity : AppCompatActivity() {
             surfacesContainer.visibility = if (willExpand) View.VISIBLE else View.GONE
             divider.visibility = if (willExpand) View.VISIBLE else View.GONE
             ivChevron.animate().rotation(if (willExpand) 180f else 0f).setDuration(200).start()
+            announceExpanded(willExpand)
         }
 
         card.addView(cardLayout)

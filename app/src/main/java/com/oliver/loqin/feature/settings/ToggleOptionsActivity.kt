@@ -1380,7 +1380,7 @@ open class ToggleOptionsActivity : AppCompatActivity() {
 
         val detailsBtn = ImageButton(this).apply {
             setImageResource(R.drawable.info_24)
-            contentDescription = getString(R.string.info)
+            contentDescription = getString(R.string.info_about_fmt, getString(titleRes))
             setBackgroundResource(android.R.color.transparent)
             this@ToggleOptionsActivity.withStyledAttributes(
                 attrs = intArrayOf(android.R.attr.selectableItemBackgroundBorderless)

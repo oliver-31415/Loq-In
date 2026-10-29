@@ -533,7 +533,7 @@ class AppListAdapter(
 
             // Plain limit/schedule button, same as every other app.
             btnLimit.setImageResource(R.drawable.schedule_24)
-            btnLimit.contentDescription = ctx.getString(R.string.set_daily_limit)
+            btnLimit.contentDescription = ctx.getString(R.string.set_daily_limit_for_fmt, item.label)
             btnLimit.setColorFilter(AccentColor.getAccentColorInt(ctx))
 
             if (item.isAvailable) {
