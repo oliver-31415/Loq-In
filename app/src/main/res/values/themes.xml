@@ -71,7 +71,7 @@
         <item name="actionModeStyle">@style/Widget.Material3.ActionMode</item>
         <item name="actionOverflowMenuStyle">@style/Widget.Material3.PopupMenu.Overflow</item>
         <item name="alertDialogTheme">@style/ThemeOverlay.Material3.Dialog.Alert</item>
-        <item name="appBarLayoutStyle">@style/Widget.Material3.AppBarLayout</item>
+        <item name="appBarLayoutStyle">@style/LoqIn.AppBar</item>
         <item name="badgeStyle">@style/Widget.Material3.Badge</item>
         <item name="borderlessButtonStyle">@style/Widget.Material3.Button.TextButton</item>
         <item name="bottomAppBarStyle">@style/Widget.Material3.BottomAppBar</item>
@@ -196,8 +196,7 @@
         <item name="materialSplitButtonLeadingFilledStyle">@style/Widget.Material3.SplitButton.LeadingButton.Filled</item>
         <item name="materialSplitButtonLeadingFilledTonalStyle">@style/Widget.Material3.SplitButton.LeadingButton.Filled.Tonal</item>
         <item name="materialSplitButtonStyle">@style/Widget.Material3.MaterialSplitButton</item>
-        <item name="materialSwitchStyle">@style/Widget.Material3.CompoundButton.MaterialSwitch</item>
-        <item name="materialTimePickerTheme">@style/ThemeOverlay.Material3.MaterialTimePicker</item>
+                <item name="materialTimePickerTheme">@style/ThemeOverlay.Material3.MaterialTimePicker</item>
         <item name="motionDurationExtraLong1">@integer/m3_sys_motion_duration_extra_long1</item>
         <item name="motionDurationExtraLong2">@integer/m3_sys_motion_duration_extra_long2</item>
         <item name="motionDurationExtraLong3">@integer/m3_sys_motion_duration_extra_long3</item>
@@ -323,6 +322,10 @@
             Use LoqIn.DropdownLayout only on actual dropdown fields in XML.
         -->
         <item name="autoCompleteTextViewStyle">@style/LoqIn.AutoCompleteText</item>
+
+        <!-- Expressive defaults (see docs/EXPRESSIVE_DESIGN.md) -->
+        <item name="android:textViewStyle">@style/LoqIn.TextView</item>
+        <item name="materialSwitchStyle">@style/LoqIn.Switch</item>
 
         <!-- Dialog overlay -->
         <item name="colorBackgroundFloating">@color/foqos_surface</item>
