@@ -296,10 +296,11 @@ class WebsiteRuleTileAdapter(
                     accentActive -> ColorUtils.setAlphaComponent(accent, 0x88)
                     else -> defaultStroke
                 }
+                // Flat unless the tile marks selection or an enabled rule; the default outline is gone.
                 card.strokeWidth = when {
                     selected -> (2.5f * density).toInt()
                     accentActive -> (1.5f * density).toInt()
-                    else -> density.toInt()
+                    else -> 0
                 }
                 card.setCardBackgroundColor(
                     if (selected) ColorUtils.setAlphaComponent(accent, 0x40) else defaultBg

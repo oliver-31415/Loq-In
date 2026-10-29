@@ -4080,8 +4080,8 @@ private class ScheduleViewHolder(
             cardRoot.strokeColor = accent
             cardRoot.setCardBackgroundColor(ColorUtils.setAlphaComponent(accent, 0x22))
         } else {
-            cardRoot.strokeWidth = dp(1)
-            cardRoot.strokeColor = ContextCompat.getColor(ctx, R.color.foqos_outline_variant)
+            // Flat when unselected: no outline, selection carries the stroke.
+            cardRoot.strokeWidth = 0
             cardRoot.setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.foqos_surface))
         }
 
