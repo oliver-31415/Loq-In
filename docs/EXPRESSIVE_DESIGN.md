@@ -56,6 +56,10 @@ rounded segment (24dp outer corners, 6dp inner corners, 2dp gap), as in Android 
     by hand: grep the id in Kotlin, then convert with `--allow-card-id` if no code needs a card).
   - `python3 -I scripts/design/restyle_rows.py path/to/layout.xml` applies the row anatomy above.
   - Always review the diff afterwards (`git diff`), and fix anything odd by hand.
+- On a sheet or dialog (white surface) use `style="@style/LoqIn.ListGroup.OnSurface"` so the segments
+  are tonal and stay visible.
+- `python3 -I scripts/design/check_list_groups.py app/src/main/res/layout/*.xml` must print nothing: a
+  TextView/Button/View directly inside a group is a mis-converted content card or a leftover divider.
 - A card that is *not* a list of rows (a chart, a hero, a form, a single block of text) stays a
   `LoqIn.Card`.
 

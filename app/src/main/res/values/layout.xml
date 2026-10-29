@@ -403,6 +403,11 @@
         <item name="listSegmentColor">@color/foqos_surface</item>
     </style>
 
+    <!-- Grouped list on a sheet or dialog (white surface): tonal segments so rows stay visible. -->
+    <style name="LoqIn.ListGroup.OnSurface">
+        <item name="listSegmentColor">@color/foqos_surface_container</item>
+    </style>
+
     <!-- A row inside LoqIn.ListGroup. -->
     <style name="LoqIn.ListRow">
         <item name="android:layout_width">match_parent</item>

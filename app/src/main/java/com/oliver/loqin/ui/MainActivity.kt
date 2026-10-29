@@ -2329,9 +2329,9 @@ class MainActivity : AppCompatActivity() {
         val radius = homeDp(28f).toFloat()
         if (!active) {
             val gd = android.graphics.drawable.GradientDrawable().apply {
-                setColor(ContextCompat.getColor(this@MainActivity, com.oliver.loqin.R.color.foqos_surface_variant))
+                // Idle hero: a tonal container like the rest of the app, no outline.
+                setColor(ContextCompat.getColor(this@MainActivity, com.oliver.loqin.R.color.foqos_surface_container_high))
                 cornerRadius = radius
-                setStroke(homeDp(1f), ContextCompat.getColor(this@MainActivity, com.oliver.loqin.R.color.foqos_outline))
             }
             heroProfileRoot.background = gd
         } else {

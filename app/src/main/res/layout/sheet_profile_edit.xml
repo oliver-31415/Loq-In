@@ -79,7 +79,7 @@
 
     <!-- Destinations -->
     <com.oliver.loqin.ui.widgets.ListGroupLayout
-        style="@style/LoqIn.ListGroup"
+        style="@style/LoqIn.ListGroup.OnSurface"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp">
