@@ -17,7 +17,9 @@ import sys
 
 CARD = "com.google.android.material.card.MaterialCardView"
 DIVIDER_RE = re.compile(r'[ \t]*<com\.google\.android\.material\.divider\.MaterialDivider\b[^>]*?/>[ \t]*\n', re.S)
-DIVIDER_VIEW_RE = re.compile(r'[ \t]*<View\b(?=[^>]*@style/LoqIn\.Divider|[^>]*layout_height="1dp")[^>]*?/>[ \t]*\n', re.S)
+DIVIDER_VIEW_RE = re.compile(r'[ \t]*<View\b(?=[^>]*?(@style/LoqIn\.Divider|layout_height="(0\.5|1|1\.5|2)dp"|layout_height="1px"))[^>]*?/>[ \t]*\n', re.S)
+ROW_TAGS = ("LinearLayout", "androidx.constraintlayout.widget.ConstraintLayout", "RelativeLayout",
+            "FrameLayout", "include")
 KEEP_CARD_ATTRS = ("android:id", "android:layout_width", "android:layout_height", "android:layout_margin",
                    "android:layout_marginTop", "android:layout_marginBottom", "android:layout_marginStart",
                    "android:layout_marginEnd", "android:layout_marginHorizontal", "android:layout_marginVertical",
@@ -106,7 +108,12 @@ def convert(text, allow_card_id, log):
             inner_attrs = {}
         else:
             inner_body = inner[len(inner_start):inner.rfind('</LinearLayout>')]
-        rows = [k for k in top_level_children(inner_body) if not k[0].endswith('MaterialDivider')]
+        rows = [k for k in top_level_children(DIVIDER_VIEW_RE.sub('', inner_body)) if not k[0].endswith('MaterialDivider')]
+        not_rows = sorted({k[0].split('.')[-1] for k in rows if k[0] not in ROW_TAGS})
+        if not_rows:
+            # Text, buttons or images directly in the card: it's a content card, not a list of rows.
+            log.append(f"  skip line {line}: content card (has {', '.join(not_rows)})")
+            out.append(text[i:m.end()]); i = m.end(); continue
         if len(rows) < 1:
             log.append(f"  skip line {line}: no rows")
             out.append(text[i:m.end()]); i = m.end(); continue
