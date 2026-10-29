@@ -62,6 +62,7 @@
             android:textColor="@color/foqos_on_surface"
             android:textSize="23sp"
             android:textStyle="bold"
+            android:fontFamily="sans-serif-medium"
             android:letterSpacing="-0.01"
             android:textAlignment="center" />
 

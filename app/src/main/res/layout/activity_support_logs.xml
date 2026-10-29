@@ -34,7 +34,7 @@
         <!-- Search Bar (toggled by search icon in toolbar) -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/searchBoxLayout"
-            style="@style/Widget.MaterialComponents.TextInputLayout.OutlinedBox"
+            style="@style/LoqIn.TextInputLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginStart="16dp"
@@ -116,7 +116,7 @@
                         android:layout_height="36dp"
                         android:contentDescription="@null"
                         android:src="@drawable/description_24"
-                        app:tint="?android:attr/textColorSecondary" />
+                        app:tint="?attr/colorOnSurfaceVariant" />
 
                     <TextView
                         android:id="@+id/tvEmptyLogs"
@@ -126,7 +126,7 @@
                         android:gravity="center"
                         android:text="@string/support_logs_view_empty"
                         android:textAppearance="?attr/textAppearanceBodyMedium"
-                        android:textColor="?android:attr/textColorSecondary" />
+                        android:textColor="?attr/colorOnSurfaceVariant" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
         </FrameLayout>

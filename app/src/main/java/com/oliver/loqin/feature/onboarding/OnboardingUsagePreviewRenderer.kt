@@ -43,7 +43,7 @@ import com.oliver.loqin.feature.usage.AppUsageRepo
 import com.oliver.loqin.feature.usage.UsageSummary
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.color.MaterialColors
-import com.google.android.material.progressindicator.CircularProgressIndicator
+import com.google.android.material.loadingindicator.LoadingIndicator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -209,11 +209,8 @@ object OnboardingUsagePreviewRenderer {
             minimumHeight = dp(184f)
             setPadding(dp(20f), dp(24f), dp(20f), dp(24f))
         }
-        content.addView(CircularProgressIndicator(activity).apply {
+        content.addView(LoadingIndicator(activity).apply {
             layoutParams = LinearLayout.LayoutParams(dp(48f), dp(48f))
-            isIndeterminate = true
-            indicatorSize = dp(48f)
-            trackThickness = dp(4f)
             setIndicatorColor(accent)
         })
         content.addView(TextView(activity).apply {

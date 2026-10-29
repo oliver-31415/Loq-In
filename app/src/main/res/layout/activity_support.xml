@@ -96,80 +96,71 @@
                 android:layout_marginTop="24dp"
                 android:text="@string/support_diagnostics_section" />
 
-            <com.google.android.material.card.MaterialCardView
-                style="@style/LoqIn.Card"
+            <com.oliver.loqin.ui.widgets.ListGroupLayout
+                style="@style/LoqIn.ListGroup"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="10dp">
 
-                <LinearLayout
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/rowViewLogs"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical">
+                    android:minHeight="82dp"
+                    android:paddingStart="20dp"
+                    android:paddingTop="14dp"
+                    android:paddingEnd="14dp"
+                    android:paddingBottom="14dp"
+                    android:clickable="true"
+                    android:focusable="true">
 
-                    <androidx.constraintlayout.widget.ConstraintLayout
-                        android:id="@+id/rowViewLogs"
-                        android:layout_width="match_parent"
+                    <ImageView
+                        android:id="@+id/ivViewLogs"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/list_alt_24"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:tint="?attr/colorPrimary" />
+
+                    <TextView
+                        android:id="@+id/tvViewLogsTitle"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:minHeight="82dp"
-                        android:paddingStart="16dp"
-                        android:paddingTop="12dp"
-                        android:paddingEnd="14dp"
-                        android:paddingBottom="12dp"
-                        android:background="?attr/selectableItemBackground"
-                        android:clickable="true"
-                        android:focusable="true">
+                        android:layout_marginStart="14dp"
+                        android:text="@string/support_logs_unified_title"
+                        app:layout_constraintEnd_toStartOf="@id/ivViewLogsChevron"
+                        app:layout_constraintStart_toEndOf="@id/ivViewLogs"
+                        app:layout_constraintTop_toTopOf="parent"
+                        android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
 
-                        <ImageView
-                            android:id="@+id/ivViewLogs"
-                            android:layout_width="24dp"
-                            android:layout_height="24dp"
-                            android:contentDescription="@null"
-                            android:src="@drawable/list_alt_24"
-                            app:layout_constraintBottom_toBottomOf="parent"
-                            app:layout_constraintStart_toStartOf="parent"
-                            app:layout_constraintTop_toTopOf="parent"
-                            app:tint="?attr/colorPrimary" />
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="14dp"
+                        android:layout_marginTop="3dp"
+                        android:text="@string/support_logs_unified_desc"
+                        android:textColor="@color/loqin_text_secondary"
+                        android:textSize="12sp"
+                        android:maxLines="2"
+                        app:layout_constraintEnd_toStartOf="@id/ivViewLogsChevron"
+                        app:layout_constraintStart_toEndOf="@id/ivViewLogs"
+                        app:layout_constraintTop_toBottomOf="@id/tvViewLogsTitle" />
 
-                        <TextView
-                            android:id="@+id/tvViewLogsTitle"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="14dp"
-                            android:text="@string/support_logs_unified_title"
-                            android:textSize="15sp"
-                            android:textStyle="bold"
-                            app:layout_constraintEnd_toStartOf="@id/ivViewLogsChevron"
-                            app:layout_constraintStart_toEndOf="@id/ivViewLogs"
-                            app:layout_constraintTop_toTopOf="parent" />
-
-                        <TextView
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginStart="14dp"
-                            android:layout_marginTop="3dp"
-                            android:text="@string/support_logs_unified_desc"
-                            android:textColor="@color/loqin_text_secondary"
-                            android:textSize="12sp"
-                            android:maxLines="2"
-                            app:layout_constraintEnd_toStartOf="@id/ivViewLogsChevron"
-                            app:layout_constraintStart_toEndOf="@id/ivViewLogs"
-                            app:layout_constraintTop_toBottomOf="@id/tvViewLogsTitle" />
-
-                        <ImageView
-                            android:id="@+id/ivViewLogsChevron"
-                            android:layout_width="18dp"
-                            android:layout_height="18dp"
-                            android:alpha="0.7"
-                            android:contentDescription="@string/open"
-                            android:src="@drawable/keyboard_arrow_right_24"
-                            app:layout_constraintBottom_toBottomOf="parent"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:layout_constraintTop_toTopOf="parent"
-                            app:tint="@color/loqin_text_secondary" />
-                    </androidx.constraintlayout.widget.ConstraintLayout>
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+                    <ImageView
+                        android:id="@+id/ivViewLogsChevron"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="@string/open"
+                        android:src="@drawable/keyboard_arrow_right_24"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintTop_toTopOf="parent"
+                        app:tint="?attr/colorOnSurfaceVariant" />
+                </androidx.constraintlayout.widget.ConstraintLayout>
+            </com.oliver.loqin.ui.widgets.ListGroupLayout>
 
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>

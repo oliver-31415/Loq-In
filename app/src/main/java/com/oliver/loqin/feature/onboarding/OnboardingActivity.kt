@@ -1174,7 +1174,7 @@ class OnboardingActivity : ComponentActivity() {
                 }
                 minimumHeight = dp(72f)
                 radius = dp(16f).toFloat()
-                strokeWidth = dp(1.5f)
+                strokeWidth = 0
                 cardElevation = 0f
                 isClickable = true
                 isFocusable = true
@@ -1238,7 +1238,7 @@ class OnboardingActivity : ComponentActivity() {
                     outline
                 }
                 card.setCardBackgroundColor(
-                    if (selected) ColorUtils.blendARGB(surface, accent, 0.07f) else surface
+                    if (selected) ColorUtils.blendARGB(surface, accent, 0.14f) else surface
                 )
                 card.alpha = if (selected) 1f else 0.78f
                 card.contentDescription = getString(

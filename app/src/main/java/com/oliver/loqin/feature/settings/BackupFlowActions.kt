@@ -53,7 +53,7 @@ import com.oliver.loqin.ui.dialog.showLoqInOptionDialog
 import com.oliver.loqin.ui.dialog.styleLoqInDialogButtons
 import com.oliver.loqin.util.LoqInAppAccessGuard
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.progressindicator.CircularProgressIndicator
+import com.google.android.material.loadingindicator.LoadingIndicator
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -505,7 +505,7 @@ class BackupFlowActions(private val activity: ComponentActivity) {
     private fun showProgressDialog(ctx: Context, titleRes: Int, messageRes: Int): AlertDialog {
         val content = LayoutInflater.from(ctx).inflate(R.layout.dialog_progress, null, false)
         content.findViewById<TextView>(R.id.progressMessage).setText(messageRes)
-        content.findViewById<CircularProgressIndicator>(R.id.progressIndicator)
+        content.findViewById<LoadingIndicator>(R.id.progressIndicator)
             .setIndicatorColor(AccentColor.getAccentColorInt(ctx))
 
         val dialog = MaterialAlertDialogBuilder(ctx)
