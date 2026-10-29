@@ -121,10 +121,11 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnFinishSetup"
-                        style="@style/LoqIn.Button"
+                        style="@style/LoqIn.TonalButton"
                         android:layout_width="match_parent"
-                        android:layout_height="56dp"
-                        android:layout_marginTop="16dp"
+                        android:layout_height="wrap_content"
+                        android:minHeight="48dp"
+                        android:layout_marginTop="8dp"
                         android:text="@string/dashboard_setup_cta"
                         app:icon="@drawable/security_24"
                         app:iconGravity="textStart"
@@ -415,11 +416,13 @@
 
                                 <TextView
                                     android:id="@+id/tvHeroStatAppsLabel"
-                                    android:layout_width="wrap_content"
+                                    android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:text="@string/hero_stat_apps"
                                     android:textSize="12sp"
-                                    android:textColor="#CCFFFFFF" />
+                                    android:textColor="#CCFFFFFF" 
+                                    android:maxLines="1"
+                                    android:ellipsize="end" />
 
                                 <TextView
                                     android:id="@+id/tvHeroStatApps"
@@ -439,11 +442,13 @@
 
                                 <TextView
                                     android:id="@+id/tvHeroStatDomainsLabel"
-                                    android:layout_width="wrap_content"
+                                    android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:text="@string/hero_stat_domains"
                                     android:textSize="12sp"
-                                    android:textColor="#CCFFFFFF" />
+                                    android:textColor="#CCFFFFFF" 
+                                    android:maxLines="1"
+                                    android:ellipsize="end" />
 
                                 <TextView
                                     android:id="@+id/tvHeroStatDomains"
@@ -463,11 +468,13 @@
 
                                 <TextView
                                     android:id="@+id/tvHeroStatBlocksLabel"
-                                    android:layout_width="wrap_content"
+                                    android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:text="@string/hero_stat_blocks"
                                     android:textSize="12sp"
-                                    android:textColor="#CCFFFFFF" />
+                                    android:textColor="#CCFFFFFF" 
+                                    android:maxLines="1"
+                                    android:ellipsize="end" />
 
                                 <TextView
                                     android:id="@+id/tvHeroStatBlocks"
@@ -497,7 +504,9 @@
                                 android:layout_height="50dp"
                                 android:layout_weight="1"
                                 android:textSize="16sp"
-                                android:text="@string/dashboard_toggle_enable" />
+                                android:text="@string/dashboard_toggle_enable"
+                                android:maxLines="1"
+                                android:ellipsize="end" />
 
                             <TextView
                                 android:id="@+id/tvActiveDuration"
@@ -664,7 +673,7 @@
                         <LinearLayout
                             android:id="@+id/tvTempHint"
                             android:layout_width="0dp"
-                            android:layout_height="wrap_content"
+                            android:layout_height="match_parent"
                             android:layout_weight="1"
                             android:minHeight="54dp"
                             android:orientation="horizontal"
@@ -707,11 +716,8 @@
                                     android:textSize="13.5sp"
                                     android:textStyle="bold"
                                     android:textColor="?attr/colorOnSurface"
-                                    android:maxLines="1"
-                                    tools:text="Take a break"
-                                    app:autoSizeMaxTextSize="13.5sp"
-                                    app:autoSizeMinTextSize="10sp"
-                                    app:autoSizeTextType="uniform" />
+                                    android:maxLines="2"
+                                    tools:text="Take a break" />
 
                                 <TextView
                                     android:id="@+id/tvTempTileSubtitle"
@@ -737,7 +743,7 @@
                         <LinearLayout
                             android:id="@+id/tvEmergencyHint"
                             android:layout_width="0dp"
-                            android:layout_height="wrap_content"
+                            android:layout_height="match_parent"
                             android:layout_weight="1"
                             android:minHeight="54dp"
                             android:orientation="horizontal"
@@ -780,11 +786,8 @@
                                     android:textSize="13.5sp"
                                     android:textStyle="bold"
                                     android:textColor="?attr/colorOnSurface"
-                                    android:maxLines="1"
-                                    tools:text="Emergency"
-                                    app:autoSizeMaxTextSize="13.5sp"
-                                    app:autoSizeMinTextSize="10sp"
-                                    app:autoSizeTextType="uniform" />
+                                    android:maxLines="2"
+                                    tools:text="Emergency" />
 
                                 <TextView
                                     android:id="@+id/tvEmergencyTileSubtitle"

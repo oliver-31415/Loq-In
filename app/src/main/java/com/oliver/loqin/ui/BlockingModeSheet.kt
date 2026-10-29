@@ -204,10 +204,7 @@ object BlockingModeSheet {
         if (includeHeader) {
             // Grab handle
             list.addView(View(activity).apply {
-                background = GradientDrawable().apply {
-                    cornerRadius = dp(2f).toFloat()
-                    setColor(ColorUtils.setAlphaComponent(onSurfaceSoft, 0x61))
-                }
+                background = ContextCompat.getDrawable(activity, R.drawable.bg_grab_handle)
                 layoutParams = LinearLayout.LayoutParams(dp(36f), dp(4f)).apply {
                     gravity = Gravity.CENTER_HORIZONTAL
                 }

@@ -446,10 +446,10 @@ class MainActivity : AppCompatActivity() {
         tvActiveDuration.isClickable = true
         tvActiveDuration.isFocusable = true
         tvActiveDuration.setOnClickListener {
-            if (protectionNotRunning) {
-                startActivity(Intent(this, PermissionsActivity::class.java))
-            } else {
-                startActivity(ActiveTimeActivity.intent(this))
+            when {
+                protectionNotRunning -> startActivity(Intent(this, PermissionsActivity::class.java))
+                heroTimerRemainingMs() > 0L -> if (showTempToggleSheet()) markTempModeDiscovered(showSnack = false)
+                else -> startActivity(ActiveTimeActivity.intent(this))
             }
         }
         tvActiveProfile = findViewById(R.id.tvActiveProfile)
@@ -1091,21 +1091,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun applyAccentToButtons() {
-        val accent = AccentColor.getAccentColorInt(this)
-        val tint = ColorStateList.valueOf(accent)
-        val onAccent = if (AccentColor.prefersDarkText(accent)) {
-            Color.BLACK
-        } else {
-            Color.WHITE
-        }
-
         if (::btnToggle.isInitialized) {
             styleHeroToggle(SwitchModeStore.isEnabled(this))
         }
-        btnFinishSetup.backgroundTintList = tint
-        btnFinishSetup.setTextColor(onAccent)
+        // Tonal, not filled: the setup prompt must not outrank the protection hero.
+        val onContainer = MaterialColors.getColor(btnFinishSetup, com.google.android.material.R.attr.colorOnSurface)
+        btnFinishSetup.backgroundTintList = ColorStateList.valueOf(AccentColor.getAccentContainerColorInt(this))
+        btnFinishSetup.setTextColor(onContainer)
         // Make the icon match the button text (otherwise it may stay default/black).
-        btnFinishSetup.iconTint = ColorStateList.valueOf(onAccent)
+        btnFinishSetup.iconTint = ColorStateList.valueOf(onContainer)
 
     }
 
@@ -2543,26 +2537,61 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private enum class HeroPillStyle { FROSTED, TONAL, WARNING }
+
+    /** Remaining time of a running break (temporary disable) or temporary enable, else 0. */
+    private fun heroTimerRemainingMs(): Long =
+        SwitchModeStore.getTemporaryRemainingMillis(this).takeIf { it > 0L }
+            ?: SwitchModeStore.getTemporaryEnableRemainingMillis(this).coerceAtLeast(0L)
+
     /**
-     * Active-session timer pill next to the launcher pill inside the hero card.
-     * Only shown while blocking is active (saturated hero art), so it is styled
-     * as a frosted translucent white pill — color-independent. [warning] switches it to a
-     * solid warning pill for "Not protecting".
+     * Status pill next to the launcher pill inside the hero card. FROSTED sits on the
+     * saturated blob art (translucent white, colour-independent); TONAL sits on the calm
+     * idle card (accent container, e.g. a break countdown); WARNING is the solid
+     * "Not protecting" pill.
      */
-    private fun styleActiveDurationPill(warning: Boolean = false) {
+    private fun styleActiveDurationPill(style: HeroPillStyle = HeroPillStyle.FROSTED) {
         val bg = GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
             cornerRadius = homeDp(999f).toFloat()
-            if (warning) {
-                setColor(ContextCompat.getColor(this@MainActivity, R.color.status_warning))
-            } else {
-                setColor(ColorUtils.setAlphaComponent(Color.WHITE, 0x2B))
-                setStroke(homeDp(1f), ColorUtils.setAlphaComponent(Color.WHITE, 0x55))
+            when (style) {
+                HeroPillStyle.WARNING -> setColor(ContextCompat.getColor(this@MainActivity, R.color.status_warning))
+                HeroPillStyle.TONAL -> setColor(AccentColor.getAccentContainerColorInt(this@MainActivity))
+                HeroPillStyle.FROSTED -> {
+                    setColor(ColorUtils.setAlphaComponent(Color.WHITE, 0x2B))
+                    setStroke(homeDp(1f), ColorUtils.setAlphaComponent(Color.WHITE, 0x55))
+                }
             }
         }
         tvActiveDuration.background = bg
-        tvActiveDuration.setTextColor(Color.WHITE)
+        tvActiveDuration.setTextColor(
+            if (style == HeroPillStyle.TONAL) {
+                MaterialColors.getColor(tvActiveDuration, com.google.android.material.R.attr.colorOnSurface)
+            } else {
+                Color.WHITE
+            }
+        )
         tvActiveDuration.setPadding(homeDp(14f), homeDp(4f), homeDp(14f), homeDp(4f))
+    }
+
+    /**
+     * "Not protecting · fix" next to the button squeezes both (the label broke mid-word at
+     * large font sizes), so the warning gets its own full-width line under the button.
+     */
+    private fun layoutHeroActions(stacked: Boolean) {
+        val row = findViewById<LinearLayout>(R.id.rowHeroActions) ?: return
+        val wantOrientation = if (stacked) LinearLayout.VERTICAL else LinearLayout.HORIZONTAL
+        if (row.orientation == wantOrientation) return
+        row.orientation = wantOrientation
+        (btnToggle.layoutParams as LinearLayout.LayoutParams).apply {
+            width = if (stacked) ViewGroup.LayoutParams.MATCH_PARENT else 0
+            weight = if (stacked) 0f else 1f
+        }.also { btnToggle.layoutParams = it }
+        (tvActiveDuration.layoutParams as LinearLayout.LayoutParams).apply {
+            width = if (stacked) ViewGroup.LayoutParams.MATCH_PARENT else ViewGroup.LayoutParams.WRAP_CONTENT
+            marginStart = if (stacked) 0 else homeDp(10f)
+            topMargin = if (stacked) homeDp(8f) else 0
+        }.also { tvActiveDuration.layoutParams = it }
     }
 
     private fun homeDp(value: Float): Int =
@@ -3650,15 +3679,26 @@ class MainActivity : AppCompatActivity() {
         // "Active now" while the accessibility service isn't running would claim protection that
         // isn't happening (the most common blocker complaint); say so and link to the fix.
         protectionNotRunning = enabled && !BlockingRuntime.isAccessibilityActive(this)
-        val showActiveTimerOnHome = enabled && (shouldShowHomeActiveTimer() || protectionNotRunning)
+        // A running break / timed enable shows its countdown in the hero itself (it used to
+        // be visible only in the small quick-action tile below).
+        val heroTimerMs = if (tempDisableRemaining > 0L) tempDisableRemaining else tempEnableRemaining.coerceAtLeast(0L)
+        val showActiveTimerOnHome = protectionNotRunning || heroTimerMs > 0L ||
+            (enabled && shouldShowHomeActiveTimer())
         val activeDurationMs = SwitchModeStore.getActiveDurationMillis(this)
         tvActiveDuration.isVisible = showActiveTimerOnHome
+        layoutHeroActions(stacked = showActiveTimerOnHome && protectionNotRunning)
         if (showActiveTimerOnHome) {
-            styleActiveDurationPill(warning = protectionNotRunning)
-            tvActiveDuration.text = if (protectionNotRunning) {
-                getString(R.string.home_protection_not_running)
-            } else {
-                getString(R.string.dashboard_active_duration_fmt, formatActiveDuration(activeDurationMs))
+            styleActiveDurationPill(
+                when {
+                    protectionNotRunning -> HeroPillStyle.WARNING
+                    enabled -> HeroPillStyle.FROSTED
+                    else -> HeroPillStyle.TONAL
+                }
+            )
+            tvActiveDuration.text = when {
+                protectionNotRunning -> getString(R.string.home_protection_not_running)
+                heroTimerMs > 0L -> getString(R.string.tile_temp_subtitle_time, formatRemainingShort(heroTimerMs))
+                else -> getString(R.string.dashboard_active_duration_fmt, formatActiveDuration(activeDurationMs))
             }
         }
 
