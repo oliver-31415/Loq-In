@@ -575,8 +575,6 @@ class AppLaunchesActivity : AppCompatActivity() {
                 LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply { topMargin = dp(10) }
             radius = dp(22).toFloat()
-            strokeWidth = dp(1)
-            strokeColor = ContextCompat.getColor(this@AppLaunchesActivity, R.color.foqos_outline_variant)
             setCardBackgroundColor(ContextCompat.getColor(this@AppLaunchesActivity, R.color.foqos_surface))
         }
     }
