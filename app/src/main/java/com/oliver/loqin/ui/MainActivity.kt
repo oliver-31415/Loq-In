@@ -2359,14 +2359,44 @@ class MainActivity : AppCompatActivity() {
             val y = ev.rawY - heroTouchLocation[1]
             val inside = x >= 0 && y >= 0 && x <= heroProfileRoot.width && y <= heroProfileRoot.height
             when (ev.actionMasked) {
-                android.view.MotionEvent.ACTION_DOWN -> if (inside) blob.touch(x, y, down = true)
-                android.view.MotionEvent.ACTION_MOVE -> if (inside) blob.touch(x, y, down = true) else blob.touch(x, y, down = false)
+                android.view.MotionEvent.ACTION_DOWN -> {
+                    heroBlobDragging = false
+                    heroTouchStartX = ev.rawX
+                    heroTouchStartY = ev.rawY
+                    if (inside) blob.touch(x, y, down = true)
+                }
+                android.view.MotionEvent.ACTION_MOVE -> {
+                    if (inside || heroBlobDragging) blob.touch(x, y, down = true) else blob.touch(x, y, down = false)
+                    // A sideways drag on the card plays with the blob: cancel the card's own tap
+                    // so letting go doesn't open whatever row the finger started on. Vertical
+                    // drags stay with the page scroll.
+                    val dx = kotlin.math.abs(ev.rawX - heroTouchStartX)
+                    val dy = kotlin.math.abs(ev.rawY - heroTouchStartY)
+                    if (!heroBlobDragging && inside && dx > heroTouchSlop && dx > dy * 1.5f) {
+                        heroBlobDragging = true
+                        val cancel = android.view.MotionEvent.obtain(ev)
+                        cancel.action = android.view.MotionEvent.ACTION_CANCEL
+                        super.dispatchTouchEvent(cancel)
+                        cancel.recycle()
+                    }
+                }
                 android.view.MotionEvent.ACTION_UP,
                 android.view.MotionEvent.ACTION_CANCEL -> blob.touch(x.coerceIn(0f, heroProfileRoot.width.toFloat()), y.coerceIn(0f, heroProfileRoot.height.toFloat()), down = false)
+            }
+            if (heroBlobDragging) {
+                if (ev.actionMasked == android.view.MotionEvent.ACTION_UP || ev.actionMasked == android.view.MotionEvent.ACTION_CANCEL) {
+                    heroBlobDragging = false
+                }
+                return true
             }
         }
         return super.dispatchTouchEvent(ev)
     }
+
+    private var heroBlobDragging = false
+    private var heroTouchStartX = 0f
+    private var heroTouchStartY = 0f
+    private val heroTouchSlop by lazy { android.view.ViewConfiguration.get(this).scaledTouchSlop.toFloat() }
 
     private var lastHeroArtActive: Boolean? = null
     private var lastHeroArtAccent: Int? = null

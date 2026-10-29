@@ -29,10 +29,12 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.PixelFormat
 import android.graphics.Rect
+import android.graphics.RectF
 import android.graphics.Shader
 import android.graphics.drawable.Drawable
 import kotlin.math.PI
 import kotlin.math.abs
+import kotlin.math.atan2
 import kotlin.math.cos
 import kotlin.math.max
 import kotlin.math.min
@@ -42,14 +44,19 @@ import kotlin.math.sqrt
 /**
  * The Home hero while protection runs: a reactive, Material 3 Expressive blob.
  *
- * A soft body of [POINTS] springs drawn as one smooth closed curve. It wanders around the card on
- * underdamped springs (so it overshoots and settles), squashes and stretches along its motion,
- * and morphs between Expressive shapes (cookie, clover, sunny, flower, burst). Two droplets orbit
- * it and stick to it gooily when close; a darker trailing blob gives depth.
+ * A soft body of [POINTS] springs drawn as one smooth closed curve, in an irregular, slowly
+ * changing outline (low harmonics plus the Expressive shape lobes). It does not wander at random:
+ * it is carried by a slow current, an eddy inside its home area in the right part of the card
+ * with a gentle meander, and it stretches along the way it is flowing.
  *
- * It reacts to the card: pressing pulls the blob towards the finger and bulges that side,
- * releasing jiggles it and scatters the droplets, [nudge] (Home scrolling) gives it inertia, and
- * it blooms in with a spring when it first appears ([bloomFrom]).
+ * Two droplets pinch off its trailing edge, ride the current on their own and are drawn back:
+ * the neck thins and snaps as one leaves, and snaps on again when it comes close, pulling it in
+ * with a ripple.
+ *
+ * It reacts to the card: pressing pulls the blob towards the finger and bulges that side. On
+ * release it glides to a stop where it is; if that is outside its home area, the current carries
+ * it back by the shortest way. [nudge] (Home scrolling) gives it inertia, and it blooms in with a
+ * spring when it first appears ([bloomFrom]).
  *
  * Runs only while visible, at 60 fps while it moves and 30 fps when calm, and draws a still
  * frame when animations are turned off. No allocations per frame.
@@ -84,6 +91,7 @@ class HeroBlobDrawable(
     private val ghostPath = Path()
     private val blobPath = Path()
     private val bridgePath = Path()
+    private val oval = RectF()
 
     // --- Shapes (M3 Expressive shape library, as lobe count + depth) ----------------------------
 
@@ -93,8 +101,11 @@ class HeroBlobDrawable(
     private var shapeTo = 0
     private var morph = 1f
     private var morphV = 0f
-    private var nextShapeAt = 4f
+    private var nextShapeAt = 6f
     private var rotation = 0f
+    // Phases of the low harmonics that keep the outline from looking like a circle.
+    private var wobble2 = 0.4f
+    private var wobble3 = 1.9f
 
     // --- Physics (positions are fractions of the card; offsets are fractions of the radius) -----
 
@@ -106,25 +117,30 @@ class HeroBlobDrawable(
     private val py = FloatArray(POINTS)
     private val gx = FloatArray(POINTS)
     private val gy = FloatArray(POINTS)
+    private val flowOut = FloatArray(2)
 
     private var cx = 0.74f
     private var cy = 0.46f
     private var vx = 0f
     private var vy = 0f
-    private var tx = cx
-    private var ty = cy
-    private var nextTargetAt = 2.5f
+    // Smoothed direction of travel (in pixels), for the stretch and for where droplets leave.
+    private var headX = 0f
+    private var headY = 1f
 
     private var ghostX = cx + 0.06f
     private var ghostY = cy + 0.10f
     private var ghostVx = 0f
     private var ghostVy = 0f
 
-    private val satAngle = floatArrayOf(0.6f, 3.6f)
-    private val satSpeed = floatArrayOf(0.55f, -0.38f)
-    private val satSize = floatArrayOf(0.20f, 0.13f)
-    private val satDist = floatArrayOf(1.30f, 1.45f)
-    private val satDistV = floatArrayOf(0f, 0f)
+    // Droplets: state machine ABSORBED -> SHEDDING -> FREE -> MERGING -> ABSORBED.
+    private val dropState = intArrayOf(ABSORBED, ABSORBED)
+    private val dropSize = floatArrayOf(0.22f, 0.15f)
+    private val dropX = floatArrayOf(cx, cx)
+    private val dropY = floatArrayOf(cy, cy)
+    private val dropVx = FloatArray(2)
+    private val dropVy = FloatArray(2)
+    private val dropSince = FloatArray(2)
+    private val dropShedAt = floatArrayOf(2.0f, 7.5f)
 
     private var bloom = if (stillFrame) 1f else 0f
     private var bloomV = 0f
@@ -133,6 +149,7 @@ class HeroBlobDrawable(
 
     private var exiting = false
     private var finished = false
+    private var warmedUp = false
 
     private var pressed = false
     private var hotX = 0.5f
@@ -180,7 +197,7 @@ class HeroBlobDrawable(
     /** Gives the blob a push, e.g. from Home scrolling ([dyPx] of scroll since the last call). */
     fun nudge(dyPx: Float) {
         val h = bounds.height().toFloat().coerceAtLeast(1f)
-        vy += (-dyPx / h * 6f).coerceIn(-1.2f, 1.2f)
+        vy += (-dyPx / h * 3f).coerceIn(-0.6f, 0.6f)
         for (i in 0 until POINTS) offsetV[i] += (dyPx / h) * 2f * sinT[i]
         invalidateSelf()
     }
@@ -258,8 +275,9 @@ class HeroBlobDrawable(
     }
 
     private fun energy(): Float {
-        var e = abs(vx) + abs(vy) + abs(bloomV) + abs(morphV) * 0.2f
+        var e = (abs(vx) + abs(vy)) * 3f + abs(bloomV) + abs(morphV) * 0.2f
         for (v in offsetV) e += abs(v) / POINTS
+        for (state in dropState) if (state == SHEDDING || state == MERGING) e += 0.5f
         return if (pressed) e + 1f else e
     }
 
@@ -271,31 +289,93 @@ class HeroBlobDrawable(
     }
 
     private fun release() {
-        // Let go: the body springs out and the droplets scatter.
-        for (i in 0 until POINTS) offsetV[i] += 1.8f
-        for (s in satDistV.indices) satDistV[s] += 2.6f
-        nextTargetAt = time + 0.6f
+        // Let go: the body jiggles, free droplets scatter and a held one squeezes out.
+        for (i in 0 until POINTS) offsetV[i] += 1.4f
+        val b = bounds
+        if (b.width() <= 0 || b.height() <= 0) return
+        val r = blobRadius(b)
+        for (s in dropState.indices) {
+            when (dropState[s]) {
+                ABSORBED -> dropShedAt[s] = min(dropShedAt[s], time + 0.15f + 0.35f * s)
+                FREE, SHEDDING -> {
+                    val ex = (dropX[s] - cx) * b.width()
+                    val ey = (dropY[s] - cy) * b.height()
+                    val d = sqrt(ex * ex + ey * ey).coerceAtLeast(1f)
+                    dropVx[s] += ex / d * r * 1.2f / b.width()
+                    dropVy[s] += ey / d * r * 1.2f / b.height()
+                }
+            }
+        }
+    }
+
+    /**
+     * The current at a point, in card fractions per second: an eddy around ([zx], [zy]) inside an
+     * ellipse of radii ([rx], [ry]), a pull back in along the shortest way from outside it, and a
+     * slow meander that differs from place to place (so droplets drift apart and back).
+     */
+    private fun flow(x: Float, y: Float, zx: Float, zy: Float, rx: Float, ry: Float, out: FloatArray) {
+        val qx = (x - zx) / rx
+        val qy = (y - zy) / ry
+        val q = sqrt(qx * qx + qy * qy)
+        val spin = 0.22f + 0.07f * sin(time * 0.05f)
+        var ux = -qy * spin * rx
+        var uy = qx * spin * ry
+        if (q > 0.9f) {
+            val back = ((q - 0.9f) * 1.6f).coerceAtMost(1.4f)
+            ux -= qx / q * back * rx
+            uy -= qy / q * back * ry
+        }
+        ux += 0.018f * sin(time * 0.21f + y * 7f)
+        uy += 0.016f * cos(time * 0.17f + x * 6f)
+        out[0] = ux
+        out[1] = uy
+    }
+
+    // An impulse on the side of the body facing [theta] (positive bulges out, negative pulls in).
+    private fun kick(theta: Float, amount: Float) {
+        val c = cos(theta)
+        val s = sin(theta)
+        for (i in 0 until POINTS) {
+            val d = cosT[i] * c + sinT[i] * s
+            if (d > 0f) {
+                val d2 = d * d
+                offsetV[i] += amount * d2 * d2
+            }
+        }
     }
 
     private fun step(dt: Float) {
         if (dt <= 0f) return
         time += dt
+        val b = bounds
+        val w = b.width().toFloat().coerceAtLeast(1f)
+        val h = b.height().toFloat().coerceAtLeast(1f)
+        val r = blobRadius(b).coerceAtLeast(1f)
 
-        // Wander: a new spot every few seconds, in the right part of the card away from the text.
+        // Carried by the current; held by a spring to the finger while pressed. After a drag it
+        // glides to a stop and only drifts back if it was left outside its home.
         if (pressed) {
-            tx = hotX.coerceIn(0.15f, 0.9f)
-            ty = hotY.coerceIn(0.15f, 0.85f)
-        } else if (time >= nextTargetAt) {
-            tx = 0.60f + random() * 0.30f
-            ty = 0.22f + random() * 0.52f
-            nextTargetAt = time + 2.4f + random() * 2.2f
+            val k = 38f
+            val c = 2f * sqrt(k) * 0.6f
+            vx += (k * (hotX.coerceIn(0.15f, 0.9f) - cx) - c * vx) * dt
+            vy += (k * (hotY.coerceIn(0.15f, 0.85f) - cy) - c * vy) * dt
+        } else {
+            flow(cx, cy, HOME_X, HOME_Y, HOME_RX, HOME_RY, flowOut)
+            vx += (flowOut[0] - vx) * 1.4f * dt
+            vy += (flowOut[1] - vy) * 1.4f * dt
         }
-        val k = if (pressed) 38f else 7f
-        val c = 2f * sqrt(k) * if (pressed) 0.6f else 0.42f
-        vx += (k * (tx - cx) - c * vx) * dt
-        vy += (k * (ty - cy) - c * vy) * dt
-        cx += vx * dt
-        cy += vy * dt
+        cx = (cx + vx * dt).coerceIn(0.05f, 0.95f)
+        cy = (cy + vy * dt).coerceIn(0.05f, 0.95f)
+
+        val speedPx = sqrt(vx * w * vx * w + vy * h * vy * h)
+        if (speedPx > 0.5f) {
+            val f = min(1f, dt * 1.5f)
+            headX += (vx * w / speedPx - headX) * f
+            headY += (vy * h / speedPx - headY) * f
+            val hl = sqrt(headX * headX + headY * headY).coerceAtLeast(1e-3f)
+            headX /= hl
+            headY /= hl
+        }
 
         // The trailing shadow blob follows lazily.
         val gk = 3.2f
@@ -305,17 +385,19 @@ class HeroBlobDrawable(
         ghostX += ghostVx * dt
         ghostY += ghostVy * dt
 
-        // Shape morph on a bouncy spring (overshoots a little, like Expressive shape morphs).
+        // Slow shape morph with a little overshoot, like Expressive shape morphs.
         if (time >= nextShapeAt) {
             shapeFrom = shapeTo
             shapeTo = (shapeTo + 1 + (random() * (shapeLobes.size - 1)).toInt()) % shapeLobes.size
             morph = 0f
             morphV = 0f
-            nextShapeAt = time + 4.5f + random() * 2.5f
+            nextShapeAt = time + 7f + random() * 4f
         }
-        morphV += (26f * (1f - morph) - 2f * sqrt(26f) * 0.45f * morphV) * dt
+        morphV += (9f * (1f - morph) - 2f * sqrt(9f) * 0.55f * morphV) * dt
         morph += morphV * dt
-        rotation += dt * 0.22f
+        rotation += dt * 0.08f
+        wobble2 += dt * 0.09f
+        wobble3 -= dt * 0.06f
 
         // Bloom in on a spring with overshoot; collapse out without one.
         val bloomTarget = if (exiting) 0f else 1f
@@ -330,38 +412,120 @@ class HeroBlobDrawable(
             return
         }
 
-        // Body: each point springs to the shape, stretched along the motion and bulging to a touch.
-        val b = bounds
-        val r = blobRadius(b).coerceAtLeast(1f)
-        val speedX = vx * b.width() / r
-        val speedY = vy * b.height() / r
-        val speed = sqrt(speedX * speedX + speedY * speedY)
-        val stretch = min(speed * 0.06f, 0.22f)
-        val hx = (hotX - cx) * b.width()
-        val hy = (hotY - cy) * b.height()
+        // Body: each point springs to the shape, stretched along the flow and bulging to a touch.
+        val speed = speedPx / r
+        val stretch = 0.06f + min(speed * 0.3f, 0.14f)
+        val hx = (hotX - cx) * w
+        val hy = (hotY - cy) * h
         val hd = sqrt(hx * hx + hy * hy).coerceAtLeast(1f)
         for (i in 0 until POINTS) {
-            var target = 0f
-            if (speed > 0.01f) {
-                val along = (cosT[i] * speedX + sinT[i] * speedY) / speed
-                target += stretch * (along * along - 0.5f)
-            }
+            val along = cosT[i] * headX + sinT[i] * headY
+            var target = stretch * (along * along - 0.5f)
             if (pressed) {
                 val toward = max(0f, (cosT[i] * hx + sinT[i] * hy) / hd)
                 target += 0.2f * toward * toward * toward
             }
-            target += 0.022f * sin(time * 2.1f + i * 0.83f) + 0.014f * sin(time * 3.7f - i * 1.31f)
+            target += 0.010f * sin(time * 1.6f + i * 0.63f)
             offsetV[i] += (130f * (target - offset[i]) - 8f * offsetV[i]) * dt
             offset[i] += offsetV[i] * dt
         }
 
-        // Droplets orbit, drift in and out, and fly out when the blob is let go.
-        for (s in satAngle.indices) {
-            satAngle[s] += satSpeed[s] * dt
-            val rest = (if (pressed) 1.75f else 1.28f + 0.16f * s) + 0.12f * sin(time * 0.9f + s * 2f)
-            satDistV[s] += (14f * (rest - satDist[s]) - 2f * sqrt(14f) * 0.35f * satDistV[s]) * dt
-            satDist[s] += satDistV[s] * dt
+        if (b.width() > 0 && b.height() > 0) stepDroplets(dt, w, h, r)
+    }
+
+    private fun stepDroplets(dt: Float, w: Float, h: Float, r: Float) {
+        for (s in dropState.indices) {
+            val sr = r * dropSize[s]
+            if (dropState[s] == ABSORBED) {
+                dropX[s] = cx
+                dropY[s] = cy
+                dropVx[s] = vx
+                dropVy[s] = vy
+                if (!pressed && !exiting && bloom > 0.9f && time >= dropShedAt[s]) {
+                    // Pinch off the trailing side, as if the current tugged it loose.
+                    val theta = atan2(-headY, -headX) + (random() - 0.5f) * 1.4f
+                    val start = r * restRadius(theta) * 0.85f
+                    dropX[s] = cx + cos(theta) * start / w
+                    dropY[s] = cy + sin(theta) * start / h
+                    dropVx[s] = vx + cos(theta) * r * 1.6f / w
+                    dropVy[s] = vy + sin(theta) * r * 1.6f / h
+                    dropState[s] = SHEDDING
+                    dropSince[s] = time
+                    kick(theta, 2.2f)
+                }
+                continue
+            }
+
+            val ex = (dropX[s] - cx) * w
+            val ey = (dropY[s] - cy) * h
+            val d = sqrt(ex * ex + ey * ey).coerceAtLeast(1f)
+            val ux = ex / d
+            val uy = ey / d
+            val theta = atan2(ey, ex)
+            val surface = r * restRadius(theta)
+            val since = time - dropSince[s]
+            var ax = 0f
+            var ay = 0f
+            var drag = 2f
+            when (dropState[s]) {
+                SHEDDING -> {
+                    // The neck pulls back a little; stretched far enough, it snaps.
+                    drag = 0.6f
+                    val pull = (d - surface * 0.8f).coerceAtLeast(0f) * 2.2f
+                    ax -= ux * pull
+                    ay -= uy * pull
+                    if (d > (surface + sr) * 1.38f) {
+                        dropState[s] = FREE
+                        dropSince[s] = time
+                        kick(theta, -1.6f)
+                        dropVx[s] += ux * r * 0.3f / w
+                        dropVy[s] += uy * r * 0.3f / h
+                    } else if (since > 0.4f && d < surface * 0.6f) {
+                        absorb(s, theta)
+                        continue
+                    }
+                }
+                FREE -> {
+                    // Drawn back more and more the longer it is apart; snaps on when close.
+                    val pull = min(r * (0.10f + 0.06f * since), r * 0.9f)
+                    ax -= ux * pull
+                    ay -= uy * pull
+                    if (since > 1.5f && d - surface - sr < r * 0.08f) {
+                        dropState[s] = MERGING
+                        dropSince[s] = time
+                        kick(theta, 1.8f)
+                        dropVx[s] -= ux * r * 0.6f / w
+                        dropVy[s] -= uy * r * 0.6f / h
+                    }
+                }
+                MERGING -> {
+                    // Sucked in quickly, riding along with the body.
+                    drag = 0f
+                    ax -= ex * 14f + (dropVx[s] - vx) * w * 6f
+                    ay -= ey * 14f + (dropVy[s] - vy) * h * 6f
+                    if (d < surface * 0.5f) {
+                        absorb(s, theta)
+                        continue
+                    }
+                }
+            }
+            if (drag > 0f) {
+                flow(dropX[s], dropY[s], DROP_X, DROP_Y, DROP_RX, DROP_RY, flowOut)
+                dropVx[s] += (flowOut[0] - dropVx[s]) * drag * dt
+                dropVy[s] += (flowOut[1] - dropVy[s]) * drag * dt
+            }
+            dropVx[s] += ax / w * dt
+            dropVy[s] += ay / h * dt
+            dropX[s] = (dropX[s] + dropVx[s] * dt).coerceIn(0.02f, 0.98f)
+            dropY[s] = (dropY[s] + dropVy[s] * dt).coerceIn(0.02f, 0.98f)
         }
+    }
+
+    private fun absorb(s: Int, theta: Float) {
+        dropState[s] = ABSORBED
+        dropShedAt[s] = time + 5f + random() * 4f
+        kick(theta, 1.0f)
+        for (i in 0 until POINTS) offsetV[i] += 0.4f
     }
 
     private fun blobRadius(b: Rect): Float = min(b.width(), b.height()) * 0.34f
@@ -369,7 +533,9 @@ class HeroBlobDrawable(
     private fun restRadius(theta: Float): Float {
         val a = shapeDepth[shapeFrom] * cos(shapeLobes[shapeFrom] * (theta - rotation))
         val z = shapeDepth[shapeTo] * cos(shapeLobes[shapeTo] * (theta - rotation))
-        return 1f + a + (z - a) * morph
+        val lobes = (a + (z - a) * morph) * 0.75f
+        val irregular = 0.11f * cos(2f * (theta - wobble2)) + 0.06f * cos(3f * (theta - wobble3))
+        return 1f + lobes + irregular
     }
 
     // --- Drawing --------------------------------------------------------------------------------
@@ -378,6 +544,11 @@ class HeroBlobDrawable(
         val b = bounds
         if (b.width() == 0 || b.height() == 0) return
         if (blobShader == null) onBoundsChange(b)
+        if (stillFrame && !warmedUp) {
+            // The widget's still frame: let it settle into a natural pose first.
+            warmedUp = true
+            repeat(270) { step(1f / 30f) }
+        }
         if (finished && exiting) return
         if (animating() && isVisible && animator?.isStarted != true) wake()
         // While collapsing, the whole art fades with the blob.
@@ -399,14 +570,19 @@ class HeroBlobDrawable(
         if (r > 1f) {
             // While blooming the blob grows out of the bloom origin.
             val grow = bloom.coerceIn(0f, 1f)
-            val bx = b.left + (bloomX + (cx - bloomX) * grow) * b.width()
-            val by = b.top + (bloomY + (cy - bloomY) * grow) * b.height()
-            val ghx = b.left + (bloomX + (ghostX - bloomX) * grow) * b.width()
-            val ghy = b.top + (bloomY + (ghostY - bloomY) * grow) * b.height()
+            val w = b.width()
+            val h = b.height()
+            val bx = b.left + (bloomX + (cx - bloomX) * grow) * w
+            val by = b.top + (bloomY + (cy - bloomY) * grow) * h
+            val ghx = b.left + (bloomX + (ghostX - bloomX) * grow) * w
+            val ghy = b.top + (bloomY + (ghostY - bloomY) * grow) * h
 
             for (i in 0 until POINTS) {
                 val theta = (2 * PI * i / POINTS).toFloat()
-                val gr = r * 1.22f * (1f + 0.05f * cos(7 * (theta + rotation * 0.7f)))
+                val gr = r * 1.22f * (
+                    1f + 0.05f * cos(7 * (theta + rotation * 0.7f)) +
+                        0.08f * cos(2f * (theta - wobble2 - 0.8f))
+                    )
                 gx[i] = ghx + cosT[i] * gr
                 gy[i] = ghy + sinT[i] * gr
                 val pr = r * (restRadius(theta) + offset[i])
@@ -422,14 +598,40 @@ class HeroBlobDrawable(
             canvas.drawPath(blobPath, blobPaint)
             // Droplets and their necks are drawn separately: in one path, opposite winding
             // directions would cut holes where they overlap the body.
-            for (s in satAngle.indices) {
-                val sr = r * satSize[s]
-                val sx = bx + cos(satAngle[s]) * r * satDist[s]
-                val sy = by + sin(satAngle[s]) * r * satDist[s]
-                canvas.drawCircle(sx, sy, sr, blobPaint)
-                bridgePath.reset()
-                addGooBridge(bridgePath, bx, by, r, sx, sy, sr)
-                canvas.drawPath(bridgePath, blobPaint)
+            for (s in dropState.indices) {
+                if (dropState[s] == ABSORBED) continue
+                val sr = r * dropSize[s]
+                val sx = b.left + (bloomX + (dropX[s] - bloomX) * grow) * w
+                val sy = b.top + (bloomY + (dropY[s] - bloomY) * grow) * h
+                // Stretched a little along the way it is moving.
+                val dvx = dropVx[s] * w
+                val dvy = dropVy[s] * h
+                val dv = sqrt(dvx * dvx + dvy * dvy)
+                val st = 1f + min(dv / (r * 2f), 0.3f)
+                canvas.save()
+                canvas.translate(sx, sy)
+                if (dv > 1f) canvas.rotate(Math.toDegrees(atan2(dvy, dvx).toDouble()).toFloat())
+                oval.set(-sr * st, -sr / st, sr * st, sr / st)
+                canvas.drawOval(oval, blobPaint)
+                canvas.restore()
+
+                val dx = sx - bx
+                val dy = sy - by
+                val d = sqrt(dx * dx + dy * dy)
+                val neck = when (dropState[s]) {
+                    MERGING -> 1f
+                    SHEDDING -> {
+                        val near = r * 0.85f
+                        val far = (r + sr) * 1.38f
+                        1f - 0.7f * ((d - near) / (far - near)).coerceIn(0f, 1f)
+                    }
+                    else -> 0f
+                }
+                if (neck > 0f) {
+                    bridgePath.reset()
+                    addGooBridge(bridgePath, bx, by, r, sx, sy, sr, neck)
+                    canvas.drawPath(bridgePath, blobPaint)
+                }
             }
         }
         canvas.restore()
@@ -453,16 +655,12 @@ class HeroBlobDrawable(
         path.close()
     }
 
-    // A neck between the blob and a droplet that thins out as they part (a gooey join).
-    private fun addGooBridge(path: Path, ax: Float, ay: Float, ar: Float, bx: Float, by: Float, br: Float) {
+    // A neck between the blob and a droplet; [s] is its thickness (1 = full, thins as it stretches).
+    private fun addGooBridge(path: Path, ax: Float, ay: Float, ar: Float, bx: Float, by: Float, br: Float, s: Float) {
         val dx = bx - ax
         val dy = by - ay
         val d = sqrt(dx * dx + dy * dy)
-        val reach = (ar + br) * 1.12f
-        if (d < 1f || d >= reach) return
-        val t = 1f - (d - ar * 0.6f).coerceAtLeast(0f) / (reach - ar * 0.6f)
-        val s = (t * t * (3f - 2f * t)).coerceIn(0f, 1f)
-        if (s <= 0.18f) return  // snap off instead of thinning to a hairline
+        if (d < 1f) return
         val ux = dx / d
         val uy = dy / d
         val nx = -uy
@@ -471,7 +669,7 @@ class HeroBlobDrawable(
         val w2 = br * 0.80f * s
         val mx = (ax + bx) / 2f
         val my = (ay + by) / 2f
-        val pinch = (w1 + w2) * 0.5f * (0.35f + 0.5f * s)
+        val pinch = (w1 + w2) * 0.5f * (0.2f + 0.65f * s)
         path.moveTo(ax + nx * w1, ay + ny * w1)
         path.quadTo(mx + nx * pinch, my + ny * pinch, bx + nx * w2, by + ny * w2)
         path.lineTo(bx - nx * w2, by - ny * w2)
@@ -482,5 +680,21 @@ class HeroBlobDrawable(
     private companion object {
         const val POINTS = 40
         const val CALM_ENERGY = 0.35f
+
+        const val ABSORBED = 0
+        const val SHEDDING = 1
+        const val FREE = 2
+        const val MERGING = 3
+
+        // The blob's home: an ellipse in the right part of the card, away from the text. The
+        // droplets ride the current in a wider one.
+        const val HOME_X = 0.74f
+        const val HOME_Y = 0.48f
+        const val HOME_RX = 0.17f
+        const val HOME_RY = 0.26f
+        const val DROP_X = 0.70f
+        const val DROP_Y = 0.50f
+        const val DROP_RX = 0.30f
+        const val DROP_RY = 0.42f
     }
 }
