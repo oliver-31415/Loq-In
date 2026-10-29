@@ -131,6 +131,9 @@ class HeroBlobDrawable(
     private var bloomX = 0.3f
     private var bloomY = 0.85f
 
+    private var exiting = false
+    private var finished = false
+
     private var pressed = false
     private var hotX = 0.5f
     private var hotY = 0.5f
@@ -155,6 +158,21 @@ class HeroBlobDrawable(
         if (down != pressed) {
             pressed = down
             if (!down) release()
+        }
+        wake()
+    }
+
+    /**
+     * Protection stopped: shrink back into the bloom origin and fade out, revealing whatever is
+     * drawn underneath (Home layers the idle card below), then stop for good.
+     */
+    fun collapse() {
+        if (exiting) return
+        exiting = true
+        if (!animating()) {
+            finished = true
+            invalidateSelf()
+            return
         }
         wake()
     }
@@ -212,7 +230,7 @@ class HeroBlobDrawable(
     private fun animating(): Boolean = !stillFrame && ValueAnimator.areAnimatorsEnabled()
 
     private fun wake() {
-        if (!animating() || !isVisible) return
+        if (!animating() || !isVisible || finished) return
         if (animator == null) {
             animator = TimeAnimator().apply {
                 setTimeListener { _, _, deltaMs ->
@@ -299,9 +317,18 @@ class HeroBlobDrawable(
         morph += morphV * dt
         rotation += dt * 0.22f
 
-        // Bloom in on a spring with overshoot.
-        bloomV += (20f * (1f - bloom) - 2f * sqrt(20f) * 0.42f * bloomV) * dt
+        // Bloom in on a spring with overshoot; collapse out without one.
+        val bloomTarget = if (exiting) 0f else 1f
+        val bloomDamping = if (exiting) 0.95f else 0.42f
+        bloomV += (20f * (bloomTarget - bloom) - 2f * sqrt(20f) * bloomDamping * bloomV) * dt
         bloom += bloomV * dt
+        if (exiting && bloom < 0.01f) {
+            bloom = 0f
+            finished = true
+            invalidateSelf()
+            stop()
+            return
+        }
 
         // Body: each point springs to the shape, stretched along the motion and bulging to a touch.
         val b = bounds
@@ -351,7 +378,13 @@ class HeroBlobDrawable(
         val b = bounds
         if (b.width() == 0 || b.height() == 0) return
         if (blobShader == null) onBoundsChange(b)
+        if (finished && exiting) return
         if (animating() && isVisible && animator?.isStarted != true) wake()
+        // While collapsing, the whole art fades with the blob.
+        val alpha = if (exiting) (bloom.coerceIn(0f, 1f) * 255).toInt() else 255
+        basePaint.alpha = alpha
+        ghostPaint.alpha = alpha
+        blobPaint.alpha = alpha
 
         clipPath.reset()
         clipPath.addRoundRect(

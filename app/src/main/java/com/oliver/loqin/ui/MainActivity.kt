@@ -378,6 +378,9 @@ class MainActivity : AppCompatActivity() {
             intent?.removeExtra(QuickActionReceiver.EXTRA_PENDING_DISABLE)
         }
         setContentView(R.layout.activity_main)
+        if (savedInstanceState == null && android.animation.ValueAnimator.areAnimatorsEnabled()) {
+            playHomeEntrance()
+        }
 
         // Ensure the flow in SwitchModeStore reflects the current prefs
         SwitchModeStore.ensureInit(applicationContext)
@@ -2315,6 +2318,41 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    /**
+     * Home's cards rise into place one after another on a fresh launch (M3 emphasized
+     * decelerate). Runs once, after the first layout, so it sees the final card visibility.
+     */
+    private fun playHomeEntrance() {
+        val content = findViewById<androidx.core.widget.NestedScrollView>(R.id.scrollMain)
+            ?.getChildAt(0) as? android.view.ViewGroup ?: return
+        val rise = homeDp(28f).toFloat()
+        val easing = android.view.animation.PathInterpolator(0.05f, 0.7f, 0.1f, 1f)
+        for (i in 0 until content.childCount) {
+            val child = content.getChildAt(i)
+            child.alpha = 0f
+            child.translationY = rise
+        }
+        content.post {
+            var shown = 0
+            for (i in 0 until content.childCount) {
+                val child = content.getChildAt(i)
+                if (child.visibility != View.VISIBLE) {
+                    child.alpha = 1f
+                    child.translationY = 0f
+                    continue
+                }
+                child.animate()
+                    .alpha(1f)
+                    .translationY(0f)
+                    .setStartDelay(40L * shown)
+                    .setDuration(500L)
+                    .setInterpolator(easing)
+                    .start()
+                shown++
+            }
+        }
+    }
+
     // The hero card's buttons and rows consume most touches, so the active blob would rarely see
     // a press. Forward every touch inside the card to it without consuming anything.
     private val heroTouchLocation = IntArray(2)
@@ -2359,7 +2397,17 @@ class MainActivity : AppCompatActivity() {
                 setColor(ContextCompat.getColor(this@MainActivity, com.oliver.loqin.R.color.foqos_surface_container_high))
                 cornerRadius = radius
             }
-            heroProfileRoot.background = gd
+            // Coming from the active art: let the blob shrink back into the button over the idle card.
+            val blob = heroProfileRoot.background as? HeroBlobDrawable
+            if (blob != null && android.animation.ValueAnimator.areAnimatorsEnabled()) {
+                // Detach the blob first: replacing a background clears its callback, which would
+                // otherwise happen after the layer took it over and stop the animation.
+                heroProfileRoot.background = null
+                heroProfileRoot.background = android.graphics.drawable.LayerDrawable(arrayOf(gd, blob))
+                blob.collapse()
+            } else {
+                heroProfileRoot.background = gd
+            }
         } else {
             heroProfileRoot.background = HeroBlobDrawable(accent, radius).also { blob ->
                 // Bloom out of the Enable/Disable button.
