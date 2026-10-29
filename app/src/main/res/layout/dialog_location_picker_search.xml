@@ -40,12 +40,11 @@
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnLocationSearch"
-        style="@style/Widget.Material3.Button.TonalButton"
+        style="@style/LoqIn.TonalButton"
         android:layout_width="match_parent"
         android:layout_height="44dp"
         android:layout_marginTop="8dp"
         android:minHeight="44dp"
-        app:strokeWidth="0dp"
         android:text="@string/schedules_location_map_picker_search_action"
         app:icon="@drawable/search_24"
         app:iconGravity="textStart" />
@@ -92,11 +91,10 @@
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnPickerUseCurrentLocation"
-        style="@style/Widget.Material3.Button.TonalButton"
+        style="@style/LoqIn.TonalButton"
         android:layout_width="match_parent"
         android:layout_height="44dp"
         android:minHeight="44dp"
-        app:strokeWidth="0dp"
         android:text="@string/schedules_location_pick_current"
         app:icon="@drawable/location_on_24"
         app:iconGravity="textStart" />

@@ -59,14 +59,12 @@
 
         <!-- Live sentence summary -->
         <com.google.android.material.card.MaterialCardView
+            style="@style/LoqIn.Card"
             android:id="@+id/cardAppLimitSummary"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="14dp"
-            app:cardBackgroundColor="@color/foqos_surface_variant"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="0dp"
-            app:strokeWidth="0dp">
+            app:cardBackgroundColor="@color/foqos_surface_variant">
 
             <TextView
                 android:id="@+id/tvAppLimitSentence"
@@ -81,13 +79,11 @@
 
         <!-- 1. Daily screen time -->
         <com.google.android.material.card.MaterialCardView
+            style="@style/LoqIn.Card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            app:cardBackgroundColor="@color/foqos_surface_variant"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="0dp"
-            app:strokeWidth="0dp">
+            app:cardBackgroundColor="@color/foqos_surface_variant">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -353,13 +349,11 @@
 
         <!-- 2. App opens -->
         <com.google.android.material.card.MaterialCardView
+            style="@style/LoqIn.Card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            app:cardBackgroundColor="@color/foqos_surface_variant"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="0dp"
-            app:strokeWidth="0dp">
+            app:cardBackgroundColor="@color/foqos_surface_variant">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -481,13 +475,11 @@
 
         <!-- 3. Single session cap -->
         <com.google.android.material.card.MaterialCardView
+            style="@style/LoqIn.Card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
-            app:cardBackgroundColor="@color/foqos_surface_variant"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="0dp"
-            app:strokeWidth="0dp">
+            app:cardBackgroundColor="@color/foqos_surface_variant">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -621,15 +613,13 @@
         </com.google.android.material.card.MaterialCardView>
 
         <com.google.android.material.card.MaterialCardView
+            style="@style/LoqIn.Card"
             android:id="@+id/cardAppPause"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="10dp"
             android:visibility="gone"
-            app:cardBackgroundColor="@color/foqos_surface_variant"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="0dp"
-            app:strokeWidth="0dp">
+            app:cardBackgroundColor="@color/foqos_surface_variant">
 
             <LinearLayout
                 android:layout_width="match_parent"

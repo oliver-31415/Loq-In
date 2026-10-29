@@ -2,6 +2,7 @@
 <com.oliver.loqin.ui.StackSquareCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    style="@style/LoqIn.TileCard"
     android:id="@+id/rowRoot"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -9,12 +10,7 @@
     android:foreground="?attr/selectableItemBackground"
     android:clickable="true"
     android:focusable="true"
-    app:cardBackgroundColor="@color/foqos_surface"
-    app:cardCornerRadius="18dp"
-    app:cardElevation="1dp"
-    app:cardUseCompatPadding="false"
-    app:strokeColor="@color/foqos_outline_variant"
-    app:strokeWidth="1dp">
+    app:cardUseCompatPadding="false">
 
     <FrameLayout
         android:layout_width="match_parent"

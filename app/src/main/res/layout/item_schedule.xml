@@ -10,7 +10,6 @@
     android:foreground="?attr/selectableItemBackground"
     android:clickable="true"
     android:focusable="true"
-    app:cardElevation="1dp"
     app:cardUseCompatPadding="true">
 
     <LinearLayout

@@ -274,9 +274,9 @@ class AppListAdapter(
                 cardRoot.strokeColor = accent
                 cardRoot.setCardBackgroundColor(ColorUtils.setAlphaComponent(accent, 0x30))
             } else {
-                cardRoot.strokeWidth = dp(1f)
+                // Flat tile: no outline when unselected. Selection and pending keep their strokes.
+                cardRoot.strokeWidth = 0
                 cardRoot.setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.foqos_surface))
-                cardRoot.strokeColor = ContextCompat.getColor(ctx, R.color.foqos_outline_variant)
             }
             val showBadge = selected || currentPending
             ivChecked.visibility = if (showBadge) View.VISIBLE else View.GONE

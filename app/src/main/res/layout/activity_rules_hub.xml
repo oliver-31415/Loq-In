@@ -43,23 +43,25 @@
                 android:layout_height="wrap_content"
                 android:text="@string/rules_hub_profiles_section" />
 
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardManageProfiles"
-                style="@style/LoqIn.Card"
+            <com.oliver.loqin.ui.widgets.ListGroupLayout
+                style="@style/LoqIn.ListGroup"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:foreground="?attr/selectableItemBackground"
-                android:clickable="true"
-                android:focusable="true">
+                android:layout_marginTop="8dp">
 
                 <LinearLayout
+                    android:id="@+id/cardManageProfiles"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:minHeight="72dp"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:padding="16dp">
+                    android:paddingStart="20dp"
+                    android:paddingTop="14dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="14dp"
+                    android:clickable="true"
+                    android:focusable="true">
 
                     <ImageView
                         android:layout_width="24dp"
@@ -79,27 +81,24 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="@string/rules_profiles_title"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
+                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
 
                         <TextView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="3dp"
+                            android:layout_marginTop="2dp"
                             android:text="@string/rules_profiles_summary"
-                            android:textColor="?android:attr/textColorSecondary"
-                            android:textSize="13sp" />
+                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
                     </LinearLayout>
 
                     <ImageView
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
-                        android:alpha="0.7"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:contentDescription="@string/open"
                         android:src="@drawable/keyboard_arrow_right_24"
-                        app:tint="?android:attr/textColorSecondary" />
+                        app:tint="?attr/colorOnSurfaceVariant" />
                 </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+            </com.oliver.loqin.ui.widgets.ListGroupLayout>
 
             <TextView
                 style="@style/LoqIn.SectionHeader"
@@ -108,23 +107,25 @@
                 android:layout_marginTop="24dp"
                 android:text="@string/rules_hub_categories_section" />
 
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardManageApps"
-                style="@style/LoqIn.Card"
+            <com.oliver.loqin.ui.widgets.ListGroupLayout
+                style="@style/LoqIn.ListGroup"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:foreground="?attr/selectableItemBackground"
-                android:clickable="true"
-                android:focusable="true">
+                android:layout_marginTop="8dp">
 
                 <LinearLayout
+                    android:id="@+id/cardManageApps"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:minHeight="72dp"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:padding="16dp">
+                    android:paddingStart="20dp"
+                    android:paddingTop="14dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="14dp"
+                    android:clickable="true"
+                    android:focusable="true">
 
                     <ImageView
                         android:layout_width="24dp"
@@ -144,45 +145,37 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="@string/rules_apps_title"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
+                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
 
                         <TextView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="3dp"
+                            android:layout_marginTop="2dp"
                             android:text="@string/rules_apps_summary"
-                            android:textColor="?android:attr/textColorSecondary"
-                            android:textSize="13sp" />
+                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
                     </LinearLayout>
 
                     <ImageView
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
-                        android:alpha="0.7"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:contentDescription="@string/open"
                         android:src="@drawable/keyboard_arrow_right_24"
-                        app:tint="?android:attr/textColorSecondary" />
+                        app:tint="?attr/colorOnSurfaceVariant" />
                 </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardManageWebsites"
-                style="@style/LoqIn.Card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:foreground="?attr/selectableItemBackground"
-                android:clickable="true"
-                android:focusable="true">
 
                 <LinearLayout
+                    android:id="@+id/cardManageWebsites"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:minHeight="72dp"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:padding="16dp">
+                    android:paddingStart="20dp"
+                    android:paddingTop="14dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="14dp"
+                    android:clickable="true"
+                    android:focusable="true">
 
                     <ImageView
                         android:layout_width="24dp"
@@ -202,45 +195,37 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="@string/rules_websites_title"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
+                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
 
                         <TextView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="3dp"
+                            android:layout_marginTop="2dp"
                             android:text="@string/rules_websites_summary"
-                            android:textColor="?android:attr/textColorSecondary"
-                            android:textSize="13sp" />
+                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
                     </LinearLayout>
 
                     <ImageView
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
-                        android:alpha="0.7"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:contentDescription="@string/open"
                         android:src="@drawable/keyboard_arrow_right_24"
-                        app:tint="?android:attr/textColorSecondary" />
+                        app:tint="?attr/colorOnSurfaceVariant" />
                 </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardInAppBlocking"
-                style="@style/LoqIn.Card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:foreground="?attr/selectableItemBackground"
-                android:clickable="true"
-                android:focusable="true">
 
                 <LinearLayout
+                    android:id="@+id/cardInAppBlocking"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:minHeight="72dp"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:padding="16dp">
+                    android:paddingStart="20dp"
+                    android:paddingTop="14dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="14dp"
+                    android:clickable="true"
+                    android:focusable="true">
 
                     <ImageView
                         android:layout_width="24dp"
@@ -260,45 +245,37 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="@string/rules_inapp_title"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
+                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
 
                         <TextView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="3dp"
+                            android:layout_marginTop="2dp"
                             android:text="@string/rules_inapp_summary"
-                            android:textColor="?android:attr/textColorSecondary"
-                            android:textSize="13sp" />
+                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
                     </LinearLayout>
 
                     <ImageView
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
-                        android:alpha="0.7"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:contentDescription="@string/open"
                         android:src="@drawable/keyboard_arrow_right_24"
-                        app:tint="?android:attr/textColorSecondary" />
+                        app:tint="?attr/colorOnSurfaceVariant" />
                 </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardSchedules"
-                style="@style/LoqIn.Card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:foreground="?attr/selectableItemBackground"
-                android:clickable="true"
-                android:focusable="true">
 
                 <LinearLayout
+                    android:id="@+id/cardSchedules"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:minHeight="72dp"
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:padding="16dp">
+                    android:paddingStart="20dp"
+                    android:paddingTop="14dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="14dp"
+                    android:clickable="true"
+                    android:focusable="true">
 
                     <ImageView
                         android:layout_width="24dp"
@@ -318,27 +295,24 @@
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="@string/rules_schedules_title"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
+                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
 
                         <TextView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="3dp"
+                            android:layout_marginTop="2dp"
                             android:text="@string/rules_schedules_summary"
-                            android:textColor="?android:attr/textColorSecondary"
-                            android:textSize="13sp" />
+                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
                     </LinearLayout>
 
                     <ImageView
-                        android:layout_width="18dp"
-                        android:layout_height="18dp"
-                        android:alpha="0.7"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:contentDescription="@string/open"
                         android:src="@drawable/keyboard_arrow_right_24"
-                        app:tint="?android:attr/textColorSecondary" />
+                        app:tint="?attr/colorOnSurfaceVariant" />
                 </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+            </com.oliver.loqin.ui.widgets.ListGroupLayout>
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
