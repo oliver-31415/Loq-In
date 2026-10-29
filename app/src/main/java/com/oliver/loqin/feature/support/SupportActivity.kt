@@ -143,7 +143,7 @@ class SupportActivity : AppCompatActivity() {
 
         setSupportActionBar(toolbar)
         toolbar.setNavigationOnClickListener { finish() }
-        toolbar.setBackgroundColor(AccentColor.getToolbarColor(this))
+        toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
         val toolbarIconColor = toolbarForegroundColor()
         toolbar.navigationIcon?.mutate()?.setTint(toolbarIconColor)
         toolbar.setTitleTextColor(toolbarIconColor)

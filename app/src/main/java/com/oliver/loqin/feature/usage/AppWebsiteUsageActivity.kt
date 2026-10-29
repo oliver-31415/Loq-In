@@ -431,7 +431,7 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
         val accent = AccentColor.getAccentColorInt(this)
         val accentTint = ColorStateList.valueOf(accent)
 
-        b.toolbar.setBackgroundColor(AccentColor.getToolbarColor(this))
+        b.toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
         // Keep the back arrow readable on the accent toolbar.
         val bg = AccentColor.getToolbarColor(this)
         val navTint = if (MaterialColors.isColorLight(bg)) Color.BLACK else Color.WHITE

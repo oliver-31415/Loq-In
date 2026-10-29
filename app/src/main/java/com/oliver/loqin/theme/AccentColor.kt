@@ -82,11 +82,14 @@ object AccentColor {
         }
     }
 
-    // Toolbars are see-through: the app bar behind them shows the page colour at rest and lifts
-    // to a tonal surface when content scrolls under it (LoqIn.AppBar). All activities that tint
-    // their toolbar programmatically go through here, so the whole app flips consistently.
+    // The colour a toolbar sits on: the page colour. Screens pick black or white toolbar icons
+    // from it, so it must be opaque (a transparent colour reads as dark and gives white icons).
+    fun getToolbarColor(context: Context): Int = ContextCompat.getColor(context, R.color.foqos_bg)
+
+    // Toolbars themselves are see-through: the app bar behind them shows the page colour at rest
+    // and lifts to a tonal surface when content scrolls under it (LoqIn.AppBar).
     @Suppress("UNUSED_PARAMETER")
-    fun getToolbarColor(context: Context): Int = android.graphics.Color.TRANSPARENT
+    fun getToolbarBackgroundColor(context: Context): Int = android.graphics.Color.TRANSPARENT
 
     fun getActiveColor(context: Context): ColorStateList = ColorStateList.valueOf(getAccentColorInt(context))
 

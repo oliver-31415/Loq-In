@@ -121,7 +121,7 @@ class InAppRulesActivity : AppCompatActivity() {
 
 
         EdgeToEdgeUtils.setupClassic(activity = this, toolbar = toolbar)
-        toolbar.setBackgroundColor(AccentColor.getToolbarColor(this))
+        toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
         toolbar.subtitle = getString(R.string.in_app_rules_profile_subtitle, currentProfile())
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)

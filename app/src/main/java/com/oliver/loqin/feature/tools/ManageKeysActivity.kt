@@ -65,7 +65,7 @@ class ManageKeysActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         toolbar.setNavigationOnClickListener { finish() }
-        toolbar.setBackgroundColor(AccentColor.getToolbarColor(this))
+        toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
 
         setupCards()
         applyOnboardingFilterIfNeeded()

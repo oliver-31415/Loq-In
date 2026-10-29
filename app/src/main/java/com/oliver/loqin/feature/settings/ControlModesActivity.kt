@@ -53,7 +53,7 @@ class ControlModesActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         toolbar.setNavigationOnClickListener { finish() }
-        toolbar.setBackgroundColor(AccentColor.getToolbarColor(this))
+        toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
 
         // Make it explicit which profile these control modes belong to.
         val profileName = ProfileStore.getCurrent(this).orEmpty()

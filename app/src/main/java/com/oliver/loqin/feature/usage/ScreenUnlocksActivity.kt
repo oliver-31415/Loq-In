@@ -114,7 +114,7 @@ class ScreenUnlocksActivity : AppCompatActivity() {
             title = getString(R.string.activity_entry_screen_unlocks)
             setNavigationIcon(R.drawable.keyboard_arrow_left_24)
             setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
-            setBackgroundColor(AccentColor.getToolbarColor(this@ScreenUnlocksActivity))
+            setBackgroundColor(AccentColor.getToolbarBackgroundColor(this@ScreenUnlocksActivity))
         }
         UsageInfoAction.attach(this, toolbar, R.string.screen_unlocks_info_title, R.string.screen_unlocks_info_body)
         ToolbarIconAction.attach(

@@ -92,7 +92,7 @@ class BlockedInboxActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         toolbar.setNavigationOnClickListener { finish() }
-        toolbar.setBackgroundColor(AccentColor.getToolbarColor(this))
+        toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
 
         sortNewestFirst = prefs.getBoolean(KEY_SORT_NEWEST, true)
         appFilter = prefs.getString(KEY_APP_FILTER, null)?.takeIf { it.isNotBlank() }

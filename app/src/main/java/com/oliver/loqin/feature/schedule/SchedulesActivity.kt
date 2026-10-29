@@ -355,7 +355,7 @@ class SchedulesActivity : AppCompatActivity() {
                 finish()
             }
         }
-        toolbar.setBackgroundColor(AccentColor.getToolbarColor(this))
+        toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
 
         val recycler = findViewById<RecyclerView>(R.id.recyclerSchedules)
         recycler.layoutManager = LinearLayoutManager(this)

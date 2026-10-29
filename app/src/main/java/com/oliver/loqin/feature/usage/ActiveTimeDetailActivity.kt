@@ -74,7 +74,7 @@ class ActiveTimeDetailActivity : AppCompatActivity() {
             title = label.ifBlank { getString(R.string.active_time_title) }
             setNavigationIcon(R.drawable.keyboard_arrow_left_24)
             setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
-            setBackgroundColor(AccentColor.getToolbarColor(this@ActiveTimeDetailActivity))
+            setBackgroundColor(AccentColor.getToolbarBackgroundColor(this@ActiveTimeDetailActivity))
         }
         UsageInfoAction.attach(this, toolbar, R.string.active_time_info_title, R.string.active_time_info_body)
 

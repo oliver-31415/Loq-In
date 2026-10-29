@@ -105,7 +105,7 @@ class IgnoredUsageAppsActivity : AppCompatActivity() {
         val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
         toolbar.setNavigationIcon(R.drawable.keyboard_arrow_left_24)
         toolbar.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
-        toolbar.setBackgroundColor(AccentColor.getToolbarColor(this))
+        toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
         findViewById<View>(R.id.btnHiddenAppsInfo)?.setOnClickListener { showInfoDialog() }
         EdgeToEdgeUtils.setupClassic(activity = this, toolbar = toolbar)
 

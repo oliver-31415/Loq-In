@@ -73,7 +73,7 @@ class AppLaunchDetailActivity : AppCompatActivity() {
             title = label
             setNavigationIcon(R.drawable.keyboard_arrow_left_24)
             setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
-            setBackgroundColor(AccentColor.getToolbarColor(this@AppLaunchDetailActivity))
+            setBackgroundColor(AccentColor.getToolbarBackgroundColor(this@AppLaunchDetailActivity))
         }
         UsageInfoAction.attach(this, toolbar, R.string.app_launches_info_title, R.string.app_launches_info_body)
         root.addView(AppBarLayout(this).apply {

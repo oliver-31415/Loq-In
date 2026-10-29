@@ -46,7 +46,7 @@ class DisclaimerActivity : AppCompatActivity() {
         EdgeToEdgeUtils.setupClassic(activity = this, toolbar = toolbar)
 
         toolbar.setNavigationOnClickListener { finish() }
-        toolbar.setBackgroundColor(AccentColor.getToolbarColor(this))
+        toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
         val toolbarColor = toolbarForegroundColor()
         toolbar.navigationIcon?.mutate()?.setTint(toolbarColor)
         toolbar.setTitleTextColor(toolbarColor)

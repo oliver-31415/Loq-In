@@ -229,7 +229,7 @@ class QrGenerateActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         b.toolbar.setNavigationOnClickListener { finish() }
 
-        b.toolbar.setBackgroundColor(AccentColor.getToolbarColor(this))
+        b.toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
 
         b.toolbar.setNavigationIcon(R.drawable.keyboard_arrow_left_24)
         b.toolbar.navigationIcon?.mutate()?.setTint(

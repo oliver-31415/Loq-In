@@ -140,7 +140,7 @@ class SupportLogActivity : AppCompatActivity() {
         EdgeToEdgeUtils.setupClassic(activity = this, toolbar = toolbar)
         setSupportActionBar(toolbar)
         toolbar.setNavigationOnClickListener { finish() }
-        toolbar.setBackgroundColor(AccentColor.getToolbarColor(this))
+        toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
         val foreground = toolbarForegroundColor()
         toolbar.navigationIcon?.mutate()?.setTint(foreground)
         toolbar.setTitleTextColor(foreground)

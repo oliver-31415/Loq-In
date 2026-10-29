@@ -127,7 +127,7 @@ class BlockingFeaturesActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         toolbar.setNavigationOnClickListener { finish() }
-        toolbar.setBackgroundColor(AccentColor.getToolbarColor(this))
+        toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
 
         val ctx = this
         val sp = PreferenceManager.getDefaultSharedPreferences(ctx)

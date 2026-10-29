@@ -109,7 +109,7 @@ class ManageProfilesActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         toolbar.setNavigationOnClickListener { finish() }
-        toolbar.setBackgroundColor(AccentColor.getToolbarColor(this))
+        toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
         ToolbarIconAction.attach(
             activity = this,
             toolbar = toolbar,
@@ -146,7 +146,7 @@ class ManageProfilesActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         findViewById<MaterialToolbar>(R.id.toolbar)
-            .setBackgroundColor(AccentColor.getToolbarColor(this))
+            .setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
         refresh()
         syncProfileLockUi()
     }

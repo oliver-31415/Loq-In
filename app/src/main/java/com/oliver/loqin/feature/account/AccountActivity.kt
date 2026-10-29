@@ -56,7 +56,7 @@ class AccountActivity : AppCompatActivity() {
 
         val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
         EdgeToEdgeUtils.setupClassic(activity = this, toolbar = toolbar)
-        toolbar.setBackgroundColor(AccentColor.getToolbarColor(this))
+        toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
         toolbar.setNavigationIcon(R.drawable.keyboard_arrow_left_24)
         toolbar.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
         toolbar.title = getString(R.string.account_title)
