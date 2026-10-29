@@ -502,6 +502,17 @@
          DROPDOWNS: TextInputLayout
          ========================= -->
     <!-- Default (non-dropdown) TextInputLayout styling used globally via theme -->
+    <!-- Search fields: a filled pill in the high surface container, no underline (M3 Expressive search). -->
+    <style name="LoqIn.SearchField" parent="Widget.Material3.TextInputLayout.FilledBox">
+        <item name="boxBackgroundColor">@color/foqos_surface_container_high</item>
+        <item name="boxCornerRadiusTopStart">28dp</item>
+        <item name="boxCornerRadiusTopEnd">28dp</item>
+        <item name="boxCornerRadiusBottomStart">28dp</item>
+        <item name="boxCornerRadiusBottomEnd">28dp</item>
+        <item name="boxStrokeWidth">0dp</item>
+        <item name="boxStrokeWidthFocused">0dp</item>
+    </style>
+
     <style name="LoqIn.TextInputLayout" parent="Widget.Material3.TextInputLayout.OutlinedBox">
         <item name="enforceTextAppearance" tools:ignore="MissingId">false</item>
         <item name="boxStrokeWidth">1dp</item>

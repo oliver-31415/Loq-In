@@ -220,9 +220,9 @@ class IgnoredUsageAppsAdapter(
                 cardRoot.strokeColor = accent
                 cardRoot.setCardBackgroundColor(ColorUtils.setAlphaComponent(accent, 0x30))
             } else {
-                cardRoot.strokeWidth = dp(1)
+                // Flat when unselected; the accent outline marks selection.
+                cardRoot.strokeWidth = 0
                 cardRoot.setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.foqos_surface))
-                cardRoot.strokeColor = ContextCompat.getColor(ctx, R.color.foqos_outline_variant)
             }
             ivChecked.visibility = if (selected) View.VISIBLE else View.GONE
             cardRoot.contentDescription = if (selected) {
