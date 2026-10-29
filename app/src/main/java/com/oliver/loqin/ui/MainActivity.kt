@@ -482,6 +482,11 @@ class MainActivity : AppCompatActivity() {
         tvHeroStatApps = findViewById(R.id.tvHeroStatApps)
         tvHeroStatDomains = findViewById(R.id.tvHeroStatDomains)
         tvHeroStatBlocks = findViewById(R.id.tvHeroStatBlocks)
+        // Home scrolling gives the active hero blob a little inertia.
+        findViewById<androidx.core.widget.NestedScrollView>(R.id.scrollMain)
+            ?.setOnScrollChangeListener { _: androidx.core.widget.NestedScrollView, _, scrollY, _, oldScrollY ->
+                (heroProfileRoot.background as? HeroBlobDrawable)?.nudge((scrollY - oldScrollY).toFloat())
+            }
         findViewById<View>(R.id.heroProfileRoot).setOnClickListener {
             ProfileStore.getCurrent(this)?.let { openProfileEditSheet(it) }
         }
@@ -2310,6 +2315,27 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    // The hero card's buttons and rows consume most touches, so the active blob would rarely see
+    // a press. Forward every touch inside the card to it without consuming anything.
+    private val heroTouchLocation = IntArray(2)
+
+    override fun dispatchTouchEvent(ev: android.view.MotionEvent): Boolean {
+        val blob = if (::heroProfileRoot.isInitialized) heroProfileRoot.background as? HeroBlobDrawable else null
+        if (blob != null) {
+            heroProfileRoot.getLocationOnScreen(heroTouchLocation)
+            val x = ev.rawX - heroTouchLocation[0]
+            val y = ev.rawY - heroTouchLocation[1]
+            val inside = x >= 0 && y >= 0 && x <= heroProfileRoot.width && y <= heroProfileRoot.height
+            when (ev.actionMasked) {
+                android.view.MotionEvent.ACTION_DOWN -> if (inside) blob.touch(x, y, down = true)
+                android.view.MotionEvent.ACTION_MOVE -> if (inside) blob.touch(x, y, down = true) else blob.touch(x, y, down = false)
+                android.view.MotionEvent.ACTION_UP,
+                android.view.MotionEvent.ACTION_CANCEL -> blob.touch(x.coerceIn(0f, heroProfileRoot.width.toFloat()), y.coerceIn(0f, heroProfileRoot.height.toFloat()), down = false)
+            }
+        }
+        return super.dispatchTouchEvent(ev)
+    }
+
     private var lastHeroArtActive: Boolean? = null
     private var lastHeroArtAccent: Int? = null
 
@@ -2335,7 +2361,20 @@ class MainActivity : AppCompatActivity() {
             }
             heroProfileRoot.background = gd
         } else {
-            heroProfileRoot.background = HeroArtDrawable(accent, radius)
+            heroProfileRoot.background = HeroBlobDrawable(accent, radius).also { blob ->
+                // Bloom out of the Enable/Disable button.
+                if (::btnToggle.isInitialized && heroProfileRoot.width > 0 && heroProfileRoot.height > 0) {
+                    var x = btnToggle.width / 2f
+                    var y = btnToggle.height / 2f
+                    var v: View? = btnToggle
+                    while (v != null && v !== heroProfileRoot) {
+                        x += v.left
+                        y += v.top
+                        v = v.parent as? View
+                    }
+                    blob.bloomFrom(x / heroProfileRoot.width, y / heroProfileRoot.height)
+                }
+            }
         }
         applyHeroIdleContrast(!active)
     }
@@ -4974,7 +5013,7 @@ class MainActivity : AppCompatActivity() {
     }
 }
 
-// Foqos-style hero artwork rendering is now located in HeroArtRenderer.kt
+// The active hero artwork is HeroBlobDrawable; widget snapshots go through HeroArtRenderer.
 
 
 
