@@ -135,7 +135,7 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnCancelTimer"
-            style="@style/Widget.Material3.Button"
+            style="@style/LoqIn.TonalButton"
             android:layout_width="match_parent"
             android:layout_height="46dp"
             android:layout_marginTop="12dp"

@@ -3735,7 +3735,7 @@ class MainActivity : AppCompatActivity() {
                 setColor(ColorUtils.setAlphaComponent(accent, 0x1F))
                 setStroke(homeDp(1f), ColorUtils.setAlphaComponent(accent, 0x55))
             } else {
-                setColor(ContextCompat.getColor(this@MainActivity, R.color.foqos_surface_variant))
+                setColor(ContextCompat.getColor(this@MainActivity, R.color.foqos_surface_container))
             }
         }
         tile.background = bg

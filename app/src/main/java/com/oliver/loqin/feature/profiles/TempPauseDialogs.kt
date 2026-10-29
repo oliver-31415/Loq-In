@@ -123,7 +123,7 @@ object TempPauseDialogs {
         }
         listOf(swCount, swPerPause, swPerDay).forEach { CustomAccentApplier.tintSwitch(it) }
         runCatching {
-            val surfaceVariant = ContextCompat.getColor(activity, R.color.foqos_surface_variant)
+            val surfaceVariant = ContextCompat.getColor(activity, R.color.foqos_surface_container)
             content.findViewById<MaterialCardView>(R.id.cardTempPauseSummary)
                 .setCardBackgroundColor(
                     ColorUtils.compositeColors(ColorUtils.setAlphaComponent(accent, 0x1F), surfaceVariant)
