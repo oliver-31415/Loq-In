@@ -37,9 +37,7 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.AutoCompleteTextView
-import android.widget.Button
 import android.widget.LinearLayout
-import android.widget.ProgressBar
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
@@ -48,6 +46,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
+import androidx.core.graphics.ColorUtils
 import androidx.core.view.isVisible
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -71,6 +70,8 @@ import com.oliver.loqin.util.EditingLockGuard
 import com.oliver.loqin.util.LocaleHelper
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.color.MaterialColors
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.loadingindicator.LoadingIndicator
 import com.google.android.material.shape.MaterialShapeDrawable
 import com.google.android.material.shape.ShapeAppearanceModel
 import com.google.android.material.textfield.TextInputLayout
@@ -141,10 +142,10 @@ class NfcWriterActivity : AppCompatActivity() {
     private lateinit var tilAction: TextInputLayout
     private lateinit var tilTime: TextInputLayout
     private lateinit var tvActionHint: TextView
-    private lateinit var btnArmWrite: Button
+    private lateinit var btnArmWrite: MaterialButton
     private lateinit var statusRow: View
     private lateinit var tvStatus: TextView
-    private lateinit var statusProgress: ProgressBar
+    private lateinit var statusProgress: LoadingIndicator
 
     private val handler = Handler(Looper.getMainLooper())
 
@@ -294,12 +295,15 @@ class NfcWriterActivity : AppCompatActivity() {
         // Give the status row a "card" look without adding any background/stroke drawable resources.
         applyStatusRowChrome()
 
-        // Button tinted with the accent color
-        btnArmWrite.backgroundTintList = AccentColor.getActiveColor(this)
+        // Button tinted with the accent color; label and icon switch to black or white for contrast
+        val accent = AccentColor.getAccentColorInt(this)
+        val onAccent = if (ColorUtils.calculateLuminance(accent) > 0.5) Color.BLACK else Color.WHITE
+        btnArmWrite.backgroundTintList = ColorStateList.valueOf(accent)
+        btnArmWrite.setTextColor(onAccent)
+        btnArmWrite.iconTint = ColorStateList.valueOf(onAccent)
 
-        // Spinner would otherwise keep the compile-time default green
-        // (its tint list is null, so the generic recolor pass skips it).
-        statusProgress.indeterminateTintList = AccentColor.getActiveColor(this)
+        // Spinner follows the accent color
+        statusProgress.setIndicatorColor(accent)
 
         // Text fields (dropdown outlines) accent tint
         tintTextFieldsWithAccent()

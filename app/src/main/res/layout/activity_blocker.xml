@@ -35,8 +35,9 @@
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:text="@string/blocked_app_default"
-                android:textColor="@color/loqin_text_primary"
-                android:textSize="20sp"
+                android:textColor="?attr/colorOnSurface"
+                android:textSize="24sp"
+                android:fontFamily="sans-serif-medium"
                 android:textStyle="bold" />
 
             <ImageButton
@@ -58,8 +59,9 @@
             android:layout_marginTop="8dp"
             android:gravity="center"
             android:visibility="gone"
-            android:textColor="@color/loqin_text_primary"
+            android:textColor="?attr/colorOnSurface"
             android:textSize="16sp"
+            android:fontFamily="sans-serif-medium"
             android:textStyle="bold" />
 
         <TextView
@@ -79,7 +81,7 @@
             android:layout_marginTop="12dp"
             android:gravity="center"
             android:text="@string/blocked_message"
-            android:textColor="@color/loqin_text_primary"
+            android:textColor="?attr/colorOnSurface"
             android:textSize="14sp" />
 
         <TextView
@@ -88,20 +90,19 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:gravity="center"
-            android:textColor="@color/loqin_text_secondary"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="12sp"
             android:visibility="gone" />
 
-        <Button
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_close"
+            style="@style/LoqIn.Button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="18dp"
             android:minWidth="90dp"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
-            android:text="@string/close"
-            android:textAllCaps="false"
-            android:textColor="@android:color/white" />
+            android:text="@string/close" />
     </LinearLayout>
 </androidx.constraintlayout.widget.ConstraintLayout>

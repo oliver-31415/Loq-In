@@ -12,13 +12,11 @@
     android:paddingEnd="24dp"
     android:paddingBottom="20dp">
 
-    <com.google.android.material.progressindicator.CircularProgressIndicator
+    <com.google.android.material.loadingindicator.LoadingIndicator
         android:id="@+id/progressIndicator"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
-        android:indeterminate="true"
-        app:indicatorColor="?attr/colorPrimary"
-        app:trackThickness="4dp" />
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        app:indicatorColor="?attr/colorPrimary" />
 
     <TextView
         android:id="@+id/progressMessage"

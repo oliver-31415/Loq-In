@@ -50,7 +50,7 @@ import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.ui.dialog.showAccented
 import com.oliver.loqin.ui.showWarnPillOnContent
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.progressindicator.CircularProgressIndicator
+import com.google.android.material.loadingindicator.LoadingIndicator
 import com.google.android.material.textfield.TextInputEditText
 import java.io.IOException
 import kotlinx.coroutines.Dispatchers
@@ -121,7 +121,7 @@ class NfcWriteWaitingActivity : AppCompatActivity() {
     private var lastTransientUid: String = ""
     private var successHapticPlayed = false
 
-    private lateinit var progress: CircularProgressIndicator
+    private lateinit var progress: LoadingIndicator
     private lateinit var tvTitle: TextView
     private lateinit var tvHint: TextView
     private lateinit var btnClose: android.view.View
@@ -225,7 +225,6 @@ class NfcWriteWaitingActivity : AppCompatActivity() {
         tvTitle.text = getString(R.string.nfc_writing)
         tvHint.text = getString(R.string.nfc_hold_still)
         progress.visibility = android.view.View.VISIBLE
-        progress.isIndeterminate = true
 
         lifecycleScope.launch {
             processTag(tag)
@@ -469,7 +468,6 @@ class NfcWriteWaitingActivity : AppCompatActivity() {
 
     private fun showWaitingState() {
         progress.visibility = android.view.View.VISIBLE
-        progress.isIndeterminate = true
         if (::btnRetry.isInitialized) btnRetry.visibility = android.view.View.GONE
         tvTitle.text = getString(R.string.nfc_waiting_tag)
         tvHint.text = when (mode) {
