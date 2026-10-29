@@ -66,7 +66,7 @@ rounded segment (24dp outer corners, 6dp inner corners, 2dp gap), as in Android 
 ## Type
 | Use | Style |
 | --- | --- |
-| Screen title (toolbar) | automatic via `LoqIn.TopBar` (22sp medium) |
+| Screen title (toolbar) | automatic via `LoqIn.TopBar` (20sp medium) |
 | Section header above a group | `@style/LoqIn.SectionHeader` (accent, 14sp medium, 16dp inset) |
 | Row title / summary | `TextAppearance.LoqIn.RowTitle` / `TextAppearance.LoqIn.RowSummary` |
 | Big numbers (stats, timers, counts) | `TextAppearance.LoqIn.HeroValue` (36sp bold) or keep larger existing sizes |

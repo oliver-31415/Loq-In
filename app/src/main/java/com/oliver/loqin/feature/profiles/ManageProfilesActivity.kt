@@ -494,7 +494,7 @@ class ManageProfilesActivity : AppCompatActivity() {
                 val accent = AccentColor.getAccentColorInt(this@ManageProfilesActivity)
                 card.strokeWidth = if (isActive) dp(2) else dp(1)
                 card.strokeColor = if (isActive) accent else Color.TRANSPARENT
-                val onAccent = if (ColorUtils.calculateLuminance(accent) > 0.5) Color.BLACK else Color.WHITE
+                val onAccent = if (AccentColor.prefersDarkText(accent)) Color.BLACK else Color.WHITE
                 badge.setTextColor(onAccent)
                 badge.background = GradientDrawable().apply {
                     shape = GradientDrawable.RECTANGLE

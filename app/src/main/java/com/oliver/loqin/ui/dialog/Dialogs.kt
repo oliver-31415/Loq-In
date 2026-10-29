@@ -700,7 +700,7 @@ fun Context.showLoqInMultiChoiceDialog(
         addView(scroll, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
 
         if (forceHorizontalButtons) {
-            val onAccent = if (ColorUtils.calculateLuminance(accent) > 0.5) Color.BLACK else Color.WHITE
+            val onAccent = if (AccentColor.prefersDarkText(accent)) Color.BLACK else Color.WHITE
             val footer = LinearLayout(this@showLoqInMultiChoiceDialog).apply {
                 orientation = LinearLayout.HORIZONTAL
                 gravity = Gravity.END or Gravity.CENTER_VERTICAL
@@ -816,7 +816,7 @@ fun CheckBox.styleForDialog(context: Context) {
  */
 fun AlertDialog.styleLoqInDialogButtons() {
     val accent = AccentColor.getAccentColorInt(context)
-    val onAccent = if (ColorUtils.calculateLuminance(accent) > 0.5) Color.BLACK else Color.WHITE
+    val onAccent = if (AccentColor.prefersDarkText(accent)) Color.BLACK else Color.WHITE
     val onSurface = MaterialColors.getColor(
         context,
         com.google.android.material.R.attr.colorOnSurface,
@@ -945,7 +945,7 @@ fun Context.styleLoqInFormButtons(
     saveIsAdd: Boolean = false
 ) {
     val accent = AccentColor.getAccentColorInt(this)
-    val onAccent = if (ColorUtils.calculateLuminance(accent) > 0.5) Color.BLACK else Color.WHITE
+    val onAccent = if (AccentColor.prefersDarkText(accent)) Color.BLACK else Color.WHITE
     val error = Color.rgb(186, 26, 26)
 
     deleteButton?.let { button ->

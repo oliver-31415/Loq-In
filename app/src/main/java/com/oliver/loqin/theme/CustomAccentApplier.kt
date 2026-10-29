@@ -140,14 +140,14 @@ object CustomAccentApplier {
 
     fun tintSwitch(switch: SwitchCompat) {
         val accent = AccentColor.getAccentColorInt(switch.context)
-        switch.thumbTintList = buildSwitchThumbTint(accent)
-        switch.trackTintList = buildSwitchTrackTint(accent)
+        switch.thumbTintList = buildSwitchThumbTint(switch.context, accent)
+        switch.trackTintList = buildSwitchTrackTint(switch.context, accent)
     }
 
     fun tintSwitch(switch: MaterialSwitch) {
         val accent = AccentColor.getAccentColorInt(switch.context)
-        switch.thumbTintList = buildSwitchThumbTint(accent)
-        switch.trackTintList = buildSwitchTrackTint(accent)
+        switch.thumbTintList = buildSwitchThumbTint(switch.context, accent)
+        switch.trackTintList = buildSwitchTrackTint(switch.context, accent)
     }
 
     fun applyToDialog(dialog: AlertDialog) {
@@ -159,7 +159,7 @@ object CustomAccentApplier {
         val accent = AccentColor.getAccentColorInt(context)
         val pos = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
         if (pos != null && pos.backgroundTintList != null) {
-            val onAccent = if (ColorUtils.calculateLuminance(accent) > 0.5) Color.BLACK else Color.WHITE
+            val onAccent = if (AccentColor.prefersDarkText(accent)) Color.BLACK else Color.WHITE
             pos.setTextColor(onAccent)
         } else {
             pos?.setTextColor(accent)
@@ -508,13 +508,13 @@ object CustomAccentApplier {
             }
 
             is MaterialSwitch -> {
-                view.thumbTintList = buildSwitchThumbTint(accent)
-                view.trackTintList = buildSwitchTrackTint(accent)
+                view.thumbTintList = buildSwitchThumbTint(view.context, accent)
+                view.trackTintList = buildSwitchTrackTint(view.context, accent)
             }
 
             is SwitchCompat -> {
-                view.thumbTintList = buildSwitchThumbTint(accent)
-                view.trackTintList = buildSwitchTrackTint(accent)
+                view.thumbTintList = buildSwitchThumbTint(view.context, accent)
+                view.trackTintList = buildSwitchTrackTint(view.context, accent)
             }
 
             is CompoundButton -> {
@@ -876,25 +876,27 @@ object CustomAccentApplier {
         return (dp.toFloat() * density).toInt().coerceAtLeast(1)
     }
 
-    private fun buildSwitchThumbTint(accent: Int): ColorStateList {
+    // Off state follows Material 3: a grey thumb on a tonal track, visible on light and dark cards
+    // (a white thumb on a faint grey track vanished on dark cards).
+    private fun buildSwitchThumbTint(context: Context, accent: Int): ColorStateList {
         val disabled = intArrayOf(-android.R.attr.state_enabled)
         val checked = intArrayOf(android.R.attr.state_checked)
         val empty = intArrayOf()
-        val thumbOff = Color.WHITE
-        val thumbDisabled = Color.LTGRAY
+        val thumbOff = ContextCompat.getColor(context, R.color.foqos_on_surface_variant)
+        val thumbDisabled = ColorUtils.setAlphaComponent(thumbOff, 0x61)
         return ColorStateList(
             arrayOf(disabled, checked, empty),
             intArrayOf(thumbDisabled, accent, thumbOff)
         )
     }
 
-    private fun buildSwitchTrackTint(accent: Int): ColorStateList {
+    private fun buildSwitchTrackTint(context: Context, accent: Int): ColorStateList {
         val disabled = intArrayOf(-android.R.attr.state_enabled)
         val checked = intArrayOf(android.R.attr.state_checked)
         val empty = intArrayOf()
         val on = ColorUtils.setAlphaComponent(accent, 0x88)
-        val off = ColorUtils.setAlphaComponent(Color.DKGRAY, 0x44)
-        val offDisabled = ColorUtils.setAlphaComponent(Color.GRAY, 0x33)
+        val off = ContextCompat.getColor(context, R.color.foqos_surface_container_high)
+        val offDisabled = ColorUtils.setAlphaComponent(off, 0x80)
         return ColorStateList(
             arrayOf(disabled, checked, empty),
             intArrayOf(offDisabled, on, off)

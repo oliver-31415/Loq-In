@@ -121,7 +121,7 @@ object ThemeUtils {
                     v.backgroundTintList?.let { bg ->
                         if (matchesGreen(bg.defaultColor) && android.graphics.Color.alpha(bg.defaultColor) > 24) {
                             v.backgroundTintList = ColorStateList.valueOf(accent)
-                            val onAccent = if (ColorUtils.calculateLuminance(accent) > 0.5) {
+                            val onAccent = if (AccentColor.prefersDarkText(accent)) {
                                 android.graphics.Color.BLACK
                             } else {
                                 android.graphics.Color.WHITE

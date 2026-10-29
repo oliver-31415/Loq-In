@@ -16,6 +16,10 @@
     <color name="foqos_surface_container">#FFF3F2ED</color>
     <color name="foqos_surface_container_high">#FFEDECE7</color>
 
+    <!-- Text on light accents (Soft Blue, Orange, Amber, Pink): white was below 4:1 on those.
+         Not overridden at night — the accent fills are the same in both modes. -->
+    <color name="loqin_on_accent_dark">#FF1B1B18</color>
+
     <!-- Text -->
     <color name="foqos_on_surface">#FF1B1B18</color>
     <color name="foqos_on_surface_variant">#FF6F6F69</color>

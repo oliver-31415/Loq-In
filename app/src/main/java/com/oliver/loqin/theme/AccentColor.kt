@@ -91,6 +91,14 @@ object AccentColor {
     @Suppress("UNUSED_PARAMETER")
     fun getToolbarBackgroundColor(context: Context): Int = android.graphics.Color.TRANSPARENT
 
+    /**
+     * Whether text/icons on an [accent] fill should be dark rather than white, by contrast ratio.
+     * A luminance threshold put white text on Soft Blue, Orange, Amber and Pink (below 4:1).
+     */
+    fun prefersDarkText(accent: Int): Boolean =
+        androidx.core.graphics.ColorUtils.calculateContrast(0xFF1B1B18.toInt(), accent or 0xFF000000.toInt()) >
+            androidx.core.graphics.ColorUtils.calculateContrast(android.graphics.Color.WHITE, accent or 0xFF000000.toInt())
+
     fun getActiveColor(context: Context): ColorStateList = ColorStateList.valueOf(getAccentColorInt(context))
 
     /**

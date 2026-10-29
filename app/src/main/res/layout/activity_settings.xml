@@ -262,8 +262,7 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
                             android:text="@string/ignored_usage_apps_summary"
-                            android:maxLines="1"
-                            android:ellipsize="end"
+
                             android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
                     </LinearLayout>
 

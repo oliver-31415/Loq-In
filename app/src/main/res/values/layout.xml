@@ -174,9 +174,9 @@
         <item name="titleTextAppearance">@style/TextAppearance.LoqIn.TopBarTitle</item>
     </style>
 
-    <!-- Screen titles: Title Large, emphasized weight (M3 Expressive). -->
+    <!-- Screen titles: emphasized weight (M3 Expressive). 20sp so long German titles still fit. -->
     <style name="TextAppearance.LoqIn.TopBarTitle" parent="TextAppearance.AppCompat.Widget.ActionBar.Title">
-        <item name="android:textSize">22sp</item>
+        <item name="android:textSize">20sp</item>
         <item name="android:fontFamily">sans-serif-medium</item>
         <item name="android:textStyle">normal</item>
         <item name="android:letterSpacing">0</item>

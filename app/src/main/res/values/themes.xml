@@ -8,6 +8,8 @@
     <style name="LoqIn" parent="Theme.LoqIn" />
 
     <style name="Theme.LoqIn" parent="Theme.LoqIn.Base">
+        <item name="colorOnPrimary">@color/loqin_on_accent_dark</item>
+        <item name="colorOnSecondary">@color/loqin_on_accent_dark</item>
         <item name="android:windowLightStatusBar">true</item>
         <!-- Default (soft blue) accent tokens so ?attr/colorPrimaryContainer etc.
              resolve per-accent; variants below override all of these. -->
@@ -589,6 +591,8 @@
          ========================= -->
     <!-- Green (explicit twin of the default green base) -->
     <style name="Theme.LoqIn.Accent.Green" parent="Theme.LoqIn">
+        <item name="colorOnPrimary">@color/foqos_on_primary</item>
+        <item name="colorOnSecondary">@color/foqos_on_primary</item>
         <item name="colorPrimary">@color/accent_green</item>
         <item name="colorPrimaryVariant">@color/accent_green</item>
         <item name="colorSecondary">@color/accent_green</item>
@@ -602,6 +606,8 @@
 
     <!-- Blue -->
     <style name="Theme.LoqIn.Accent.Blue" parent="Theme.LoqIn">
+        <item name="colorOnPrimary">@color/foqos_on_primary</item>
+        <item name="colorOnSecondary">@color/foqos_on_primary</item>
         <item name="colorPrimary">@color/accent_blue</item>
         <item name="colorPrimaryVariant">@color/accent_blue</item>
         <item name="colorSecondary">@color/accent_blue</item>
@@ -615,6 +621,8 @@
 
     <!-- Orange -->
     <style name="Theme.LoqIn.Accent.Orange" parent="Theme.LoqIn">
+        <item name="colorOnPrimary">@color/loqin_on_accent_dark</item>
+        <item name="colorOnSecondary">@color/loqin_on_accent_dark</item>
         <item name="colorPrimary">@color/accent_orange</item>
         <item name="colorPrimaryVariant">@color/accent_orange</item>
         <item name="colorSecondary">@color/accent_orange</item>
@@ -628,6 +636,8 @@
 
     <!-- Purple -->
     <style name="Theme.LoqIn.Accent.Purple" parent="Theme.LoqIn">
+        <item name="colorOnPrimary">@color/foqos_on_primary</item>
+        <item name="colorOnSecondary">@color/foqos_on_primary</item>
         <item name="colorPrimary">@color/accent_purple</item>
         <item name="colorPrimaryVariant">@color/accent_purple</item>
         <item name="colorSecondary">@color/accent_purple</item>
@@ -641,6 +651,8 @@
 
     <!-- Red -->
     <style name="Theme.LoqIn.Accent.Red" parent="Theme.LoqIn">
+        <item name="colorOnPrimary">@color/foqos_on_primary</item>
+        <item name="colorOnSecondary">@color/foqos_on_primary</item>
         <item name="colorPrimary">@color/accent_red</item>
         <item name="colorPrimaryVariant">@color/accent_red</item>
         <item name="colorSecondary">@color/accent_red</item>
@@ -654,6 +666,8 @@
 
     <!-- Pink -->
     <style name="Theme.LoqIn.Accent.Pink" parent="Theme.LoqIn">
+        <item name="colorOnPrimary">@color/loqin_on_accent_dark</item>
+        <item name="colorOnSecondary">@color/loqin_on_accent_dark</item>
         <item name="colorPrimary">@color/accent_pink</item>
         <item name="colorPrimaryVariant">@color/accent_pink</item>
         <item name="colorSecondary">@color/accent_pink</item>
@@ -667,6 +681,8 @@
 
     <!-- Teal -->
     <style name="Theme.LoqIn.Accent.Teal" parent="Theme.LoqIn">
+        <item name="colorOnPrimary">@color/foqos_on_primary</item>
+        <item name="colorOnSecondary">@color/foqos_on_primary</item>
         <item name="colorPrimary">@color/accent_teal</item>
         <item name="colorPrimaryVariant">@color/accent_teal</item>
         <item name="colorSecondary">@color/accent_teal</item>
@@ -680,6 +696,8 @@
 
     <!-- Amber -->
     <style name="Theme.LoqIn.Accent.Amber" parent="Theme.LoqIn">
+        <item name="colorOnPrimary">@color/loqin_on_accent_dark</item>
+        <item name="colorOnSecondary">@color/loqin_on_accent_dark</item>
         <item name="colorPrimary">@color/accent_amber</item>
         <item name="colorPrimaryVariant">@color/accent_amber</item>
         <item name="colorSecondary">@color/accent_amber</item>
@@ -693,6 +711,8 @@
 
     <!-- Gray -->
     <style name="Theme.LoqIn.Accent.Gray" parent="Theme.LoqIn">
+        <item name="colorOnPrimary">@color/foqos_on_primary</item>
+        <item name="colorOnSecondary">@color/foqos_on_primary</item>
         <item name="colorPrimary">@color/accent_gray</item>
         <item name="colorPrimaryVariant">@color/accent_gray</item>
         <item name="colorSecondary">@color/accent_gray</item>

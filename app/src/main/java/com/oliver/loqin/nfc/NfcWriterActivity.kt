@@ -297,7 +297,7 @@ class NfcWriterActivity : AppCompatActivity() {
 
         // Button tinted with the accent color; label and icon switch to black or white for contrast
         val accent = AccentColor.getAccentColorInt(this)
-        val onAccent = if (ColorUtils.calculateLuminance(accent) > 0.5) Color.BLACK else Color.WHITE
+        val onAccent = if (AccentColor.prefersDarkText(accent)) Color.BLACK else Color.WHITE
         btnArmWrite.backgroundTintList = ColorStateList.valueOf(accent)
         btnArmWrite.setTextColor(onAccent)
         btnArmWrite.iconTint = ColorStateList.valueOf(onAccent)
