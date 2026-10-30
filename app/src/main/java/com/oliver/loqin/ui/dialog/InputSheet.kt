@@ -21,20 +21,21 @@ package com.oliver.loqin.ui.dialog
 import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.text.InputType
 import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.Window
 import android.view.WindowManager
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.appcompat.app.AppCompatDialog
 import androidx.core.content.ContextCompat
 import androidx.core.widget.NestedScrollView
-import com.google.android.material.bottomsheet.BottomSheetBehavior
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.textfield.TextInputEditText
@@ -45,9 +46,9 @@ import com.oliver.loqin.ui.SegmentedToggleUi
 import com.oliver.loqin.ui.SheetRows
 
 /**
- * Bottom sheet for entering or choosing a value, in the same style as the profile
- * and blocking-method sheets: grab handle, bold title with a close button, tonal
- * fields, and pill buttons at the bottom.
+ * Centred pop-up for entering or choosing a value, in the same style as the profile
+ * and blocking-method sheets: bold title with a close button, tonal fields, and pill
+ * buttons at the bottom.
  *
  * Add content with [message], [field], [choices] or directly to [body], then call
  * [show]. Button callbacks run without closing the sheet; call [dismiss] when the
@@ -55,7 +56,7 @@ import com.oliver.loqin.ui.SheetRows
  */
 class InputSheet(private val context: Context, title: CharSequence) {
 
-    val dialog = BottomSheetDialog(context)
+    val dialog = AppCompatDialog(context)
     val accent: Int = AccentColor.getAccentColorInt(context)
 
     /** Content between the header and the buttons. */
@@ -68,9 +69,14 @@ class InputSheet(private val context: Context, title: CharSequence) {
     init {
         root = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(16), dp(8), dp(16), dp(20))
+            setPadding(dp(20), dp(12), dp(20), dp(20))
         }
-        root.addView(SheetRows.header(context, root, title) { dismiss() })
+        root.addView(
+            SheetRows.header(context, root, title) { dismiss() }.apply {
+                // Centred pop-up: no grab handle.
+                findViewById<View>(R.id.sheetHandle).visibility = View.GONE
+            }
+        )
         body = LinearLayout(context).apply { orientation = LinearLayout.VERTICAL }
         root.addView(body, matchWrap())
         buttons = LinearLayout(context).apply {
@@ -79,16 +85,22 @@ class InputSheet(private val context: Context, title: CharSequence) {
         }
         root.addView(buttons, matchWrap().apply { topMargin = dp(24) })
 
+        dialog.supportRequestWindowFeature(Window.FEATURE_NO_TITLE)
         dialog.setContentView(
             NestedScrollView(context).apply {
-                setBackgroundResource(R.drawable.sheet_profile_bg)
+                setBackgroundResource(R.drawable.bg_input_dialog)
+                clipToOutline = true
                 addView(root)
             }
         )
-        dialog.behavior.skipCollapsed = true
-        dialog.behavior.state = BottomSheetBehavior.STATE_EXPANDED
-        @Suppress("DEPRECATION")
-        dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+        dialog.window?.let { window ->
+            window.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT))
+            val width = (context.resources.displayMetrics.widthPixels * 0.92f).toInt()
+                .coerceAtMost(dp(560))
+            window.setLayout(width, ViewGroup.LayoutParams.WRAP_CONTENT)
+            @Suppress("DEPRECATION")
+            window.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
+        }
     }
 
     /** Adds a ready-made view (for example an inflated layout) to the body. */
@@ -207,7 +219,6 @@ class InputSheet(private val context: Context, title: CharSequence) {
     }
 
     fun show() {
-        dialog.padForNavigationBar()
         dialog.show()
         focusOnShow?.let { edit ->
             edit.requestFocus()
