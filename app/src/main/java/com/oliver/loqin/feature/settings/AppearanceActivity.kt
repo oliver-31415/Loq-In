@@ -18,20 +18,27 @@
 
 package com.oliver.loqin.feature.settings
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.ValueAnimator
 import android.content.Context
-import android.graphics.drawable.Drawable
+import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
-import android.view.View
-import android.widget.ImageView
+import android.widget.GridLayout
 import android.widget.TextView
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
+import androidx.core.graphics.ColorUtils
 import androidx.core.graphics.toColorInt
 import androidx.preference.PreferenceManager
+import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.button.MaterialButtonToggleGroup
+import com.google.android.material.materialswitch.MaterialSwitch
+import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.oliver.loqin.R
 import com.oliver.loqin.feature.theme.CustomAccentPickerDialog
 import com.oliver.loqin.theme.AccentColor
@@ -39,21 +46,17 @@ import com.oliver.loqin.theme.CustomAccentApplier
 import com.oliver.loqin.ui.EdgeToEdgeUtils
 import com.oliver.loqin.ui.SegmentedToggleUi
 import com.oliver.loqin.ui.ThemeUtils
-import com.oliver.loqin.ui.dialog.LoqInDialogOption
-import com.oliver.loqin.ui.dialog.showLoqInOptionDialog
 import com.oliver.loqin.util.LocaleHelper
 import com.oliver.loqin.util.TimeFormatPrefs
-import com.google.android.material.appbar.MaterialToolbar
-import com.google.android.material.button.MaterialButton
-import com.google.android.material.button.MaterialButtonToggleGroup
-import com.google.android.material.color.MaterialColors
 
 /**
  * Appearance.
  *
  * Choice settings use the same segmented bar as the insights range selector
- * (a single track with the active option highlighted). Theme colour opens the
- * existing colour overlay from a row that previews the current accent.
+ * (a single track with the active option highlighted). Theme colour is an
+ * inline selector: a live preview of the accent above a grid of swatches.
+ * Picking a preset animates the preview, saves the accent and recreates the
+ * screen. Custom opens the colour picker dialog.
  */
 class AppearanceActivity : AppCompatActivity() {
 
@@ -66,7 +69,20 @@ class AppearanceActivity : AppCompatActivity() {
     private lateinit var tvThemeColorSummary: TextView
     private lateinit var tvLanguageSummary: TextView
 
-    private lateinit var accentPreviewDot: View
+    private lateinit var accentPreviewPill: TextView
+    private lateinit var accentPreviewSwitch: MaterialSwitch
+    private lateinit var accentPreviewProgress: LinearProgressIndicator
+    private lateinit var gridAccentSwatches: GridLayout
+
+    /** Swatches keyed by accent value, including [CUSTOM]. */
+    private val swatchViews = mutableMapOf<String, AccentSwatchView>()
+
+    /** Accent the grid marks as selected. Updated on tap, before the save. */
+    private var selectedAccent: String = "default"
+
+    /** Colour the preview is currently showing. Animations start from here. */
+    private var previewColor: Int = 0
+    private var previewAnimator: ValueAnimator? = null
 
     private val prefs by lazy { PreferenceManager.getDefaultSharedPreferences(this) }
 
@@ -105,19 +121,26 @@ class AppearanceActivity : AppCompatActivity() {
         tvThemeColorSummary = findViewById(R.id.tvThemeColorSummary)
         tvLanguageSummary = findViewById(R.id.tvLanguageSummary)
 
-        accentPreviewDot = findViewById(R.id.accentPreviewDot)
-
-        findViewById<View>(R.id.rowThemeColor).setOnClickListener { showThemeColorDialog() }
+        accentPreviewPill = findViewById(R.id.accentPreviewPill)
+        accentPreviewSwitch = findViewById(R.id.accentPreviewSwitch)
+        accentPreviewProgress = findViewById(R.id.accentPreviewProgress)
+        gridAccentSwatches = findViewById(R.id.gridAccentSwatches)
 
         setupThemeMode()
         setupTimeFormat()
         setupLanguage()
+        setupAccentSelector()
         updateAllSummaries()
     }
 
     override fun onResume() {
         super.onResume()
         updateAllSummaries()
+    }
+
+    override fun onDestroy() {
+        previewAnimator?.cancel()
+        super.onDestroy()
     }
 
     // ---------------------------------------------------------------------
@@ -189,75 +212,108 @@ class AppearanceActivity : AppCompatActivity() {
     }
 
     // ---------------------------------------------------------------------
-    // Colour overlay
+    // Theme colour selector
     // ---------------------------------------------------------------------
 
-    private fun showThemeColorDialog() {
-        val current = currentAccent()
+    /**
+     * Builds the swatch grid (presets in settings order, then Custom) and
+     * shows the current accent in the preview. Preset names and values come
+     * from the `pref_accent_*` arrays.
+     */
+    private fun setupAccentSelector() {
+        val entries = resources.getStringArray(R.array.pref_accent_entries)
+        val values = resources.getStringArray(R.array.pref_accent_values)
 
-        val allEntries = resources.getStringArray(R.array.pref_accent_entries)
-        val allValues = resources.getStringArray(R.array.pref_accent_values)
+        selectedAccent = currentAccent()
+        previewColor = accentColorForValue(selectedAccent)
+        applyPreviewColor(previewColor)
 
-        val entries = allEntries + getString(R.string.pref_accent_custom)
-        val values = allValues + "custom"
+        val items = values.mapIndexed { index, value -> value to entries.getOrElse(index) { value } } +
+            (CUSTOM to getString(R.string.pref_accent_custom_title))
 
-        val checked = values.indexOf(current).let { idx -> if (idx >= 0) idx else 0 }
-
-        showSingleSelectCheckboxDialog(
-            title = getString(R.string.pref_theme_color_title),
-            dialogSubtitle = getString(R.string.pref_theme_color_summary),
-            entries = entries,
-            checkedIndex = checked,
-            iconDrawables = values.map { colorPreviewDrawable(accentColorForValue(it)) as Drawable? }.toTypedArray(),
-            instantApply = true,
-        ) { which, dialog ->
-            val selected = values[which]
-            if (selected == "custom") {
-                dialog.dismiss()
-                showCustomColorPicker()
-            } else {
-                prefs.edit { putString(KEY_ACCENT, selected) }
-                updateThemeColorSummary()
-                dialog.dismiss()
-                recreate()
+        items.forEachIndexed { index, (value, name) ->
+            val isCustom = value == CUSTOM
+            val swatch = AccentSwatchView(this).apply {
+                bind(
+                    name = name,
+                    color = accentColorForValue(value),
+                    custom = isCustom,
+                    selected = value == selectedAccent,
+                )
+                setOnClickListener { onSwatchTapped(value) }
             }
+            gridAccentSwatches.addView(
+                swatch,
+                GridLayout.LayoutParams(
+                    GridLayout.spec(index / GRID_COLUMNS),
+                    GridLayout.spec(index % GRID_COLUMNS, GridLayout.CENTER, 1f),
+                ),
+            )
+            swatchViews[value] = swatch
         }
+    }
+
+    private fun onSwatchTapped(value: String) {
+        if (value == CUSTOM) {
+            showCustomColorPicker()
+            return
+        }
+        if (value == selectedAccent) return
+
+        val previous = swatchViews[selectedAccent]
+        selectedAccent = value
+        previous?.setChosen(false, SELECTION_ANIMATION_MS)
+        swatchViews[value]?.setChosen(true, SELECTION_ANIMATION_MS)
+        prefs.edit { putString(KEY_ACCENT, value) }
+        updateThemeColorSummary()
+        animatePreview(to = accentColorForValue(value))
+    }
+
+    /**
+     * Animates the preview to [to], then recreates the screen so everything
+     * picks up the saved accent. A cancelled animation (another tap arrived
+     * first) leaves the recreate to the newer one.
+     */
+    private fun animatePreview(to: Int) {
+        previewAnimator?.cancel()
+        previewAnimator = ValueAnimator.ofArgb(previewColor, to).apply {
+            duration = SELECTION_ANIMATION_MS
+            addUpdateListener { animator ->
+                previewColor = animator.animatedValue as Int
+                applyPreviewColor(previewColor)
+            }
+            addListener(object : AnimatorListenerAdapter() {
+                private var cancelled = false
+
+                override fun onAnimationCancel(animation: Animator) {
+                    cancelled = true
+                }
+
+                override fun onAnimationEnd(animation: Animator) {
+                    if (cancelled) return
+                    recreate()
+                }
+            })
+            start()
+        }
+    }
+
+    private fun applyPreviewColor(color: Int) {
+        accentPreviewPill.background = GradientDrawable().apply {
+            cornerRadius = 100f * resources.displayMetrics.density
+            setColor(color)
+        }
+        accentPreviewPill.setTextColor(
+            if (ColorUtils.calculateLuminance(color) > 0.5) Color.BLACK else Color.WHITE
+        )
+        CustomAccentApplier.tintSwitch(accentPreviewSwitch, color)
+        accentPreviewProgress.setIndicatorColor(color)
     }
 
     private fun showCustomColorPicker() {
         CustomAccentPickerDialog.show(this) {
             updateThemeColorSummary()
             recreate()
-        }
-    }
-
-    private fun showSingleSelectCheckboxDialog(
-        title: String,
-        dialogSubtitle: String? = null,
-        entries: Array<String>,
-        checkedIndex: Int,
-        summaries: Array<String>? = null,
-        iconRes: Array<Int?>? = null,
-        iconDrawables: Array<Drawable?>? = null,
-        instantApply: Boolean = false,
-        onSelected: (index: Int, dialog: AlertDialog) -> Unit,
-    ) {
-        lateinit var dialog: AlertDialog
-        dialog = showLoqInOptionDialog(
-            title = title,
-            subtitle = dialogSubtitle,
-            options = entries.mapIndexed { index, label ->
-                LoqInDialogOption(
-                    title = label,
-                    summary = summaries?.getOrNull(index),
-                    iconRes = iconRes?.getOrNull(index),
-                    iconDrawable = iconDrawables?.getOrNull(index),
-                    selected = index == checkedIndex
-                )
-            },
-            confirmSelection = !instantApply
-        ) { which ->
-            onSelected(which, dialog)
         }
     }
 
@@ -301,7 +357,7 @@ class AppearanceActivity : AppCompatActivity() {
     private fun updateThemeColorSummary() {
         val current = currentAccent()
         tvThemeColorSummary.text = when (current) {
-            "custom" -> {
+            CUSTOM -> {
                 val hex = prefs.getString(KEY_ACCENT_CUSTOM, "").orEmpty()
                 if (hex.isNotBlank()) getString(R.string.pref_theme_color_custom_fmt, hex)
                 else getString(R.string.pref_accent_custom_title)
@@ -312,7 +368,6 @@ class AppearanceActivity : AppCompatActivity() {
                 entries.getOrNull(values.indexOf(current)) ?: entries.firstOrNull().orEmpty()
             }
         }
-        accentPreviewDot.background = colorPreviewDrawable(accentColorForValue(current))
     }
 
     private fun updateLanguageSummary() {
@@ -326,18 +381,8 @@ class AppearanceActivity : AppCompatActivity() {
     }
 
     // ---------------------------------------------------------------------
-    // Drawables and colours
+    // Colours
     // ---------------------------------------------------------------------
-
-    private fun colorPreviewDrawable(color: Int): Drawable {
-        val outline = MaterialColors.getColor(this, com.google.android.material.R.attr.colorOutline, 0x33000000)
-        return GradientDrawable().apply {
-            shape = GradientDrawable.OVAL
-            setColor(color)
-            setStroke(dp(2), outline)
-            setSize(dp(24), dp(24))
-        }
-    }
 
     private fun accentColorForValue(value: String): Int {
         return when (value) {
@@ -349,20 +394,20 @@ class AppearanceActivity : AppCompatActivity() {
             "red" -> ContextCompat.getColor(this, R.color.accent_red)
             "amber" -> ContextCompat.getColor(this, R.color.accent_amber)
             "gray" -> ContextCompat.getColor(this, R.color.accent_gray)
-            "custom" -> runCatching {
+            CUSTOM -> runCatching {
                 (prefs.getString(KEY_ACCENT_CUSTOM, "#6BA6E8") ?: "#6BA6E8").toColorInt()
             }.getOrDefault(ContextCompat.getColor(this, R.color.accent_default_blue))
             else -> ContextCompat.getColor(this, R.color.accent_default_blue)
         }
     }
 
-    private fun dp(value: Int): Int =
-        (value * resources.displayMetrics.density + 0.5f).toInt()
-
     private companion object {
         const val KEY_THEME_MODE = "pref_theme_mode"
         const val KEY_ACCENT = "pref_accent"
         const val KEY_ACCENT_CUSTOM = "pref_accent_custom"
         const val KEY_LANGUAGE = "pref_language"
+        const val CUSTOM = "custom"
+        const val GRID_COLUMNS = 5
+        const val SELECTION_ANIMATION_MS = 220L
     }
 }

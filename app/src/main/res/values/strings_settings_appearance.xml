@@ -6,7 +6,10 @@
     <!-- ====================================================== -->
     <string name="pref_theme_color_title">Theme color</string>
     <string name="pref_theme_color_summary">Choose the accent color used across the app.</string>
-    <string name="pref_theme_color_custom_fmt">Custom: %1$s</string>
+    <string name="pref_theme_color_custom_fmt">Custom · %1$s</string>
+    <string name="pref_theme_color_preview_pill">Focus</string>
+    <string name="pref_theme_color_selected">Selected</string>
+    <string name="pref_theme_color_not_selected">Not selected</string>
 
     <!-- ====================================================== -->
     <!-- Theme and display mode -->

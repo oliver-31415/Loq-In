@@ -56,6 +56,8 @@ object UiConsistency {
     }
 
     private fun applyRecursive(view: View, activity: Activity) {
+        // Accent previews carry their own colours; leave the whole subtree alone.
+        if (view.tag == CustomAccentApplier.ACCENT_PREVIEW_TAG) return
         applyView(view, activity)
         if (view is ViewGroup) {
             for (i in 0 until view.childCount) applyRecursive(view.getChildAt(i), activity)
