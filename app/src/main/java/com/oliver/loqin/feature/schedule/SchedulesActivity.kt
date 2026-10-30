@@ -111,7 +111,6 @@ import com.oliver.loqin.ui.dialog.showDestructiveAccented
 import com.oliver.loqin.ui.dialog.styleLoqInDestructivePositiveButton
 import com.oliver.loqin.ui.dialog.LoqInDialogOption
 import com.oliver.loqin.ui.dialog.showLoqInOptionDialog
-import com.oliver.loqin.ui.dialog.styleLoqInDialogButtons
 import com.oliver.loqin.ui.dialog.LoqInInfoRow
 import com.oliver.loqin.ui.dialog.showLoqInInfoDialog
 import com.oliver.loqin.util.BatteryOptimizationCompat
@@ -125,7 +124,6 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.loadingindicator.LoadingIndicator
 import com.google.android.material.chip.Chip
 import com.google.android.material.color.MaterialColors
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputLayout
@@ -740,7 +738,7 @@ class SchedulesActivity : AppCompatActivity() {
 
         val container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(20), dp(8), dp(20), dp(4))
+            setPadding(0, dp(12), 0, 0)
         }
         if (nfcLockOn) {
             container.addView(
@@ -770,7 +768,7 @@ class SchedulesActivity : AppCompatActivity() {
             )
         )
 
-        var typeDialog: AlertDialog? = null
+        var typeDialog: InputSheet? = null
         fun openMode(mode: NewScheduleMode) {
             typeDialog?.dismiss()
             when (mode) {
@@ -793,7 +791,7 @@ class SchedulesActivity : AppCompatActivity() {
                 radius = dp(16).toFloat()
                 strokeWidth = 0
                 setCardBackgroundColor(
-                    ContextCompat.getColor(this@SchedulesActivity, R.color.foqos_surface_variant)
+                    ContextCompat.getColor(this@SchedulesActivity, R.color.foqos_surface_container)
                 )
                 isClickable = true
                 isFocusable = true
@@ -874,13 +872,10 @@ class SchedulesActivity : AppCompatActivity() {
             }
         }
 
-        typeDialog = MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.schedules_choose_type)
-            .setView(container)
-            .setNegativeButton(R.string.cancel, null)
-            .create()
-            .also { it.show() }
-        typeDialog?.styleLoqInDialogButtons()
+        typeDialog = InputSheet(this, getString(R.string.schedules_choose_type)).apply {
+            content(container)
+            show()
+        }
     }
 
     private fun showScheduleActionInfoDialog() {

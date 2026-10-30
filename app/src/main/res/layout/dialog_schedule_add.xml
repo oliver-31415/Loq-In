@@ -33,6 +33,7 @@
     <!-- 2A. ATTACHED PROFILE (When locked to a profile - no wireframe, no text saying 'locked') -->
     <com.google.android.material.card.MaterialCardView
         style="@style/LoqIn.Card"
+        app:cardUseCompatPadding="false"
         android:id="@+id/cardAttachedProfile"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -538,6 +539,7 @@
     <!-- 8. UNIFIED TIMING & DAYS CARD (Tonal surface, no harsh wireframes) -->
     <com.google.android.material.card.MaterialCardView
         style="@style/LoqIn.Card"
+        app:cardUseCompatPadding="false"
         android:id="@+id/cardTimingContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -693,6 +695,7 @@
                 <!-- Start Time Tile -->
                 <com.google.android.material.card.MaterialCardView
                     style="@style/LoqIn.Card"
+                    app:cardUseCompatPadding="false"
                     android:id="@+id/cardStartTime"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -760,6 +763,7 @@
                 <!-- End Time Tile -->
                 <com.google.android.material.card.MaterialCardView
                     style="@style/LoqIn.Card"
+                    app:cardUseCompatPadding="false"
                     android:id="@+id/cardEndTime"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -1052,6 +1056,7 @@
                     <!-- Start Date Tile -->
                     <com.google.android.material.card.MaterialCardView
                         style="@style/LoqIn.Card"
+                        app:cardUseCompatPadding="false"
                         android:id="@+id/cardStartDate"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -1117,6 +1122,7 @@
                     <!-- End Date Tile -->
                     <com.google.android.material.card.MaterialCardView
                         style="@style/LoqIn.Card"
+                        app:cardUseCompatPadding="false"
                         android:id="@+id/cardEndDate"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
