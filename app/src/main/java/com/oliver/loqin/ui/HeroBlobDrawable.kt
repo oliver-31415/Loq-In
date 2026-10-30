@@ -442,8 +442,13 @@ class HeroBlobDrawable(
                 dropVx[s] = vx
                 dropVy[s] = vy
                 if (!pressed && !exiting && bloom > 0.9f && time >= dropShedAt[s]) {
-                    // Pinch off the trailing side, as if the current tugged it loose.
-                    val theta = atan2(-headY, -headX) + (random() - 0.5f) * 1.4f
+                    // Pinch off the trailing side, as if the current tugged it loose, leaning
+                    // towards the open card so the droplet stays in view.
+                    val openX = (0.45f - cx) * w
+                    val openY = (0.5f - cy) * h
+                    val openL = sqrt(openX * openX + openY * openY).coerceAtLeast(1f)
+                    val theta = atan2(-headY + 1.4f * openY / openL, -headX + 1.4f * openX / openL) +
+                        (random() - 0.5f) * 1.0f
                     val start = r * restRadius(theta) * 0.85f
                     dropX[s] = cx + cos(theta) * start / w
                     dropY[s] = cy + sin(theta) * start / h
@@ -603,34 +608,44 @@ class HeroBlobDrawable(
                 val sr = r * dropSize[s]
                 val sx = b.left + (bloomX + (dropX[s] - bloomX) * grow) * w
                 val sy = b.top + (bloomY + (dropY[s] - bloomY) * grow) * h
-                // Stretched a little along the way it is moving.
-                val dvx = dropVx[s] * w
-                val dvy = dropVy[s] * h
-                val dv = sqrt(dvx * dvx + dvy * dvy)
-                val st = 1f + min(dv / (r * 2f), 0.3f)
-                canvas.save()
-                canvas.translate(sx, sy)
-                if (dv > 1f) canvas.rotate(Math.toDegrees(atan2(dvy, dvx).toDouble()).toFloat())
-                oval.set(-sr * st, -sr / st, sr * st, sr / st)
-                canvas.drawOval(oval, blobPaint)
-                canvas.restore()
-
                 val dx = sx - bx
                 val dy = sy - by
                 val d = sqrt(dx * dx + dy * dy)
+                // The neck starts on a circle that stays inside the irregular outline around
+                // the join, so its sides grow out of the body instead of poking past it.
+                val toward = atan2(dy, dx)
+                var bodyR = bodyRadiusAt(toward, r)
+                for (k in 1..4) {
+                    bodyR = min(bodyR, bodyRadiusAt(toward + 0.3f * k, r))
+                    bodyR = min(bodyR, bodyRadiusAt(toward - 0.3f * k, r))
+                }
+                bodyR *= 0.97f
                 val neck = when (dropState[s]) {
-                    MERGING -> 1f
+                    MERGING -> 0.6f
                     SHEDDING -> {
-                        val near = r * 0.85f
-                        val far = (r + sr) * 1.38f
-                        1f - 0.7f * ((d - near) / (far - near)).coerceIn(0f, 1f)
+                        val near = bodyR * 0.85f
+                        val far = (bodyR + sr) * 1.38f
+                        0.6f - 0.3f * ((d - near) / (far - near)).coerceIn(0f, 1f)
                     }
                     else -> 0f
                 }
                 if (neck > 0f) {
                     bridgePath.reset()
-                    addGooBridge(bridgePath, bx, by, r, sx, sy, sr, neck)
+                    addGooBridge(bridgePath, bx, by, bodyR, sx, sy, sr, neck)
                     canvas.drawPath(bridgePath, blobPaint)
+                    canvas.drawCircle(sx, sy, sr, blobPaint)
+                } else {
+                    // Free: stretched a little along the way it is moving.
+                    val dvx = dropVx[s] * w
+                    val dvy = dropVy[s] * h
+                    val dv = sqrt(dvx * dvx + dvy * dvy)
+                    val st = 1f + min(dv / (r * 3f), 0.15f)
+                    canvas.save()
+                    canvas.translate(sx, sy)
+                    if (dv > 1f) canvas.rotate(Math.toDegrees(atan2(dvy, dvx).toDouble()).toFloat())
+                    oval.set(-sr * st, -sr / st, sr * st, sr / st)
+                    canvas.drawOval(oval, blobPaint)
+                    canvas.restore()
                 }
             }
         }
@@ -655,25 +670,86 @@ class HeroBlobDrawable(
         path.close()
     }
 
-    // A neck between the blob and a droplet; [s] is its thickness (1 = full, thins as it stretches).
-    private fun addGooBridge(path: Path, ax: Float, ay: Float, ar: Float, bx: Float, by: Float, br: Float, s: Float) {
+    // Outline radius of the body (centre-relative, in px) in direction [theta].
+    private fun bodyRadiusAt(theta: Float, r: Float): Float {
+        var i = Math.round(theta / (2f * PI.toFloat()) * POINTS) % POINTS
+        if (i < 0) i += POINTS
+        return r * (restRadius(theta) + offset[i])
+    }
+
+    /**
+     * A metaball neck between the body (centre [ax],[ay], radius [ar]) and a droplet: it leaves
+     * each outline tangentially and curves inward, like liquid pulled into a thread. [v] is how
+     * far round each outline it starts (0.6 = a thick join, towards 0 = a thin thread).
+     */
+    private fun addGooBridge(path: Path, ax: Float, ay: Float, ar: Float, bx: Float, by: Float, br: Float, v: Float) {
         val dx = bx - ax
         val dy = by - ay
         val d = sqrt(dx * dx + dy * dy)
-        if (d < 1f) return
-        val ux = dx / d
-        val uy = dy / d
-        val nx = -uy
-        val ny = ux
-        val w1 = ar * 0.42f * s
-        val w2 = br * 0.80f * s
-        val mx = (ax + bx) / 2f
-        val my = (ay + by) / 2f
-        val pinch = (w1 + w2) * 0.5f * (0.2f + 0.65f * s)
-        path.moveTo(ax + nx * w1, ay + ny * w1)
-        path.quadTo(mx + nx * pinch, my + ny * pinch, bx + nx * w2, by + ny * w2)
-        path.lineTo(bx - nx * w2, by - ny * w2)
-        path.quadTo(mx - nx * pinch, my - ny * pinch, ax - nx * w1, ay - ny * w1)
+        if (d <= abs(ar - br) || d < 1f) return
+        val u1: Float
+        val u2: Float
+        if (d < ar + br) {
+            u1 = kotlin.math.acos(((ar * ar + d * d - br * br) / (2f * ar * d)).coerceIn(-1f, 1f))
+            u2 = kotlin.math.acos(((br * br + d * d - ar * ar) / (2f * br * d)).coerceIn(-1f, 1f))
+        } else {
+            u1 = 0f
+            u2 = 0f
+        }
+        val centre = atan2(dy, dx)
+        val maxSpread = kotlin.math.acos(((ar - br) / d).coerceIn(-1f, 1f))
+        val pi = PI.toFloat()
+        val a1 = centre + u1 + (maxSpread - u1) * v
+        val a2 = centre - u1 - (maxSpread - u1) * v
+        val a3 = centre + pi - u2 - (pi - u2 - maxSpread) * v
+        val a4 = centre - pi + u2 + (pi - u2 - maxSpread) * v
+        val p1x = ax + cos(a1) * ar
+        val p1y = ay + sin(a1) * ar
+        val p2x = ax + cos(a2) * ar
+        val p2y = ay + sin(a2) * ar
+        val p3x = bx + cos(a3) * br
+        val p3y = by + sin(a3) * br
+        val p4x = bx + cos(a4) * br
+        val p4y = by + sin(a4) * br
+        // Handle length: shorter as the neck stretches, so it narrows in the middle. Shortened
+        // further if the two sides would cross (a bow-tie instead of a thread).
+        val p13 = sqrt((p3x - p1x) * (p3x - p1x) + (p3y - p1y) * (p3y - p1y))
+        var handle = min(v * 2.4f, p13 / (ar + br)) * min(1f, d * 2f / (ar + br))
+        val nx = -dy / d
+        val ny = dx / d
+        val side = if ((p1x - ax) * nx + (p1y - ay) * ny >= 0f) 1f else -1f
+        var h1 = 0f
+        var h2 = 0f
+        var open = false
+        for (attempt in 0 until 5) {
+            h1 = ar * handle
+            h2 = br * handle
+            val c1x = p1x + cos(a1 - pi / 2) * h1
+            val c1y = p1y + sin(a1 - pi / 2) * h1
+            val c3x = p3x + cos(a3 + pi / 2) * h2
+            val c3y = p3y + sin(a3 + pi / 2) * h2
+            val midX = (p1x + 3f * c1x + 3f * c3x + p3x) / 8f
+            val midY = (p1y + 3f * c1y + 3f * c3y + p3y) / 8f
+            if (((midX - ax) * nx + (midY - ay) * ny) * side >= br * 0.08f) {
+                open = true
+                break
+            }
+            handle *= 0.6f
+        }
+        if (!open) return
+        path.moveTo(p1x, p1y)
+        path.cubicTo(
+            p1x + cos(a1 - pi / 2) * h1, p1y + sin(a1 - pi / 2) * h1,
+            p3x + cos(a3 + pi / 2) * h2, p3y + sin(a3 + pi / 2) * h2,
+            p3x, p3y,
+        )
+        // Back across inside the droplet, along the other side, and across inside the body.
+        path.lineTo(p4x, p4y)
+        path.cubicTo(
+            p4x + cos(a4 - pi / 2) * h2, p4y + sin(a4 - pi / 2) * h2,
+            p2x + cos(a2 + pi / 2) * h1, p2y + sin(a2 + pi / 2) * h1,
+            p2x, p2y,
+        )
         path.close()
     }
 
@@ -692,9 +768,9 @@ class HeroBlobDrawable(
         const val HOME_Y = 0.48f
         const val HOME_RX = 0.17f
         const val HOME_RY = 0.26f
-        const val DROP_X = 0.70f
+        const val DROP_X = 0.62f
         const val DROP_Y = 0.50f
-        const val DROP_RX = 0.30f
-        const val DROP_RY = 0.42f
+        const val DROP_RX = 0.24f
+        const val DROP_RY = 0.36f
     }
 }
