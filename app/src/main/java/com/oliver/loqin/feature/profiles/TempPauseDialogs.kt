@@ -18,7 +18,6 @@
 
 package com.oliver.loqin.feature.profiles
 
-import android.content.res.ColorStateList
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.TextView
@@ -28,13 +27,12 @@ import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import androidx.core.widget.addTextChangedListener
 import com.oliver.loqin.R
+import com.oliver.loqin.ui.dialog.InputSheet
 import com.oliver.loqin.data.prefs.EmergencyPinStore
 import com.oliver.loqin.data.prefs.TempPauseStore
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.theme.CustomAccentApplier
-import com.oliver.loqin.ui.dialog.Dialogs
 import com.oliver.loqin.ui.dialog.EmergencyPinDialog
-import com.oliver.loqin.ui.dialog.applyLoqInDialogWidth
 import com.oliver.loqin.ui.showWarnPill
 import com.oliver.loqin.util.EditingLockGuard
 import com.google.android.material.button.MaterialButton
@@ -93,9 +91,10 @@ object TempPauseDialogs {
         val etPerDay = content.findViewById<TextInputEditText>(R.id.etTempPausePerDay)
         val tvSentence = content.findViewById<TextView>(R.id.tvTempPauseSentence)
         val tvUsage = content.findViewById<TextView>(R.id.tvTempPauseUsage)
-        val btnClear = content.findViewById<MaterialButton>(R.id.btnTempPauseClear)
-        val btnCancel = content.findViewById<MaterialButton>(R.id.btnTempPauseCancel)
-        val btnSave = content.findViewById<MaterialButton>(R.id.btnTempPauseSave)
+        val sheet = InputSheet(activity, activity.getString(R.string.temp_pause_title))
+        sheet.message(activity.getString(R.string.temp_pause_header_subtitle))
+        lateinit var btnClear: MaterialButton
+        lateinit var btnSave: MaterialButton
 
         val caps = TempPauseStore.getCaps(activity, profile)
         etCount.setText(if (caps.maxCountPerDay > 0) caps.maxCountPerDay.toString() else "")
@@ -112,15 +111,8 @@ object TempPauseDialogs {
             btnClear.visibility = if (usedCount > 0 || usedMinutes > 0) View.VISIBLE else View.GONE
             btnClear.alpha = if (EditingLockGuard.isLocked(activity)) 0.65f else 1f
         }
-        refreshUsage()
 
         val accent = AccentColor.getAccentColorInt(activity)
-        val accentList = ColorStateList.valueOf(accent)
-        listOf(tilCount, tilPerPause, tilPerDay).forEach { til ->
-            til.boxStrokeColor = accent
-            til.hintTextColor = accentList
-            til.defaultHintTextColor = accentList
-        }
         listOf(swCount, swPerPause, swPerDay).forEach { CustomAccentApplier.tintSwitch(it) }
         runCatching {
             val surfaceVariant = ContextCompat.getColor(activity, R.color.foqos_surface_container)
@@ -313,50 +305,12 @@ object TempPauseDialogs {
         setSectionEnabled(rowCount, swCount.isChecked)
         setSectionEnabled(rowPerPause, swPerPause.isChecked)
         setSectionEnabled(rowPerDay, swPerDay.isChecked)
-        refreshAll()
 
-        // Buttons follow the global dialog design: filled accent save, text cancel, red clear.
-        val onAccent = if (AccentColor.prefersDarkText(accent)) {
-            android.graphics.Color.BLACK
-        } else {
-            android.graphics.Color.WHITE
-        }
-        val errorColor = android.graphics.Color.rgb(186, 26, 26)
-
-        btnCancel.setTextColor(accent)
-        btnCancel.isAllCaps = false
-        btnCancel.backgroundTintList = null
-        runCatching { btnCancel.setBackgroundColor(android.graphics.Color.TRANSPARENT) }
-
-        btnClear.setTextColor(errorColor)
-        btnClear.isAllCaps = false
-        btnClear.backgroundTintList = null
-        runCatching { btnClear.setBackgroundColor(android.graphics.Color.TRANSPARENT) }
-
-        btnSave.setTextColor(onAccent)
-        btnSave.isAllCaps = false
-        btnSave.backgroundTintList = AccentColor.getActiveColor(activity)
-
-        val dialog = Dialogs.builder(activity)
-            .setView(content)
-            .create()
-
-        btnCancel.setOnClickListener { dialog.dismiss() }
-        btnSave.setOnClickListener {
+        sheet.content(content)
+        btnClear = sheet.secondary(activity.getString(R.string.temp_pause_reset_today), destructive = true) {
             if (EditingLockGuard.isLocked(activity)) {
                 content.showWarnPill(R.string.edit_locked_manage_temp_pauses)
-                return@setOnClickListener
-            }
-            val validated = validateAll(focusInvalid = true) ?: return@setOnClickListener
-            val (count, perPause, perDay) = validated
-            TempPauseStore.setCaps(activity, profile, TempPauseStore.Caps(count, perPause, perDay))
-            onSaved?.invoke()
-            dialog.dismiss()
-        }
-        btnClear.setOnClickListener {
-            if (EditingLockGuard.isLocked(activity)) {
-                content.showWarnPill(R.string.edit_locked_manage_temp_pauses)
-                return@setOnClickListener
+                return@secondary
             }
 
             fun doReset() {
@@ -374,11 +328,19 @@ object TempPauseDialogs {
                 }
             }
         }
-
-        dialog.applyLoqInDialogWidth(0.94f)
-        dialog.setOnShowListener {
-            runCatching { CustomAccentApplier.applyToDialog(dialog) }
+        btnSave = sheet.primary(activity.getString(R.string.save)) {
+            if (EditingLockGuard.isLocked(activity)) {
+                content.showWarnPill(R.string.edit_locked_manage_temp_pauses)
+                return@primary
+            }
+            val validated = validateAll(focusInvalid = true) ?: return@primary
+            val (count, perPause, perDay) = validated
+            TempPauseStore.setCaps(activity, profile, TempPauseStore.Caps(count, perPause, perDay))
+            onSaved?.invoke()
+            sheet.dismiss()
         }
-        dialog.show()
+        refreshUsage()
+        refreshAll()
+        sheet.show()
     }
 }

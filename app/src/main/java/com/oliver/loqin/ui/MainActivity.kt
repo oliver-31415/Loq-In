@@ -51,12 +51,10 @@ import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import android.widget.Toast
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
@@ -67,13 +65,11 @@ import androidx.core.content.edit
 import androidx.core.graphics.ColorUtils
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.drawable.toDrawable
-import androidx.core.net.toUri
+import androidx.core.view.iterator
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.updatePadding
 import androidx.core.view.isVisible
-import androidx.core.view.iterator
 import androidx.core.widget.NestedScrollView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -141,19 +137,16 @@ import com.oliver.loqin.ui.dialog.ClockDurationDialSheet
 import com.oliver.loqin.ui.dialog.Dialogs
 import com.oliver.loqin.ui.dialog.EmergencyPinDialog
 import com.oliver.loqin.ui.dialog.padForNavigationBar
-import com.oliver.loqin.ui.dialog.styledDialogEditText
-import com.oliver.loqin.ui.dialog.applyLoqInDialogWidth
 import com.oliver.loqin.ui.dialog.showAccented
 import com.oliver.loqin.ui.dialog.showDestructiveAccented
 import com.oliver.loqin.ui.dialog.showLoqInInputDialog
-import com.oliver.loqin.ui.dialog.styleLoqInDialogButtons
+import com.oliver.loqin.ui.dialog.showLoqInNumberInput
 import com.oliver.loqin.ui.dialog.LoqInDialogOption
 import com.oliver.loqin.ui.dialog.showLoqInOptionDialog
 import com.oliver.loqin.ui.LoqInDropdownAdapter
 import com.oliver.loqin.util.ActivityTransitionCompat
 import com.oliver.loqin.util.EditingLockGuard
 import com.oliver.loqin.util.LocaleHelper
-import com.oliver.loqin.util.LoqInAppAccessGuard
 import com.oliver.loqin.util.PlayStoreUpdatePrompt
 import com.oliver.loqin.util.ProtectionStatusNotifier
 import com.oliver.loqin.util.BatteryOptimizationCompat
@@ -1754,47 +1747,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showCustomTempMinutesInput(onPicked: (Int) -> Unit) {
-        val input = styledDialogEditText().apply {
-            inputType = InputType.TYPE_CLASS_NUMBER
-            hint = getString(R.string.minutes_hint)
-        }
-
-        val container = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            val pad = (20 * resources.displayMetrics.density + 0.5f).toInt()
-            setPadding(pad, (8 * resources.displayMetrics.density + 0.5f).toInt(), pad, 0)
-            addView(
-                input,
-                LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                )
-            )
-        }
-
-        val dialog = MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.custom_minutes_title)
-            .setView(container)
-            .setNegativeButton(R.string.cancel, null)
-            .setPositiveButton(R.string.custom_minutes_confirm) { _, _ ->
-                val m = input.text?.toString()?.trim()?.toIntOrNull()
-                if (m == null || m < 1 || m > 1440) {
-                    input.showWarnPill(R.string.nfc_time_custom_invalid)
-                    return@setPositiveButton
-                }
-                onPicked(m)
-            }
-            .create()
-
-        dialog.applyLoqInDialogWidth(0.90f)
-        dialog.window?.setSoftInputMode(
-            android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE
+        showLoqInNumberInput(
+            title = getString(R.string.custom_minutes_title),
+            hint = getString(R.string.minutes_hint),
+            confirmText = getString(R.string.custom_minutes_confirm),
+            range = 1..1440,
+            invalidMessage = getString(R.string.nfc_time_custom_invalid),
+            onPicked = onPicked,
         )
-        dialog.setOnShowListener {
-            dialog.styleLoqInDialogButtons()
-            input.requestFocus()
-        }
-        dialog.show()
     }
 
     private fun openRulesDestination(

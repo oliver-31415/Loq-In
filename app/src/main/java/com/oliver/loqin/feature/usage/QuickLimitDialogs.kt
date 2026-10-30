@@ -18,45 +18,35 @@
 
 package com.oliver.loqin.feature.usage
 
-import android.content.res.ColorStateList
 import android.text.InputType
 import android.view.LayoutInflater
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.widget.addTextChangedListener
 import com.oliver.loqin.R
-import com.oliver.loqin.blocking.BlockingRuntime
+import com.oliver.loqin.ui.SegmentedToggleUi
+import com.oliver.loqin.ui.dialog.InputSheet
 import com.oliver.loqin.data.prefs.AttemptLimitStore
 import com.oliver.loqin.data.prefs.DomainBlockStore
 import com.oliver.loqin.data.prefs.DomainLimitStore
 import com.oliver.loqin.data.prefs.DomainVisitLimitStore
 import com.oliver.loqin.data.prefs.PauseRuleStore
 import com.oliver.loqin.feature.websites.WebsiteIconCache
-import com.oliver.loqin.data.prefs.LimitReachedStore
-import com.oliver.loqin.data.prefs.OpenCountStore
 import com.oliver.loqin.data.prefs.ProfileRuleModeStore
 import com.oliver.loqin.data.prefs.ProfileStore
 import com.oliver.loqin.data.prefs.SessionLimitStore
 import com.oliver.loqin.data.prefs.UsageLimitStore
 import com.oliver.loqin.data.prefs.UsageLimitResetStore
-import com.oliver.loqin.data.prefs.UsageStore
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.theme.CustomAccentApplier
-import com.oliver.loqin.ui.LoqInDropdownAdapter
 import com.oliver.loqin.ui.showWarnPill
-import com.oliver.loqin.ui.dialog.Dialogs
 import com.oliver.loqin.ui.dialog.showAccented
-import com.oliver.loqin.ui.dialog.applyLoqInDialogWidth
-import com.oliver.loqin.ui.dialog.pinLoqInDialogToTop
 import com.oliver.loqin.util.AppBlockSafety
-import com.oliver.loqin.util.EditingLockGuard
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
-import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import java.util.Locale
@@ -173,9 +163,7 @@ object QuickLimitDialogs {
         val btnResetDaily = v.findViewById<MaterialButton>(R.id.btnAppLimitResetDaily)
         val btnResetProtection = v.findViewById<MaterialButton>(R.id.btnAppLimitResetProtection)
         val tvResetHint = v.findViewById<TextView>(R.id.tvAppLimitResetHint)
-        val btnClear = v.findViewById<MaterialButton>(R.id.btnAppLimitClear)
-        val btnCancel = v.findViewById<MaterialButton>(R.id.btnAppLimitCancel)
-        val btnSave = v.findViewById<MaterialButton>(R.id.btnAppLimitSave)
+        val sheet = InputSheet(activity, label)
 
         val currentTime = UsageLimitStore.getLimitMinutes(activity, profile, pkg)
         val currentAttempts = AttemptLimitStore.getLimitAttempts(activity, profile, pkg)
@@ -192,7 +180,8 @@ object QuickLimitDialogs {
             pkg in ProfileStore.getBlockedForProfile(activity, profile)
         }
 
-        tvTitle.text = label
+        // The sheet title carries the name; the header row keeps the icon and state.
+        tvTitle.visibility = View.GONE
         val limitAllowMode = ProfileRuleModeStore.isAllowMode(activity, profile)
         val limitSelected = pkg in ProfileStore.getSelectedForProfileMode(activity, profile)
         val limitHasLimit = UsageLimitStore.getLimitMinutes(activity, profile, pkg) > 0 ||
@@ -226,12 +215,6 @@ object QuickLimitDialogs {
         swVisit.isChecked = currentPerVisit > 0
 
         val accent = AccentColor.getAccentColorInt(activity)
-        val accentList = ColorStateList.valueOf(accent)
-        listOf(tilTime, tilAttempts, tilPerVisit).forEach { til ->
-            til.boxStrokeColor = accent
-            til.hintTextColor = accentList
-            til.defaultHintTextColor = accentList
-        }
         listOf(swTime, swOpens, swVisit).forEach { CustomAccentApplier.tintSwitch(it) }
 
         // "Pause before opening" (soft friction): separate from limits, applied on Save.
@@ -264,27 +247,13 @@ object QuickLimitDialogs {
 
         var sessionResetMode =
             UsageLimitResetStore.getMode(activity, profile, pkg) == UsageLimitResetStore.MODE_SESSION
-        val onAccent = if (AccentColor.prefersDarkText(accent)) {
-            android.graphics.Color.BLACK
-        } else {
-            android.graphics.Color.WHITE
-        }
         toggleReset.check(
             if (sessionResetMode) R.id.btnAppLimitResetProtection else R.id.btnAppLimitResetDaily
         )
 
         fun styleResetToggle() {
             val dailySelected = toggleReset.checkedButtonId == R.id.btnAppLimitResetDaily
-            listOf(btnResetDaily to dailySelected, btnResetProtection to !dailySelected).forEach { (button, selected) ->
-                button.isAllCaps = false
-                if (selected) {
-                    button.backgroundTintList = AccentColor.getActiveColor(activity)
-                    button.setTextColor(onAccent)
-                } else {
-                    button.backgroundTintList = ColorStateList.valueOf(android.graphics.Color.TRANSPARENT)
-                    button.setTextColor(accent)
-                }
-            }
+            SegmentedToggleUi.apply(activity, listOf(btnResetDaily, btnResetProtection), toggleReset.checkedButtonId)
             tvResetHint.setText(
                 if (dailySelected) R.string.app_limit_reset_hint_daily
                 else R.string.app_limit_reset_hint_protection
@@ -325,23 +294,9 @@ object QuickLimitDialogs {
             apply(container)
         }
 
-        btnCancel.setTextColor(accent)
-        btnCancel.isAllCaps = false
-        btnCancel.backgroundTintList = null
-        runCatching { btnCancel.setBackgroundColor(android.graphics.Color.TRANSPARENT) }
-
-        val error = android.graphics.Color.rgb(186, 26, 26)
-        btnClear.setTextColor(error)
-        btnClear.isAllCaps = false
-        btnClear.backgroundTintList = null
-        runCatching { btnClear.setBackgroundColor(android.graphics.Color.TRANSPARENT) }
-        btnClear.visibility =
-            if (currentTime > 0 || currentAttempts > 0 || currentPerVisit > 0) View.VISIBLE
-            else View.GONE
-
-        btnSave.setTextColor(onAccent)
-        btnSave.isAllCaps = false
-        btnSave.backgroundTintList = AccentColor.getActiveColor(activity)
+        val hasLimits = currentTime > 0 || currentAttempts > 0 || currentPerVisit > 0
+        // Created with the sheet's buttons, after the fields are wired up.
+        var btnSave: MaterialButton? = null
 
         fun rawInt(field: TextInputEditText): Int =
             field.text?.toString()?.trim()?.toIntOrNull() ?: 0
@@ -449,8 +404,8 @@ object QuickLimitDialogs {
 
         fun refreshSaveState() {
             val valid = validateAll(focusInvalid = false) != null
-            btnSave.isEnabled = valid
-            btnSave.alpha = if (valid) 1f else 0.5f
+            btnSave?.isEnabled = valid
+            btnSave?.alpha = if (valid) 1f else 0.5f
         }
 
         fun refreshAll() {
@@ -604,11 +559,8 @@ object QuickLimitDialogs {
             onChanged?.invoke()
         }
 
-        val dlg = Dialogs.builder(activity)
-            .setView(v)
-            .create()
-
-        btnClear.setOnClickListener {
+        sheet.content(v)
+        if (hasLimits) sheet.secondary(activity.getString(R.string.app_limit_remove), destructive = true) {
             // A limited app lives in the block list; without limits that entry means "always
             // blocked". Make the outcome a choice instead of silently hard-blocking the app.
             val inBlockList = !ProfileRuleModeStore.isAllowMode(activity, profile) &&
@@ -620,10 +572,10 @@ object QuickLimitDialogs {
                     .setNegativeButton(android.R.string.cancel, null)
                     .setPositiveButton(R.string.app_limit_remove) { _, _ ->
                         applyValues(0, 0, 0)
-                        dlg.dismiss()
+                        sheet.dismiss()
                     }
                     .showAccented()
-                return@setOnClickListener
+                return@secondary
             }
             AlertDialog.Builder(activity)
                 .setTitle(R.string.app_limit_remove_confirm_title)
@@ -631,7 +583,7 @@ object QuickLimitDialogs {
                 .setNegativeButton(android.R.string.cancel, null)
                 .setNeutralButton(R.string.app_limit_remove_block_completely) { _, _ ->
                     applyValues(0, 0, 0)
-                    dlg.dismiss()
+                    sheet.dismiss()
                 }
                 .setPositiveButton(R.string.app_limit_remove_stop_limiting) { _, _ ->
                     val unblock = ProtectionChangeGate.decision(
@@ -650,30 +602,23 @@ object QuickLimitDialogs {
                         ProfileStore.getSelectedForProfileMode(activity, profile) - pkg,
                     )
                     onChanged?.invoke()
-                    dlg.dismiss()
+                    sheet.dismiss()
                 }
                 .showAccented()
         }
-        btnCancel.setOnClickListener { dlg.dismiss() }
-        btnSave.setOnClickListener {
-            val validated = validateAll(focusInvalid = true) ?: return@setOnClickListener
+        btnSave = sheet.primary(activity.getString(R.string.save)) {
+            val validated = validateAll(focusInvalid = true) ?: return@primary
             val (time, visit, opens) = validated
             applyValues(time, opens, visit)
             applyPauseChange()
-            dlg.dismiss()
+            sheet.dismiss()
         }
 
-        dlg.applyLoqInDialogWidth(0.94f)
-        dlg.pinLoqInDialogToTop()
-        dlg.setOnShowListener {
-            runCatching { CustomAccentApplier.applyToDialog(dlg) }
-            val focus = if (focusAttempts) etAttempts else etTime
-            focus.post {
-                focus.requestFocus()
-                focus.setSelection(focus.text?.length ?: 0)
-            }
-        }
-        dlg.show()
+        refreshAll()
+        val focus = if (focusAttempts) etAttempts else etTime
+        focus.setSelection(focus.text?.length ?: 0)
+        sheet.focus(focus)
+        sheet.show()
     }
 
     /**
@@ -708,16 +653,17 @@ object QuickLimitDialogs {
         val rowVisitControls = v.findViewById<View>(R.id.rowLimitVisitControls)
         v.findViewById<View>(R.id.containerAppLimitReset)?.visibility = View.GONE
         v.findViewById<TextView>(R.id.tvAppLimitResetHint)?.visibility = View.GONE
-        val btnClear = v.findViewById<MaterialButton>(R.id.btnAppLimitClear)
-        val btnCancel = v.findViewById<MaterialButton>(R.id.btnAppLimitCancel)
-        val btnSave = v.findViewById<MaterialButton>(R.id.btnAppLimitSave)
+        val sheet = InputSheet(activity, label)
+        // Created with the sheet's buttons, after the fields are wired up.
+        var btnSave: MaterialButton? = null
 
         val currentTime = DomainLimitStore.getLimitMinutesForProfile(activity, profile, normalized)
         val currentOpens = DomainVisitLimitStore.getVisitLimitCountForProfile(activity, profile, normalized)
         val currentPerVisit = DomainVisitLimitStore.getSessionLimitMinutesForProfile(activity, profile, normalized)
         val hardBlocked = DomainBlockStore.getDomainsForProfileAndMode(activity, profile).contains(normalized)
 
-        tvTitle.text = label
+        // The sheet title carries the name; the header row keeps the icon and profile.
+        tvTitle.visibility = View.GONE
         tvSubtitle.text = activity.getString(R.string.profile_active_fmt, profile)
         // The dialog is shared with the app block page; swap the app wording for websites.
         v.findViewById<TextView>(R.id.tvAppLimitOpensTitle)
@@ -739,19 +685,7 @@ object QuickLimitDialogs {
         swVisit.isChecked = currentPerVisit > 0
 
         val accent = AccentColor.getAccentColorInt(activity)
-        val accentList = ColorStateList.valueOf(accent)
-        listOf(tilTime, tilAttempts, tilPerVisit).forEach { til ->
-            til.boxStrokeColor = accent
-            til.hintTextColor = accentList
-            til.defaultHintTextColor = accentList
-        }
         listOf(swTime, swOpens, swVisit).forEach { CustomAccentApplier.tintSwitch(it) }
-
-        val onAccent = if (AccentColor.prefersDarkText(accent)) {
-            android.graphics.Color.BLACK
-        } else {
-            android.graphics.Color.WHITE
-        }
 
         runCatching {
             val surfaceVariant = androidx.core.content.ContextCompat.getColor(activity, R.color.foqos_surface_variant)
@@ -777,22 +711,7 @@ object QuickLimitDialogs {
             apply(container)
         }
 
-        btnCancel.setTextColor(accent)
-        btnCancel.isAllCaps = false
-        btnCancel.backgroundTintList = null
-        runCatching { btnCancel.setBackgroundColor(android.graphics.Color.TRANSPARENT) }
-
-        val error = android.graphics.Color.rgb(186, 26, 26)
-        btnClear.setTextColor(error)
-        btnClear.isAllCaps = false
-        btnClear.backgroundTintList = null
-        runCatching { btnClear.setBackgroundColor(android.graphics.Color.TRANSPARENT) }
-        btnClear.visibility =
-            if (currentTime > 0 || currentOpens > 0 || currentPerVisit > 0) View.VISIBLE else View.GONE
-
-        btnSave.setTextColor(onAccent)
-        btnSave.isAllCaps = false
-        btnSave.backgroundTintList = AccentColor.getActiveColor(activity)
+        val hasLimits = currentTime > 0 || currentOpens > 0 || currentPerVisit > 0
 
         fun rawInt(field: TextInputEditText): Int =
             field.text?.toString()?.trim()?.toIntOrNull() ?: 0
@@ -892,8 +811,8 @@ object QuickLimitDialogs {
 
         fun refreshSaveState() {
             val valid = validateAll(focusInvalid = false) != null
-            btnSave.isEnabled = valid
-            btnSave.alpha = if (valid) 1f else 0.5f
+            btnSave?.isEnabled = valid
+            btnSave?.alpha = if (valid) 1f else 0.5f
         }
 
         fun refreshAll() {
@@ -1000,8 +919,8 @@ object QuickLimitDialogs {
             }
         }
 
-        val dlgDismissHolder = arrayOf<(() -> Unit)?>(null)
-        btnClear.setOnClickListener {
+        sheet.content(v)
+        if (hasLimits) sheet.secondary(activity.getString(R.string.app_limit_remove), destructive = true) {
             AlertDialog.Builder(activity)
                 .setTitle(R.string.app_limit_remove_confirm_title)
                 .setMessage(activity.getString(R.string.app_limit_remove_confirm_message, label))
@@ -1011,34 +930,23 @@ object QuickLimitDialogs {
                         activity, profile, normalized,
                         hardBlocked, timeMinutes = 0, opens = 0, perVisit = 0,
                     )
-                    dlgDismissHolder[0]?.invoke()
+                    sheet.dismiss()
                     onChanged?.invoke()
                 }
                 .showAccented()
         }
-
-        btnCancel.setOnClickListener { dlgDismissHolder[0]?.invoke() }
-        btnSave.setOnClickListener {
-            val validated = validateAll(focusInvalid = true) ?: return@setOnClickListener
+        btnSave = sheet.primary(activity.getString(R.string.save)) {
+            val validated = validateAll(focusInvalid = true) ?: return@primary
             val (time, visit, opens) = validated
             applyWebsiteLimits(
                 activity, profile, normalized,
                 hardBlocked, timeMinutes = time, opens = opens, perVisit = visit,
             )
-            dlgDismissHolder[0]?.invoke()
+            sheet.dismiss()
             onChanged?.invoke()
         }
-
-        val dlg = Dialogs.builder(activity)
-            .setView(v)
-            .create()
-        dlgDismissHolder[0] = { dlg.dismiss() }
-        dlg.applyLoqInDialogWidth(0.94f)
-        dlg.pinLoqInDialogToTop()
-        dlg.setOnShowListener {
-            runCatching { CustomAccentApplier.applyToDialog(dlg) }
-        }
-        dlg.show()
+        refreshAll()
+        sheet.show()
     }
 
     private fun applyWebsiteLimits(
@@ -1124,34 +1032,11 @@ object QuickLimitDialogs {
         val tilType = v.findViewById<TextInputLayout>(R.id.tilType)
         val tvSubtitle = v.findViewById<TextView>(R.id.tvLimitSubtitle)
         val tvModeSummary = v.findViewById<TextView>(R.id.tvLimitModeSummary)
-        val etType = v.findViewById<MaterialAutoCompleteTextView>(R.id.etType)
         val tilValue = v.findViewById<TextInputLayout>(R.id.tilValue)
         val etValue = v.findViewById<TextInputEditText>(R.id.etValue)
         val tilResetMode = v.findViewById<TextInputLayout>(R.id.tilResetMode)
-        val etResetMode = v.findViewById<MaterialAutoCompleteTextView>(R.id.etResetMode)
 
-        // Ensure the dialog matches the currently selected accent (including custom colors).
-        val accent = AccentColor.getAccentColorInt(activity)
-        val accentList = ColorStateList.valueOf(accent)
-        fun accentInputs() {
-            // Outlined box stroke + hints + dropdown icon
-            tilValue.boxStrokeColor = accent
-            tilValue.hintTextColor = accentList
-            tilValue.defaultHintTextColor = accentList
-
-            tilType.boxStrokeColor = accent
-            tilType.hintTextColor = accentList
-            tilType.defaultHintTextColor = accentList
-            tilType.setEndIconTintList(accentList)
-
-            tilResetMode.boxStrokeColor = accent
-            tilResetMode.hintTextColor = accentList
-            tilResetMode.defaultHintTextColor = accentList
-            tilResetMode.setEndIconTintList(accentList)
-        }
-        accentInputs()
-        tvSubtitle.text = subtitle?.toString() ?: ""
-        tvSubtitle.visibility = if (subtitle.isNullOrBlank()) View.GONE else View.VISIBLE
+        tvSubtitle.visibility = View.GONE
 
         val modeLabels = supportedModes.map { mode ->
             when (mode) {
@@ -1172,14 +1057,11 @@ object QuickLimitDialogs {
                 else -> UsageLimitResetStore.MODE_DAY
             }
         )
-        etResetMode.setAdapter(LoqInDropdownAdapter(activity, resetLabels))
-        etResetMode.setText(resetLabels[resetModes.indexOf(activeResetMode[0]).coerceAtLeast(0)], false)
-        etResetMode.setOnItemClickListener { _, _, position, _ ->
-            activeResetMode[0] = resetModes.getOrNull(position) ?: UsageLimitResetStore.MODE_DAY
-        }
-
-        etType.setAdapter(LoqInDropdownAdapter(activity, modeLabels))
-        if (supportedModes.size <= 1) tilType.visibility = View.GONE
+        val sheet = InputSheet(activity, title)
+        // Mode and reset period are segmented choices; the layout's dropdowns stay hidden.
+        tilType.visibility = View.GONE
+        tilResetMode.visibility = View.GONE
+        lateinit var resetChoices: View
 
         fun applyMode(mode: Int, keepTypedValue: Boolean) {
             val typed = etValue.text?.toString()?.trim().orEmpty()
@@ -1188,14 +1070,14 @@ object QuickLimitDialogs {
 
             if (mode == MODE_ALWAYS_BLOCK) {
                 tilValue.visibility = View.GONE
-                tilResetMode.visibility = View.GONE
+                resetChoices.visibility = View.GONE
                 etValue.setText("")
                 tvModeSummary.setText(R.string.limit_always_block_action_summary)
                 return
             }
 
             tilValue.visibility = View.VISIBLE
-            tilResetMode.visibility = if (showTimeResetMode && mode == MODE_TIME) View.VISIBLE else View.GONE
+            resetChoices.visibility = if (showTimeResetMode && mode == MODE_TIME) View.VISIBLE else View.GONE
             tvModeSummary.setText(
                 when (mode) {
                     MODE_ATTEMPTS -> R.string.limit_attempts_action_summary
@@ -1213,56 +1095,43 @@ object QuickLimitDialogs {
 
         val initialIdx = supportedModes.indexOf(initialMode).takeIf { it >= 0 } ?: 0
         val activeMode = intArrayOf(supportedModes[initialIdx])
-        etType.setText(modeLabels[initialIdx], false)
+        val vg = v as android.view.ViewGroup
+        resetChoices = sheet.choices(
+            labels = resetLabels,
+            selected = resetModes.indexOf(activeResetMode[0]).coerceAtLeast(0),
+            required = true,
+            parent = vg,
+            index = vg.indexOfChild(tilResetMode),
+        ) { position ->
+            activeResetMode[0] = resetModes.getOrNull(position) ?: UsageLimitResetStore.MODE_DAY
+        }
+        if (supportedModes.size > 1) {
+            sheet.choices(
+                labels = modeLabels,
+                selected = initialIdx,
+                required = true,
+                parent = vg,
+                index = vg.indexOfChild(tilType),
+            ) { position ->
+                if (position < 0) return@choices
+                activeMode[0] = supportedModes[position]
+                applyMode(activeMode[0], keepTypedValue = true)
+            }
+        }
         applyMode(activeMode[0], keepTypedValue = false)
+        if (!subtitle.isNullOrBlank()) sheet.message(subtitle)
+        sheet.content(v)
 
-        etType.setOnItemClickListener { _, _, position, _ ->
-            activeMode[0] = supportedModes[position]
-            applyMode(activeMode[0], keepTypedValue = true)
-        }
-
-        // Use custom in-view MaterialButtons so dialogs match LoqIn's button styling.
-        val dlg = Dialogs.builder(activity)
-            .setTitle(title)
-            .setView(v)
-            .create()
-
-        val btnClear = v.findViewById<MaterialButton>(R.id.btnClear)
-        val btnCancel = v.findViewById<MaterialButton>(R.id.btnCancel)
-        val btnOk = v.findViewById<MaterialButton>(R.id.btnOk)
-
-        // Match the global dialog button design:
-        // - OK = filled accent
-        // - Cancel/Clear = text-only accent
-        val onAccent = if (AccentColor.prefersDarkText(accent)) android.graphics.Color.BLACK else android.graphics.Color.WHITE
-
-        btnCancel.setTextColor(accent)
-        btnCancel.isAllCaps = false
-        btnCancel.backgroundTintList = null
-        runCatching { btnCancel.setBackgroundColor(android.graphics.Color.TRANSPARENT) }
-
-        val error = android.graphics.Color.rgb(186, 26, 26)
-        btnClear.setTextColor(error)
-        btnClear.isAllCaps = false
-        btnClear.backgroundTintList = null
-        runCatching { btnClear.setBackgroundColor(android.graphics.Color.TRANSPARENT) }
-
-        btnOk.setTextColor(onAccent)
-        btnOk.isAllCaps = false
-        // Prefer active accent tint for proper state handling.
-        btnOk.backgroundTintList = AccentColor.getActiveColor(activity)
-
-        btnClear.setOnClickListener {
+        sheet.secondary(activity.getString(R.string.clear_limit), destructive = true) {
             onApply(activeMode[0], 0, activeResetMode[0])
-            dlg.dismiss()
+            sheet.dismiss()
         }
-        btnCancel.setOnClickListener { dlg.dismiss() }
-        btnOk.setOnClickListener {
+        sheet.primary(activity.getString(R.string.ok)) {
             if (activeMode[0] == MODE_ALWAYS_BLOCK) {
                 // Pass a non-zero sentinel to mean "enable always block".
                 onApply(activeMode[0], 1, activeResetMode[0])
-                dlg.dismiss()
-                return@setOnClickListener
+                sheet.dismiss()
+                return@primary
             }
 
             val raw = etValue.text?.toString()?.trim().orEmpty()
@@ -1272,18 +1141,12 @@ object QuickLimitDialogs {
                 else -> 24 * 60
             }
             if (n < 0 || n > max) {
-                etValue.showWarnPill(R.string.invalid_value)
-                return@setOnClickListener
+                tilValue.error = activity.getString(R.string.invalid_value)
+                return@primary
             }
             onApply(activeMode[0], n, activeResetMode[0])
-            dlg.dismiss()
+            sheet.dismiss()
         }
-
-        dlg.applyLoqInDialogWidth(0.94f)
-        dlg.setOnShowListener {
-            // Retint in CUSTOM accent mode so the dialog matches the rest of the app.
-            runCatching { CustomAccentApplier.applyToDialog(dlg) }
-        }
-        dlg.show()
+        sheet.show()
     }
 }

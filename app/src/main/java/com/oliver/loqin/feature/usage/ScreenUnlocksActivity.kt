@@ -37,8 +37,8 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.coordinatorlayout.widget.CoordinatorLayout
 import androidx.core.content.ContextCompat
-import androidx.core.graphics.ColorUtils
 import com.oliver.loqin.R
+import com.oliver.loqin.ui.dialog.InputSheet
 import com.oliver.loqin.data.prefs.AttemptLimitStore
 import com.oliver.loqin.data.prefs.ScreenUnlockHistoryStore
 import com.oliver.loqin.data.prefs.ProfileStore
@@ -50,7 +50,6 @@ import com.oliver.loqin.ui.EdgeToEdgeUtils
 import com.oliver.loqin.ui.LoqInDropdownAdapter
 import com.oliver.loqin.ui.ToolbarIconAction
 import com.oliver.loqin.ui.ThemeUtils
-import com.oliver.loqin.ui.dialog.showAccented
 import com.oliver.loqin.ui.dialog.styleForDialog
 import com.oliver.loqin.util.LocaleHelper
 import com.google.android.material.appbar.AppBarLayout
@@ -61,7 +60,6 @@ import com.google.android.material.card.MaterialCardView
 import com.google.android.material.divider.MaterialDivider
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.datepicker.MaterialDatePicker
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import java.text.DateFormat
 import java.util.Calendar
@@ -265,18 +263,17 @@ class ScreenUnlocksActivity : AppCompatActivity() {
         hideShort.visibility = View.VISIBLE
         hideShort.styleForDialog(this)
 
-        MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.screen_unlocks_sort_filter_title)
-            .setView(root)
-            .setNegativeButton(android.R.string.cancel, null)
-            .setPositiveButton(R.string.stats_apply) { _, _ ->
-                currentScope = selectedScope
-                currentSort = selectedSort
-                hideVeryShortUnlocks = hideShort.isChecked
-                updateScopeSubtitle()
-                load()
-            }
-            .showAccented()
+        val sheet = InputSheet(this, getString(R.string.screen_unlocks_sort_filter_title))
+        sheet.content(root)
+        sheet.primary(getString(R.string.stats_apply)) {
+            currentScope = selectedScope
+            currentSort = selectedSort
+            hideVeryShortUnlocks = hideShort.isChecked
+            updateScopeSubtitle()
+            load()
+            sheet.dismiss()
+        }
+        sheet.show()
     }
 
     private fun updateScopeSubtitle() {

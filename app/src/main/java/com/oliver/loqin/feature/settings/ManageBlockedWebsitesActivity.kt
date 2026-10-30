@@ -26,7 +26,6 @@ import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.view.ViewGroup
 import android.widget.AutoCompleteTextView
 import android.widget.FrameLayout
 import android.widget.ImageView
@@ -50,6 +49,7 @@ import com.google.android.material.chip.ChipGroup
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.oliver.loqin.R
+import com.oliver.loqin.ui.dialog.InputSheet
 import com.oliver.loqin.blocking.BlockingRuntime
 import com.oliver.loqin.data.prefs.DomainBlockStore
 import com.oliver.loqin.data.prefs.DomainLimitStore
@@ -1215,90 +1215,73 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
             applyMode()
         }
 
-        val builder = AlertDialog.Builder(this)
-            .setTitle(title)
-            .setView(v)
-            .setPositiveButton(if (allowDomainEdit) R.string.website_add_selected else R.string.save, null)
-            .setNegativeButton(android.R.string.cancel, null)
+        val sheet = InputSheet(this, title)
+        sheet.content(v)
         if (!allowDomainEdit) {
-            builder.setNeutralButton(R.string.website_delete_rule, null)
+            sheet.secondary(getString(R.string.website_delete_rule), destructive = true) {
+                sheet.dismiss()
+                confirmDeleteSingle(initialDomain)
+            }
         }
-        val dlg = builder.create()
+        sheet.primary(getString(if (allowDomainEdit) R.string.website_add_selected else R.string.save)) {
+            if (websiteEditingLocked() && !tightenOnlyAdd) {
+                sheet.dismiss()
+                refreshList()
+                return@primary
+            }
+            val domainRaw = etDomain.text?.toString()?.trim().orEmpty()
 
-        dlg.setOnShowListener {
-            dlg.styleLoqInDialogButtons()
-            if (CustomAccentApplier.isCustomAccentEnabled(this)) {
-                runCatching { CustomAccentApplier.applyToDialog(dlg) }
+            if (domainRaw.isBlank()) {
+                tilDomain.error = getString(R.string.domain_required)
+                return@primary
             }
 
-            if (!allowDomainEdit) {
-                dlg.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
-                    dlg.dismiss()
-                    confirmDeleteSingle(initialDomain)
-                }
+            val normalized = DomainBlockStore.normalize(domainRaw)
+            if (normalized.isNullOrBlank()) {
+                tilDomain.error = getString(R.string.domain_invalid)
+                return@primary
+            }
+            if (isAllowMode() && DomainBlockStore.isPathRule(normalized)) {
+                tilDomain.error = getString(R.string.website_rule_path_allow_mode_error)
+                return@primary
+            }
+            tilDomain.error = null
+
+            val hardBlock = acMode.text?.toString() == modeAlways
+
+            if (tightenOnlyAdd && (!hardBlock || isAllowMode())) {
+                return@primary
             }
 
-            dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                if (websiteEditingLocked() && !tightenOnlyAdd) {
-                    dlg.dismiss()
-                    refreshList()
-                    return@setOnClickListener
-                }
-                val domainRaw = etDomain.text?.toString()?.trim().orEmpty()
-
-                if (domainRaw.isBlank()) {
-                    tilDomain.error = getString(R.string.domain_required)
-                    return@setOnClickListener
-                }
-
-                val normalized = DomainBlockStore.normalize(domainRaw)
-                if (normalized.isNullOrBlank()) {
-                    tilDomain.error = getString(R.string.domain_invalid)
-                    return@setOnClickListener
-                }
-                if (isAllowMode() && DomainBlockStore.isPathRule(normalized)) {
-                    tilDomain.error = getString(R.string.website_rule_path_allow_mode_error)
-                    return@setOnClickListener
-                }
-                tilDomain.error = null
-
-                val hardBlock = acMode.text?.toString() == modeAlways
-
-                if (tightenOnlyAdd && (!hardBlock || isAllowMode())) {
-                    return@setOnClickListener
-                }
-
-                val profile = currentProfile()
-                if (hardBlock) {
-                    if (isAllowMode()) {
-                        DomainBlockStore.addDomainForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
-                        DomainBlockStore.setDomainEnabledForProfile(this@ManageBlockedWebsitesActivity, profile, normalized, true)
-                        DomainLimitStore.clearForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
-                    } else {
-                        DomainLimitStore.clearForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
-                        DomainBlockStore.addDomainForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
-                        DomainBlockStore.setDomainEnabledForProfile(this@ManageBlockedWebsitesActivity, profile, normalized, true)
-                    }
-                    BlockingRuntime.ensureRunning(this@ManageBlockedWebsitesActivity)
-                    refreshList()
-                    dlg.dismiss()
-                } else {
-                    // Limits mode: create the rule shell and open the limits screen.
-                    if (isAllowMode()) {
-                        DomainBlockStore.addDomainForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
-                    } else {
-                        DomainBlockStore.removeDomainForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
-                    }
+            val profile = currentProfile()
+            if (hardBlock) {
+                if (isAllowMode()) {
+                    DomainBlockStore.addDomainForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
                     DomainBlockStore.setDomainEnabledForProfile(this@ManageBlockedWebsitesActivity, profile, normalized, true)
-                    BlockingRuntime.ensureRunning(this@ManageBlockedWebsitesActivity)
-                    refreshList()
-                    dlg.dismiss()
-                    showWebsiteLimitsDialog(normalized)
+                    DomainLimitStore.clearForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
+                } else {
+                    DomainLimitStore.clearForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
+                    DomainBlockStore.addDomainForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
+                    DomainBlockStore.setDomainEnabledForProfile(this@ManageBlockedWebsitesActivity, profile, normalized, true)
                 }
+                BlockingRuntime.ensureRunning(this@ManageBlockedWebsitesActivity)
+                refreshList()
+                sheet.dismiss()
+            } else {
+                // Limits mode: create the rule shell and open the limits screen.
+                if (isAllowMode()) {
+                    DomainBlockStore.addDomainForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
+                } else {
+                    DomainBlockStore.removeDomainForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
+                }
+                DomainBlockStore.setDomainEnabledForProfile(this@ManageBlockedWebsitesActivity, profile, normalized, true)
+                BlockingRuntime.ensureRunning(this@ManageBlockedWebsitesActivity)
+                refreshList()
+                sheet.dismiss()
+                showWebsiteLimitsDialog(normalized)
             }
         }
-
-        dlg.show()
+        sheet.show()
     }
 
     private data class DomainRule(

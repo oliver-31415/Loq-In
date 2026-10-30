@@ -28,18 +28,15 @@ import android.view.View
 import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
+import androidx.core.widget.doAfterTextChanged
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.card.MaterialCardView
-import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.color.MaterialColors
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.oliver.loqin.R
 import com.oliver.loqin.data.prefs.InsightsGoalStore
@@ -49,7 +46,7 @@ import com.oliver.loqin.data.prefs.UsageStore
 import com.oliver.loqin.feature.stats.StatsFormat
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.ui.SegmentedToggleUi
-import com.oliver.loqin.ui.dialog.showAccented
+import com.oliver.loqin.ui.dialog.InputSheet
 import com.oliver.loqin.ui.widgets.BudgetRingView
 import com.oliver.loqin.ui.widgets.SplitBarRowView
 import com.oliver.loqin.ui.widgets.StackedDailyBarChartView
@@ -405,82 +402,50 @@ class LoqInInsightsCards(private val activity: AppCompatActivity) {
         val current = InsightsGoalStore.getDailyGoalMin(ctx)
         val presets = listOf(60, 120, 180, 240)
 
-        val content = LinearLayout(ctx).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(24), dp(8), dp(24), 0)
+        val sheet = InputSheet(ctx, ctx.getString(R.string.charts_goal_dialog_title))
+        sheet.message(ctx.getString(R.string.charts_goal_dialog_message))
+        var preset = presets.indexOf(current)
+        var input: TextInputLayout? = null
+        val choices = sheet.choices(
+            labels = presets.map { ctx.getString(R.string.charts_goal_preset, it / 60) },
+            selected = preset,
+        ) { index ->
+            preset = index
+            // A preset replaces any custom number.
+            if (index >= 0) input?.editText?.text?.clear()
         }
-        content.addView(TextView(ctx).apply {
-            text = ctx.getString(R.string.charts_goal_dialog_message)
-            textSize = 14f
-            alpha = 0.72f
-        })
-        val chips = ChipGroup(ctx).apply {
-            isSingleSelection = true
-            layoutParams = matchWrap().apply { topMargin = dp(12) }
+        input = sheet.field(
+            hint = ctx.getString(R.string.charts_goal_custom_hint),
+            text = if (current > 0 && current !in presets) current.toString() else null,
+            inputType = InputType.TYPE_CLASS_NUMBER,
+        )
+        input.editText?.doAfterTextChanged { text ->
+            if (!text.isNullOrEmpty() && preset >= 0) choices.clearChecked()
         }
-        presets.forEach { minutes ->
-            chips.addView(Chip(ctx).apply {
-                id = View.generateViewId()
-                text = ctx.getString(R.string.charts_goal_preset, minutes / 60)
-                isCheckable = true
-                isChecked = minutes == current
-                tag = minutes
-            })
-        }
-        content.addView(chips)
 
-        val input = TextInputEditText(ctx).apply {
-            inputType = InputType.TYPE_CLASS_NUMBER
-            if (current > 0 && current !in presets) setText(current.toString())
+        if (current > 0) {
+            sheet.secondary(ctx.getString(R.string.charts_goal_remove), destructive = true) {
+                InsightsGoalStore.clearDailyGoal(ctx)
+                sheet.dismiss()
+                refresh()
+            }
         }
-        val inputLayout = TextInputLayout(ctx).apply {
-            hint = ctx.getString(R.string.charts_goal_custom_hint)
-            layoutParams = matchWrap().apply { topMargin = dp(8) }
-            addView(input)
-        }
-        content.addView(inputLayout)
-
-        val dialog = MaterialAlertDialogBuilder(ctx)
-            .setTitle(R.string.charts_goal_dialog_title)
-            .setView(content)
-            .setPositiveButton(R.string.charts_goal_save, null)
-            .setNegativeButton(android.R.string.cancel, null)
-            .apply {
-                if (current > 0) {
-                    setNeutralButton(R.string.charts_goal_remove) { _, _ ->
-                        InsightsGoalStore.clearDailyGoal(ctx)
-                        refresh()
-                    }
-                }
+        sheet.primary(ctx.getString(R.string.charts_goal_save)) {
+            val typed = input.editText?.text?.toString()?.trim().orEmpty()
+            val minutes: Int? = if (typed.isNotEmpty()) typed.toIntOrNull() else presets.getOrNull(preset)
+            if (minutes == null && typed.isEmpty()) {
+                sheet.dismiss()
+                return@primary
             }
-            .showAccented()
-
-        // Overridden after show so that invalid input keeps the dialog open.
-        dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-            val typed = input.text?.toString()?.trim().orEmpty()
-            val minutes: Int? = if (typed.isNotEmpty()) {
-                typed.toIntOrNull()
-            } else {
-                chips.checkedChipId
-                    .takeIf { it != View.NO_ID }
-                    ?.let { chips.findViewById<Chip>(it)?.tag as? Int }
-            }
-            if (minutes == null) {
-                if (typed.isEmpty()) {
-                    dialog.dismiss()
-                } else {
-                    inputLayout.error = ctx.getString(R.string.charts_goal_invalid)
-                }
-                return@setOnClickListener
-            }
-            if (minutes !in 1..MAX_GOAL_MIN) {
-                inputLayout.error = ctx.getString(R.string.charts_goal_invalid)
-                return@setOnClickListener
+            if (minutes == null || minutes !in 1..MAX_GOAL_MIN) {
+                input.error = ctx.getString(R.string.charts_goal_invalid)
+                return@primary
             }
             InsightsGoalStore.setDailyGoalMin(ctx, minutes)
-            dialog.dismiss()
+            sheet.dismiss()
             refresh()
         }
+        sheet.show()
     }
 
     // ---------------------------------------------------------------------

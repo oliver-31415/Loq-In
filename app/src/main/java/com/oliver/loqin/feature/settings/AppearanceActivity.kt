@@ -18,12 +18,7 @@
 
 package com.oliver.loqin.feature.settings
 
-import android.animation.Animator
-import android.animation.AnimatorListenerAdapter
-import android.animation.ValueAnimator
 import android.content.Context
-import android.graphics.Color
-import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.widget.GridLayout
 import android.widget.TextView
@@ -36,8 +31,6 @@ import androidx.preference.PreferenceManager
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
-import com.google.android.material.materialswitch.MaterialSwitch
-import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.oliver.loqin.R
 import com.oliver.loqin.feature.theme.CustomAccentPickerDialog
 import com.oliver.loqin.theme.AccentColor
@@ -68,9 +61,6 @@ class AppearanceActivity : AppCompatActivity() {
     private lateinit var tvThemeColorSummary: TextView
     private lateinit var tvLanguageSummary: TextView
 
-    private lateinit var accentPreviewPill: TextView
-    private lateinit var accentPreviewSwitch: MaterialSwitch
-    private lateinit var accentPreviewProgress: LinearProgressIndicator
     private lateinit var gridAccentSwatches: GridLayout
 
     /** Swatches keyed by accent value, including [CUSTOM]. */
@@ -79,9 +69,8 @@ class AppearanceActivity : AppCompatActivity() {
     /** Accent the grid marks as selected. Updated on tap, before the save. */
     private var selectedAccent: String = "default"
 
-    /** Colour the preview is currently showing. Animations start from here. */
-    private var previewColor: Int = 0
-    private var previewAnimator: ValueAnimator? = null
+    /** Recreates the screen once the swatch animation has finished. */
+    private val recreateAfterSelection = Runnable { recreate() }
 
     private val prefs by lazy { PreferenceManager.getDefaultSharedPreferences(this) }
 
@@ -120,9 +109,6 @@ class AppearanceActivity : AppCompatActivity() {
         tvThemeColorSummary = findViewById(R.id.tvThemeColorSummary)
         tvLanguageSummary = findViewById(R.id.tvLanguageSummary)
 
-        accentPreviewPill = findViewById(R.id.accentPreviewPill)
-        accentPreviewSwitch = findViewById(R.id.accentPreviewSwitch)
-        accentPreviewProgress = findViewById(R.id.accentPreviewProgress)
         gridAccentSwatches = findViewById(R.id.gridAccentSwatches)
 
         setupThemeMode()
@@ -138,7 +124,7 @@ class AppearanceActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        previewAnimator?.cancel()
+        gridAccentSwatches.removeCallbacks(recreateAfterSelection)
         super.onDestroy()
     }
 
@@ -215,17 +201,14 @@ class AppearanceActivity : AppCompatActivity() {
     // ---------------------------------------------------------------------
 
     /**
-     * Builds the swatch grid (presets in settings order, then Custom) and
-     * shows the current accent in the preview. Preset names and values come
-     * from the `pref_accent_*` arrays.
+     * Builds the swatch grid (presets in settings order, then Custom). Preset
+     * names and values come from the `pref_accent_*` arrays.
      */
     private fun setupAccentSelector() {
         val entries = resources.getStringArray(R.array.pref_accent_entries)
         val values = resources.getStringArray(R.array.pref_accent_values)
 
         selectedAccent = currentAccent()
-        previewColor = accentColorForValue(selectedAccent)
-        applyPreviewColor(previewColor)
 
         val items = values.mapIndexed { index, value -> value to entries.getOrElse(index) { value } } +
             (CUSTOM to getString(R.string.pref_accent_custom_title))
@@ -265,48 +248,10 @@ class AppearanceActivity : AppCompatActivity() {
         swatchViews[value]?.setChosen(true, SELECTION_ANIMATION_MS)
         prefs.edit { putString(KEY_ACCENT, value) }
         updateThemeColorSummary()
-        animatePreview(to = accentColorForValue(value))
-    }
-
-    /**
-     * Animates the preview to [to], then recreates the screen so everything
-     * picks up the saved accent. A cancelled animation (another tap arrived
-     * first) leaves the recreate to the newer one.
-     */
-    private fun animatePreview(to: Int) {
-        previewAnimator?.cancel()
-        previewAnimator = ValueAnimator.ofArgb(previewColor, to).apply {
-            duration = SELECTION_ANIMATION_MS
-            addUpdateListener { animator ->
-                previewColor = animator.animatedValue as Int
-                applyPreviewColor(previewColor)
-            }
-            addListener(object : AnimatorListenerAdapter() {
-                private var cancelled = false
-
-                override fun onAnimationCancel(animation: Animator) {
-                    cancelled = true
-                }
-
-                override fun onAnimationEnd(animation: Animator) {
-                    if (cancelled) return
-                    recreate()
-                }
-            })
-            start()
-        }
-    }
-
-    private fun applyPreviewColor(color: Int) {
-        accentPreviewPill.background = GradientDrawable().apply {
-            cornerRadius = 100f * resources.displayMetrics.density
-            setColor(color)
-        }
-        accentPreviewPill.setTextColor(
-            if (AccentColor.prefersDarkText(color)) Color.BLACK else Color.WHITE
-        )
-        CustomAccentApplier.tintSwitch(accentPreviewSwitch, color)
-        accentPreviewProgress.setIndicatorColor(color)
+        // Let the selection animation finish before the screen recreates with the new accent.
+        // Another tap restarts the wait.
+        gridAccentSwatches.removeCallbacks(recreateAfterSelection)
+        gridAccentSwatches.postDelayed(recreateAfterSelection, SELECTION_ANIMATION_MS)
     }
 
     private fun showCustomColorPicker() {

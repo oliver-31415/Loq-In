@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sheet close button: a tonal 40dp roundel centred in a 48dp touch target, visible on the sheet surface -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android" android:inset="4dp">
+    <shape android:shape="oval">
+        <solid android:color="@color/foqos_surface_container_high" />
+    </shape>
+</inset>

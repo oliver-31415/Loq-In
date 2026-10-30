@@ -22,21 +22,20 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import android.text.InputType
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.view.ViewGroup
-import android.widget.EditText
 import android.widget.ArrayAdapter
 import android.widget.FrameLayout
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isVisible
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentManager
+import androidx.core.widget.doAfterTextChanged
 import com.oliver.loqin.R
+import com.oliver.loqin.ui.SheetRows
+import com.oliver.loqin.ui.dialog.InputSheet
 import com.oliver.loqin.blocking.BlockingRuntime
 import com.oliver.loqin.data.prefs.AppLogStore
 import com.oliver.loqin.data.prefs.EmergencyBypassStore
@@ -62,11 +61,8 @@ import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.showWarnPill
 import com.oliver.loqin.ui.showWarnPillOnContent
 import com.oliver.loqin.ui.dialog.LoqInDialogOption
-import com.oliver.loqin.ui.dialog.LoqInInfoRow
-import com.oliver.loqin.ui.dialog.showLoqInInfoDialog
 import com.oliver.loqin.ui.dialog.showAccented
 import com.oliver.loqin.ui.dialog.showLoqInOptionDialog
-import com.oliver.loqin.ui.dialog.styleLoqInDialogButtons
 import com.oliver.loqin.ui.dialog.EmergencyPinDialog
 import com.oliver.loqin.util.LocaleHelper
 import com.oliver.loqin.util.ActivityTransitionCompat
@@ -426,26 +422,31 @@ class SettingsActivity : AppCompatActivity() {
             FrameLayout(this),
             false,
         )
-        val input = content.findViewById<MaterialAutoCompleteTextView>(R.id.acSettingsFind).apply {
-            threshold = 1
-            setAdapter(adapter)
+        // Results are listed inside the sheet rather than in a dropdown, which would open
+        // upwards over the title while the keyboard is up.
+        val input = content.findViewById<MaterialAutoCompleteTextView>(R.id.acSettingsFind)
+        val sheet = InputSheet(this, getString(R.string.settings_find_title))
+        sheet.content(content)
+        val results = SheetRows.group(this, sheet.body).apply { visibility = View.GONE }
+        sheet.body.addView(results)
+        fun showResults() {
+            results.removeAllViews()
+            for (index in 0 until adapter.count) {
+                val item = adapter.getItem(index) ?: continue
+                val row = SheetRows.row(this, results, iconRes = 0, title = item.title, accent = sheet.accent)
+                row.root.setOnClickListener {
+                    sheet.dismiss()
+                    item.open()
+                }
+                results.addView(row.root)
+            }
+            results.visibility = if (results.childCount > 0) View.VISIBLE else View.GONE
         }
-        val dialog = MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.settings_find_title)
-            .setView(content)
-            .setNegativeButton(R.string.cancel, null)
-            .create()
-        input.setOnItemClickListener { parent, _, index, _ ->
-            val result = (parent.getItemAtPosition(index) as? SettingsSearchItem)
-                ?: adapter.getItem(index)
-                ?: return@setOnItemClickListener
-            input.dismissDropDown()
-            dialog.dismiss()
-            result.open()
+        input.doAfterTextChanged { text ->
+            adapter.filter.filter(text) { showResults() }
         }
-        dialog.setOnShowListener { input.requestFocus() }
-        dialog.show()
-        dialog.styleLoqInDialogButtons()
+        sheet.focus(input)
+        sheet.show()
     }
 
     fun setToolbarTitle(title: String) {

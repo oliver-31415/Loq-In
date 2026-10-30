@@ -100,7 +100,6 @@
     <string name="color_hex_hint">Hex-Code (z. B. #6BA6E8)</string>
     <string name="color_hex_invalid">Ungültiger Hex-Code</string>
 
-    <string name="pref_theme_color_preview_pill">Fokus</string>
     <string name="pref_theme_color_selected">Ausgewählt</string>
     <string name="pref_theme_color_not_selected">Nicht ausgewählt</string>
 </resources>

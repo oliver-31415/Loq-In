@@ -34,11 +34,11 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.oliver.loqin.R
+import com.oliver.loqin.ui.dialog.InputSheet
 import com.oliver.loqin.blocking.LoqInAccessibilityService
 import com.oliver.loqin.data.prefs.AttemptLimitStore
 import com.oliver.loqin.data.prefs.AppLogStore
@@ -1012,18 +1012,17 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
         }
         sortDropdown.setOnClickListener { sortDropdown.showDropDown() }
 
-        MaterialAlertDialogBuilder(this)
-            .setTitle(getString(R.string.stats_sort_filter_title))
-            .setView(v)
-            .setPositiveButton(getString(R.string.stats_apply)) { _, _ ->
-                filter = selectedFilter
-                sort = selectedSort
-                sortDir = selectedSortDir
-                updateStatisticsProfileSubtitle()
-                applyAndShowCurrent()
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .showAccented()
+        val sheet = InputSheet(this, getString(R.string.stats_sort_filter_title))
+        sheet.content(v)
+        sheet.primary(getString(R.string.stats_apply)) {
+            filter = selectedFilter
+            sort = selectedSort
+            sortDir = selectedSortDir
+            updateStatisticsProfileSubtitle()
+            applyAndShowCurrent()
+            sheet.dismiss()
+        }
+        sheet.show()
     }
 
     private fun applyAndShowCurrent() {

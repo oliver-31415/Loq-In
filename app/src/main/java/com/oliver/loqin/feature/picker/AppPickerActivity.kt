@@ -28,19 +28,14 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.text.Editable
-import android.text.InputType
 import android.text.TextWatcher
 import android.view.inputmethod.EditorInfo
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.CheckBox
-import android.widget.EditText
 import android.widget.ImageButton
-import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
@@ -50,6 +45,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.oliver.loqin.R
+import com.oliver.loqin.ui.dialog.showLoqInNumberInput
 import com.oliver.loqin.blocking.BlockingRuntime
 import com.oliver.loqin.data.prefs.ProfileStore
 import com.oliver.loqin.data.prefs.AttemptLimitStore
@@ -68,6 +64,7 @@ import com.oliver.loqin.ui.SegmentedToggleUi
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.applyLoqInStyle
 import com.oliver.loqin.ui.showWarnPill
+import com.oliver.loqin.ui.showWarnPillOnContent
 import com.oliver.loqin.ui.dialog.showAccented
 import com.oliver.loqin.ui.dialog.LoqInInfoRow
 import com.oliver.loqin.ui.dialog.showLoqInInfoDialog
@@ -83,7 +80,6 @@ import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
-import com.google.android.material.color.MaterialColors
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputLayout
@@ -92,7 +88,6 @@ import com.oliver.loqin.util.ProtectionFeedback
 import com.oliver.loqin.util.ProtectionChangePolicy
 import com.oliver.loqin.util.ProtectionChangeGate
 import com.oliver.loqin.data.prefs.PickerLimitActionStore
-import com.oliver.loqin.data.prefs.SwitchModeStore
 
 class AppPickerActivity : AppCompatActivity() {
 
@@ -1396,47 +1391,21 @@ class AppPickerActivity : AppCompatActivity() {
         ensureAppCanBeManaged(app) {
             val profile = currentProfile ?: return@ensureAppCanBeManaged
 
-            val input = EditText(this).apply {
-                inputType = InputType.TYPE_CLASS_NUMBER
-                hint = getString(R.string.minutes_hint)
-                backgroundTintList = AccentColor.getActiveColor(context)
-            }
-
-            val container = LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                val pad = (16 * resources.displayMetrics.density).toInt()
-                setPadding(pad, pad / 2, pad, 0)
-                addView(
-                    input,
-                    LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                    )
-                )
-            }
-
-            AlertDialog.Builder(this)
-                .setTitle(R.string.custom_minutes_title)
-                .setView(container)
-                .setNegativeButton(R.string.cancel, null)
-                .setPositiveButton(R.string.custom_minutes_confirm) { _, _ ->
-                    val m = input.text?.toString()?.trim()?.toIntOrNull()
-                    if (m == null || m < 0) {
-                        input.showWarnPill(R.string.invalid_value)
-                        return@setPositiveButton
-                    }
-
-                    if (EditingLockGuard.isLocked(this)) {
-                        container.showWarnPill(R.string.toast_disable_loqin_to_edit_app_limits)
-                        return@setPositiveButton
-                    }
-
-                    SessionLimitStore.setLimitMinutes(this, profile, app.packageName, m)
-
-                    BlockingRuntime.ensureRunning(this)
-                    adapter.notifyPkgChanged(app.packageName)
+            showLoqInNumberInput(
+                title = getString(R.string.custom_minutes_title),
+                hint = getString(R.string.minutes_hint),
+                confirmText = getString(R.string.custom_minutes_confirm),
+                range = 0..24 * 60,
+                invalidMessage = getString(R.string.invalid_value),
+            ) { m ->
+                if (EditingLockGuard.isLocked(this)) {
+                    showWarnPillOnContent(R.string.toast_disable_loqin_to_edit_app_limits)
+                    return@showLoqInNumberInput
                 }
-                .showAccented()
+                SessionLimitStore.setLimitMinutes(this, profile, app.packageName, m)
+                BlockingRuntime.ensureRunning(this)
+                adapter.notifyPkgChanged(app.packageName)
+            }
         }
     }
 

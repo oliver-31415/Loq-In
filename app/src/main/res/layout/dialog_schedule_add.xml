@@ -1,124 +1,418 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.core.widget.NestedScrollView
-    xmlns:android="http://schemas.android.com/apk/res/android"
-    android:focusable="true"
-    android:focusableInTouchMode="true"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:clipToPadding="false"
-    android:fillViewport="true"
-    android:paddingStart="20dp"
-    android:paddingTop="12dp"
-    android:paddingEnd="20dp"
-    android:paddingBottom="24dp">
+    android:orientation="vertical"
+    android:focusable="true"
+    android:focusableInTouchMode="true"
+    android:paddingTop="4dp">
 
-    <LinearLayout
+    <!-- 1. SCHEDULE TITLE (AT THE VERY TOP) -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/layoutTitle"
+        style="@style/LoqIn.SheetField"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:layout_marginBottom="12dp"
+        android:hint="@string/schedules_field_title_hint"
+        app:startIconDrawable="@drawable/edit_24">
 
-        <!-- 1. SCHEDULE TITLE (AT THE VERY TOP) -->
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/layoutTitle"
-            style="@style/LoqIn.TextInputLayout"
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/editTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            android:hint="@string/schedules_field_title_hint"
-            app:startIconDrawable="@drawable/edit_24">
+            android:autofillHints="name"
+            android:gravity="center_vertical"
+            android:inputType="textCapSentences"
+            android:maxLines="1"
+            android:minHeight="52dp" />
+    </com.google.android.material.textfield.TextInputLayout>
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/editTitle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:autofillHints="name"
-                android:gravity="center_vertical"
-                android:inputType="textCapSentences"
-                android:maxLines="1"
-                android:minHeight="52dp" />
-        </com.google.android.material.textfield.TextInputLayout>
+    <!-- 2A. ATTACHED PROFILE (When locked to a profile - no wireframe, no text saying 'locked') -->
+    <com.google.android.material.card.MaterialCardView
+        style="@style/LoqIn.Card"
+        android:id="@+id/cardAttachedProfile"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:visibility="gone"
+        app:cardBackgroundColor="@color/foqos_surface_variant"
+        tools:visibility="visible">
 
-        <!-- 2A. ATTACHED PROFILE (When locked to a profile - no wireframe, no text saying 'locked') -->
-        <com.google.android.material.card.MaterialCardView
-            style="@style/LoqIn.Card"
-            android:id="@+id/cardAttachedProfile"
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            android:visibility="gone"
-            app:cardBackgroundColor="@color/foqos_surface_variant"
-            tools:visibility="visible">
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingHorizontal="16dp"
+            android:paddingVertical="12dp">
+
+            <ImageView
+                android:id="@+id/ivAttachedProfile"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:contentDescription="@null"
+                android:src="@drawable/app_blocking_black_24"
+                app:tint="?attr/colorPrimary" />
 
             <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="14dp"
+                android:layout_marginEnd="12dp"
+                android:layout_weight="1"
+                android:orientation="vertical">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:letterSpacing="0.06"
+                    android:text="@string/schedules_field_profile"
+                    android:textAllCaps="true"
+                    android:textColor="?android:attr/textColorSecondary"
+                    android:textSize="11sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/tvAttachedProfileName"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textColor="?attr/colorOnSurface"
+                    android:textSize="15sp"
+                    android:textStyle="bold"
+                    tools:text="Work" />
+            </LinearLayout>
+
+            <ImageView
+                android:layout_width="18dp"
+                android:layout_height="18dp"
+                android:alpha="0.4"
+                android:contentDescription="@null"
+                android:src="@drawable/lock_24"
+                app:tint="?android:attr/textColorSecondary" />
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <!-- 2B. PROFILE SELECTOR (When choosing profile freely) -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/layoutProfile"
+        style="@style/LoqIn.SheetField.Dropdown"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:hint="@string/schedules_field_profile"
+        app:startIconDrawable="@drawable/account_box_24">
+
+        <com.google.android.material.textfield.MaterialAutoCompleteTextView
+            android:id="@+id/spinnerProfile"
+            style="@style/LoqIn.SheetDropdownText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:importantForAutofill="no"
+            android:inputType="none" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- 3. TIME MODE (Only for Time schedules) -->
+    <LinearLayout
+        android:id="@+id/groupTimeMode"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:orientation="vertical">
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/layoutTimeMode"
+            style="@style/LoqIn.SheetField.Dropdown"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/schedules_time_mode"
+            app:startIconDrawable="@drawable/schedule_24">
+
+            <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                android:id="@+id/spinnerTimeMode"
+                style="@style/LoqIn.SheetDropdownText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
-                android:orientation="horizontal"
-                android:paddingHorizontal="16dp"
-                android:paddingVertical="12dp">
+                android:importantForAutofill="no"
+                android:inputType="none" />
+        </com.google.android.material.textfield.TextInputLayout>
+    </LinearLayout>
 
-                <ImageView
-                    android:id="@+id/ivAttachedProfile"
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:contentDescription="@null"
-                    android:src="@drawable/app_blocking_black_24"
-                    app:tint="?attr/colorPrimary" />
+    <!-- 4. WI-FI CONFIGURATION -->
+    <LinearLayout
+        android:id="@+id/groupWifi"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:orientation="vertical"
+        android:visibility="gone"
+        tools:visibility="visible">
 
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="14dp"
-                    android:layout_marginEnd="12dp"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:letterSpacing="0.06"
-                        android:text="@string/schedules_field_profile"
-                        android:textAllCaps="true"
-                        android:textColor="?android:attr/textColorSecondary"
-                        android:textSize="11sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:id="@+id/tvAttachedProfileName"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textSize="15sp"
-                        android:textStyle="bold"
-                        tools:text="Work" />
-                </LinearLayout>
-
-                <ImageView
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
-                    android:alpha="0.4"
-                    android:contentDescription="@null"
-                    android:src="@drawable/lock_24"
-                    app:tint="?android:attr/textColorSecondary" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- 2B. PROFILE SELECTOR (When choosing profile freely) -->
         <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/layoutProfile"
-            style="@style/LoqIn.DropdownLayout"
+            android:id="@+id/layoutWifiSsid"
+            style="@style/LoqIn.SheetField"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            android:hint="@string/schedules_field_profile"
-            app:startIconDrawable="@drawable/account_box_24">
+            android:hint="@string/schedules_wifi_ssid_hint"
+            app:endIconMode="clear_text"
+            app:startIconDrawable="@drawable/wifi_24">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/inputWifiSsid"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:autofillHints="none"
+                android:gravity="center_vertical"
+                android:inputType="textNoSuggestions"
+                android:minHeight="52dp"
+                android:singleLine="true" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnScanWifi"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:layout_marginTop="6dp"
+            android:minHeight="44dp"
+            app:strokeWidth="0dp"
+            android:text="@string/schedules_wifi_pick_action"
+            app:icon="@drawable/wifi_24"
+            app:iconGravity="textStart" />
+    </LinearLayout>
+
+    <!-- 5. BLUETOOTH CONFIGURATION -->
+    <LinearLayout
+        android:id="@+id/groupBt"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:orientation="vertical"
+        android:visibility="gone"
+        tools:visibility="visible">
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/layoutBtName"
+            style="@style/LoqIn.SheetField"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/schedules_bt_name_hint"
+            app:endIconMode="clear_text"
+            app:startIconDrawable="@drawable/bluetooth_24">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/inputBtName"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:autofillHints="none"
+                android:gravity="center_vertical"
+                android:inputType="textNoSuggestions"
+                android:minHeight="52dp"
+                android:singleLine="true" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnUseConnectedBt"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:layout_marginTop="6dp"
+            android:minHeight="44dp"
+            app:strokeWidth="0dp"
+            android:text="@string/schedules_bt_use_connected"
+            app:icon="@drawable/bluetooth_24"
+            app:iconGravity="textStart" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnPickPairedBt"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:layout_marginTop="6dp"
+            android:minHeight="44dp"
+            app:strokeWidth="0dp"
+            android:text="@string/schedules_bt_pick_paired"
+            app:icon="@drawable/bluetooth_24"
+            app:iconGravity="textStart" />
+    </LinearLayout>
+
+    <!-- 6. LOCATION CONFIGURATION -->
+    <LinearLayout
+        android:id="@+id/groupLocation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:orientation="vertical"
+        android:visibility="gone"
+        tools:visibility="visible">
+
+        <!-- Single location box: type an address or coordinates, then Search -->
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/layoutLocationQuery"
+            style="@style/LoqIn.SheetField"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/schedules_location_picker_hint"
+            app:helperText="@string/schedules_location_picker_helper"
+            app:startIconDrawable="@drawable/location_on_24"
+            app:endIconMode="clear_text">
+
+            <com.google.android.material.textfield.TextInputEditText
+                android:id="@+id/inputLocationQuery"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:autofillHints="none"
+                android:gravity="center_vertical"
+                android:imeOptions="actionSearch"
+                android:inputType="textPostalAddress|textCapSentences"
+                android:minHeight="52dp"
+                android:singleLine="true" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            android:id="@+id/textLocationSummary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:layout_marginStart="4dp"
+            android:textColor="?android:attr/textColorSecondary"
+            android:textSize="12sp"
+            android:visibility="gone"
+            tools:text="Selected: Central Park (250m radius)"
+            tools:visibility="visible" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnLocationSearchInline"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:layout_marginTop="6dp"
+            android:minHeight="44dp"
+            app:strokeWidth="0dp"
+            android:text="@string/schedules_location_map_picker_search_action"
+            app:icon="@drawable/search_24"
+            app:iconGravity="textStart" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnUseCurrentLocation"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:layout_marginTop="6dp"
+            android:minHeight="44dp"
+            app:strokeWidth="0dp"
+            android:text="@string/schedules_location_pick_current"
+            app:icon="@drawable/location_on_24"
+            app:iconGravity="textStart" />
+
+        <com.google.android.material.loadingindicator.LoadingIndicator
+            android:id="@+id/progressLocationSearchInline"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="4dp"
+            android:visibility="gone"
+            tools:visibility="visible"
+            app:indicatorColor="?attr/colorPrimary" />
+
+        <TextView
+            android:id="@+id/tvLocationSearchStatusInline"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:gravity="center"
+            android:textColor="?android:attr/textColorSecondary"
+            android:textSize="12sp"
+            android:visibility="gone"
+            tools:text="No matching locations found"
+            tools:visibility="visible" />
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvLocationResultsInline"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:nestedScrollingEnabled="false"
+            android:visibility="gone"
+            tools:itemCount="2"
+            tools:listitem="@layout/item_location_search_result"
+            tools:visibility="visible" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnOpenMapPicker"
+            style="@style/Widget.Material3.Button.TonalButton"
+            android:layout_width="match_parent"
+            android:layout_height="44dp"
+            android:layout_marginTop="6dp"
+            android:minHeight="44dp"
+            app:strokeWidth="0dp"
+            android:text="@string/schedules_location_open_map_picker"
+            app:icon="@drawable/location_on_24"
+            app:iconGravity="textStart" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="2dp"
+            android:layout_marginTop="10dp"
+            android:text="@string/schedules_location_radius_title"
+            android:textAppearance="?attr/textAppearanceSubtitle2" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chipGroupRadius"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            app:chipSpacingHorizontal="6dp"
+            app:selectionRequired="true"
+            app:singleSelection="true">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipRadius100"
+                style="@style/LoqIn.DayChip"
+                app:chipStrokeWidth="0dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checkable="true"
+                android:text="@string/schedules_location_radius_100" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipRadius250"
+                style="@style/LoqIn.DayChip"
+                app:chipStrokeWidth="0dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checkable="true"
+                android:text="@string/schedules_location_radius_250" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chipRadius500"
+                style="@style/LoqIn.DayChip"
+                app:chipStrokeWidth="0dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:checkable="true"
+                android:text="@string/schedules_location_radius_500" />
+        </com.google.android.material.chip.ChipGroup>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/layoutLocationTrigger"
+            style="@style/LoqIn.SheetField.Dropdown"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:hint="@string/schedules_location_trigger_title"
+            app:startIconDrawable="@drawable/location_on_24">
 
             <com.google.android.material.textfield.MaterialAutoCompleteTextView
-                android:id="@+id/spinnerProfile"
-                style="@style/LoqIn.DropdownText"
+                android:id="@+id/spinnerLocationTrigger"
+                style="@style/LoqIn.SheetDropdownText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center_vertical"
@@ -126,584 +420,639 @@
                 android:inputType="none" />
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- 3. TIME MODE (Only for Time schedules) -->
-        <LinearLayout
-            android:id="@+id/groupTimeMode"
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/layoutLocationCooldown"
+            style="@style/LoqIn.SheetField.Dropdown"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            android:orientation="vertical">
+            android:layout_marginTop="10dp"
+            android:hint="@string/schedules_location_cooldown_title"
+            app:startIconDrawable="@drawable/alarm_24">
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/layoutTimeMode"
-                style="@style/LoqIn.DropdownLayout"
+            <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                android:id="@+id/spinnerLocationCooldown"
+                style="@style/LoqIn.SheetDropdownText"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:hint="@string/schedules_time_mode"
-                app:startIconDrawable="@drawable/schedule_24">
+                android:gravity="center_vertical"
+                android:importantForAutofill="no"
+                android:inputType="none" />
+        </com.google.android.material.textfield.TextInputLayout>
+    </LinearLayout>
 
-                <com.google.android.material.textfield.MaterialAutoCompleteTextView
-                    android:id="@+id/spinnerTimeMode"
-                    style="@style/LoqIn.DropdownText"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:importantForAutofill="no"
-                    android:inputType="none" />
-            </com.google.android.material.textfield.TextInputLayout>
-        </LinearLayout>
+    <!-- 7A. STANDARD ACTION (Time & Location) -->
+    <LinearLayout
+        android:id="@+id/groupStandardAction"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:orientation="vertical">
 
-        <!-- 4. WI-FI CONFIGURATION -->
-        <LinearLayout
-            android:id="@+id/groupWifi"
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/layoutAction"
+            style="@style/LoqIn.SheetField.Dropdown"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
+            android:hint="@string/schedules_field_action"
+            app:startIconDrawable="@drawable/play_arrow_24">
+
+            <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                android:id="@+id/spinnerAction"
+                style="@style/LoqIn.SheetDropdownText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:importantForAutofill="no"
+                android:inputType="none" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            android:id="@+id/textActionNfcHint"
+            android:textAppearance="?attr/textAppearanceBody2"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:layout_marginTop="6dp"
+            android:text="@string/schedules_dialog_nfc_lock_hint"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <!-- 7B. CONNECTION ACTIONS (Wi-Fi & Bluetooth) -->
+    <LinearLayout
+        android:id="@+id/groupConnActions"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        android:orientation="vertical"
+        android:visibility="gone"
+        tools:visibility="visible">
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/layoutConnActionConnect"
+            style="@style/LoqIn.SheetField.Dropdown"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/schedules_when_connected"
+            app:startIconDrawable="@drawable/play_arrow_24">
+
+            <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                android:id="@+id/spinnerConnActionConnect"
+                style="@style/LoqIn.SheetDropdownText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:importantForAutofill="no"
+                android:inputType="none" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <com.google.android.material.textfield.TextInputLayout
+            android:id="@+id/layoutConnActionDisconnect"
+            style="@style/LoqIn.SheetField.Dropdown"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="10dp"
+            android:hint="@string/schedules_when_disconnected"
+            app:startIconDrawable="@drawable/play_arrow_24">
+
+            <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                android:id="@+id/spinnerConnActionDisconnect"
+                style="@style/LoqIn.SheetDropdownText"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:importantForAutofill="no"
+                android:inputType="none" />
+        </com.google.android.material.textfield.TextInputLayout>
+
+        <TextView
+            android:id="@+id/tvConnSummary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:layout_marginStart="4dp"
+            android:textColor="?android:attr/textColorSecondary"
+            android:textSize="12.5sp"
+            tools:text="Blocks apps while connected, and unblocks when disconnected." />
+    </LinearLayout>
+
+    <!-- 8. UNIFIED TIMING & DAYS CARD (Tonal surface, no harsh wireframes) -->
+    <com.google.android.material.card.MaterialCardView
+        style="@style/LoqIn.Card"
+        android:id="@+id/cardTimingContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="12dp"
+        app:cardBackgroundColor="@color/foqos_surface_variant">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:visibility="gone"
-            tools:visibility="visible">
+            android:padding="16dp">
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/layoutWifiSsid"
-                style="@style/LoqIn.TextInputLayout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="@string/schedules_wifi_ssid_hint"
-                app:endIconMode="clear_text"
-                app:startIconDrawable="@drawable/wifi_24">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/inputWifiSsid"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:autofillHints="none"
-                    android:gravity="center_vertical"
-                    android:inputType="textNoSuggestions"
-                    android:minHeight="52dp"
-                    android:singleLine="true" />
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnScanWifi"
-                style="@style/Widget.Material3.Button.TonalButton"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:layout_marginTop="6dp"
-                android:minHeight="44dp"
-                app:strokeWidth="0dp"
-                android:text="@string/schedules_wifi_pick_action"
-                app:icon="@drawable/wifi_24"
-                app:iconGravity="textStart" />
-        </LinearLayout>
-
-        <!-- 5. BLUETOOTH CONFIGURATION -->
-        <LinearLayout
-            android:id="@+id/groupBt"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            android:orientation="vertical"
-            android:visibility="gone"
-            tools:visibility="visible">
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/layoutBtName"
-                style="@style/LoqIn.TextInputLayout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="@string/schedules_bt_name_hint"
-                app:endIconMode="clear_text"
-                app:startIconDrawable="@drawable/bluetooth_24">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/inputBtName"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:autofillHints="none"
-                    android:gravity="center_vertical"
-                    android:inputType="textNoSuggestions"
-                    android:minHeight="52dp"
-                    android:singleLine="true" />
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnUseConnectedBt"
-                style="@style/Widget.Material3.Button.TonalButton"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:layout_marginTop="6dp"
-                android:minHeight="44dp"
-                app:strokeWidth="0dp"
-                android:text="@string/schedules_bt_use_connected"
-                app:icon="@drawable/bluetooth_24"
-                app:iconGravity="textStart" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnPickPairedBt"
-                style="@style/Widget.Material3.Button.TonalButton"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:layout_marginTop="6dp"
-                android:minHeight="44dp"
-                app:strokeWidth="0dp"
-                android:text="@string/schedules_bt_pick_paired"
-                app:icon="@drawable/bluetooth_24"
-                app:iconGravity="textStart" />
-        </LinearLayout>
-
-        <!-- 6. LOCATION CONFIGURATION -->
-        <LinearLayout
-            android:id="@+id/groupLocation"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            android:orientation="vertical"
-            android:visibility="gone"
-            tools:visibility="visible">
-
-            <!-- Single location box: type an address or coordinates, then Search -->
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/layoutLocationQuery"
-                style="@style/LoqIn.TextInputLayout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="@string/schedules_location_picker_hint"
-                app:helperText="@string/schedules_location_picker_helper"
-                app:startIconDrawable="@drawable/location_on_24"
-                app:endIconMode="clear_text">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/inputLocationQuery"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:autofillHints="none"
-                    android:gravity="center_vertical"
-                    android:imeOptions="actionSearch"
-                    android:inputType="textPostalAddress|textCapSentences"
-                    android:minHeight="52dp"
-                    android:singleLine="true" />
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <TextView
-                android:id="@+id/textLocationSummary"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:layout_marginStart="4dp"
-                android:textColor="?android:attr/textColorSecondary"
-                android:textSize="12sp"
-                android:visibility="gone"
-                tools:text="Selected: Central Park (250m radius)"
-                tools:visibility="visible" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnLocationSearchInline"
-                style="@style/Widget.Material3.Button.TonalButton"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:layout_marginTop="6dp"
-                android:minHeight="44dp"
-                app:strokeWidth="0dp"
-                android:text="@string/schedules_location_map_picker_search_action"
-                app:icon="@drawable/search_24"
-                app:iconGravity="textStart" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnUseCurrentLocation"
-                style="@style/Widget.Material3.Button.TonalButton"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:layout_marginTop="6dp"
-                android:minHeight="44dp"
-                app:strokeWidth="0dp"
-                android:text="@string/schedules_location_pick_current"
-                app:icon="@drawable/location_on_24"
-                app:iconGravity="textStart" />
-
-            <com.google.android.material.loadingindicator.LoadingIndicator
-                android:id="@+id/progressLocationSearchInline"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginTop="12dp"
-                android:layout_marginBottom="4dp"
-                android:visibility="gone"
-                tools:visibility="visible"
-                app:indicatorColor="?attr/colorPrimary" />
-
-            <TextView
-                android:id="@+id/tvLocationSearchStatusInline"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:gravity="center"
-                android:textColor="?android:attr/textColorSecondary"
-                android:textSize="12sp"
-                android:visibility="gone"
-                tools:text="No matching locations found"
-                tools:visibility="visible" />
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rvLocationResultsInline"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:nestedScrollingEnabled="false"
-                android:visibility="gone"
-                tools:itemCount="2"
-                tools:listitem="@layout/item_location_search_result"
-                tools:visibility="visible" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnOpenMapPicker"
-                style="@style/Widget.Material3.Button.TonalButton"
-                android:layout_width="match_parent"
-                android:layout_height="44dp"
-                android:layout_marginTop="6dp"
-                android:minHeight="44dp"
-                app:strokeWidth="0dp"
-                android:text="@string/schedules_location_open_map_picker"
-                app:icon="@drawable/location_on_24"
-                app:iconGravity="textStart" />
-
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="2dp"
-                android:layout_marginTop="10dp"
-                android:text="@string/schedules_location_radius_title"
-                android:textAppearance="?attr/textAppearanceSubtitle2" />
-
-            <com.google.android.material.chip.ChipGroup
-                android:id="@+id/chipGroupRadius"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                app:chipSpacingHorizontal="6dp"
-                app:selectionRequired="true"
-                app:singleSelection="true">
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chipRadius100"
-                    style="@style/LoqIn.DayChip"
-                    app:chipStrokeWidth="0dp"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:checkable="true"
-                    android:text="@string/schedules_location_radius_100" />
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chipRadius250"
-                    style="@style/LoqIn.DayChip"
-                    app:chipStrokeWidth="0dp"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:checkable="true"
-                    android:text="@string/schedules_location_radius_250" />
-
-                <com.google.android.material.chip.Chip
-                    android:id="@+id/chipRadius500"
-                    style="@style/LoqIn.DayChip"
-                    app:chipStrokeWidth="0dp"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:checkable="true"
-                    android:text="@string/schedules_location_radius_500" />
-            </com.google.android.material.chip.ChipGroup>
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/layoutLocationTrigger"
-                style="@style/LoqIn.DropdownLayout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:hint="@string/schedules_location_trigger_title"
-                app:startIconDrawable="@drawable/location_on_24">
-
-                <com.google.android.material.textfield.MaterialAutoCompleteTextView
-                    android:id="@+id/spinnerLocationTrigger"
-                    style="@style/LoqIn.DropdownText"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:importantForAutofill="no"
-                    android:inputType="none" />
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/layoutLocationCooldown"
-                style="@style/LoqIn.DropdownLayout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:hint="@string/schedules_location_cooldown_title"
-                app:startIconDrawable="@drawable/alarm_24">
-
-                <com.google.android.material.textfield.MaterialAutoCompleteTextView
-                    android:id="@+id/spinnerLocationCooldown"
-                    style="@style/LoqIn.DropdownText"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:importantForAutofill="no"
-                    android:inputType="none" />
-            </com.google.android.material.textfield.TextInputLayout>
-        </LinearLayout>
-
-        <!-- 7A. STANDARD ACTION (Time & Location) -->
-        <LinearLayout
-            android:id="@+id/groupStandardAction"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            android:orientation="vertical">
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/layoutAction"
-                style="@style/LoqIn.DropdownLayout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="@string/schedules_field_action"
-                app:startIconDrawable="@drawable/play_arrow_24">
-
-                <com.google.android.material.textfield.MaterialAutoCompleteTextView
-                    android:id="@+id/spinnerAction"
-                    style="@style/LoqIn.DropdownText"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:importantForAutofill="no"
-                    android:inputType="none" />
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <TextView
-                android:id="@+id/textActionNfcHint"
-                android:textAppearance="?attr/textAppearanceBody2"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
-                android:layout_marginTop="6dp"
-                android:text="@string/schedules_dialog_nfc_lock_hint"
-                android:visibility="gone" />
-        </LinearLayout>
-
-        <!-- 7B. CONNECTION ACTIONS (Wi-Fi & Bluetooth) -->
-        <LinearLayout
-            android:id="@+id/groupConnActions"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            android:orientation="vertical"
-            android:visibility="gone"
-            tools:visibility="visible">
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/layoutConnActionConnect"
-                style="@style/LoqIn.DropdownLayout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="@string/schedules_when_connected"
-                app:startIconDrawable="@drawable/play_arrow_24">
-
-                <com.google.android.material.textfield.MaterialAutoCompleteTextView
-                    android:id="@+id/spinnerConnActionConnect"
-                    style="@style/LoqIn.DropdownText"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:importantForAutofill="no"
-                    android:inputType="none" />
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/layoutConnActionDisconnect"
-                style="@style/LoqIn.DropdownLayout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:hint="@string/schedules_when_disconnected"
-                app:startIconDrawable="@drawable/play_arrow_24">
-
-                <com.google.android.material.textfield.MaterialAutoCompleteTextView
-                    android:id="@+id/spinnerConnActionDisconnect"
-                    style="@style/LoqIn.DropdownText"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:importantForAutofill="no"
-                    android:inputType="none" />
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <TextView
-                android:id="@+id/tvConnSummary"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:layout_marginStart="4dp"
-                android:textColor="?android:attr/textColorSecondary"
-                android:textSize="12.5sp"
-                tools:text="Blocks apps while connected, and unblocks when disconnected." />
-        </LinearLayout>
-
-        <!-- 8. UNIFIED TIMING & DAYS CARD (Tonal surface, no harsh wireframes) -->
-        <com.google.android.material.card.MaterialCardView
-            style="@style/LoqIn.Card"
-            android:id="@+id/cardTimingContainer"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="12dp"
-            app:cardBackgroundColor="@color/foqos_surface_variant">
-
+            <!-- 24/7 Row -->
             <LinearLayout
+                android:id="@+id/row247"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackground">
+
+                <ImageView
+                    android:id="@+id/iv247Icon"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/calendar_month_24"
+                    app:tint="?attr/colorPrimary" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="12dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tv247Title"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/schedules_247_title"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tv247Subtitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="@string/schedules_247_subtitle_conn"
+                        android:textColor="?android:attr/textColorSecondary"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switch247"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:clickable="false"
+                    android:focusable="false" />
+            </LinearLayout>
+
+            <!-- Divider between 24/7 row and All Day row -->
+            <View
+                android:id="@+id/divider247"
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="12dp"
+                android:background="?attr/colorOutlineVariant"
+                android:alpha="0.4"
+                android:visibility="gone" />
+
+            <!-- All Day Row -->
+            <LinearLayout
+                android:id="@+id/rowAllDay"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:clickable="true"
+                android:focusable="true"
+                android:background="?attr/selectableItemBackground">
+
+                <ImageView
+                    android:id="@+id/ivAllDayIcon"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/schedule_24"
+                    app:tint="?attr/colorPrimary" />
+
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="12dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tvAllDayTitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/schedules_all_day_title"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="15sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/tvAllDaySubtitle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:text="@string/schedules_all_day_subtitle"
+                        android:textColor="?android:attr/textColorSecondary"
+                        android:textSize="12sp" />
+                </LinearLayout>
+
+                <androidx.appcompat.widget.SwitchCompat
+                    android:id="@+id/switchAllDay"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:clickable="false"
+                    android:focusable="false" />
+            </LinearLayout>
+
+            <!-- Divider between All Day row and Time Tiles -->
+            <View
+                android:id="@+id/dividerTime"
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="12dp"
+                android:layout_marginBottom="12dp"
+                android:background="?attr/colorOutlineVariant"
+                android:alpha="0.4"
+                android:visibility="gone" />
+
+            <!-- Time Range Tiles: Start Time -> End Time (Shown when All Day is OFF) -->
+            <LinearLayout
+                android:id="@+id/groupTimeRow"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:visibility="gone"
+                tools:visibility="visible">
+
+                <!-- Start Time Tile -->
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/LoqIn.Card"
+                    android:id="@+id/cardStartTime"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:paddingHorizontal="14dp"
+                        android:paddingVertical="10dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/schedules_start_time"
+                            android:textSize="10.5sp"
+                            android:textStyle="bold"
+                            android:textAllCaps="true"
+                            android:letterSpacing="0.06"
+                            android:textColor="?android:attr/textColorSecondary" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginTop="4dp">
+
+                            <ImageView
+                                android:id="@+id/ivStartTimeIcon"
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:src="@drawable/alarm_24"
+                                android:contentDescription="@null"
+                                app:tint="?attr/colorPrimary" />
+
+                            <TextView
+                                android:id="@+id/textStartTime"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:textSize="18sp"
+                                android:textStyle="bold"
+                                android:textColor="?attr/colorOnSurface"
+                                tools:text="08:00" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+
+                <!-- Arrow -->
+                <ImageView
+                    android:id="@+id/ivTimeArrow"
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:layout_marginHorizontal="6dp"
+                    android:src="@drawable/play_arrow_24"
+                    android:alpha="0.4"
+                    android:contentDescription="@null"
+                    app:tint="?android:attr/textColorSecondary" />
+
+                <!-- End Time Tile -->
+                <com.google.android.material.card.MaterialCardView
+                    style="@style/LoqIn.Card"
+                    android:id="@+id/cardEndTime"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?attr/selectableItemBackground">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:paddingHorizontal="14dp"
+                        android:paddingVertical="10dp">
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/schedules_end_time"
+                            android:textSize="10.5sp"
+                            android:textStyle="bold"
+                            android:textAllCaps="true"
+                            android:letterSpacing="0.06"
+                            android:textColor="?android:attr/textColorSecondary" />
+
+                        <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical"
+                            android:layout_marginTop="4dp">
+
+                            <ImageView
+                                android:id="@+id/ivEndTimeIcon"
+                                android:layout_width="18dp"
+                                android:layout_height="18dp"
+                                android:src="@drawable/alarm_24"
+                                android:contentDescription="@null"
+                                app:tint="?attr/colorPrimary" />
+
+                            <TextView
+                                android:id="@+id/textEndTime"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="8dp"
+                                android:textSize="18sp"
+                                android:textStyle="bold"
+                                android:textColor="?attr/colorOnSurface"
+                                tools:text="17:00" />
+                        </LinearLayout>
+                    </LinearLayout>
+                </com.google.android.material.card.MaterialCardView>
+            </LinearLayout>
+
+            <!-- Weekly Days Section -->
+            <LinearLayout
+                android:id="@+id/groupWeekly"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:orientation="vertical">
+
+                <TextView
+                    android:textAppearance="?attr/textAppearanceSubtitle2"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="2dp"
+                    android:text="@string/schedules_days" />
+
+                <!-- Single Row of 7 Day Pills -->
+                <LinearLayout
+                    android:id="@+id/rowDayPills"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/chipMon"
+                        style="@style/Widget.Material3.Button.UnelevatedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="3dp"
+                        android:checkable="true"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:minWidth="0dp"
+                        android:padding="0dp"
+                        android:text="@string/day_short_mon"
+                        android:textSize="12.5sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="12dp"
+                        app:strokeWidth="0dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/chipTue"
+                        style="@style/Widget.Material3.Button.UnelevatedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="3dp"
+                        android:checkable="true"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:minWidth="0dp"
+                        android:padding="0dp"
+                        android:text="@string/day_short_tue"
+                        android:textSize="12.5sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="12dp"
+                        app:strokeWidth="0dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/chipWed"
+                        style="@style/Widget.Material3.Button.UnelevatedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="3dp"
+                        android:checkable="true"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:minWidth="0dp"
+                        android:padding="0dp"
+                        android:text="@string/day_short_wed"
+                        android:textSize="12.5sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="12dp"
+                        app:strokeWidth="0dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/chipThu"
+                        style="@style/Widget.Material3.Button.UnelevatedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="3dp"
+                        android:checkable="true"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:minWidth="0dp"
+                        android:padding="0dp"
+                        android:text="@string/day_short_thu"
+                        android:textSize="12.5sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="12dp"
+                        app:strokeWidth="0dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/chipFri"
+                        style="@style/Widget.Material3.Button.UnelevatedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="3dp"
+                        android:checkable="true"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:minWidth="0dp"
+                        android:padding="0dp"
+                        android:text="@string/day_short_fri"
+                        android:textSize="12.5sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="12dp"
+                        app:strokeWidth="0dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/chipSat"
+                        style="@style/Widget.Material3.Button.UnelevatedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:layout_marginEnd="3dp"
+                        android:checkable="true"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:minWidth="0dp"
+                        android:padding="0dp"
+                        android:text="@string/day_short_sat"
+                        android:textSize="12.5sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="12dp"
+                        app:strokeWidth="0dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/chipSun"
+                        style="@style/Widget.Material3.Button.UnelevatedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="40dp"
+                        android:layout_weight="1"
+                        android:checkable="true"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:minWidth="0dp"
+                        android:padding="0dp"
+                        android:text="@string/day_short_sun"
+                        android:textSize="12.5sp"
+                        android:textStyle="bold"
+                        app:cornerRadius="12dp"
+                        app:strokeWidth="0dp" />
+                </LinearLayout>
+
+                <!-- Quick Presets Row (Clean tonal pills, no wireframe strokes) -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:orientation="horizontal">
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/chipWeekdays"
+                        style="@style/Widget.Material3.Button.UnelevatedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="36dp"
+                        android:layout_marginEnd="4dp"
+                        android:layout_weight="1"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:minHeight="36dp"
+                        android:padding="0dp"
+                        android:text="@string/schedules_group_weekdays"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="11.5sp"
+                        app:backgroundTint="@color/foqos_surface"
+                        app:cornerRadius="12dp"
+                        app:strokeWidth="0dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/chipWeekend"
+                        style="@style/Widget.Material3.Button.UnelevatedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="36dp"
+                        android:layout_marginHorizontal="2dp"
+                        android:layout_weight="1"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:minHeight="36dp"
+                        android:padding="0dp"
+                        android:text="@string/schedules_group_weekend"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="11.5sp"
+                        app:backgroundTint="@color/foqos_surface"
+                        app:cornerRadius="12dp"
+                        app:strokeWidth="0dp" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/chipToday"
+                        style="@style/Widget.Material3.Button.UnelevatedButton"
+                        android:layout_width="0dp"
+                        android:layout_height="36dp"
+                        android:layout_marginStart="4dp"
+                        android:layout_weight="1"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:minHeight="36dp"
+                        android:padding="0dp"
+                        android:text="@string/schedules_group_all"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="11.5sp"
+                        app:backgroundTint="@color/foqos_surface"
+                        app:cornerRadius="12dp"
+                        app:strokeWidth="0dp" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <!-- Date range (one-time only) -->
+            <LinearLayout
+                android:id="@+id/groupOnce"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
                 android:orientation="vertical"
-                android:padding="16dp">
+                android:visibility="gone">
 
-                <!-- 24/7 Row -->
-                <LinearLayout
-                    android:id="@+id/row247"
+                <TextView
+                    android:textAppearance="?attr/textAppearanceSubtitle2"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:background="?attr/selectableItemBackground">
+                    android:layout_marginStart="2dp"
+                    android:text="@string/schedules_date_range" />
 
-                    <ImageView
-                        android:id="@+id/iv247Icon"
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
-                        android:contentDescription="@null"
-                        android:src="@drawable/calendar_month_24"
-                        app:tint="?attr/colorPrimary" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:layout_marginEnd="12dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:id="@+id/tv247Title"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/schedules_247_title"
-                            android:textColor="?attr/colorOnSurface"
-                            android:textSize="15sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:id="@+id/tv247Subtitle"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="@string/schedules_247_subtitle_conn"
-                            android:textColor="?android:attr/textColorSecondary"
-                            android:textSize="12sp" />
-                    </LinearLayout>
-
-                    <androidx.appcompat.widget.SwitchCompat
-                        android:id="@+id/switch247"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:clickable="false"
-                        android:focusable="false" />
-                </LinearLayout>
-
-                <!-- Divider between 24/7 row and All Day row -->
-                <View
-                    android:id="@+id/divider247"
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginTop="12dp"
-                    android:layout_marginBottom="12dp"
-                    android:background="?attr/colorOutlineVariant"
-                    android:alpha="0.4"
-                    android:visibility="gone" />
-
-                <!-- All Day Row -->
                 <LinearLayout
-                    android:id="@+id/rowAllDay"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
                     android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:background="?attr/selectableItemBackground">
+                    android:orientation="horizontal">
 
-                    <ImageView
-                        android:id="@+id/ivAllDayIcon"
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
-                        android:contentDescription="@null"
-                        android:src="@drawable/schedule_24"
-                        app:tint="?attr/colorPrimary" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="12dp"
-                        android:layout_marginEnd="12dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:id="@+id/tvAllDayTitle"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/schedules_all_day_title"
-                            android:textColor="?attr/colorOnSurface"
-                            android:textSize="15sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:id="@+id/tvAllDaySubtitle"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="@string/schedules_all_day_subtitle"
-                            android:textColor="?android:attr/textColorSecondary"
-                            android:textSize="12sp" />
-                    </LinearLayout>
-
-                    <androidx.appcompat.widget.SwitchCompat
-                        android:id="@+id/switchAllDay"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:clickable="false"
-                        android:focusable="false" />
-                </LinearLayout>
-
-                <!-- Divider between All Day row and Time Tiles -->
-                <View
-                    android:id="@+id/dividerTime"
-                    android:layout_width="match_parent"
-                    android:layout_height="1dp"
-                    android:layout_marginTop="12dp"
-                    android:layout_marginBottom="12dp"
-                    android:background="?attr/colorOutlineVariant"
-                    android:alpha="0.4"
-                    android:visibility="gone" />
-
-                <!-- Time Range Tiles: Start Time -> End Time (Shown when All Day is OFF) -->
-                <LinearLayout
-                    android:id="@+id/groupTimeRow"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_vertical"
-                    android:orientation="horizontal"
-                    android:visibility="gone"
-                    tools:visibility="visible">
-
-                    <!-- Start Time Tile -->
+                    <!-- Start Date Tile -->
                     <com.google.android.material.card.MaterialCardView
                         style="@style/LoqIn.Card"
-                        android:id="@+id/cardStartTime"
+                        android:id="@+id/cardStartDate"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
@@ -721,7 +1070,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="@string/schedules_start_time"
+                                android:text="@string/schedules_start_date"
                                 android:textSize="10.5sp"
                                 android:textStyle="bold"
                                 android:textAllCaps="true"
@@ -736,29 +1085,27 @@
                                 android:layout_marginTop="4dp">
 
                                 <ImageView
-                                    android:id="@+id/ivStartTimeIcon"
+                                    android:id="@+id/ivStartDateIcon"
                                     android:layout_width="18dp"
                                     android:layout_height="18dp"
-                                    android:src="@drawable/alarm_24"
+                                    android:src="@drawable/calendar_month_24"
                                     android:contentDescription="@null"
                                     app:tint="?attr/colorPrimary" />
 
                                 <TextView
-                                    android:id="@+id/textStartTime"
+                                    android:id="@+id/textStartDate"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_marginStart="8dp"
-                                    android:textSize="18sp"
+                                    android:textSize="15sp"
                                     android:textStyle="bold"
                                     android:textColor="?attr/colorOnSurface"
-                                    tools:text="08:00" />
+                                    tools:text="Sep 7, 2026" />
                             </LinearLayout>
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
 
-                    <!-- Arrow -->
                     <ImageView
-                        android:id="@+id/ivTimeArrow"
                         android:layout_width="20dp"
                         android:layout_height="20dp"
                         android:layout_marginHorizontal="6dp"
@@ -767,10 +1114,10 @@
                         android:contentDescription="@null"
                         app:tint="?android:attr/textColorSecondary" />
 
-                    <!-- End Time Tile -->
+                    <!-- End Date Tile -->
                     <com.google.android.material.card.MaterialCardView
                         style="@style/LoqIn.Card"
-                        android:id="@+id/cardEndTime"
+                        android:id="@+id/cardEndDate"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
                         android:layout_weight="1"
@@ -788,7 +1135,7 @@
                             <TextView
                                 android:layout_width="wrap_content"
                                 android:layout_height="wrap_content"
-                                android:text="@string/schedules_end_time"
+                                android:text="@string/schedules_end_date"
                                 android:textSize="10.5sp"
                                 android:textStyle="bold"
                                 android:textAllCaps="true"
@@ -803,406 +1150,48 @@
                                 android:layout_marginTop="4dp">
 
                                 <ImageView
-                                    android:id="@+id/ivEndTimeIcon"
+                                    android:id="@+id/ivEndDateIcon"
                                     android:layout_width="18dp"
                                     android:layout_height="18dp"
-                                    android:src="@drawable/alarm_24"
+                                    android:src="@drawable/calendar_month_24"
                                     android:contentDescription="@null"
                                     app:tint="?attr/colorPrimary" />
 
                                 <TextView
-                                    android:id="@+id/textEndTime"
+                                    android:id="@+id/textEndDate"
                                     android:layout_width="wrap_content"
                                     android:layout_height="wrap_content"
                                     android:layout_marginStart="8dp"
-                                    android:textSize="18sp"
+                                    android:textSize="15sp"
                                     android:textStyle="bold"
                                     android:textColor="?attr/colorOnSurface"
-                                    tools:text="17:00" />
+                                    tools:text="Sep 8, 2026" />
                             </LinearLayout>
                         </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
                 </LinearLayout>
-
-                <!-- Weekly Days Section -->
-                <LinearLayout
-                    android:id="@+id/groupWeekly"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:orientation="vertical">
-
-                    <TextView
-                        android:textAppearance="?attr/textAppearanceSubtitle2"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="2dp"
-                        android:text="@string/schedules_days" />
-
-                    <!-- Single Row of 7 Day Pills -->
-                    <LinearLayout
-                        android:id="@+id/rowDayPills"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:orientation="horizontal">
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/chipMon"
-                            style="@style/Widget.Material3.Button.UnelevatedButton"
-                            android:layout_width="0dp"
-                            android:layout_height="40dp"
-                            android:layout_weight="1"
-                            android:layout_marginEnd="3dp"
-                            android:checkable="true"
-                            android:insetTop="0dp"
-                            android:insetBottom="0dp"
-                            android:minWidth="0dp"
-                            android:padding="0dp"
-                            android:text="@string/day_short_mon"
-                            android:textSize="12.5sp"
-                            android:textStyle="bold"
-                            app:cornerRadius="12dp"
-                            app:strokeWidth="0dp" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/chipTue"
-                            style="@style/Widget.Material3.Button.UnelevatedButton"
-                            android:layout_width="0dp"
-                            android:layout_height="40dp"
-                            android:layout_weight="1"
-                            android:layout_marginEnd="3dp"
-                            android:checkable="true"
-                            android:insetTop="0dp"
-                            android:insetBottom="0dp"
-                            android:minWidth="0dp"
-                            android:padding="0dp"
-                            android:text="@string/day_short_tue"
-                            android:textSize="12.5sp"
-                            android:textStyle="bold"
-                            app:cornerRadius="12dp"
-                            app:strokeWidth="0dp" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/chipWed"
-                            style="@style/Widget.Material3.Button.UnelevatedButton"
-                            android:layout_width="0dp"
-                            android:layout_height="40dp"
-                            android:layout_weight="1"
-                            android:layout_marginEnd="3dp"
-                            android:checkable="true"
-                            android:insetTop="0dp"
-                            android:insetBottom="0dp"
-                            android:minWidth="0dp"
-                            android:padding="0dp"
-                            android:text="@string/day_short_wed"
-                            android:textSize="12.5sp"
-                            android:textStyle="bold"
-                            app:cornerRadius="12dp"
-                            app:strokeWidth="0dp" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/chipThu"
-                            style="@style/Widget.Material3.Button.UnelevatedButton"
-                            android:layout_width="0dp"
-                            android:layout_height="40dp"
-                            android:layout_weight="1"
-                            android:layout_marginEnd="3dp"
-                            android:checkable="true"
-                            android:insetTop="0dp"
-                            android:insetBottom="0dp"
-                            android:minWidth="0dp"
-                            android:padding="0dp"
-                            android:text="@string/day_short_thu"
-                            android:textSize="12.5sp"
-                            android:textStyle="bold"
-                            app:cornerRadius="12dp"
-                            app:strokeWidth="0dp" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/chipFri"
-                            style="@style/Widget.Material3.Button.UnelevatedButton"
-                            android:layout_width="0dp"
-                            android:layout_height="40dp"
-                            android:layout_weight="1"
-                            android:layout_marginEnd="3dp"
-                            android:checkable="true"
-                            android:insetTop="0dp"
-                            android:insetBottom="0dp"
-                            android:minWidth="0dp"
-                            android:padding="0dp"
-                            android:text="@string/day_short_fri"
-                            android:textSize="12.5sp"
-                            android:textStyle="bold"
-                            app:cornerRadius="12dp"
-                            app:strokeWidth="0dp" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/chipSat"
-                            style="@style/Widget.Material3.Button.UnelevatedButton"
-                            android:layout_width="0dp"
-                            android:layout_height="40dp"
-                            android:layout_weight="1"
-                            android:layout_marginEnd="3dp"
-                            android:checkable="true"
-                            android:insetTop="0dp"
-                            android:insetBottom="0dp"
-                            android:minWidth="0dp"
-                            android:padding="0dp"
-                            android:text="@string/day_short_sat"
-                            android:textSize="12.5sp"
-                            android:textStyle="bold"
-                            app:cornerRadius="12dp"
-                            app:strokeWidth="0dp" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/chipSun"
-                            style="@style/Widget.Material3.Button.UnelevatedButton"
-                            android:layout_width="0dp"
-                            android:layout_height="40dp"
-                            android:layout_weight="1"
-                            android:checkable="true"
-                            android:insetTop="0dp"
-                            android:insetBottom="0dp"
-                            android:minWidth="0dp"
-                            android:padding="0dp"
-                            android:text="@string/day_short_sun"
-                            android:textSize="12.5sp"
-                            android:textStyle="bold"
-                            app:cornerRadius="12dp"
-                            app:strokeWidth="0dp" />
-                    </LinearLayout>
-
-                    <!-- Quick Presets Row (Clean tonal pills, no wireframe strokes) -->
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:orientation="horizontal">
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/chipWeekdays"
-                            style="@style/Widget.Material3.Button.UnelevatedButton"
-                            android:layout_width="0dp"
-                            android:layout_height="36dp"
-                            android:layout_marginEnd="4dp"
-                            android:layout_weight="1"
-                            android:insetTop="0dp"
-                            android:insetBottom="0dp"
-                            android:minHeight="36dp"
-                            android:padding="0dp"
-                            android:text="@string/schedules_group_weekdays"
-                            android:textColor="?attr/colorOnSurface"
-                            android:textSize="11.5sp"
-                            app:backgroundTint="@color/foqos_surface"
-                            app:cornerRadius="12dp"
-                            app:strokeWidth="0dp" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/chipWeekend"
-                            style="@style/Widget.Material3.Button.UnelevatedButton"
-                            android:layout_width="0dp"
-                            android:layout_height="36dp"
-                            android:layout_marginHorizontal="2dp"
-                            android:layout_weight="1"
-                            android:insetTop="0dp"
-                            android:insetBottom="0dp"
-                            android:minHeight="36dp"
-                            android:padding="0dp"
-                            android:text="@string/schedules_group_weekend"
-                            android:textColor="?attr/colorOnSurface"
-                            android:textSize="11.5sp"
-                            app:backgroundTint="@color/foqos_surface"
-                            app:cornerRadius="12dp"
-                            app:strokeWidth="0dp" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/chipToday"
-                            style="@style/Widget.Material3.Button.UnelevatedButton"
-                            android:layout_width="0dp"
-                            android:layout_height="36dp"
-                            android:layout_marginStart="4dp"
-                            android:layout_weight="1"
-                            android:insetTop="0dp"
-                            android:insetBottom="0dp"
-                            android:minHeight="36dp"
-                            android:padding="0dp"
-                            android:text="@string/schedules_group_all"
-                            android:textColor="?attr/colorOnSurface"
-                            android:textSize="11.5sp"
-                            app:backgroundTint="@color/foqos_surface"
-                            app:cornerRadius="12dp"
-                            app:strokeWidth="0dp" />
-                    </LinearLayout>
-                </LinearLayout>
-
-                <!-- Date range (one-time only) -->
-                <LinearLayout
-                    android:id="@+id/groupOnce"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:orientation="vertical"
-                    android:visibility="gone">
-
-                    <TextView
-                        android:textAppearance="?attr/textAppearanceSubtitle2"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="2dp"
-                        android:text="@string/schedules_date_range" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:gravity="center_vertical"
-                        android:orientation="horizontal">
-
-                        <!-- Start Date Tile -->
-                        <com.google.android.material.card.MaterialCardView
-                            style="@style/LoqIn.Card"
-                            android:id="@+id/cardStartDate"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:foreground="?attr/selectableItemBackground">
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="vertical"
-                                android:paddingHorizontal="14dp"
-                                android:paddingVertical="10dp">
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="@string/schedules_start_date"
-                                    android:textSize="10.5sp"
-                                    android:textStyle="bold"
-                                    android:textAllCaps="true"
-                                    android:letterSpacing="0.06"
-                                    android:textColor="?android:attr/textColorSecondary" />
-
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:orientation="horizontal"
-                                    android:gravity="center_vertical"
-                                    android:layout_marginTop="4dp">
-
-                                    <ImageView
-                                        android:id="@+id/ivStartDateIcon"
-                                        android:layout_width="18dp"
-                                        android:layout_height="18dp"
-                                        android:src="@drawable/calendar_month_24"
-                                        android:contentDescription="@null"
-                                        app:tint="?attr/colorPrimary" />
-
-                                    <TextView
-                                        android:id="@+id/textStartDate"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:layout_marginStart="8dp"
-                                        android:textSize="15sp"
-                                        android:textStyle="bold"
-                                        android:textColor="?attr/colorOnSurface"
-                                        tools:text="Sep 7, 2026" />
-                                </LinearLayout>
-                            </LinearLayout>
-                        </com.google.android.material.card.MaterialCardView>
-
-                        <ImageView
-                            android:layout_width="20dp"
-                            android:layout_height="20dp"
-                            android:layout_marginHorizontal="6dp"
-                            android:src="@drawable/play_arrow_24"
-                            android:alpha="0.4"
-                            android:contentDescription="@null"
-                            app:tint="?android:attr/textColorSecondary" />
-
-                        <!-- End Date Tile -->
-                        <com.google.android.material.card.MaterialCardView
-                            style="@style/LoqIn.Card"
-                            android:id="@+id/cardEndDate"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:clickable="true"
-                            android:focusable="true"
-                            android:foreground="?attr/selectableItemBackground">
-
-                            <LinearLayout
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:orientation="vertical"
-                                android:paddingHorizontal="14dp"
-                                android:paddingVertical="10dp">
-
-                                <TextView
-                                    android:layout_width="wrap_content"
-                                    android:layout_height="wrap_content"
-                                    android:text="@string/schedules_end_date"
-                                    android:textSize="10.5sp"
-                                    android:textStyle="bold"
-                                    android:textAllCaps="true"
-                                    android:letterSpacing="0.06"
-                                    android:textColor="?android:attr/textColorSecondary" />
-
-                                <LinearLayout
-                                    android:layout_width="match_parent"
-                                    android:layout_height="wrap_content"
-                                    android:orientation="horizontal"
-                                    android:gravity="center_vertical"
-                                    android:layout_marginTop="4dp">
-
-                                    <ImageView
-                                        android:id="@+id/ivEndDateIcon"
-                                        android:layout_width="18dp"
-                                        android:layout_height="18dp"
-                                        android:src="@drawable/calendar_month_24"
-                                        android:contentDescription="@null"
-                                        app:tint="?attr/colorPrimary" />
-
-                                    <TextView
-                                        android:id="@+id/textEndDate"
-                                        android:layout_width="wrap_content"
-                                        android:layout_height="wrap_content"
-                                        android:layout_marginStart="8dp"
-                                        android:textSize="15sp"
-                                        android:textStyle="bold"
-                                        android:textColor="?attr/colorOnSurface"
-                                        tools:text="Sep 8, 2026" />
-                                </LinearLayout>
-                            </LinearLayout>
-                        </com.google.android.material.card.MaterialCardView>
-                    </LinearLayout>
-                </LinearLayout>
             </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
 
-        <!-- 9. NOTE (AT THE VERY BOTTOM) -->
-        <com.google.android.material.textfield.TextInputLayout
-            android:id="@+id/layoutNote"
-            style="@style/LoqIn.TextInputLayout"
+    <!-- 9. NOTE (AT THE VERY BOTTOM) -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/layoutNote"
+        style="@style/LoqIn.SheetField"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:hint="@string/schedules_field_note_hint"
+        app:startIconDrawable="@drawable/info_24">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/editNote"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="@string/schedules_field_note_hint"
-            app:startIconDrawable="@drawable/info_24">
+            android:autofillHints="none"
+            android:gravity="center_vertical"
+            android:inputType="textCapSentences|textMultiLine"
+            android:maxLines="3"
+            android:minHeight="52dp" />
+    </com.google.android.material.textfield.TextInputLayout>
 
-            <com.google.android.material.textfield.TextInputEditText
-                android:id="@+id/editNote"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:autofillHints="none"
-                android:gravity="center_vertical"
-                android:inputType="textCapSentences|textMultiLine"
-                android:maxLines="3"
-                android:minHeight="52dp" />
-        </com.google.android.material.textfield.TextInputLayout>
-
-    </LinearLayout>
-</androidx.core.widget.NestedScrollView>
+</LinearLayout>

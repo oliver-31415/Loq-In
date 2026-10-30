@@ -36,7 +36,7 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:layout_marginStart="12dp"
-            android:background="@drawable/bg_roundel_neutral_close"
+            android:background="@drawable/bg_sheet_close"
             android:clickable="true"
             android:contentDescription="@string/close"
             android:focusable="true">
