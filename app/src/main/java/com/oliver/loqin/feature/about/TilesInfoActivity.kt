@@ -39,10 +39,11 @@ import androidx.core.content.ContextCompat
 import androidx.core.widget.ImageViewCompat
 import com.oliver.loqin.R
 import com.oliver.loqin.theme.AccentColor
+import com.oliver.loqin.ui.EdgeToEdgeUtils
+import com.oliver.loqin.ui.SheetRows
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.showWarnPill
 import com.oliver.loqin.ui.showWarnPillOnContent
-import com.oliver.loqin.ui.widgets.ListGroupLayout
 import com.oliver.loqin.util.LocaleHelper
 import com.google.android.material.appbar.MaterialToolbar
 
@@ -85,6 +86,8 @@ abstract class TilesInfoActivity : AppCompatActivity() {
         setContentView(R.layout.activity_tiles_info)
 
         setupToolbar()
+        EdgeToEdgeUtils.setupClassic(activity = this, toolbar = toolbar)
+        EdgeToEdgeUtils.applyThemedSystemBars(this)
         setupContent()
         refreshTiles()
     }
@@ -130,14 +133,11 @@ abstract class TilesInfoActivity : AppCompatActivity() {
             .forEachIndexed { groupIndex, (section, groupTiles) ->
                 section?.let { rowsContainer.addView(createSectionTitle(it, groupIndex > 0)) }
 
-                val group = ListGroupLayout(this).apply {
+                val group = SheetRows.group(this, rowsContainer, onSurface = false).apply {
                     layoutParams = LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
                         LinearLayout.LayoutParams.WRAP_CONTENT
-                    ).apply {
-                        topMargin = dp(6)
-                        bottomMargin = dp(6)
-                    }
+                    )
                 }
 
                 groupTiles.forEach { tile ->
@@ -148,15 +148,17 @@ abstract class TilesInfoActivity : AppCompatActivity() {
             }
     }
 
+    /** Same header as the Settings and Account pages: sentence case, LoqIn.SectionHeader. */
     private fun createSectionTitle(title: String, hasTopMargin: Boolean): TextView =
-        TextView(this).apply {
+        TextView(this, null, 0, R.style.LoqIn_SectionHeader).apply {
             text = title
-            setTextColor(AccentColor.getAccentColorInt(this@TilesInfoActivity))
-            textSize = 12.5f
-            typeface = android.graphics.Typeface.DEFAULT_BOLD
-            letterSpacing = 0.06f
-            isAllCaps = true
-            setPadding(dp(4), if (hasTopMargin) dp(14) else dp(2), dp(4), dp(5))
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = dp(if (hasTopMargin) 16 else 4)
+                bottomMargin = dp(6)
+            }
         }
 
     private fun createTileRow(inflater: LayoutInflater, tile: Tile): View {
