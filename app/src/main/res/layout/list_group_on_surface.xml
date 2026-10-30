@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A grouped list on a sheet (tonal segments), for sheets built in code. -->
+<com.oliver.loqin.ui.widgets.ListGroupLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/LoqIn.ListGroup.OnSurface"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="16dp" />

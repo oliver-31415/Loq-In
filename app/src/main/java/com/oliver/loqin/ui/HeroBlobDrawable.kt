@@ -91,6 +91,8 @@ class HeroBlobDrawable(
     private val ghostPath = Path()
     private val blobPath = Path()
     private val bridgePath = Path()
+    private val gooPath = Path()
+    private val circlePath = Path()
     private val oval = RectF()
 
     // --- Shapes (M3 Expressive shape library, as lobe count + depth) ----------------------------
@@ -132,9 +134,17 @@ class HeroBlobDrawable(
     private var ghostVx = 0f
     private var ghostVy = 0f
 
-    // Droplets: state machine ABSORBED -> SHEDDING -> FREE -> MERGING -> ABSORBED.
+    // Droplets: ABSORBED -> SHEDDING -> FREE -> MERGING -> ABSORBED. Two free droplets can also
+    // combine: one JOINS the other and is HELD inside it until that one rejoins the body.
     private val dropState = intArrayOf(ABSORBED, ABSORBED)
-    private val dropSize = floatArrayOf(0.22f, 0.15f)
+    private val dropBase = floatArrayOf(0.22f, 0.15f)
+    private val dropSize = dropBase.copyOf()
+    private val dropSizeTarget = dropBase.copyOf()
+    private val dropAngle = FloatArray(2)
+    private val dropExt = FloatArray(2)
+    private val dropExtV = FloatArray(2)
+    private val dropTarget = IntArray(2) { -1 }
+    private val surfaceOut = FloatArray(4)
     private val dropX = floatArrayOf(cx, cx)
     private val dropY = floatArrayOf(cy, cy)
     private val dropVx = FloatArray(2)
@@ -277,7 +287,7 @@ class HeroBlobDrawable(
     private fun energy(): Float {
         var e = (abs(vx) + abs(vy)) * 3f + abs(bloomV) + abs(morphV) * 0.2f
         for (v in offsetV) e += abs(v) / POINTS
-        for (state in dropState) if (state == SHEDDING || state == MERGING) e += 0.5f
+        for (state in dropState) if (state == SHEDDING || state == MERGING || state == JOINING) e += 0.5f
         return if (pressed) e + 1f else e
     }
 
@@ -297,7 +307,8 @@ class HeroBlobDrawable(
         for (s in dropState.indices) {
             when (dropState[s]) {
                 ABSORBED -> dropShedAt[s] = min(dropShedAt[s], time + 0.15f + 0.35f * s)
-                FREE, SHEDDING -> {
+                SHEDDING -> dropExtV[s] += r * 1.2f
+                FREE -> {
                     val ex = (dropX[s] - cx) * b.width()
                     val ey = (dropY[s] - cy) * b.height()
                     val d = sqrt(ex * ex + ey * ey).coerceAtLeast(1f)
@@ -433,32 +444,59 @@ class HeroBlobDrawable(
         if (b.width() > 0 && b.height() > 0) stepDroplets(dt, w, h, r)
     }
 
+    // How far a droplet's centre gets past the outline before its neck snaps; a free droplet
+    // reconnects at about the same distance.
+    private fun neckReach(sr: Float, r: Float): Float = sr * 1.2f + r * 0.25f
+
     private fun stepDroplets(dt: Float, w: Float, h: Float, r: Float) {
         for (s in dropState.indices) {
+            dropSize[s] += (dropSizeTarget[s] - dropSize[s]) * min(1f, dt * 6f)
             val sr = r * dropSize[s]
-            if (dropState[s] == ABSORBED) {
-                dropX[s] = cx
-                dropY[s] = cy
-                dropVx[s] = vx
-                dropVy[s] = vy
-                if (!pressed && !exiting && bloom > 0.9f && time >= dropShedAt[s]) {
-                    // Pinch off the trailing side, as if the current tugged it loose, leaning
-                    // towards the open card so the droplet stays in view.
-                    val openX = (0.45f - cx) * w
-                    val openY = (0.5f - cy) * h
-                    val openL = sqrt(openX * openX + openY * openY).coerceAtLeast(1f)
-                    val theta = atan2(-headY + 1.4f * openY / openL, -headX + 1.4f * openX / openL) +
-                        (random() - 0.5f) * 1.0f
-                    val start = r * restRadius(theta) * 0.85f
-                    dropX[s] = cx + cos(theta) * start / w
-                    dropY[s] = cy + sin(theta) * start / h
-                    dropVx[s] = vx + cos(theta) * r * 1.6f / w
-                    dropVy[s] = vy + sin(theta) * r * 1.6f / h
-                    dropState[s] = SHEDDING
-                    dropSince[s] = time
-                    kick(theta, 2.2f)
+            when (dropState[s]) {
+                HELD -> {
+                    val t = dropTarget[s]
+                    dropX[s] = dropX[t]
+                    dropY[s] = dropY[t]
+                    continue
                 }
-                continue
+                ABSORBED -> {
+                    dropX[s] = cx
+                    dropY[s] = cy
+                    dropVx[s] = vx
+                    dropVy[s] = vy
+                    if (!pressed && !exiting && bloom > 0.9f && time >= dropShedAt[s]) {
+                        // Pinch off the trailing side, as if the current tugged it loose, leaning
+                        // towards the open card so the droplet stays in view.
+                        val openX = (0.45f - cx) * w
+                        val openY = (0.5f - cy) * h
+                        val openL = sqrt(openX * openX + openY * openY).coerceAtLeast(1f)
+                        val theta = atan2(-headY + 1.4f * openY / openL, -headX + 1.4f * openX / openL) +
+                            (random() - 0.5f) * 1.0f
+                        dropAngle[s] = theta
+                        dropExt[s] = -sr * 0.5f
+                        dropExtV[s] = r * 0.9f
+                        dropState[s] = SHEDDING
+                        dropSince[s] = time
+                        kick(theta, 2.2f)
+                        placeOnNormal(s, w, h, r)
+                    }
+                    continue
+                }
+                SHEDDING -> {
+                    // Pushed straight out along the outline's normal; the neck's pull slows it,
+                    // and stretched far enough it snaps.
+                    dropExtV[s] -= dropExt[s].coerceAtLeast(0f) * 0.6f * dt
+                    dropExt[s] += dropExtV[s] * dt
+                    placeOnNormal(s, w, h, r)
+                    if (dropExt[s] > neckReach(sr, r)) {
+                        dropState[s] = FREE
+                        dropSince[s] = time
+                        kick(dropAngle[s], -1.6f)
+                    } else if (dropExtV[s] < 0f && dropExt[s] < -sr * 0.5f) {
+                        absorb(s, dropAngle[s])
+                    }
+                    continue
+                }
             }
 
             val ex = (dropX[s] - cx) * w
@@ -467,50 +505,80 @@ class HeroBlobDrawable(
             val ux = ex / d
             val uy = ey / d
             val theta = atan2(ey, ex)
-            val surface = r * restRadius(theta)
+            val surface = bodyRadiusAt(theta, r)
             val since = time - dropSince[s]
             var ax = 0f
             var ay = 0f
             var drag = 2f
             when (dropState[s]) {
-                SHEDDING -> {
-                    // The neck pulls back a little; stretched far enough, it snaps.
-                    drag = 0.6f
-                    val pull = (d - surface * 0.8f).coerceAtLeast(0f) * 2.2f
-                    ax -= ux * pull
-                    ay -= uy * pull
-                    if (d > (surface + sr) * 1.38f) {
-                        dropState[s] = FREE
-                        dropSince[s] = time
-                        kick(theta, -1.6f)
-                        dropVx[s] += ux * r * 0.3f / w
-                        dropVy[s] += uy * r * 0.3f / h
-                    } else if (since > 0.4f && d < surface * 0.6f) {
-                        absorb(s, theta)
-                        continue
-                    }
-                }
                 FREE -> {
-                    // Drawn back more and more the longer it is apart; snaps on when close.
-                    val pull = min(r * (0.10f + 0.06f * since), r * 0.9f)
-                    ax -= ux * pull
-                    ay -= uy * pull
-                    if (since > 1.5f && d - surface - sr < r * 0.08f) {
+                    // Another droplet out at the same time? Then they seek each other first and
+                    // the body waits (for a while) before drawing either back.
+                    var partner = false
+                    for (o in dropState.indices) {
+                        if (o == s) continue
+                        if (dropState[o] == FREE || (dropState[o] == JOINING && dropTarget[o] == s)) partner = true
+                        if (dropState[o] != FREE) continue
+                        val ox = (dropX[o] - dropX[s]) * w
+                        val oy = (dropY[o] - dropY[s]) * h
+                        val od = sqrt(ox * ox + oy * oy).coerceAtLeast(1f)
+                        val osr = r * dropSize[o]
+                        ax += ox / od * r * 0.6f
+                        ay += oy / od * r * 0.6f
+                        // Close enough: the smaller joins the larger.
+                        val smaller = dropSize[s] < dropSize[o] || (dropSize[s] == dropSize[o] && s > o)
+                        if (smaller && since > 0.6f && time - dropSince[o] > 0.6f && od < sr + osr + r * 0.15f) {
+                            dropState[s] = JOINING
+                            dropTarget[s] = o
+                            dropSince[s] = time
+                        }
+                    }
+                    val waiting = partner && since < 9f
+                    if (!waiting) {
+                        // Floats free for a while, then is drawn back more and more.
+                        val pull = min(r * (0.03f + 0.05f * (since - 4f).coerceAtLeast(0f)), r * 0.6f)
+                        ax -= ux * pull
+                        ay -= uy * pull
+                    }
+                    // Reconnects at about the distance it snapped off, then is drawn in. Touching
+                    // the body always joins, so a droplet never slides over it.
+                    val touching = d - surface < sr * 1.6f
+                    val reconnect = !waiting && since > 4.5f && d - surface < neckReach(sr, r)
+                    if (dropState[s] == FREE && (touching || reconnect)) {
                         dropState[s] = MERGING
                         dropSince[s] = time
-                        kick(theta, 1.8f)
-                        dropVx[s] -= ux * r * 0.6f / w
-                        dropVy[s] -= uy * r * 0.6f / h
+                        kick(theta, 1.2f)
                     }
                 }
                 MERGING -> {
-                    // Sucked in quickly, riding along with the body.
+                    // Drawn in along the neck, riding along with the body.
                     drag = 0f
-                    ax -= ex * 14f + (dropVx[s] - vx) * w * 6f
-                    ay -= ey * 14f + (dropVy[s] - vy) * h * 6f
-                    if (d < surface * 0.5f) {
+                    ax -= ex * 6f + (dropVx[s] - vx) * w * 4f
+                    ay -= ey * 6f + (dropVy[s] - vy) * h * 4f
+                    if (d < surface * 0.55f) {
                         absorb(s, theta)
                         continue
+                    }
+                }
+                JOINING -> {
+                    val t = dropTarget[s]
+                    if (t < 0 || dropState[t] != FREE) {
+                        dropState[s] = FREE
+                        dropSince[s] = time
+                    } else {
+                        drag = 0f
+                        val tx = (dropX[s] - dropX[t]) * w
+                        val ty = (dropY[s] - dropY[t]) * h
+                        ax -= tx * 10f + (dropVx[s] - dropVx[t]) * w * 5f
+                        ay -= ty * 10f + (dropVy[s] - dropVy[t]) * h * 5f
+                        if (sqrt(tx * tx + ty * ty) < r * dropSize[t] * 0.5f) {
+                            // Combined: one bigger droplet with the same amount of goo.
+                            dropState[s] = HELD
+                            dropSizeTarget[t] = sqrt(dropSizeTarget[t] * dropSizeTarget[t] + dropSize[s] * dropSize[s])
+                            dropVx[t] = (dropVx[t] + dropVx[s]) * 0.5f
+                            dropVy[t] = (dropVy[t] + dropVy[s]) * 0.5f
+                            continue
+                        }
                     }
                 }
             }
@@ -526,11 +594,33 @@ class HeroBlobDrawable(
         }
     }
 
+    // Puts a shedding droplet on the outline's normal at its angle, [dropExt] beyond the surface.
+    private fun placeOnNormal(s: Int, w: Float, h: Float, r: Float) {
+        surfaceAt(dropAngle[s], r, surfaceOut)
+        val ox = surfaceOut[0] + surfaceOut[2] * dropExt[s]
+        val oy = surfaceOut[1] + surfaceOut[3] * dropExt[s]
+        dropX[s] = cx + ox / w
+        dropY[s] = cy + oy / h
+        dropVx[s] = vx + surfaceOut[2] * dropExtV[s] / w
+        dropVy[s] = vy + surfaceOut[3] * dropExtV[s] / h
+    }
+
     private fun absorb(s: Int, theta: Float) {
         dropState[s] = ABSORBED
         dropShedAt[s] = time + 5f + random() * 4f
-        kick(theta, 1.0f)
-        for (i in 0 until POINTS) offsetV[i] += 0.4f
+        val grown = dropSize[s] / dropBase[s]
+        dropSize[s] = dropBase[s]
+        dropSizeTarget[s] = dropBase[s]
+        kick(theta, 1.0f * grown)
+        for (i in 0 until POINTS) offsetV[i] += 0.4f * grown
+        // Droplets it had swallowed come back into the body with it.
+        for (o in dropState.indices) {
+            if (dropState[o] == HELD && dropTarget[o] == s) {
+                dropState[o] = ABSORBED
+                dropTarget[o] = -1
+                dropShedAt[o] = time + 2f + random() * 3f
+            }
+        }
     }
 
     private fun blobRadius(b: Rect): Float = min(b.width(), b.height()) * 0.34f
@@ -600,56 +690,91 @@ class HeroBlobDrawable(
             shaderMatrix.setTranslate(0f, by)
             blobShader?.setLocalMatrix(shaderMatrix)
             smoothClosed(blobPath, px, py)
-            canvas.drawPath(blobPath, blobPaint)
-            // Droplets and their necks are drawn separately: in one path, opposite winding
-            // directions would cut holes where they overlap the body.
+            // The body, attached droplets and their necks are merged into one shape and drawn
+            // once, so the joins have no anti-aliased seams. Free droplets are drawn on their own.
+            gooPath.set(blobPath)
             for (s in dropState.indices) {
-                if (dropState[s] == ABSORBED) continue
+                if (dropState[s] == ABSORBED || dropState[s] == HELD) continue
                 val sr = r * dropSize[s]
                 val sx = b.left + (bloomX + (dropX[s] - bloomX) * grow) * w
                 val sy = b.top + (bloomY + (dropY[s] - bloomY) * grow) * h
-                val dx = sx - bx
-                val dy = sy - by
-                val d = sqrt(dx * dx + dy * dy)
-                // The neck starts on a circle that stays inside the irregular outline around
-                // the join, so its sides grow out of the body instead of poking past it.
-                val toward = atan2(dy, dx)
-                var bodyR = bodyRadiusAt(toward, r)
-                for (k in 1..4) {
-                    bodyR = min(bodyR, bodyRadiusAt(toward + 0.3f * k, r))
-                    bodyR = min(bodyR, bodyRadiusAt(toward - 0.3f * k, r))
-                }
-                bodyR *= 0.97f
-                val neck = when (dropState[s]) {
-                    MERGING -> 0.6f
-                    SHEDDING -> {
-                        val near = bodyR * 0.85f
-                        val far = (bodyR + sr) * 1.38f
-                        0.6f - 0.3f * ((d - near) / (far - near)).coerceIn(0f, 1f)
+                when (dropState[s]) {
+                    SHEDDING, MERGING -> {
+                        // The neck grows out of the outline along its normal: from a circle that
+                        // touches the outline there from inside, sized to the local curve.
+                        val angle = if (dropState[s] == SHEDDING) dropAngle[s] else atan2(sy - by, sx - bx)
+                        surfaceAt(angle, r, surfaceOut)
+                        var rho = bodyRadiusAt(angle, r)
+                        for (k in 1..3) {
+                            rho = min(rho, bodyRadiusAt(angle + 0.25f * k, r))
+                            rho = min(rho, bodyRadiusAt(angle - 0.25f * k, r))
+                        }
+                        val anchorX = bx + surfaceOut[0]
+                        val anchorY = by + surfaceOut[1]
+                        val vcx = anchorX - surfaceOut[2] * rho
+                        val vcy = anchorY - surfaceOut[3] * rho
+                        val reach = neckReach(sr, r)
+                        val out = if (dropState[s] == SHEDDING) {
+                            dropExt[s]
+                        } else {
+                            sqrt((sx - anchorX) * (sx - anchorX) + (sy - anchorY) * (sy - anchorY))
+                        }
+                        val f = ((out + sr * 0.5f) / (reach + sr * 0.5f)).coerceIn(0f, 1f)
+                        bridgePath.reset()
+                        addGooBridge(
+                            bridgePath, vcx, vcy, rho * 0.97f, sx, sy, sr, 0.6f - 0.3f * f,
+                            body = true, bodyX = bx, bodyY = by, bodyR = r,
+                        )
+                        merge(canvas, bridgePath)
+                        circlePath.reset()
+                        circlePath.addCircle(sx, sy, sr, Path.Direction.CW)
+                        merge(canvas, circlePath)
                     }
-                    else -> 0f
-                }
-                if (neck > 0f) {
-                    bridgePath.reset()
-                    addGooBridge(bridgePath, bx, by, bodyR, sx, sy, sr, neck)
-                    canvas.drawPath(bridgePath, blobPaint)
-                    canvas.drawCircle(sx, sy, sr, blobPaint)
-                } else {
-                    // Free: stretched a little along the way it is moving.
-                    val dvx = dropVx[s] * w
-                    val dvy = dropVy[s] * h
-                    val dv = sqrt(dvx * dvx + dvy * dvy)
-                    val st = 1f + min(dv / (r * 3f), 0.15f)
-                    canvas.save()
-                    canvas.translate(sx, sy)
-                    if (dv > 1f) canvas.rotate(Math.toDegrees(atan2(dvy, dvx).toDouble()).toFloat())
-                    oval.set(-sr * st, -sr / st, sr * st, sr / st)
-                    canvas.drawOval(oval, blobPaint)
-                    canvas.restore()
+                    JOINING -> {
+                        val t = dropTarget[s]
+                        val tr = r * dropSize[t]
+                        val tx = b.left + (bloomX + (dropX[t] - bloomX) * grow) * w
+                        val ty = b.top + (bloomY + (dropY[t] - bloomY) * grow) * h
+                        val dd = sqrt((sx - tx) * (sx - tx) + (sy - ty) * (sy - ty))
+                        val near = max(sr, tr) * 0.6f
+                        val far = sr + tr + r * 0.15f
+                        val f = ((dd - near) / (far - near)).coerceIn(0f, 1f)
+                        bridgePath.reset()
+                        addGooBridge(bridgePath, tx, ty, tr, sx, sy, sr, 0.6f - 0.3f * f)
+                        merge(canvas, bridgePath)
+                        circlePath.reset()
+                        circlePath.addCircle(sx, sy, sr, Path.Direction.CW)
+                        merge(canvas, circlePath)
+                        circlePath.reset()
+                        circlePath.addCircle(tx, ty, tr, Path.Direction.CW)
+                        merge(canvas, circlePath)
+                    }
+                    else -> {
+                        // Free: stretched a little along the way it is moving (kept round while
+                        // another droplet is joining it, so the neck meets it cleanly).
+                        // (A droplet another one is joining is part of the merged shape instead.)
+                        if (dropState.indices.any { dropState[it] == JOINING && dropTarget[it] == s }) continue
+                        val dvx = dropVx[s] * w
+                        val dvy = dropVy[s] * h
+                        val dv = sqrt(dvx * dvx + dvy * dvy)
+                        val st = 1f + min(dv / (r * 4f), 0.06f)
+                        canvas.save()
+                        canvas.translate(sx, sy)
+                        if (dv > 1f) canvas.rotate(Math.toDegrees(atan2(dvy, dvx).toDouble()).toFloat())
+                        oval.set(-sr * st, -sr / st, sr * st, sr / st)
+                        canvas.drawOval(oval, blobPaint)
+                        canvas.restore()
+                    }
                 }
             }
+            canvas.drawPath(gooPath, blobPaint)
         }
         canvas.restore()
+    }
+
+    // Adds [part] to the merged shape; if the union fails, draws it on its own instead.
+    private fun merge(canvas: Canvas, part: Path) {
+        if (!gooPath.op(part, Path.Op.UNION)) canvas.drawPath(part, blobPaint)
     }
 
     // Catmull-Rom through the points, as cubic Béziers: one smooth closed outline.
@@ -672,9 +797,39 @@ class HeroBlobDrawable(
 
     // Outline radius of the body (centre-relative, in px) in direction [theta].
     private fun bodyRadiusAt(theta: Float, r: Float): Float {
-        var i = Math.round(theta / (2f * PI.toFloat()) * POINTS) % POINTS
-        if (i < 0) i += POINTS
-        return r * (restRadius(theta) + offset[i])
+        var f = theta / (2f * PI.toFloat()) * POINTS
+        f -= kotlin.math.floor(f / POINTS) * POINTS
+        val i = f.toInt() % POINTS
+        val j = (i + 1) % POINTS
+        val t = f - kotlin.math.floor(f)
+        return r * (restRadius(theta) + offset[i] + (offset[j] - offset[i]) * t)
+    }
+
+    /**
+     * The outline point in direction [theta] (offset from the centre, px) and its outward
+     * normal: out = [x, y, nx, ny].
+     */
+    private fun surfaceAt(theta: Float, r: Float, out: FloatArray) {
+        val rho = bodyRadiusAt(theta, r)
+        val e = 0.06f
+        val dRho = (bodyRadiusAt(theta + e, r) - bodyRadiusAt(theta - e, r)) / (2f * e)
+        val c = cos(theta)
+        val sn = sin(theta)
+        val tx = dRho * c - rho * sn
+        val ty = dRho * sn + rho * c
+        var nx = ty
+        var ny = -tx
+        val nl = sqrt(nx * nx + ny * ny).coerceAtLeast(1e-3f)
+        nx /= nl
+        ny /= nl
+        if (nx * c + ny * sn < 0f) {
+            nx = -nx
+            ny = -ny
+        }
+        out[0] = rho * c
+        out[1] = rho * sn
+        out[2] = nx
+        out[3] = ny
     }
 
     /**
@@ -682,7 +837,20 @@ class HeroBlobDrawable(
      * each outline tangentially and curves inward, like liquid pulled into a thread. [v] is how
      * far round each outline it starts (0.6 = a thick join, towards 0 = a thin thread).
      */
-    private fun addGooBridge(path: Path, ax: Float, ay: Float, ar: Float, bx: Float, by: Float, br: Float, v: Float) {
+    private fun addGooBridge(
+        path: Path,
+        ax: Float,
+        ay: Float,
+        ar: Float,
+        bx: Float,
+        by: Float,
+        br: Float,
+        v: Float,
+        body: Boolean = false,
+        bodyX: Float = 0f,
+        bodyY: Float = 0f,
+        bodyR: Float = 0f,
+    ) {
         val dx = bx - ax
         val dy = by - ay
         val d = sqrt(dx * dx + dy * dy)
@@ -703,10 +871,21 @@ class HeroBlobDrawable(
         val a2 = centre - u1 - (maxSpread - u1) * v
         val a3 = centre + pi - u2 - (pi - u2 - maxSpread) * v
         val a4 = centre - pi + u2 + (pi - u2 - maxSpread) * v
-        val p1x = ax + cos(a1) * ar
-        val p1y = ay + sin(a1) * ar
-        val p2x = ax + cos(a2) * ar
-        val p2y = ay + sin(a2) * ar
+        var p1x = ax + cos(a1) * ar
+        var p1y = ay + sin(a1) * ar
+        var p2x = ax + cos(a2) * ar
+        var p2y = ay + sin(a2) * ar
+        if (body) {
+            // Start exactly on the body's real outline (just inside it), not on the helper circle.
+            val t1 = atan2(p1y - bodyY, p1x - bodyX)
+            val t2 = atan2(p2y - bodyY, p2x - bodyX)
+            val e1 = bodyRadiusAt(t1, bodyR) * 0.995f
+            val e2 = bodyRadiusAt(t2, bodyR) * 0.995f
+            p1x = bodyX + cos(t1) * e1
+            p1y = bodyY + sin(t1) * e1
+            p2x = bodyX + cos(t2) * e2
+            p2y = bodyY + sin(t2) * e2
+        }
         val p3x = bx + cos(a3) * br
         val p3y = by + sin(a3) * br
         val p4x = bx + cos(a4) * br
@@ -743,13 +922,16 @@ class HeroBlobDrawable(
             p3x + cos(a3 + pi / 2) * h2, p3y + sin(a3 + pi / 2) * h2,
             p3x, p3y,
         )
-        // Back across inside the droplet, along the other side, and across inside the body.
+        // Close through the centres: those segments always stay inside the droplet and the body
+        // (the outline is star-shaped around its centre), so no straight edge shows.
+        path.lineTo(bx, by)
         path.lineTo(p4x, p4y)
         path.cubicTo(
             p4x + cos(a4 - pi / 2) * h2, p4y + sin(a4 - pi / 2) * h2,
             p2x + cos(a2 + pi / 2) * h1, p2y + sin(a2 + pi / 2) * h1,
             p2x, p2y,
         )
+        if (body) path.lineTo(bodyX, bodyY) else path.lineTo(ax, ay)
         path.close()
     }
 
@@ -761,6 +943,8 @@ class HeroBlobDrawable(
         const val SHEDDING = 1
         const val FREE = 2
         const val MERGING = 3
+        const val JOINING = 4
+        const val HELD = 5
 
         // The blob's home: an ellipse in the right part of the card, away from the text. The
         // droplets ride the current in a wider one.

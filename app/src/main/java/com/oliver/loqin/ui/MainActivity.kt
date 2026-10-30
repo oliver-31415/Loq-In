@@ -1849,180 +1849,63 @@ class MainActivity : AppCompatActivity() {
     // =========================
     // Foqos-style profile edit sheet (SPA: all profile edits from the home pill)
     // =========================
-    /** Foqos-style quick profile switcher. */
+    /** Quick profile switcher, in the same grouped-list style as the profile sheet. */
     private fun openSwitchProfileSheet() {
         val profiles = ProfileStore.getProfiles(this).toList().sorted()
         val current = ProfileStore.getCurrent(this)
         val sheet = BottomSheetDialog(this)
-        val onSurface = ContextCompat.getColor(this@MainActivity, com.oliver.loqin.R.color.foqos_on_surface)
-        val onSurfaceSoft = ContextCompat.getColor(this@MainActivity, com.oliver.loqin.R.color.foqos_on_surface_variant)
         val accent = AccentColor.getAccentColorInt(this)
-
-        val surfaceVariant = ContextCompat.getColor(this@MainActivity, com.oliver.loqin.R.color.foqos_surface_variant)
-
-        fun profileRowBg(selected: Boolean): android.graphics.drawable.GradientDrawable =
-            android.graphics.drawable.GradientDrawable().apply {
-                cornerRadius = homeDp(16f).toFloat()
-                setColor(
-                    if (selected) ColorUtils.compositeColors(ColorUtils.setAlphaComponent(accent, 0x18), surfaceVariant)
-                    else surfaceVariant
-                )
-                setStroke(
-                    homeDp(2f),
-                    if (selected) accent else Color.TRANSPARENT
-                )
-            }
-
-        fun roundelBg(): android.graphics.drawable.GradientDrawable =
-            android.graphics.drawable.GradientDrawable().apply {
-                shape = android.graphics.drawable.GradientDrawable.OVAL
-                setColor(foqosSurfaceColor())
-            }
 
         val list = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             val pad = homeDp(16f)
             setPadding(pad, homeDp(8f), pad, homeDp(22f))
-            setBackgroundColor(ContextCompat.getColor(this@MainActivity, com.oliver.loqin.R.color.foqos_surface))
+            setBackgroundResource(R.drawable.sheet_profile_bg)
         }
+        list.addView(SheetRows.header(this, list, getString(R.string.profile_rows_switch)) { sheet.dismiss() })
 
-        // Grab handle
-        list.addView(View(this).apply {
-            background = android.graphics.drawable.GradientDrawable().apply {
-                cornerRadius = homeDp(2f).toFloat()
-                setColor(ColorUtils.setAlphaComponent(onSurfaceSoft, 0x61))
-            }
-            layoutParams = LinearLayout.LayoutParams(homeDp(36f), homeDp(4f)).apply {
-                gravity = android.view.Gravity.CENTER_HORIZONTAL
-            }
-        })
-
-        // Title + close
-        val header = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = android.view.Gravity.CENTER_VERTICAL
-            setPadding(0, homeDp(12f), 0, 0)
-        }
-        header.addView(TextView(this).apply {
-            text = getString(R.string.profile_rows_switch)
-            textSize = 22f
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-            setTextColor(onSurface)
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-        })
-        header.addView(FrameLayout(this).apply {
-            background = roundelBg()
-            isClickable = true
-            isFocusable = true
-            contentDescription = this@MainActivity.getString(R.string.close)
-            setOnClickListener { sheet.dismiss() }
-            addView(TextView(this@MainActivity).apply {
-                text = "\u2715"
-                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
-                textSize = 14f
-                setTextColor(onSurface)
-                layoutParams = FrameLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                ).apply { gravity = android.view.Gravity.CENTER }
-            })
-            layoutParams = LinearLayout.LayoutParams(homeDp(34f), homeDp(34f))
-        })
-        list.addView(header)
-
-        // Create new profile (accent tile)
-        val newRow = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = android.view.Gravity.CENTER_VERTICAL
-            val padV = homeDp(11f)
-            setPadding(homeDp(10f), padV, homeDp(10f), padV)
-            background = profileRowBg(false).apply { setStroke(homeDp(1f), ColorUtils.setAlphaComponent(accent, 0x66)) }
-            isClickable = true
-            isFocusable = true
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-            ).apply { topMargin = homeDp(14f) }
-        }
-        val newIcon = TextView(this).apply {
-            text = "\uFF0B"
-            textSize = 16f
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-            setTextColor(accent)
-            gravity = android.view.Gravity.CENTER
-            layoutParams = LinearLayout.LayoutParams(homeDp(38f), homeDp(38f)).apply {
-                background = roundelBg()
-            }
-        }
-        val newLabel = TextView(this).apply {
-            text = getString(R.string.profile_sheet_new_profile)
-            textSize = 15f
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-            setTextColor(accent)
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
-                marginStart = homeDp(12f)
-            }
-        }
-        newRow.addView(newIcon)
-        newRow.addView(newLabel)
-        newRow.setOnClickListener {
+        // Create new profile
+        val newGroup = SheetRows.group(this, list)
+        val newRow = SheetRows.row(this, newGroup, R.drawable.add_24, getString(R.string.profile_sheet_new_profile), accent = accent)
+        newRow.title.setTextColor(accent)
+        newRow.root.isClickable = true
+        newRow.root.setOnClickListener {
             // Creating is allowed while active (as in Manage profiles); showCreateProfileDialog
             // only activates the new profile when switching is unlocked.
             sheet.dismiss()
             showCreateProfileDialog()
         }
-        list.addView(newRow)
+        newGroup.addView(newRow.root)
+        list.addView(newGroup)
 
-        val profileRows = mutableListOf<Pair<String, View>>()
-        profiles.forEachIndexed { index, profile ->
-            val isSelected = profile == current
-            val row = LinearLayout(this).apply {
-                orientation = LinearLayout.HORIZONTAL
-                gravity = android.view.Gravity.CENTER_VERTICAL
-                val padV = homeDp(11f)
-                setPadding(homeDp(12f), padV, homeDp(12f), padV)
-                background = profileRowBg(isSelected)
-                isClickable = true
-                isFocusable = true
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                ).apply { topMargin = homeDp(8f) }
-            }
-            val name = TextView(this).apply {
-                text = profile
-                textSize = 16f
-                setTypeface(typeface, android.graphics.Typeface.BOLD)
-                setTextColor(onSurface)
-                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-            }
-            row.addView(name)
+        val profileGroup = SheetRows.group(this, list)
+        val profileRows = mutableListOf<Pair<String, SheetRows.Row>>()
+        profiles.forEach { profile ->
+            val row = SheetRows.row(this, profileGroup, R.drawable.layers_24, profile, accent = accent)
+            row.root.isClickable = true
+            row.setSelected(profile == current, accent)
             profileRows += profile to row
-            row.setOnClickListener {
+            row.root.setOnClickListener {
                 // Read the live current profile: the `current` snapshot above
                 // goes stale after the first switch while the sheet is open.
                 if (profile != ProfileStore.getCurrent(this@MainActivity)) {
-                    // Only move the highlight when the switch actually happened:
+                    // Only move the check when the switch actually happened:
                     // a blocked tap warns via pill and must not look selected.
                     // Anchor to the sheet window so the pill is visible above it.
-                    if (!switchToProfile(profile, anchor = row)) {
+                    if (!switchToProfile(profile, anchor = row.root)) {
                         return@setOnClickListener
                     }
                 }
-                profileRows.forEach { (p, r) ->
-                    r.background = profileRowBg(p == profile)
-                }
+                profileRows.forEach { (p, r) -> r.setSelected(p == profile, accent) }
             }
-            list.addView(row)
+            profileGroup.addView(row.root)
         }
+        list.addView(profileGroup)
 
         sheet.setContentView(list)
         sheet.padForNavigationBar()
         sheet.show()
     }
-
-    private fun foqosSurfaceColor(): Int =
-        ContextCompat.getColor(this@MainActivity, com.oliver.loqin.R.color.foqos_surface)
 
     private fun openProfileEditSheet(profile: String) {
         val sheet = BottomSheetDialog(this)
