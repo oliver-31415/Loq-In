@@ -31,7 +31,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
-import androidx.core.graphics.ColorUtils
 import androidx.core.graphics.toColorInt
 import androidx.preference.PreferenceManager
 import com.google.android.material.appbar.MaterialToolbar
@@ -304,7 +303,7 @@ class AppearanceActivity : AppCompatActivity() {
             setColor(color)
         }
         accentPreviewPill.setTextColor(
-            if (ColorUtils.calculateLuminance(color) > 0.5) Color.BLACK else Color.WHITE
+            if (AccentColor.prefersDarkText(color)) Color.BLACK else Color.WHITE
         )
         CustomAccentApplier.tintSwitch(accentPreviewSwitch, color)
         accentPreviewProgress.setIndicatorColor(color)
@@ -358,7 +357,9 @@ class AppearanceActivity : AppCompatActivity() {
         val current = currentAccent()
         tvThemeColorSummary.text = when (current) {
             CUSTOM -> {
+                // Stored as #AARRGGBB; show the #RRGGBB the user typed
                 val hex = prefs.getString(KEY_ACCENT_CUSTOM, "").orEmpty()
+                    .let { if (it.length == 9) "#" + it.substring(3) else it }
                 if (hex.isNotBlank()) getString(R.string.pref_theme_color_custom_fmt, hex)
                 else getString(R.string.pref_accent_custom_title)
             }
