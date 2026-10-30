@@ -13,7 +13,6 @@
     <string name="in_app_youtube_native_limit_guide_title">YouTube Shorts-Feed-Limit</string>
     <string name="in_app_youtube_native_limit_guide_body">Öffne in YouTube Einstellungen → Zeitmanagement → Limit für den Shorts-Feed und stelle es auf 0 Minuten. Lass die Shorts-Regel in Loq In als primäre Blockierung aktiviert. YouTubes eigenes Limit ist eine zusätzliche Ebene und kann weiterhin geschlossen werden.</string>
     <string name="in_app_youtube_open_youtube">YouTube öffnen</string>
-    <string name="in_app_rule_mode_title">In-App-Regelmodus</string>
     <string name="in_app_rule_mode_block">Ausgewählte blockieren</string>
     <string name="in_app_rule_mode_allow">Ausgewählte erlauben</string>
     <string name="in_app_rule_mode_block_summary">Schalter markieren Bereiche, die Loq In blockieren soll.</string>

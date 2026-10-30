@@ -181,6 +181,10 @@ class SchedulesActivity : AppCompatActivity() {
     private val targetProfile: String?
         get() = intent.getStringExtra(EXTRA_PROFILE_NAME)?.trim()?.takeIf { it.isNotBlank() }
 
+    private fun rulesSubtitle(): String =
+        targetProfile?.let { getString(R.string.app_rules_profile_subtitle, it) }
+            ?: getString(R.string.schedules_profile_subtitle)
+
     private fun matchesTargetProfile(schedule: ScheduleStore.Schedule): Boolean {
         val target = targetProfile ?: return true
         val schedProf = schedule.profile.trim()
@@ -335,7 +339,7 @@ class SchedulesActivity : AppCompatActivity() {
         )
         EdgeToEdgeUtils.applyThemedSystemBars(this)
         setSupportActionBar(toolbar)
-        toolbar.subtitle = targetProfile ?: getString(R.string.schedules_profile_subtitle)
+        toolbar.subtitle = rulesSubtitle()
         toolbar.setNavigationOnClickListener {
             if (isSelectionMode) {
                 exitSelectionMode()
@@ -542,7 +546,7 @@ class SchedulesActivity : AppCompatActivity() {
             toolbar.updateSelectionSubtitle(
                 isSelectionMode,
                 selectedScheduleIds.size,
-                targetProfile ?: getString(R.string.schedules_profile_subtitle)
+                rulesSubtitle()
             )
         }
     }
@@ -1008,8 +1012,9 @@ class SchedulesActivity : AppCompatActivity() {
         isScheduleUiReadOnly = readOnlyNow
 
         emptyState.visibility = if (sorted.isEmpty()) View.VISIBLE else View.GONE
+        val priorityChanged = (adapter.itemCount > 1) != (sorted.size > 1)
         adapter.submitList(sorted) {
-            if (readOnlyChanged) {
+            if (readOnlyChanged || priorityChanged) {
                 adapter.notifyItemRangeChanged(0, adapter.itemCount)
             }
         }
@@ -3896,7 +3901,7 @@ private class ScheduleAdapter(
     }
 
     override fun onBindViewHolder(holder: ScheduleViewHolder, position: Int) {
-        holder.bind(getItem(position), position + 1)
+        holder.bind(getItem(position), position + 1, itemCount > 1)
     }
 
     companion object {
@@ -4022,15 +4027,16 @@ private class ScheduleViewHolder(
 
     private fun fmtMinutes(m: Int): String = TimeFormatPrefs.formatMinutesOfDay(itemView.context, m)
 
-    fun bind(s: ScheduleStore.Schedule, rank: Int) {
+    fun bind(s: ScheduleStore.Schedule, rank: Int, ranked: Boolean) {
         current = s
 
         val canInteractNow = canInteract()
         val selecting = isSelectionMode()
 
+        textPriority.visibility = if (ranked) View.VISIBLE else View.GONE
         textPriority.text = itemView.context.getString(R.string.schedules_priority_badge_fmt, rank)
         textPriority.alpha = if (s.enabled) 1f else 0.5f
-        btnDragHandle.visibility = if (selecting) View.GONE else View.VISIBLE
+        btnDragHandle.visibility = if (selecting || !ranked) View.GONE else View.VISIBLE
         btnDragHandle.isEnabled = canInteractNow
         btnDragHandle.alpha = if (canInteractNow) 0.6f else 0.3f
 

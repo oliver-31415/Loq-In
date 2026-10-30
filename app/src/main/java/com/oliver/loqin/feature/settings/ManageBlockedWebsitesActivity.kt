@@ -190,6 +190,9 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         emptyBody.text = getString(
             if (allow) R.string.allowed_websites_empty_body else R.string.blocked_websites_empty_body
         )
+        findViewById<TextView>(R.id.tvWebsiteRuleModeSummary)?.setText(
+            if (allow) R.string.website_rule_mode_allow_summary else R.string.website_rule_mode_block_summary
+        )
         val targetId = if (allow) R.id.btnWebsiteModeAllow else R.id.btnWebsiteModeBlock
         val group = findViewById<MaterialButtonToggleGroup>(R.id.toggleWebsiteRuleMode)
         if (group != null && group.checkedButtonId != targetId) {

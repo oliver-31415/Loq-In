@@ -53,14 +53,18 @@ object TempPauseDialogs {
     private const val STEP_PER_DAY_MINUTES = 15
 
     fun summaryText(activity: AppCompatActivity, profile: String): String {
-        val caps = TempPauseStore.getCaps(activity, profile)
         val used = activity.getString(
             R.string.temp_pause_used_fmt,
             TempPauseStore.usedCountToday(activity, profile),
             TempPauseStore.usedMinutesToday(activity, profile)
         )
+        return capsSummaryText(activity, profile) + "\n" + used
+    }
+
+    fun capsSummaryText(activity: AppCompatActivity, profile: String): String {
+        val caps = TempPauseStore.getCaps(activity, profile)
         if (caps.maxCountPerDay <= 0 && caps.maxMinutesPerPause <= 0 && caps.maxMinutesPerDay <= 0) {
-            return activity.getString(R.string.temp_pause_summary_unlimited) + "\n" + used
+            return activity.getString(R.string.temp_pause_summary_unlimited)
         }
         val parts = mutableListOf<String>()
         if (caps.maxCountPerDay > 0) {
@@ -72,7 +76,7 @@ object TempPauseDialogs {
         if (caps.maxMinutesPerDay > 0) {
             parts += activity.getString(R.string.temp_pause_part_total_fmt, caps.maxMinutesPerDay)
         }
-        return parts.joinToString(" · ") + "\n" + used
+        return parts.joinToString(" · ")
     }
 
     fun show(activity: AppCompatActivity, profile: String, onSaved: (() -> Unit)? = null) {

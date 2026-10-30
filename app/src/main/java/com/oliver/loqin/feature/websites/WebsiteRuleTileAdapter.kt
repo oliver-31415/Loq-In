@@ -298,12 +298,12 @@ class WebsiteRuleTileAdapter(
                 }
                 // Flat unless the tile marks selection or an enabled rule; the default outline is gone.
                 card.strokeWidth = when {
-                    selected -> (2.5f * density).toInt()
+                    selected -> (2f * density).toInt()
                     accentActive -> (1.5f * density).toInt()
                     else -> 0
                 }
                 card.setCardBackgroundColor(
-                    if (selected) ColorUtils.setAlphaComponent(accent, 0x40) else defaultBg
+                    if (selected) ColorUtils.setAlphaComponent(accent, 0x30) else defaultBg
                 )
             }
             // Unselected tiles step back during selection so the chosen one is unmistakable.

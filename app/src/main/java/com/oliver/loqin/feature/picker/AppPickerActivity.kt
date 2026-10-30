@@ -772,6 +772,9 @@ class AppPickerActivity : AppCompatActivity() {
         )
         btnSelectAll.setText(if (isAllow) R.string.app_picker_select_all_allow else R.string.app_picker_select_all)
         btnClearAll.setText(if (isAllow) R.string.app_picker_clear_all_allow else R.string.app_picker_clear_all)
+        findViewById<TextView>(R.id.tvAppRuleModeSummary)?.setText(
+            if (isAllow) R.string.profile_rule_mode_allow_summary else R.string.profile_rule_mode_block_summary
+        )
         SegmentedToggleUi.apply(
             this,
             listOf(btnBlockSelectedMode, btnAllowSelectedMode),

@@ -395,7 +395,7 @@ class InAppRulesActivity : AppCompatActivity() {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { topMargin = dp(10) }
+            ).apply { topMargin = dp(8) }
             setCardBackgroundColor(ContextCompat.getColor(this@InAppRulesActivity, R.color.foqos_surface))
             // Flat tonal card: no outline, same 28dp shape as LoqIn.Card.
             strokeWidth = 0
@@ -503,21 +503,21 @@ class InAppRulesActivity : AppCompatActivity() {
                 AppInstallStatus.NOT_INSTALLED -> {
                     setTextColor(ColorUtils.setAlphaComponent(onSurfaceColor(), 0x99))
                     background = GradientDrawable().apply {
-                        cornerRadius = dp(6).toFloat()
+                        cornerRadius = dp(99).toFloat()
                         setColor(ColorUtils.setAlphaComponent(onSurfaceColor(), 0x18))
                     }
                 }
                 AppInstallStatus.DISABLED -> {
                     setTextColor(danger)
                     background = GradientDrawable().apply {
-                        cornerRadius = dp(6).toFloat()
+                        cornerRadius = dp(99).toFloat()
                         setColor(ColorUtils.setAlphaComponent(danger, 0x1E))
                     }
                 }
                 AppInstallStatus.INSTALLED -> {
                     setTextColor(accent)
                     background = GradientDrawable().apply {
-                        cornerRadius = dp(6).toFloat()
+                        cornerRadius = dp(99).toFloat()
                         setColor(ColorUtils.setAlphaComponent(accent, 0x1E))
                     }
                 }
@@ -993,7 +993,7 @@ class InAppRulesActivity : AppCompatActivity() {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT,
-            ).apply { topMargin = dp(10) }
+            ).apply { topMargin = dp(8) }
             setCardBackgroundColor(ContextCompat.getColor(this@InAppRulesActivity, R.color.foqos_surface))
             // Flat tonal card: no outline, same 28dp shape as LoqIn.Card.
             strokeWidth = 0
@@ -1024,9 +1024,8 @@ class InAppRulesActivity : AppCompatActivity() {
             addView(TextView(this@InAppRulesActivity).apply {
                 text = getString(R.string.in_app_rules_empty_installed_summary)
                 textSize = 13f
-                alpha = 0.72f
                 gravity = Gravity.CENTER
-                setTextColor(onSurfaceColor())
+                setTextColor(MaterialColors.getColor(this@InAppRulesActivity, android.R.attr.textColorSecondary, 0))
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT,

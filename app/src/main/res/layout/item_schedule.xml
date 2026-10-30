@@ -10,7 +10,7 @@
     android:foreground="?attr/selectableItemBackground"
     android:clickable="true"
     android:focusable="true"
-    app:cardUseCompatPadding="true">
+    app:cardUseCompatPadding="false">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -99,7 +99,7 @@
                 android:contentDescription="@string/schedules_test_title"
                 android:alpha="0.82"
                 android:padding="7dp"
-                android:src="@drawable/search_24"
+                android:src="@drawable/info_24"
                 app:tint="?android:attr/textColorSecondary" />
 
             <androidx.appcompat.widget.SwitchCompat
