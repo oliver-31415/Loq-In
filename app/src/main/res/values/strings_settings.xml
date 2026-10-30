@@ -16,13 +16,14 @@
     <!-- ====================================================== -->
     <!-- Settings sections -->
     <!-- ====================================================== -->
-    <string name="settings_section_controls">Controls</string>
+    <string name="settings_section_protection">Protection</string>
     <string name="settings_section_personalization">Personalization</string>
-    <string name="settings_section_reliability">Permissions &amp; reliability</string>
-    <string name="settings_section_data">Account &amp; data</string>
-    <string name="settings_section_help">Help &amp; about</string>
+    <string name="settings_section_system">System</string>
+    <string name="settings_section_help_info">Help &amp; info</string>
     <string name="settings_section_info">Info</string>
     <string name="settings_section_developer">Developer</string>
+    <string name="settings_setup_guide_title">Setup guide</string>
+    <string name="settings_setup_guide_summary">Walk through setup, permissions and features again</string>
 
     <!-- ====================================================== -->
     <!-- Controls -->
@@ -60,11 +61,8 @@
     <string name="account_restricted_open_message">Loq In is active. Account can still be viewed, but protection-related options cannot be changed until Loq In is turned off.</string>
     <string name="account_open_restricted">Open Account</string>
     <string name="account_section_activity_history">Activity &amp; history</string>
-    <string name="account_section_security_access">Security &amp; access</string>
-    <string name="account_section_setup_data">Setup &amp; data</string>
-    <string name="account_overview_title">Loq In overview</string>
+    <string name="account_section_your_data">Your data</string>
     <string name="account_overview_summary">Counters, schedules and actions at a glance</string>
-    <string name="account_keys_codes_title">My keys and codes</string>
     <string name="account_keys_codes_summary">NFC tags, QR and barcode keys</string>
     <string name="settings_account_title">Account</string>
     <string name="settings_account_summary">Backup &amp; emergency PIN</string>
