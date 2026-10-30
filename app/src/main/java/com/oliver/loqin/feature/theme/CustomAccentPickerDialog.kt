@@ -60,7 +60,18 @@ object CustomAccentPickerDialog {
 
         val root = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(24), dp(8), dp(24), dp(4))
+            setPadding(dp(24), dp(8), dp(24), dp(8))
+        }
+
+        // Visible swatch of the chosen colour, shown beside the hex field
+        val swatchDrawable = GradientDrawable().apply {
+            shape = GradientDrawable.OVAL
+            setColor(initial)
+            setStroke(dp(1), 0x33000000)
+        }
+        val swatch = View(context).apply {
+            background = swatchDrawable
+            layoutParams = LinearLayout.LayoutParams(dp(40), dp(40))
         }
 
         // Hex field for exact input
@@ -72,10 +83,15 @@ object CustomAccentPickerDialog {
             filters = arrayOf(InputFilter.LengthFilter(7))
             gravity = Gravity.CENTER
             layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
+                0,
                 LinearLayout.LayoutParams.WRAP_CONTENT,
-            )
+                1f,
+            ).apply { marginStart = dp(12) }
             setText(String.format("#%06X", 0xFFFFFF and initial))
+        }
+
+        fun showColor(color: Int) {
+            swatchDrawable.setColor(color)
         }
 
         // Single drag-through spectrum (hue horizontally, white→hue→black vertically)
@@ -92,19 +108,31 @@ object CustomAccentPickerDialog {
             }
             onColorPicked = { _, _ ->
                 selected = currentColor()
+                showColor(selected)
                 updatingHex = true
                 hexInput.setText(String.format("#%06X", 0xFFFFFF and selected))
                 updatingHex = false
             }
         }
+        val hexRow = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply { topMargin = dp(16) }
+            addView(swatch)
+            addView(hexInput)
+        }
         root.addView(pad)
-        root.addView(hexInput)
+        root.addView(hexRow)
         hexInput.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
                 if (updatingHex) return
                 val parsed = s?.toString()?.trim()?.let { runCatching { it.toColorInt() }.getOrNull() }
                 if (parsed != null) {
                     selected = parsed
+                    showColor(parsed)
                     pad.setColor(parsed)
                 }
             }

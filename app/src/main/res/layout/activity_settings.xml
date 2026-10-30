@@ -41,13 +41,14 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <!-- Protection -->
             <TextView
                 style="@style/LoqIn.SectionHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:layout_marginBottom="6dp"
-                android:text="@string/settings_section_controls" />
+                android:text="@string/settings_section_protection" />
 
             <com.oliver.loqin.ui.widgets.ListGroupLayout
                 style="@style/LoqIn.ListGroup"
@@ -104,7 +105,6 @@
                         app:tint="?attr/colorOnSurfaceVariant" />
                 </LinearLayout>
 
-
                 <LinearLayout
                     android:id="@+id/cardSettingsProtectionChanges"
                     android:layout_width="match_parent"
@@ -155,8 +155,111 @@
                         android:src="@drawable/keyboard_arrow_right_24"
                         app:tint="?attr/colorOnSurfaceVariant" />
                 </LinearLayout>
+
+                <!-- App lock (moved from Account) -->
+                <LinearLayout
+                    android:id="@+id/cardAccountAppLock"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="72dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingStart="20dp"
+                    android:paddingTop="14dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="14dp"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/lock_24"
+                        app:tint="?attr/colorPrimary" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="14dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/pref_app_lock_title"
+                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="@string/pref_app_lock_summary"
+                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/keyboard_arrow_right_24"
+                        app:tint="?attr/colorOnSurfaceVariant" />
+                </LinearLayout>
+
+                <!-- Keys and codes (moved from Account) -->
+                <LinearLayout
+                    android:id="@+id/cardAccountKeysCodes"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="72dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingStart="20dp"
+                    android:paddingTop="14dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="14dp"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/nfc_24"
+                        app:tint="?attr/colorPrimary" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="14dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/keys_codes_title"
+                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="@string/account_keys_codes_summary"
+                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/keyboard_arrow_right_24"
+                        app:tint="?attr/colorOnSurfaceVariant" />
+                </LinearLayout>
             </com.oliver.loqin.ui.widgets.ListGroupLayout>
 
+            <!-- Personalization -->
             <TextView
                 style="@style/LoqIn.SectionHeader"
                 android:layout_width="match_parent"
@@ -221,61 +324,7 @@
                         app:tint="?attr/colorOnSurfaceVariant" />
                 </LinearLayout>
 
-
-                <!-- Ignored Apps -->
-                <LinearLayout
-                    android:id="@+id/cardSettingsIgnoredApps"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:minHeight="72dp"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:paddingStart="20dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
-                    android:clickable="true"
-                    android:focusable="true">
-
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:contentDescription="@null"
-                        android:src="@drawable/visibility_off_24"
-                        app:tint="?attr/colorPrimary" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="14dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="@string/ignored_usage_apps_title"
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="@string/ignored_usage_apps_summary"
-
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
-                    </LinearLayout>
-
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:contentDescription="@null"
-                        android:src="@drawable/keyboard_arrow_right_24"
-                        app:tint="?attr/colorOnSurfaceVariant" />
-                </LinearLayout>
-
-
-                <!-- Display Shortcuts -->
+                <!-- Widgets and shortcuts -->
                 <LinearLayout
                     android:id="@+id/cardSettingsDisplayShortcuts"
                     android:layout_width="match_parent"
@@ -325,132 +374,238 @@
                         android:src="@drawable/keyboard_arrow_right_24"
                         app:tint="?attr/colorOnSurfaceVariant" />
                 </LinearLayout>
+
+                <!-- Hidden apps -->
+                <LinearLayout
+                    android:id="@+id/cardSettingsIgnoredApps"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="72dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingStart="20dp"
+                    android:paddingTop="14dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="14dp"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/visibility_off_24"
+                        app:tint="?attr/colorPrimary" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="14dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/ignored_usage_apps_title"
+                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="@string/ignored_usage_apps_summary"
+                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/keyboard_arrow_right_24"
+                        app:tint="?attr/colorOnSurfaceVariant" />
+                </LinearLayout>
             </com.oliver.loqin.ui.widgets.ListGroupLayout>
 
+            <!-- System -->
             <TextView
                 style="@style/LoqIn.SectionHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:layout_marginBottom="6dp"
-                android:text="@string/settings_section_reliability" />
+                android:text="@string/settings_section_system" />
 
             <com.oliver.loqin.ui.widgets.ListGroupLayout
                 style="@style/LoqIn.ListGroup"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
-<LinearLayout
-                android:id="@+id/cardSettingsPermissions"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:minHeight="72dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingStart="20dp"
-                android:paddingTop="14dp"
-                android:paddingEnd="16dp"
-                android:paddingBottom="14dp"
-                android:clickable="true"
-                android:focusable="true">
-
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:contentDescription="@null"
-                    android:src="@drawable/security_24"
-                    app:tint="?attr/colorPrimary" />
 
                 <LinearLayout
-                    android:layout_width="0dp"
+                    android:id="@+id/cardSettingsPermissions"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="14dp"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
+                    android:minHeight="72dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingStart="20dp"
+                    android:paddingTop="14dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="14dp"
+                    android:clickable="true"
+                    android:focusable="true">
 
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/pref_permissions_title"
-                        android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/security_24"
+                        app:tint="?attr/colorPrimary" />
 
-                    <TextView
-                        android:layout_width="match_parent"
+                    <LinearLayout
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="@string/pref_permissions_summary"
-                        android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
+                        android:layout_marginStart="14dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/pref_permissions_title"
+                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="@string/pref_permissions_summary"
+                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/keyboard_arrow_right_24"
+                        app:tint="?attr/colorOnSurfaceVariant" />
                 </LinearLayout>
-
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:contentDescription="@null"
-                    android:src="@drawable/keyboard_arrow_right_24"
-                    app:tint="?attr/colorOnSurfaceVariant" />
-            </LinearLayout>
             </com.oliver.loqin.ui.widgets.ListGroupLayout>
 
+            <!-- Help and info -->
             <TextView
                 style="@style/LoqIn.SectionHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:layout_marginBottom="6dp"
-                android:text="@string/settings_section_info" />
+                android:text="@string/settings_section_help_info" />
 
             <com.oliver.loqin.ui.widgets.ListGroupLayout
                 style="@style/LoqIn.ListGroup"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
-<LinearLayout
-                android:id="@+id/cardSettingsInfo"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:minHeight="72dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingStart="20dp"
-                android:paddingTop="14dp"
-                android:paddingEnd="16dp"
-                android:paddingBottom="14dp"
-                android:clickable="true"
-                android:focusable="true">
 
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:contentDescription="@null"
-                    android:src="@drawable/info_24"
-                    app:tint="?attr/colorPrimary" />
-
+                <!-- Setup guide (moved from Account) -->
                 <LinearLayout
-                    android:layout_width="0dp"
+                    android:id="@+id/cardAccountOnboarding"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="14dp"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
+                    android:minHeight="72dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingStart="20dp"
+                    android:paddingTop="14dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="14dp"
+                    android:clickable="true"
+                    android:focusable="true">
 
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/settings_section_info"
-                        android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/play_arrow_24"
+                        app:tint="?attr/colorPrimary" />
 
-                    <TextView
-                        android:layout_width="match_parent"
+                    <LinearLayout
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="@string/settings_info_summary"
-                        android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
+                        android:layout_marginStart="14dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/settings_setup_guide_title"
+                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="@string/settings_setup_guide_summary"
+                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/keyboard_arrow_right_24"
+                        app:tint="?attr/colorOnSurfaceVariant" />
                 </LinearLayout>
 
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:contentDescription="@null"
-                    android:src="@drawable/keyboard_arrow_right_24"
-                    app:tint="?attr/colorOnSurfaceVariant" />
-            </LinearLayout>
+                <LinearLayout
+                    android:id="@+id/cardSettingsInfo"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="72dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingStart="20dp"
+                    android:paddingTop="14dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="14dp"
+                    android:clickable="true"
+                    android:focusable="true">
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/info_24"
+                        app:tint="?attr/colorPrimary" />
+
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="14dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/settings_section_info"
+                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="@string/settings_info_summary"
+                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/keyboard_arrow_right_24"
+                        app:tint="?attr/colorOnSurfaceVariant" />
+                </LinearLayout>
             </com.oliver.loqin.ui.widgets.ListGroupLayout>
 
         </LinearLayout>

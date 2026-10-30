@@ -80,6 +80,13 @@ object CustomAccentApplier {
     private val cursorFocusHooks = WeakHashMap<EditText, ViewTreeObserver.OnGlobalFocusChangeListener>()
     private val cursorTextWatchers = WeakHashMap<EditText, TextWatcher>()
 
+    /**
+     * Tag for a live preview that shows an arbitrary colour (the Appearance
+     * theme colour mock). The tagged view and its subtree keep the colours they
+     * were given and are skipped by the accent recolouring passes.
+     */
+    const val ACCENT_PREVIEW_TAG = "accent_preview"
+
     fun isAccentRecoloringNeeded(context: Context): Boolean {
         val accent = AccentColor.getAccentColorInt(context) and 0x00FFFFFF
         val defaultGreen = ContextCompat.getColor(context, R.color.accent_default_blue) and 0x00FFFFFF
@@ -146,6 +153,12 @@ object CustomAccentApplier {
 
     fun tintSwitch(switch: MaterialSwitch) {
         val accent = AccentColor.getAccentColorInt(switch.context)
+        switch.thumbTintList = buildSwitchThumbTint(switch.context, accent)
+        switch.trackTintList = buildSwitchTrackTint(switch.context, accent)
+    }
+
+    /** Tints a switch with an explicit colour, for previews of a colour that is not yet saved. */
+    fun tintSwitch(switch: MaterialSwitch, accent: Int) {
         switch.thumbTintList = buildSwitchThumbTint(switch.context, accent)
         switch.trackTintList = buildSwitchTrackTint(switch.context, accent)
     }
@@ -287,6 +300,7 @@ object CustomAccentApplier {
     }
 
     private fun recolorRecursive(view: View, defaultAccent: Int, accent: Int) {
+        if (view.tag == ACCENT_PREVIEW_TAG) return
         recolorView(view, defaultAccent, accent)
 
         if (view is ViewGroup) {
