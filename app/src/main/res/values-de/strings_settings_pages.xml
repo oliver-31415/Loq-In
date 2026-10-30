@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="privacy_report_section_delete">Daten löschen</string>
+    <string name="app_lock_strict_protection_footnote">Verwendet den Android-Geräteadministrator als Deinstallationsschutz. Unter Standard-Android deaktiviert ein aktiver Geräteadministrator auch „Beenden erzwingen“; das Verhalten kann je nach Hersteller abweichen. Das Deaktivieren dieses Schutzes in Loq In erfordert PIN oder Biometrie.</string>
+</resources>
