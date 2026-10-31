@@ -48,9 +48,11 @@ class RuleTile(val root: MaterialCardView) {
     val badge: ImageView = root.findViewById(R.id.tileBadge)
 
     private val context get() = root.context
+    private var symbolMode = false
 
     /** A real app icon, drawn as-is like on the app tiles. */
     fun setAppIcon(drawable: Drawable?) {
+        symbolMode = false
         icon.background = null
         icon.setPadding(0, 0, 0, 0)
         icon.imageTintList = null
@@ -59,10 +61,27 @@ class RuleTile(val root: MaterialCardView) {
 
     /** A symbol on an accent roundel, for things that have no app icon of their own. */
     fun setSymbol(@DrawableRes res: Int) {
-        icon.setBackgroundResource(R.drawable.bg_roundel_accent)
+        symbolMode = true
         val pad = SheetRows.dp(context, 10f)
         icon.setPadding(pad, pad, pad, pad)
         icon.setImageResource(res)
+        styleSymbol(on = root.isSelected)
+    }
+
+    /**
+     * Off: soft accent roundel. On: a surface-coloured roundel, so the accent glyph still stands
+     * out on the tile's accent wash instead of melting into it.
+     */
+    private fun styleSymbol(on: Boolean) {
+        if (!symbolMode) return
+        if (on) {
+            icon.background = android.graphics.drawable.GradientDrawable().apply {
+                shape = android.graphics.drawable.GradientDrawable.OVAL
+                setColor(ContextCompat.getColor(context, R.color.foqos_surface))
+            }
+        } else {
+            icon.setBackgroundResource(R.drawable.bg_roundel_accent)
+        }
         icon.imageTintList = android.content.res.ColorStateList.valueOf(AccentColor.getAccentColorInt(context))
     }
 
@@ -87,6 +106,7 @@ class RuleTile(val root: MaterialCardView) {
     fun setState(on: Boolean, pending: Boolean = false, showCheck: Boolean = true) {
         RuleTileStyle.apply(root, on, pending)
         root.isSelected = on
+        styleSymbol(on)
         val showBadge = showCheck && (on || pending) && !toggle.isVisible
         badge.isVisible = showBadge
         if (showBadge) {
@@ -95,7 +115,10 @@ class RuleTile(val root: MaterialCardView) {
         }
     }
 
-    /** Corner on/off switch, separate from the tile tap; null hides it. */
+    /**
+     * Corner on/off control, separate from the tile tap; null hides it. Drawn as the app tiles'
+     * check badge when on and an empty ring when off, so "on" looks the same on every grid.
+     */
     fun setToggle(on: Boolean?, contentDescription: CharSequence? = null, onClick: (() -> Unit)? = null) {
         if (on == null) {
             toggle.isVisible = false
@@ -104,12 +127,17 @@ class RuleTile(val root: MaterialCardView) {
         }
         toggle.isVisible = true
         badge.isVisible = false
-        toggle.setImageResource(if (on) R.drawable.toggle_on_24 else R.drawable.toggle_off_24)
+        toggle.setImageResource(if (on) R.drawable.check_circle_24 else R.drawable.circle_outline_24)
         toggle.imageTintList = android.content.res.ColorStateList.valueOf(
             if (on) AccentColor.getAccentColorInt(context)
             else MaterialColors.getColor(toggle, com.google.android.material.R.attr.colorOnSurfaceVariant)
         )
+        toggle.imageAlpha = if (on) 255 else 0xCC
         toggle.contentDescription = contentDescription
+        androidx.core.view.ViewCompat.setStateDescription(
+            toggle,
+            context.getString(if (on) R.string.state_on else R.string.state_off),
+        )
         toggle.setOnClickListener(onClick?.let { action -> View.OnClickListener { action() } })
     }
 

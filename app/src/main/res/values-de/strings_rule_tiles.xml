@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Rule tiles: state read out for the corner on/off control -->
+    <string name="state_on">Ein</string>
+    <string name="state_off">Aus</string>
+
+</resources>

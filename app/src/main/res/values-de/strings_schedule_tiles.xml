@@ -2,7 +2,11 @@
 <resources>
 
     <!-- Schedules tile grid: summary card, add tile, tile toggle -->
-    <string name="schedule_tile_summary_title">%1$d von %2$d an</string>
+    <plurals name="schedule_tile_summary_on">
+        <item quantity="one">%1$d Zeitplan an</item>
+        <item quantity="other">%1$d Zeitpläne an</item>
+    </plurals>
+    <string name="schedule_tile_summary_all_off">Alle Zeitpläne aus</string>
     <string name="schedule_tile_summary_empty">Noch keine Zeitpläne</string>
     <string name="schedule_tile_add_label">Zeitplan hinzufügen</string>
     <string name="schedule_tile_toggle_desc">Zeitplan ein- oder ausschalten</string>

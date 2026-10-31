@@ -18,4 +18,5 @@
     <!-- Marks a bottom sheet's content as already padded for the navigation bar. -->
     <item name="tag_nav_bar_padded" type="id" />
     <item name="tag_sheet_primary" type="id" />
+    <item name="action_breaks_info" type="id" />
 </resources>

@@ -2,9 +2,8 @@
 <resources>
     <string name="breaks_page_limits_header">Limits</string>
     <string name="breaks_page_today_header">Heute</string>
-    <string name="breaks_page_off">Aus</string>
-    <string name="breaks_page_taken">Pausen genutzt</string>
-    <string name="breaks_page_minutes_used">Minuten genutzt</string>
+    <string name="breaks_page_no_limit">Kein Limit</string>
+    <string name="breaks_page_summary_unlimited">Keine Pausenlimits</string>
     <string name="breaks_page_minutes_fmt">%1$d min</string>
     <string name="breaks_page_pin_sub">Erfordert deine PIN</string>
 </resources>

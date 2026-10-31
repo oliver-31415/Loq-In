@@ -397,7 +397,7 @@ class InAppRulesActivity : AppCompatActivity() {
 
     private fun buildGroupSection(group: AppGroup, status: AppInstallStatus): View {
         val isYouTube = group.packageName == "com.google.android.youtube"
-        val enabledYtVariants = if (isYouTube) detectYouTubeVariants().filter { it.isEnabled } else emptyList()
+        val installed = status == AppInstallStatus.INSTALLED
 
         val section = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -407,43 +407,50 @@ class InAppRulesActivity : AppCompatActivity() {
             )
         }
 
+        // Header: app icon + name, like a website rule's favicon; the right side holds either
+        // why the app can't be used (status pill) or YouTube's extra Shorts setup link.
         val header = layoutInflater.inflate(R.layout.item_website_section_header, section, false)
-        header.findViewById<TextView>(R.id.tvHeader).text = getString(group.titleRes)
+        header.findViewById<TextView>(R.id.tvHeader).apply {
+            text = getString(group.titleRes)
+            val icon = installedPackage(group)?.let { pkg ->
+                runCatching { packageManager.getApplicationIcon(pkg) }.getOrNull()
+            }
+            if (icon != null) {
+                icon.setBounds(0, 0, dp(20), dp(20))
+                setCompoundDrawablesRelative(icon, null, null, null)
+                compoundDrawablePadding = dp(8)
+            }
+            gravity = Gravity.CENTER_VERTICAL
+        }
         header.findViewById<TextView>(R.id.tvHeaderAction).apply {
-            text = when {
-                enabledYtVariants.isNotEmpty() -> enabledYtVariants.joinToString(" · ") { it.label }
-                status == AppInstallStatus.INSTALLED -> getString(R.string.in_app_status_installed)
-                status == AppInstallStatus.DISABLED -> getString(R.string.in_app_status_disabled)
-                else -> getString(R.string.in_app_status_not_installed)
+            when {
+                !installed -> {
+                    text = getString(
+                        if (status == AppInstallStatus.DISABLED) R.string.in_app_status_disabled
+                        else R.string.in_app_status_not_installed
+                    )
+                    isClickable = false
+                    isFocusable = false
+                    background = GradientDrawable().apply {
+                        cornerRadius = dp(99).toFloat()
+                        setColor(ColorUtils.setAlphaComponent(onSurfaceColor(), 0x14))
+                    }
+                    setTextColor(ColorUtils.setAlphaComponent(onSurfaceColor(), 0xAA))
+                    setPadding(dp(10), dp(4), dp(10), dp(4))
+                    textSize = 11.5f
+                    visibility = View.VISIBLE
+                }
+                isYouTube -> {
+                    text = getString(R.string.in_app_youtube_native_limit_compact_title)
+                    setOnClickListener { showYouTubeNativeLimitGuide() }
+                    visibility = View.VISIBLE
+                }
+                else -> visibility = View.GONE
             }
-            isClickable = false
-            isFocusable = false
-            setOnClickListener(null)
-            textSize = 11.5f
-            setPadding(dp(8), dp(3), dp(8), dp(3))
-            val tint = when (status) {
-                AppInstallStatus.NOT_INSTALLED -> onSurfaceColor()
-                AppInstallStatus.DISABLED -> ContextCompat.getColor(this@InAppRulesActivity, R.color.status_error)
-                AppInstallStatus.INSTALLED -> AccentColor.getAccentColorInt(this@InAppRulesActivity)
-            }
-            setTextColor(if (status == AppInstallStatus.NOT_INSTALLED) ColorUtils.setAlphaComponent(tint, 0x99) else tint)
-            background = GradientDrawable().apply {
-                cornerRadius = dp(99).toFloat()
-                setColor(ColorUtils.setAlphaComponent(tint, if (status == AppInstallStatus.NOT_INSTALLED) 0x18 else 0x1E))
-            }
-            visibility = View.VISIBLE
         }
         section.addView(header)
 
-        if (isYouTube && enabledYtVariants.isNotEmpty()) {
-            val variantSummary = enabledYtVariants.joinToString(", ") { v ->
-                if (v.versionName != null) "${v.label} (v${v.versionName})" else v.label
-            }
-            section.addView(buildNoteRow(getString(R.string.in_app_recognized_variants, variantSummary), R.drawable.check_circle_24))
-        }
-        if (!isYouTube && status == AppInstallStatus.INSTALLED) {
-            section.addView(buildNoteRow(appDiagnosticLabel(group), R.drawable.info_24))
-        }
+        appUpdateWarning(group)?.let { section.addView(buildNoteRow(it, R.drawable.info_24)) }
 
         val grid = TileGridLayout(this).apply {
             layoutParams = LinearLayout.LayoutParams(
@@ -452,26 +459,22 @@ class InAppRulesActivity : AppCompatActivity() {
             )
         }
         group.surfaces.forEach { surface ->
-            grid.addView(buildSurfaceTile(surface, group.packageName, grid).root)
-            if (isYouTube && surface.surfaceKey == "yt:shorts") {
-                grid.addView(buildYouTubeNativeLimitTile(grid).root)
-            }
+            grid.addView(buildSurfaceTile(surface, group.packageName, grid, installed).root)
         }
         section.addView(grid)
         return section
     }
 
-    private fun buildYouTubeNativeLimitTile(parent: ViewGroup): RuleTile {
-        val tile = RuleTile.inflate(parent)
-        tile.setSymbol(R.drawable.timer_24)
-        tile.setText(
-            getString(R.string.in_app_youtube_native_limit_compact_title),
-            getString(R.string.in_app_youtube_native_limit_compact_action),
-        )
-        tile.setToggle(null)
-        tile.setState(on = false)
-        tile.root.setOnClickListener { showYouTubeNativeLimitGuide() }
-        return tile
+    /** The package actually serving this group (for YouTube, an enabled patched build wins). */
+    private fun installedPackage(group: AppGroup): String? {
+        val candidates = if (group.packageName == "com.google.android.youtube") {
+            listOf("app.morphe.android.youtube", "app.revanced.android.youtube", group.packageName)
+        } else {
+            listOf(group.packageName)
+        }
+        return candidates.firstOrNull {
+            runCatching { packageManager.getApplicationInfo(it, 0).enabled }.getOrDefault(false)
+        }
     }
 
     private fun showYouTubeNativeLimitGuide() {
@@ -525,10 +528,10 @@ class InAppRulesActivity : AppCompatActivity() {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
             background = GradientDrawable().apply {
-                cornerRadius = dp(8).toFloat()
-                setColor(ColorUtils.setAlphaComponent(AccentColor.getAccentColorInt(this@InAppRulesActivity), 0x18))
+                cornerRadius = dp(16).toFloat()
+                setColor(ContextCompat.getColor(this@InAppRulesActivity, R.color.accent_amber_container))
             }
-            setPadding(dp(10), dp(6), dp(10), dp(6))
+            setPadding(dp(12), dp(8), dp(12), dp(8))
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -540,61 +543,30 @@ class InAppRulesActivity : AppCompatActivity() {
             }
             addView(ImageView(this@InAppRulesActivity).apply {
                 setImageResource(iconRes)
-                imageTintList = ColorStateList.valueOf(AccentColor.getAccentColorInt(this@InAppRulesActivity))
+                imageTintList = ColorStateList.valueOf(
+                    ContextCompat.getColor(this@InAppRulesActivity, R.color.accent_amber_on_container)
+                )
                 layoutParams = LinearLayout.LayoutParams(dp(16), dp(16)).apply { marginEnd = dp(8) }
             })
             addView(TextView(this@InAppRulesActivity).apply {
                 text = message
-                textSize = 12f
-                setTextColor(onSurfaceColor())
+                textSize = 12.5f
+                setTextColor(ContextCompat.getColor(this@InAppRulesActivity, R.color.accent_amber_on_container))
             })
         }
     }
 
-    private fun appDiagnosticLabel(group: AppGroup): String {
-        return when (getAppStatus(group.packageName)) {
-            AppInstallStatus.NOT_INSTALLED -> getString(R.string.in_app_status_not_installed)
-            AppInstallStatus.DISABLED -> getString(R.string.in_app_status_disabled)
-            AppInstallStatus.INSTALLED -> {
-                if (group.packageName == "com.google.android.youtube") {
-                    val enabledVariants = detectYouTubeVariants().filter { it.isEnabled }
-                    if (enabledVariants.isNotEmpty()) {
-                        return enabledVariants.joinToString(" · ") { it.label }
-                    }
-                }
-                val resolvedPkg = if (group.packageName == "com.google.android.youtube") {
-                    listOf("app.morphe.android.youtube", "app.revanced.android.youtube", group.packageName)
-                        .firstOrNull { runCatching { packageManager.getApplicationInfo(it, 0).enabled }.getOrDefault(false) }
-                        ?: group.packageName
-                } else {
-                    group.packageName
-                }
-                val info = runCatching { packageManager.getPackageInfo(resolvedPkg, 0) }.getOrNull()
-                val version = info?.versionName.orEmpty().ifBlank { null }
-                val lastDetected = InAppDetectionStore.lastForAny(
-                    this,
-                    group.surfaces.mapNotNull { it.surfaceKey },
-                )
-                when {
-                    lastDetected > 0L && info != null && info.lastUpdateTime <= lastDetected -> {
-                        if (version != null) {
-                            getString(R.string.in_app_app_diagnostic_detected, version, RelativeTimeFormatter.format(this, lastDetected))
-                        } else {
-                            RelativeTimeFormatter.format(this, lastDetected)
-                        }
-                    }
-                    lastDetected > 0L -> {
-                        if (version != null) {
-                            getString(R.string.in_app_app_diagnostic_stale, version)
-                        } else {
-                            getString(R.string.in_app_status_installed)
-                        }
-                    }
-                    version != null -> getString(R.string.in_app_app_diagnostic_never, version)
-                    else -> getString(R.string.in_app_status_installed)
-                }
-            }
-        }
+    /**
+     * Only worth a note when the app changed since Loq In last recognised its screens: the
+     * detection may need a moment (or an update) before those sections block again.
+     */
+    private fun appUpdateWarning(group: AppGroup): String? {
+        val pkg = installedPackage(group) ?: return null
+        val info = runCatching { packageManager.getPackageInfo(pkg, 0) }.getOrNull() ?: return null
+        val version = info.versionName.orEmpty().ifBlank { return null }
+        val lastDetected = InAppDetectionStore.lastForAny(this, group.surfaces.mapNotNull { it.surfaceKey })
+        if (lastDetected <= 0L || info.lastUpdateTime <= lastDetected) return null
+        return getString(R.string.in_app_app_diagnostic_stale, version)
     }
 
     private fun surfaceIconRes(surfaceKey: String?): Int = when (surfaceKey) {
@@ -610,7 +582,7 @@ class InAppRulesActivity : AppCompatActivity() {
         else -> R.drawable.apps_24
     }
 
-    private fun buildSurfaceTile(surface: Surface, packageName: String, parent: ViewGroup): RuleTile {
+    private fun buildSurfaceTile(surface: Surface, packageName: String, parent: ViewGroup, installed: Boolean): RuleTile {
         val tile = RuleTile.inflate(parent)
         val prefKey = surface.prefKey
         val readOnly = EditingLockGuard.isLocked(this)
@@ -629,17 +601,21 @@ class InAppRulesActivity : AppCompatActivity() {
             surface.surfaceKey?.let { setSurfaceRuleForMode(it, checked = true) }
         }
         val shown = pendingSelected ?: currentChecked
-        val label = ruleSwitchText(getString(surface.labelRes))
+        // The mode card already says Block/Allow selected, so the tile is just the section's name.
+        val label = getString(surface.labelRes)
         val onTap: (() -> Unit)? = prefKey?.let { key ->
             { onSurfaceTapped(tile, surface, packageName, key) }
         }
 
         tile.setSymbol(surfaceIconRes(surface.surfaceKey))
-        tile.setText(label, getString(surface.statusRes))
+        tile.setText(label)
+        tile.root.contentDescription = ruleSwitchText(label)
         // Tap the tile to pick it, with the same check badge as a picked app.
         tile.setToggle(null)
         tile.setState(on = shown, pending = pendingSelected != null)
         tile.setDimmed(prefKey == null || (readOnly && !canToggleWhileLocked))
+        // Not installed: the rule still applies once it is, so keep the name readable.
+        if (!installed && !shown) tile.icon.alpha = 0.6f
         tile.root.setOnClickListener(onTap?.let { tap -> View.OnClickListener { tap() } })
         return tile
     }

@@ -19,6 +19,8 @@
 package com.oliver.loqin.feature.profiles
 
 import android.os.Bundle
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.widget.TextView
 import androidx.annotation.DrawableRes
@@ -36,6 +38,8 @@ import com.oliver.loqin.ui.RuleSummary
 import com.oliver.loqin.ui.RuleTile
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.dialog.EmergencyPinDialog
+import com.oliver.loqin.ui.dialog.LoqInInfoRow
+import com.oliver.loqin.ui.dialog.showLoqInInfoDialog
 import com.oliver.loqin.ui.dialog.showLoqInNumberInput
 import com.oliver.loqin.ui.showWarnPill
 import com.oliver.loqin.ui.widgets.TileGridLayout
@@ -58,20 +62,21 @@ class BreaksActivity : AppCompatActivity() {
         @DrawableRes val iconRes: Int,
         @StringRes val hintRes: Int,
         @StringRes val errorRes: Int,
+        @StringRes val infoRes: Int,
         val max: Int,
         val defaultValue: Int,
     ) {
         COUNT(
             R.string.temp_pause_section_count, R.drawable.calendar_month_24, R.string.temp_pause_section_count,
-            R.string.temp_pause_error_count_fmt, MAX_COUNT, DEFAULT_COUNT
+            R.string.temp_pause_error_count_fmt, R.string.temp_pause_section_count_subtitle, MAX_COUNT, DEFAULT_COUNT
         ),
         PER_PAUSE(
             R.string.temp_pause_section_length, R.drawable.timer_24, R.string.minutes_hint,
-            R.string.temp_pause_error_minutes_fmt, MAX_MINUTES, DEFAULT_PER_PAUSE_MINUTES
+            R.string.temp_pause_error_minutes_fmt, R.string.temp_pause_section_length_subtitle, MAX_MINUTES, DEFAULT_PER_PAUSE_MINUTES
         ),
         PER_DAY(
             R.string.temp_pause_section_total, R.drawable.schedule_24, R.string.minutes_hint,
-            R.string.temp_pause_error_minutes_fmt, MAX_MINUTES, DEFAULT_PER_DAY_MINUTES
+            R.string.temp_pause_error_minutes_fmt, R.string.temp_pause_section_total_subtitle, MAX_MINUTES, DEFAULT_PER_DAY_MINUTES
         ),
     }
 
@@ -102,6 +107,26 @@ class BreaksActivity : AppCompatActivity() {
         render()
     }
 
+    override fun onCreateOptionsMenu(menu: Menu): Boolean {
+        menu.add(Menu.NONE, R.id.action_breaks_info, Menu.NONE, R.string.profile_sheet_pauses)
+            .setIcon(R.drawable.info_24)
+            .setShowAsAction(MenuItem.SHOW_AS_ACTION_IF_ROOM)
+        return true
+    }
+
+    override fun onOptionsItemSelected(item: MenuItem): Boolean =
+        if (item.itemId == R.id.action_breaks_info) {
+            showLoqInInfoDialog(
+                title = getString(R.string.profile_sheet_pauses),
+                rows = Cap.entries.map { cap ->
+                    LoqInInfoRow(label = getString(cap.labelRes), value = getString(cap.infoRes))
+                },
+            )
+            true
+        } else {
+            super.onOptionsItemSelected(item)
+        }
+
     override fun onResume() {
         super.onResume()
         if (::gridLimits.isInitialized) render()
@@ -119,10 +144,11 @@ class BreaksActivity : AppCompatActivity() {
         val usedCount = TempPauseStore.usedCountToday(this, profile)
         val usedMinutes = TempPauseStore.usedMinutesToday(this, profile)
 
+        val unlimited = caps.maxCountPerDay <= 0 && caps.maxMinutesPerPause <= 0 && caps.maxMinutesPerDay <= 0
         RuleSummary.bind(
             summary,
             R.drawable.hourglass_24,
-            TempPauseDialogs.capsSummaryText(this, profile),
+            if (unlimited) getString(R.string.breaks_page_summary_unlimited) else TempPauseDialogs.capsSummaryText(this, profile),
             getString(R.string.temp_pause_used_fmt, usedCount, usedMinutes)
         )
 
@@ -131,10 +157,12 @@ class BreaksActivity : AppCompatActivity() {
         capTile(Cap.PER_PAUSE, caps.maxMinutesPerPause, locked)
         capTile(Cap.PER_DAY, caps.maxMinutesPerDay, locked)
 
+        // Today's numbers are already in the summary card; this section only offers the reset.
+        val usedToday = usedCount > 0 || usedMinutes > 0
         gridToday.removeAllViews()
-        statTile(R.string.breaks_page_taken, R.drawable.hourglass_24, usedCount.toString())
-        statTile(R.string.breaks_page_minutes_used, R.drawable.timer_24, getString(R.string.breaks_page_minutes_fmt, usedMinutes))
-        if (usedCount > 0 || usedMinutes > 0) resetTile(locked)
+        findViewById<View>(R.id.headerToday).visibility = if (usedToday) View.VISIBLE else View.GONE
+        gridToday.visibility = if (usedToday) View.VISIBLE else View.GONE
+        if (usedToday) resetTile(locked)
     }
 
     private fun newTile(grid: TileGridLayout): RuleTile =
@@ -151,7 +179,9 @@ class BreaksActivity : AppCompatActivity() {
         val label = getString(cap.labelRes)
         val tile = newTile(gridLimits)
         tile.setSymbol(cap.iconRes)
-        tile.setText(label, value = if (on) cap.valueText(value) else getString(R.string.breaks_page_off))
+        // Off reads as a quiet "No limit" line; a set limit gets the big number.
+        if (on) tile.setText(label, value = cap.valueText(value))
+        else tile.setText(label, sub = getString(R.string.breaks_page_no_limit))
         tile.setState(on, showCheck = false)
         tile.setToggle(on, contentDescription = label) {
             if (locked) {
@@ -199,18 +229,6 @@ class BreaksActivity : AppCompatActivity() {
             )
         )
         render()
-    }
-
-    private fun statTile(@StringRes labelRes: Int, @DrawableRes iconRes: Int, value: String) {
-        val tile = newTile(gridToday)
-        tile.setSymbol(iconRes)
-        tile.setText(getString(labelRes), value = value)
-        tile.setState(false, showCheck = false)
-        tile.setToggle(null)
-        // Read-only figure: no ripple, nothing to tap.
-        tile.root.isClickable = false
-        tile.root.isFocusable = false
-        tile.root.foreground = null
     }
 
     private fun resetTile(locked: Boolean) {

@@ -188,6 +188,15 @@ class SchedulesActivity : AppCompatActivity() {
             ?: getString(R.string.schedules_profile_subtitle)
 
     /** Summary detail: the next boundary across all schedules, so only shown unfiltered. */
+    private fun scheduleSummaryTitle(shown: List<ScheduleStore.Schedule>): String {
+        val on = shown.count { it.enabled }
+        return when {
+            shown.isEmpty() -> getString(R.string.schedule_tile_summary_empty)
+            on == 0 -> getString(R.string.schedule_tile_summary_all_off)
+            else -> resources.getQuantityString(R.plurals.schedule_tile_summary_on, on, on)
+        }
+    }
+
     private fun nextScheduleDetail(): String? {
         if (!isScheduleAutomationAllowed()) return getString(R.string.schedules_next_inactive_control_mode)
         val next = ScheduleNext.find(this, ::matchesTargetProfile) ?: return getString(R.string.schedules_next_none)
@@ -983,12 +992,8 @@ class SchedulesActivity : AppCompatActivity() {
         RuleSummary.bind(
             findViewById(R.id.scheduleSummary),
             R.drawable.schedule_24,
-            if (sorted.isEmpty()) {
-                getString(R.string.schedule_tile_summary_empty)
-            } else {
-                getString(R.string.schedule_tile_summary_title, sorted.count { it.enabled }, sorted.size)
-            },
-            nextScheduleDetail(),
+            scheduleSummaryTitle(sorted),
+            if (sorted.isEmpty()) null else nextScheduleDetail(),
         )
         val priorityChanged = (adapter.itemCount > 1) != (sorted.size > 1)
         adapter.submitList(sorted) {
@@ -3924,6 +3929,10 @@ private class ScheduleAddTileViewHolder(itemView: View) : RecyclerView.ViewHolde
     }
 }
 
+private const val ALL_DAYS = 127
+private const val WEEKDAYS = 31
+private const val WEEKEND = 96
+
 private class ScheduleViewHolder(
     private val tile: RuleTile,
     private val onToggleEnabled: (ScheduleStore.Schedule, Boolean) -> Unit,
@@ -3994,7 +4003,12 @@ private class ScheduleViewHolder(
         }
 
         val daysLabel = when (s.type) {
-            ScheduleStore.Type.WEEKLY -> {
+            // Tiles are small: name common sets of days instead of listing seven abbreviations.
+            ScheduleStore.Type.WEEKLY -> when (s.daysMask and ALL_DAYS) {
+                ALL_DAYS -> ctx.getString(R.string.schedules_group_all)
+                WEEKDAYS -> ctx.getString(R.string.schedules_group_weekdays)
+                WEEKEND -> ctx.getString(R.string.schedules_group_weekend)
+                else -> {
                 val parts = mutableListOf<String>()
                 if (s.daysMask and Days.MON != 0) parts += ctx.getString(R.string.day_short_mon)
                 if (s.daysMask and Days.TUE != 0) parts += ctx.getString(R.string.day_short_tue)
@@ -4004,6 +4018,7 @@ private class ScheduleViewHolder(
                 if (s.daysMask and Days.SAT != 0) parts += ctx.getString(R.string.day_short_sat)
                 if (s.daysMask and Days.SUN != 0) parts += ctx.getString(R.string.day_short_sun)
                 parts.joinToString(" ")
+                }
             }
 
             ScheduleStore.Type.ONE_TIME -> {
@@ -4071,16 +4086,15 @@ private class ScheduleViewHolder(
         if (timeWindowStr != null && (hasWifi || hasBt || hasLocation)) {
             subtitleParts += timeWindowStr
         }
-        subtitleParts += actionLabel
+        // "Enable & disable" is what a time window does anyway; only name other actions.
+        if (s.action != ScheduleStore.Action.ENABLE_AND_DISABLE) {
+            subtitleParts += actionLabel
+        }
         val activeTargetProfile = getTargetProfile()
         if (activeTargetProfile == null && s.profile.isNotBlank()) {
             subtitleParts += s.profile
         }
 
-        tile.setText(
-            label = displayTitle,
-            sub = subtitleParts.joinToString(" · "),
-            value = s.note.takeIf { it.isNotBlank() },
-        )
+        tile.setText(label = displayTitle, sub = subtitleParts.joinToString(" · "))
     }
 }
