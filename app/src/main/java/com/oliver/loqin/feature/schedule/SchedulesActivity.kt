@@ -87,6 +87,7 @@ import com.oliver.loqin.data.prefs.EmergencyBypassStore
 import com.oliver.loqin.data.prefs.ExactAlarmPermissionSync
 import com.oliver.loqin.data.prefs.ProfileStore
 import com.oliver.loqin.data.prefs.ScheduleInsights
+import com.oliver.loqin.data.prefs.ScheduleNext
 import com.oliver.loqin.data.prefs.SchedulePlanner
 import com.oliver.loqin.data.prefs.ScheduleRuntimeStore
 import com.oliver.loqin.data.prefs.ScheduleStore
@@ -188,13 +189,9 @@ class SchedulesActivity : AppCompatActivity() {
 
     /** Summary detail: the next boundary across all schedules, so only shown unfiltered. */
     private fun nextScheduleDetail(): String? {
-        if (targetProfile != null) return null
         if (!isScheduleAutomationAllowed()) return getString(R.string.schedules_next_inactive_control_mode)
-        val nextMillis = SchedulePlanner.getNextBoundaryMillis(this)
-        if (nextMillis <= 0L) return getString(R.string.schedules_next_none)
-        val cal = Calendar.getInstance().apply { timeInMillis = nextMillis }
-        val minutes = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
-        return getString(R.string.schedules_next_at, TimeFormatPrefs.formatMinutesOfDay(this, minutes))
+        val next = ScheduleNext.find(this, ::matchesTargetProfile) ?: return getString(R.string.schedules_next_none)
+        return ScheduleNext.describe(this, next)
     }
 
     private fun matchesTargetProfile(schedule: ScheduleStore.Schedule): Boolean {

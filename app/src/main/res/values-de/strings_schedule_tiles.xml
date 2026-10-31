@@ -9,4 +9,11 @@
 
     <string name="schedules_test_button">Prüfen</string>
 
+    <!-- Summary card: next start or end, e.g. "Starts today at 9:31 PM" -->
+    <string name="schedule_next_starts_fmt">Beginnt %1$s</string>
+    <string name="schedule_next_ends_fmt">Endet %1$s</string>
+    <string name="schedule_next_today_fmt">heute um %1$s</string>
+    <string name="schedule_next_tomorrow_fmt">morgen um %1$s</string>
+    <string name="schedule_next_day_fmt">%1$s um %2$s</string>
+
 </resources>
