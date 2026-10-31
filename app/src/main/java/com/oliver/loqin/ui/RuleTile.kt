@@ -152,7 +152,7 @@ class RuleTile(val root: MaterialCardView) {
 
     companion object {
         /** Rule tiles carry a symbol and a short name, so a full square leaves them looking empty. */
-        private const val HEIGHT_RATIO = 0.8f
+        const val HEIGHT_RATIO = 0.8f
 
         fun inflate(parent: ViewGroup): RuleTile {
             val card = LayoutInflater.from(parent.context)

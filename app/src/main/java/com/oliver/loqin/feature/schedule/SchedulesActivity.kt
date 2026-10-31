@@ -107,6 +107,7 @@ import com.oliver.loqin.ui.applyLoqInStyle
 import com.oliver.loqin.ui.showWarnPill
 import com.oliver.loqin.ui.RuleSummary
 import com.oliver.loqin.ui.RuleTile
+import com.oliver.loqin.ui.SquareCardView
 import com.oliver.loqin.ui.updateSelectionSubtitle
 import com.oliver.loqin.ui.dialog.showAccented
 import com.oliver.loqin.ui.dialog.showDestructiveAccented
@@ -3909,7 +3910,9 @@ private class ScheduleAddTileAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ScheduleAddTileViewHolder =
         ScheduleAddTileViewHolder(
-            LayoutInflater.from(parent.context).inflate(R.layout.item_website_add_custom, parent, false)
+            (LayoutInflater.from(parent.context)
+                .inflate(R.layout.item_website_add_custom, parent, false) as SquareCardView)
+                .apply { heightRatio = RuleTile.HEIGHT_RATIO }
         )
 
     override fun onBindViewHolder(holder: ScheduleAddTileViewHolder, position: Int) {
