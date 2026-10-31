@@ -22,15 +22,15 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:layout_marginTop="10dp"
-            android:layout_marginBottom="10dp"
+            android:layout_marginTop="6dp"
+            android:layout_marginBottom="6dp"
             android:gravity="center_horizontal"
             android:orientation="vertical">
 
             <ImageView
                 android:id="@+id/tileIcon"
-                android:layout_width="42dp"
-                android:layout_height="42dp"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
                 android:importantForAccessibility="no" />
 
             <TextView
@@ -74,8 +74,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="top|start"
-            android:layout_marginStart="4dp"
-            android:layout_marginTop="2dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="5dp"
             android:textColor="?android:attr/textColorSecondary"
             android:textSize="11sp"
             android:textStyle="bold"
@@ -86,8 +86,8 @@
             android:layout_width="48dp"
             android:layout_height="48dp"
             android:layout_gravity="top|end"
-            android:layout_marginTop="-13dp"
-            android:layout_marginEnd="-13dp"
+            android:layout_marginTop="-9dp"
+            android:layout_marginEnd="-9dp"
             android:background="?attr/selectableItemBackgroundBorderless"
             android:padding="13dp"
             android:scaleType="fitCenter"
@@ -98,6 +98,8 @@
             android:layout_width="22dp"
             android:layout_height="22dp"
             android:layout_gravity="top|end"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="4dp"
             android:importantForAccessibility="no"
             android:src="@drawable/check_circle_24"
             android:visibility="gone"

@@ -151,11 +151,15 @@ class RuleTile(val root: MaterialCardView) {
     }
 
     companion object {
-        fun inflate(parent: ViewGroup): RuleTile =
-            RuleTile(
-                LayoutInflater.from(parent.context)
-                    .inflate(R.layout.grid_rule_tile, parent, false) as MaterialCardView
-            )
+        /** Rule tiles carry a symbol and a short name, so a full square leaves them looking empty. */
+        private const val HEIGHT_RATIO = 0.8f
+
+        fun inflate(parent: ViewGroup): RuleTile {
+            val card = LayoutInflater.from(parent.context)
+                .inflate(R.layout.grid_rule_tile, parent, false) as SquareCardView
+            card.heightRatio = HEIGHT_RATIO
+            return RuleTile(card)
+        }
     }
 }
 

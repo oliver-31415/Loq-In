@@ -23,8 +23,8 @@ import android.util.AttributeSet
 import com.google.android.material.card.MaterialCardView
 
 /**
- * Card that always measures square (height follows width), for grid tiles
- * like the app picker where every cell must be a true square.
+ * Card whose height follows its width, for grid tiles like the app picker where every cell must
+ * be a true square. [heightRatio] below 1 makes a shorter tile that still grows to fit its content.
  */
 open class SquareCardView @JvmOverloads constructor(
     context: Context,
@@ -32,7 +32,21 @@ open class SquareCardView @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : MaterialCardView(context, attrs, defStyleAttr) {
 
+    var heightRatio: Float = 1f
+        set(value) {
+            field = value
+            requestLayout()
+        }
+
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        super.onMeasure(widthMeasureSpec, widthMeasureSpec)
+        if (heightRatio == 1f) {
+            super.onMeasure(widthMeasureSpec, widthMeasureSpec)
+            return
+        }
+        val target = (MeasureSpec.getSize(widthMeasureSpec) * heightRatio).toInt()
+        super.onMeasure(widthMeasureSpec, MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED))
+        if (measuredHeight < target) {
+            super.onMeasure(widthMeasureSpec, MeasureSpec.makeMeasureSpec(target, MeasureSpec.EXACTLY))
+        }
     }
 }

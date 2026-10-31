@@ -523,43 +523,33 @@ class InAppRulesActivity : AppCompatActivity() {
         return AppInstallStatus.NOT_INSTALLED
     }
 
+    /** A quiet caption under a section heading, aligned with the heading text. */
     private fun buildNoteRow(message: String, iconRes: Int): View {
         return LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            background = GradientDrawable().apply {
-                cornerRadius = dp(16).toFloat()
-                setColor(ContextCompat.getColor(this@InAppRulesActivity, R.color.accent_amber_container))
-            }
-            setPadding(dp(12), dp(8), dp(12), dp(8))
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
             ).apply {
-                topMargin = dp(4)
-                bottomMargin = dp(6)
                 marginStart = dp(4)
                 marginEnd = dp(4)
+                bottomMargin = dp(6)
             }
+            val secondary = MaterialColors.getColor(this, android.R.attr.textColorSecondary)
             addView(ImageView(this@InAppRulesActivity).apply {
                 setImageResource(iconRes)
-                imageTintList = ColorStateList.valueOf(
-                    ContextCompat.getColor(this@InAppRulesActivity, R.color.accent_amber_on_container)
-                )
-                layoutParams = LinearLayout.LayoutParams(dp(16), dp(16)).apply { marginEnd = dp(8) }
+                imageTintList = ColorStateList.valueOf(secondary)
+                layoutParams = LinearLayout.LayoutParams(dp(14), dp(14)).apply { marginEnd = dp(6) }
             })
             addView(TextView(this@InAppRulesActivity).apply {
                 text = message
                 textSize = 12.5f
-                setTextColor(ContextCompat.getColor(this@InAppRulesActivity, R.color.accent_amber_on_container))
+                setTextColor(secondary)
             })
         }
     }
 
-    /**
-     * Only worth a note when the app changed since Loq In last recognised its screens: the
-     * detection may need a moment (or an update) before those sections block again.
-     */
     private fun appUpdateWarning(group: AppGroup): String? {
         val pkg = installedPackage(group) ?: return null
         val info = runCatching { packageManager.getPackageInfo(pkg, 0) }.getOrNull() ?: return null
