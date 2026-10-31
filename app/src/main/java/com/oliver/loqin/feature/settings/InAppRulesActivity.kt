@@ -18,30 +18,25 @@
 
 package com.oliver.loqin.feature.settings
 
-import android.content.Intent
 import android.content.res.ColorStateList
 import android.graphics.Typeface
-import android.graphics.drawable.Drawable
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.view.Gravity
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import androidx.core.view.ViewCompat
+import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
-import androidx.core.net.toUri
 import androidx.core.widget.NestedScrollView
 import com.oliver.loqin.R
 import com.oliver.loqin.blocking.BlockingRuntime
 import com.oliver.loqin.data.prefs.BlockingToggleKeys
-import com.oliver.loqin.data.prefs.IgnoredUsageAppsStore
 import com.oliver.loqin.data.prefs.InAppDetectionStore
 import com.oliver.loqin.data.prefs.InAppRuleStore
 import com.oliver.loqin.data.prefs.ProfileRuleModeStore
@@ -50,12 +45,14 @@ import com.oliver.loqin.data.prefs.SurfaceLimitStore
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.theme.CustomAccentApplier
 import com.oliver.loqin.ui.EdgeToEdgeUtils
+import com.oliver.loqin.ui.RuleTile
 import com.oliver.loqin.ui.SegmentedToggleUi
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.showWarnPill
 import com.oliver.loqin.ui.dialog.LoqInInfoRow
 import com.oliver.loqin.ui.dialog.showLoqInInfoDialog
 import com.oliver.loqin.ui.dialog.styleLoqInDialogButtons
+import com.oliver.loqin.ui.widgets.TileGridLayout
 import com.oliver.loqin.util.EditingLockGuard
 import com.oliver.loqin.util.PackageLaunchIntentCompat
 import com.oliver.loqin.util.RelativeTimeFormatter
@@ -70,7 +67,6 @@ import com.oliver.loqin.util.ProtectionChangePolicy
 import com.oliver.loqin.util.ProtectionChangeGate
 import com.oliver.loqin.ui.dialog.showAccented
 import com.oliver.loqin.util.AppBlockSafety
-import com.oliver.loqin.data.prefs.SwitchModeStore
 
 class InAppRulesActivity : AppCompatActivity() {
     companion object {
@@ -103,7 +99,6 @@ class InAppRulesActivity : AppCompatActivity() {
         val packageName: String,
         val label: String,
         val versionName: String?,
-        val icon: Drawable?,
         val isInstalled: Boolean,
         val isEnabled: Boolean
     )
@@ -174,16 +169,18 @@ class InAppRulesActivity : AppCompatActivity() {
         var focusView: View? = null
 
         val visibleGroups = groups()
+            .map { it to groupStatus(it) }
+            .sortedBy { (_, status) -> if (status == AppInstallStatus.NOT_INSTALLED) 1 else 0 }
         updateModeUi()
         if (visibleGroups.isEmpty()) {
             container.addView(emptyState())
             return
         }
 
-        visibleGroups.forEach { group ->
-            val card = buildGroupCard(group)
-            container.addView(card)
-            if (group.packageName == focusPackage) focusView = card
+        visibleGroups.forEach { (group, status) ->
+            val section = buildGroupSection(group, status)
+            container.addView(section)
+            if (group.packageName == focusPackage) focusView = section
         }
 
         focusView?.let { targetView ->
@@ -377,12 +374,10 @@ class InAppRulesActivity : AppCompatActivity() {
             runCatching {
                 val ai = packageManager.getApplicationInfo(pkg, 0)
                 val pi = packageManager.getPackageInfo(pkg, 0)
-                val icon = packageManager.getApplicationIcon(ai)
                 YouTubeVariantInfo(
                     packageName = pkg,
                     label = label,
                     versionName = pi.versionName,
-                    icon = icon,
                     isInstalled = true,
                     isEnabled = ai.enabled
                 )
@@ -390,319 +385,93 @@ class InAppRulesActivity : AppCompatActivity() {
         }
     }
 
-    private fun buildGroupCard(group: AppGroup): View {
-        val card = MaterialCardView(this).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { topMargin = dp(8) }
-            setCardBackgroundColor(ContextCompat.getColor(this@InAppRulesActivity, R.color.foqos_surface))
-            // Flat tonal card: no outline, same 28dp shape as LoqIn.Card.
-            strokeWidth = 0
-            radius = dp(28).toFloat()
+    private fun groupStatus(group: AppGroup): AppInstallStatus {
+        if (group.packageName != "com.google.android.youtube") return getAppStatus(group.packageName)
+        val variants = detectYouTubeVariants()
+        return when {
+            variants.any { it.isEnabled } -> AppInstallStatus.INSTALLED
+            variants.any { it.isInstalled } -> AppInstallStatus.DISABLED
+            else -> AppInstallStatus.NOT_INSTALLED
         }
+    }
 
-        val cardLayout = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-        }
-
+    private fun buildGroupSection(group: AppGroup, status: AppInstallStatus): View {
         val isYouTube = group.packageName == "com.google.android.youtube"
-        val ytVariants = if (isYouTube) detectYouTubeVariants() else emptyList()
-        val enabledYtVariants = ytVariants.filter { it.isEnabled }
+        val enabledYtVariants = if (isYouTube) detectYouTubeVariants().filter { it.isEnabled } else emptyList()
 
-        val status = if (isYouTube) {
-            when {
-                enabledYtVariants.isNotEmpty() -> AppInstallStatus.INSTALLED
-                ytVariants.any { it.isInstalled } -> AppInstallStatus.DISABLED
-                else -> AppInstallStatus.NOT_INSTALLED
-            }
-        } else {
-            getAppStatus(group.packageName)
-        }
-
-        val resolvedTitle = getString(group.titleRes)
-
-        val resolvedIcon = if (isYouTube && enabledYtVariants.isNotEmpty()) {
-            enabledYtVariants.first().icon ?: appIcon(group.packageName)
-        } else {
-            appIcon(group.packageName)
-        }
-
-        // Header Row (Clickable Accordion Dropdown)
-        val header = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            minimumHeight = dp(58)
-            setPadding(dp(16), dp(12), dp(16), dp(12))
-            isClickable = true
-            isFocusable = true
-            val outValue = android.util.TypedValue()
-            theme.resolveAttribute(android.R.attr.selectableItemBackground, outValue, true)
-            setBackgroundResource(outValue.resourceId)
-        }
-
-        // App Icon
-        header.addView(ImageView(this).apply {
-            if (resolvedIcon != null) {
-                setImageDrawable(resolvedIcon)
-                imageTintList = null
-            } else {
-                setImageResource(fallbackIconForPackage(group.packageName))
-                val iconTint = if (status == AppInstallStatus.NOT_INSTALLED) {
-                    ColorUtils.setAlphaComponent(onSurfaceColor(), 0x77)
-                } else {
-                    AccentColor.getAccentColorInt(this@InAppRulesActivity)
-                }
-                imageTintList = ColorStateList.valueOf(iconTint)
-            }
-            layoutParams = LinearLayout.LayoutParams(dp(28), dp(28))
-        })
-
-        // Title and Subtitle
-        val textCol = LinearLayout(this).apply {
+        val section = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
-                marginStart = dp(12)
-                marginEnd = dp(8)
-            }
-        }
-        val tvTitle = TextView(this).apply {
-            text = resolvedTitle
-            setTypeface(typeface, Typeface.BOLD)
-            textSize = 15.5f
-            setTextColor(onSurfaceColor())
-        }
-        val tvSubtitle = TextView(this).apply {
-            textSize = 12f
-            setTextColor(ColorUtils.setAlphaComponent(onSurfaceColor(), 0x88))
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { topMargin = dp(1) }
+            )
         }
-        textCol.addView(tvTitle)
-        textCol.addView(tvSubtitle)
-        header.addView(textCol)
 
-        // Status Badge (collapsed chip shows clean install status, not versions)
-        val tvStatus = TextView(this).apply {
+        val header = layoutInflater.inflate(R.layout.item_website_section_header, section, false)
+        header.findViewById<TextView>(R.id.tvHeader).text = getString(group.titleRes)
+        header.findViewById<TextView>(R.id.tvHeaderAction).apply {
             text = when {
-                isYouTube && enabledYtVariants.isNotEmpty() ->
-                    enabledYtVariants.joinToString(" · ") { it.label }
-                status == AppInstallStatus.INSTALLED ->
-                    getString(R.string.in_app_status_installed)
-                status == AppInstallStatus.DISABLED ->
-                    getString(R.string.in_app_status_disabled)
+                enabledYtVariants.isNotEmpty() -> enabledYtVariants.joinToString(" · ") { it.label }
+                status == AppInstallStatus.INSTALLED -> getString(R.string.in_app_status_installed)
+                status == AppInstallStatus.DISABLED -> getString(R.string.in_app_status_disabled)
                 else -> getString(R.string.in_app_status_not_installed)
             }
+            isClickable = false
+            isFocusable = false
+            setOnClickListener(null)
             textSize = 11.5f
             setPadding(dp(8), dp(3), dp(8), dp(3))
-            val accent = AccentColor.getAccentColorInt(this@InAppRulesActivity)
-            val danger = ContextCompat.getColor(this@InAppRulesActivity, R.color.status_error)
-            when (status) {
-                AppInstallStatus.NOT_INSTALLED -> {
-                    setTextColor(ColorUtils.setAlphaComponent(onSurfaceColor(), 0x99))
-                    background = GradientDrawable().apply {
-                        cornerRadius = dp(99).toFloat()
-                        setColor(ColorUtils.setAlphaComponent(onSurfaceColor(), 0x18))
-                    }
-                }
-                AppInstallStatus.DISABLED -> {
-                    setTextColor(danger)
-                    background = GradientDrawable().apply {
-                        cornerRadius = dp(99).toFloat()
-                        setColor(ColorUtils.setAlphaComponent(danger, 0x1E))
-                    }
-                }
-                AppInstallStatus.INSTALLED -> {
-                    setTextColor(accent)
-                    background = GradientDrawable().apply {
-                        cornerRadius = dp(99).toFloat()
-                        setColor(ColorUtils.setAlphaComponent(accent, 0x1E))
-                    }
-                }
+            val tint = when (status) {
+                AppInstallStatus.NOT_INSTALLED -> onSurfaceColor()
+                AppInstallStatus.DISABLED -> ContextCompat.getColor(this@InAppRulesActivity, R.color.status_error)
+                AppInstallStatus.INSTALLED -> AccentColor.getAccentColorInt(this@InAppRulesActivity)
             }
-        }
-        header.addView(tvStatus)
-
-        // Dropdown Chevron
-        val ivChevron = ImageView(this).apply {
-            setImageResource(R.drawable.keyboard_arrow_down_24)
-            imageTintList = ColorStateList.valueOf(ColorUtils.setAlphaComponent(onSurfaceColor(), 0x90))
-            layoutParams = LinearLayout.LayoutParams(dp(24), dp(24)).apply {
-                marginStart = dp(6)
+            setTextColor(if (status == AppInstallStatus.NOT_INSTALLED) ColorUtils.setAlphaComponent(tint, 0x99) else tint)
+            background = GradientDrawable().apply {
+                cornerRadius = dp(99).toFloat()
+                setColor(ColorUtils.setAlphaComponent(tint, if (status == AppInstallStatus.NOT_INSTALLED) 0x18 else 0x1E))
             }
+            visibility = View.VISIBLE
         }
-        header.addView(ivChevron)
-        cardLayout.addView(header)
+        section.addView(header)
 
-        // Subtle Divider
-        val divider = View(this).apply {
-            layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(1))
-            setBackgroundColor(ColorUtils.setAlphaComponent(onSurfaceColor(), 0x14))
-            visibility = View.GONE
-        }
-        cardLayout.addView(divider)
-
-        // Surfaces Container
-        val surfacesContainer = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(16), dp(8), dp(16), dp(14))
-            visibility = View.GONE
-        }
-
-        // Recognized variant note
         if (isYouTube && enabledYtVariants.isNotEmpty()) {
             val variantSummary = enabledYtVariants.joinToString(", ") { v ->
                 if (v.versionName != null) "${v.label} (v${v.versionName})" else v.label
             }
-            val noteRow = LinearLayout(this).apply {
-                orientation = LinearLayout.HORIZONTAL
-                gravity = Gravity.CENTER_VERTICAL
-                background = GradientDrawable().apply {
-                    cornerRadius = dp(8).toFloat()
-                    setColor(ColorUtils.setAlphaComponent(AccentColor.getAccentColorInt(this@InAppRulesActivity), 0x18))
-                }
-                setPadding(dp(10), dp(6), dp(10), dp(6))
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply {
-                    topMargin = dp(4)
-                    bottomMargin = dp(6)
-                }
-
-                addView(ImageView(this@InAppRulesActivity).apply {
-                    setImageResource(R.drawable.check_circle_24)
-                    imageTintList = ColorStateList.valueOf(AccentColor.getAccentColorInt(this@InAppRulesActivity))
-                    layoutParams = LinearLayout.LayoutParams(dp(16), dp(16)).apply { marginEnd = dp(8) }
-                })
-                addView(TextView(this@InAppRulesActivity).apply {
-                    text = getString(R.string.in_app_recognized_variants, variantSummary)
-                    textSize = 12f
-                    setTextColor(onSurfaceColor())
-                })
-            }
-            surfacesContainer.addView(noteRow)
+            section.addView(buildNoteRow(getString(R.string.in_app_recognized_variants, variantSummary), R.drawable.check_circle_24))
         }
-
-        // Installed-app diagnostic moves into the expanded card
         if (!isYouTube && status == AppInstallStatus.INSTALLED) {
-            surfacesContainer.addView(buildDiagnosticNoteRow(appDiagnosticLabel(group)))
+            section.addView(buildNoteRow(appDiagnosticLabel(group), R.drawable.info_24))
         }
 
-        fun updateSubtitle() {
-            val isAllow = isInAppAllowMode()
-            val activeCount = group.surfaces.count { s ->
-                s.prefKey?.let { k -> InAppRuleStore.isRuleSelected(this@InAppRulesActivity, currentProfile(), k) } == true
-            }
-            val total = group.surfaces.count { it.prefKey != null }
-            tvSubtitle.text = if (isAllow) {
-                if (activeCount == 0) getString(R.string.in_app_rules_none_active)
-                else getString(R.string.in_app_rules_active_summary_allow, activeCount, total)
-            } else {
-                if (activeCount == 0) getString(R.string.in_app_rules_none_active)
-                else getString(R.string.in_app_rules_active_summary_block, activeCount, total)
-            }
-        }
-        updateSubtitle()
-
-        group.surfaces.forEach { surface ->
-            val row = buildSurfaceRow(surface, group.packageName, onToggle = { updateSubtitle() })
-            surfacesContainer.addView(row)
-            if (group.packageName == "com.google.android.youtube" && surface.surfaceKey == "yt:shorts") {
-                surfacesContainer.addView(buildYouTubeNativeLimitRow())
-            }
-        }
-        cardLayout.addView(surfacesContainer)
-
-        val focusPackage = intent.getStringExtra(EXTRA_FOCUS_PACKAGE).orEmpty()
-        val shouldExpand = focusPackage == group.packageName
-        if (shouldExpand) {
-            surfacesContainer.visibility = View.VISIBLE
-            divider.visibility = View.VISIBLE
-            ivChevron.rotation = 180f
-        }
-        // TalkBack: announce whether the section is open (the chevron is decorative).
-        ivChevron.importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
-        fun announceExpanded(expanded: Boolean) = ViewCompat.setStateDescription(
-            header,
-            getString(if (expanded) R.string.a11y_state_expanded else R.string.a11y_state_collapsed)
-        )
-        announceExpanded(shouldExpand)
-
-        header.setOnClickListener {
-            val isExpanded = surfacesContainer.visibility == View.VISIBLE
-            val willExpand = !isExpanded
-            surfacesContainer.visibility = if (willExpand) View.VISIBLE else View.GONE
-            divider.visibility = if (willExpand) View.VISIBLE else View.GONE
-            ivChevron.animate().rotation(if (willExpand) 180f else 0f).setDuration(200).start()
-            announceExpanded(willExpand)
-        }
-
-        card.addView(cardLayout)
-        return card
-    }
-
-    private fun buildYouTubeNativeLimitRow(): View {
-        val accent = AccentColor.getAccentColorInt(this)
-        val rowBackground = GradientDrawable().apply {
-            shape = GradientDrawable.RECTANGLE
-            cornerRadius = dp(10).toFloat()
-            setColor(ColorUtils.setAlphaComponent(accent, 18))
-        }
-
-        return LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            background = rowBackground
-            isClickable = true
-            isFocusable = true
-            setPadding(dp(10), dp(9), dp(8), dp(9))
-            setOnClickListener { showYouTubeNativeLimitGuide() }
+        val grid = TileGridLayout(this).apply {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-            ).apply {
-                topMargin = dp(7)
-                bottomMargin = dp(2)
-                marginStart = dp(8)
-            }
-
-            addView(ImageView(this@InAppRulesActivity).apply {
-                setImageResource(R.drawable.timer_24)
-                imageTintList = ColorStateList.valueOf(accent)
-                contentDescription = null
-                layoutParams = LinearLayout.LayoutParams(dp(20), dp(20)).apply {
-                    marginEnd = dp(10)
-                }
-            })
-
-            addView(LinearLayout(this@InAppRulesActivity).apply {
-                orientation = LinearLayout.VERTICAL
-                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-                addView(TextView(this@InAppRulesActivity).apply {
-                    setText(R.string.in_app_youtube_native_limit_compact_title)
-                    setTypeface(typeface, Typeface.BOLD)
-                    textSize = 13f
-                    setTextColor(onSurfaceColor())
-                })
-                addView(TextView(this@InAppRulesActivity).apply {
-                    setText(R.string.in_app_youtube_native_limit_compact_summary)
-                    textSize = 12f
-                    setTextColor(onSurfaceColor())
-                    alpha = 0.72f
-                })
-            })
-
-            addView(TextView(this@InAppRulesActivity).apply {
-                setText(R.string.in_app_youtube_native_limit_compact_action)
-                setTypeface(typeface, Typeface.BOLD)
-                textSize = 12f
-                setTextColor(accent)
-                setPadding(dp(8), dp(4), dp(8), dp(4))
-            })
+                LinearLayout.LayoutParams.WRAP_CONTENT
+            )
         }
+        group.surfaces.forEach { surface ->
+            grid.addView(buildSurfaceTile(surface, group.packageName, grid).root)
+            if (isYouTube && surface.surfaceKey == "yt:shorts") {
+                grid.addView(buildYouTubeNativeLimitTile(grid).root)
+            }
+        }
+        section.addView(grid)
+        return section
+    }
+
+    private fun buildYouTubeNativeLimitTile(parent: ViewGroup): RuleTile {
+        val tile = RuleTile.inflate(parent)
+        tile.setSymbol(R.drawable.timer_24)
+        tile.setText(
+            getString(R.string.in_app_youtube_native_limit_compact_title),
+            getString(R.string.in_app_youtube_native_limit_compact_action),
+        )
+        tile.setToggle(null)
+        tile.setState(on = false)
+        tile.root.setOnClickListener { showYouTubeNativeLimitGuide() }
+        return tile
     }
 
     private fun showYouTubeNativeLimitGuide() {
@@ -751,16 +520,7 @@ class InAppRulesActivity : AppCompatActivity() {
         return AppInstallStatus.NOT_INSTALLED
     }
 
-    private fun fallbackIconForPackage(packageName: String): Int = when (packageName) {
-        "com.google.android.youtube" -> R.drawable.play_arrow_24
-        "com.instagram.android" -> R.drawable.photo_camera_24
-        "com.twitter.android" -> R.drawable.share_24
-        "com.snapchat.android" -> R.drawable.photo_camera_24
-        "com.facebook.katana" -> R.drawable.share_24
-        else -> R.drawable.apps_24
-    }
-
-    private fun buildDiagnosticNoteRow(message: String): View {
+    private fun buildNoteRow(message: String, iconRes: Int): View {
         return LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
@@ -775,9 +535,11 @@ class InAppRulesActivity : AppCompatActivity() {
             ).apply {
                 topMargin = dp(4)
                 bottomMargin = dp(6)
+                marginStart = dp(4)
+                marginEnd = dp(4)
             }
             addView(ImageView(this@InAppRulesActivity).apply {
-                setImageResource(R.drawable.info_24)
+                setImageResource(iconRes)
                 imageTintList = ColorStateList.valueOf(AccentColor.getAccentColorInt(this@InAppRulesActivity))
                 layoutParams = LinearLayout.LayoutParams(dp(16), dp(16)).apply { marginEnd = dp(8) }
             })
@@ -835,33 +597,21 @@ class InAppRulesActivity : AppCompatActivity() {
         }
     }
 
-    private fun buildSurfaceRow(surface: Surface, packageName: String, onToggle: (() -> Unit)? = null): View {
-        val row = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(0, dp(10), 0, 0)
-        }
+    private fun surfaceIconRes(surfaceKey: String?): Int = when (surfaceKey) {
+        "yt:shorts", "ig:reels", "snap:spotlight", "fb:reels" -> R.drawable.play_arrow_24
+        "yt:subscriptions", "x:foryou", "fb:marketplace" -> R.drawable.apps_24
+        "yt:you", "snap:following" -> R.drawable.account_box_24
+        "yt:miniplayer", "x:grok" -> R.drawable.layers_24
+        "yt:pip" -> R.drawable.share_24
+        "ig:search", "x:search" -> R.drawable.search_24
+        "ig:stories", "snap:stories" -> R.drawable.photo_camera_24
+        "x:notifications" -> R.drawable.notifications_24
+        "snap:map" -> R.drawable.location_on_24
+        else -> R.drawable.apps_24
+    }
 
-        row.addView(LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
-                marginEnd = dp(8)
-            }
-            addView(TextView(this@InAppRulesActivity).apply {
-                text = ruleSwitchText(getString(surface.labelRes))
-                setTypeface(typeface, Typeface.BOLD)
-                textSize = 14f
-                setTextColor(onSurfaceColor())
-            })
-            addView(TextView(this@InAppRulesActivity).apply {
-                text = getString(surface.statusRes)
-                alpha = 0.72f
-                textSize = 12f
-                setTextColor(onSurfaceColor())
-                gravity = Gravity.CENTER_VERTICAL
-            })
-        })
-
+    private fun buildSurfaceTile(surface: Surface, packageName: String, parent: ViewGroup): RuleTile {
+        val tile = RuleTile.inflate(parent)
         val prefKey = surface.prefKey
         val readOnly = EditingLockGuard.isLocked(this)
         val currentChecked = prefKey?.let { readProfileBool(it) } ?: false
@@ -875,66 +625,59 @@ class InAppRulesActivity : AppCompatActivity() {
             )
             ProtectionChangeGate.decision(this, direction) != ProtectionChangePolicy.Decision.DENY
         }
-        val sw = SwitchCompat(this).apply {
-            // Stay tappable (dimmed): denied taps warn via pill instead of doing nothing.
-            isEnabled = prefKey != null
-            alpha = when {
-                prefKey == null -> 0.52f
-                pendingSelected != null -> 0.55f
-                readOnly && !canToggleWhileLocked -> 0.45f
-                else -> 1f
+        if (currentChecked && !readOnly && pendingSelected == null) {
+            surface.surfaceKey?.let { setSurfaceRuleForMode(it, checked = true) }
+        }
+        val shown = pendingSelected ?: currentChecked
+        val label = ruleSwitchText(getString(surface.labelRes))
+        val onTap: (() -> Unit)? = prefKey?.let { key ->
+            { onSurfaceTapped(tile, surface, packageName, key) }
+        }
+
+        tile.setSymbol(surfaceIconRes(surface.surfaceKey))
+        tile.setText(label, getString(surface.statusRes))
+        // Tap the tile to pick it, with the same check badge as a picked app.
+        tile.setToggle(null)
+        tile.setState(on = shown, pending = pendingSelected != null)
+        tile.setDimmed(prefKey == null || (readOnly && !canToggleWhileLocked))
+        tile.root.setOnClickListener(onTap?.let { tap -> View.OnClickListener { tap() } })
+        return tile
+    }
+
+    private fun onSurfaceTapped(tile: RuleTile, surface: Surface, packageName: String, prefKey: String) {
+        val before = readProfileBool(prefKey)
+        val checked = !(pendingInAppSelections[prefKey] ?: before)
+        when (ProtectionChangeGate.requestInAppSelection(
+            context = this,
+            profile = currentProfile(),
+            packageName = packageName,
+            baseKey = prefKey,
+            surfaceKey = surface.surfaceKey,
+            allowMode = isInAppAllowMode(),
+            currentSelected = before,
+            requestedSelected = checked,
+        )) {
+            ProtectionChangePolicy.Result.APPLIED -> {
+                BlockingRuntime.ensureRunning(this)
+                if (checked) {
+                    maybeOfferWholeAppBlock(packageName, appLabel(packageName))
+                }
+                tile.root.post { render() }
             }
-            if (prefKey != null) {
-                isChecked = pendingSelected ?: currentChecked
-                if (isChecked && !readOnly && pendingSelected == null) {
-                    surface.surfaceKey?.let { setSurfaceRuleForMode(it, checked = true) }
-                }
-                setOnCheckedChangeListener { button, checked ->
-                    val before = readProfileBool(prefKey)
-                    when (ProtectionChangeGate.requestInAppSelection(
-                        context = this@InAppRulesActivity,
-                        profile = currentProfile(),
-                        packageName = packageName,
-                        baseKey = prefKey,
-                        surfaceKey = surface.surfaceKey,
-                        allowMode = isInAppAllowMode(),
-                        currentSelected = before,
-                        requestedSelected = checked,
-                    )) {
-                        ProtectionChangePolicy.Result.APPLIED -> {
-                            BlockingRuntime.ensureRunning(this@InAppRulesActivity)
-                            onToggle?.invoke()
-                            if (checked) {
-                                maybeOfferWholeAppBlock(packageName, appLabel(packageName))
-                            }
-                            if (EditingLockGuard.isLocked(this@InAppRulesActivity)) {
-                                button.post { render() }
-                            }
-                        }
 
-                        ProtectionChangePolicy.Result.QUEUED -> {
-                            ProtectionFeedback.showQueued(this@InAppRulesActivity)
-                            button.setOnCheckedChangeListener(null)
-                            button.isChecked = before
-                            button.post { render() }
-                        }
+            ProtectionChangePolicy.Result.QUEUED -> {
+                ProtectionFeedback.showQueued(this)
+                tile.root.post { render() }
+            }
 
-                        ProtectionChangePolicy.Result.DENIED -> {
-                            if (EditingLockGuard.isLocked(this@InAppRulesActivity)) {
-                                this@InAppRulesActivity.findViewById<View>(android.R.id.content)
-                                    .showWarnPill(R.string.rules_tighten_only_active_message)
-                            }
-                            button.setOnCheckedChangeListener(null)
-                            button.isChecked = before
-                            button.post { render() }
-                        }
-                    }
+            ProtectionChangePolicy.Result.DENIED -> {
+                if (EditingLockGuard.isLocked(this)) {
+                    findViewById<View>(android.R.id.content)
+                        .showWarnPill(R.string.rules_tighten_only_active_message)
                 }
+                tile.root.post { render() }
             }
         }
-        CustomAccentApplier.tintSwitch(sw)
-        row.addView(sw)
-        return row
     }
 
     private fun groups(): List<AppGroup> = listOf(
@@ -993,7 +736,11 @@ class InAppRulesActivity : AppCompatActivity() {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT,
-            ).apply { topMargin = dp(8) }
+            ).apply {
+                topMargin = dp(8)
+                marginStart = dp(4)
+                marginEnd = dp(4)
+            }
             setCardBackgroundColor(ContextCompat.getColor(this@InAppRulesActivity, R.color.foqos_surface))
             // Flat tonal card: no outline, same 28dp shape as LoqIn.Card.
             strokeWidth = 0
@@ -1035,67 +782,12 @@ class InAppRulesActivity : AppCompatActivity() {
         return card
     }
 
-    private fun isAppInstalled(packageName: String): Boolean =
-        getAppStatus(packageName) == AppInstallStatus.INSTALLED
-
-    private fun appIcon(packageName: String): Drawable? {
-        val candidates = if (packageName == "com.google.android.youtube") {
-            listOf("app.morphe.android.youtube", "app.revanced.android.youtube", packageName)
-        } else {
-            listOf(packageName)
-        }
-        for (pkg in candidates) {
-            val d = runCatching {
-                val ai = packageManager.getApplicationInfo(pkg, 0)
-                if (ai.enabled) packageManager.getApplicationIcon(ai) else null
-            }.getOrNull()
-            if (d != null) return d
-        }
-        for (pkg in candidates) {
-            val d = runCatching {
-                val ai = packageManager.getApplicationInfo(pkg, 0)
-                packageManager.getApplicationIcon(ai)
-            }.getOrNull()
-            if (d != null) return d
-        }
-        return null
-    }
-
     private fun currentProfile(): String =
         intent.getStringExtra(EXTRA_PROFILE_NAME)?.trim()?.takeIf { it.isNotBlank() }
             ?: ProfileStore.getCurrent(this) ?: "default"
 
     private fun readProfileBool(baseKey: String): Boolean {
         return InAppRuleStore.isRuleSelected(this, currentProfile(), baseKey)
-    }
-
-    private fun writeProfileBool(baseKey: String, value: Boolean) {
-        InAppRuleStore.setRuleSelected(this, currentProfile(), baseKey, value)
-    }
-
-    private fun keepAppAllowedForInAppRule(packageName: String, baseKey: String, enabled: Boolean) {
-        if (!enabled) {
-            return
-        }
-        val profile = currentProfile()
-        if (!ProfileRuleModeStore.isAllowMode(this, profile)) {
-            return
-        }
-        if (InAppRuleStore.packageForRuleKey(baseKey) != packageName) {
-            return
-        }
-        val packagesToAdd = if (packageName == "com.google.android.youtube") {
-            listOf("app.morphe.android.youtube", "app.revanced.android.youtube", packageName)
-        } else {
-            listOf(packageName)
-        }
-        val currentAllowed = ProfileStore.getAllowedForProfile(this, profile)
-        val missing = packagesToAdd.filter {
-            it !in currentAllowed && runCatching { packageManager.getApplicationInfo(it, 0).enabled }.getOrDefault(false)
-        }
-        if (missing.isNotEmpty()) {
-            ProfileStore.setAllowedForProfile(this, profile, currentAllowed + missing)
-        }
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()

@@ -111,6 +111,7 @@ import com.oliver.loqin.data.prefs.SessionMissedNotificationsStore
 import com.oliver.loqin.data.prefs.BlockedNotificationEvent
 import com.oliver.loqin.feature.onboarding.OnboardingActivity
 import com.oliver.loqin.feature.picker.AppPickerActivity
+import com.oliver.loqin.feature.profiles.BreaksActivity
 import com.oliver.loqin.feature.profiles.TempPauseDialogs
 import com.oliver.loqin.feature.profiles.ManageProfilesActivity
 import com.oliver.loqin.feature.qr.QrGenerateActivity
@@ -1959,9 +1960,11 @@ class MainActivity : AppCompatActivity() {
                     tapped.showWarnPill(R.string.edit_locked_manage_temp_pauses)
                     return@setOnClickListener
                 }
-                TempPauseDialogs.show(this@MainActivity, currentProfileName) {
-                    refreshTempPausesSummary()
-                }
+                sheet.dismiss()
+                startActivity(
+                    Intent(this@MainActivity, BreaksActivity::class.java)
+                        .putExtra(BreaksActivity.EXTRA_PROFILE_NAME, currentProfileName)
+                )
             }
         }
         view.findViewById<View>(R.id.rowSheetDelete).setOnClickListener {
@@ -2476,6 +2479,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private var lastSetupProtectionWanted: Boolean? = null
+
     private fun updateSetupCard() {
         val missing = mutableListOf<String>()
 
@@ -2524,10 +2529,12 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (show) {
-            // Without accessibility nothing is blocked, so say that plainly; anything
-            // else missing only makes blocking less reliable.
+            // Protection switched on without accessibility blocks nothing, so say that plainly;
+            // anything else missing only makes blocking less reliable.
+            val protectionWanted = SwitchModeStore.isEnabled(this)
             tvSetupTitle.text = getString(
-                if (accessibilityOk) R.string.dashboard_setup_title else R.string.home_warning_not_protecting
+                if (accessibilityOk || !protectionWanted) R.string.dashboard_setup_title
+                else R.string.home_warning_not_protecting
             )
             tvSetupSubtitle.text = missing.joinToString(separator = " · ")
         }
@@ -3517,6 +3524,10 @@ class MainActivity : AppCompatActivity() {
         // "Active now" while the accessibility service isn't running would claim protection that
         // isn't happening (the most common blocker complaint); say so and link to the fix.
         val protectionNotRunning = enabled && !BlockingRuntime.isAccessibilityActive(this)
+        if (lastSetupProtectionWanted != enabled) {
+            lastSetupProtectionWanted = enabled
+            updateSetupCard()
+        }
         // A running break / timed enable shows its countdown in the hero itself (it used to
         // be visible only in the small quick-action tile below).
         val heroTimerMs = if (tempDisableRemaining > 0L) tempDisableRemaining else tempEnableRemaining.coerceAtLeast(0L)

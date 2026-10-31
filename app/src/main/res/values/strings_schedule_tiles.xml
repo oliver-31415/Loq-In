@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Schedules tile grid: summary card, add tile, tile toggle -->
+    <string name="schedule_tile_summary_title">%1$d of %2$d on</string>
+    <string name="schedule_tile_summary_empty">No schedules yet</string>
+    <string name="schedule_tile_add_label">Add schedule</string>
+    <string name="schedule_tile_toggle_desc">Turn schedule on or off</string>
+
+    <string name="schedules_test_button">Check</string>
+
+</resources>

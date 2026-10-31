@@ -52,7 +52,6 @@ import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.GridLayout
-import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
@@ -74,10 +73,11 @@ import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.ConcatAdapter
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import android.view.MotionEvent
 import com.oliver.loqin.BuildConfig
 import com.oliver.loqin.R
 import com.oliver.loqin.ui.dialog.InputSheet
@@ -104,7 +104,8 @@ import com.oliver.loqin.ui.LoqInDropdownAdapter
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.applyLoqInStyle
 import com.oliver.loqin.ui.showWarnPill
-import com.oliver.loqin.ui.attachEditDeleteSwipe
+import com.oliver.loqin.ui.RuleSummary
+import com.oliver.loqin.ui.RuleTile
 import com.oliver.loqin.ui.updateSelectionSubtitle
 import com.oliver.loqin.ui.dialog.showAccented
 import com.oliver.loqin.ui.dialog.showDestructiveAccented
@@ -164,9 +165,9 @@ class SchedulesActivity : AppCompatActivity() {
     )
 
     private lateinit var adapter: ScheduleAdapter
+    private lateinit var addTileAdapter: ScheduleAddTileAdapter
     private var priorityDragHelper: ItemTouchHelper? = null
     private lateinit var toolbar: MaterialToolbar
-    private lateinit var emptyState: View
     private lateinit var cardScheduleHealth: View
     private lateinit var tvStatusTitle: TextView
     private lateinit var tvStatusBody: TextView
@@ -184,6 +185,17 @@ class SchedulesActivity : AppCompatActivity() {
     private fun rulesSubtitle(): String =
         targetProfile?.let { getString(R.string.app_rules_profile_subtitle, it) }
             ?: getString(R.string.schedules_profile_subtitle)
+
+    /** Summary detail: the next boundary across all schedules, so only shown unfiltered. */
+    private fun nextScheduleDetail(): String? {
+        if (targetProfile != null) return null
+        if (!isScheduleAutomationAllowed()) return getString(R.string.schedules_next_inactive_control_mode)
+        val nextMillis = SchedulePlanner.getNextBoundaryMillis(this)
+        if (nextMillis <= 0L) return getString(R.string.schedules_next_none)
+        val cal = Calendar.getInstance().apply { timeInMillis = nextMillis }
+        val minutes = cal.get(Calendar.HOUR_OF_DAY) * 60 + cal.get(Calendar.MINUTE)
+        return getString(R.string.schedules_next_at, TimeFormatPrefs.formatMinutesOfDay(this, minutes))
+    }
 
     private fun matchesTargetProfile(schedule: ScheduleStore.Schedule): Boolean {
         val target = targetProfile ?: return true
@@ -357,8 +369,7 @@ class SchedulesActivity : AppCompatActivity() {
         toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
 
         val recycler = findViewById<RecyclerView>(R.id.recyclerSchedules)
-        recycler.layoutManager = LinearLayoutManager(this)
-        emptyState = findViewById(R.id.tvEmpty)
+        recycler.layoutManager = GridLayoutManager(this, 3)
 
         cardScheduleHealth = findViewById(R.id.cardScheduleHealth)
         tvStatusTitle = cardScheduleHealth.findViewById(R.id.tvStatusTitle)
@@ -399,53 +410,32 @@ class SchedulesActivity : AppCompatActivity() {
                         showEnabledScheduleOverlapWarning(schedule.id, list)
                     }
                 }
+                // The tile's corner switch has no state of its own: re-bind from the store.
+                refreshList()
             },
             canInteract = { canEditSchedules() },
             isSelectionMode = { isSelectionMode },
             isSelected = { id -> selectedScheduleIds.contains(id) },
             onToggleSelection = { id -> toggleSelection(id) },
-            onEnterSelection = { preselectId -> enterSelectionMode(preselectId) },
             onEdit = { schedule ->
                 if (!denyScheduleEditWithPopover()) {
                     showScheduleDialog(existing = schedule, preselectedMode = null)
                 }
             },
-            onTest = { schedule -> showScheduleTest(schedule) },
             getTargetProfile = { targetProfile },
-            onStartDrag = { holder -> priorityDragHelper?.startDrag(holder) },
         )
-        recycler.adapter = adapter
-        recycler.attachEditDeleteSwipe(
-            canSwipe = { !isSelectionMode && canEditSchedules() },
-            onEdit = { position ->
-                adapter.itemAt(position)?.let { schedule ->
-                    showScheduleDialog(existing = schedule, preselectedMode = null)
+        addTileAdapter = ScheduleAddTileAdapter(
+            canInteract = { canEditSchedules() },
+            onAdd = {
+                if (!denyScheduleEditWithPopover()) {
+                    showNewScheduleTypeDialog()
                 }
             },
-            onDelete = { position ->
-                adapter.itemAt(position)?.let(::confirmDeleteSchedule)
-            }
         )
+        recycler.adapter = ConcatAdapter(adapter, addTileAdapter)
         priorityDragHelper = ItemTouchHelper(priorityDragCallback(recycler)).apply {
             attachToRecyclerView(recycler)
         }
-
-        val addScheduleClick = View.OnClickListener {
-            if (denyScheduleEditWithPopover()) {
-                return@OnClickListener
-            }
-            showNewScheduleTypeDialog()
-        }
-        val accent = AccentColor.getAccentColorInt(this)
-        findViewById<ImageView>(R.id.ivEmptyScheduleIcon)?.imageTintList = ColorStateList.valueOf(accent)
-        (findViewById<View>(R.id.btnEmptyAddSchedule) as? MaterialButton)?.apply {
-            strokeColor = ColorStateList.valueOf(accent)
-            setTextColor(accent)
-            iconTint = ColorStateList.valueOf(accent)
-            rippleColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 0x26))
-        }
-
-        findViewById<View>(R.id.btnEmptyAddSchedule).setOnClickListener(addScheduleClick)
 
         refreshList()
 
@@ -467,7 +457,6 @@ class SchedulesActivity : AppCompatActivity() {
     override fun onPrepareOptionsMenu(menu: Menu): Boolean {
         val canInteract = canEditSchedules()
         val hasItems = adapter.itemCount > 0
-        menu.findItem(R.id.action_add)?.isVisible = canInteract && !isSelectionMode
         menu.findItem(R.id.action_info)?.isVisible = !isSelectionMode
         menu.findItem(R.id.action_select)?.isVisible = canInteract && !isSelectionMode && hasItems
         menu.findItem(R.id.action_cancel_selection)?.isVisible = canInteract && isSelectionMode
@@ -511,14 +500,6 @@ class SchedulesActivity : AppCompatActivity() {
                 showScheduleActionInfoDialog()
                 true
             }
-            R.id.action_add -> {
-                if (denyScheduleEditWithPopover()) {
-                    true
-                } else {
-                    showNewScheduleTypeDialog()
-                    true
-                }
-            }
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -530,17 +511,8 @@ class SchedulesActivity : AppCompatActivity() {
 
     private fun updateMenuState() {
         invalidateOptionsMenu()
-        val canInteract = canEditSchedules()
-        findViewById<View>(R.id.btnEmptyAddSchedule)?.apply {
-            isEnabled = true
-            isClickable = true
-            alpha = if (canInteract) 1f else 0.45f
-            (this as? MaterialButton)?.apply {
-                val accentColor = AccentColor.getAccentColorInt(this@SchedulesActivity)
-                strokeColor = ColorStateList.valueOf(accentColor)
-                setTextColor(accentColor)
-                iconTint = ColorStateList.valueOf(accentColor)
-            }
+        if (::addTileAdapter.isInitialized) {
+            addTileAdapter.notifyItemChanged(0)
         }
         if (::toolbar.isInitialized) {
             toolbar.updateSelectionSubtitle(
@@ -1011,7 +983,16 @@ class SchedulesActivity : AppCompatActivity() {
         val readOnlyChanged = isScheduleUiReadOnly != readOnlyNow
         isScheduleUiReadOnly = readOnlyNow
 
-        emptyState.visibility = if (sorted.isEmpty()) View.VISIBLE else View.GONE
+        RuleSummary.bind(
+            findViewById(R.id.scheduleSummary),
+            R.drawable.schedule_24,
+            if (sorted.isEmpty()) {
+                getString(R.string.schedule_tile_summary_empty)
+            } else {
+                getString(R.string.schedule_tile_summary_title, sorted.count { it.enabled }, sorted.size)
+            },
+            nextScheduleDetail(),
+        )
         val priorityChanged = (adapter.itemCount > 1) != (sorted.size > 1)
         adapter.submitList(sorted) {
             if (readOnlyChanged || priorityChanged) {
@@ -1031,19 +1012,23 @@ class SchedulesActivity : AppCompatActivity() {
 
     private fun priorityDragCallback(recycler: RecyclerView) =
         object : ItemTouchHelper.SimpleCallback(
-            ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0
+            ItemTouchHelper.UP or ItemTouchHelper.DOWN or ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT, 0
         ) {
             private var reordered = false
-
-            override fun isLongPressDragEnabled(): Boolean = false
 
             override fun getDragDirs(
                 recyclerView: RecyclerView,
                 viewHolder: RecyclerView.ViewHolder
             ): Int {
-                if (isSelectionMode || !canEditSchedules()) return 0
+                if (isSelectionMode || !canEditSchedules() || viewHolder !is ScheduleViewHolder) return 0
                 return super.getDragDirs(recyclerView, viewHolder)
             }
+
+            override fun canDropOver(
+                recyclerView: RecyclerView,
+                current: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ): Boolean = target is ScheduleViewHolder
 
             override fun onMove(
                 recyclerView: RecyclerView,
@@ -3346,6 +3331,9 @@ class SchedulesActivity : AppCompatActivity() {
         sheet.setOnDismissListener { scheduleDialog = null }
         tintSwitchCompat(switch247)
         tintSwitchCompat(switchAllDay)
+        if (existing != null) {
+            sheet.secondary(getString(R.string.schedules_test_button)) { showScheduleTest(existing) }
+        }
         sheet.primary(getString(if (existing == null) R.string.create else R.string.save)) {
             if (!canEditSchedules()) {
                 sheet.dismiss()
@@ -3873,32 +3861,21 @@ private class ScheduleAdapter(
     private val isSelectionMode: () -> Boolean,
     private val isSelected: (Int) -> Boolean,
     private val onToggleSelection: (Int) -> Unit,
-    private val onEnterSelection: (Int) -> Unit,
     private val onEdit: (ScheduleStore.Schedule) -> Unit,
-    private val onTest: (ScheduleStore.Schedule) -> Unit,
     private val getTargetProfile: () -> String?,
-    private val onStartDrag: (RecyclerView.ViewHolder) -> Unit,
 ) : androidx.recyclerview.widget.ListAdapter<ScheduleStore.Schedule, ScheduleViewHolder>(DIFF) {
 
-    fun itemAt(position: Int): ScheduleStore.Schedule? = currentList.getOrNull(position)
-
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ScheduleViewHolder {
-        val v = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_schedule, parent, false)
-        return ScheduleViewHolder(
-            v,
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ScheduleViewHolder =
+        ScheduleViewHolder(
+            RuleTile.inflate(parent),
             onToggleEnabled,
             canInteract,
             isSelectionMode,
             isSelected,
             onToggleSelection,
-            onEnterSelection,
             onEdit,
-            onTest,
             getTargetProfile,
-            onStartDrag,
         )
-    }
 
     override fun onBindViewHolder(holder: ScheduleViewHolder, position: Int) {
         holder.bind(getItem(position), position + 1, itemCount > 1)
@@ -3920,151 +3897,67 @@ private class ScheduleAdapter(
     }
 }
 
+/** The trailing "Add schedule" tile, a separate adapter so it stays out of drag and priority. */
+private class ScheduleAddTileAdapter(
+    private val canInteract: () -> Boolean,
+    private val onAdd: () -> Unit,
+) : RecyclerView.Adapter<ScheduleAddTileViewHolder>() {
+
+    override fun getItemCount(): Int = 1
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ScheduleAddTileViewHolder =
+        ScheduleAddTileViewHolder(
+            LayoutInflater.from(parent.context).inflate(R.layout.item_website_add_custom, parent, false)
+        )
+
+    override fun onBindViewHolder(holder: ScheduleAddTileViewHolder, position: Int) {
+        holder.bind(canInteract(), onAdd)
+    }
+}
+
+private class ScheduleAddTileViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+
+    private val label = itemView.findViewById<TextView>(R.id.tvAddLabel)
+
+    fun bind(enabled: Boolean, onAdd: () -> Unit) {
+        label.text = itemView.context.getString(R.string.schedule_tile_add_label)
+        // Stay tappable while locked: onAdd warns via popover, as the old add button did.
+        itemView.alpha = if (enabled) 1f else 0.45f
+        itemView.setOnClickListener { onAdd() }
+    }
+}
+
 private class ScheduleViewHolder(
-    itemView: View,
+    private val tile: RuleTile,
     private val onToggleEnabled: (ScheduleStore.Schedule, Boolean) -> Unit,
     private val canInteract: () -> Boolean,
     private val isSelectionMode: () -> Boolean,
     private val isSelected: (Int) -> Boolean,
     private val onToggleSelection: (Int) -> Unit,
-    private val onEnterSelection: (Int) -> Unit,
     private val onEdit: (ScheduleStore.Schedule) -> Unit,
-    private val onTest: (ScheduleStore.Schedule) -> Unit,
     private val getTargetProfile: () -> String?,
-    private val onStartDrag: (RecyclerView.ViewHolder) -> Unit,
-) : RecyclerView.ViewHolder(itemView) {
-
-    private val kindIcon = itemView.findViewById<ImageView>(R.id.imgKind)
-    private val title = itemView.findViewById<TextView>(R.id.textTitle)
-    private val subtitle = itemView.findViewById<TextView>(R.id.textSubtitle)
-    private val note = itemView.findViewById<TextView>(R.id.textNote)
-    private val switchEnabled = itemView.findViewById<SwitchCompat>(R.id.switchEnabled)
-    private val btnTest = itemView.findViewById<ImageButton>(R.id.btnTestScheduleInfo)
-    private val btnDragHandle = itemView.findViewById<ImageButton>(R.id.btnDragHandle)
-    private val textPriority = itemView.findViewById<TextView>(R.id.textPriority)
-    private val checkSelect =
-        itemView.findViewById<com.google.android.material.checkbox.MaterialCheckBox>(R.id.checkSelect)
-    private val cardRoot = itemView.findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardRoot)
-
-    private var current: ScheduleStore.Schedule? = null
-    private var binding = false
-
-    private fun tintEnabledSwitch() {
-        val ctx = itemView.context
-        val accent = AccentColor.getAccentColorInt(ctx)
-        val thumbOff = Color.WHITE
-        val thumbDisabled = Color.LTGRAY
-        val trackOn = ColorUtils.setAlphaComponent(accent, 0x88)
-        val trackOff = ColorUtils.setAlphaComponent(Color.DKGRAY, 0x44)
-        val trackOffDisabled = ColorUtils.setAlphaComponent(Color.GRAY, 0x33)
-
-        switchEnabled.thumbTintList = ColorStateList(
-            arrayOf(
-                intArrayOf(-android.R.attr.state_enabled),
-                intArrayOf(android.R.attr.state_checked),
-                intArrayOf()
-            ),
-            intArrayOf(thumbDisabled, accent, thumbOff)
-        )
-
-        switchEnabled.trackTintList = ColorStateList(
-            arrayOf(
-                intArrayOf(-android.R.attr.state_enabled),
-                intArrayOf(android.R.attr.state_checked),
-                intArrayOf()
-            ),
-            intArrayOf(trackOffDisabled, trackOn, trackOff)
-        )
-    }
-
-    init {
-        switchEnabled.setOnCheckedChangeListener { _, isChecked ->
-            if (!binding && !isSelectionMode()) {
-                val s = current
-                if (s != null && !canInteract()) {
-                    // Revert the visual toggle; onToggleEnabled warns via popover.
-                    binding = true
-                    switchEnabled.isChecked = s.enabled
-                    binding = false
-                }
-                s?.let { onToggleEnabled(it, isChecked) }
-            }
-        }
-
-        cardRoot.setOnClickListener {
-            val s = current ?: return@setOnClickListener
-            if (isSelectionMode()) {
-                onToggleSelection(s.id)
-            } else {
-                onEdit(s)
-            }
-        }
-
-        btnTest.setOnClickListener {
-            current?.let(onTest)
-        }
-
-        btnDragHandle.setOnTouchListener { _, event ->
-            if (event.actionMasked == MotionEvent.ACTION_DOWN && !isSelectionMode() && canInteract()) {
-                onStartDrag(this)
-            }
-            false
-        }
-
-        cardRoot.setOnLongClickListener {
-            val s = current ?: return@setOnLongClickListener true
-            if (!isSelectionMode() && canInteract()) {
-                onEnterSelection(s.id)
-            } else if (!canInteract()) {
-                onEdit(s)
-            }
-            true
-        }
-    }
-
-    private fun dp(value: Int): Int =
-        (value * itemView.resources.displayMetrics.density + 0.5f).toInt()
+) : RecyclerView.ViewHolder(tile.root) {
 
     private fun fmtMinutes(m: Int): String = TimeFormatPrefs.formatMinutesOfDay(itemView.context, m)
 
     fun bind(s: ScheduleStore.Schedule, rank: Int, ranked: Boolean) {
-        current = s
-
+        val ctx = itemView.context
         val canInteractNow = canInteract()
         val selecting = isSelectionMode()
-
-        textPriority.visibility = if (ranked) View.VISIBLE else View.GONE
-        textPriority.text = itemView.context.getString(R.string.schedules_priority_badge_fmt, rank)
-        textPriority.alpha = if (s.enabled) 1f else 0.5f
-        btnDragHandle.visibility = if (selecting || !ranked) View.GONE else View.VISIBLE
-        btnDragHandle.isEnabled = canInteractNow
-        btnDragHandle.alpha = if (canInteractNow) 0.6f else 0.3f
-
-        binding = true
-        switchEnabled.isChecked = s.enabled
-        // Stay tappable while locked (dimmed via alpha below): denied taps warn
-        // via popover in onToggleEnabled instead of silently doing nothing.
-        switchEnabled.isEnabled = !isSelectionMode()
-        tintEnabledSwitch()
-        binding = false
-
         val selected = selecting && isSelected(s.id)
-        checkSelect.visibility = if (selecting) View.VISIBLE else View.GONE
-        checkSelect.isChecked = selected
-        btnTest.visibility = if (selecting) View.GONE else View.VISIBLE
-        // Stay tappable while locked: taps route to onEdit, which warns via popover.
-        cardRoot.isClickable = true
-        cardRoot.isLongClickable = true
-        val ctx = itemView.context
-        val accent = AccentColor.getAccentColorInt(ctx)
-        if (selected) {
-            cardRoot.strokeWidth = dp(2)
-            cardRoot.strokeColor = accent
-            cardRoot.setCardBackgroundColor(ColorUtils.setAlphaComponent(accent, 0x22))
-        } else {
-            // Flat when unselected: no outline, selection carries the stroke.
-            cardRoot.strokeWidth = 0
-            cardRoot.setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.foqos_surface))
+
+        tile.setCorner(if (ranked) ctx.getString(R.string.schedules_priority_badge_fmt, rank) else null)
+        tile.corner.alpha = if (s.enabled) 1f else 0.5f
+        // Toggle is hidden in selection mode; its taps route to onToggleEnabled, which warns when locked.
+        tile.setToggle(
+            on = if (selecting) null else s.enabled,
+            contentDescription = ctx.getString(R.string.schedule_tile_toggle_desc),
+        ) { onToggleEnabled(s, !s.enabled) }
+        // Same as every other grid: an outlined tile is on (or picked while selecting).
+        tile.setState(on = if (selecting) selected else s.enabled)
+        tile.setDimmed(!canInteractNow)
+        tile.root.setOnClickListener {
+            if (isSelectionMode()) onToggleSelection(s.id) else onEdit(s)
         }
 
         val hasWifi = !s.wifiSsid.isNullOrBlank()
@@ -4078,28 +3971,7 @@ private class ScheduleViewHolder(
             hasBt -> R.drawable.bluetooth_24
             else -> R.drawable.alarm_24
         }
-        val tintedIcon = ContextCompat.getDrawable(ctx, iconRes)?.mutate()?.apply {
-            setTint(accent)
-        }
-        if (tintedIcon != null) {
-            kindIcon.setImageDrawable(tintedIcon)
-        } else {
-            kindIcon.setImageResource(iconRes)
-        }
-        kindIcon.imageTintList = ColorStateList.valueOf(accent)
-        kindIcon.setColorFilter(accent)
-        kindIcon.isEnabled = true
-
-        val a = when {
-            !canInteractNow && s.enabled -> 0.72f
-            !canInteractNow -> 0.45f
-            s.enabled -> 1f
-            else -> 0.5f
-        }
-        kindIcon.alpha = 1f
-        title.alpha = a
-        subtitle.alpha = a
-        note.alpha = a
+        tile.setSymbol(iconRes)
 
         val customTitle = s.title.trim()
         val hasExplicitTitle = customTitle.isNotBlank() &&
@@ -4192,8 +4064,6 @@ private class ScheduleViewHolder(
             }
         }
 
-        title.text = displayTitle
-
         val subtitleParts = mutableListOf<String>()
         if (daysLabel.isNotBlank()) {
             subtitleParts += daysLabel
@@ -4209,13 +4079,11 @@ private class ScheduleViewHolder(
         if (activeTargetProfile == null && s.profile.isNotBlank()) {
             subtitleParts += s.profile
         }
-        subtitle.text = subtitleParts.joinToString(" · ")
 
-        if (s.note.isNotBlank()) {
-            note.visibility = View.VISIBLE
-            note.text = s.note
-        } else {
-            note.visibility = View.GONE
-        }
+        tile.setText(
+            label = displayTitle,
+            sub = subtitleParts.joinToString(" · "),
+            value = s.note.takeIf { it.isNotBlank() },
+        )
     }
 }

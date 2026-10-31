@@ -86,6 +86,7 @@ class RuleTile(val root: MaterialCardView) {
      */
     fun setState(on: Boolean, pending: Boolean = false, showCheck: Boolean = true) {
         RuleTileStyle.apply(root, on, pending)
+        root.isSelected = on
         val showBadge = showCheck && (on || pending) && !toggle.isVisible
         badge.isVisible = showBadge
         if (showBadge) {
