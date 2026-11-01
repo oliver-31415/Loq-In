@@ -1951,15 +1951,9 @@ class MainActivity : AppCompatActivity() {
             tvTempPausesSummary?.text = TempPauseDialogs.capsSummaryText(this, currentProfileName)
         }
         refreshTempPausesSummary()
-        // Temporary pause limits cannot change while protection is active:
-        // gray the row out and warn immediately instead of opening the editor.
+        // Opens even while protection is on: the page shows today's breaks and keeps the limits read-only.
         view.findViewById<View>(R.id.rowSheetTempPauses)?.apply {
-            alpha = if (EditingLockGuard.isLocked(this@MainActivity)) 0.45f else 1f
-            setOnClickListener { tapped ->
-                if (EditingLockGuard.isLocked(this@MainActivity)) {
-                    tapped.showWarnPill(R.string.edit_locked_manage_temp_pauses)
-                    return@setOnClickListener
-                }
+            setOnClickListener {
                 sheet.dismiss()
                 startActivity(
                     Intent(this@MainActivity, BreaksActivity::class.java)

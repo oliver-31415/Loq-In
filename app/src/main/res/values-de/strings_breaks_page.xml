@@ -5,5 +5,20 @@
     <string name="breaks_page_no_limit">Kein Limit</string>
     <string name="breaks_page_summary_unlimited">Keine Pausenlimits</string>
     <string name="breaks_page_minutes_fmt">%1$d min</string>
-    <string name="breaks_page_pin_sub">Erfordert deine PIN</string>
+    <string name="breaks_today_none_left">Heute keine Pausen mehr übrig</string>
+    <plurals name="breaks_today_left">
+        <item quantity="one">%1$d von %2$d Pause übrig</item>
+        <item quantity="other">%1$d von %2$d Pausen übrig</item>
+    </plurals>
+    <string name="breaks_today_next_fmt">Nächste Pause: bis zu %1$d min</string>
+    <string name="breaks_meter_count">Genommene Pausen</string>
+    <string name="breaks_meter_minutes">Genutzte Pausenzeit</string>
+    <string name="breaks_meter_count_fmt">%1$d / %2$d</string>
+    <string name="breaks_meter_minutes_fmt">%1$d / %2$d min</string>
+    <plurals name="breaks_limit_count">
+        <item quantity="one">%d Pause</item>
+        <item quantity="other">%d Pausen</item>
+    </plurals>
+    <string name="breaks_limit_up_to_fmt">Bis zu %1$d min</string>
+    <string name="breaks_page_footer">Eine Pause pausiert die Blockierung für die von dir gewählte Zeit. Sobald die heutigen Limits aufgebraucht sind, ist die nächste Pause erst morgen.</string>
 </resources>

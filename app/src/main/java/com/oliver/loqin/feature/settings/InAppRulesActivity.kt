@@ -453,6 +453,7 @@ class InAppRulesActivity : AppCompatActivity() {
         appUpdateWarning(group)?.let { section.addView(buildNoteRow(it, R.drawable.info_24)) }
 
         val grid = TileGridLayout(this).apply {
+            columns = RuleTile.COMPACT_COLUMNS
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -573,7 +574,7 @@ class InAppRulesActivity : AppCompatActivity() {
     }
 
     private fun buildSurfaceTile(surface: Surface, packageName: String, parent: ViewGroup, installed: Boolean): RuleTile {
-        val tile = RuleTile.inflate(parent)
+        val tile = RuleTile.inflate(parent, compact = true)
         val prefKey = surface.prefKey
         val readOnly = EditingLockGuard.isLocked(this)
         val currentChecked = prefKey?.let { readProfileBool(it) } ?: false

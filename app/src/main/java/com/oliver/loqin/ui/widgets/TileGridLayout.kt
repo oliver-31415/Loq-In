@@ -25,7 +25,7 @@ import android.view.ViewGroup
 
 /**
  * Lays its children out in a fixed number of equal columns, row by row, for tile grids built in
- * code (in-app rules, breaks) that sit inside a scrolling page instead of a RecyclerView. Child
+ * code (in-app rules) that sit inside a scrolling page instead of a RecyclerView. Child
  * margins are respected, so grid_rule_tile's 4dp margin gives the same gaps as the app grid.
  */
 class TileGridLayout @JvmOverloads constructor(
@@ -44,8 +44,26 @@ class TileGridLayout @JvmOverloads constructor(
         val width = MeasureSpec.getSize(widthMeasureSpec)
         val cell = (width - paddingLeft - paddingRight) / columns
         var height = paddingTop + paddingBottom
+        val row = ArrayList<View>(columns)
         var rowHeight = 0
-        var col = 0
+
+        // A tile that grows for long text stretches the rest of its row, so rows stay even.
+        fun closeRow() {
+            for (child in row) {
+                val lp = child.layoutParams as MarginLayoutParams
+                val target = rowHeight - lp.topMargin - lp.bottomMargin
+                if (child.measuredHeight < target) {
+                    child.measure(
+                        MeasureSpec.makeMeasureSpec(child.measuredWidth, MeasureSpec.EXACTLY),
+                        MeasureSpec.makeMeasureSpec(target, MeasureSpec.EXACTLY),
+                    )
+                }
+            }
+            height += rowHeight
+            row.clear()
+            rowHeight = 0
+        }
+
         for (i in 0 until childCount) {
             val child = getChildAt(i)
             if (child.visibility == View.GONE) continue
@@ -56,14 +74,10 @@ class TileGridLayout @JvmOverloads constructor(
                 MeasureSpec.makeMeasureSpec(0, MeasureSpec.UNSPECIFIED),
             )
             rowHeight = maxOf(rowHeight, child.measuredHeight + lp.topMargin + lp.bottomMargin)
-            col++
-            if (col == columns) {
-                height += rowHeight
-                rowHeight = 0
-                col = 0
-            }
+            row += child
+            if (row.size == columns) closeRow()
         }
-        height += rowHeight
+        if (row.isNotEmpty()) closeRow()
         setMeasuredDimension(width, resolveSize(height, heightMeasureSpec))
     }
 

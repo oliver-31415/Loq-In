@@ -5,5 +5,20 @@
     <string name="breaks_page_no_limit">No limit</string>
     <string name="breaks_page_summary_unlimited">No break limits</string>
     <string name="breaks_page_minutes_fmt">%1$d min</string>
-    <string name="breaks_page_pin_sub">Needs your PIN</string>
+    <string name="breaks_today_none_left">No breaks left today</string>
+    <plurals name="breaks_today_left">
+        <item quantity="one">%1$d of %2$d break left</item>
+        <item quantity="other">%1$d of %2$d breaks left</item>
+    </plurals>
+    <string name="breaks_today_next_fmt">Next break: up to %1$d min</string>
+    <string name="breaks_meter_count">Breaks taken</string>
+    <string name="breaks_meter_minutes">Break time used</string>
+    <string name="breaks_meter_count_fmt">%1$d / %2$d</string>
+    <string name="breaks_meter_minutes_fmt">%1$d / %2$d min</string>
+    <plurals name="breaks_limit_count">
+        <item quantity="one">%d break</item>
+        <item quantity="other">%d breaks</item>
+    </plurals>
+    <string name="breaks_limit_up_to_fmt">Up to %1$d min</string>
+    <string name="breaks_page_footer">A break pauses blocking for the time you choose. Once today\'s limits are used up, the next break is tomorrow.</string>
 </resources>

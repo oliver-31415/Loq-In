@@ -29,6 +29,7 @@ import androidx.annotation.DrawableRes
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import androidx.core.view.isVisible
+import androidx.core.view.updateLayoutParams
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.color.MaterialColors
 import com.oliver.loqin.R
@@ -38,7 +39,7 @@ import com.oliver.loqin.theme.AccentColor
  * One tile of a rule grid (grid_rule_tile), styled exactly like the app and website tiles so
  * in-app rules, schedules and breaks read as the same kind of page.
  */
-class RuleTile(val root: MaterialCardView) {
+class RuleTile(val root: MaterialCardView, private val compact: Boolean = false) {
     val icon: ImageView = root.findViewById(R.id.tileIcon)
     val label: TextView = root.findViewById(R.id.tileLabel)
     val value: TextView = root.findViewById(R.id.tileValue)
@@ -62,7 +63,7 @@ class RuleTile(val root: MaterialCardView) {
     /** A symbol on an accent roundel, for things that have no app icon of their own. */
     fun setSymbol(@DrawableRes res: Int) {
         symbolMode = true
-        val pad = SheetRows.dp(context, 10f)
+        val pad = SheetRows.dp(context, if (compact) 8f else 10f)
         icon.setPadding(pad, pad, pad, pad)
         icon.setImageResource(res)
         styleSymbol(on = root.isSelected)
@@ -151,14 +152,34 @@ class RuleTile(val root: MaterialCardView) {
     }
 
     companion object {
-        /** Rule tiles carry a symbol and a short name, so a full square leaves them looking empty. */
-        const val HEIGHT_RATIO = 0.8f
+        /** Columns for a [compact] grid: a symbol and a short name fit four across. */
+        const val COMPACT_COLUMNS = 4
 
-        fun inflate(parent: ViewGroup): RuleTile {
+        /**
+         * A square tile that only grows past square when its text needs it. [compact] shrinks the
+         * symbol and name for four-across grids like the in-app rules.
+         */
+        fun inflate(parent: ViewGroup, compact: Boolean = false): RuleTile {
             val card = LayoutInflater.from(parent.context)
                 .inflate(R.layout.grid_rule_tile, parent, false) as SquareCardView
-            card.heightRatio = HEIGHT_RATIO
-            return RuleTile(card)
+            card.growToFit = true
+            val tile = RuleTile(card, compact)
+            if (compact) {
+                val size = SheetRows.dp(card.context, 34f)
+                tile.icon.layoutParams = tile.icon.layoutParams.apply {
+                    width = size
+                    height = size
+                }
+                tile.label.textSize = 11f
+                // Narrow tiles: let "Picture-in-picture" wrap at its hyphens, not mid-word.
+                tile.label.hyphenationFrequency = android.text.Layout.HYPHENATION_FREQUENCY_NORMAL
+                tile.label.breakStrategy = android.text.Layout.BREAK_STRATEGY_BALANCED
+                (tile.icon.parent as View).updateLayoutParams<ViewGroup.MarginLayoutParams> {
+                    topMargin = 0
+                    bottomMargin = 0
+                }
+            }
+            return tile
         }
     }
 }

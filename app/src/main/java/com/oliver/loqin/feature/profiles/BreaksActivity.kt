@@ -24,9 +24,16 @@ import android.view.MenuItem
 import android.view.View
 import android.widget.TextView
 import androidx.annotation.DrawableRes
+import androidx.annotation.PluralsRes
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.ColorUtils
+import androidx.core.view.isVisible
 import com.google.android.material.appbar.MaterialToolbar
+import com.google.android.material.button.MaterialButton
+import com.google.android.material.materialswitch.MaterialSwitch
+import com.google.android.material.progressindicator.LinearProgressIndicator
 import com.oliver.loqin.R
 import com.oliver.loqin.data.prefs.EmergencyPinStore
 import com.oliver.loqin.data.prefs.ProfileStore
@@ -34,15 +41,14 @@ import com.oliver.loqin.data.prefs.TempPauseStore
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.theme.CustomAccentApplier
 import com.oliver.loqin.ui.EdgeToEdgeUtils
-import com.oliver.loqin.ui.RuleSummary
-import com.oliver.loqin.ui.RuleTile
+import com.oliver.loqin.ui.SheetRows
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.dialog.EmergencyPinDialog
 import com.oliver.loqin.ui.dialog.LoqInInfoRow
 import com.oliver.loqin.ui.dialog.showLoqInInfoDialog
 import com.oliver.loqin.ui.dialog.showLoqInNumberInput
 import com.oliver.loqin.ui.showWarnPill
-import com.oliver.loqin.ui.widgets.TileGridLayout
+import com.oliver.loqin.ui.widgets.ListGroupLayout
 import com.oliver.loqin.util.EditingLockGuard
 
 private const val MAX_COUNT = 100
@@ -51,7 +57,10 @@ private const val DEFAULT_COUNT = 2
 private const val DEFAULT_PER_PAUSE_MINUTES = 15
 private const val DEFAULT_PER_DAY_MINUTES = 30
 
-/** Per-profile temporary-pause limits: one tile per cap, plus today's usage. */
+/**
+ * Per-profile break limits. A "Today" card shows what's left, with a meter per daily limit;
+ * below it each limit is a settings row: the switch turns it on or off, the row edits the amount.
+ */
 class BreaksActivity : AppCompatActivity() {
     companion object {
         const val EXTRA_PROFILE_NAME = "extra_profile_name"
@@ -80,22 +89,29 @@ class BreaksActivity : AppCompatActivity() {
         ),
     }
 
-    private lateinit var summary: View
-    private lateinit var gridLimits: TileGridLayout
-    private lateinit var gridToday: TileGridLayout
+    private lateinit var todayTitle: TextView
+    private lateinit var meterCount: View
+    private lateinit var meterMinutes: View
+    private lateinit var btnReset: MaterialButton
+    private lateinit var lockNote: View
+    private lateinit var groupLimits: ListGroupLayout
 
     override fun onCreate(savedInstanceState: Bundle?) {
         ThemeUtils.applyAccentTheme(this)
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_breaks)
         val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
-        summary = findViewById(R.id.breaksSummary)
-        gridLimits = findViewById(R.id.gridLimits)
-        gridToday = findViewById(R.id.gridToday)
+        todayTitle = findViewById(R.id.todayTitle)
+        meterCount = findViewById(R.id.meterCount)
+        meterMinutes = findViewById(R.id.meterMinutes)
+        btnReset = findViewById(R.id.btnResetToday)
+        lockNote = findViewById(R.id.lockNote)
+        groupLimits = findViewById(R.id.groupLimits)
         findViewById<View>(R.id.headerLimits).findViewById<TextView>(R.id.tvHeader).text =
             getString(R.string.breaks_page_limits_header)
-        findViewById<View>(R.id.headerToday).findViewById<TextView>(R.id.tvHeader).text =
-            getString(R.string.breaks_page_today_header)
+        meterCount.findViewById<TextView>(R.id.meterLabel).setText(R.string.breaks_meter_count)
+        meterMinutes.findViewById<TextView>(R.id.meterLabel).setText(R.string.breaks_meter_minutes)
+        btnReset.setOnClickListener { resetToday(it) }
 
         EdgeToEdgeUtils.setupClassic(activity = this, toolbar = toolbar)
         toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
@@ -129,7 +145,7 @@ class BreaksActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        if (::gridLimits.isInitialized) render()
+        if (::groupLimits.isInitialized) render()
     }
 
     private fun currentProfile(): String =
@@ -144,60 +160,108 @@ class BreaksActivity : AppCompatActivity() {
         val usedCount = TempPauseStore.usedCountToday(this, profile)
         val usedMinutes = TempPauseStore.usedMinutesToday(this, profile)
 
-        val unlimited = caps.maxCountPerDay <= 0 && caps.maxMinutesPerPause <= 0 && caps.maxMinutesPerDay <= 0
-        RuleSummary.bind(
-            summary,
-            R.drawable.hourglass_24,
-            if (unlimited) getString(R.string.breaks_page_summary_unlimited) else TempPauseDialogs.capsSummaryText(this, profile),
-            getString(R.string.temp_pause_used_fmt, usedCount, usedMinutes)
+        renderToday(profile, caps, usedCount, usedMinutes, locked)
+
+        lockNote.isVisible = locked
+        groupLimits.removeAllViews()
+        limitRow(Cap.COUNT, caps.maxCountPerDay, locked)
+        limitRow(Cap.PER_PAUSE, caps.maxMinutesPerPause, locked)
+        limitRow(Cap.PER_DAY, caps.maxMinutesPerDay, locked)
+        groupLimits.refreshSegments()
+    }
+
+    private fun renderToday(profile: String, caps: TempPauseStore.Caps, usedCount: Int, usedMinutes: Int, locked: Boolean) {
+        val nextMax = TempPauseStore.maxAllowedDurationMinutes(this, profile)
+        todayTitle.text = when {
+            !TempPauseStore.hasCaps(this, profile) -> getString(R.string.breaks_page_summary_unlimited)
+            nextMax <= 0 -> getString(R.string.breaks_today_none_left)
+            caps.maxCountPerDay > 0 -> {
+                val left = TempPauseStore.remainingPauses(this, profile)
+                resources.getQuantityString(R.plurals.breaks_today_left, caps.maxCountPerDay, left, caps.maxCountPerDay)
+            }
+            nextMax != Int.MAX_VALUE -> getString(R.string.breaks_today_next_fmt, nextMax)
+            else -> getString(R.string.breaks_page_summary_unlimited)
+        }
+
+        bindMeter(meterCount, usedCount, caps.maxCountPerDay, R.string.breaks_meter_count_fmt, null)
+        bindMeter(
+            meterMinutes, usedMinutes, caps.maxMinutesPerDay,
+            R.string.breaks_meter_minutes_fmt, R.string.breaks_page_minutes_fmt,
         )
 
-        gridLimits.removeAllViews()
-        capTile(Cap.COUNT, caps.maxCountPerDay, locked)
-        capTile(Cap.PER_PAUSE, caps.maxMinutesPerPause, locked)
-        capTile(Cap.PER_DAY, caps.maxMinutesPerDay, locked)
-
-        // Today's numbers are already in the summary card; this section only offers the reset.
-        val usedToday = usedCount > 0 || usedMinutes > 0
-        gridToday.removeAllViews()
-        findViewById<View>(R.id.headerToday).visibility = if (usedToday) View.VISIBLE else View.GONE
-        gridToday.visibility = if (usedToday) View.VISIBLE else View.GONE
-        if (usedToday) resetTile(locked)
+        btnReset.isVisible = usedCount > 0 || usedMinutes > 0
+        btnReset.alpha = if (locked) 0.45f else 1f
     }
 
-    private fun newTile(grid: TileGridLayout): RuleTile =
-        RuleTile.inflate(grid).also { grid.addView(it.root) }
+    /**
+     * "used / limit" with a bar when the limit is on; with no limit just the amount used, no bar.
+     * [plainRes] formats the bare amount (null = the number alone).
+     */
+    private fun bindMeter(meter: View, used: Int, limit: Int, @StringRes cappedRes: Int, @StringRes plainRes: Int?) {
+        val value = meter.findViewById<TextView>(R.id.meterValue)
+        val bar = meter.findViewById<LinearProgressIndicator>(R.id.meterBar)
+        if (limit > 0) {
+            value.text = getString(cappedRes, used, limit)
+            val accent = AccentColor.getAccentColorInt(this)
+            val full = used >= limit
+            val color = if (full) ContextCompat.getColor(this, R.color.status_warning) else accent
+            bar.setIndicatorColor(color)
+            // Opaque tint: a see-through track darkens where its rounded end overlaps itself.
+            bar.trackColor = ColorUtils.compositeColors(
+                ColorUtils.setAlphaComponent(color, 0x33),
+                ContextCompat.getColor(this, R.color.foqos_surface),
+            )
+            bar.max = limit
+            bar.setProgressCompat(used.coerceAtMost(limit), false)
+            bar.isVisible = true
+        } else {
+            value.text = plainRes?.let { getString(it, used) } ?: used.toString()
+            bar.isVisible = false
+        }
+    }
 
-    // The tile label already says "per day" / "per break", so the value is just the amount.
     private fun Cap.valueText(value: Int): String = when (this) {
-        Cap.COUNT -> value.toString()
-        Cap.PER_PAUSE, Cap.PER_DAY -> getString(R.string.breaks_page_minutes_fmt, value)
+        Cap.COUNT -> resources.getQuantityString(R.plurals.breaks_limit_count, value, value)
+        Cap.PER_PAUSE -> getString(R.string.breaks_limit_up_to_fmt, value)
+        Cap.PER_DAY -> getString(R.string.breaks_page_minutes_fmt, value)
     }
 
-    private fun capTile(cap: Cap, value: Int, locked: Boolean) {
+    private fun limitRow(cap: Cap, value: Int, locked: Boolean) {
         val on = value > 0
+        val accent = AccentColor.getAccentColorInt(this)
         val label = getString(cap.labelRes)
-        val tile = newTile(gridLimits)
-        tile.setSymbol(cap.iconRes)
-        // Off reads as a quiet "No limit" line; a set limit gets the big number.
-        if (on) tile.setText(label, value = cap.valueText(value))
-        else tile.setText(label, sub = getString(R.string.breaks_page_no_limit))
-        tile.setState(on, showCheck = false)
-        tile.setToggle(on, contentDescription = label) {
+        val row = SheetRows.row(
+            this, groupLimits, cap.iconRes, label,
+            if (on) cap.valueText(value) else getString(R.string.breaks_page_no_limit),
+            accent,
+        )
+        if (on) row.summary.setTextColor(accent)
+        val switch = MaterialSwitch(this).apply {
+            isChecked = on
+            thumbIconDrawable = ContextCompat.getDrawable(this@BreaksActivity, R.drawable.loqin_switch_thumb_icon)
+            CustomAccentApplier.tintSwitch(this)
+            contentDescription = label
+        }
+        switch.setOnCheckedChangeListener { button, checked ->
             if (locked) {
-                tile.root.showWarnPill(R.string.edit_locked_manage_temp_pauses)
+                button.isChecked = !checked
+                row.root.showWarnPill(R.string.edit_locked_manage_temp_pauses)
             } else {
-                writeCap(cap, if (on) 0 else cap.defaultValue)
+                writeCap(cap, if (checked) cap.defaultValue else 0)
             }
         }
-        tile.root.setOnClickListener {
-            if (locked) {
-                it.showWarnPill(R.string.edit_locked_manage_temp_pauses)
-            } else {
-                pickCap(cap, value)
-            }
+        row.trailing.addView(switch)
+        row.root.setOnClickListener {
+            if (locked) it.showWarnPill(R.string.edit_locked_manage_temp_pauses) else pickCap(cap, value)
         }
-        tile.setDimmed(locked)
+        // Fade the content, not the segment, so the group keeps its shape while read-only.
+        if (locked) {
+            switch.isEnabled = false
+            row.icon.alpha = 0.45f
+            row.title.alpha = 0.55f
+            row.summary.alpha = 0.55f
+        }
+        groupLimits.addView(row.root)
     }
 
     private fun pickCap(cap: Cap, current: Int) {
@@ -229,16 +293,6 @@ class BreaksActivity : AppCompatActivity() {
             )
         )
         render()
-    }
-
-    private fun resetTile(locked: Boolean) {
-        val tile = newTile(gridToday)
-        tile.setSymbol(R.drawable.pin_24)
-        tile.setText(getString(R.string.temp_pause_reset_today), sub = getString(R.string.breaks_page_pin_sub))
-        tile.setState(false, showCheck = false)
-        tile.setToggle(null)
-        tile.setDimmed(locked)
-        tile.root.setOnClickListener { resetToday(tile.root) }
     }
 
     private fun resetToday(anchor: View) {

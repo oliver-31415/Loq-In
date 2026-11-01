@@ -3912,7 +3912,7 @@ private class ScheduleAddTileAdapter(
         ScheduleAddTileViewHolder(
             (LayoutInflater.from(parent.context)
                 .inflate(R.layout.item_website_add_custom, parent, false) as SquareCardView)
-                .apply { heightRatio = RuleTile.HEIGHT_RATIO }
+                .apply { growToFit = true }
         )
 
     override fun onBindViewHolder(holder: ScheduleAddTileViewHolder, position: Int) {

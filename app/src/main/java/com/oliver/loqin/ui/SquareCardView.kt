@@ -24,7 +24,8 @@ import com.google.android.material.card.MaterialCardView
 
 /**
  * Card whose height follows its width, for grid tiles like the app picker where every cell must
- * be a true square. [heightRatio] below 1 makes a shorter tile that still grows to fit its content.
+ * be a true square. [heightRatio] sets the target height as a share of the width; with
+ * [growToFit] the card keeps that as a minimum and grows when its content needs more.
  */
 open class SquareCardView @JvmOverloads constructor(
     context: Context,
@@ -38,9 +39,20 @@ open class SquareCardView @JvmOverloads constructor(
             requestLayout()
         }
 
+    var growToFit: Boolean = false
+        set(value) {
+            field = value
+            requestLayout()
+        }
+
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
-        if (heightRatio == 1f) {
+        if (heightRatio == 1f && !growToFit) {
             super.onMeasure(widthMeasureSpec, widthMeasureSpec)
+            return
+        }
+        // A grid evening out its row hands down an exact height; take it.
+        if (growToFit && MeasureSpec.getMode(heightMeasureSpec) == MeasureSpec.EXACTLY) {
+            super.onMeasure(widthMeasureSpec, heightMeasureSpec)
             return
         }
         val target = (MeasureSpec.getSize(widthMeasureSpec) * heightRatio).toInt()
