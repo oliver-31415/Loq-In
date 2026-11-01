@@ -59,10 +59,10 @@
 
         <FrameLayout
             android:id="@+id/btnSheetClose"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:layout_marginStart="12dp"
-            android:background="@drawable/bg_roundel_neutral"
+            android:background="@drawable/bg_sheet_close"
             android:clickable="true"
             android:focusable="true"
             tools:ignore="UseCompoundDrawables">
@@ -323,6 +323,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="2dp"
+                    android:maxLines="1"
+                    android:ellipsize="end"
                     android:text="@string/profile_sheet_pauses_summary"
                     android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
             </LinearLayout>

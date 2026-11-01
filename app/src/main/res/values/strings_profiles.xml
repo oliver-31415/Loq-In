@@ -53,7 +53,6 @@
     <!-- Needed by the in-progress widget refactor. -->
     <string name="profile_default_name">Profile</string>
     <string name="temp_pause_action">Breaks</string>
-    <string name="temp_pause_title">Breaks</string>
     <string name="temp_pause_summary_unlimited">Unlimited</string>
     <string name="temp_pause_part_count_fmt">%1$d/day</string>
     <string name="temp_pause_part_max_fmt">max %1$d min</string>
@@ -63,7 +62,6 @@
     <string name="temp_pause_field_per_pause">Max minutes per break (0 = unlimited)</string>
     <string name="temp_pause_field_per_day">Max break minutes per day (0 = unlimited)</string>
     <string name="temp_pause_zero_hint">0 means unlimited.</string>
-    <string name="temp_pause_header_subtitle">Choose how often and how long you can pause protection.</string>
     <string name="temp_pause_section_count">Breaks per day</string>
     <string name="temp_pause_section_count_subtitle">How many breaks you can take per day</string>
     <string name="temp_pause_section_length">Length per break</string>

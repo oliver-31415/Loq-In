@@ -9,7 +9,9 @@
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:fitsSystemWindows="true">
+        android:background="@color/foqos_bg"
+        android:fitsSystemWindows="true"
+        app:liftOnScroll="false">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
@@ -26,9 +28,9 @@
         android:id="@+id/scrollContent"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingStart="16dp"
+        android:paddingStart="12dp"
         android:paddingTop="0dp"
-        android:paddingEnd="16dp"
+        android:paddingEnd="12dp"
         android:paddingBottom="24dp"
         android:clipToPadding="false"
         android:fillViewport="true"
@@ -45,65 +47,59 @@
                 style="@style/LoqIn.Card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
+                android:layout_marginStart="4dp"
+                android:layout_marginTop="4dp"
+                android:layout_marginEnd="4dp"
+                android:layout_marginBottom="8dp"
                 app:cardUseCompatPadding="false">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="14dp">
+                    android:padding="8dp">
 
-                    <TextView
-                        android:id="@+id/tvInAppRuleModeTitle"
+                    <com.google.android.material.button.MaterialButtonToggleGroup
+                        android:id="@+id/toggleInAppRuleMode"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:text="@string/in_app_rule_mode_title"
-                        android:textColor="?android:attr/textColorPrimary"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
+                        app:selectionRequired="true"
+                        app:singleSelection="true">
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnInAppModeBlock"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:minHeight="48dp"
+                            android:maxLines="2"
+                            android:text="@string/in_app_rule_mode_block"
+                            android:textSize="13sp"
+                            app:cornerRadius="16dp" />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnInAppModeAllow"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:minHeight="48dp"
+                            android:maxLines="2"
+                            android:text="@string/in_app_rule_mode_allow"
+                            android:textSize="13sp"
+                            app:cornerRadius="16dp" />
+                    </com.google.android.material.button.MaterialButtonToggleGroup>
 
                     <TextView
                         android:id="@+id/tvInAppRuleModeSummary"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="3dp"
-                        android:maxLines="2"
-                        android:ellipsize="end"
+                        android:layout_marginStart="8dp"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginEnd="8dp"
+                        android:layout_marginBottom="4dp"
                         android:text="@string/in_app_rule_mode_block_summary"
                         android:textColor="?android:attr/textColorSecondary"
                         android:textSize="12.5sp" />
-
-                        <com.google.android.material.button.MaterialButtonToggleGroup
-                            android:id="@+id/toggleInAppRuleMode"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            app:selectionRequired="true"
-                            app:singleSelection="true">
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btnInAppModeBlock"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:minHeight="48dp"
-                                android:maxLines="2"
-                                android:text="@string/in_app_rule_mode_block"
-                                android:textSize="13sp"
-                                app:cornerRadius="14dp" />
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/btnInAppModeAllow"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_weight="1"
-                                android:minHeight="48dp"
-                                android:maxLines="2"
-                                android:text="@string/in_app_rule_mode_allow"
-                                android:textSize="13sp"
-                                app:cornerRadius="14dp" />
-                        </com.google.android.material.button.MaterialButtonToggleGroup>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

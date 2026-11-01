@@ -26,8 +26,6 @@ import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
-import androidx.core.content.ContextCompat
-import androidx.core.graphics.ColorUtils
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -41,6 +39,7 @@ import com.oliver.loqin.data.prefs.SessionLimitStore
 import com.oliver.loqin.data.prefs.UsageLimitStore
 import com.oliver.loqin.data.prefs.UsageLimitResetStore
 import com.oliver.loqin.theme.AccentColor
+import com.oliver.loqin.ui.RuleTileStyle
 import com.oliver.loqin.ui.dialog.showAccented
 import com.oliver.loqin.ui.showWarnPill
 import com.oliver.loqin.util.AppBlockSafety
@@ -261,23 +260,8 @@ class AppListAdapter(
 
         private fun updateTileState(selected: Boolean) {
             val ctx = itemView.context
-            if (currentPending) {
-                // Queued weakening change: same accent hue, lighter shade and a faded badge so it
-                // reads as "blocked, but a change is waiting" instead of a different color.
-                val accent = AccentColor.getAccentColorInt(ctx)
-                cardRoot.strokeWidth = dp(2f)
-                cardRoot.strokeColor = ColorUtils.setAlphaComponent(accent, 0x66)
-                cardRoot.setCardBackgroundColor(ColorUtils.setAlphaComponent(accent, 0x14))
-            } else if (selected) {
-                val accent = AccentColor.getAccentColorInt(ctx)
-                cardRoot.strokeWidth = dp(2f)
-                cardRoot.strokeColor = accent
-                cardRoot.setCardBackgroundColor(ColorUtils.setAlphaComponent(accent, 0x30))
-            } else {
-                // Flat tile: no outline when unselected. Selection and pending keep their strokes.
-                cardRoot.strokeWidth = 0
-                cardRoot.setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.foqos_surface))
-            }
+            // Pending (a weakening change is queued) keeps the accent hue in a lighter shade.
+            RuleTileStyle.apply(cardRoot, selected, currentPending)
             val showBadge = selected || currentPending
             ivChecked.visibility = if (showBadge) View.VISIBLE else View.GONE
             if (showBadge) {
@@ -533,7 +517,7 @@ class AppListAdapter(
 
             // Plain limit/schedule button, same as every other app.
             btnLimit.setImageResource(R.drawable.schedule_24)
-            btnLimit.contentDescription = ctx.getString(R.string.set_daily_limit)
+            btnLimit.contentDescription = ctx.getString(R.string.set_daily_limit_for_fmt, item.label)
             btnLimit.setColorFilter(AccentColor.getAccentColorInt(ctx))
 
             if (item.isAvailable) {

@@ -53,7 +53,6 @@
     <!-- Needed by the in-progress widget refactor. -->
     <string name="profile_default_name">Profil</string>
     <string name="temp_pause_action">Pausen</string>
-    <string name="temp_pause_title">Pausen</string>
     <string name="temp_pause_summary_unlimited">Unbegrenzt</string>
     <string name="temp_pause_part_count_fmt">%1$d/Tag</string>
     <string name="temp_pause_part_max_fmt">max. %1$d Min.</string>
@@ -63,7 +62,6 @@
     <string name="temp_pause_field_per_pause">Max. Minuten pro Pause (0 = unbegrenzt)</string>
     <string name="temp_pause_field_per_day">Max. Pausenminuten pro Tag (0 = unbegrenzt)</string>
     <string name="temp_pause_zero_hint">0 bedeutet unbegrenzt.</string>
-    <string name="temp_pause_header_subtitle">Lege fest, wie oft und wie lange du den Schutz pausieren kannst.</string>
     <string name="temp_pause_section_count">Pausen pro Tag</string>
     <string name="temp_pause_section_count_subtitle">Wie viele Pausen du pro Tag nehmen kannst</string>
     <string name="temp_pause_section_length">Länge pro Pause</string>

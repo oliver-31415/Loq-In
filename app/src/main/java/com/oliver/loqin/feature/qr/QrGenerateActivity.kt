@@ -22,26 +22,20 @@ import android.content.ClipData
 import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
-import android.content.res.ColorStateList
 import android.graphics.Bitmap
-import android.graphics.Color
-import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.view.ViewGroup
-import android.widget.LinearLayout
-import android.widget.TextView
-import android.widget.EditText
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.set
+import androidx.core.widget.doAfterTextChanged
 import com.oliver.loqin.R
+import com.oliver.loqin.ui.dialog.InputSheet
 import com.oliver.loqin.data.prefs.AutomationModeStore
 import com.oliver.loqin.data.prefs.ProfileStore
 import com.oliver.loqin.databinding.ActivityQrGenerateBinding
@@ -274,76 +268,36 @@ class QrGenerateActivity : AppCompatActivity() {
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density + 0.5f).toInt()
 
     private fun showCustomMinutesDialog() {
-        val accent = AccentColor.getAccentColorInt(this)
-        val input = EditText(this).apply {
-            inputType = android.text.InputType.TYPE_CLASS_NUMBER
-            hint = getString(R.string.qr_minutes_hint)
-            isSingleLine = true
-            backgroundTintList = ColorStateList.valueOf(accent)
+        val presets = listOf(5, 10, 15, 30, 60)
+        val sheet = InputSheet(this, getString(R.string.qr_minutes_custom_title))
+        sheet.label(getString(R.string.temp_duration_quick_presets))
+        var field: com.google.android.material.textfield.TextInputLayout? = null
+        val choices = sheet.choices(
+            labels = presets.map { getString(R.string.temp_duration_preset_minutes, it.toLong()) },
+            selected = -1,
+        ) { index ->
+            if (index >= 0) field?.editText?.text?.clear()
         }
-
-        fun presetChip(minutes: Long): TextView {
-            return TextView(this).apply {
-                text = getString(R.string.temp_duration_preset_minutes, minutes)
-                textSize = 14f
-                gravity = android.view.Gravity.CENTER
-                setTextColor(accent)
-                setPadding(dp(9), dp(6), dp(9), dp(6))
-                background = GradientDrawable().apply {
-                    cornerRadius = dp(18).toFloat()
-                    setColor(Color.TRANSPARENT)
-                    setStroke(dp(1), accent)
-                }
-                setOnClickListener {
-                    input.setText(String.format(Locale.getDefault(), "%d", minutes))
-                    input.setSelection(input.text?.length ?: 0)
-                }
-            }
-        }
-
-        val presetRow = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-        }
-        listOf(5L, 10L, 15L, 30L, 60L).forEachIndexed { index, minutes ->
-            presetRow.addView(
-                presetChip(minutes),
-                LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f).apply {
-                    if (index > 0) marginStart = dp(4)
-                }
-            )
-        }
-
-        val content = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(24), 0, dp(24), 0)
-            addView(TextView(this@QrGenerateActivity).apply {
-                text = getString(R.string.temp_duration_quick_presets)
-                textSize = 12.5f
-                alpha = 0.74f
-                setPadding(0, 0, 0, dp(4))
+        field = sheet.field(
+            hint = getString(R.string.qr_minutes_hint),
+            inputType = android.text.InputType.TYPE_CLASS_NUMBER,
+        )
+        field.editText?.doAfterTextChanged { if (!it.isNullOrEmpty()) choices.clearChecked() }
+        sheet.primary(getString(R.string.ok)) {
+            val typed = field.editText?.text?.toString()?.trim().orEmpty()
+            val preset = presets.getOrNull(choices.checkedButtonId.let { id ->
+                (0 until choices.childCount).firstOrNull { choices.getChildAt(it).id == id } ?: -1
             })
-            addView(presetRow, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT))
-            addView(input, LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT).apply {
-                topMargin = dp(8)
-            })
-        }
-
-        Dialogs.builder(this)
-            .setTitle(getString(R.string.qr_minutes_custom_title))
-            .setView(content)
-            .setNegativeButton(getString(R.string.cancel), null)
-            .setPositiveButton(getString(R.string.ok)) { _, _ ->
-                val m = input.text?.toString()?.trim()?.toLongOrNull()
-                if (m == null || m <= 0) {
-                    input.showWarnPill(R.string.invalid_value)
-                    return@setPositiveButton
-                }
-
-                val locale = Locale.getDefault()
-                b.minutesDropdown.setText(String.format(locale, "%d", m), false)
-                regenerate()
+            val m = if (typed.isNotEmpty()) typed.toLongOrNull() else preset?.toLong()
+            if (m == null || m <= 0) {
+                field.error = getString(R.string.invalid_value)
+                return@primary
             }
-            .showAccented()
+            sheet.dismiss()
+            b.minutesDropdown.setText(String.format(Locale.getDefault(), "%d", m), false)
+            regenerate()
+        }
+        sheet.show()
     }
 
     private fun applyActionUi(action: Action) {

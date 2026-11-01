@@ -25,6 +25,9 @@
     <!-- ====================================================== -->
     <string name="copied">Kopiert</string>
     <string name="info">Info</string>
+    <string name="info_about_fmt">Info zu %1$s</string>
+    <string name="a11y_state_expanded">Ausgeklappt</string>
+    <string name="a11y_state_collapsed">Eingeklappt</string>
     <string name="settings">Einstellungen</string>
     <string name="required">Erforderlich</string>
     <string name="invalid_value">Ungültiger Wert</string>

@@ -5,10 +5,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:paddingStart="24dp"
-    android:paddingTop="12dp"
-    android:paddingEnd="24dp"
-    android:paddingBottom="12dp">
+    android:paddingTop="4dp">
 
     <TextView
         android:id="@+id/tvLimitSubtitle"
@@ -21,13 +18,14 @@
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tilType"
-        style="@style/LoqIn.DropdownLayout"
+        style="@style/LoqIn.SheetField.Dropdown"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="@string/limit_type_hint"
         app:endIconMode="dropdown_menu">
 
         <com.google.android.material.textfield.MaterialAutoCompleteTextView
+            style="@style/LoqIn.SheetDropdownText"
             android:id="@+id/etType"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -45,7 +43,7 @@
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tilValue"
-        style="@style/LoqIn.TextInputLayout"
+        style="@style/LoqIn.SheetField"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="14dp"
@@ -61,7 +59,7 @@
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tilResetMode"
-        style="@style/LoqIn.DropdownLayout"
+        style="@style/LoqIn.SheetField.Dropdown"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="14dp"
@@ -70,49 +68,11 @@
         app:endIconMode="dropdown_menu">
 
         <com.google.android.material.textfield.MaterialAutoCompleteTextView
+            style="@style/LoqIn.SheetDropdownText"
             android:id="@+id/etResetMode"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="none"
             android:importantForAutofill="no" />
     </com.google.android.material.textfield.TextInputLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="22dp"
-        android:orientation="horizontal"
-        android:baselineAligned="false">
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnClear"
-            style="@style/LoqIn.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/clear_limit" />
-
-        <Space
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:layout_weight="1" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnCancel"
-            style="@style/LoqIn.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/cancel" />
-
-        <Space
-            android:layout_width="8dp"
-            android:layout_height="1dp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnOk"
-            style="@style/LoqIn.TextButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/ok"
-            android:textStyle="bold" />
-    </LinearLayout>
 </LinearLayout>

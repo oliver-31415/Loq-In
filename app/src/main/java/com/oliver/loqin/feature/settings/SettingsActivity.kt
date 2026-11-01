@@ -22,32 +22,36 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
-import android.text.InputType
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.view.ViewGroup
-import android.widget.EditText
 import android.widget.ArrayAdapter
 import android.widget.FrameLayout
-import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.isVisible
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.FragmentManager
+import androidx.core.widget.doAfterTextChanged
 import com.oliver.loqin.R
+import com.oliver.loqin.ui.SheetRows
+import com.oliver.loqin.ui.dialog.InputSheet
 import com.oliver.loqin.blocking.BlockingRuntime
 import com.oliver.loqin.data.prefs.AppLogStore
 import com.oliver.loqin.data.prefs.EmergencyBypassStore
 import com.oliver.loqin.data.prefs.EmergencyPinStore
 import com.oliver.loqin.data.prefs.SwitchModeStore
+import com.oliver.loqin.feature.about.PrivacyReportActivity
+import com.oliver.loqin.feature.inbox.BlockedInboxActivity
+import com.oliver.loqin.feature.onboarding.OnboardingActivity
 import com.oliver.loqin.feature.qr.QrGenerateActivity
 import com.oliver.loqin.feature.schedule.SchedulesActivity
 import com.oliver.loqin.feature.tools.RulesHubActivity
 import com.oliver.loqin.feature.tools.ManageKeysActivity
 import com.oliver.loqin.feature.tools.ActivityHubActivity
 import com.oliver.loqin.feature.usage.IgnoredUsageAppsActivity
+import com.oliver.loqin.feature.usage.LoqInOverviewActivity
+import com.oliver.loqin.feature.usage.ScreenUnlocksActivity
 import com.oliver.loqin.nfc.NfcWriterActivity
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.ui.EdgeToEdgeUtils
@@ -55,12 +59,10 @@ import com.oliver.loqin.ui.LockedUi
 import com.oliver.loqin.ui.MainActivity
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.showWarnPill
+import com.oliver.loqin.ui.showWarnPillOnContent
 import com.oliver.loqin.ui.dialog.LoqInDialogOption
-import com.oliver.loqin.ui.dialog.LoqInInfoRow
-import com.oliver.loqin.ui.dialog.showLoqInInfoDialog
 import com.oliver.loqin.ui.dialog.showAccented
 import com.oliver.loqin.ui.dialog.showLoqInOptionDialog
-import com.oliver.loqin.ui.dialog.styleLoqInDialogButtons
 import com.oliver.loqin.ui.dialog.EmergencyPinDialog
 import com.oliver.loqin.util.LocaleHelper
 import com.oliver.loqin.util.ActivityTransitionCompat
@@ -244,16 +246,37 @@ class SettingsActivity : AppCompatActivity() {
             Build.MANUFACTURER.orEmpty(), Build.BRAND.orEmpty(),
         ).filter { it.isNotBlank() }.joinToString(" ")
 
-        // Top-level destinations.
-        add(R.string.toggle_group_manage_other_blocking_features, "${getString(R.string.settings_search_terms_blocking)} temporary timer temporärer Timer safety Sicherheit status notification Benachrichtigung blocking features") {
+        // Top-level destinations, in the same groups as the Settings root.
+        add(R.string.toggle_options_features_title, "${getString(R.string.settings_search_terms_blocking)} temporary timer temporärer Timer safety Sicherheit status notification Benachrichtigung blocking features") {
             openRootCard(R.id.cardSettingsBlockingFeatures)
         }
         add(R.string.protection_changes_title, "protection changes delay queue pending verzögern ausstehend warten") { openRootCard(R.id.cardSettingsProtectionChanges) }
-        add(R.string.settings_theme_title, "theme appearance color language time home") { openRootCard(R.id.cardSettingsAppearance) }
-        add(R.string.ignored_usage_apps_title, "usage statistics ignored apps") { openRootCard(R.id.cardSettingsIgnoredApps) }
+        add(R.string.pref_app_lock_title, "app lock App-Sperre PIN password Passwort biometric Biometrie") { openRootCard(R.id.cardAccountAppLock) }
+        add(R.string.keys_codes_title, "${getString(R.string.settings_search_terms_keys)} keys codes Schlüssel Codes") { openRootCard(R.id.cardAccountKeysCodes) }
+        add(R.string.settings_theme_title, "theme appearance color language time home Design Farben Sprache") { openRootCard(R.id.cardSettingsAppearance) }
         add(R.string.settings_display_shortcuts_title, "${getString(R.string.settings_search_terms_display)} widgets Kacheln tiles quick settings shortcuts Verknüpfungen home Startseite") { openRootCard(R.id.cardSettingsDisplayShortcuts) }
+        add(R.string.ignored_usage_apps_title, "usage statistics ignored apps Nutzung Statistik ignorierte Apps Hidden hidden apps ausgeblendet") { openRootCard(R.id.cardSettingsIgnoredApps) }
         add(R.string.pref_permissions_title, "${getString(R.string.settings_search_terms_permissions)} battery Akku background Hintergrund accessibility Bedienungshilfe autostart Autostart notifications Benachrichtigungen NFC reliability Zuverlässigkeit") { openRootCard(R.id.cardSettingsPermissions) }
+        add(R.string.settings_setup_guide_title, "setup guide onboarding Onboarding walk through Einrichtung Anleitung Berechtigungen Funktionen") { openRootCard(R.id.cardAccountOnboarding) }
         add(R.string.settings_section_info, "info about app device help FAQ support changelog whats new disclaimer") { openRootCard(R.id.cardSettingsInfo) }
+
+        // Account destinations. These rows live on the Account page, so they open their target directly.
+        add(R.string.loqin_overview_title, "stats statistics counters schedules actions Statistik Zähler Pläne Aktionen") {
+            startActivity(LoqInOverviewActivity.intent(this))
+        }
+        add(R.string.activity_entry_screen_unlocks, "screen unlocks unlock history Bildschirm Entsperrungen Verlauf") {
+            startActivity(ScreenUnlocksActivity.intent(this))
+        }
+        add(R.string.blocked_inbox_title, "blocked notifications inbox Benachrichtigungen blockiert Posteingang") {
+            if (EditingLockGuard.isLocked(this)) {
+                showWarnPillOnContent(R.string.edit_locked_manage_blocked_notifications)
+            } else {
+                startActivity(Intent(this, BlockedInboxActivity::class.java))
+            }
+        }
+        add(R.string.privacy_report_title, "privacy data report Datenschutz Daten Bericht") {
+            startActivity(Intent(this, PrivacyReportActivity::class.java))
+        }
 
         // Individual control-mode settings.
         add(R.string.pref_mode_nfc_title, "NFC control mode") { openProtectedActivity(Intent(this, BlockingModesActivity::class.java)) }
@@ -301,7 +324,12 @@ class SettingsActivity : AppCompatActivity() {
             "screen_account",
             "screen_help_about",
         )
-        val preferenceKeysAlreadyIndexed = setOf("pref_permissions")
+        // Rows that have an explicit entry above, so the XML index must not add a duplicate.
+        val preferenceKeysAlreadyIndexed = setOf(
+            "pref_permissions",
+            "pref_tutorial",
+            "pref_privacy_report",
+        )
         val parser = resources.getXml(R.xml.preferences_settings)
         val screenStack = mutableListOf<String?>()
         fun parserText(attribute: String): String {
@@ -394,26 +422,31 @@ class SettingsActivity : AppCompatActivity() {
             FrameLayout(this),
             false,
         )
-        val input = content.findViewById<MaterialAutoCompleteTextView>(R.id.acSettingsFind).apply {
-            threshold = 1
-            setAdapter(adapter)
+        // Results are listed inside the sheet rather than in a dropdown, which would open
+        // upwards over the title while the keyboard is up.
+        val input = content.findViewById<MaterialAutoCompleteTextView>(R.id.acSettingsFind)
+        val sheet = InputSheet(this, getString(R.string.settings_find_title))
+        sheet.content(content)
+        val results = SheetRows.group(this, sheet.body).apply { visibility = View.GONE }
+        sheet.body.addView(results)
+        fun showResults() {
+            results.removeAllViews()
+            for (index in 0 until adapter.count) {
+                val item = adapter.getItem(index) ?: continue
+                val row = SheetRows.row(this, results, iconRes = 0, title = item.title, accent = sheet.accent)
+                row.root.setOnClickListener {
+                    sheet.dismiss()
+                    item.open()
+                }
+                results.addView(row.root)
+            }
+            results.visibility = if (results.childCount > 0) View.VISIBLE else View.GONE
         }
-        val dialog = MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.settings_find_title)
-            .setView(content)
-            .setNegativeButton(R.string.cancel, null)
-            .create()
-        input.setOnItemClickListener { parent, _, index, _ ->
-            val result = (parent.getItemAtPosition(index) as? SettingsSearchItem)
-                ?: adapter.getItem(index)
-                ?: return@setOnItemClickListener
-            input.dismissDropDown()
-            dialog.dismiss()
-            result.open()
+        input.doAfterTextChanged { text ->
+            adapter.filter.filter(text) { showResults() }
         }
-        dialog.setOnShowListener { input.requestFocus() }
-        dialog.show()
-        dialog.styleLoqInDialogButtons()
+        sheet.focus(input)
+        sheet.show()
     }
 
     fun setToolbarTitle(title: String) {
@@ -525,6 +558,15 @@ class SettingsActivity : AppCompatActivity() {
         }
         findViewById<View>(R.id.cardSettingsInfo).setOnClickListener {
             startActivity(Intent(this, com.oliver.loqin.feature.about.InfoActivity::class.java))
+        }
+        findViewById<View>(R.id.cardAccountAppLock).setOnClickListener {
+            startActivity(Intent(this, AppLockSettingsActivity::class.java))
+        }
+        findViewById<View>(R.id.cardAccountKeysCodes).setOnClickListener {
+            startActivity(Intent(this, ManageKeysActivity::class.java))
+        }
+        findViewById<View>(R.id.cardAccountOnboarding).setOnClickListener {
+            startActivity(Intent(this, OnboardingActivity::class.java).putExtra(OnboardingActivity.EXTRA_FORCE, true))
         }
     }
 

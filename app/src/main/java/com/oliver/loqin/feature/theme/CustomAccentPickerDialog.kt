@@ -19,7 +19,6 @@
 package com.oliver.loqin.feature.theme
 
 import android.content.Context
-import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.text.Editable
 import android.text.InputFilter
@@ -29,15 +28,13 @@ import android.view.Gravity
 import android.view.View
 import android.widget.EditText
 import android.widget.LinearLayout
-import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.graphics.toColorInt
 import androidx.preference.PreferenceManager
 import com.oliver.loqin.R
-import com.oliver.loqin.theme.CustomAccentApplier
+import com.oliver.loqin.ui.dialog.InputSheet
 import com.oliver.loqin.ui.dialog.styledDialogEditText
-import com.oliver.loqin.ui.dialog.styleLoqInDialogButtons
 
 /**
  * Curated-palette custom accent picker: a swatch grid with a selected check,
@@ -60,7 +57,17 @@ object CustomAccentPickerDialog {
 
         val root = LinearLayout(context).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(24), dp(8), dp(24), dp(4))
+        }
+
+        // Visible swatch of the chosen colour, shown beside the hex field
+        val swatchDrawable = GradientDrawable().apply {
+            shape = GradientDrawable.OVAL
+            setColor(initial)
+            setStroke(dp(1), 0x33000000)
+        }
+        val swatch = View(context).apply {
+            background = swatchDrawable
+            layoutParams = LinearLayout.LayoutParams(dp(40), dp(40))
         }
 
         // Hex field for exact input
@@ -72,18 +79,23 @@ object CustomAccentPickerDialog {
             filters = arrayOf(InputFilter.LengthFilter(7))
             gravity = Gravity.CENTER
             layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
+                0,
                 LinearLayout.LayoutParams.WRAP_CONTENT,
-            )
+                1f,
+            ).apply { marginStart = dp(12) }
             setText(String.format("#%06X", 0xFFFFFF and initial))
+        }
+
+        fun showColor(color: Int) {
+            swatchDrawable.setColor(color)
         }
 
         // Single drag-through spectrum (hue horizontally, white→hue→black vertically)
         val pad = SpectrumPadView(context).apply {
             setColor(initial)
             layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT, dp(200),
-            ).apply { topMargin = dp(16) }
+                LinearLayout.LayoutParams.MATCH_PARENT, dp(220),
+            ).apply { topMargin = dp(8) }
             clipToOutline = true
             outlineProvider = object : android.view.ViewOutlineProvider() {
                 override fun getOutline(view: View, outline: android.graphics.Outline) {
@@ -92,19 +104,31 @@ object CustomAccentPickerDialog {
             }
             onColorPicked = { _, _ ->
                 selected = currentColor()
+                showColor(selected)
                 updatingHex = true
                 hexInput.setText(String.format("#%06X", 0xFFFFFF and selected))
                 updatingHex = false
             }
         }
+        val hexRow = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT,
+            ).apply { topMargin = dp(16) }
+            addView(swatch)
+            addView(hexInput)
+        }
         root.addView(pad)
-        root.addView(hexInput)
+        root.addView(hexRow)
         hexInput.addTextChangedListener(object : TextWatcher {
             override fun afterTextChanged(s: Editable?) {
                 if (updatingHex) return
                 val parsed = s?.toString()?.trim()?.let { runCatching { it.toColorInt() }.getOrNull() }
                 if (parsed != null) {
                     selected = parsed
+                    showColor(parsed)
                     pad.setColor(parsed)
                 }
             }
@@ -112,26 +136,19 @@ object CustomAccentPickerDialog {
             override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {}
         })
 
-        val dialog = AlertDialog.Builder(context)
-            .setTitle(context.getString(R.string.pref_accent_custom_title))
-            .setView(root)
-            .setNegativeButton(context.getString(R.string.cancel), null)
-            .setPositiveButton(context.getString(R.string.ok)) { _, _ ->
-                val parsed = hexInput.text.toString().trim().let { runCatching { it.toColorInt() }.getOrNull() }
-                val color = parsed ?: selected
-                val hex = String.format("#%08X", color)
-                prefs.edit {
-                    putString("pref_accent", "custom")
-                    putString("pref_accent_custom", hex)
-                }
-                onApplied()
+        val sheet = InputSheet(context, context.getString(R.string.pref_accent_custom_title))
+        sheet.content(root)
+        sheet.primary(context.getString(R.string.ok)) {
+            val parsed = hexInput.text.toString().trim().let { runCatching { it.toColorInt() }.getOrNull() }
+            val color = parsed ?: selected
+            val hex = String.format("#%08X", color)
+            prefs.edit {
+                putString("pref_accent", "custom")
+                putString("pref_accent_custom", hex)
             }
-            .create()
-
-        dialog.setOnShowListener {
-            dialog.styleLoqInDialogButtons()
-            runCatching { CustomAccentApplier.applyToDialog(dialog) }
+            sheet.dismiss()
+            onApplied()
         }
-        dialog.show()
+        sheet.show()
     }
 }

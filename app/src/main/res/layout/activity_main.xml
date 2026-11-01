@@ -42,93 +42,80 @@
                 app:titleTextAppearance="@style/TextAppearance.LoqIn.LargeTitle" />
 
 
-            <!-- Setup/permissions -->
+            <!-- Setup/permissions: the only "something is wrong" surface on Home -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardSetup"
                 style="@style/LoqIn.Card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:visibility="gone">
+                android:clickable="true"
+                android:focusable="true"
+                android:visibility="gone"
+                app:cardBackgroundColor="@color/accent_amber_container">
 
                 <LinearLayout
+                    android:id="@+id/layoutProtectionStatus"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
+                    android:baselineAligned="false"
+                    android:gravity="center_vertical"
+                    android:minHeight="64dp"
+                    android:orientation="horizontal"
                     android:paddingStart="18dp"
-                    android:paddingTop="18dp"
-                    android:paddingEnd="18dp"
-                    android:paddingBottom="18dp">
+                    android:paddingTop="12dp"
+                    android:paddingEnd="12dp"
+                    android:paddingBottom="12dp">
+
+                    <ImageView
+                        android:layout_width="22dp"
+                        android:layout_height="22dp"
+                        android:importantForAccessibility="no"
+                        android:src="@drawable/security_24"
+                        app:tint="@color/accent_amber_on_container" />
 
                     <LinearLayout
-                        android:id="@+id/layoutProtectionStatus"
-                        android:layout_width="match_parent"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:baselineAligned="false">
+                        android:layout_marginStart="14dp"
+                        android:layout_marginEnd="10dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
 
-                        <FrameLayout
-                            android:layout_width="34dp"
-                            android:layout_height="34dp">
-
-                            <ImageView
-                                android:layout_width="20dp"
-                                android:layout_height="20dp"
-                                android:layout_gravity="center"
-                                android:contentDescription="@string/dashboard_setup_title"
-                                android:src="@drawable/security_24"
-                                app:tint="?attr/colorOnSurface" />
-                        </FrameLayout>
-
-                        <LinearLayout
-                            android:layout_width="0dp"
+                        <TextView
+                            android:id="@+id/tvSetupTitle"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="10dp"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
+                            android:text="@string/dashboard_setup_title"
+                            android:textColor="@color/accent_amber_on_container"
+                            android:textSize="15sp"
+                            android:textStyle="bold" />
 
-                            <TextView
-                                android:id="@+id/tvSetupTitle"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:text="@string/dashboard_setup_title"
-                                android:textSize="17sp"
-                                android:textStyle="bold" />
-
-                            <TextView
-                                android:id="@+id/tvSetupSubtitle"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:alpha="0.78"
-                                android:text="@string/dashboard_setup_subtitle"
-                                android:textSize="13sp" />
-                        </LinearLayout>
+                        <TextView
+                            android:id="@+id/tvSetupSubtitle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="1dp"
+                            android:alpha="0.85"
+                            android:ellipsize="end"
+                            android:maxLines="2"
+                            android:textColor="@color/accent_amber_on_container"
+                            android:textSize="13sp" />
                     </LinearLayout>
-
-                    <TextView
-                        android:id="@+id/tvSetupDesc"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:paddingStart="10dp"
-                        android:paddingTop="10dp"
-                        android:paddingEnd="10dp"
-                        android:paddingBottom="10dp"
-                        android:text="@string/dashboard_setup_desc"
-                        android:textSize="13sp"
-                        android:lineSpacingExtra="2dp" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnFinishSetup"
-                        style="@style/LoqIn.Button"
-                        android:layout_width="match_parent"
-                        android:layout_height="56dp"
-                        android:layout_marginTop="16dp"
-                        android:text="@string/dashboard_setup_cta"
-                        app:icon="@drawable/security_24"
-                        app:iconGravity="textStart"
-                        app:iconPadding="8dp" />
+                        style="@style/Widget.Material3.Button"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:insetTop="0dp"
+                        android:insetBottom="0dp"
+                        android:minWidth="0dp"
+                        android:minHeight="40dp"
+                        android:paddingStart="18dp"
+                        android:paddingEnd="18dp"
+                        android:text="@string/home_warning_fix"
+                        android:textColor="@android:color/white"
+                        app:backgroundTint="@color/status_warning" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -415,11 +402,14 @@
 
                                 <TextView
                                     android:id="@+id/tvHeroStatAppsLabel"
-                                    android:layout_width="wrap_content"
+                                    android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:text="@string/hero_stat_apps"
                                     android:textSize="12sp"
-                                    android:textColor="#CCFFFFFF" />
+                                    android:textColor="#CCFFFFFF" 
+                                    android:maxLines="1"
+                                    android:ellipsize="end"
+                                    android:layout_marginEnd="8dp" />
 
                                 <TextView
                                     android:id="@+id/tvHeroStatApps"
@@ -439,11 +429,14 @@
 
                                 <TextView
                                     android:id="@+id/tvHeroStatDomainsLabel"
-                                    android:layout_width="wrap_content"
+                                    android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:text="@string/hero_stat_domains"
                                     android:textSize="12sp"
-                                    android:textColor="#CCFFFFFF" />
+                                    android:textColor="#CCFFFFFF" 
+                                    android:maxLines="1"
+                                    android:ellipsize="end"
+                                    android:layout_marginEnd="8dp" />
 
                                 <TextView
                                     android:id="@+id/tvHeroStatDomains"
@@ -463,11 +456,13 @@
 
                                 <TextView
                                     android:id="@+id/tvHeroStatBlocksLabel"
-                                    android:layout_width="wrap_content"
+                                    android:layout_width="match_parent"
                                     android:layout_height="wrap_content"
                                     android:text="@string/hero_stat_blocks"
                                     android:textSize="12sp"
-                                    android:textColor="#CCFFFFFF" />
+                                    android:textColor="#CCFFFFFF" 
+                                    android:maxLines="1"
+                                    android:ellipsize="end" />
 
                                 <TextView
                                     android:id="@+id/tvHeroStatBlocks"
@@ -497,7 +492,9 @@
                                 android:layout_height="50dp"
                                 android:layout_weight="1"
                                 android:textSize="16sp"
-                                android:text="@string/dashboard_toggle_enable" />
+                                android:text="@string/dashboard_toggle_enable"
+                                android:maxLines="1"
+                                android:ellipsize="end" />
 
                             <TextView
                                 android:id="@+id/tvActiveDuration"
@@ -708,9 +705,10 @@
                                     android:textStyle="bold"
                                     android:textColor="?attr/colorOnSurface"
                                     android:maxLines="1"
+                                    android:ellipsize="end"
                                     tools:text="Take a break"
                                     app:autoSizeMaxTextSize="13.5sp"
-                                    app:autoSizeMinTextSize="10sp"
+                                    app:autoSizeMinTextSize="9sp"
                                     app:autoSizeTextType="uniform" />
 
                                 <TextView
@@ -781,9 +779,10 @@
                                     android:textStyle="bold"
                                     android:textColor="?attr/colorOnSurface"
                                     android:maxLines="1"
+                                    android:ellipsize="end"
                                     tools:text="Emergency"
                                     app:autoSizeMaxTextSize="13.5sp"
-                                    app:autoSizeMinTextSize="10sp"
+                                    app:autoSizeMinTextSize="9sp"
                                     app:autoSizeTextType="uniform" />
 
                                 <TextView

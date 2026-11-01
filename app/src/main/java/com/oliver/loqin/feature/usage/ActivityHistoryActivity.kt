@@ -53,6 +53,7 @@ import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.children
 import com.oliver.loqin.R
+import com.oliver.loqin.ui.dialog.InputSheet
 import com.oliver.loqin.data.prefs.ActivityHistoryLogStore
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.theme.CustomAccentApplier
@@ -318,16 +319,15 @@ class ActivityHistoryActivity : AppCompatActivity() {
         sortDropdown.setOnClickListener { sortDropdown.showDropDown() }
         extraFilter.visibility = View.GONE
 
-        MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.stats_sort_filter_title)
-            .setView(view)
-            .setNegativeButton(android.R.string.cancel, null)
-            .setPositiveButton(R.string.stats_apply) { _, _ ->
-                typeFilter = selectedTypeFilter
-                sortOrder = selectedSortOrder
-                refreshContent()
-            }
-            .showAccented()
+        val sheet = InputSheet(this, getString(R.string.stats_sort_filter_title))
+        sheet.content(view)
+        sheet.primary(getString(R.string.stats_apply)) {
+            typeFilter = selectedTypeFilter
+            sortOrder = selectedSortOrder
+            refreshContent()
+            sheet.dismiss()
+        }
+        sheet.show()
     }
 
     private fun rangeButton(option: RangeFilter): MaterialButton {

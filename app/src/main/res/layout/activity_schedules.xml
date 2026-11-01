@@ -11,7 +11,9 @@
         android:id="@+id/appBar"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:fitsSystemWindows="true">
+        android:background="@color/foqos_bg"
+        android:fitsSystemWindows="true"
+        app:liftOnScroll="false">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
@@ -31,6 +33,16 @@
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <include
+            android:id="@+id/scheduleSummary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="8dp"
+            layout="@layout/view_rule_summary" />
+
+        <include
             android:id="@+id/cardScheduleHealth"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -40,82 +52,14 @@
             android:visibility="gone"
             layout="@layout/view_status_card" />
 
-        <FrameLayout
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recyclerSchedules"
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="1">
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/recyclerSchedules"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:paddingStart="16dp"
-                android:paddingTop="8dp"
-                android:paddingEnd="16dp"
-                android:paddingBottom="120dp"
-                android:clipToPadding="false" />
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/tvEmpty"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="24dp"
-                android:layout_marginTop="20dp"
-                android:layout_marginEnd="24dp"
-                android:layout_gravity="top"
-                android:visibility="gone"
-                app:cardCornerRadius="20dp"
-                app:cardElevation="0dp"
-                app:strokeColor="@color/status_border"
-                app:strokeWidth="1dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:gravity="center_horizontal"
-                    android:padding="22dp">
-
-                    <ImageView
-                        android:id="@+id/ivEmptyScheduleIcon"
-                        android:layout_width="34dp"
-                        android:layout_height="34dp"
-                        android:contentDescription="@null"
-                        android:importantForAccessibility="no"
-                        app:srcCompat="@drawable/schedule_24" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:gravity="center"
-                        android:text="@string/schedules_empty_title"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textSize="16sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:gravity="center"
-                        android:text="@string/schedules_empty_body"
-                        android:textColor="?android:attr/textColorSecondary"
-                        android:textSize="13sp" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnEmptyAddSchedule"
-                        style="@style/LoqIn.OutlinedButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="14dp"
-                        android:text="@string/empty_action_add_first_schedule"
-                        android:textAllCaps="false"
-                        app:icon="@drawable/add_24"
-                        app:iconGravity="textStart"
-                        app:iconTint="?attr/colorPrimary" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-        </FrameLayout>
+            android:layout_weight="1"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="120dp"
+            android:clipToPadding="false" />
     </LinearLayout>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

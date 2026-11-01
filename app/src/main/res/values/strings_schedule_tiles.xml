@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Schedules tile grid: summary card, add tile, tile toggle -->
+    <plurals name="schedule_tile_summary_on">
+        <item quantity="one">%1$d schedule on</item>
+        <item quantity="other">%1$d schedules on</item>
+    </plurals>
+    <string name="schedule_tile_summary_all_off">All schedules off</string>
+    <string name="schedule_tile_summary_empty">No schedules yet</string>
+    <string name="schedule_tile_add_label">Add schedule</string>
+    <string name="schedule_tile_toggle_desc">Turn schedule on or off</string>
+
+    <string name="schedules_test_button">Check</string>
+
+    <!-- Summary card: next start or end, e.g. "Starts today at 9:31 PM" -->
+    <string name="schedule_next_starts_fmt">Starts %1$s</string>
+    <string name="schedule_next_ends_fmt">Ends %1$s</string>
+    <string name="schedule_next_today_fmt">today at %1$s</string>
+    <string name="schedule_next_tomorrow_fmt">tomorrow at %1$s</string>
+    <string name="schedule_next_day_fmt">%1$s at %2$s</string>
+
+</resources>

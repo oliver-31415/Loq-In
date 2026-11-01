@@ -78,7 +78,7 @@
         <item name="borderlessButtonStyle">@style/Widget.Material3.Button.TextButton</item>
         <item name="bottomAppBarStyle">@style/Widget.Material3.BottomAppBar</item>
         <item name="bottomNavigationStyle">@style/Widget.Material3.BottomNavigationView</item>
-        <item name="bottomSheetDialogTheme">@style/ThemeOverlay.Material3.BottomSheetDialog</item>
+        <item name="bottomSheetDialogTheme">@style/ThemeOverlay.LoqIn.BottomSheetDialog</item>
         <item name="bottomSheetDragHandleStyle">@style/Widget.Material3.BottomSheet.DragHandle</item>
         <item name="buttonBarButtonStyle">@style/Widget.Material3.Button.TextButton.Dialog</item>
         <item name="checkboxStyle">@style/Widget.Material3.CompoundButton.CheckBox</item>
@@ -572,6 +572,16 @@
         <item name="colorControlActivated">@color/accent_gray</item>
         <item name="colorPrimaryContainer">@color/accent_gray_container</item>
         <item name="colorOnPrimaryContainer">@color/accent_gray_on_container</item>
+    </style>
+
+    <!-- The sheet container pads itself above the navigation bar; give it the sheet
+         surface so that padding doesn't show as a tonal band under the content. -->
+    <style name="ThemeOverlay.LoqIn.BottomSheetDialog" parent="ThemeOverlay.Material3.BottomSheetDialog">
+        <item name="bottomSheetStyle">@style/LoqIn.BottomSheet</item>
+    </style>
+
+    <style name="LoqIn.BottomSheet" parent="Widget.Material3.BottomSheet.Modal">
+        <item name="backgroundTint">@color/foqos_surface</item>
     </style>
 
     <!-- Same tokens for plain androidx AlertDialog.Builder panels (alertDialogTheme). -->

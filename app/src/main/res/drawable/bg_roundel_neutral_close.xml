@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sheet close button: 40dp roundel centred in a 48dp touch target -->
+<inset xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/bg_roundel_neutral"
+    android:inset="4dp" />

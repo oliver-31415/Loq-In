@@ -488,7 +488,6 @@
         <item name="checkedIconVisible">false</item>
         <item name="chipIconVisible">false</item>
         <item name="closeIconVisible">false</item>
-        <item name="ensureMinTouchTargetSize">false</item>
     </style>
 
     <style name="LoqIn.LogFilterChip" parent="Widget.Material3.Chip.Filter">
@@ -508,6 +507,30 @@
          ========================= -->
     <!-- Default (non-dropdown) TextInputLayout styling used globally via theme -->
     <!-- Search fields: a filled pill in the high surface container, no underline (M3 Expressive search). -->
+    <!-- Tonal input field for sheets: filled with the list-segment colour, rounded, no lines. -->
+    <style name="LoqIn.SheetField" parent="Widget.Material3.TextInputLayout.FilledBox">
+        <item name="enforceTextAppearance" tools:ignore="MissingId">false</item>
+        <item name="boxBackgroundColor">@color/foqos_surface_container</item>
+        <item name="boxCornerRadiusTopStart">20dp</item>
+        <item name="boxCornerRadiusTopEnd">20dp</item>
+        <item name="boxCornerRadiusBottomStart">20dp</item>
+        <item name="boxCornerRadiusBottomEnd">20dp</item>
+        <item name="boxStrokeWidth">0dp</item>
+        <item name="boxStrokeWidthFocused">0dp</item>
+    </style>
+
+    <style name="LoqIn.SheetField.Dropdown" parent="Widget.Material3.TextInputLayout.FilledBox.ExposedDropdownMenu">
+        <item name="enforceTextAppearance" tools:ignore="MissingId">false</item>
+        <item name="boxBackgroundColor">@color/foqos_surface_container</item>
+        <item name="boxCornerRadiusTopStart">20dp</item>
+        <item name="boxCornerRadiusTopEnd">20dp</item>
+        <item name="boxCornerRadiusBottomStart">20dp</item>
+        <item name="boxCornerRadiusBottomEnd">20dp</item>
+        <item name="boxStrokeWidth">0dp</item>
+        <item name="boxStrokeWidthFocused">0dp</item>
+        <item name="hintEnabled">true</item>
+    </style>
+
     <style name="LoqIn.SearchField" parent="Widget.Material3.TextInputLayout.FilledBox">
         <item name="boxBackgroundColor">@color/foqos_surface_container_high</item>
         <item name="boxCornerRadiusTopStart">28dp</item>
@@ -554,6 +577,11 @@
     <!-- Hint text styling inside dropdowns (lineHeight removed: triggers the
          broken API-34 TextView.setLineHeight(int,float) path on some images) -->
     <style name="LoqIn.DropdownHint" parent="TextAppearance.Material3.BodySmall">
+    </style>
+
+    <!-- Dropdown text inside LoqIn.SheetField.Dropdown: filled-box padding clears the floating label. -->
+    <style name="LoqIn.SheetDropdownText" parent="Widget.Material3.AutoCompleteTextView.FilledBox">
+        <item name="android:textAppearance">?attr/textAppearanceBody1</item>
     </style>
 
     <!-- Text appearance for dropdown input field -->

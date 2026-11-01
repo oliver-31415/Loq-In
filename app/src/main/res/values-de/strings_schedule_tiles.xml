@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Schedules tile grid: summary card, add tile, tile toggle -->
+    <plurals name="schedule_tile_summary_on">
+        <item quantity="one">%1$d Zeitplan an</item>
+        <item quantity="other">%1$d Zeitpläne an</item>
+    </plurals>
+    <string name="schedule_tile_summary_all_off">Alle Zeitpläne aus</string>
+    <string name="schedule_tile_summary_empty">Noch keine Zeitpläne</string>
+    <string name="schedule_tile_add_label">Zeitplan hinzufügen</string>
+    <string name="schedule_tile_toggle_desc">Zeitplan ein- oder ausschalten</string>
+
+    <string name="schedules_test_button">Prüfen</string>
+
+    <!-- Summary card: next start or end, e.g. "Starts today at 9:31 PM" -->
+    <string name="schedule_next_starts_fmt">Beginnt %1$s</string>
+    <string name="schedule_next_ends_fmt">Endet %1$s</string>
+    <string name="schedule_next_today_fmt">heute um %1$s</string>
+    <string name="schedule_next_tomorrow_fmt">morgen um %1$s</string>
+    <string name="schedule_next_day_fmt">%1$s um %2$s</string>
+
+</resources>

@@ -50,17 +50,13 @@ import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
-import android.widget.ProgressBar
 import android.widget.FrameLayout
 import android.widget.GridLayout
-import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
-import android.graphics.drawable.GradientDrawable
-import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.card.MaterialCardView
 import androidx.activity.addCallback
 import androidx.activity.result.contract.ActivityResultContracts
@@ -72,24 +68,26 @@ import androidx.core.content.ContextCompat
 import androidx.core.content.edit
 import androidx.core.graphics.ColorUtils
 import androidx.core.net.toUri
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.isVisible
 import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.ConcatAdapter
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import android.view.MotionEvent
 import com.oliver.loqin.BuildConfig
 import com.oliver.loqin.R
+import com.oliver.loqin.ui.dialog.InputSheet
 import com.oliver.loqin.blocking.BlockingRuntime
 import com.oliver.loqin.data.prefs.AutomationModeStore
 import com.oliver.loqin.data.prefs.EmergencyBypassStore
 import com.oliver.loqin.data.prefs.ExactAlarmPermissionSync
 import com.oliver.loqin.data.prefs.ProfileStore
 import com.oliver.loqin.data.prefs.ScheduleInsights
+import com.oliver.loqin.data.prefs.ScheduleNext
 import com.oliver.loqin.data.prefs.SchedulePlanner
 import com.oliver.loqin.data.prefs.ScheduleRuntimeStore
 import com.oliver.loqin.data.prefs.ScheduleStore
@@ -107,17 +105,17 @@ import com.oliver.loqin.ui.LoqInDropdownAdapter
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.applyLoqInStyle
 import com.oliver.loqin.ui.showWarnPill
-import com.oliver.loqin.ui.attachEditDeleteSwipe
+import com.oliver.loqin.ui.RuleSummary
+import com.oliver.loqin.ui.RuleTile
+import com.oliver.loqin.ui.SquareCardView
 import com.oliver.loqin.ui.updateSelectionSubtitle
 import com.oliver.loqin.ui.dialog.showAccented
 import com.oliver.loqin.ui.dialog.showDestructiveAccented
 import com.oliver.loqin.ui.dialog.styleLoqInDestructivePositiveButton
 import com.oliver.loqin.ui.dialog.LoqInDialogOption
 import com.oliver.loqin.ui.dialog.showLoqInOptionDialog
-import com.oliver.loqin.ui.dialog.styleLoqInDialogButtons
 import com.oliver.loqin.ui.dialog.LoqInInfoRow
 import com.oliver.loqin.ui.dialog.showLoqInInfoDialog
-import com.oliver.loqin.ui.dialog.applyLoqInDialogWidth
 import com.oliver.loqin.util.BatteryOptimizationCompat
 import com.oliver.loqin.util.EditingLockGuard
 import com.oliver.loqin.util.TimeFormatPrefs
@@ -126,9 +124,9 @@ import com.google.android.gms.location.Priority
 import com.google.android.gms.tasks.CancellationTokenSource
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.loadingindicator.LoadingIndicator
 import com.google.android.material.chip.Chip
 import com.google.android.material.color.MaterialColors
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputLayout
@@ -169,9 +167,9 @@ class SchedulesActivity : AppCompatActivity() {
     )
 
     private lateinit var adapter: ScheduleAdapter
+    private lateinit var addTileAdapter: ScheduleAddTileAdapter
     private var priorityDragHelper: ItemTouchHelper? = null
     private lateinit var toolbar: MaterialToolbar
-    private lateinit var emptyState: View
     private lateinit var cardScheduleHealth: View
     private lateinit var tvStatusTitle: TextView
     private lateinit var tvStatusBody: TextView
@@ -185,6 +183,26 @@ class SchedulesActivity : AppCompatActivity() {
 
     private val targetProfile: String?
         get() = intent.getStringExtra(EXTRA_PROFILE_NAME)?.trim()?.takeIf { it.isNotBlank() }
+
+    private fun rulesSubtitle(): String =
+        targetProfile?.let { getString(R.string.app_rules_profile_subtitle, it) }
+            ?: getString(R.string.schedules_profile_subtitle)
+
+    /** Summary detail: the next boundary across all schedules, so only shown unfiltered. */
+    private fun scheduleSummaryTitle(shown: List<ScheduleStore.Schedule>): String {
+        val on = shown.count { it.enabled }
+        return when {
+            shown.isEmpty() -> getString(R.string.schedule_tile_summary_empty)
+            on == 0 -> getString(R.string.schedule_tile_summary_all_off)
+            else -> resources.getQuantityString(R.plurals.schedule_tile_summary_on, on, on)
+        }
+    }
+
+    private fun nextScheduleDetail(): String? {
+        if (!isScheduleAutomationAllowed()) return getString(R.string.schedules_next_inactive_control_mode)
+        val next = ScheduleNext.find(this, ::matchesTargetProfile) ?: return getString(R.string.schedules_next_none)
+        return ScheduleNext.describe(this, next)
+    }
 
     private fun matchesTargetProfile(schedule: ScheduleStore.Schedule): Boolean {
         val target = targetProfile ?: return true
@@ -206,7 +224,7 @@ class SchedulesActivity : AppCompatActivity() {
     private var pendingAfterFineLocationGrant: (() -> Unit)? = null
 
     /** The open add/edit schedule dialog, so in-dialog messages are not shown behind it. */
-    private var scheduleDialog: AlertDialog? = null
+    private var scheduleDialog: InputSheet? = null
     private var pendingAfterBluetoothGrant: (() -> Unit)? = null
 
     private var pendingMapPickerCallback: ((ResolvedLocation) -> Unit)? = null
@@ -340,7 +358,7 @@ class SchedulesActivity : AppCompatActivity() {
         )
         EdgeToEdgeUtils.applyThemedSystemBars(this)
         setSupportActionBar(toolbar)
-        toolbar.subtitle = targetProfile ?: getString(R.string.schedules_profile_subtitle)
+        toolbar.subtitle = rulesSubtitle()
         toolbar.setNavigationOnClickListener {
             if (isSelectionMode) {
                 exitSelectionMode()
@@ -358,8 +376,7 @@ class SchedulesActivity : AppCompatActivity() {
         toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
 
         val recycler = findViewById<RecyclerView>(R.id.recyclerSchedules)
-        recycler.layoutManager = LinearLayoutManager(this)
-        emptyState = findViewById(R.id.tvEmpty)
+        recycler.layoutManager = GridLayoutManager(this, 3)
 
         cardScheduleHealth = findViewById(R.id.cardScheduleHealth)
         tvStatusTitle = cardScheduleHealth.findViewById(R.id.tvStatusTitle)
@@ -400,53 +417,32 @@ class SchedulesActivity : AppCompatActivity() {
                         showEnabledScheduleOverlapWarning(schedule.id, list)
                     }
                 }
+                // The tile's corner switch has no state of its own: re-bind from the store.
+                refreshList()
             },
             canInteract = { canEditSchedules() },
             isSelectionMode = { isSelectionMode },
             isSelected = { id -> selectedScheduleIds.contains(id) },
             onToggleSelection = { id -> toggleSelection(id) },
-            onEnterSelection = { preselectId -> enterSelectionMode(preselectId) },
             onEdit = { schedule ->
                 if (!denyScheduleEditWithPopover()) {
                     showScheduleDialog(existing = schedule, preselectedMode = null)
                 }
             },
-            onTest = { schedule -> showScheduleTest(schedule) },
             getTargetProfile = { targetProfile },
-            onStartDrag = { holder -> priorityDragHelper?.startDrag(holder) },
         )
-        recycler.adapter = adapter
-        recycler.attachEditDeleteSwipe(
-            canSwipe = { !isSelectionMode && canEditSchedules() },
-            onEdit = { position ->
-                adapter.itemAt(position)?.let { schedule ->
-                    showScheduleDialog(existing = schedule, preselectedMode = null)
+        addTileAdapter = ScheduleAddTileAdapter(
+            canInteract = { canEditSchedules() },
+            onAdd = {
+                if (!denyScheduleEditWithPopover()) {
+                    showNewScheduleTypeDialog()
                 }
             },
-            onDelete = { position ->
-                adapter.itemAt(position)?.let(::confirmDeleteSchedule)
-            }
         )
+        recycler.adapter = ConcatAdapter(adapter, addTileAdapter)
         priorityDragHelper = ItemTouchHelper(priorityDragCallback(recycler)).apply {
             attachToRecyclerView(recycler)
         }
-
-        val addScheduleClick = View.OnClickListener {
-            if (denyScheduleEditWithPopover()) {
-                return@OnClickListener
-            }
-            showNewScheduleTypeDialog()
-        }
-        val accent = AccentColor.getAccentColorInt(this)
-        findViewById<ImageView>(R.id.ivEmptyScheduleIcon)?.imageTintList = ColorStateList.valueOf(accent)
-        (findViewById<View>(R.id.btnEmptyAddSchedule) as? MaterialButton)?.apply {
-            strokeColor = ColorStateList.valueOf(accent)
-            setTextColor(accent)
-            iconTint = ColorStateList.valueOf(accent)
-            rippleColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 0x26))
-        }
-
-        findViewById<View>(R.id.btnEmptyAddSchedule).setOnClickListener(addScheduleClick)
 
         refreshList()
 
@@ -468,7 +464,6 @@ class SchedulesActivity : AppCompatActivity() {
     override fun onPrepareOptionsMenu(menu: Menu): Boolean {
         val canInteract = canEditSchedules()
         val hasItems = adapter.itemCount > 0
-        menu.findItem(R.id.action_add)?.isVisible = canInteract && !isSelectionMode
         menu.findItem(R.id.action_info)?.isVisible = !isSelectionMode
         menu.findItem(R.id.action_select)?.isVisible = canInteract && !isSelectionMode && hasItems
         menu.findItem(R.id.action_cancel_selection)?.isVisible = canInteract && isSelectionMode
@@ -512,14 +507,6 @@ class SchedulesActivity : AppCompatActivity() {
                 showScheduleActionInfoDialog()
                 true
             }
-            R.id.action_add -> {
-                if (denyScheduleEditWithPopover()) {
-                    true
-                } else {
-                    showNewScheduleTypeDialog()
-                    true
-                }
-            }
             else -> super.onOptionsItemSelected(item)
         }
     }
@@ -531,23 +518,14 @@ class SchedulesActivity : AppCompatActivity() {
 
     private fun updateMenuState() {
         invalidateOptionsMenu()
-        val canInteract = canEditSchedules()
-        findViewById<View>(R.id.btnEmptyAddSchedule)?.apply {
-            isEnabled = true
-            isClickable = true
-            alpha = if (canInteract) 1f else 0.45f
-            (this as? MaterialButton)?.apply {
-                val accentColor = AccentColor.getAccentColorInt(this@SchedulesActivity)
-                strokeColor = ColorStateList.valueOf(accentColor)
-                setTextColor(accentColor)
-                iconTint = ColorStateList.valueOf(accentColor)
-            }
+        if (::addTileAdapter.isInitialized) {
+            addTileAdapter.notifyItemChanged(0)
         }
         if (::toolbar.isInitialized) {
             toolbar.updateSelectionSubtitle(
                 isSelectionMode,
                 selectedScheduleIds.size,
-                targetProfile ?: getString(R.string.schedules_profile_subtitle)
+                rulesSubtitle()
             )
         }
     }
@@ -743,7 +721,7 @@ class SchedulesActivity : AppCompatActivity() {
 
         val container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(20), dp(8), dp(20), dp(4))
+            setPadding(0, dp(12), 0, 0)
         }
         if (nfcLockOn) {
             container.addView(
@@ -773,7 +751,7 @@ class SchedulesActivity : AppCompatActivity() {
             )
         )
 
-        var typeDialog: AlertDialog? = null
+        var typeDialog: InputSheet? = null
         fun openMode(mode: NewScheduleMode) {
             typeDialog?.dismiss()
             when (mode) {
@@ -796,7 +774,7 @@ class SchedulesActivity : AppCompatActivity() {
                 radius = dp(16).toFloat()
                 strokeWidth = 0
                 setCardBackgroundColor(
-                    ContextCompat.getColor(this@SchedulesActivity, R.color.foqos_surface_variant)
+                    ContextCompat.getColor(this@SchedulesActivity, R.color.foqos_surface_container)
                 )
                 isClickable = true
                 isFocusable = true
@@ -877,13 +855,10 @@ class SchedulesActivity : AppCompatActivity() {
             }
         }
 
-        typeDialog = MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.schedules_choose_type)
-            .setView(container)
-            .setNegativeButton(R.string.cancel, null)
-            .create()
-            .also { it.show() }
-        typeDialog?.styleLoqInDialogButtons()
+        typeDialog = InputSheet(this, getString(R.string.schedules_choose_type)).apply {
+            content(container)
+            show()
+        }
     }
 
     private fun showScheduleActionInfoDialog() {
@@ -1015,9 +990,15 @@ class SchedulesActivity : AppCompatActivity() {
         val readOnlyChanged = isScheduleUiReadOnly != readOnlyNow
         isScheduleUiReadOnly = readOnlyNow
 
-        emptyState.visibility = if (sorted.isEmpty()) View.VISIBLE else View.GONE
+        RuleSummary.bind(
+            findViewById(R.id.scheduleSummary),
+            R.drawable.schedule_24,
+            scheduleSummaryTitle(sorted),
+            if (sorted.isEmpty()) null else nextScheduleDetail(),
+        )
+        val priorityChanged = (adapter.itemCount > 1) != (sorted.size > 1)
         adapter.submitList(sorted) {
-            if (readOnlyChanged) {
+            if (readOnlyChanged || priorityChanged) {
                 adapter.notifyItemRangeChanged(0, adapter.itemCount)
             }
         }
@@ -1034,19 +1015,23 @@ class SchedulesActivity : AppCompatActivity() {
 
     private fun priorityDragCallback(recycler: RecyclerView) =
         object : ItemTouchHelper.SimpleCallback(
-            ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0
+            ItemTouchHelper.UP or ItemTouchHelper.DOWN or ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT, 0
         ) {
             private var reordered = false
-
-            override fun isLongPressDragEnabled(): Boolean = false
 
             override fun getDragDirs(
                 recyclerView: RecyclerView,
                 viewHolder: RecyclerView.ViewHolder
             ): Int {
-                if (isSelectionMode || !canEditSchedules()) return 0
+                if (isSelectionMode || !canEditSchedules() || viewHolder !is ScheduleViewHolder) return 0
                 return super.getDragDirs(recyclerView, viewHolder)
             }
+
+            override fun canDropOver(
+                recyclerView: RecyclerView,
+                current: RecyclerView.ViewHolder,
+                target: RecyclerView.ViewHolder
+            ): Boolean = target is ScheduleViewHolder
 
             override fun onMove(
                 recyclerView: RecyclerView,
@@ -1757,7 +1742,7 @@ class SchedulesActivity : AppCompatActivity() {
     private fun showSnack(msgRes: Int) {
         // While the add/edit schedule dialog is open, anchor the message to that
         // window; using the activity content view renders it behind the dialog.
-        val root = scheduleDialog?.takeIf { it.isShowing }?.window?.decorView
+        val root = scheduleDialog?.dialog?.takeIf { it.isShowing }?.window?.decorView
             ?: findViewById<View?>(android.R.id.content)
         if (root != null) Snackbar.make(root, msgRes, Snackbar.LENGTH_LONG).applyLoqInStyle().show()
         else Toast.makeText(this, getString(msgRes), Toast.LENGTH_LONG).show()
@@ -1814,9 +1799,8 @@ class SchedulesActivity : AppCompatActivity() {
         val btnLocationSearchInline = view.findViewById<MaterialButton>(R.id.btnLocationSearchInline)
         val btnUseCurrentLocation = view.findViewById<MaterialButton>(R.id.btnUseCurrentLocation)
         val btnOpenMapPicker = view.findViewById<MaterialButton>(R.id.btnOpenMapPicker)
-        val progressLocationSearchInline = view.findViewById<ProgressBar>(R.id.progressLocationSearchInline)
-        progressLocationSearchInline.indeterminateTintList =
-            android.content.res.ColorStateList.valueOf(AccentColor.getAccentColorInt(this))
+        val progressLocationSearchInline = view.findViewById<LoadingIndicator>(R.id.progressLocationSearchInline)
+        progressLocationSearchInline.setIndicatorColor(AccentColor.getAccentColorInt(this))
         val tvLocationSearchStatusInline = view.findViewById<TextView>(R.id.tvLocationSearchStatusInline)
         val rvLocationResultsInline = view.findViewById<RecyclerView>(R.id.rvLocationResultsInline)
         val chipRadius100 = view.findViewById<Chip>(R.id.chipRadius100)
@@ -3341,304 +3325,292 @@ class SchedulesActivity : AppCompatActivity() {
             }
         }
 
-        val dialog = MaterialAlertDialogBuilder(this, AccentColor.getDialogTheme(this))
-            .setTitle(if (existing == null) R.string.schedules_add else R.string.schedules_edit)
-            .setView(view)
-            .setPositiveButton(R.string.ok, null)
-            .setNegativeButton(R.string.cancel, null)
-            .create()
-
-        dialog.applyLoqInDialogWidth(0.94f)
-        scheduleDialog = dialog
-        dialog.setOnDismissListener { scheduleDialog = null }
-        dialog.setOnShowListener {
-            dialog.styleLoqInDialogButtons()
-            val btnPos = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
-            val btnNeg = dialog.getButton(AlertDialog.BUTTON_NEGATIVE)
-            btnPos.setText(if (existing == null) R.string.create else R.string.save)
-            // NOTE: do not override btnPos text color here — styleLoqInDialogButtons()
-            // already sets readable on-accent text on the filled accent background.
-            // Setting it to accent would make the label invisible (same as background).
-            btnNeg.setTextColor(accent)
-            tintSwitchCompat(switch247)
+        val sheet = InputSheet(
+            this,
+            getString(if (existing == null) R.string.schedules_add else R.string.schedules_edit),
+        )
+        sheet.content(view)
+        scheduleDialog = sheet
+        sheet.setOnDismissListener { scheduleDialog = null }
+        tintSwitchCompat(switch247)
         tintSwitchCompat(switchAllDay)
-
-            btnPos.setOnClickListener {
-                if (!canEditSchedules()) {
-                    dialog.dismiss()
-                    refreshList()
-                    return@setOnClickListener
-                }
-                layoutWifiSsid.error = null
-                layoutBtName.error = null
-                layoutLocationQuery.error = null
-                inputWifiSsid.error = null
-                inputBtName.error = null
-                inputLocationQuery.error = null
-
-                val profile = (if (targetProfile != null) {
-                    targetProfile
-                } else {
-                    profileList.getOrNull(selectedProfileIndex)
-                        ?: spinnerProfile.text?.toString().orEmpty().ifBlank {
-                            ProfileStore.getCurrent(this@SchedulesActivity) ?: "Default"
-                        }
-                }) ?: "Default"
-                if (profile.isBlank()) {
-                    showSnack(R.string.schedules_error_no_profile)
-                    return@setOnClickListener
-                }
-
-                val wifiSsid: String? = if (kind == Kind.WIFI) {
-                    inputWifiSsid.text.toString().trim().ifEmpty { null }
-                } else {
-                    null
-                }
-
-                val btName: String? = if (kind == Kind.BT) {
-                    inputBtName.text.toString().trim().ifEmpty { null }
-                } else {
-                    null
-                }
-
-                val locationQueryText: String = if (kind == Kind.LOCATION) {
-                    inputLocationQuery.text.toString().trim()
-                } else {
-                    ""
-                }
-                // Accept pasted coordinates even without an explicit search+pick.
-                if (kind == Kind.LOCATION && (locationLat == null || locationLng == null)) {
-                    parseLocationCoordinateQuery(locationQueryText)?.let { (lat, lng) ->
-                        locationLat = lat
-                        locationLng = lng
-                        updateLocationSummary()
-                    }
-                }
-                val locationLabel: String? = if (kind == Kind.LOCATION) {
-                    locationQueryText.ifEmpty { null }
-                } else {
-                    null
-                }
-
-                if (kind == Kind.WIFI && wifiSsid.isNullOrBlank()) {
-                    layoutWifiSsid.error = getString(R.string.schedules_error_wifi_required)
-                    inputWifiSsid.error = getString(R.string.schedules_error_wifi_required)
-                    inputWifiSsid.requestFocus()
-                    showSnack(R.string.schedules_error_wifi_required)
-                    return@setOnClickListener
-                }
-
-                if (kind == Kind.BT && btName.isNullOrBlank()) {
-                    layoutBtName.error = getString(R.string.schedules_error_bt_required)
-                    inputBtName.error = getString(R.string.schedules_error_bt_required)
-                    inputBtName.requestFocus()
-                    showSnack(R.string.schedules_error_bt_required)
-                    return@setOnClickListener
-                }
-
-                if (kind == Kind.LOCATION && (locationLat == null || locationLng == null)) {
-                    layoutLocationQuery.error = getString(R.string.schedules_error_location_required)
-                    inputLocationQuery.error = getString(R.string.schedules_error_location_required)
-                    inputLocationQuery.requestFocus()
-                    showSnack(R.string.schedules_error_location_required)
-                    return@setOnClickListener
-                }
-
-                if (kind == Kind.WIFI && !wifiSsid.isNullOrBlank() && !hasWifiSsidPermission()) {
-                    showWhyLocationDialogForWifi()
-                    return@setOnClickListener
-                }
-
-                if (kind == Kind.BT && !btName.isNullOrBlank() && !hasBluetoothConnectPermission()) {
-                    showWhyBluetoothDialogForSchedules()
-                    return@setOnClickListener
-                }
-
-                if (kind == Kind.LOCATION && !hasFineLocationPermission()) {
-                    showWhyLocationDialogForGeofence()
-                    return@setOnClickListener
-                }
-                if (kind == Kind.LOCATION && !hasBackgroundLocationPermission()) {
-                    showWhyBackgroundLocationDialogForGeofence()
-                    return@setOnClickListener
-                }
-
-                val connAction: ScheduleStore.Action? = if (isConnKind) {
-                    val resolved = getConnAction()
-                    if (resolved == null) {
-                        showSnack(R.string.schedules_conn_summary_none)
-                        return@setOnClickListener
-                    }
-                    resolved
-                } else null
-
-                var daysMask = 0
-                val isDateRange = kind == Kind.TIME && currentTimeMode() == TimeMode.DATE_RANGE
-
-                if (switch247.isChecked) {
-                    daysMask = 0x7F
-                } else if (!isDateRange) {
-                    if (chipMon.isChecked) daysMask = daysMask or Days.MON
-                    if (chipTue.isChecked) daysMask = daysMask or Days.TUE
-                    if (chipWed.isChecked) daysMask = daysMask or Days.WED
-                    if (chipThu.isChecked) daysMask = daysMask or Days.THU
-                    if (chipFri.isChecked) daysMask = daysMask or Days.FRI
-                    if (chipSat.isChecked) daysMask = daysMask or Days.SAT
-                    if (chipSun.isChecked) daysMask = daysMask or Days.SUN
-
-                    if (daysMask == 0) {
-                        showSnack(R.string.schedules_error_no_days)
-                        return@setOnClickListener
-                    }
-                }
-
-                if (isDateRange) {
-                    if (startDateYmd <= 0 || endDateYmd <= 0) {
-                        showSnack(R.string.schedules_error_no_dates)
-                        return@setOnClickListener
-                    }
-                    if (endDateYmd < startDateYmd) {
-                        showSnack(R.string.schedules_error_date_order)
-                        return@setOnClickListener
-                    }
-                }
-
-                val action: ScheduleStore.Action = when {
-                    isConnKind -> connAction!!
-                    isLocationKind -> selectedAction()
-                    currentTimeMode() == TimeMode.TIME_RANGE -> selectedAction()
-                    currentTimeMode() == TimeMode.DATE_RANGE -> ScheduleStore.Action.ENABLE_AND_DISABLE
-                    else -> selectedAction()
-                }
-
-                val normalizedStart: Int
-                val normalizedEnd: Int
-
-                if (switch247.isChecked || switchAllDay.isChecked || isDateRange) {
-                    normalizedStart = 0
-                    normalizedEnd = 24 * 60 - 1
-                } else {
-                    normalizedStart = startMinutes
-                    normalizedEnd = when (action) {
-                        ScheduleStore.Action.ENABLE_AND_DISABLE,
-                        ScheduleStore.Action.DISABLE_AND_ENABLE -> endMinutes
-                        else -> startMinutes
-                    }
-                }
-
-                val isFixedRange = !switch247.isChecked && !switchAllDay.isChecked && !isDateRange
-                if (isFixedRange && (isConnKind || isLocationKind || action == ScheduleStore.Action.ENABLE_AND_DISABLE || action == ScheduleStore.Action.DISABLE_AND_ENABLE)) {
-                    if (normalizedEnd == normalizedStart) {
-                        showSnack(R.string.schedules_error_time_range_empty)
-                        return@setOnClickListener
-                    }
-                }
-
-                val type: ScheduleStore.Type = when {
-                    isConnKind || isLocationKind -> ScheduleStore.Type.WEEKLY
-                    isDateRange -> ScheduleStore.Type.ONE_TIME
-                    else -> ScheduleStore.Type.WEEKLY
-                }
-
-                val newSchedule = ScheduleStore.Schedule(
-                    id = existing?.id ?: ScheduleStore.nextId(ScheduleStore.getAll(this@SchedulesActivity)),
-                    enabled = existing?.enabled ?: true,
-                    profile = profile,
-                    title = editTitle.text.toString().trim(),
-                    note = editNote.text.toString().trim(),
-                    type = type,
-                    daysMask = if (type == ScheduleStore.Type.WEEKLY) daysMask else 0,
-                    startMinutes = normalizedStart,
-                    endMinutes = normalizedEnd,
-                    startDate = if (type == ScheduleStore.Type.ONE_TIME) startDateYmd else 0,
-                    endDate = if (type == ScheduleStore.Type.ONE_TIME) endDateYmd else 0,
-                    wifiSsid = wifiSsid,
-                    btDeviceName = btName,
-                    locationLabel = locationLabel,
-                    locationLat = if (kind == Kind.LOCATION) locationLat else null,
-                    locationLng = if (kind == Kind.LOCATION) locationLng else null,
-                    locationRadiusMeters = if (kind == Kind.LOCATION) selectedRadiusMeters() else 250,
-                    locationTrigger = if (kind == Kind.LOCATION) locationTrigger else null,
-                    locationCooldownMinutes = if (kind == Kind.LOCATION) selectedCooldownMinutes else 15,
-                    action = action,
-                    priority = existing?.priority ?: 0
-                )
-
-                val oldList = ScheduleStore.getAll(this@SchedulesActivity)
-                val newScheduleWithPriority = if (existing == null) {
-                    val maxPriority = oldList.maxOfOrNull { it.priority } ?: -1
-                    newSchedule.copy(priority = maxPriority + 1)
-                } else {
-                    // Keep the edited schedule's existing rank.
-                    newSchedule.copy(priority = existing.priority)
-                }
-                val newList = if (existing == null) {
-                    oldList + newScheduleWithPriority
-                } else {
-                    oldList.map { if (it.id == existing.id) newScheduleWithPriority else it }
-                }
-
-                fun persistScheduleNow() {
-                    ScheduleStore.saveAll(this@SchedulesActivity, newList)
-                    LocationTriggerMonitor.syncAsync(this@SchedulesActivity)
-                    reapplySchedulesNow(existing?.id)
-                    SchedulePlanner.updateNextAlarm(this@SchedulesActivity)
-                    SchedulePlanner.notifyNextChanged(this@SchedulesActivity)
-                    refreshList()
-                    dialog.dismiss()
-                }
-
-                fun persistSchedule() {
-                    if (FeatureFlagStore.isEnabled(
-                            this@SchedulesActivity,
-                            FeatureFlagStore.Flag.AUTOMATION_SAVE_PREVIEW,
-                        )
-                    ) {
-                        showLoqInInfoDialog(
-                            title = getString(R.string.schedules_preview_title),
-                            rows = SchedulePreviewFormatter.infoRows(
-                                this@SchedulesActivity,
-                                newScheduleWithPriority,
-                            ).map { (label, value) ->
-                                com.oliver.loqin.ui.dialog.LoqInInfoRow(
-                                    label = label,
-                                    value = value,
-                                )
-                            },
-                            positiveText = getString(R.string.schedules_preview_confirm),
-                            onPositive = { persistScheduleNow() },
-                        )
-                        return
-                    }
-                    persistScheduleNow()
-                }
-
-                val overlap = ScheduleInsights.detectOverlaps(newList).firstOrNull {
-                    it.first.id == newScheduleWithPriority.id || it.second.id == newScheduleWithPriority.id
-                }
-                if (overlap != null) {
-                    val other = if (overlap.first.id == newScheduleWithPriority.id) overlap.second else overlap.first
-                    AlertDialog.Builder(this@SchedulesActivity)
-                        .setTitle(R.string.schedules_overlap_warning_title)
-                        .setMessage(
-                            getString(
-                                R.string.schedules_overlap_warning_message_fmt,
-                                ScheduleInsights.scheduleDisplayName(other)
-                            )
-                        )
-                        .setNegativeButton(R.string.cancel, null)
-                        .setPositiveButton(R.string.schedules_overlap_warning_save) { _, _ ->
-                            persistSchedule()
-                        }
-                        .showAccented()
-                    return@setOnClickListener
-                }
-
-                persistSchedule()
-            }
+        if (existing != null) {
+            sheet.secondary(getString(R.string.schedules_test_button)) { showScheduleTest(existing) }
         }
+        sheet.primary(getString(if (existing == null) R.string.create else R.string.save)) {
+            if (!canEditSchedules()) {
+                sheet.dismiss()
+                refreshList()
+                return@primary
+            }
+            layoutWifiSsid.error = null
+            layoutBtName.error = null
+            layoutLocationQuery.error = null
+            inputWifiSsid.error = null
+            inputBtName.error = null
+            inputLocationQuery.error = null
 
-        dialog.show()
+            val profile = (if (targetProfile != null) {
+                targetProfile
+            } else {
+                profileList.getOrNull(selectedProfileIndex)
+                    ?: spinnerProfile.text?.toString().orEmpty().ifBlank {
+                        ProfileStore.getCurrent(this@SchedulesActivity) ?: "Default"
+                    }
+            }) ?: "Default"
+            if (profile.isBlank()) {
+                showSnack(R.string.schedules_error_no_profile)
+                return@primary
+            }
+
+            val wifiSsid: String? = if (kind == Kind.WIFI) {
+                inputWifiSsid.text.toString().trim().ifEmpty { null }
+            } else {
+                null
+            }
+
+            val btName: String? = if (kind == Kind.BT) {
+                inputBtName.text.toString().trim().ifEmpty { null }
+            } else {
+                null
+            }
+
+            val locationQueryText: String = if (kind == Kind.LOCATION) {
+                inputLocationQuery.text.toString().trim()
+            } else {
+                ""
+            }
+            // Accept pasted coordinates even without an explicit search+pick.
+            if (kind == Kind.LOCATION && (locationLat == null || locationLng == null)) {
+                parseLocationCoordinateQuery(locationQueryText)?.let { (lat, lng) ->
+                    locationLat = lat
+                    locationLng = lng
+                    updateLocationSummary()
+                }
+            }
+            val locationLabel: String? = if (kind == Kind.LOCATION) {
+                locationQueryText.ifEmpty { null }
+            } else {
+                null
+            }
+
+            if (kind == Kind.WIFI && wifiSsid.isNullOrBlank()) {
+                layoutWifiSsid.error = getString(R.string.schedules_error_wifi_required)
+                inputWifiSsid.error = getString(R.string.schedules_error_wifi_required)
+                inputWifiSsid.requestFocus()
+                showSnack(R.string.schedules_error_wifi_required)
+                return@primary
+            }
+
+            if (kind == Kind.BT && btName.isNullOrBlank()) {
+                layoutBtName.error = getString(R.string.schedules_error_bt_required)
+                inputBtName.error = getString(R.string.schedules_error_bt_required)
+                inputBtName.requestFocus()
+                showSnack(R.string.schedules_error_bt_required)
+                return@primary
+            }
+
+            if (kind == Kind.LOCATION && (locationLat == null || locationLng == null)) {
+                layoutLocationQuery.error = getString(R.string.schedules_error_location_required)
+                inputLocationQuery.error = getString(R.string.schedules_error_location_required)
+                inputLocationQuery.requestFocus()
+                showSnack(R.string.schedules_error_location_required)
+                return@primary
+            }
+
+            if (kind == Kind.WIFI && !wifiSsid.isNullOrBlank() && !hasWifiSsidPermission()) {
+                showWhyLocationDialogForWifi()
+                return@primary
+            }
+
+            if (kind == Kind.BT && !btName.isNullOrBlank() && !hasBluetoothConnectPermission()) {
+                showWhyBluetoothDialogForSchedules()
+                return@primary
+            }
+
+            if (kind == Kind.LOCATION && !hasFineLocationPermission()) {
+                showWhyLocationDialogForGeofence()
+                return@primary
+            }
+            if (kind == Kind.LOCATION && !hasBackgroundLocationPermission()) {
+                showWhyBackgroundLocationDialogForGeofence()
+                return@primary
+            }
+
+            val connAction: ScheduleStore.Action? = if (isConnKind) {
+                val resolved = getConnAction()
+                if (resolved == null) {
+                    showSnack(R.string.schedules_conn_summary_none)
+                    return@primary
+                }
+                resolved
+            } else null
+
+            var daysMask = 0
+            val isDateRange = kind == Kind.TIME && currentTimeMode() == TimeMode.DATE_RANGE
+
+            if (switch247.isChecked) {
+                daysMask = 0x7F
+            } else if (!isDateRange) {
+                if (chipMon.isChecked) daysMask = daysMask or Days.MON
+                if (chipTue.isChecked) daysMask = daysMask or Days.TUE
+                if (chipWed.isChecked) daysMask = daysMask or Days.WED
+                if (chipThu.isChecked) daysMask = daysMask or Days.THU
+                if (chipFri.isChecked) daysMask = daysMask or Days.FRI
+                if (chipSat.isChecked) daysMask = daysMask or Days.SAT
+                if (chipSun.isChecked) daysMask = daysMask or Days.SUN
+
+                if (daysMask == 0) {
+                    showSnack(R.string.schedules_error_no_days)
+                    return@primary
+                }
+            }
+
+            if (isDateRange) {
+                if (startDateYmd <= 0 || endDateYmd <= 0) {
+                    showSnack(R.string.schedules_error_no_dates)
+                    return@primary
+                }
+                if (endDateYmd < startDateYmd) {
+                    showSnack(R.string.schedules_error_date_order)
+                    return@primary
+                }
+            }
+
+            val action: ScheduleStore.Action = when {
+                isConnKind -> connAction!!
+                isLocationKind -> selectedAction()
+                currentTimeMode() == TimeMode.TIME_RANGE -> selectedAction()
+                currentTimeMode() == TimeMode.DATE_RANGE -> ScheduleStore.Action.ENABLE_AND_DISABLE
+                else -> selectedAction()
+            }
+
+            val normalizedStart: Int
+            val normalizedEnd: Int
+
+            if (switch247.isChecked || switchAllDay.isChecked || isDateRange) {
+                normalizedStart = 0
+                normalizedEnd = 24 * 60 - 1
+            } else {
+                normalizedStart = startMinutes
+                normalizedEnd = when (action) {
+                    ScheduleStore.Action.ENABLE_AND_DISABLE,
+                    ScheduleStore.Action.DISABLE_AND_ENABLE -> endMinutes
+                    else -> startMinutes
+                }
+            }
+
+            val isFixedRange = !switch247.isChecked && !switchAllDay.isChecked && !isDateRange
+            if (isFixedRange && (isConnKind || isLocationKind || action == ScheduleStore.Action.ENABLE_AND_DISABLE || action == ScheduleStore.Action.DISABLE_AND_ENABLE)) {
+                if (normalizedEnd == normalizedStart) {
+                    showSnack(R.string.schedules_error_time_range_empty)
+                    return@primary
+                }
+            }
+
+            val type: ScheduleStore.Type = when {
+                isConnKind || isLocationKind -> ScheduleStore.Type.WEEKLY
+                isDateRange -> ScheduleStore.Type.ONE_TIME
+                else -> ScheduleStore.Type.WEEKLY
+            }
+
+            val newSchedule = ScheduleStore.Schedule(
+                id = existing?.id ?: ScheduleStore.nextId(ScheduleStore.getAll(this@SchedulesActivity)),
+                enabled = existing?.enabled ?: true,
+                profile = profile,
+                title = editTitle.text.toString().trim(),
+                note = editNote.text.toString().trim(),
+                type = type,
+                daysMask = if (type == ScheduleStore.Type.WEEKLY) daysMask else 0,
+                startMinutes = normalizedStart,
+                endMinutes = normalizedEnd,
+                startDate = if (type == ScheduleStore.Type.ONE_TIME) startDateYmd else 0,
+                endDate = if (type == ScheduleStore.Type.ONE_TIME) endDateYmd else 0,
+                wifiSsid = wifiSsid,
+                btDeviceName = btName,
+                locationLabel = locationLabel,
+                locationLat = if (kind == Kind.LOCATION) locationLat else null,
+                locationLng = if (kind == Kind.LOCATION) locationLng else null,
+                locationRadiusMeters = if (kind == Kind.LOCATION) selectedRadiusMeters() else 250,
+                locationTrigger = if (kind == Kind.LOCATION) locationTrigger else null,
+                locationCooldownMinutes = if (kind == Kind.LOCATION) selectedCooldownMinutes else 15,
+                action = action,
+                priority = existing?.priority ?: 0
+            )
+
+            val oldList = ScheduleStore.getAll(this@SchedulesActivity)
+            val newScheduleWithPriority = if (existing == null) {
+                val maxPriority = oldList.maxOfOrNull { it.priority } ?: -1
+                newSchedule.copy(priority = maxPriority + 1)
+            } else {
+                // Keep the edited schedule's existing rank.
+                newSchedule.copy(priority = existing.priority)
+            }
+            val newList = if (existing == null) {
+                oldList + newScheduleWithPriority
+            } else {
+                oldList.map { if (it.id == existing.id) newScheduleWithPriority else it }
+            }
+
+            fun persistScheduleNow() {
+                ScheduleStore.saveAll(this@SchedulesActivity, newList)
+                LocationTriggerMonitor.syncAsync(this@SchedulesActivity)
+                reapplySchedulesNow(existing?.id)
+                SchedulePlanner.updateNextAlarm(this@SchedulesActivity)
+                SchedulePlanner.notifyNextChanged(this@SchedulesActivity)
+                refreshList()
+                sheet.dismiss()
+            }
+
+            fun persistSchedule() {
+                if (FeatureFlagStore.isEnabled(
+                        this@SchedulesActivity,
+                        FeatureFlagStore.Flag.AUTOMATION_SAVE_PREVIEW,
+                    )
+                ) {
+                    showLoqInInfoDialog(
+                        title = getString(R.string.schedules_preview_title),
+                        rows = SchedulePreviewFormatter.infoRows(
+                            this@SchedulesActivity,
+                            newScheduleWithPriority,
+                        ).map { (label, value) ->
+                            com.oliver.loqin.ui.dialog.LoqInInfoRow(
+                                label = label,
+                                value = value,
+                            )
+                        },
+                        positiveText = getString(R.string.schedules_preview_confirm),
+                        onPositive = { persistScheduleNow() },
+                    )
+                    return
+                }
+                persistScheduleNow()
+            }
+
+            val overlap = ScheduleInsights.detectOverlaps(newList).firstOrNull {
+                it.first.id == newScheduleWithPriority.id || it.second.id == newScheduleWithPriority.id
+            }
+            if (overlap != null) {
+                val other = if (overlap.first.id == newScheduleWithPriority.id) overlap.second else overlap.first
+                AlertDialog.Builder(this@SchedulesActivity)
+                    .setTitle(R.string.schedules_overlap_warning_title)
+                    .setMessage(
+                        getString(
+                            R.string.schedules_overlap_warning_message_fmt,
+                            ScheduleInsights.scheduleDisplayName(other)
+                        )
+                    )
+                    .setNegativeButton(R.string.cancel, null)
+                    .setPositiveButton(R.string.schedules_overlap_warning_save) { _, _ ->
+                        persistSchedule()
+                    }
+                    .showAccented()
+                return@primary
+            }
+
+            persistSchedule()
+        }
+        sheet.show()
     }
 
     private fun parseLocationCoordinateQuery(raw: String): Pair<Double, Double>? {
@@ -3892,35 +3864,24 @@ private class ScheduleAdapter(
     private val isSelectionMode: () -> Boolean,
     private val isSelected: (Int) -> Boolean,
     private val onToggleSelection: (Int) -> Unit,
-    private val onEnterSelection: (Int) -> Unit,
     private val onEdit: (ScheduleStore.Schedule) -> Unit,
-    private val onTest: (ScheduleStore.Schedule) -> Unit,
     private val getTargetProfile: () -> String?,
-    private val onStartDrag: (RecyclerView.ViewHolder) -> Unit,
 ) : androidx.recyclerview.widget.ListAdapter<ScheduleStore.Schedule, ScheduleViewHolder>(DIFF) {
 
-    fun itemAt(position: Int): ScheduleStore.Schedule? = currentList.getOrNull(position)
-
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ScheduleViewHolder {
-        val v = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_schedule, parent, false)
-        return ScheduleViewHolder(
-            v,
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ScheduleViewHolder =
+        ScheduleViewHolder(
+            RuleTile.inflate(parent),
             onToggleEnabled,
             canInteract,
             isSelectionMode,
             isSelected,
             onToggleSelection,
-            onEnterSelection,
             onEdit,
-            onTest,
             getTargetProfile,
-            onStartDrag,
         )
-    }
 
     override fun onBindViewHolder(holder: ScheduleViewHolder, position: Int) {
-        holder.bind(getItem(position), position + 1)
+        holder.bind(getItem(position), position + 1, itemCount > 1)
     }
 
     companion object {
@@ -3939,150 +3900,73 @@ private class ScheduleAdapter(
     }
 }
 
+/** The trailing "Add schedule" tile, a separate adapter so it stays out of drag and priority. */
+private class ScheduleAddTileAdapter(
+    private val canInteract: () -> Boolean,
+    private val onAdd: () -> Unit,
+) : RecyclerView.Adapter<ScheduleAddTileViewHolder>() {
+
+    override fun getItemCount(): Int = 1
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ScheduleAddTileViewHolder =
+        ScheduleAddTileViewHolder(
+            (LayoutInflater.from(parent.context)
+                .inflate(R.layout.item_website_add_custom, parent, false) as SquareCardView)
+                .apply { growToFit = true }
+        )
+
+    override fun onBindViewHolder(holder: ScheduleAddTileViewHolder, position: Int) {
+        holder.bind(canInteract(), onAdd)
+    }
+}
+
+private class ScheduleAddTileViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
+
+    private val label = itemView.findViewById<TextView>(R.id.tvAddLabel)
+
+    fun bind(enabled: Boolean, onAdd: () -> Unit) {
+        label.text = itemView.context.getString(R.string.schedule_tile_add_label)
+        // Stay tappable while locked: onAdd warns via popover, as the old add button did.
+        itemView.alpha = if (enabled) 1f else 0.45f
+        itemView.setOnClickListener { onAdd() }
+    }
+}
+
+private const val ALL_DAYS = 127
+private const val WEEKDAYS = 31
+private const val WEEKEND = 96
+
 private class ScheduleViewHolder(
-    itemView: View,
+    private val tile: RuleTile,
     private val onToggleEnabled: (ScheduleStore.Schedule, Boolean) -> Unit,
     private val canInteract: () -> Boolean,
     private val isSelectionMode: () -> Boolean,
     private val isSelected: (Int) -> Boolean,
     private val onToggleSelection: (Int) -> Unit,
-    private val onEnterSelection: (Int) -> Unit,
     private val onEdit: (ScheduleStore.Schedule) -> Unit,
-    private val onTest: (ScheduleStore.Schedule) -> Unit,
     private val getTargetProfile: () -> String?,
-    private val onStartDrag: (RecyclerView.ViewHolder) -> Unit,
-) : RecyclerView.ViewHolder(itemView) {
-
-    private val kindIcon = itemView.findViewById<ImageView>(R.id.imgKind)
-    private val title = itemView.findViewById<TextView>(R.id.textTitle)
-    private val subtitle = itemView.findViewById<TextView>(R.id.textSubtitle)
-    private val note = itemView.findViewById<TextView>(R.id.textNote)
-    private val switchEnabled = itemView.findViewById<SwitchCompat>(R.id.switchEnabled)
-    private val btnTest = itemView.findViewById<ImageButton>(R.id.btnTestScheduleInfo)
-    private val btnDragHandle = itemView.findViewById<ImageButton>(R.id.btnDragHandle)
-    private val textPriority = itemView.findViewById<TextView>(R.id.textPriority)
-    private val checkSelect =
-        itemView.findViewById<com.google.android.material.checkbox.MaterialCheckBox>(R.id.checkSelect)
-    private val cardRoot = itemView.findViewById<com.google.android.material.card.MaterialCardView>(R.id.cardRoot)
-
-    private var current: ScheduleStore.Schedule? = null
-    private var binding = false
-
-    private fun tintEnabledSwitch() {
-        val ctx = itemView.context
-        val accent = AccentColor.getAccentColorInt(ctx)
-        val thumbOff = Color.WHITE
-        val thumbDisabled = Color.LTGRAY
-        val trackOn = ColorUtils.setAlphaComponent(accent, 0x88)
-        val trackOff = ColorUtils.setAlphaComponent(Color.DKGRAY, 0x44)
-        val trackOffDisabled = ColorUtils.setAlphaComponent(Color.GRAY, 0x33)
-
-        switchEnabled.thumbTintList = ColorStateList(
-            arrayOf(
-                intArrayOf(-android.R.attr.state_enabled),
-                intArrayOf(android.R.attr.state_checked),
-                intArrayOf()
-            ),
-            intArrayOf(thumbDisabled, accent, thumbOff)
-        )
-
-        switchEnabled.trackTintList = ColorStateList(
-            arrayOf(
-                intArrayOf(-android.R.attr.state_enabled),
-                intArrayOf(android.R.attr.state_checked),
-                intArrayOf()
-            ),
-            intArrayOf(trackOffDisabled, trackOn, trackOff)
-        )
-    }
-
-    init {
-        switchEnabled.setOnCheckedChangeListener { _, isChecked ->
-            if (!binding && !isSelectionMode()) {
-                val s = current
-                if (s != null && !canInteract()) {
-                    // Revert the visual toggle; onToggleEnabled warns via popover.
-                    binding = true
-                    switchEnabled.isChecked = s.enabled
-                    binding = false
-                }
-                s?.let { onToggleEnabled(it, isChecked) }
-            }
-        }
-
-        cardRoot.setOnClickListener {
-            val s = current ?: return@setOnClickListener
-            if (isSelectionMode()) {
-                onToggleSelection(s.id)
-            } else {
-                onEdit(s)
-            }
-        }
-
-        btnTest.setOnClickListener {
-            current?.let(onTest)
-        }
-
-        btnDragHandle.setOnTouchListener { _, event ->
-            if (event.actionMasked == MotionEvent.ACTION_DOWN && !isSelectionMode() && canInteract()) {
-                onStartDrag(this)
-            }
-            false
-        }
-
-        cardRoot.setOnLongClickListener {
-            val s = current ?: return@setOnLongClickListener true
-            if (!isSelectionMode() && canInteract()) {
-                onEnterSelection(s.id)
-            } else if (!canInteract()) {
-                onEdit(s)
-            }
-            true
-        }
-    }
-
-    private fun dp(value: Int): Int =
-        (value * itemView.resources.displayMetrics.density + 0.5f).toInt()
+) : RecyclerView.ViewHolder(tile.root) {
 
     private fun fmtMinutes(m: Int): String = TimeFormatPrefs.formatMinutesOfDay(itemView.context, m)
 
-    fun bind(s: ScheduleStore.Schedule, rank: Int) {
-        current = s
-
+    fun bind(s: ScheduleStore.Schedule, rank: Int, ranked: Boolean) {
+        val ctx = itemView.context
         val canInteractNow = canInteract()
         val selecting = isSelectionMode()
-
-        textPriority.text = itemView.context.getString(R.string.schedules_priority_badge_fmt, rank)
-        textPriority.alpha = if (s.enabled) 1f else 0.5f
-        btnDragHandle.visibility = if (selecting) View.GONE else View.VISIBLE
-        btnDragHandle.isEnabled = canInteractNow
-        btnDragHandle.alpha = if (canInteractNow) 0.6f else 0.3f
-
-        binding = true
-        switchEnabled.isChecked = s.enabled
-        // Stay tappable while locked (dimmed via alpha below): denied taps warn
-        // via popover in onToggleEnabled instead of silently doing nothing.
-        switchEnabled.isEnabled = !isSelectionMode()
-        tintEnabledSwitch()
-        binding = false
-
         val selected = selecting && isSelected(s.id)
-        checkSelect.visibility = if (selecting) View.VISIBLE else View.GONE
-        checkSelect.isChecked = selected
-        btnTest.visibility = if (selecting) View.GONE else View.VISIBLE
-        // Stay tappable while locked: taps route to onEdit, which warns via popover.
-        cardRoot.isClickable = true
-        cardRoot.isLongClickable = true
-        val ctx = itemView.context
-        val accent = AccentColor.getAccentColorInt(ctx)
-        if (selected) {
-            cardRoot.strokeWidth = dp(2)
-            cardRoot.strokeColor = accent
-            cardRoot.setCardBackgroundColor(ColorUtils.setAlphaComponent(accent, 0x22))
-        } else {
-            // Flat when unselected: no outline, selection carries the stroke.
-            cardRoot.strokeWidth = 0
-            cardRoot.setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.foqos_surface))
+
+        tile.setCorner(if (ranked) ctx.getString(R.string.schedules_priority_badge_fmt, rank) else null)
+        tile.corner.alpha = if (s.enabled) 1f else 0.5f
+        // Toggle is hidden in selection mode; its taps route to onToggleEnabled, which warns when locked.
+        tile.setToggle(
+            on = if (selecting) null else s.enabled,
+            contentDescription = ctx.getString(R.string.schedule_tile_toggle_desc),
+        ) { onToggleEnabled(s, !s.enabled) }
+        // Same as every other grid: an outlined tile is on (or picked while selecting).
+        tile.setState(on = if (selecting) selected else s.enabled)
+        tile.setDimmed(!canInteractNow)
+        tile.root.setOnClickListener {
+            if (isSelectionMode()) onToggleSelection(s.id) else onEdit(s)
         }
 
         val hasWifi = !s.wifiSsid.isNullOrBlank()
@@ -4096,28 +3980,7 @@ private class ScheduleViewHolder(
             hasBt -> R.drawable.bluetooth_24
             else -> R.drawable.alarm_24
         }
-        val tintedIcon = ContextCompat.getDrawable(ctx, iconRes)?.mutate()?.apply {
-            setTint(accent)
-        }
-        if (tintedIcon != null) {
-            kindIcon.setImageDrawable(tintedIcon)
-        } else {
-            kindIcon.setImageResource(iconRes)
-        }
-        kindIcon.imageTintList = ColorStateList.valueOf(accent)
-        kindIcon.setColorFilter(accent)
-        kindIcon.isEnabled = true
-
-        val a = when {
-            !canInteractNow && s.enabled -> 0.72f
-            !canInteractNow -> 0.45f
-            s.enabled -> 1f
-            else -> 0.5f
-        }
-        kindIcon.alpha = 1f
-        title.alpha = a
-        subtitle.alpha = a
-        note.alpha = a
+        tile.setSymbol(iconRes)
 
         val customTitle = s.title.trim()
         val hasExplicitTitle = customTitle.isNotBlank() &&
@@ -4143,7 +4006,12 @@ private class ScheduleViewHolder(
         }
 
         val daysLabel = when (s.type) {
-            ScheduleStore.Type.WEEKLY -> {
+            // Tiles are small: name common sets of days instead of listing seven abbreviations.
+            ScheduleStore.Type.WEEKLY -> when (s.daysMask and ALL_DAYS) {
+                ALL_DAYS -> ctx.getString(R.string.schedules_group_all)
+                WEEKDAYS -> ctx.getString(R.string.schedules_group_weekdays)
+                WEEKEND -> ctx.getString(R.string.schedules_group_weekend)
+                else -> {
                 val parts = mutableListOf<String>()
                 if (s.daysMask and Days.MON != 0) parts += ctx.getString(R.string.day_short_mon)
                 if (s.daysMask and Days.TUE != 0) parts += ctx.getString(R.string.day_short_tue)
@@ -4153,6 +4021,7 @@ private class ScheduleViewHolder(
                 if (s.daysMask and Days.SAT != 0) parts += ctx.getString(R.string.day_short_sat)
                 if (s.daysMask and Days.SUN != 0) parts += ctx.getString(R.string.day_short_sun)
                 parts.joinToString(" ")
+                }
             }
 
             ScheduleStore.Type.ONE_TIME -> {
@@ -4210,8 +4079,6 @@ private class ScheduleViewHolder(
             }
         }
 
-        title.text = displayTitle
-
         val subtitleParts = mutableListOf<String>()
         if (daysLabel.isNotBlank()) {
             subtitleParts += daysLabel
@@ -4222,18 +4089,15 @@ private class ScheduleViewHolder(
         if (timeWindowStr != null && (hasWifi || hasBt || hasLocation)) {
             subtitleParts += timeWindowStr
         }
-        subtitleParts += actionLabel
+        // "Enable & disable" is what a time window does anyway; only name other actions.
+        if (s.action != ScheduleStore.Action.ENABLE_AND_DISABLE) {
+            subtitleParts += actionLabel
+        }
         val activeTargetProfile = getTargetProfile()
         if (activeTargetProfile == null && s.profile.isNotBlank()) {
             subtitleParts += s.profile
         }
-        subtitle.text = subtitleParts.joinToString(" · ")
 
-        if (s.note.isNotBlank()) {
-            note.visibility = View.VISIBLE
-            note.text = s.note
-        } else {
-            note.visibility = View.GONE
-        }
+        tile.setText(label = displayTitle, sub = subtitleParts.joinToString(" · "))
     }
 }
