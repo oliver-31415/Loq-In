@@ -77,7 +77,7 @@
 
     <string name="pref_language_title">Language</string>
     <string name="pref_language_english">English</string>
-    <string name="pref_language_german">German</string>
+    <string name="pref_language_german">Deutsch</string>
 
     <!-- ====================================================== -->
     <!-- Language -->
@@ -89,7 +89,7 @@
     <string-array name="pref_language_entries">
         <item>System</item>
         <item>English</item>
-        <item>German</item>
+        <item>Deutsch</item>
     </string-array>
 
     <string-array name="pref_language_values">

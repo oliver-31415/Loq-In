@@ -141,16 +141,14 @@ object SegmentedToggleUi {
             if (selected) {
                 // Concrete accent container: ?attr/colorPrimaryContainer doesn't follow a
                 // custom accent (see AccentColor.getAccentContainerColorInt).
-                val selectedBg = ColorUtils.compositeColors(
-                    AccentColor.getAccentContainerColorInt(context),
-                    surfaceColor,
-                )
-                val onSelected = onSurfaceColor
-                button.backgroundTintList = ColorStateList.valueOf(selectedBg)
-                button.strokeColor = ColorStateList.valueOf(Color.TRANSPARENT)
-                button.strokeWidth = 0
-                button.setTextColor(onSelected)
-                button.iconTint = ColorStateList.valueOf(accent)
+                // The selected segment is a white pill with a readable-accent outline and label:
+                // a pale container alone was ~1:1 against the track, so selection read only as bold.
+                val strong = RuleTileStyle.strongAccent(context)
+                button.backgroundTintList = ColorStateList.valueOf(surfaceColor)
+                button.strokeColor = ColorStateList.valueOf(strong)
+                button.strokeWidth = dp(context, 2)
+                button.setTextColor(AccentColor.readableOn(strong, surfaceColor, onSurfaceColor, 4.5))
+                button.iconTint = ColorStateList.valueOf(strong)
                 button.setTypeface(button.typeface, Typeface.BOLD)
                 button.rippleColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 0x25))
                 button.alpha = 1f
@@ -158,10 +156,15 @@ object SegmentedToggleUi {
                 button.backgroundTintList = ColorStateList.valueOf(Color.TRANSPARENT)
                 button.strokeColor = ColorStateList.valueOf(Color.TRANSPARENT)
                 button.strokeWidth = 0
-                val unselectedText = MaterialColors.getColor(
-                    context,
-                    com.google.android.material.R.attr.colorOnSurfaceVariant,
-                    ColorUtils.setAlphaComponent(onSurfaceColor, 0x88),
+                // Darker than on-surface-variant: the grey label sat at ~3.8:1 on the grey track.
+                val unselectedText = ColorUtils.blendARGB(
+                    MaterialColors.getColor(
+                        context,
+                        com.google.android.material.R.attr.colorOnSurfaceVariant,
+                        ColorUtils.setAlphaComponent(onSurfaceColor, 0x88),
+                    ),
+                    onSurfaceColor,
+                    0.35f,
                 )
                 button.setTextColor(unselectedText)
                 button.iconTint = ColorStateList.valueOf(unselectedText)

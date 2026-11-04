@@ -1916,7 +1916,8 @@ class MainActivity : AppCompatActivity() {
         val profiles = ProfileStore.getProfiles(this).toList().sorted()
         val current = ProfileStore.getCurrent(this)
         val sheet = BottomSheetDialog(this)
-        val accent = AccentColor.getAccentColorInt(this)
+        // Readable accent: the soft accent on the tonal rows was ~2.4:1 for labels and icons.
+        val accent = RuleTileStyle.strongAccent(this)
 
         val list = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -1946,6 +1947,10 @@ class MainActivity : AppCompatActivity() {
             val row = SheetRows.row(this, profileGroup, R.drawable.layers_24, profile, accent = accent)
             row.root.isClickable = true
             row.setSelected(profile == current, accent)
+            if (profile == current) row.title.setTypeface(row.title.typeface, android.graphics.Typeface.BOLD)
+            androidx.core.view.ViewCompat.setStateDescription(
+                row.root, getString(if (profile == current) R.string.state_selected_profile else R.string.state_not_selected_profile),
+            )
             profileRows += profile to row
             row.root.setOnClickListener {
                 // Read the live current profile: the `current` snapshot above

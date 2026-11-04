@@ -71,7 +71,7 @@
                             android:layout_width="24dp"
                             android:layout_height="24dp"
                             android:contentDescription="@null"
-                            android:src="@drawable/toggle_on_24"
+                            android:src="@drawable/dark_mode_24"
                             app:tint="?attr/colorPrimary" />
 
                         <LinearLayout

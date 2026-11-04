@@ -99,4 +99,6 @@
     <string name="pref_reset_app_data_done">All local data was cleared.</string>
 
     <string name="settings_row_locked_state">Locked while Loq In is on</string>
+    <string name="state_selected_profile">Current profile</string>
+    <string name="state_not_selected_profile">Not the current profile</string>
 </resources>
