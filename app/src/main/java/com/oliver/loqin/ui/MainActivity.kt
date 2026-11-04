@@ -1948,6 +1948,12 @@ class MainActivity : AppCompatActivity() {
             row.root.isClickable = true
             row.setSelected(profile == current, accent)
             if (profile == current) row.title.setTypeface(row.title.typeface, android.graphics.Typeface.BOLD)
+            // Accent only marks the current profile; the others get a neutral icon.
+            if (profile != current) {
+                androidx.core.widget.ImageViewCompat.setImageTintList(
+                    row.icon, ColorStateList.valueOf(ContextCompat.getColor(this, R.color.foqos_on_surface_variant)),
+                )
+            }
             androidx.core.view.ViewCompat.setStateDescription(
                 row.root, getString(if (profile == current) R.string.state_selected_profile else R.string.state_not_selected_profile),
             )

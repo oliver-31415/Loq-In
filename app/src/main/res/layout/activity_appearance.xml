@@ -45,11 +45,13 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <!-- Tall sections (control + summary each): a wider gap keeps them from reading as one block. -->
             <com.oliver.loqin.ui.widgets.ListGroupLayout
                 style="@style/LoqIn.ListGroup"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp">
+                android:layout_marginTop="6dp"
+                app:listSegmentGap="10dp">
 
                 <!-- Display mode -->
                 <LinearLayout
