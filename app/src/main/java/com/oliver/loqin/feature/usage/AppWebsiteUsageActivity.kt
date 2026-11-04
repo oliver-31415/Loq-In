@@ -852,15 +852,7 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
                 }
             }
 
-            b.permHint.isVisible = !data.hasAccessibility
-            if (!data.hasAccessibility) {
-                b.permHint.text = getString(R.string.usage_websites_no_accessibility)
-            }
-            b.btnOpenSettings.isVisible = !data.hasAccessibility
-            b.btnOpenSettings.text = getString(R.string.onb_open)
-            b.btnOpenSettings.setOnClickListener {
-                AccessibilityDisclosure.openSettingsWithDisclosure(this)
-            }
+            applyTrackingOffState(!data.hasAccessibility)
             return
         }
 
@@ -884,16 +876,35 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
             }
         }
 
-        b.permHint.isVisible = !data.hasAccessibility && visibleEmpty
-        if (!data.hasAccessibility && visibleEmpty) {
-            b.permHint.text = getString(R.string.usage_apps_no_accessibility)
-        }
-        b.btnOpenSettings.isVisible = !data.hasAccessibility && visibleEmpty
-        b.btnOpenSettings.text = getString(R.string.onb_open)
-        b.btnOpenSettings.setOnClickListener {
-            AccessibilityDisclosure.openSettingsWithDisclosure(this)
-        }
         b.rowTapHint.isVisible = !visibleEmpty
+        applyTrackingOffState(!data.hasAccessibility && visibleEmpty)
+    }
+
+    /**
+     * Without the Accessibility service there's nothing to show: one card explains why and opens
+     * the setting, and the empty dashboard (ranges, total, tabs, list) steps out of the way.
+     */
+    private fun applyTrackingOffState(off: Boolean) {
+        b.cardTrackingOff.isVisible = off
+        b.permHint.isVisible = false
+        b.btnOpenSettings.isVisible = false
+        listOf(b.chipGroupRange, b.cardUsageTotal, b.toggleType, b.recycler, b.webPlaceholder).forEach {
+            if (off) it.isVisible = false
+        }
+        if (off) {
+            b.rowTapHint.isVisible = false
+            b.customRangeSummary.isVisible = false
+            b.ivTrackingOff.imageTintList =
+                android.content.res.ColorStateList.valueOf(com.oliver.loqin.ui.RuleTileStyle.strongAccent(this))
+            b.btnTrackingOn.setOnClickListener { AccessibilityDisclosure.openSettingsWithDisclosure(this) }
+        } else {
+            b.chipGroupRange.isVisible = true
+            b.cardUsageTotal.isVisible = true
+            b.toggleType.isVisible = true
+            b.recycler.isVisible = true
+        }
+        b.btnStatsSortFilter.isVisible = !off
+        invalidateOptionsMenu()
     }
 
     private fun getDeviceFallbackSummary(range: Range): UsageSummary {

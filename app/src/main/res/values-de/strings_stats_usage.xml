@@ -485,4 +485,8 @@
     <string name="usage_export_progress">Nutzungsdaten werden exportiert…</string>
     <string name="usage_export_done">Nutzungsdaten exportiert.</string>
     <string name="usage_export_failed">Nutzungsdaten konnten nicht exportiert werden.</string>
+    <string name="usage_tracking_off_title">Nutzungserfassung ist aus</string>
+    <string name="usage_tracking_off_body">Loq In erfasst Bildschirmzeit, Öffnungen und blockierte Versuche über die Bedienungshilfen. Die Nutzung wird auf diesem Gerät gespeichert.</string>
+    <string name="usage_tracking_off_action">Bedienungshilfen öffnen</string>
+    <string name="usage_tracking_off_next">Suche dort nach Loq In und schalte es ein.</string>
 </resources>

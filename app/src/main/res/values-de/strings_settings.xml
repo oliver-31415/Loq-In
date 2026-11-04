@@ -36,7 +36,7 @@
     <string name="settings_theme_title">Erscheinungsbild</string>
     <string name="settings_theme_summary">Design, Farben &amp; Sprache</string>
     <string name="settings_display_shortcuts_title">Widgets &amp; Verknüpfungen</string>
-    <string name="settings_display_shortcuts_summary">Schnelleinstellungs-Kacheln und Android-Widgets verwalten</string>
+    <string name="settings_display_shortcuts_summary">Schnelleinstellungs-Kacheln und Widgets</string>
 
     <!-- ====================================================== -->
     <!-- Permissions and reliability -->
@@ -44,7 +44,7 @@
     <string name="settings_permissions_reliability_title">Berechtigungen &amp; Zuverlässigkeit</string>
     <string name="settings_permissions_reliability_summary">Berechtigungen und Hintergrundzuverlässigkeit</string>
     <string name="pref_permissions_title">Berechtigungen</string>
-    <string name="pref_permissions_summary">Die Systemberechtigungen prüfen und verwalten, die Loq In benötigt.</string>
+    <string name="pref_permissions_summary">Systemberechtigungen, die Loq In benötigt</string>
     <string name="settings_emergency_unlock_title">Notfall-Entsperrung</string>
     <string name="settings_emergency_unlock_summary">Notfall-Entsperrung starten, pausieren, fortsetzen oder beenden</string>
 
@@ -98,4 +98,5 @@
     <string name="settings_setup_guide_title">Einrichtungsassistent</string>
     <string name="settings_setup_guide_summary">Einrichtung, Berechtigungen und Funktionen erneut durchlaufen</string>
     <string name="account_section_your_data">Eigene Daten</string>
+    <string name="settings_row_locked_state">Gesperrt, solange Loq In aktiv ist</string>
 </resources>
