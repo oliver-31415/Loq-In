@@ -119,127 +119,10 @@
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Activity heatmap (Foqos BlockedSessionsHabitTracker):
-                 section title + Hide pill float on the page above the card -->
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:layout_marginBottom="8dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
-
-                <TextView
-                    android:id="@+id/tvActivityTitle"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:maxLines="1"
-                    android:text="@string/activity_section_title"
-                    android:textSize="20sp"
-                    android:textStyle="bold"
-                    app:autoSizeMaxTextSize="20sp"
-                    app:autoSizeMinTextSize="14sp"
-                    app:autoSizeTextType="uniform" />
-
-                <LinearLayout
-                    android:id="@+id/btnActivityHide"
-                    style="@style/LoqIn.HeaderPill"
-                    android:layout_width="wrap_content"
-                    android:layout_height="38dp"
-                    android:layout_marginEnd="8dp">
-
-                    <ImageView
-                        android:layout_width="15dp"
-                        android:layout_height="15dp"
-                        android:contentDescription="@null"
-                        android:src="@drawable/visibility_off_24"
-                        app:tint="?attr/colorOnSurface" />
-
-                    <TextView
-                        android:id="@+id/tvHeaderPillLabel"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="7dp"
-                        android:text="@string/activity_hide"
-                        android:textSize="13sp"
-                        android:textStyle="bold"
-                        android:textColor="?attr/colorOnSurface" />
-                </LinearLayout>
-
-                <LinearLayout
-                    android:id="@+id/btnMoreInsights"
-                    style="@style/LoqIn.HeaderPill"
-                    android:layout_width="wrap_content"
-                    android:layout_height="38dp">
-
-                    <ImageView
-                        android:id="@+id/ivMoreInsightsIcon"
-                        android:layout_width="15dp"
-                        android:layout_height="15dp"
-                        android:contentDescription="@null"
-                        android:src="@drawable/bar_chart_24"
-                        app:tint="?attr/colorOnSurface" />
-
-                    <TextView
-                        android:id="@+id/tvMoreInsightsLabel"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="7dp"
-                        android:text="@string/activity_more_insights"
-                        android:textSize="13sp"
-                        android:textStyle="bold"
-                        android:textColor="?attr/colorOnSurface" />
-                </LinearLayout>
-            </LinearLayout>
-
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardActivity"
-                style="@style/LoqIn.Card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:paddingStart="14dp"
-                    android:paddingTop="12dp"
-                    android:paddingEnd="14dp"
-                    android:paddingBottom="14dp">
-
-                    <TextView
-                        android:id="@+id/tvHeatmapLegend"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:gravity="center"
-                        android:textSize="12sp"
-                        tools:text="legend" />
-
-                    <com.oliver.loqin.ui.widgets.FoqosHeatmapView
-                        android:id="@+id/activityHeatmap"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:contentDescription="@string/activity_heatmap_content_desc" />
-
-                    <TextView
-                        android:id="@+id/tvActivityDetail"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:alpha="0.8"
-                        android:textSize="13sp"
-                        android:visibility="gone"
-                        tools:text="1 Sept · 12m blocked"
-                        tools:visibility="visible" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
             <Space
                 android:id="@+id/spaceBeforeStatusCard"
                 android:layout_width="1dp"
-                android:layout_height="10dp" />
+                android:layout_height="6dp" />
 
             <!-- Status/primary action -->
             <com.google.android.material.card.MaterialCardView
@@ -261,6 +144,7 @@
                     <!-- Foqos-style Profiles section -->
                     <LinearLayout
                         android:id="@+id/layoutProfilesHeader"
+                        android:visibility="gone"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
@@ -312,21 +196,59 @@
                         android:clickable="true"
                         android:focusable="true">
 
+                        <!-- One true state: Protecting / Not protecting / On a break / Off -->
+                        <TextView
+                            android:id="@+id/tvHeroState"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginBottom="6dp"
+                            android:accessibilityLiveRegion="polite"
+                            android:drawablePadding="6dp"
+                            android:fontFamily="sans-serif-medium"
+                            android:gravity="center_vertical"
+                            android:minHeight="30dp"
+                            android:paddingStart="10dp"
+                            android:paddingEnd="12dp"
+                            android:textSize="13.5sp"
+                            tools:text="Protecting" />
+
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="horizontal"
                             android:gravity="center_vertical">
 
-                            <TextView
-                                android:id="@+id/tvHeroProfileName"
+                            <LinearLayout
+                                android:id="@+id/rowHeroName"
                                 android:layout_width="0dp"
                                 android:layout_height="wrap_content"
                                 android:layout_weight="1"
+                                android:background="?attr/selectableItemBackground"
+                                android:contentDescription="@string/profile_rows_switch"
+                                android:gravity="center_vertical"
+                                android:minHeight="48dp"
+                                android:orientation="horizontal">
+
+                            <TextView
+                                android:id="@+id/tvHeroProfileName"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:ellipsize="end"
+                                android:maxLines="1"
                                 android:textSize="24sp"
                                 android:textStyle="bold"
                                 android:textColor="#FFFFFFFF"
                                 tools:text="Work Profile" />
+
+                            <ImageView
+                                android:id="@+id/ivHeroSwitch"
+                                android:layout_width="28dp"
+                                android:layout_height="28dp"
+                                android:layout_marginStart="2dp"
+                                android:importantForAccessibility="no"
+                                android:src="@drawable/keyboard_arrow_down_24"
+                                app:tint="#FFFFFFFF" />
+                            </LinearLayout>
 
                             <ImageView
                                 android:id="@+id/ibtnHeroEdit"
@@ -474,6 +396,29 @@
                                     tools:text="11" />
                             </LinearLayout>
                         </LinearLayout>
+
+                        <!-- Why protection isn't working (or what setup is left), in plain words -->
+                        <TextView
+                            android:id="@+id/tvHeroWhy"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="12dp"
+                            android:drawablePadding="8dp"
+                            android:textSize="14sp"
+                            android:visibility="gone"
+                            tools:text="The Accessibility service is off, so nothing is blocked right now." />
+
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnHeroFix"
+                            style="@style/LoqIn.Button"
+                            android:layout_width="match_parent"
+                            android:layout_height="52dp"
+                            android:layout_marginTop="12dp"
+                            android:text="@string/home_hero_fix"
+                            android:textSize="16sp"
+                            android:visibility="gone"
+                            app:icon="@drawable/security_24"
+                            app:iconGravity="textStart" />
 
                         <!-- Foqos launcher pill: primary enable/disable + active timer,
                              docked to the bottom edge of the hero card -->
@@ -803,6 +748,15 @@
                         </LinearLayout>
                     </LinearLayout>
 
+                    <!-- Rules: counts per rule page, each opening it -->
+                    <LinearLayout
+                        android:id="@+id/rowHomeRules"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="10dp"
+                        android:baselineAligned="false"
+                        android:orientation="horizontal" />
+
                     <com.google.android.material.divider.MaterialDivider
                         android:id="@+id/dividerBeforeProfileDropdown"
                         style="@style/LoqIn.Divider"
@@ -834,6 +788,164 @@
                     </com.google.android.material.textfield.TextInputLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
+
+            <!-- Focus this week: a weekly bar chart under the hero (the month heatmap moved to
+                 Insights); the title row links there. -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:id="@+id/rowFocusHeader"
+                android:layout_marginTop="18dp"
+                android:layout_marginBottom="6dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <TextView
+                    android:id="@+id/tvActivityTitle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:maxLines="1"
+                    android:text="@string/activity_section_title"
+                    android:textSize="20sp"
+                    android:textStyle="bold"
+                    app:autoSizeMaxTextSize="20sp"
+                    app:autoSizeMinTextSize="14sp"
+                    app:autoSizeTextType="uniform" />
+
+                <LinearLayout
+                    android:id="@+id/btnActivityHide"
+                    style="@style/LoqIn.HeaderPill"
+                    android:visibility="gone"
+                    android:layout_width="wrap_content"
+                    android:layout_height="38dp"
+                    android:layout_marginEnd="8dp">
+
+                    <ImageView
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/visibility_off_24"
+                        app:tint="?attr/colorOnSurface" />
+
+                    <TextView
+                        android:id="@+id/tvHeaderPillLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="7dp"
+                        android:text="@string/activity_hide"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface" />
+                </LinearLayout>
+
+                <LinearLayout
+                    android:id="@+id/btnMoreInsights"
+                    style="@style/LoqIn.HeaderPill"
+                    android:layout_width="wrap_content"
+                    android:layout_height="38dp">
+
+                    <ImageView
+                        android:id="@+id/ivMoreInsightsIcon"
+                        android:layout_width="15dp"
+                        android:layout_height="15dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/bar_chart_24"
+                        app:tint="?attr/colorOnSurface" />
+
+                    <TextView
+                        android:id="@+id/tvMoreInsightsLabel"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="7dp"
+                        android:text="@string/activity_more_insights"
+                        android:textSize="13sp"
+                        android:textStyle="bold"
+                        android:textColor="?attr/colorOnSurface" />
+                </LinearLayout>
+            </LinearLayout>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardActivity"
+                style="@style/LoqIn.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingStart="14dp"
+                    android:paddingTop="12dp"
+                    android:paddingEnd="14dp"
+                    android:paddingBottom="14dp">
+
+                    <LinearLayout
+                        android:id="@+id/rowWeekSummary"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="4dp"
+                        android:layout_marginEnd="4dp"
+                        android:baselineAligned="true"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/tvWeekTotal"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-medium"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textSize="26sp"
+                            tools:text="57h" />
+
+                        <TextView
+                            android:id="@+id/tvWeekCompare"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="10dp"
+                            android:layout_weight="1"
+                            android:gravity="end"
+                            android:textColor="?android:attr/textColorSecondary"
+                            android:textSize="13sp"
+                            tools:text="+12% vs last week" />
+                    </LinearLayout>
+
+                    <com.oliver.loqin.ui.widgets.WeekBarsView
+                        android:id="@+id/weekBars"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp" />
+
+                    <TextView
+                        android:id="@+id/tvHeatmapLegend"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:visibility="gone"
+                        android:gravity="center"
+                        android:textSize="12sp"
+                        tools:text="legend" />
+
+                    <com.oliver.loqin.ui.widgets.FoqosHeatmapView
+                        android:id="@+id/activityHeatmap"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:visibility="gone"
+                        android:layout_marginTop="8dp"
+                        android:contentDescription="@string/activity_heatmap_content_desc" />
+
+                    <TextView
+                        android:id="@+id/tvActivityDetail"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:alpha="0.8"
+                        android:textSize="13sp"
+                        android:visibility="gone"
+                        tools:text="1 Sept · 12m blocked"
+                        tools:visibility="visible" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
 
             <include
                 layout="@layout/view_home_quick_actions"

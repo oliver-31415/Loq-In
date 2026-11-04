@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_state_protecting">Schützt</string>
+    <string name="home_state_not_protecting">Schützt nicht</string>
+    <string name="home_state_break_fmt">Pause · noch %1$s</string>
+    <string name="home_state_off">Aus</string>
+    <string name="home_hero_why_accessibility">Der Bedienungshilfen-Dienst ist aus, daher wird gerade nichts blockiert.</string>
+    <string name="home_hero_why_setup_fmt">Einrichtung abschließen: %1$s</string>
+    <string name="home_hero_fix">Beheben</string>
+    <string name="home_end_break">Pause jetzt beenden</string>
+    <string name="home_rules_apps">Apps</string>
+    <string name="home_rules_websites">Websites</string>
+    <string name="home_rules_in_app">In-App</string>
+    <string name="home_rules_schedules">Zeitpläne</string>
+    <string name="home_insights_link">Statistiken</string>
+    <string name="home_week_label">Letzte 7 Tage</string>
+    <string name="home_week_up_fmt">+%1$d%% zur Vorwoche</string>
+    <string name="home_week_down_fmt">−%1$d%% zur Vorwoche</string>
+</resources>

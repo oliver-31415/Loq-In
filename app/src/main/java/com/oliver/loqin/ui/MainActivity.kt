@@ -226,6 +226,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var rowActiveProfile: View
     private lateinit var tvNfcLockedHint: TextView
     private lateinit var btnToggle: MaterialButton
+    private lateinit var tvHeroState: TextView
+    private lateinit var tvHeroWhy: TextView
+    private lateinit var btnHeroFix: MaterialButton
+    private lateinit var weekBars: com.oliver.loqin.ui.widgets.WeekBarsView
+    private lateinit var rowHomeRules: LinearLayout
+    /** What setup is still missing (accessibility first); the hero shows it instead of a banner. */
+    private var setupMissing: List<String> = emptyList()
     private lateinit var btnSimplePickApps: MaterialButton
     private lateinit var tvTempHint: LinearLayout
     private lateinit var tvEmergencyHint: LinearLayout
@@ -463,6 +470,16 @@ class MainActivity : AppCompatActivity() {
         tvSetupTitle = findViewById(R.id.tvSetupTitle)
         tvSetupSubtitle = findViewById(R.id.tvSetupSubtitle)
         btnFinishSetup = findViewById(R.id.btnFinishSetup)
+
+        tvHeroState = findViewById(R.id.tvHeroState)
+        tvHeroWhy = findViewById(R.id.tvHeroWhy)
+        btnHeroFix = findViewById(R.id.btnHeroFix)
+        weekBars = findViewById(R.id.weekBars)
+        rowHomeRules = findViewById(R.id.rowHomeRules)
+        btnHeroFix.setOnClickListener { startActivity(Intent(this, PermissionsActivity::class.java)) }
+        tvHeroWhy.setOnClickListener { startActivity(Intent(this, PermissionsActivity::class.java)) }
+        findViewById<View>(R.id.rowHeroName).setOnClickListener { openSwitchProfileSheet() }
+        findViewById<TextView>(R.id.tvMoreInsightsLabel)?.setText(R.string.home_insights_link)
 
         cardActivity = findViewById(R.id.cardActivity)
         activityHeatmap = findViewById(R.id.activityHeatmap)
@@ -2058,6 +2075,7 @@ class MainActivity : AppCompatActivity() {
             runOnUiThread {
                 activityDaysMs = days
                 activityHeatmap.setData(days)
+                updateWeekChart(days)
                 onHeatmapDaySelected(-1)
             }
         }
@@ -2084,6 +2102,162 @@ class MainActivity : AppCompatActivity() {
     }
 
     /** Foqos hero card: active profile name, feature chips and stat columns. */
+    /**
+     * The hero's one true state (Protecting / Not protecting / On a break / Off) as a chip, a
+     * plain sentence when something is wrong, and the button order that fits: while protection
+     * is on but not working, Fix leads and the toggle steps back.
+     */
+    private fun refreshHeroState() {
+        if (!::tvHeroState.isInitialized || !::btnToggle.isInitialized) return
+        val enabled = SwitchModeStore.isEnabled(this)
+        val breakMs = SwitchModeStore.getTemporaryRemainingMillis(this)
+        val onBreak = !enabled && breakMs > 0L
+        val broken = enabled && !BlockingRuntime.isAccessibilityActive(this)
+        val accent = AccentColor.getAccentColorInt(this)
+        val onSurface = ContextCompat.getColor(this, R.color.foqos_on_surface)
+        val onSurfaceSoft = ContextCompat.getColor(this, R.color.foqos_on_surface_variant)
+
+        val (iconRes, label) = when {
+            onBreak -> R.drawable.timer_24 to getString(R.string.home_state_break_fmt, formatRemainingShort(breakMs))
+            broken -> R.drawable.security_24 to getString(R.string.home_state_not_protecting)
+            enabled -> R.drawable.check_circle_24 to getString(R.string.home_state_protecting)
+            else -> R.drawable.lock_open_24 to getString(R.string.home_state_off)
+        }
+        val (chipBg, chipInk) = when {
+            broken -> 0xFFFFF3D6.toInt() to 0xFF5C3B00.toInt()
+            enabled -> ColorUtils.setAlphaComponent(Color.WHITE, 0xF2) to
+                AccentColor.readableOn(accent, Color.WHITE, Color.BLACK, 4.5)
+            else -> AccentColor.getAccentContainerColorInt(this) to onSurface
+        }
+        tvHeroState.text = label
+        tvHeroState.setTextColor(chipInk)
+        tvHeroState.background = GradientDrawable().apply {
+            cornerRadius = homeDp(999f).toFloat()
+            setColor(chipBg)
+        }
+        tvHeroState.setCompoundDrawablesRelative(
+            ContextCompat.getDrawable(this, iconRes)?.mutate()?.apply {
+                val size = homeDp(16f)
+                setBounds(0, 0, size, size)
+                setTint(chipInk)
+            },
+            null, null, null,
+        )
+
+        // Why, in plain words: accessibility first; otherwise what setup is left (tap to fix).
+        val why = when {
+            broken -> getString(R.string.home_hero_why_accessibility)
+            setupMissing.isNotEmpty() -> getString(R.string.home_hero_why_setup_fmt, setupMissing.joinToString(" · "))
+            else -> null
+        }
+        tvHeroWhy.isVisible = why != null
+        tvHeroWhy.text = why
+        tvHeroWhy.setTextColor(if (enabled) Color.WHITE else onSurfaceSoft)
+
+        // Broken: Fix is the loud white button; the toggle becomes an outline below it.
+        btnHeroFix.isVisible = broken
+        if (broken) {
+            btnHeroFix.backgroundTintList = ColorStateList.valueOf(Color.WHITE)
+            val fixInk = AccentColor.readableOn(accent, Color.WHITE, Color.BLACK, 4.5)
+            btnHeroFix.setTextColor(fixInk)
+            btnHeroFix.iconTint = ColorStateList.valueOf(fixInk)
+            btnToggle.backgroundTintList = ColorStateList.valueOf(Color.TRANSPARENT)
+            btnToggle.strokeWidth = homeDp(1.5f)
+            btnToggle.strokeColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(Color.WHITE, 0xCC))
+            btnToggle.setTextColor(Color.WHITE)
+        }
+        if (onBreak) {
+            btnToggle.text = getString(R.string.home_end_break)
+            // The chip carries the countdown, so the pill beside the button would repeat it.
+            tvActiveDuration.isVisible = false
+        }
+    }
+
+    /** Rules row: one tile per rule page with its count, each opening that page. */
+    private fun bindHomeRules(profile: String, apps: Int, websites: Int) {
+        if (!::rowHomeRules.isInitialized) return
+        val inApp = InAppRuleStore.getPackagesWithEnabledRules(this, profile).size
+        val schedules = ScheduleStore.getAll(this).count { schedule ->
+            schedule.enabled && (schedule.profile.isBlank() || schedule.profile.equals(profile, ignoreCase = true))
+        }
+        rowHomeRules.removeAllViews()
+        val strong = RuleTileStyle.strongAccent(this)
+        listOf(
+            Triple(R.drawable.apps_24, apps, R.string.home_rules_apps) to { openRulesDestination(Intent(this, AppPickerActivity::class.java)) },
+            Triple(R.drawable.language_24, websites, R.string.home_rules_websites) to { openRulesDestination(Intent(this, ManageBlockedWebsitesActivity::class.java)) },
+            Triple(R.drawable.layers_24, inApp, R.string.home_rules_in_app) to { openRulesDestination(Intent(this, com.oliver.loqin.feature.settings.InAppRulesActivity::class.java)) },
+            Triple(R.drawable.schedule_24, schedules, R.string.home_rules_schedules) to { openRulesDestination(Intent(this, com.oliver.loqin.feature.schedule.SchedulesActivity::class.java)) },
+        ).forEachIndexed { index, (spec, open) ->
+            val (icon, count, labelRes) = spec
+            val tile = LinearLayout(this).apply {
+                orientation = LinearLayout.VERTICAL
+                gravity = android.view.Gravity.CENTER
+                minimumHeight = homeDp(76f)
+                setPadding(homeDp(4f), homeDp(8f), homeDp(4f), homeDp(8f))
+                setBackgroundResource(R.drawable.bg_tile_neutral)
+                foreground = android.util.TypedValue().let { tv ->
+                    theme.resolveAttribute(android.R.attr.selectableItemBackground, tv, true)
+                    ContextCompat.getDrawable(this@MainActivity, tv.resourceId)
+                }
+                isClickable = true
+                isFocusable = true
+                contentDescription = "$count ${getString(labelRes)}"
+                setOnClickListener { open() }
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
+                    if (index > 0) marginStart = homeDp(8f)
+                }
+            }
+            tile.addView(ImageView(this).apply {
+                setImageResource(icon)
+                imageTintList = ColorStateList.valueOf(strong)
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                layoutParams = LinearLayout.LayoutParams(homeDp(22f), homeDp(22f))
+            })
+            tile.addView(TextView(this).apply {
+                text = count.toString()
+                gravity = android.view.Gravity.CENTER
+                textSize = 18f
+                typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.BOLD)
+                setTextColor(ContextCompat.getColor(this@MainActivity, R.color.foqos_on_surface))
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+            })
+            tile.addView(TextView(this).apply {
+                setText(labelRes)
+                textSize = 12f
+                layoutParams = LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT)
+                gravity = android.view.Gravity.CENTER
+                maxLines = 2
+                setTextColor(ContextCompat.getColor(this@MainActivity, R.color.foqos_on_surface_variant))
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+            })
+            rowHomeRules.addView(tile)
+        }
+    }
+
+    /** Last seven days of focus time, with the total and how it compares to the week before. */
+    private fun updateWeekChart(days: LongArray) {
+        if (!::weekBars.isInitialized || days.size < 7) return
+        val week = days.copyOfRange(days.size - 7, days.size)
+        val prior = if (days.size >= 14) days.copyOfRange(days.size - 14, days.size - 7) else LongArray(0)
+        val strong = RuleTileStyle.strongAccent(this)
+        weekBars.setData(
+            week,
+            bar = strong,
+            track = ColorUtils.setAlphaComponent(strong, 0x2E),
+            label = ContextCompat.getColor(this, R.color.foqos_on_surface_variant),
+        )
+        val total = week.sum()
+        val totalText = formatActiveDuration(total)
+        findViewById<TextView>(R.id.tvWeekTotal)?.text = totalText
+        val priorTotal = prior.sum()
+        val compare = if (priorTotal > 0L) {
+            val pct = ((total - priorTotal) * 100 / priorTotal).toInt()
+            getString(if (pct >= 0) R.string.home_week_up_fmt else R.string.home_week_down_fmt, kotlin.math.abs(pct))
+        } else null
+        findViewById<TextView>(R.id.tvWeekCompare)?.text = compare ?: getString(R.string.home_week_label)
+        weekBars.contentDescription = listOfNotNull(getString(R.string.home_week_label), totalText, compare).joinToString(", ")
+    }
+
     private fun refreshProfileHero(current: String?) {
         val profile = current ?: return
         if (!::tvHeroProfileName.isInitialized) {
@@ -2110,6 +2284,10 @@ class MainActivity : AppCompatActivity() {
             getString(R.string.hero_stat_apps)
         }
         tvHeroStatDomains.text = domainCount.toString()
+        // Apps and websites are counted in the Rules row below; the hero keeps blocks only.
+        (tvHeroStatApps.parent as? View)?.visibility = View.GONE
+        (tvHeroStatDomains.parent as? View)?.visibility = View.GONE
+        bindHomeRules(profile, selectedApps.size, domainCount)
         thread {
             val blocks28d = BlockCountStore.getTotalForLastNDays(this, 28)
             runOnUiThread {
@@ -2294,7 +2472,7 @@ class MainActivity : AppCompatActivity() {
         val onSurface = ContextCompat.getColor(this, com.oliver.loqin.R.color.foqos_on_surface)
         val onSurfaceSoft = ContextCompat.getColor(this, com.oliver.loqin.R.color.foqos_on_surface_variant)
         val white = Color.WHITE
-        val whiteSoft = ColorUtils.setAlphaComponent(Color.WHITE, 0xCC)
+        val whiteSoft = ColorUtils.setAlphaComponent(Color.WHITE, 0xF0)
         fun tv(id: Int, activeColor: Int, idleColor: Int) {
             findViewById<TextView>(id)?.setTextColor(if (idle) idleColor else activeColor)
         }
@@ -2307,7 +2485,7 @@ class MainActivity : AppCompatActivity() {
         tv(R.id.tvHeroStatApps, white, onSurface)
         tv(R.id.tvHeroStatDomains, white, onSurface)
         tv(R.id.tvHeroStatBlocks, white, onSurface)
-        listOf(R.id.ibtnHeroEdit, R.id.ivHeroStrategyIcon).forEach { id ->
+        listOf(R.id.ibtnHeroEdit, R.id.ivHeroStrategyIcon, R.id.ivHeroSwitch).forEach { id ->
             findViewById<ImageView>(id)?.setColorFilter(if (idle) onSurface else white)
         }
     }
@@ -2321,6 +2499,7 @@ class MainActivity : AppCompatActivity() {
      */
     private fun styleHeroToggle(active: Boolean) {
         if (!::btnToggle.isInitialized) return
+        btnToggle.strokeWidth = 0
         if (active) {
             btnToggle.backgroundTintList =
                 ColorStateList.valueOf(ColorUtils.setAlphaComponent(Color.WHITE, 0x2B))
@@ -2510,17 +2689,10 @@ class MainActivity : AppCompatActivity() {
 
         val show = missing.isNotEmpty()
 
-        // Smooth reveal/hide (feels less "jumpy")
-        if (show && !cardSetup.isVisible) {
-            cardSetup.alpha = 0f
-            cardSetup.isVisible = true
-            cardSetup.animate().alpha(1f).setDuration(180).start()
-        } else if (!show && cardSetup.isVisible) {
-            cardSetup.animate().alpha(0f).setDuration(150).withEndAction {
-                cardSetup.isVisible = false
-                cardSetup.alpha = 1f
-            }.start()
-        }
+        // The hero card says what's wrong and offers the fix, so the separate banner stays hidden.
+        cardSetup.isVisible = false
+        setupMissing = missing
+        refreshHeroState()
 
         if (show) {
             // Protection switched on without accessibility blocks nothing, so say that plainly;
@@ -3540,6 +3712,8 @@ class MainActivity : AppCompatActivity() {
                 else -> getString(R.string.dashboard_active_duration_fmt, formatActiveDuration(activeDurationMs))
             }
         }
+
+        refreshHeroState()
 
         // The heatmap's "today" must never read BELOW the running session: tick accrual
         // pauses on reinstalls/screen-off, so while blocking is active we lift the
