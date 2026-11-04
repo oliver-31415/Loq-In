@@ -1042,6 +1042,7 @@ class SchedulesActivity : AppCompatActivity() {
         }
         updateScheduleHealthBanner()
         updateReorderHeader()
+        com.oliver.loqin.ui.AccentContrast.strengthen(headerSchedules)
     }
 
     private fun priorityDragCallback(recycler: RecyclerView) =

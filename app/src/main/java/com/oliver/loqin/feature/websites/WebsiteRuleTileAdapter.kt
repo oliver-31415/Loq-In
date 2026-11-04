@@ -198,6 +198,10 @@ class WebsiteRuleTileAdapter(
         private val tvHeaderAction: TextView = itemView.findViewById(R.id.tvHeaderAction)
         fun bind(item: WebsiteTile.SectionHeader) {
             tvHeader.text = item.title
+            // Readable accent: the soft accent alone is too pale on the page for a heading.
+            val strong = RuleTileStyle.strongAccent(itemView.context)
+            tvHeader.setTextColor(strong)
+            tvHeaderAction.setTextColor(strong)
             val label = item.actionLabel
             if (label.isNullOrBlank()) {
                 tvHeaderAction.visibility = View.GONE

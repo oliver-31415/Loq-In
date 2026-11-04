@@ -198,6 +198,7 @@ class BreaksActivity : AppCompatActivity() {
         limitSection(Cap.PER_PAUSE, caps.maxMinutesPerPause, locked)
         limitSection(Cap.PER_DAY, caps.maxMinutesPerDay, locked)
         groupLimits.refreshSegments()
+        com.oliver.loqin.ui.AccentContrast.strengthen(findViewById(R.id.root))
     }
 
     private fun renderToday(profile: String, caps: TempPauseStore.Caps, usedCount: Int, usedMinutes: Int, locked: Boolean) {

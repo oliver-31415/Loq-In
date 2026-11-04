@@ -201,6 +201,7 @@ class InAppRulesActivity : AppCompatActivity() {
             }
         }
         detectedVersionsNote(present.map { it.first })?.let { container.addView(it) }
+        com.oliver.loqin.ui.AccentContrast.strengthen(findViewById(android.R.id.content))
 
         focusView?.let { targetView ->
             targetView.post {
