@@ -2161,16 +2161,21 @@ class MainActivity : AppCompatActivity() {
             val fixInk = AccentColor.readableOn(accent, Color.WHITE, Color.BLACK, 4.5)
             btnHeroFix.setTextColor(fixInk)
             btnHeroFix.iconTint = ColorStateList.valueOf(fixInk)
-            btnToggle.backgroundTintList = ColorStateList.valueOf(Color.TRANSPARENT)
-            btnToggle.strokeWidth = homeDp(1.5f)
-            btnToggle.strokeColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(Color.WHITE, 0xCC))
-            btnToggle.setTextColor(Color.WHITE)
+            applyBrokenToggleStyle()
         }
         if (onBreak) {
             btnToggle.text = getString(R.string.home_end_break)
             // The chip carries the countdown, so the pill beside the button would repeat it.
             tvActiveDuration.isVisible = false
         }
+    }
+
+    /** While protection is on but not working, the toggle is an outline under Fix it. */
+    private fun applyBrokenToggleStyle() {
+        btnToggle.backgroundTintList = ColorStateList.valueOf(Color.TRANSPARENT)
+        btnToggle.strokeWidth = homeDp(1.5f)
+        btnToggle.strokeColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(Color.WHITE, 0xCC))
+        btnToggle.setTextColor(Color.WHITE)
     }
 
     /** Rules row: one tile per rule page with its count, each opening that page. */
@@ -2181,6 +2186,10 @@ class MainActivity : AppCompatActivity() {
             schedule.enabled && (schedule.profile.isBlank() || schedule.profile.equals(profile, ignoreCase = true))
         }
         rowHomeRules.removeAllViews()
+        rowHomeRules.orientation = LinearLayout.VERTICAL
+        // Four across; two by two once large text needs the width (labels must not break mid-word).
+        val perRow = if (resources.configuration.fontScale >= 1.3f) 2 else 4
+        var row: LinearLayout? = null
         val strong = RuleTileStyle.strongAccent(this)
         listOf(
             Triple(R.drawable.apps_24, apps, R.string.home_rules_apps) to { openRulesDestination(Intent(this, AppPickerActivity::class.java)) },
@@ -2204,7 +2213,7 @@ class MainActivity : AppCompatActivity() {
                 contentDescription = "$count ${getString(labelRes)}"
                 setOnClickListener { open() }
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
-                    if (index > 0) marginStart = homeDp(8f)
+                    if (index % perRow > 0) marginStart = homeDp(8f)
                 }
             }
             tile.addView(ImageView(this).apply {
@@ -2230,7 +2239,17 @@ class MainActivity : AppCompatActivity() {
                 setTextColor(ContextCompat.getColor(this@MainActivity, R.color.foqos_on_surface_variant))
                 importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
             })
-            rowHomeRules.addView(tile)
+            if (index % perRow == 0) {
+                row = LinearLayout(this).apply {
+                    orientation = LinearLayout.HORIZONTAL
+                    isBaselineAligned = false
+                    layoutParams = LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT,
+                    ).apply { if (index > 0) topMargin = homeDp(8f) }
+                }
+                rowHomeRules.addView(row)
+            }
+            row?.addView(tile)
         }
     }
 
@@ -2505,6 +2524,8 @@ class MainActivity : AppCompatActivity() {
                 ColorStateList.valueOf(ColorUtils.setAlphaComponent(Color.WHITE, 0x2B))
             btnToggle.setTextColor(Color.WHITE)
             btnToggle.rippleColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(Color.WHITE, 0x40))
+            // Re-styling must not undo the outline the broken state puts on the toggle.
+            if (!BlockingRuntime.isAccessibilityActive(this)) applyBrokenToggleStyle()
         } else {
             val accent = AccentColor.getAccentColorInt(this)
             val onAccent = if (AccentColor.prefersDarkText(accent)) Color.BLACK else Color.WHITE
