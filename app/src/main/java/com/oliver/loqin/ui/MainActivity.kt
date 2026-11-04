@@ -2373,7 +2373,8 @@ class MainActivity : AppCompatActivity() {
         val totalText = formatActiveDuration(total)
         findViewById<TextView>(R.id.tvWeekTotal)?.text = totalText
         val priorTotal = prior.sum()
-        val compare = if (priorTotal > 0L) {
+        // Compare only against a week with real focus time; a near-empty one gives "+1238%".
+        val compare = if (priorTotal >= 60L * 60_000L) {
             val pct = ((total - priorTotal) * 100 / priorTotal).toInt()
             getString(if (pct >= 0) R.string.home_week_up_fmt else R.string.home_week_down_fmt, kotlin.math.abs(pct))
         } else null
