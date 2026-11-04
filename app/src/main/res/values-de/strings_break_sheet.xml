@@ -16,4 +16,14 @@
     <string name="break_started_fmt">Pause gestartet · Blockierung wieder ab %1$s</string>
     <string name="break_started_undo">Rückgängig</string>
     <string name="break_sheet_custom_range_fmt">1–%1$d min</string>
+    <string name="blocked_title_app_fmt">%1$s ist blockiert</string>
+    <string name="blocked_focus_today_fmt">Du bist heute %1$s fokussiert geblieben.</string>
+    <string name="blocked_focus_h_m_fmt">%1$d h %2$d min</string>
+    <string name="blocked_focus_h_fmt">%1$d h</string>
+    <string name="blocked_focus_m_fmt">%1$d min</string>
+    <plurals name="blocked_break_left_fmt">
+        <item quantity="one">Pause einlegen · %1$d Pause heute übrig</item>
+        <item quantity="other">Pause einlegen · %1$d Pausen heute übrig</item>
+    </plurals>
+    <string name="blocked_break_plain">Pause einlegen</string>
 </resources>

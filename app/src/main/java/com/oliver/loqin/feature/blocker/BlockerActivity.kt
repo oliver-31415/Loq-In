@@ -19,6 +19,8 @@
 package com.oliver.loqin.feature.blocker
 
 import androidx.core.graphics.ColorUtils
+import androidx.core.content.ContextCompat
+import android.widget.ImageView
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
@@ -166,6 +168,7 @@ class BlockerActivity : ComponentActivity() {
         btnClose.setOnClickListener {
             handleCloseAction()
         }
+        styleBlockerArt()
         debugInfoButton.setOnClickListener { showBlockReasonInfo() }
 
         applyFromIntent(intent)
@@ -258,6 +261,79 @@ class BlockerActivity : ComponentActivity() {
         shownAt = System.currentTimeMillis()
     }
 
+    /** The app icon on a white tile with a lock badge, over a soft blob in the accent wash. */
+    private fun styleBlockerArt() {
+        val density = resources.displayMetrics.density
+        val strong = com.oliver.loqin.ui.RuleTileStyle.strongAccent(this)
+        val page = ContextCompat.getColor(this, R.color.loqin_bg)
+        findViewById<View>(R.id.blocker_blob)?.background = android.graphics.drawable.GradientDrawable().apply {
+            // Uneven corner radii read as an organic shape, like the Home card's blobs.
+            cornerRadii = floatArrayOf(120f, 96f, 140f, 110f, 90f, 130f, 150f, 100f).map { it * density }.toFloatArray()
+            setColor(ColorUtils.compositeColors(ColorUtils.setAlphaComponent(AccentColor.getAccentColorInt(this@BlockerActivity), 0x38), page))
+        }
+        findViewById<ImageView>(R.id.blocker_app_icon)?.background = android.graphics.drawable.GradientDrawable().apply {
+            cornerRadius = 32 * density
+            setColor(ContextCompat.getColor(this@BlockerActivity, R.color.foqos_surface))
+        }
+        findViewById<ImageView>(R.id.blocker_lock_badge)?.apply {
+            background = android.graphics.drawable.GradientDrawable().apply {
+                shape = android.graphics.drawable.GradientDrawable.OVAL
+                setColor(strong)
+                setStroke((4 * density).toInt(), page)
+            }
+            androidx.core.widget.ImageViewCompat.setImageTintList(this, android.content.res.ColorStateList.valueOf(Color.WHITE))
+        }
+        debugInfoButton.imageTintList = android.content.res.ColorStateList.valueOf(strong)
+        btnClose.backgroundTintList = android.content.res.ColorStateList.valueOf(strong)
+        btnClose.setTextColor(if (AccentColor.prefersDarkText(strong)) Color.BLACK else Color.WHITE)
+    }
+
+    /**
+     * One encouraging line once there's real focus time today, and a quiet way to a break while
+     * breaks remain; it opens the break sheet (limits first, Undo after), never starts one here.
+     */
+    private fun bindFocusAndBreak() {
+        val focusView = findViewById<TextView>(R.id.blocker_focus_today) ?: return
+        val focusedMs = com.oliver.loqin.data.prefs.ActiveDurationStore.todayMs(this)
+        val minutes = (focusedMs / 60_000L).toInt()
+        focusView.isVisible = minutes >= 15
+        if (focusView.isVisible) {
+            val h = minutes / 60
+            val m = minutes % 60
+            val amount = when {
+                h > 0 && m > 0 -> getString(R.string.blocked_focus_h_m_fmt, h, m)
+                h > 0 -> getString(R.string.blocked_focus_h_fmt, h)
+                else -> getString(R.string.blocked_focus_m_fmt, m)
+            }
+            focusView.text = getString(R.string.blocked_focus_today_fmt, amount)
+        }
+
+        val breakButton = findViewById<com.google.android.material.button.MaterialButton>(R.id.btn_blocker_break) ?: return
+        val profile = com.oliver.loqin.data.prefs.ProfileStore.getCurrent(this).orEmpty().trim().ifEmpty { "Default" }
+        val hasCaps = com.oliver.loqin.data.prefs.TempPauseStore.hasCaps(this, profile)
+        val left = com.oliver.loqin.data.prefs.TempPauseStore.remainingPauses(this, profile)
+        val allowed = com.oliver.loqin.data.prefs.AutomationModeStore.isButtonAllowed(this) &&
+            com.oliver.loqin.data.prefs.TempPauseStore.maxAllowedDurationMinutes(this, profile) > 0
+        breakButton.isVisible = allowed
+        if (!allowed) return
+        breakButton.text = if (hasCaps && left != Int.MAX_VALUE) {
+            resources.getQuantityString(R.plurals.blocked_break_left_fmt, left, left)
+        } else {
+            getString(R.string.blocked_break_plain)
+        }
+        val muted = ContextCompat.getColor(this, R.color.foqos_on_surface_variant)
+        breakButton.setTextColor(muted)
+        breakButton.iconTint = android.content.res.ColorStateList.valueOf(muted)
+        breakButton.setOnClickListener {
+            startActivity(
+                Intent(this, com.oliver.loqin.ui.MainActivity::class.java)
+                    .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+                    .putExtra(com.oliver.loqin.ui.MainActivity.EXTRA_OPEN_BREAK_SHEET, true)
+            )
+            finish()
+        }
+    }
+
     private fun areBlockerViewsInitialized(): Boolean =
         ::titleView.isInitialized &&
             ::appNameView.isInitialized &&
@@ -326,8 +402,28 @@ class BlockerActivity : ComponentActivity() {
         attemptsView.isVisible = attemptsToday > 0
         if (attemptsToday > 0) {
             attemptsView.text = resources.getQuantityString(R.plurals.blocked_attempts_today, attemptsToday, attemptsToday)
-            attemptsView.setTextColor(AccentColor.getAccentColorInt(this))
+            val strong = com.oliver.loqin.ui.RuleTileStyle.strongAccent(this)
+            val wash = ColorUtils.compositeColors(ColorUtils.setAlphaComponent(strong, 0x24), ContextCompat.getColor(this, R.color.foqos_surface))
+            attemptsView.setTextColor(AccentColor.readableOn(strong, wash, Color.BLACK, 4.5))
+            attemptsView.background = android.graphics.drawable.GradientDrawable().apply {
+                cornerRadius = 99 * resources.displayMetrics.density
+                setColor(wash)
+            }
+            attemptsView.gravity = android.view.Gravity.CENTER
         }
+
+        // An app block names the app in the title; website / in-app blocks keep their own title
+        // and show the app beneath it.
+        val appBlock = title.isBlank() && limitMessageRes == null && label.isNotBlank()
+        if (appBlock) {
+            titleView.text = getString(R.string.blocked_title_app_fmt, label)
+            appNameView.visibility = View.GONE
+        }
+        findViewById<ImageView>(R.id.blocker_app_icon)?.setImageDrawable(
+            pkg.takeIf { it.isNotBlank() }?.let { runCatching { packageManager.getApplicationIcon(it) }.getOrNull() }
+                ?: ContextCompat.getDrawable(this, R.drawable.app_blocking_black_24)
+        )
+        bindFocusAndBreak()
 
         if (BuildConfig.DEBUG) {
             // Test hook: the block screen is FLAG_SECURE (black in screenshots) and UI dumps restart

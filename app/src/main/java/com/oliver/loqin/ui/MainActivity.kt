@@ -188,6 +188,8 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         const val EXTRA_SKIP_ONBOARDING_GATE_ONCE = "extra_skip_onboarding_gate_once"
+        /** From the block screen: open the Take a break sheet once Home is up. */
+        const val EXTRA_OPEN_BREAK_SHEET = "extra_open_break_sheet"
 
         private const val PREFS_UI_HINTS = "loqin_ui_hints"
         private const val KEY_TEMP_MODE_DISCOVERED = "temp_mode_discovered"
@@ -729,6 +731,14 @@ class MainActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        openBreakSheetIfAsked()
+    }
+
+    private fun openBreakSheetIfAsked() {
+        val current = intent ?: return
+        if (!current.getBooleanExtra(EXTRA_OPEN_BREAK_SHEET, false)) return
+        current.removeExtra(EXTRA_OPEN_BREAK_SHEET)
+        window.decorView.post { showTempToggleSheet() }
     }
 
     /** Runs a widget/tile action deferred by App lock, once the PIN has been entered. */
@@ -749,6 +759,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        openBreakSheetIfAsked()
         runPendingQuickAction()
         syncScanQuickActions()
         refreshActivityHeatmap()
