@@ -82,6 +82,19 @@ object SegmentedToggleUi {
                 .setAllCornerSizes(pill)
                 .build()
             parent.innerCornerSize = pill
+
+            // Long labels (German, large text) wrap rather than ellipsize; if a segment still
+            // can't fit its label, the icon gives up its room.
+            buttons.forEach { button ->
+                button.maxLines = 2
+                button.ellipsize = android.text.TextUtils.TruncateAt.END
+                button.post {
+                    val layout = button.layout ?: return@post
+                    if (button.icon != null && (0 until layout.lineCount).any { layout.getEllipsisCount(it) > 0 }) {
+                        button.icon = null
+                    }
+                }
+            }
         }
 
         val buttonCornerRadius = dp(context, 100)

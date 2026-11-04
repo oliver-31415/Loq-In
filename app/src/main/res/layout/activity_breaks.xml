@@ -42,7 +42,8 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- Today: what's left of today's breaks, with a meter per daily limit. -->
+            <!-- Today: what's left of today's breaks. The big number is breaks (or minutes) left;
+                 bars fill with what remains, so they empty as breaks are used. -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardToday"
                 style="@style/LoqIn.Card"
@@ -59,63 +60,103 @@
                     android:orientation="vertical"
                     android:padding="20dp">
 
+                    <TextView
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/breaks_page_today_header"
+                        android:textColor="?android:attr/textColorSecondary"
+                        android:textSize="14sp" />
+
+                    <LinearLayout
+                        android:id="@+id/todayHero"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:baselineAligned="true"
+                        android:orientation="horizontal">
+
+                        <TextView
+                            android:id="@+id/todayBig"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:fontFamily="sans-serif-medium"
+                            android:includeFontPadding="false"
+                            android:letterSpacing="-0.03"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textSize="52sp" />
+
+                        <TextView
+                            android:id="@+id/todaySuffix"
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="10dp"
+                            android:layout_weight="1"
+                            android:fontFamily="sans-serif-medium"
+                            android:textColor="?attr/colorOnSurface"
+                            android:textSize="20sp" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/todayTitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="22sp"
+                        android:textStyle="bold" />
+
+                    <LinearLayout
+                        android:id="@+id/todaySegments"
+                        android:layout_width="match_parent"
+                        android:layout_height="8dp"
+                        android:layout_marginTop="14dp"
+                        android:importantForAccessibility="no"
+                        android:orientation="horizontal" />
+
+                    <TextView
+                        android:id="@+id/todayMinutes"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:textColor="?attr/colorOnSurface"
+                        android:textSize="15sp" />
+
+                    <com.google.android.material.progressindicator.LinearProgressIndicator
+                        android:id="@+id/todayMinutesBar"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:importantForAccessibility="no"
+                        app:indicatorTrackGapSize="0dp"
+                        app:trackCornerRadius="4dp"
+                        app:trackStopIndicatorSize="0dp"
+                        app:trackThickness="8dp" />
+
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
                         android:gravity="center_vertical"
                         android:orientation="horizontal">
 
-                        <ImageView
-                            android:id="@+id/todayIcon"
-                            android:layout_width="44dp"
-                            android:layout_height="44dp"
-                            android:background="@drawable/bg_roundel_accent"
-                            android:importantForAccessibility="no"
-                            android:padding="11dp"
-                            android:src="@drawable/hourglass_24"
-                            app:tint="?attr/colorPrimary" />
-
-                        <LinearLayout
+                        <TextView
+                            android:id="@+id/todayNext"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="14dp"
+                            android:layout_marginEnd="12dp"
                             android:layout_weight="1"
-                            android:orientation="vertical">
+                            android:textColor="?android:attr/textColorSecondary"
+                            android:textSize="14sp" />
 
-                            <TextView
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:text="@string/breaks_page_today_header"
-                                android:textColor="?android:attr/textColorSecondary"
-                                android:textSize="13sp" />
-
-                            <TextView
-                                android:id="@+id/todayTitle"
-                                android:layout_width="match_parent"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="1dp"
-                                android:textColor="?attr/colorOnSurface"
-                                android:textSize="20sp"
-                                android:textStyle="bold" />
-                        </LinearLayout>
+                        <com.google.android.material.button.MaterialButton
+                            android:id="@+id/btnResetToday"
+                            style="@style/LoqIn.TonalButton"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:minHeight="48dp"
+                            android:text="@string/temp_pause_reset_today"
+                            app:icon="@drawable/pin_24" />
                     </LinearLayout>
-
-                    <include
-                        android:id="@+id/meterCount"
-                        layout="@layout/view_break_meter" />
-
-                    <include
-                        android:id="@+id/meterMinutes"
-                        layout="@layout/view_break_meter" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnResetToday"
-                        style="@style/LoqIn.TonalButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:text="@string/temp_pause_reset_today"
-                        app:icon="@drawable/pin_24" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -165,7 +206,7 @@
                 android:id="@+id/limitsFooter"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
+                android:layout_marginStart="4dp"
                 android:layout_marginTop="10dp"
                 android:layout_marginEnd="8dp"
                 android:text="@string/breaks_page_footer"

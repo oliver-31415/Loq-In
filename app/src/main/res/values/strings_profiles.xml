@@ -64,7 +64,7 @@
     <string name="temp_pause_zero_hint">0 means unlimited.</string>
     <string name="temp_pause_section_count">Breaks per day</string>
     <string name="temp_pause_section_count_subtitle">How many breaks you can take per day</string>
-    <string name="temp_pause_section_length">Length per break</string>
+    <string name="temp_pause_section_length">Longest break</string>
     <string name="temp_pause_section_length_subtitle">Longest single break</string>
     <string name="temp_pause_section_total">Daily break time</string>
     <string name="temp_pause_section_total_subtitle">Total break minutes across the day</string>

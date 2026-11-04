@@ -18,22 +18,30 @@
 
 package com.oliver.loqin.feature.profiles
 
+import android.content.res.ColorStateList
 import android.os.Bundle
+import android.view.Gravity
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
+import android.view.ViewGroup
+import android.widget.ImageView
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.annotation.DrawableRes
-import androidx.annotation.PluralsRes
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
+import androidx.core.view.ViewCompat
 import androidx.core.view.isVisible
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
-import com.google.android.material.materialswitch.MaterialSwitch
+import com.google.android.material.chip.Chip
+import com.google.android.material.chip.ChipGroup
+import com.google.android.material.color.MaterialColors
 import com.google.android.material.progressindicator.LinearProgressIndicator
+import com.google.android.material.shape.RelativeCornerSize
 import com.oliver.loqin.R
 import com.oliver.loqin.data.prefs.EmergencyPinStore
 import com.oliver.loqin.data.prefs.ProfileStore
@@ -41,6 +49,7 @@ import com.oliver.loqin.data.prefs.TempPauseStore
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.theme.CustomAccentApplier
 import com.oliver.loqin.ui.EdgeToEdgeUtils
+import com.oliver.loqin.ui.RuleTileStyle
 import com.oliver.loqin.ui.SheetRows
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.dialog.EmergencyPinDialog
@@ -53,13 +62,14 @@ import com.oliver.loqin.util.EditingLockGuard
 
 private const val MAX_COUNT = 100
 private const val MAX_MINUTES = 1440
-private const val DEFAULT_COUNT = 2
-private const val DEFAULT_PER_PAUSE_MINUTES = 15
-private const val DEFAULT_PER_DAY_MINUTES = 30
+
+/** More breaks than this and the per-break segments get too thin; a plain bar takes over. */
+private const val MAX_SEGMENTS = 10
 
 /**
- * Per-profile break limits. A "Today" card shows what's left, with a meter per daily limit;
- * below it each limit is a settings row: the switch turns it on or off, the row edits the amount.
+ * Per-profile break limits. The Today card says what's left (big number, bars that empty as
+ * breaks are used); below it each limit picks a value from preset chips, with "Other" for any
+ * amount. While protection is on everything stays readable but nothing can be changed.
  */
 class BreaksActivity : AppCompatActivity() {
     companion object {
@@ -68,30 +78,40 @@ class BreaksActivity : AppCompatActivity() {
 
     private enum class Cap(
         @StringRes val labelRes: Int,
+        @StringRes val subRes: Int,
         @DrawableRes val iconRes: Int,
         @StringRes val hintRes: Int,
         @StringRes val errorRes: Int,
         @StringRes val infoRes: Int,
         val max: Int,
-        val defaultValue: Int,
+        val presets: List<Int>,
+        val minutes: Boolean,
     ) {
         COUNT(
-            R.string.temp_pause_section_count, R.drawable.calendar_month_24, R.string.temp_pause_section_count,
-            R.string.temp_pause_error_count_fmt, R.string.temp_pause_section_count_subtitle, MAX_COUNT, DEFAULT_COUNT
+            R.string.temp_pause_section_count, R.string.breaks_limit_count_sub, R.drawable.calendar_month_24,
+            R.string.temp_pause_section_count, R.string.temp_pause_error_count_fmt,
+            R.string.temp_pause_section_count_subtitle, MAX_COUNT, listOf(1, 2, 3), minutes = false,
         ),
         PER_PAUSE(
-            R.string.temp_pause_section_length, R.drawable.timer_24, R.string.minutes_hint,
-            R.string.temp_pause_error_minutes_fmt, R.string.temp_pause_section_length_subtitle, MAX_MINUTES, DEFAULT_PER_PAUSE_MINUTES
+            R.string.temp_pause_section_length, R.string.breaks_limit_length_sub, R.drawable.timer_24,
+            R.string.minutes_hint, R.string.temp_pause_error_minutes_fmt,
+            R.string.temp_pause_section_length_subtitle, MAX_MINUTES, listOf(10, 15, 30), minutes = true,
         ),
         PER_DAY(
-            R.string.temp_pause_section_total, R.drawable.schedule_24, R.string.minutes_hint,
-            R.string.temp_pause_error_minutes_fmt, R.string.temp_pause_section_total_subtitle, MAX_MINUTES, DEFAULT_PER_DAY_MINUTES
+            R.string.temp_pause_section_total, R.string.breaks_limit_total_sub, R.drawable.schedule_24,
+            R.string.minutes_hint, R.string.temp_pause_error_minutes_fmt,
+            R.string.temp_pause_section_total_subtitle, MAX_MINUTES, listOf(15, 30, 60), minutes = true,
         ),
     }
 
+    private lateinit var todayHero: View
+    private lateinit var todayBig: TextView
+    private lateinit var todaySuffix: TextView
     private lateinit var todayTitle: TextView
-    private lateinit var meterCount: View
-    private lateinit var meterMinutes: View
+    private lateinit var todaySegments: LinearLayout
+    private lateinit var todayMinutes: TextView
+    private lateinit var todayMinutesBar: LinearProgressIndicator
+    private lateinit var todayNext: TextView
     private lateinit var btnReset: MaterialButton
     private lateinit var lockNote: View
     private lateinit var groupLimits: ListGroupLayout
@@ -101,16 +121,19 @@ class BreaksActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_breaks)
         val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
+        todayHero = findViewById(R.id.todayHero)
+        todayBig = findViewById(R.id.todayBig)
+        todaySuffix = findViewById(R.id.todaySuffix)
         todayTitle = findViewById(R.id.todayTitle)
-        meterCount = findViewById(R.id.meterCount)
-        meterMinutes = findViewById(R.id.meterMinutes)
+        todaySegments = findViewById(R.id.todaySegments)
+        todayMinutes = findViewById(R.id.todayMinutes)
+        todayMinutesBar = findViewById(R.id.todayMinutesBar)
+        todayNext = findViewById(R.id.todayNext)
         btnReset = findViewById(R.id.btnResetToday)
         lockNote = findViewById(R.id.lockNote)
         groupLimits = findViewById(R.id.groupLimits)
         findViewById<View>(R.id.headerLimits).findViewById<TextView>(R.id.tvHeader).text =
             getString(R.string.breaks_page_limits_header)
-        meterCount.findViewById<TextView>(R.id.meterLabel).setText(R.string.breaks_meter_count)
-        meterMinutes.findViewById<TextView>(R.id.meterLabel).setText(R.string.breaks_meter_minutes)
         btnReset.setOnClickListener { resetToday(it) }
 
         EdgeToEdgeUtils.setupClassic(activity = this, toolbar = toolbar)
@@ -152,6 +175,13 @@ class BreaksActivity : AppCompatActivity() {
         intent.getStringExtra(EXTRA_PROFILE_NAME)?.trim()?.takeIf { it.isNotBlank() }
             ?: ProfileStore.getCurrent(this) ?: "default"
 
+    private fun surface(): Int = ContextCompat.getColor(this, R.color.foqos_surface)
+    private fun ink(): Int = MaterialColors.getColor(todayBig, com.google.android.material.R.attr.colorOnSurface)
+
+    /** Accent strong enough to carry meaning (bars, selected chips) on the card surface. */
+    private fun strongAccent(): Int =
+        RuleTileStyle.strongAccent(this)
+
     private fun render() {
         CustomAccentApplier.applyIfNeeded(this)
         val profile = currentProfile()
@@ -164,104 +194,231 @@ class BreaksActivity : AppCompatActivity() {
 
         lockNote.isVisible = locked
         groupLimits.removeAllViews()
-        limitRow(Cap.COUNT, caps.maxCountPerDay, locked)
-        limitRow(Cap.PER_PAUSE, caps.maxMinutesPerPause, locked)
-        limitRow(Cap.PER_DAY, caps.maxMinutesPerDay, locked)
+        limitSection(Cap.COUNT, caps.maxCountPerDay, locked)
+        limitSection(Cap.PER_PAUSE, caps.maxMinutesPerPause, locked)
+        limitSection(Cap.PER_DAY, caps.maxMinutesPerDay, locked)
         groupLimits.refreshSegments()
     }
 
     private fun renderToday(profile: String, caps: TempPauseStore.Caps, usedCount: Int, usedMinutes: Int, locked: Boolean) {
         val nextMax = TempPauseStore.maxAllowedDurationMinutes(this, profile)
-        todayTitle.text = when {
-            !TempPauseStore.hasCaps(this, profile) -> getString(R.string.breaks_page_summary_unlimited)
-            nextMax <= 0 -> getString(R.string.breaks_today_none_left)
-            caps.maxCountPerDay > 0 -> {
-                val left = TempPauseStore.remainingPauses(this, profile)
-                resources.getQuantityString(R.plurals.breaks_today_left, caps.maxCountPerDay, left, caps.maxCountPerDay)
-            }
-            nextMax != Int.MAX_VALUE -> getString(R.string.breaks_today_next_fmt, nextMax)
-            else -> getString(R.string.breaks_page_summary_unlimited)
+        val countLeft = TempPauseStore.remainingPauses(this, profile)
+        val minutesLeft = TempPauseStore.remainingMinutes(this, profile)
+        val hasCaps = TempPauseStore.hasCaps(this, profile)
+
+        // Hero: breaks left if counted, else minutes left; a plain title when nothing is capped
+        // or today is used up.
+        val hero: Pair<Int, String>? = when {
+            !hasCaps || nextMax <= 0 -> null
+            caps.maxCountPerDay > 0 -> countLeft to resources.getQuantityString(
+                R.plurals.breaks_hero_count_suffix, caps.maxCountPerDay, caps.maxCountPerDay,
+            )
+            caps.maxMinutesPerDay > 0 ->
+                minutesLeft to getString(R.string.breaks_hero_minutes_suffix_fmt, caps.maxMinutesPerDay)
+            else -> null
+        }
+        todayHero.isVisible = hero != null
+        todayTitle.isVisible = hero == null
+        if (hero != null) {
+            todayBig.text = hero.first.toString()
+            todaySuffix.text = hero.second
+            todayHero.contentDescription = "${hero.first} ${hero.second}"
+        } else {
+            todayTitle.text = getString(
+                if (hasCaps) R.string.breaks_today_none_left else R.string.breaks_page_summary_unlimited
+            )
         }
 
-        bindMeter(meterCount, usedCount, caps.maxCountPerDay, R.string.breaks_meter_count_fmt, null)
-        bindMeter(
-            meterMinutes, usedMinutes, caps.maxMinutesPerDay,
-            R.string.breaks_meter_minutes_fmt, R.string.breaks_page_minutes_fmt,
-        )
+        val strong = strongAccent()
+        val track = ColorUtils.compositeColors(ColorUtils.setAlphaComponent(strong, 0x2E), surface())
+
+        val segments = caps.maxCountPerDay.takeIf { it in 1..MAX_SEGMENTS }
+        todaySegments.isVisible = segments != null
+        if (segments != null) {
+            todaySegments.removeAllViews()
+            repeat(segments) { i ->
+                todaySegments.addView(View(this).apply {
+                    background = android.graphics.drawable.GradientDrawable().apply {
+                        cornerRadius = SheetRows.dp(this@BreaksActivity, 4f).toFloat()
+                        setColor(if (i < countLeft.coerceAtMost(segments)) strong else track)
+                    }
+                    layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.MATCH_PARENT, 1f).apply {
+                        if (i > 0) marginStart = SheetRows.dp(this@BreaksActivity, 6f)
+                    }
+                })
+            }
+        }
+
+        val dailyCap = caps.maxMinutesPerDay
+        // With minutes as the hero (no count limit) the line would repeat it, so it only shows
+        // alongside a count hero, or as "used" when minutes aren't capped.
+        val minutesIsHero = hero != null && caps.maxCountPerDay <= 0
+        todayMinutes.isVisible = !minutesIsHero && (dailyCap > 0 || usedMinutes > 0)
+        todayMinutes.text = if (dailyCap > 0) {
+            getString(R.string.breaks_minutes_left_fmt, minutesLeft, dailyCap)
+        } else {
+            getString(R.string.breaks_minutes_used_fmt, usedMinutes)
+        }
+        todayMinutesBar.isVisible = dailyCap > 0
+        if (dailyCap > 0) {
+            todayMinutesBar.setIndicatorColor(strong)
+            todayMinutesBar.trackColor = track
+            todayMinutesBar.max = dailyCap
+            todayMinutesBar.setProgressCompat(minutesLeft.coerceIn(0, dailyCap), false)
+        }
+
+        todayNext.isVisible = nextMax in 1 until Int.MAX_VALUE
+        if (todayNext.isVisible) todayNext.text = getString(R.string.breaks_today_next_fmt, nextMax)
 
         btnReset.isVisible = usedCount > 0 || usedMinutes > 0
+        // Locked: still shown (so the card doesn't jump), faded, and a tap explains why.
         btnReset.alpha = if (locked) 0.45f else 1f
     }
 
-    /**
-     * "used / limit" with a bar when the limit is on; with no limit just the amount used, no bar.
-     * [plainRes] formats the bare amount (null = the number alone).
-     */
-    private fun bindMeter(meter: View, used: Int, limit: Int, @StringRes cappedRes: Int, @StringRes plainRes: Int?) {
-        val value = meter.findViewById<TextView>(R.id.meterValue)
-        val bar = meter.findViewById<LinearProgressIndicator>(R.id.meterBar)
-        if (limit > 0) {
-            value.text = getString(cappedRes, used, limit)
-            val accent = AccentColor.getAccentColorInt(this)
-            val full = used >= limit
-            val color = if (full) ContextCompat.getColor(this, R.color.status_warning) else accent
-            bar.setIndicatorColor(color)
-            // Opaque tint: a see-through track darkens where its rounded end overlaps itself.
-            bar.trackColor = ColorUtils.compositeColors(
-                ColorUtils.setAlphaComponent(color, 0x33),
-                ContextCompat.getColor(this, R.color.foqos_surface),
+    private fun Cap.chipText(value: Int): String = value.toString()
+
+    private fun Cap.spoken(value: Int): String =
+        if (minutes) getString(R.string.breaks_page_minutes_fmt, value) else value.toString()
+
+    private fun limitSection(cap: Cap, value: Int, locked: Boolean) {
+        val ctx = this
+        val section = LinearLayout(ctx).apply {
+            orientation = LinearLayout.VERTICAL
+            val padH = SheetRows.dp(ctx, 18f)
+            setPadding(padH, SheetRows.dp(ctx, 16f), SheetRows.dp(ctx, 14f), SheetRows.dp(ctx, 14f))
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
             )
-            bar.max = limit
-            bar.setProgressCompat(used.coerceAtMost(limit), false)
-            bar.isVisible = true
+        }
+        val strong = strongAccent()
+        section.addView(LinearLayout(ctx).apply {
+            orientation = LinearLayout.HORIZONTAL
+            addView(ImageView(ctx).apply {
+                setImageResource(cap.iconRes)
+                imageTintList = ColorStateList.valueOf(strong)
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                layoutParams = LinearLayout.LayoutParams(SheetRows.dp(ctx, 24f), SheetRows.dp(ctx, 24f)).apply {
+                    marginEnd = SheetRows.dp(ctx, 16f)
+                }
+            })
+            addView(LinearLayout(ctx).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+                addView(TextView(ctx).apply {
+                    text = getString(cap.labelRes)
+                    androidx.core.widget.TextViewCompat.setTextAppearance(this, R.style.TextAppearance_LoqIn_RowTitle)
+                    ViewCompat.setAccessibilityHeading(this, true)
+                })
+                addView(TextView(ctx).apply {
+                    text = getString(cap.subRes)
+                    androidx.core.widget.TextViewCompat.setTextAppearance(this, R.style.TextAppearance_LoqIn_RowSummary)
+                })
+            })
+        })
+
+        val chips = ChipGroup(ctx).apply {
+            chipSpacingHorizontal = SheetRows.dp(ctx, 8f)
+            chipSpacingVertical = 0
+            layoutParams = LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+            ).apply { topMargin = SheetRows.dp(ctx, 6f) }
+        }
+        val custom = value > 0 && value !in cap.presets
+        chips.addView(limitChip(getString(R.string.breaks_page_no_limit), null, value <= 0, locked) {
+            writeCap(cap, 0)
+        })
+        cap.presets.forEach { preset ->
+            chips.addView(limitChip(cap.chipText(preset), cap.spoken(preset), value == preset, locked) {
+                writeCap(cap, preset)
+            })
+        }
+        // A custom amount takes the Other chip's place, with its unit (no preset beside it to
+        // explain the number) and a pencil.
+        val otherChip = if (custom) {
+            limitChip(cap.spoken(value), getString(R.string.breaks_chip_custom_cd, cap.spoken(value)), true, locked, edit = true) {
+                pickCap(cap, value)
+            }
         } else {
-            value.text = plainRes?.let { getString(it, used) } ?: used.toString()
-            bar.isVisible = false
+            limitChip(getString(R.string.breaks_chip_other), null, false, locked) { pickCap(cap, value) }
         }
+        chips.addView(otherChip)
+        section.addView(chips)
+        groupLimits.addView(section)
     }
 
-    private fun Cap.valueText(value: Int): String = when (this) {
-        Cap.COUNT -> resources.getQuantityString(R.plurals.breaks_limit_count, value, value)
-        Cap.PER_PAUSE -> getString(R.string.breaks_limit_up_to_fmt, value)
-        Cap.PER_DAY -> getString(R.string.breaks_page_minutes_fmt, value)
-    }
-
-    private fun limitRow(cap: Cap, value: Int, locked: Boolean) {
-        val on = value > 0
-        val accent = AccentColor.getAccentColorInt(this)
-        val label = getString(cap.labelRes)
-        val row = SheetRows.row(
-            this, groupLimits, cap.iconRes, label,
-            if (on) cap.valueText(value) else getString(R.string.breaks_page_no_limit),
-            accent,
-        )
-        if (on) row.summary.setTextColor(accent)
-        val switch = MaterialSwitch(this).apply {
-            isChecked = on
-            thumbIconDrawable = ContextCompat.getDrawable(this@BreaksActivity, R.drawable.loqin_switch_thumb_icon)
-            CustomAccentApplier.tintSwitch(this)
-            contentDescription = label
-        }
-        switch.setOnCheckedChangeListener { button, checked ->
-            if (locked) {
-                button.isChecked = !checked
-                row.root.showWarnPill(R.string.edit_locked_manage_temp_pauses)
-            } else {
-                writeCap(cap, if (checked) cap.defaultValue else 0)
+    /**
+     * One limit choice. Not a checkable Chip: the selected look is drawn here so a locked page
+     * can keep the chosen value fully readable (a lock in place of the check) while the rest fade.
+     */
+    private fun limitChip(
+        label: String,
+        spoken: String?,
+        selected: Boolean,
+        locked: Boolean,
+        edit: Boolean = false,
+        onPick: () -> Unit,
+    ): Chip {
+        val ctx = this
+        val strong = strongAccent()
+        val ink = ink()
+        val outline = ContextCompat.getColor(ctx, R.color.foqos_outline)
+        val muted = MaterialColors.getColor(todayBig, android.R.attr.textColorSecondary)
+        return Chip(ctx).apply {
+            text = label
+            isCheckable = false
+            chipMinHeight = SheetRows.dp(ctx, 40f).toFloat()
+            textStartPadding = SheetRows.dp(ctx, 3f).toFloat()
+            textEndPadding = SheetRows.dp(ctx, 3f).toFloat()
+            shapeAppearanceModel = shapeAppearanceModel.withCornerSize(RelativeCornerSize(0.5f))
+            setTextAppearanceResource(R.style.TextAppearance_LoqIn_RowSummary)
+            textSize = 14f
+            typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL)
+            gravity = Gravity.CENTER
+            minWidth = SheetRows.dp(ctx, 48f)
+            when {
+                selected && locked -> {
+                    val fill = ContextCompat.getColor(ctx, R.color.foqos_surface_variant)
+                    chipBackgroundColor = ColorStateList.valueOf(fill)
+                    chipStrokeWidth = 0f
+                    setTextColor(ink)
+                    chipIcon = ContextCompat.getDrawable(ctx, R.drawable.lock_24)
+                    chipIconTint = ColorStateList.valueOf(muted)
+                }
+                selected -> {
+                    val fill = ColorUtils.compositeColors(ColorUtils.setAlphaComponent(strong, 0x2E), surface())
+                    val onFill = AccentColor.readableOn(strong, fill, ink, 4.5)
+                    chipBackgroundColor = ColorStateList.valueOf(fill)
+                    chipStrokeWidth = 0f
+                    setTextColor(onFill)
+                    chipIcon = ContextCompat.getDrawable(ctx, R.drawable.check_circle_24)
+                    chipIconTint = ColorStateList.valueOf(onFill)
+                }
+                else -> {
+                    chipBackgroundColor = ColorStateList.valueOf(surface())
+                    chipStrokeWidth = SheetRows.dp(ctx, 1f).toFloat()
+                    chipStrokeColor = ColorStateList.valueOf(
+                        if (locked) outline else ColorUtils.blendARGB(outline, ink, 0.15f)
+                    )
+                    setTextColor(if (locked) ColorUtils.setAlphaComponent(ink, 0x73) else ink)
+                }
+            }
+            isChipIconVisible = selected
+            chipIconSize = SheetRows.dp(ctx, 18f).toFloat()
+            iconStartPadding = if (selected) SheetRows.dp(ctx, 6f).toFloat() else 0f
+            if (edit && !locked) {
+                closeIcon = ContextCompat.getDrawable(ctx, R.drawable.edit_24)
+                closeIconTint = chipIconTint
+                closeIconSize = SheetRows.dp(ctx, 16f).toFloat()
+                isCloseIconVisible = true
+                setOnCloseIconClickListener { onPick() }
+                closeIconContentDescription = spoken
+            }
+            contentDescription = spoken ?: label
+            ViewCompat.setStateDescription(this, if (selected) getString(R.string.state_on) else null)
+            setOnClickListener {
+                if (locked) it.showWarnPill(R.string.edit_locked_manage_temp_pauses) else onPick()
             }
         }
-        row.trailing.addView(switch)
-        row.root.setOnClickListener {
-            if (locked) it.showWarnPill(R.string.edit_locked_manage_temp_pauses) else pickCap(cap, value)
-        }
-        // Fade the content, not the segment, so the group keeps its shape while read-only.
-        if (locked) {
-            switch.isEnabled = false
-            row.icon.alpha = 0.45f
-            row.title.alpha = 0.55f
-            row.summary.alpha = 0.55f
-        }
-        groupLimits.addView(row.root)
     }
 
     private fun pickCap(cap: Cap, current: Int) {
@@ -271,7 +428,7 @@ class BreaksActivity : AppCompatActivity() {
             confirmText = getString(R.string.save),
             range = 1..cap.max,
             invalidMessage = getString(cap.errorRes, cap.max),
-            initialValue = if (current > 0) current else cap.defaultValue,
+            initialValue = current.takeIf { it > 0 },
         ) { writeCap(cap, it) }
     }
 

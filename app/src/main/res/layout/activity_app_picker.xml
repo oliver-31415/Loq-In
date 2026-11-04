@@ -113,20 +113,102 @@
                         android:textColor="?android:attr/textColorSecondary"
                         android:textSize="12.5sp" />
 
-                    <CheckBox
-                        android:id="@+id/cbAutoBlockNewApps"
+                    <!-- Block new apps: a switch row; the whole row toggles it. -->
+                    <LinearLayout
+                        android:id="@+id/rowAutoBlockNewApps"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
-                        android:text="@string/app_picker_auto_block_new_apps_title"
-                        android:textColor="?android:attr/textColorPrimary" />
+                        android:background="?attr/selectableItemBackground"
+                        android:gravity="center_vertical"
+                        android:minHeight="56dp"
+                        android:orientation="horizontal"
+                        android:paddingStart="8dp"
+                        android:paddingTop="6dp"
+                        android:paddingEnd="4dp"
+                        android:paddingBottom="6dp">
 
-                    <TextView
-                        android:id="@+id/tvAutoBlockNewAppsSummary"
-                        android:layout_width="match_parent"
-                        android:layout_height="0dp"
-                        android:visibility="gone"
-                        android:text="@string/app_picker_auto_block_new_apps_summary" />
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:text="@string/app_picker_auto_block_new_apps_title"
+                                android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
+                                android:textSize="15sp" />
+
+                            <TextView
+                                android:id="@+id/tvAutoBlockNewAppsSummary"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="1dp"
+                                android:text="@string/app_picker_auto_block_new_apps_row_sub"
+                                android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
+                                android:textSize="13sp" />
+                        </LinearLayout>
+
+                        <com.google.android.material.materialswitch.MaterialSwitch
+                            android:id="@+id/cbAutoBlockNewApps"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="12dp"
+                            android:contentDescription="@string/app_picker_auto_block_new_apps_title" />
+                    </LinearLayout>
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
+
+        <!-- One-time tip: press and hold an app for its limit and rules. Scrolls away. -->
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/cardHoldTip"
+            style="@style/LoqIn.Card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="8dp"
+            android:visibility="gone"
+            app:cardUseCompatPadding="false"
+            app:layout_scrollFlags="scroll">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="16dp"
+                android:paddingTop="4dp"
+                android:paddingEnd="4dp"
+                android:paddingBottom="4dp">
+
+                <ImageView
+                    android:id="@+id/ivHoldTip"
+                    android:layout_width="22dp"
+                    android:layout_height="22dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/timer_24" />
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="12dp"
+                    android:layout_weight="1"
+                    android:paddingTop="8dp"
+                    android:paddingBottom="8dp"
+                    android:text="@string/app_picker_hold_tip"
+                    android:textColor="?android:attr/textColorPrimary"
+                    android:textSize="13.5sp" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnHoldTipDismiss"
+                    style="@style/LoqIn.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:minHeight="48dp"
+                    android:text="@string/app_picker_hold_tip_dismiss" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 

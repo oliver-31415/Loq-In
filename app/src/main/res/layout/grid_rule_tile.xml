@@ -44,62 +44,15 @@
                 android:textColor="?android:attr/textColorPrimary"
                 android:textSize="12sp"
                 android:textStyle="bold" />
-
-            <TextView
-                android:id="@+id/tileValue"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:maxLines="1"
-                android:textColor="?android:attr/textColorPrimary"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:visibility="gone" />
-
-            <TextView
-                android:id="@+id/tileSub"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:ellipsize="end"
-                android:gravity="center"
-                android:lineSpacingExtra="1dp"
-                android:maxLines="2"
-                android:textColor="?android:attr/textColorSecondary"
-                android:textSize="10sp"
-                android:visibility="gone" />
         </LinearLayout>
-
-        <TextView
-            android:id="@+id/tileCorner"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="top|start"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="5dp"
-            android:textColor="?android:attr/textColorSecondary"
-            android:textSize="11sp"
-            android:textStyle="bold"
-            android:visibility="gone" />
-
-        <ImageButton
-            android:id="@+id/tileToggle"
-            android:layout_width="48dp"
-            android:layout_height="48dp"
-            android:layout_gravity="top|end"
-            android:layout_marginTop="-9dp"
-            android:layout_marginEnd="-9dp"
-            android:background="?attr/selectableItemBackgroundBorderless"
-            android:padding="13dp"
-            android:scaleType="fitCenter"
-            android:visibility="gone" />
 
         <ImageView
             android:id="@+id/tileBadge"
-            android:layout_width="22dp"
-            android:layout_height="22dp"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
             android:layout_gravity="top|end"
-            android:layout_marginTop="4dp"
-            android:layout_marginEnd="4dp"
+            android:layout_marginTop="3dp"
+            android:layout_marginEnd="3dp"
             android:importantForAccessibility="no"
             android:src="@drawable/check_circle_24"
             android:visibility="gone"

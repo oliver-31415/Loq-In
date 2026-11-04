@@ -74,7 +74,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.ConcatAdapter
-import androidx.recyclerview.widget.GridLayoutManager
+
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -106,8 +106,11 @@ import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.applyLoqInStyle
 import com.oliver.loqin.ui.showWarnPill
 import com.oliver.loqin.ui.RuleSummary
-import com.oliver.loqin.ui.RuleTile
-import com.oliver.loqin.ui.SquareCardView
+import com.oliver.loqin.ui.RuleTileStyle
+import com.oliver.loqin.ui.widgets.ListGroupLayout
+import androidx.core.view.ViewCompat
+import com.google.android.material.materialswitch.MaterialSwitch
+
 import com.oliver.loqin.ui.updateSelectionSubtitle
 import com.oliver.loqin.ui.dialog.showAccented
 import com.oliver.loqin.ui.dialog.showDestructiveAccented
@@ -168,6 +171,8 @@ class SchedulesActivity : AppCompatActivity() {
 
     private lateinit var adapter: ScheduleAdapter
     private lateinit var addTileAdapter: ScheduleAddTileAdapter
+    private lateinit var headerSchedules: View
+    private var isReorderMode = false
     private var priorityDragHelper: ItemTouchHelper? = null
     private lateinit var toolbar: MaterialToolbar
     private lateinit var cardScheduleHealth: View
@@ -198,8 +203,16 @@ class SchedulesActivity : AppCompatActivity() {
         }
     }
 
-    private fun nextScheduleDetail(): String? {
+    private fun nextScheduleDetail(shown: List<ScheduleStore.Schedule>): String? {
         if (!isScheduleAutomationAllowed()) return getString(R.string.schedules_next_inactive_control_mode)
+        val activeId = ScheduleRuntimeStore.getActiveRangeScheduleId(this)
+        shown.firstOrNull { it.id == activeId && it.enabled }?.let { running ->
+            return getString(
+                R.string.schedules_summary_running_fmt,
+                ScheduleInsights.scheduleDisplayName(running),
+                TimeFormatPrefs.formatMinutesOfDay(this, running.endMinutes),
+            )
+        }
         val next = ScheduleNext.find(this, ::matchesTargetProfile) ?: return getString(R.string.schedules_next_none)
         return ScheduleNext.describe(this, next)
     }
@@ -376,7 +389,19 @@ class SchedulesActivity : AppCompatActivity() {
         toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
 
         val recycler = findViewById<RecyclerView>(R.id.recyclerSchedules)
-        recycler.layoutManager = GridLayoutManager(this, 3)
+        recycler.layoutManager = LinearLayoutManager(this)
+        headerSchedules = findViewById(R.id.headerSchedules)
+        headerSchedules.findViewById<TextView>(R.id.tvHeader).text = getString(R.string.schedules_list_header)
+        headerSchedules.findViewById<TextView>(R.id.tvHeaderAction).apply {
+            minHeight = (48 * resources.displayMetrics.density).toInt()
+            gravity = android.view.Gravity.CENTER_VERTICAL
+            setOnClickListener {
+                if (denyScheduleEditWithPopover()) return@setOnClickListener
+                isReorderMode = !isReorderMode
+                adapter.notifyItemRangeChanged(0, adapter.itemCount)
+                updateReorderHeader()
+            }
+        }
 
         cardScheduleHealth = findViewById(R.id.cardScheduleHealth)
         tvStatusTitle = cardScheduleHealth.findViewById(R.id.tvStatusTitle)
@@ -430,9 +455,14 @@ class SchedulesActivity : AppCompatActivity() {
                 }
             },
             getTargetProfile = { targetProfile },
+            isReorderMode = { isReorderMode },
+            activeScheduleId = { ScheduleRuntimeStore.getActiveRangeScheduleId(this).takeIf { it >= 0 } },
+            onStartDrag = { holder -> priorityDragHelper?.startDrag(holder) },
+            onMoveBy = { holder, delta -> moveScheduleBy(holder.bindingAdapterPosition, delta) },
         )
         addTileAdapter = ScheduleAddTileAdapter(
             canInteract = { canEditSchedules() },
+            scheduleCount = { adapter.itemCount },
             onAdd = {
                 if (!denyScheduleEditWithPopover()) {
                     showNewScheduleTypeDialog()
@@ -994,7 +1024,7 @@ class SchedulesActivity : AppCompatActivity() {
             findViewById(R.id.scheduleSummary),
             R.drawable.schedule_24,
             scheduleSummaryTitle(sorted),
-            if (sorted.isEmpty()) null else nextScheduleDetail(),
+            if (sorted.isEmpty()) null else nextScheduleDetail(sorted),
         )
         val priorityChanged = (adapter.itemCount > 1) != (sorted.size > 1)
         adapter.submitList(sorted) {
@@ -1011,11 +1041,12 @@ class SchedulesActivity : AppCompatActivity() {
             updateMenuState()
         }
         updateScheduleHealthBanner()
+        updateReorderHeader()
     }
 
     private fun priorityDragCallback(recycler: RecyclerView) =
         object : ItemTouchHelper.SimpleCallback(
-            ItemTouchHelper.UP or ItemTouchHelper.DOWN or ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT, 0
+            ItemTouchHelper.UP or ItemTouchHelper.DOWN, 0
         ) {
             private var reordered = false
 
@@ -1059,6 +1090,26 @@ class SchedulesActivity : AppCompatActivity() {
                 persistPriorityOrder(adapter.currentList.toList())
             }
         }
+
+    /** Reorder mode's accessibility "Move up/down": the same as dragging one place. */
+    private fun moveScheduleBy(from: Int, delta: Int) {
+        val current = adapter.currentList.toMutableList()
+        val to = from + delta
+        if (from !in current.indices || to !in current.indices) return
+        current.add(to, current.removeAt(from))
+        persistPriorityOrder(current)
+    }
+
+    private fun updateReorderHeader() {
+        if (!::headerSchedules.isInitialized) return
+        val count = adapter.itemCount
+        if (count < 2 || isSelectionMode) isReorderMode = false
+        headerSchedules.isVisible = count > 0
+        headerSchedules.findViewById<TextView>(R.id.tvHeaderAction).apply {
+            isVisible = count > 1 && !isSelectionMode
+            text = getString(if (isReorderMode) R.string.schedules_reorder_done else R.string.schedules_reorder)
+        }
+    }
 
     private fun persistPriorityOrder(displayedInNewOrder: List<ScheduleStore.Schedule>) {
         if (!canEditSchedules() || displayedInNewOrder.isEmpty()) return
@@ -1155,8 +1206,9 @@ class SchedulesActivity : AppCompatActivity() {
         // Avoid a second large warning card at the top of this screen.
         val hasAnyIssue = nfcConflict || nfcBlockedRecently
         val overlaps = ScheduleInsights.detectOverlaps(enabledSchedules)
-        val activeRangeSummary = ScheduleInsights.activeRangeSummary(this, enabledSchedules)
-        val insightBody = buildScheduleInsightBody(overlaps, activeRangeSummary)
+        // The running schedule is already in the summary card and marked Active in the list,
+        // so the insights card only speaks up for overlaps and NFC problems.
+        val insightBody = buildScheduleInsightBody(overlaps, null)
 
         if (!hasAnyIssue && insightBody.isBlank()) {
             cardScheduleHealth.isVisible = false
@@ -3866,11 +3918,15 @@ private class ScheduleAdapter(
     private val onToggleSelection: (Int) -> Unit,
     private val onEdit: (ScheduleStore.Schedule) -> Unit,
     private val getTargetProfile: () -> String?,
+    private val isReorderMode: () -> Boolean,
+    private val activeScheduleId: () -> Int?,
+    private val onStartDrag: (RecyclerView.ViewHolder) -> Unit,
+    private val onMoveBy: (RecyclerView.ViewHolder, Int) -> Unit,
 ) : androidx.recyclerview.widget.ListAdapter<ScheduleStore.Schedule, ScheduleViewHolder>(DIFF) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ScheduleViewHolder =
         ScheduleViewHolder(
-            RuleTile.inflate(parent),
+            LayoutInflater.from(parent.context).inflate(R.layout.item_schedule_row, parent, false),
             onToggleEnabled,
             canInteract,
             isSelectionMode,
@@ -3878,6 +3934,10 @@ private class ScheduleAdapter(
             onToggleSelection,
             onEdit,
             getTargetProfile,
+            isReorderMode,
+            activeScheduleId,
+            onStartDrag,
+            onMoveBy,
         )
 
     override fun onBindViewHolder(holder: ScheduleViewHolder, position: Int) {
@@ -3900,9 +3960,10 @@ private class ScheduleAdapter(
     }
 }
 
-/** The trailing "Add schedule" tile, a separate adapter so it stays out of drag and priority. */
+/** The trailing "Add schedule" row (and the priority note under the list), outside drag and priority. */
 private class ScheduleAddTileAdapter(
     private val canInteract: () -> Boolean,
+    private val scheduleCount: () -> Int,
     private val onAdd: () -> Unit,
 ) : RecyclerView.Adapter<ScheduleAddTileViewHolder>() {
 
@@ -3910,25 +3971,44 @@ private class ScheduleAddTileAdapter(
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ScheduleAddTileViewHolder =
         ScheduleAddTileViewHolder(
-            (LayoutInflater.from(parent.context)
-                .inflate(R.layout.item_website_add_custom, parent, false) as SquareCardView)
-                .apply { growToFit = true }
+            LayoutInflater.from(parent.context).inflate(R.layout.item_schedule_add_row, parent, false)
         )
 
     override fun onBindViewHolder(holder: ScheduleAddTileViewHolder, position: Int) {
-        holder.bind(canInteract(), onAdd)
+        holder.bind(canInteract(), scheduleCount(), onAdd)
     }
 }
 
 private class ScheduleAddTileViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
 
-    private val label = itemView.findViewById<TextView>(R.id.tvAddLabel)
+    private val row = itemView.findViewById<View>(R.id.scheduleAddRow)
+    private val icon = itemView.findViewById<ImageView>(R.id.scheduleAddIcon)
+    private val label = itemView.findViewById<TextView>(R.id.scheduleAddLabel)
+    private val note = itemView.findViewById<TextView>(R.id.scheduleListNote)
 
-    fun bind(enabled: Boolean, onAdd: () -> Unit) {
-        label.text = itemView.context.getString(R.string.schedule_tile_add_label)
+    fun bind(enabled: Boolean, count: Int, onAdd: () -> Unit) {
+        val ctx = itemView.context
+        val density = ctx.resources.displayMetrics.density
+        val strong = RuleTileStyle.strongAccent(ctx)
+        // Closes the group: big bottom corners, and big top corners too when it's alone.
+        row.background = ListGroupLayout.segmentBackground(
+            row, if (count == 0) 24 * density else 6 * density, 24 * density,
+            ContextCompat.getColor(ctx, R.color.foqos_surface),
+        )
+        (itemView.layoutParams as? RecyclerView.LayoutParams)?.let { lp ->
+            val want = if (count == 0) 0 else (2 * density).toInt()
+            if (lp.topMargin != want) {
+                lp.topMargin = want
+                itemView.layoutParams = lp
+            }
+        }
+        androidx.core.widget.ImageViewCompat.setImageTintList(icon, ColorStateList.valueOf(strong))
+        label.setTextColor(AccentColor.readableOn(strong, ContextCompat.getColor(ctx, R.color.foqos_surface), label.currentTextColor, 4.5))
         // Stay tappable while locked: onAdd warns via popover, as the old add button did.
-        itemView.alpha = if (enabled) 1f else 0.45f
-        itemView.setOnClickListener { onAdd() }
+        icon.alpha = if (enabled) 1f else 0.45f
+        label.alpha = if (enabled) 1f else 0.45f
+        row.setOnClickListener { onAdd() }
+        note.isVisible = count > 1
     }
 }
 
@@ -3937,7 +4017,7 @@ private const val WEEKDAYS = 31
 private const val WEEKEND = 96
 
 private class ScheduleViewHolder(
-    private val tile: RuleTile,
+    itemView: View,
     private val onToggleEnabled: (ScheduleStore.Schedule, Boolean) -> Unit,
     private val canInteract: () -> Boolean,
     private val isSelectionMode: () -> Boolean,
@@ -3945,27 +4025,92 @@ private class ScheduleViewHolder(
     private val onToggleSelection: (Int) -> Unit,
     private val onEdit: (ScheduleStore.Schedule) -> Unit,
     private val getTargetProfile: () -> String?,
-) : RecyclerView.ViewHolder(tile.root) {
+    private val isReorderMode: () -> Boolean,
+    private val activeScheduleId: () -> Int?,
+    private val onStartDrag: (RecyclerView.ViewHolder) -> Unit,
+    private val onMoveBy: (RecyclerView.ViewHolder, Int) -> Unit,
+) : RecyclerView.ViewHolder(itemView) {
+
+    private val icon: ImageView = itemView.findViewById(R.id.scheduleIcon)
+    private val title: TextView = itemView.findViewById(R.id.scheduleTitle)
+    private val active: TextView = itemView.findViewById(R.id.scheduleActive)
+    private val sub: TextView = itemView.findViewById(R.id.scheduleSub)
+    private val timeline: ScheduleTimelineView = itemView.findViewById(R.id.scheduleTimeline)
+    private val switch: MaterialSwitch = itemView.findViewById(R.id.scheduleSwitch)
+    private val handle: ImageView = itemView.findViewById(R.id.scheduleHandle)
+    private val check: ImageView = itemView.findViewById(R.id.scheduleCheck)
+    private var a11yActions: List<Int> = emptyList()
 
     private fun fmtMinutes(m: Int): String = TimeFormatPrefs.formatMinutesOfDay(itemView.context, m)
 
+    @android.annotation.SuppressLint("ClickableViewAccessibility")
     fun bind(s: ScheduleStore.Schedule, rank: Int, ranked: Boolean) {
         val ctx = itemView.context
         val canInteractNow = canInteract()
         val selecting = isSelectionMode()
         val selected = selecting && isSelected(s.id)
+        val reordering = isReorderMode() && !selecting && ranked
+        val strong = RuleTileStyle.strongAccent(ctx)
+        val surface = ContextCompat.getColor(ctx, R.color.foqos_surface)
+        val secondary = MaterialColors.getColor(itemView, android.R.attr.textColorSecondary)
 
-        tile.setCorner(if (ranked) ctx.getString(R.string.schedules_priority_badge_fmt, rank) else null)
-        tile.corner.alpha = if (s.enabled) 1f else 0.5f
-        // Toggle is hidden in selection mode; its taps route to onToggleEnabled, which warns when locked.
-        tile.setToggle(
-            on = if (selecting) null else s.enabled,
-            contentDescription = ctx.getString(R.string.schedule_tile_toggle_desc),
-        ) { onToggleEnabled(s, !s.enabled) }
-        // Same as every other grid: an outlined tile is on (or picked while selecting).
-        tile.setState(on = if (selecting) selected else s.enabled)
-        tile.setDimmed(!canInteractNow)
-        tile.root.setOnClickListener {
+        // Grouped-list segment: the first row gets the big top corners; the Add row below always
+        // closes the group, so no schedule row takes the big bottom corners.
+        val density = ctx.resources.displayMetrics.density
+        val rowColor = if (selected) {
+            ColorUtils.compositeColors(ColorUtils.setAlphaComponent(strong, 0x2E), surface)
+        } else surface
+        itemView.background = ListGroupLayout.segmentBackground(
+            itemView, if (rank == 1) 24 * density else 6 * density, 6 * density, rowColor,
+        )
+        (itemView.layoutParams as? RecyclerView.LayoutParams)?.let { lp ->
+            val want = if (rank == 1) 0 else (2 * density).toInt()
+            if (lp.topMargin != want) {
+                lp.topMargin = want
+                itemView.layoutParams = lp
+            }
+        }
+
+        switch.setOnCheckedChangeListener(null)
+        switch.isChecked = s.enabled
+        switch.isVisible = !selecting && !reordering
+        switch.alpha = if (canInteractNow) 1f else 0.5f
+        switch.contentDescription = ctx.getString(R.string.schedule_tile_toggle_desc)
+        CustomAccentApplier.tintSwitch(switch)
+        // Its taps route to onToggleEnabled, which warns when locked. A denied tap puts the
+        // switch straight back, since re-binding from an unchanged store won't redraw it.
+        switch.setOnCheckedChangeListener { button, checked ->
+            if (!canInteract()) {
+                button.setOnCheckedChangeListener(null)
+                button.isChecked = !checked
+                bind(s, rank, ranked)
+            }
+            onToggleEnabled(s, checked)
+        }
+
+        handle.isVisible = reordering
+        handle.setOnTouchListener { _, event ->
+            if (event.actionMasked == android.view.MotionEvent.ACTION_DOWN) onStartDrag(this)
+            false
+        }
+        check.isVisible = selecting
+        if (selecting) {
+            check.setImageResource(if (selected) R.drawable.check_circle_24 else R.drawable.circle_outline_24)
+            androidx.core.widget.ImageViewCompat.setImageTintList(
+                check, ColorStateList.valueOf(if (selected) strong else secondary),
+            )
+        }
+        a11yActions.forEach { ViewCompat.removeAccessibilityAction(itemView, it) }
+        a11yActions = if (reordering) listOf(
+            ViewCompat.addAccessibilityAction(itemView, ctx.getString(R.string.schedules_reorder_up)) { _, _ ->
+                onMoveBy(this, -1); true
+            },
+            ViewCompat.addAccessibilityAction(itemView, ctx.getString(R.string.schedules_reorder_down)) { _, _ ->
+                onMoveBy(this, 1); true
+            },
+        ) else emptyList()
+
+        itemView.setOnClickListener {
             if (isSelectionMode()) onToggleSelection(s.id) else onEdit(s)
         }
 
@@ -3978,9 +4123,12 @@ private class ScheduleViewHolder(
             hasWifi && hasBt -> R.drawable.layers_24
             hasWifi -> R.drawable.wifi_24
             hasBt -> R.drawable.bluetooth_24
-            else -> R.drawable.alarm_24
+            else -> R.drawable.schedule_24
         }
-        tile.setSymbol(iconRes)
+        icon.setImageResource(iconRes)
+        androidx.core.widget.ImageViewCompat.setImageTintList(
+            icon, ColorStateList.valueOf(if (s.enabled) strong else secondary),
+        )
 
         val customTitle = s.title.trim()
         val hasExplicitTitle = customTitle.isNotBlank() &&
@@ -4098,6 +4246,51 @@ private class ScheduleViewHolder(
             subtitleParts += s.profile
         }
 
-        tile.setText(label = displayTitle, sub = subtitleParts.joinToString(" · "))
+        val now = java.util.Calendar.getInstance()
+        val timeOnly = !hasWifi && !hasBt && !hasLocation
+        val today = ScheduleWindow.appliesOn(s, now)
+        if (!s.enabled) subtitleParts.add(0, ctx.getString(R.string.state_off))
+        else if (timeOnly && !today) subtitleParts += ctx.getString(R.string.schedules_row_not_today)
+
+        title.text = displayTitle
+        title.setTextColor(
+            if (s.enabled) MaterialColors.getColor(itemView, com.google.android.material.R.attr.colorOnSurface)
+            else secondary
+        )
+        sub.text = subtitleParts.joinToString(" · ")
+        sub.isVisible = subtitleParts.isNotEmpty()
+
+        val isActive = s.enabled && activeScheduleId() == s.id
+        active.isVisible = isActive
+        if (isActive) {
+            val fill = ColorUtils.compositeColors(ColorUtils.setAlphaComponent(strong, 0x2E), surface)
+            active.background = android.graphics.drawable.GradientDrawable().apply {
+                cornerRadius = 99 * density
+                setColor(fill)
+            }
+            active.setTextColor(AccentColor.readableOn(strong, fill, title.currentTextColor, 4.5))
+        }
+
+        // The 24h strip only means something for a time window; Wi-Fi/Bluetooth/location rows
+        // and all-day schedules say it in words.
+        timeline.isVisible = timeOnly && hasWindow
+        if (timeline.isVisible) {
+            val track = ColorUtils.blendARGB(surface, secondary, 0.22f)
+            val lit = s.enabled && today
+            timeline.setWindow(
+                startMinute = s.startMinutes,
+                endMinute = s.endMinutes,
+                nowMinute = now.get(java.util.Calendar.HOUR_OF_DAY) * 60 + now.get(java.util.Calendar.MINUTE),
+                track = track,
+                fill = if (lit) strong else ColorUtils.blendARGB(track, secondary, 0.35f),
+                now = MaterialColors.getColor(itemView, com.google.android.material.R.attr.colorOnSurface),
+            )
+        }
+
+        itemView.contentDescription = listOfNotNull(
+            displayTitle,
+            if (isActive) ctx.getString(R.string.schedules_row_active) else null,
+            sub.text.takeIf { sub.isVisible },
+        ).joinToString(", ")
     }
 }

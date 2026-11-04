@@ -23,7 +23,7 @@
     <!-- ====================================================== -->
     <!-- Automatic blocking -->
     <!-- ====================================================== -->
-    <string name="app_picker_auto_block_new_apps_title">Neu installierte Apps automatisch blockieren</string>
+    <string name="app_picker_auto_block_new_apps_title">Neue Apps blockieren</string>
     <string name="app_picker_auto_block_new_apps_summary">Neu installierte startbare Apps werden automatisch zu diesem Profil hinzugefügt. Sicherheitsrelevante Apps werden übersprungen.</string>
 
     <!-- ====================================================== -->
@@ -31,4 +31,18 @@
     <!-- ====================================================== -->
     <string name="rules_tighten_only_active_message">Während Loq In aktiv ist, kannst du zusätzlichen Schutz hinzufügen. Bestehenden Schutz zu entfernen oder erlaubte Ausnahmen zu erweitern erfordert weiterhin eine erlaubte Steueraktion.</string>
 
+    <string name="app_picker_auto_block_new_apps_row_sub">Später installierte Apps starten blockiert</string>
+    <string name="app_picker_hold_tip">Halte eine App gedrückt für Tageslimit und Regeln. Apps mit Limit zeigen es unter dem Namen.</string>
+    <string name="app_picker_hold_tip_dismiss">Verstanden</string>
+    <string name="app_picker_filter_blocked_fmt">Blockiert · %1$d</string>
+    <string name="app_picker_filter_allowed_fmt">Erlaubt · %1$d</string>
+    <string name="app_picker_filter_limits_fmt">Limits · %1$d</string>
+    <string name="app_picker_state_blocked">Blockiert</string>
+    <string name="app_picker_state_allowed">Erlaubt</string>
+    <string name="app_picker_tile_limit_cd_fmt">Tageslimit %1$s</string>
+    <string name="app_picker_sheet_action">Limit und Regeln</string>
+    <string name="app_picker_sheet_limit">Tageslimit</string>
+    <string name="app_picker_sheet_limit_sub">Minuten, Öffnungen oder Zeit pro Besuch</string>
+    <string name="app_picker_sheet_in_app">In-App-Regeln</string>
+    <string name="app_picker_sheet_websites">Website-Regeln</string>
 </resources>

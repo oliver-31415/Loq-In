@@ -64,7 +64,7 @@
     <string name="temp_pause_zero_hint">0 bedeutet unbegrenzt.</string>
     <string name="temp_pause_section_count">Pausen pro Tag</string>
     <string name="temp_pause_section_count_subtitle">Wie viele Pausen du pro Tag nehmen kannst</string>
-    <string name="temp_pause_section_length">Länge pro Pause</string>
+    <string name="temp_pause_section_length">Längste Pause</string>
     <string name="temp_pause_section_length_subtitle">Längste einzelne Pause</string>
     <string name="temp_pause_section_total">Tägliche Pausenzeit</string>
     <string name="temp_pause_section_total_subtitle">Gesamte Pausenminuten pro Tag</string>

@@ -32,6 +32,8 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.widget.TextViewCompat
 import androidx.core.graphics.ColorUtils
 import androidx.core.widget.NestedScrollView
 import com.oliver.loqin.R
@@ -46,6 +48,7 @@ import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.theme.CustomAccentApplier
 import com.oliver.loqin.ui.EdgeToEdgeUtils
 import com.oliver.loqin.ui.RuleTile
+import com.oliver.loqin.ui.RuleTileStyle
 import com.oliver.loqin.ui.SegmentedToggleUi
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.showWarnPill
@@ -81,6 +84,7 @@ class InAppRulesActivity : AppCompatActivity() {
     private lateinit var modeAllowButton: MaterialButton
     private lateinit var modeSummary: TextView
     private var updatingModeUi = false
+    private var notInstalledExpanded = false
 
     private data class Surface(
         val labelRes: Int,
@@ -177,11 +181,26 @@ class InAppRulesActivity : AppCompatActivity() {
             return
         }
 
-        visibleGroups.forEach { (group, status) ->
+        val (absent, present) = visibleGroups.partition { (_, status) -> status == AppInstallStatus.NOT_INSTALLED }
+        present.forEach { (group, status) ->
             val section = buildGroupSection(group, status)
             container.addView(section)
             if (group.packageName == focusPackage) focusView = section
         }
+        // Apps that aren't installed fold into one row: their rules still apply once they are,
+        // but a page of tiles nobody can use buries the ones that matter.
+        if (absent.isNotEmpty()) {
+            if (absent.any { it.first.packageName == focusPackage }) notInstalledExpanded = true
+            container.addView(buildNotInstalledRow(absent.map { it.first }))
+            if (notInstalledExpanded) {
+                absent.forEach { (group, status) ->
+                    val section = buildGroupSection(group, status)
+                    container.addView(section)
+                    if (group.packageName == focusPackage) focusView = section
+                }
+            }
+        }
+        detectedVersionsNote(present.map { it.first })?.let { container.addView(it) }
 
         focusView?.let { targetView ->
             targetView.post {
@@ -407,53 +426,10 @@ class InAppRulesActivity : AppCompatActivity() {
             )
         }
 
-        // Header: app icon + name, like a website rule's favicon; the right side holds either
-        // why the app can't be used (status pill) or YouTube's extra Shorts setup link.
-        val header = layoutInflater.inflate(R.layout.item_website_section_header, section, false)
-        header.findViewById<TextView>(R.id.tvHeader).apply {
-            text = getString(group.titleRes)
-            val icon = installedPackage(group)?.let { pkg ->
-                runCatching { packageManager.getApplicationIcon(pkg) }.getOrNull()
-            }
-            if (icon != null) {
-                icon.setBounds(0, 0, dp(20), dp(20))
-                setCompoundDrawablesRelative(icon, null, null, null)
-                compoundDrawablePadding = dp(8)
-            }
-            gravity = Gravity.CENTER_VERTICAL
-        }
-        header.findViewById<TextView>(R.id.tvHeaderAction).apply {
-            when {
-                !installed -> {
-                    text = getString(
-                        if (status == AppInstallStatus.DISABLED) R.string.in_app_status_disabled
-                        else R.string.in_app_status_not_installed
-                    )
-                    isClickable = false
-                    isFocusable = false
-                    background = GradientDrawable().apply {
-                        cornerRadius = dp(99).toFloat()
-                        setColor(ColorUtils.setAlphaComponent(onSurfaceColor(), 0x14))
-                    }
-                    setTextColor(ColorUtils.setAlphaComponent(onSurfaceColor(), 0xAA))
-                    setPadding(dp(10), dp(4), dp(10), dp(4))
-                    textSize = 11.5f
-                    visibility = View.VISIBLE
-                }
-                isYouTube -> {
-                    text = getString(R.string.in_app_youtube_native_limit_compact_title)
-                    setOnClickListener { showYouTubeNativeLimitGuide() }
-                    visibility = View.VISIBLE
-                }
-                else -> visibility = View.GONE
-            }
-        }
-        section.addView(header)
-
-        appUpdateWarning(group)?.let { section.addView(buildNoteRow(it, R.drawable.info_24)) }
-
+        section.addView(buildGroupHeader(group, status))
         val grid = TileGridLayout(this).apply {
-            columns = RuleTile.COMPACT_COLUMNS
+            // Three across once large text needs the room, like the app rules grid.
+            columns = if (resources.configuration.fontScale >= 1.3f) 3 else RuleTile.COMPACT_COLUMNS
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
@@ -463,7 +439,192 @@ class InAppRulesActivity : AppCompatActivity() {
             grid.addView(buildSurfaceTile(surface, group.packageName, grid, installed).root)
         }
         section.addView(grid)
+        if (isYouTube && installed) section.addView(buildExtraShortsRow())
         return section
+    }
+
+    /** App icon, name, and either "N of M blocked" or why the app can't be used yet. */
+    private fun buildGroupHeader(group: AppGroup, status: AppInstallStatus): View {
+        val installed = status == AppInstallStatus.INSTALLED
+        val row = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            minimumHeight = dp(48)
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                topMargin = dp(16)
+                bottomMargin = dp(6)
+                marginStart = dp(4)
+                marginEnd = dp(4)
+            }
+        }
+        val icon = installedPackage(group)?.let { pkg ->
+            runCatching { packageManager.getApplicationIcon(pkg) }.getOrNull()
+        }
+        if (icon != null) {
+            row.addView(ImageView(this).apply {
+                setImageDrawable(icon)
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                layoutParams = LinearLayout.LayoutParams(dp(30), dp(30)).apply { marginEnd = dp(12) }
+            })
+        }
+        row.addView(TextView(this).apply {
+            text = getString(group.titleRes)
+            textSize = 17f
+            typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL)
+            setTextColor(onSurfaceColor())
+            ViewCompat.setAccessibilityHeading(this, true)
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        })
+        val pill = TextView(this).apply {
+            textSize = 12.5f
+            setPadding(dp(10), dp(4), dp(10), dp(4))
+            maxLines = 1
+        }
+        if (installed) {
+            val total = group.surfaces.count { it.prefKey != null }
+            val chosen = group.surfaces.count { surface ->
+                val key = surface.prefKey ?: return@count false
+                pendingInAppSelections[key] ?: readProfileBool(key)
+            }
+            pill.text = getString(
+                if (isInAppAllowMode()) R.string.in_app_count_allowed_fmt else R.string.in_app_count_blocked_fmt,
+                chosen, total,
+            )
+            val strong = strongAccent()
+            if (chosen > 0) {
+                val fill = ColorUtils.compositeColors(ColorUtils.setAlphaComponent(strong, 0x2E), surfaceColor())
+                pill.setTextColor(AccentColor.readableOn(strong, fill, onSurfaceColor(), 4.5))
+                pill.typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL)
+                pill.background = GradientDrawable().apply { cornerRadius = dp(99).toFloat(); setColor(fill) }
+            } else {
+                pill.setTextColor(MaterialColors.getColor(pill, android.R.attr.textColorSecondary))
+                pill.background = GradientDrawable().apply { cornerRadius = dp(99).toFloat(); setColor(surfaceColor()) }
+            }
+        } else {
+            pill.text = getString(
+                if (status == AppInstallStatus.DISABLED) R.string.in_app_status_disabled
+                else R.string.in_app_status_not_installed
+            )
+            pill.setTextColor(MaterialColors.getColor(pill, android.R.attr.textColorSecondary))
+            pill.background = GradientDrawable().apply {
+                cornerRadius = dp(99).toFloat()
+                setColor(ColorUtils.setAlphaComponent(onSurfaceColor(), 0x14))
+            }
+        }
+        row.addView(pill)
+        return row
+    }
+
+    /** YouTube's own Shorts feed limit, as a row under its tiles rather than a link in the header. */
+    private fun buildExtraShortsRow(): View = navRow(
+        iconRes = R.drawable.security_24,
+        title = getString(R.string.in_app_youtube_native_limit_compact_title),
+        summary = getString(R.string.in_app_youtube_native_limit_row_sub),
+        trailingRes = R.drawable.keyboard_arrow_right_24,
+        topMargin = dp(8),
+    ) { showYouTubeNativeLimitGuide() }
+
+    private fun buildNotInstalledRow(groups: List<AppGroup>): View {
+        val names = groups.joinToString(", ") { getString(it.titleRes) }
+        return navRow(
+            iconRes = R.drawable.apps_24,
+            title = resources.getQuantityString(R.plurals.in_app_not_installed_title, groups.size, groups.size),
+            summary = getString(R.string.in_app_not_installed_sub_fmt, names),
+            trailingRes = if (notInstalledExpanded) R.drawable.keyboard_arrow_up_24 else R.drawable.keyboard_arrow_down_24,
+            topMargin = dp(20),
+            muted = true,
+        ) {
+            notInstalledExpanded = !notInstalledExpanded
+            render()
+        }.also { row ->
+            ViewCompat.setStateDescription(
+                row,
+                getString(if (notInstalledExpanded) R.string.a11y_state_expanded else R.string.a11y_state_collapsed),
+            )
+        }
+    }
+
+    /** A rounded white row with an icon, two lines and a trailing glyph, like a list segment. */
+    private fun navRow(
+        iconRes: Int,
+        title: String,
+        summary: String,
+        trailingRes: Int,
+        topMargin: Int,
+        muted: Boolean = false,
+        onClick: () -> Unit,
+    ): View {
+        val secondary = MaterialColors.getColor(container, android.R.attr.textColorSecondary)
+        return LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            gravity = Gravity.CENTER_VERTICAL
+            minimumHeight = dp(64)
+            setPadding(dp(18), dp(12), dp(14), dp(12))
+            background = GradientDrawable().apply { cornerRadius = dp(20).toFloat(); setColor(surfaceColor()) }
+            foreground = android.util.TypedValue().let { tv ->
+                theme.resolveAttribute(android.R.attr.selectableItemBackground, tv, true)
+                ContextCompat.getDrawable(this@InAppRulesActivity, tv.resourceId)
+            }
+            clipToOutline = true
+            isClickable = true
+            isFocusable = true
+            setOnClickListener { onClick() }
+            // Inset like the tiles' 4dp margins, so the row lines up with the grid.
+            layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT
+            ).apply {
+                this.topMargin = topMargin
+                marginStart = dp(4)
+                marginEnd = dp(4)
+            }
+            addView(ImageView(this@InAppRulesActivity).apply {
+                setImageResource(iconRes)
+                imageTintList = ColorStateList.valueOf(if (muted) secondary else strongAccent())
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                layoutParams = LinearLayout.LayoutParams(dp(24), dp(24)).apply { marginEnd = dp(16) }
+            })
+            addView(LinearLayout(this@InAppRulesActivity).apply {
+                orientation = LinearLayout.VERTICAL
+                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+                addView(TextView(this@InAppRulesActivity).apply {
+                    text = title
+                    TextViewCompat.setTextAppearance(this, R.style.TextAppearance_LoqIn_RowTitle)
+                    textSize = 15f
+                })
+                addView(TextView(this@InAppRulesActivity).apply {
+                    text = summary
+                    TextViewCompat.setTextAppearance(this, R.style.TextAppearance_LoqIn_RowSummary)
+                    textSize = 13f
+                })
+            })
+            addView(ImageView(this@InAppRulesActivity).apply {
+                setImageResource(trailingRes)
+                imageTintList = ColorStateList.valueOf(secondary)
+                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+                layoutParams = LinearLayout.LayoutParams(dp(24), dp(24)).apply { marginStart = dp(8) }
+            })
+        }
+    }
+
+    /**
+     * One quiet line for every installed app that changed since its sections were last seen,
+     * in place of a warning under each app.
+     */
+    private fun detectedVersionsNote(groups: List<AppGroup>): View? {
+        val stale = groups.mapNotNull { group ->
+            appUpdateVersion(group)?.let { version -> "${getString(group.titleRes)} $version" }
+        }
+        if (stale.isEmpty()) return null
+        return buildNoteRow(getString(R.string.in_app_detected_versions_fmt, stale.joinToString(", ")), R.drawable.info_24)
+            .also { note ->
+                (note.layoutParams as LinearLayout.LayoutParams).apply {
+                    topMargin = dp(16)
+                    marginStart = dp(8)
+                    marginEnd = dp(8)
+                }
+            }
     }
 
     /** The package actually serving this group (for YouTube, an enabled patched build wins). */
@@ -551,21 +712,25 @@ class InAppRulesActivity : AppCompatActivity() {
         }
     }
 
-    private fun appUpdateWarning(group: AppGroup): String? {
+    /** The app's version when it was updated after Loq In last saw its sections, else null. */
+    private fun appUpdateVersion(group: AppGroup): String? {
         val pkg = installedPackage(group) ?: return null
         val info = runCatching { packageManager.getPackageInfo(pkg, 0) }.getOrNull() ?: return null
         val version = info.versionName.orEmpty().ifBlank { return null }
         val lastDetected = InAppDetectionStore.lastForAny(this, group.surfaces.mapNotNull { it.surfaceKey })
         if (lastDetected <= 0L || info.lastUpdateTime <= lastDetected) return null
-        return getString(R.string.in_app_app_diagnostic_stale, version)
+        return version
     }
 
     private fun surfaceIconRes(surfaceKey: String?): Int = when (surfaceKey) {
         "yt:shorts", "ig:reels", "snap:spotlight", "fb:reels" -> R.drawable.play_arrow_24
-        "yt:subscriptions", "x:foryou", "fb:marketplace" -> R.drawable.apps_24
+        "yt:subscriptions" -> R.drawable.list_alt_24
+        "x:foryou" -> R.drawable.loqin_home_nav_24
+        "fb:marketplace" -> R.drawable.dashboard_24
         "yt:you", "snap:following" -> R.drawable.account_box_24
-        "yt:miniplayer", "x:grok" -> R.drawable.layers_24
-        "yt:pip" -> R.drawable.share_24
+        "yt:miniplayer" -> R.drawable.layers_24
+        "x:grok" -> R.drawable.star_24
+        "yt:pip" -> R.drawable.open_in_new_24
         "ig:search", "x:search" -> R.drawable.search_24
         "ig:stories", "snap:stories" -> R.drawable.photo_camera_24
         "x:notifications" -> R.drawable.notifications_24
@@ -602,7 +767,6 @@ class InAppRulesActivity : AppCompatActivity() {
         tile.setText(label)
         tile.root.contentDescription = ruleSwitchText(label)
         // Tap the tile to pick it, with the same check badge as a picked app.
-        tile.setToggle(null)
         tile.setState(on = shown, pending = pendingSelected != null)
         tile.setDimmed(prefKey == null || (readOnly && !canToggleWhileLocked))
         // Not installed: the rule still applies once it is, so keep the name readable.
@@ -758,6 +922,11 @@ class InAppRulesActivity : AppCompatActivity() {
     }
 
     private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
+
+    private fun surfaceColor(): Int = ContextCompat.getColor(this, R.color.foqos_surface)
+
+    private fun strongAccent(): Int =
+        RuleTileStyle.strongAccent(this)
 
     private fun onSurfaceColor(): Int =
         MaterialColors.getColor(this, com.google.android.material.R.attr.colorOnSurface, 0)

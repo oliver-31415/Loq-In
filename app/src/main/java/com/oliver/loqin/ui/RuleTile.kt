@@ -18,11 +18,9 @@
 
 package com.oliver.loqin.ui
 
-import android.graphics.drawable.Drawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.annotation.DrawableRes
@@ -36,29 +34,16 @@ import com.oliver.loqin.R
 import com.oliver.loqin.theme.AccentColor
 
 /**
- * One tile of a rule grid (grid_rule_tile), styled exactly like the app and website tiles so
- * in-app rules, schedules and breaks read as the same kind of page.
+ * One tile of a rule grid (grid_rule_tile), styled like the app and website tiles: a symbol on a
+ * roundel, a short name, and the check badge when picked. Used by the in-app rules grid.
  */
 class RuleTile(val root: MaterialCardView, private val compact: Boolean = false) {
     val icon: ImageView = root.findViewById(R.id.tileIcon)
     val label: TextView = root.findViewById(R.id.tileLabel)
-    val value: TextView = root.findViewById(R.id.tileValue)
-    val sub: TextView = root.findViewById(R.id.tileSub)
-    val corner: TextView = root.findViewById(R.id.tileCorner)
-    val toggle: ImageButton = root.findViewById(R.id.tileToggle)
     val badge: ImageView = root.findViewById(R.id.tileBadge)
 
     private val context get() = root.context
     private var symbolMode = false
-
-    /** A real app icon, drawn as-is like on the app tiles. */
-    fun setAppIcon(drawable: Drawable?) {
-        symbolMode = false
-        icon.background = null
-        icon.setPadding(0, 0, 0, 0)
-        icon.imageTintList = null
-        icon.setImageDrawable(drawable)
-    }
 
     /** A symbol on an accent roundel, for things that have no app icon of their own. */
     fun setSymbol(@DrawableRes res: Int) {
@@ -83,72 +68,35 @@ class RuleTile(val root: MaterialCardView, private val compact: Boolean = false)
         } else {
             icon.setBackgroundResource(R.drawable.bg_roundel_accent)
         }
-        icon.imageTintList = android.content.res.ColorStateList.valueOf(AccentColor.getAccentColorInt(context))
+        icon.imageTintList = android.content.res.ColorStateList.valueOf(RuleTileStyle.strongAccent(context))
     }
 
-    fun setText(label: CharSequence, sub: CharSequence? = null, value: CharSequence? = null) {
+    fun setText(label: CharSequence) {
         this.label.text = label
-        this.sub.text = sub
-        this.sub.isVisible = !sub.isNullOrEmpty()
-        this.value.text = value
-        this.value.isVisible = !value.isNullOrEmpty()
-    }
-
-    /** Small top-left marker (e.g. a schedule's priority "#1"); null hides it. */
-    fun setCorner(text: CharSequence?) {
-        corner.text = text
-        corner.isVisible = !text.isNullOrEmpty()
     }
 
     /**
      * On = accent outline and wash, as for a selected app; pending = the lighter "change queued"
-     * look. [showCheck] adds the app tiles' check badge (off for tiles that carry a toggle).
+     * look; both carry the app tiles' check badge.
      */
-    fun setState(on: Boolean, pending: Boolean = false, showCheck: Boolean = true) {
+    fun setState(on: Boolean, pending: Boolean = false) {
         RuleTileStyle.apply(root, on, pending)
         root.isSelected = on
         styleSymbol(on)
-        val showBadge = showCheck && (on || pending) && !toggle.isVisible
+        val showBadge = on || pending
         badge.isVisible = showBadge
         if (showBadge) {
-            badge.setImageResource(if (pending) R.drawable.hourglass_24 else R.drawable.check_circle_24)
-            badge.alpha = if (pending) 0.85f else 1f
+            RuleTileStyle.bindBadge(badge, pending)
         }
-    }
-
-    /**
-     * Corner on/off control, separate from the tile tap; null hides it. Drawn as the app tiles'
-     * check badge when on and an empty ring when off, so "on" looks the same on every grid.
-     */
-    fun setToggle(on: Boolean?, contentDescription: CharSequence? = null, onClick: (() -> Unit)? = null) {
-        if (on == null) {
-            toggle.isVisible = false
-            toggle.setOnClickListener(null)
-            return
+        if (compact) {
+            label.setTypeface(null, if (on) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL)
         }
-        toggle.isVisible = true
-        badge.isVisible = false
-        toggle.setImageResource(if (on) R.drawable.check_circle_24 else R.drawable.circle_outline_24)
-        toggle.imageTintList = android.content.res.ColorStateList.valueOf(
-            if (on) AccentColor.getAccentColorInt(context)
-            else MaterialColors.getColor(toggle, com.google.android.material.R.attr.colorOnSurfaceVariant)
-        )
-        toggle.imageAlpha = if (on) 255 else 0xCC
-        toggle.contentDescription = contentDescription
-        androidx.core.view.ViewCompat.setStateDescription(
-            toggle,
-            context.getString(if (on) R.string.state_on else R.string.state_off),
-        )
-        toggle.setOnClickListener(onClick?.let { action -> View.OnClickListener { action() } })
     }
 
     /** Faded like a locked app tile; still tappable so callers can explain why. */
     fun setDimmed(dimmed: Boolean) {
         icon.alpha = if (dimmed) 0.45f else 1f
         label.alpha = if (dimmed) 0.55f else 1f
-        value.alpha = if (dimmed) 0.55f else 1f
-        sub.alpha = if (dimmed) 0.55f else 1f
-        toggle.alpha = if (dimmed) 0.45f else 1f
     }
 
     companion object {
@@ -165,12 +113,13 @@ class RuleTile(val root: MaterialCardView, private val compact: Boolean = false)
             card.growToFit = true
             val tile = RuleTile(card, compact)
             if (compact) {
-                val size = SheetRows.dp(card.context, 34f)
+                val size = SheetRows.dp(card.context, 32f)
                 tile.icon.layoutParams = tile.icon.layoutParams.apply {
                     width = size
                     height = size
                 }
-                tile.label.textSize = 11f
+                tile.label.textSize = 11.5f
+                tile.label.typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL)
                 // Narrow tiles: let "Picture-in-picture" wrap at its hyphens, not mid-word.
                 tile.label.hyphenationFrequency = android.text.Layout.HYPHENATION_FREQUENCY_NORMAL
                 tile.label.breakStrategy = android.text.Layout.BREAK_STRATEGY_BALANCED
@@ -186,6 +135,34 @@ class RuleTile(val root: MaterialCardView, private val compact: Boolean = false)
 
 /** The tile outline and fill shared by every grid: apps, websites, in-app rules, schedules, breaks. */
 object RuleTileStyle {
+    /**
+     * The picked badge: a solid accent disc with a white check (an hourglass while a change is
+     * queued), so "picked" reads without relying on the tile's tint.
+     */
+    fun bindBadge(badge: android.widget.ImageView, pending: Boolean) {
+        val ctx = badge.context
+        val strong = strongAccent(ctx)
+        badge.background = android.graphics.drawable.GradientDrawable().apply {
+            shape = android.graphics.drawable.GradientDrawable.OVAL
+            setColor(if (pending) ColorUtils.setAlphaComponent(strong, 0x99) else strong)
+        }
+        badge.setImageResource(if (pending) R.drawable.hourglass_24 else R.drawable.loqin_switch_check_16)
+        // ImageViewCompat: a layout's app:tint would otherwise win over imageTintList.
+        androidx.core.widget.ImageViewCompat.setImageTintList(
+            badge, android.content.res.ColorStateList.valueOf(android.graphics.Color.WHITE)
+        )
+        val pad = SheetRows.dp(ctx, 3f)
+        badge.setPadding(pad, pad, pad, pad)
+        badge.alpha = 1f
+    }
+
+    /** The accent darkened (or lightened, in dark mode) until it reads as a state on a tile. */
+    fun strongAccent(ctx: android.content.Context): Int {
+        val surface = ContextCompat.getColor(ctx, R.color.foqos_surface)
+        val ink = if (ColorUtils.calculateLuminance(surface) > 0.5) android.graphics.Color.BLACK else android.graphics.Color.WHITE
+        return AccentColor.readableOn(AccentColor.getAccentColorInt(ctx), surface, ink, 4.0)
+    }
+
     fun apply(card: MaterialCardView, on: Boolean, pending: Boolean = false) {
         val ctx = card.context
         val accent = AccentColor.getAccentColorInt(ctx)
@@ -197,9 +174,10 @@ object RuleTileStyle {
                 card.setCardBackgroundColor(ColorUtils.setAlphaComponent(accent, 0x14))
             }
             on -> {
+                val strong = strongAccent(ctx)
                 card.strokeWidth = strokePx
-                card.strokeColor = accent
-                card.setCardBackgroundColor(ColorUtils.setAlphaComponent(accent, 0x30))
+                card.strokeColor = strong
+                card.setCardBackgroundColor(ColorUtils.setAlphaComponent(strong, 0x2E))
             }
             else -> {
                 card.strokeWidth = 0
