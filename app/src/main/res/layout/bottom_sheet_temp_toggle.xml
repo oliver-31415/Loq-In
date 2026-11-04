@@ -89,6 +89,22 @@
         </FrameLayout>
     </LinearLayout>
 
+    <!-- What today's break limits allow, as on the Breaks page; breaks only. -->
+    <TextView
+        android:id="@+id/tvLimitStrip"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:drawablePadding="10dp"
+        android:gravity="center_vertical"
+        android:minHeight="48dp"
+        android:paddingStart="14dp"
+        android:paddingTop="10dp"
+        android:paddingEnd="14dp"
+        android:paddingBottom="10dp"
+        android:textSize="14sp"
+        android:visibility="gone" />
+
     <!-- Active Timer Card (shown only when a timer is currently active) -->
     <LinearLayout
         android:id="@+id/cardActiveTimer"
@@ -362,6 +378,7 @@
                     android:textStyle="bold" />
 
                 <TextView
+                    android:id="@+id/tvCustomSubtitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:alpha="0.6"

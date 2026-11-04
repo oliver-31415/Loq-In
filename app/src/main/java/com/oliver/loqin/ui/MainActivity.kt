@@ -1341,6 +1341,26 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * "Break started · back at 2:55 PM" with Undo for a few seconds: breaks are limited, so a
+     * mis-tap gives the break (and its minutes) back.
+     */
+    private fun showBreakStartedUndo(profile: String, minutes: Int) {
+        val backAt = java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT)
+            .format(java.util.Date(System.currentTimeMillis() + minutes * 60_000L))
+        com.google.android.material.snackbar.Snackbar.make(
+            snackRoot(),
+            getString(R.string.break_started_fmt, backAt),
+            8_000,
+        ).setAction(R.string.break_started_undo) {
+            if (SwitchModeStore.getTemporaryRemainingMillis(this) > 0L) {
+                SwitchModeStore.cancelTemporaryDisable(this)
+                TempPauseStore.refundPause(this, profile, minutes)
+                updateSwitchState()
+            }
+        }.applyLoqInStyle().show()
+    }
+
     private fun showTempToggleSheet(): Boolean {
         val enabledNow = SwitchModeStore.isEnabled(this)
         val tempDisableRemaining = SwitchModeStore.getTemporaryRemainingMillis(this)
@@ -1441,14 +1461,15 @@ class MainActivity : AppCompatActivity() {
         btnClose.setOnClickListener { sheet.dismiss() }
 
         if (mode == TempSheetMode.DISABLE) {
-            tvTitle.text = getString(R.string.nfc_action_temp_disable)
+            // Same words as the Home tile and the Breaks page.
+            tvTitle.text = getString(R.string.break_sheet_title)
             tvSubtitle.text = if (lockedByNfc) {
                 getString(R.string.dashboard_temp_sheet_sub_disable_locked)
             } else {
-                getString(R.string.dashboard_temp_sheet_sub_disable)
+                getString(R.string.break_sheet_subtitle)
             }
         } else {
-            tvTitle.text = getString(R.string.nfc_action_temp_enable)
+            tvTitle.text = getString(R.string.break_sheet_title_enable)
             val currentProfile = ProfileStore.getCurrent(this).orEmpty().trim()
             tvSubtitle.text = if (currentProfile.isBlank()) {
                 getString(R.string.dashboard_temp_sheet_sub_enable)
@@ -1462,6 +1483,34 @@ class MainActivity : AppCompatActivity() {
                 .getBoolean(ToggleOptionsActivity.KEY_LOCK_ACTIVE_TEMPORARY_TIMER, true)
 
         tvNote.text = getString(R.string.nfc_temp_hint_timer_behavior)
+        // The subtitle already says blocking comes back by itself, so the note only stays for enabling.
+        tvNote.isVisible = mode == TempSheetMode.ENABLE
+        val tvLimitStrip = view.findViewById<TextView>(R.id.tvLimitStrip)
+        if (hasCaps && !hasActive) {
+            val caps = TempPauseStore.getCaps(this, currentProfile)
+            val parts = buildList {
+                if (caps.maxCountPerDay > 0) add(resources.getQuantityString(
+                    R.plurals.break_sheet_left_fmt, caps.maxCountPerDay, remainingPauses.coerceAtLeast(0), caps.maxCountPerDay,
+                ))
+                if (caps.maxMinutesPerPause > 0) add(getString(R.string.break_sheet_each_fmt, caps.maxMinutesPerPause))
+                if (caps.maxMinutesPerDay > 0) add(getString(R.string.break_sheet_minutes_left_fmt, remainingMinutes.coerceAtLeast(0)))
+            }
+            val strong = RuleTileStyle.strongAccent(this)
+            val fill = ColorUtils.compositeColors(ColorUtils.setAlphaComponent(strong, 0x22), ContextCompat.getColor(this, R.color.foqos_surface))
+            val ink = AccentColor.readableOn(strong, fill, onSurface, 4.5)
+            tvLimitStrip.isVisible = parts.isNotEmpty()
+            tvLimitStrip.text = parts.joinToString(" · ")
+            tvLimitStrip.setTextColor(ink)
+            tvLimitStrip.background = GradientDrawable().apply {
+                cornerRadius = 16 * resources.displayMetrics.density
+                setColor(fill)
+            }
+            tvLimitStrip.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                ContextCompat.getDrawable(this, R.drawable.info_24)?.mutate()?.apply { setTint(ink) }, null, null, null,
+            )
+        } else {
+            tvLimitStrip.isVisible = false
+        }
 
         if (lockedByNfc) {
             cardLockedNotice.visibility = View.VISIBLE
@@ -1585,31 +1634,64 @@ class MainActivity : AppCompatActivity() {
             }
             sheet.dismiss()
             updateSwitchState()
+            if (mode == TempSheetMode.DISABLE) showBreakStartedUndo(currentProfile, minutes)
         }
 
         if (!lockedByNfc && !lockActiveTimerChanges && !isPauseExhausted) {
             layoutPresetsSection.visibility = View.VISIBLE
             layoutMoreOptionsSection.visibility = View.VISIBLE
 
+            // Over-limit presets stay visible and readable, with a lock and the reason, so the
+            // limit is clear before tapping rather than refused after.
             fun setupPreset(v: View, minutes: Int) {
                 applyCardStyle(v)
+                val group = v as ViewGroup
+                val number = group.getChildAt(0) as TextView
+                val unit = group.getChildAt(1) as TextView
+                val hours = minutes >= 60 && minutes % 60 == 0
+                number.text = if (hours) (minutes / 60).toString() else minutes.toString()
+                val unitText = getString(if (hours) R.string.temp_duration_unit_hour else R.string.temp_pause_unit_minutes)
+                v.alpha = 1f
                 if (minutes > maxAllowed) {
-                    v.alpha = 0.35f
+                    number.alpha = 0.4f
+                    unit.alpha = 1f
+                    unit.text = getString(R.string.break_sheet_over_limit)
+                    unit.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                        ContextCompat.getDrawable(this, R.drawable.lock_24)?.mutate()?.apply {
+                            setTint(ContextCompat.getColor(this@MainActivity, R.color.foqos_on_surface_variant))
+                            setBounds(0, 0, homeDp(14f), homeDp(14f))
+                        }, null, null, null,
+                    )
+                    unit.setCompoundDrawablesRelative(unit.compoundDrawablesRelative[0]?.apply {
+                        setBounds(0, 0, homeDp(14f), homeDp(14f))
+                    }, null, null, null)
+                    unit.compoundDrawablePadding = homeDp(4f)
+                    unit.setTextColor(ContextCompat.getColor(this, R.color.foqos_on_surface_variant))
+                    v.contentDescription = getString(R.string.break_sheet_preset_over_cd, minutes)
                     v.setOnClickListener { tapped ->
                         tapped.showWarnPill(getString(R.string.temp_pause_exceeds_limit, maxAllowed))
                     }
                 } else {
-                    v.alpha = 1.0f
+                    number.alpha = 1f
+                    unit.alpha = 0.75f
+                    unit.text = if (minutes == maxAllowed && hasCaps) getString(R.string.break_sheet_longest_fmt, unitText) else unitText
+                    unit.setCompoundDrawablesRelative(null, null, null, null)
+                    v.contentDescription = getString(R.string.break_sheet_preset_cd, minutes)
                     v.setOnClickListener { setDuration(minutes) }
                 }
             }
 
             setupPreset(preset5m, 5)
-            setupPreset(preset15m, 15)
-            setupPreset(preset30m, 30)
-            setupPreset(preset60m, 60)
+            setupPreset(preset15m, 10)
+            setupPreset(preset30m, 15)
+            setupPreset(preset60m, 30)
 
             applyCardStyle(rowCustomDuration)
+            // With limits, say the range the picker will accept.
+            if (hasCaps && maxAllowed in 1 until Int.MAX_VALUE) {
+                view.findViewById<TextView>(R.id.tvCustomSubtitle)?.text =
+                    getString(R.string.break_sheet_custom_range_fmt, maxAllowed)
+            }
             roundelCustom.background = GradientDrawable().apply {
                 shape = GradientDrawable.OVAL
                 setColor(ColorUtils.compositeColors(ColorUtils.setAlphaComponent(accent, 0x22), surfaceVariant))

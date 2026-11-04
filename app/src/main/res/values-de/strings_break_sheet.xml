@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="break_sheet_title">Pause einlegen</string>
+    <string name="break_sheet_subtitle">Die Blockierung schaltet sich nach der Pause von selbst wieder ein.</string>
+    <string name="break_sheet_title_enable">Zeitweise aktivieren</string>
+    <plurals name="break_sheet_left_fmt">
+        <item quantity="one">%1$d von %2$d Pause heute übrig</item>
+        <item quantity="other">%1$d von %2$d Pausen heute übrig</item>
+    </plurals>
+    <string name="break_sheet_each_fmt">je bis zu %1$d min</string>
+    <string name="break_sheet_minutes_left_fmt">%1$d min heute übrig</string>
+    <string name="break_sheet_over_limit">über deinem Limit</string>
+    <string name="break_sheet_longest_fmt">%1$s · deine längste</string>
+    <string name="break_sheet_preset_cd">%1$d Minuten</string>
+    <string name="break_sheet_preset_over_cd">%1$d Minuten, nicht verfügbar, über deinem Limit</string>
+    <string name="break_started_fmt">Pause gestartet · Blockierung wieder ab %1$s</string>
+    <string name="break_started_undo">Rückgängig</string>
+    <string name="break_sheet_custom_range_fmt">1–%1$d min</string>
+</resources>

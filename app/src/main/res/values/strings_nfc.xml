@@ -91,7 +91,7 @@
     <string name="temp_enable_duration_custom_title">Custom duration</string>
     <string name="temp_enable_duration_custom_hint">Enter minutes</string>
     <string name="temp_enable_duration_invalid">Enter minutes, max 24h.</string>
-    <string name="temp_duration_quick_presets">Quick presets</string>
+    <string name="temp_duration_quick_presets">How long?</string>
     <string name="temp_duration_more_options">More options</string>
     <string name="temp_duration_unit_hour">hour</string>
     <string name="temp_duration_preset_minutes">%1$dm</string>
