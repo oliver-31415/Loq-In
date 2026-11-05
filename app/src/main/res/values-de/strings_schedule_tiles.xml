@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- Schedules tile grid: summary card, add tile, tile toggle -->
+    <plurals name="schedule_tile_summary_on">
+        <item quantity="one">%1$d Zeitplan an</item>
+        <item quantity="other">%1$d Zeitpläne an</item>
+    </plurals>
+    <string name="schedule_tile_summary_all_off">Alle Zeitpläne aus</string>
+    <string name="schedule_tile_summary_empty">Noch keine Zeitpläne</string>
+    <string name="schedule_tile_add_label">Zeitplan hinzufügen</string>
+    <string name="schedule_tile_toggle_desc">Zeitplan ein- oder ausschalten</string>
+
+    <string name="schedules_test_button">Prüfen</string>
+
+    <!-- Summary card: next start or end, e.g. "Starts today at 9:31 PM" -->
+    <string name="schedule_next_starts_fmt">Beginnt %1$s</string>
+    <string name="schedule_next_ends_fmt">Endet %1$s</string>
+    <string name="schedule_next_today_fmt">heute um %1$s</string>
+    <string name="schedule_next_tomorrow_fmt">morgen um %1$s</string>
+    <string name="schedule_next_day_fmt">%1$s um %2$s</string>
+
+    <string name="schedules_list_header">Deine Zeitpläne</string>
+    <string name="schedules_reorder">Neu anordnen</string>
+    <string name="schedules_reorder_done">Fertig</string>
+    <string name="schedules_reorder_up">Nach oben</string>
+    <string name="schedules_reorder_down">Nach unten</string>
+    <string name="schedules_row_active">Aktiv</string>
+    <string name="schedules_row_not_today">Nicht heute</string>
+    <string name="schedules_list_priority_note">Tippe auf einen Zeitplan, um ihn zu bearbeiten. Bei Überschneidungen gilt der weiter oben in der Liste.</string>
+    <string name="schedules_summary_running_fmt">%1$s · bis %2$s</string>
+</resources>

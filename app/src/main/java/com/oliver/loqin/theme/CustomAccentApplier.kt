@@ -150,6 +150,12 @@ object CustomAccentApplier {
         switch.trackTintList = buildSwitchTrackTint(switch.context, accent)
     }
 
+    /** Tints a switch with an explicit colour, for previews of a colour that is not yet saved. */
+    fun tintSwitch(switch: MaterialSwitch, accent: Int) {
+        switch.thumbTintList = buildSwitchThumbTint(switch.context, accent)
+        switch.trackTintList = buildSwitchTrackTint(switch.context, accent)
+    }
+
     fun applyToDialog(dialog: AlertDialog) {
         val context = dialog.context
         if (!isAccentRecoloringNeeded(context)) {

@@ -26,9 +26,6 @@ import androidx.appcompat.app.AppCompatActivity
 import com.oliver.loqin.R
 import com.oliver.loqin.feature.about.PrivacyReportActivity
 import com.oliver.loqin.feature.inbox.BlockedInboxActivity
-import com.oliver.loqin.feature.onboarding.OnboardingActivity
-import com.oliver.loqin.feature.settings.AppLockSettingsActivity
-import com.oliver.loqin.feature.tools.ManageKeysActivity
 import com.oliver.loqin.feature.usage.LoqInOverviewActivity
 import com.oliver.loqin.feature.usage.ScreenUnlocksActivity
 import com.oliver.loqin.theme.AccentColor
@@ -36,16 +33,16 @@ import com.oliver.loqin.ui.EdgeToEdgeUtils
 import com.oliver.loqin.ui.LockedUi
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.dialog.showAccented
-import com.oliver.loqin.ui.showWarnPill
+import com.oliver.loqin.ui.showWarnPillOnContent
 import com.oliver.loqin.util.ActivityTransitionCompat
 import com.oliver.loqin.util.EditingLockGuard
 import com.oliver.loqin.util.LoqInAppAccessGuard
 import com.google.android.material.appbar.MaterialToolbar
 
 /**
- * Account hub: account-level destinations (overview, keys, app lock,
- * onboarding, privacy, blocked notifications) plus the Info section.
- * Same card language as Settings.
+ * Account page: activity and history (stats, screen unlocks, blocked
+ * notifications) and your data (privacy report). Same card language as
+ * Settings. Protection, personalization, and help rows live in SettingsActivity.
  */
 class AccountActivity : AppCompatActivity() {
 
@@ -67,26 +64,13 @@ class AccountActivity : AppCompatActivity() {
         findViewById<View>(R.id.cardAccountScreenUnlocks).setOnClickListener {
             startActivity(ScreenUnlocksActivity.intent(this))
         }
-        findViewById<View>(R.id.cardAccountKeysCodes).setOnClickListener {
-            startActivity(Intent(this, ManageKeysActivity::class.java))
-        }
-        findViewById<View>(R.id.cardAccountAppLock).setOnClickListener {
-            startActivity(Intent(this, AppLockSettingsActivity::class.java))
-        }
-        findViewById<View>(R.id.cardAccountOnboarding).setOnClickListener {
-            startActivity(
-                Intent(this, OnboardingActivity::class.java)
-                    .putExtra(OnboardingActivity.EXTRA_FORCE, true)
-            )
-        }
         findViewById<View>(R.id.cardAccountPrivacy).setOnClickListener {
             startActivity(Intent(this, PrivacyReportActivity::class.java))
         }
         findViewById<View>(R.id.cardAccountBlockedNotifications).setOnClickListener {
             // Same lock as Settings: warn via pill instead of opening while active.
             if (EditingLockGuard.isLocked(this)) {
-                findViewById<View>(android.R.id.content)
-                    .showWarnPill(R.string.edit_locked_manage_blocked_notifications)
+                showWarnPillOnContent(R.string.edit_locked_manage_blocked_notifications)
                 return@setOnClickListener
             }
             startActivity(Intent(this, BlockedInboxActivity::class.java))
@@ -100,7 +84,7 @@ class AccountActivity : AppCompatActivity() {
     }
 
     private fun syncLockedCardState() {
-        // Gray out (but keep tappable for the warning pill) while protection is active.
+        // Dimmed like other locked rows, but still tappable for the warning pill.
         findViewById<View>(R.id.cardAccountBlockedNotifications)?.alpha =
             if (EditingLockGuard.isLocked(this)) LockedUi.cardAlpha(this) else 1f
     }

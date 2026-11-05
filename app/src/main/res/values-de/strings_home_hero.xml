@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_state_protecting">Schützt</string>
+    <string name="home_state_not_protecting">Schützt nicht</string>
+    <string name="home_state_break_fmt">Pause · noch %1$s</string>
+    <string name="home_state_off">Aus</string>
+</resources>

@@ -49,58 +49,59 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp">
-<LinearLayout
-                android:id="@+id/rowEmergencyPin"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:minHeight="72dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingStart="20dp"
-                android:paddingTop="14dp"
-                android:paddingEnd="16dp"
-                android:paddingBottom="14dp"
-                android:clickable="true"
-                android:focusable="true">
-
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:contentDescription="@null"
-                    android:src="@drawable/pin_24"
-                    app:tint="?attr/colorPrimary" />
 
                 <LinearLayout
-                    android:layout_width="0dp"
+                    android:id="@+id/rowEmergencyPin"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="14dp"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
+                    android:minHeight="72dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingStart="20dp"
+                    android:paddingTop="14dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="14dp"
+                    android:clickable="true"
+                    android:focusable="true">
 
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/app_lock_emergency_pin_title"
-                        android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/pin_24"
+                        app:tint="?attr/colorPrimary" />
 
-                    <TextView
-                        android:layout_width="match_parent"
+                    <LinearLayout
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="@string/app_lock_emergency_pin_summary"
-                        android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
+                        android:layout_marginStart="14dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/app_lock_emergency_pin_title"
+                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="@string/app_lock_emergency_pin_summary"
+                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
+                    </LinearLayout>
+
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="@string/open"
+                        android:src="@drawable/keyboard_arrow_right_24"
+                        app:tint="?attr/colorOnSurfaceVariant" />
                 </LinearLayout>
-
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:contentDescription="@string/open"
-                    android:src="@drawable/keyboard_arrow_right_24"
-                    app:tint="?attr/colorOnSurfaceVariant" />
-            </LinearLayout>
             </com.oliver.loqin.ui.widgets.ListGroupLayout>
 
-            <!-- Strict Protection -->
+            <!-- Uninstall protection -->
             <TextView
                 style="@style/LoqIn.SectionHeader"
                 android:layout_width="match_parent"
@@ -113,56 +114,69 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp">
-<LinearLayout
-                android:id="@+id/rowStrictProtection"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:minHeight="72dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingStart="20dp"
-                android:paddingTop="14dp"
-                android:paddingEnd="16dp"
-                android:paddingBottom="14dp"
-                android:clickable="true"
-                android:focusable="true">
-
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:contentDescription="@null"
-                    android:src="@drawable/security_24"
-                    app:tint="?attr/colorPrimary" />
 
                 <LinearLayout
-                    android:layout_width="0dp"
+                    android:id="@+id/rowStrictProtection"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="14dp"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
+                    android:minHeight="72dp"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:paddingStart="20dp"
+                    android:paddingTop="14dp"
+                    android:paddingEnd="16dp"
+                    android:paddingBottom="14dp"
+                    android:clickable="true"
+                    android:focusable="true">
 
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/app_lock_strict_protection_title"
-                        android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
+                    <ImageView
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/security_24"
+                        app:tint="?attr/colorPrimary" />
 
-                    <TextView
-                        android:id="@+id/tvStrictProtectionSummary"
-                        android:layout_width="match_parent"
+                    <LinearLayout
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="@string/app_lock_strict_protection_summary"
-                        android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
+                        android:layout_marginStart="14dp"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
+
+                        <TextView
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/app_lock_strict_protection_title"
+                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
+
+                        <TextView
+                            android:id="@+id/tvStrictProtectionSummary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="@string/app_lock_strict_protection_summary"
+                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
+                    </LinearLayout>
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                        android:id="@+id/switchStrictProtection"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
+                        app:showText="false" />
                 </LinearLayout>
-
-                <com.google.android.material.switchmaterial.SwitchMaterial
-                    android:id="@+id/switchStrictProtection"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    app:showText="false" />
-            </LinearLayout>
             </com.oliver.loqin.ui.widgets.ListGroupLayout>
+
+            <!-- Full uninstall-protection explanation -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:text="@string/app_lock_strict_protection_footnote"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:textSize="13sp" />
 
             <!-- Lock Access -->
             <TextView
@@ -225,9 +239,9 @@
                         android:id="@+id/switchAppLockEnabled"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
                         app:showText="false" />
                 </LinearLayout>
-
 
                 <!-- Biometric Unlock -->
                 <LinearLayout
@@ -276,9 +290,9 @@
                         android:id="@+id/switchAppLockBiometric"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_gravity="center_vertical"
                         app:showText="false" />
                 </LinearLayout>
-
 
                 <!-- Set / Change PIN -->
                 <LinearLayout

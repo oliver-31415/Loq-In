@@ -40,7 +40,6 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.addCallback
 import androidx.activity.result.contract.ActivityResultContracts
@@ -57,6 +56,7 @@ import androidx.core.view.updatePadding
 import androidx.recyclerview.widget.RecyclerView
 import androidx.viewpager2.widget.ViewPager2
 import com.oliver.loqin.R
+import com.oliver.loqin.ui.dialog.showLoqInInputDialog
 import com.oliver.loqin.blocking.LoqInAccessibilityService
 import com.oliver.loqin.data.onboarding.OnboardingPage
 import com.oliver.loqin.data.prefs.ProfileStore
@@ -65,20 +65,11 @@ import com.oliver.loqin.feature.settings.ManageBlockedWebsitesActivity
 import com.oliver.loqin.data.prefs.ScheduleStore
 import com.oliver.loqin.data.prefs.SwitchModeStore
 import com.oliver.loqin.feature.onboarding.adapters.OnboardingPagerAdapter
-import com.oliver.loqin.feature.faq.FaqActivity
-import com.oliver.loqin.feature.settings.AppLockSettingsActivity
 import com.oliver.loqin.feature.settings.BackupFlowActions
-import com.oliver.loqin.feature.settings.BlockingFeaturesActivity
 import com.oliver.loqin.feature.settings.ControlModesActivity
-import com.oliver.loqin.feature.settings.HomeModeDialogHelper
 import com.oliver.loqin.feature.picker.AppPickerActivity
-import com.oliver.loqin.feature.schedule.SchedulesActivity
 import com.oliver.loqin.feature.settings.AccessibilityDisclosure
 import com.oliver.loqin.feature.settings.PermissionsActivity
-import com.oliver.loqin.feature.settings.ToggleOptionsActivity
-import com.oliver.loqin.feature.tools.ManageKeysActivity
-import com.oliver.loqin.feature.support.SupportActivity
-import com.oliver.loqin.feature.usage.IgnoredUsageAppsActivity
 import com.oliver.loqin.feature.usage.UsageStatsRepo
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.ui.MainActivity
@@ -96,7 +87,6 @@ import com.oliver.loqin.util.NfcLaunchAccessCompat
 import com.oliver.loqin.util.getIntCompat
 import com.oliver.loqin.util.FrameworkApi34Compat
 import com.google.android.material.button.MaterialButton
-import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.checkbox.MaterialCheckBox
 import com.google.android.material.color.MaterialColors
@@ -341,34 +331,18 @@ class OnboardingActivity : ComponentActivity() {
 
     fun showRenameProfileDialog() {
         val current = ensureOnboardingProfile(this)
-        val density = resources.displayMetrics.density
-        fun dp(value: Float): Int = (value * density).toInt()
-
-        val input = TextInputEditText(this).apply {
-            setText(current)
-            setSelection(current.length)
-            setSingleLine()
-            setPadding(dp(16f), dp(12f), dp(16f), dp(12f))
-        }
-        val container = FrameLayout(this).apply {
-            setPadding(dp(24f), dp(8f), dp(24f), dp(4f))
-            addView(input)
-        }
-
-        MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.onb_profiles_rename_dialog_title)
-            .setView(container)
-            .setPositiveButton(R.string.save) { _, _ ->
-                val newName = input.text?.toString()?.trim() ?: ""
-                if (newName.isNotEmpty() && newName != current) {
-                    if (ProfileStore.renameProfile(this, current, newName)) {
-                        ProfileStore.setCurrent(this, newName)
-                        refreshPages()
-                    }
+        showLoqInInputDialog(
+            title = getString(R.string.onb_profiles_rename_dialog_title),
+            initialText = current,
+            hint = getString(R.string.profile_sheet_rename_hint),
+        ) { newName ->
+            if (newName.isNotEmpty() && newName != current) {
+                if (ProfileStore.renameProfile(this, current, newName)) {
+                    ProfileStore.setCurrent(this, newName)
+                    refreshPages()
                 }
             }
-            .setNegativeButton(R.string.cancel, null)
-            .showAccented()
+        }
     }
 
     override fun onResume() {

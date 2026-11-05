@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- ====================================================== -->
+    <!-- Settings sub-pages: Privacy & data, App lock, Keys & codes -->
+    <!-- ====================================================== -->
+
+    <!-- Privacy & data: own group header for the destructive delete row -->
+    <string name="privacy_report_section_delete">Delete data</string>
+
+    <!-- App lock: full uninstall-protection explanation, shown as a footnote below the group -->
+    <string name="app_lock_strict_protection_footnote">Uses Android Device Admin for removal protection. On standard Android, an active Device Admin also disables Force Stop; manufacturer behavior can differ. Turning this protection off in Loq In requires your PIN or biometrics.</string>
+
+</resources>

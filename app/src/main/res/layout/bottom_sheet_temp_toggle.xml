@@ -73,11 +73,11 @@
 
         <FrameLayout
             android:id="@+id/btnClose"
-            android:layout_width="34dp"
-            android:layout_height="34dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:clickable="true"
             android:focusable="true"
-            android:background="@drawable/bg_roundel_neutral">
+            android:background="@drawable/bg_roundel_neutral_close">
 
             <ImageView
                 android:layout_width="16dp"
@@ -88,6 +88,22 @@
                 app:tint="?attr/colorOnSurface" />
         </FrameLayout>
     </LinearLayout>
+
+    <!-- What today's break limits allow, as on the Breaks page; breaks only. -->
+    <TextView
+        android:id="@+id/tvLimitStrip"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:drawablePadding="10dp"
+        android:gravity="center_vertical"
+        android:minHeight="48dp"
+        android:paddingStart="14dp"
+        android:paddingTop="10dp"
+        android:paddingEnd="14dp"
+        android:paddingBottom="10dp"
+        android:textSize="14sp"
+        android:visibility="gone" />
 
     <!-- Active Timer Card (shown only when a timer is currently active) -->
     <LinearLayout
@@ -155,7 +171,8 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="QUICK PRESETS"
+            android:text="@string/temp_duration_quick_presets"
+            android:textAllCaps="true"
             android:textColor="?attr/colorOnSurface"
             android:textSize="11sp"
             android:textStyle="bold"
@@ -184,6 +201,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="5"
+                    tools:ignore="HardcodedText"
                     android:textColor="?attr/colorOnSurface"
                     android:textSize="21sp"
                     android:textStyle="bold" />
@@ -192,7 +210,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="4dp"
-                    android:text="min"
+                    android:text="@string/temp_pause_unit_minutes"
                     android:textColor="?attr/colorOnSurface"
                     android:textSize="12sp"
                     android:alpha="0.65" />
@@ -213,6 +231,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="15"
+                    tools:ignore="HardcodedText"
                     android:textColor="?attr/colorOnSurface"
                     android:textSize="21sp"
                     android:textStyle="bold" />
@@ -221,7 +240,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="4dp"
-                    android:text="min"
+                    android:text="@string/temp_pause_unit_minutes"
                     android:textColor="?attr/colorOnSurface"
                     android:textSize="12sp"
                     android:alpha="0.65" />
@@ -250,6 +269,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="30"
+                    tools:ignore="HardcodedText"
                     android:textColor="?attr/colorOnSurface"
                     android:textSize="21sp"
                     android:textStyle="bold" />
@@ -258,7 +278,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="4dp"
-                    android:text="min"
+                    android:text="@string/temp_pause_unit_minutes"
                     android:textColor="?attr/colorOnSurface"
                     android:textSize="12sp"
                     android:alpha="0.65" />
@@ -279,6 +299,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="1"
+                    tools:ignore="HardcodedText"
                     android:textColor="?attr/colorOnSurface"
                     android:textSize="21sp"
                     android:textStyle="bold" />
@@ -287,7 +308,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="4dp"
-                    android:text="hour"
+                    android:text="@string/temp_duration_unit_hour"
                     android:textColor="?attr/colorOnSurface"
                     android:textSize="12sp"
                     android:alpha="0.65" />
@@ -306,7 +327,8 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="MORE OPTIONS"
+            android:text="@string/temp_duration_more_options"
+            android:textAllCaps="true"
             android:textColor="?attr/colorOnSurface"
             android:textSize="11sp"
             android:textStyle="bold"
@@ -356,6 +378,7 @@
                     android:textStyle="bold" />
 
                 <TextView
+                    android:id="@+id/tvCustomSubtitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:alpha="0.6"

@@ -66,6 +66,7 @@ object BlockingRuntime {
     private const val KEY_MULTIWINDOW_BLOCK_LAST_PKG = "multiwindow_block_last_pkg"
     private const val KEY_MULTIWINDOW_BLOCK_LAST_DETAILS = "multiwindow_block_last_details"
     private const val A11Y_HEARTBEAT_STALE_MS = 8_000L
+    private const val A11Y_HEARTBEAT_WRITE_MS = 3_000L
 
     private fun prefs(ctx: Context) =
         ctx.applicationContext.getSharedPreferences(PREFS_RUNTIME, Context.MODE_PRIVATE)
@@ -105,8 +106,14 @@ object BlockingRuntime {
     )
 
     // Called by [LoqInAccessibilityService] while it is connected and alive.
+    // Readers treat the heartbeat as stale after A11Y_HEARTBEAT_STALE_MS (8 s); writing it every
+    // tick (1 s) only rewrote the prefs file, so it is throttled well inside that window.
+    @Volatile private var lastHeartbeatWriteMs = 0L
+
     fun markAccessibilityHeartbeat(ctx: Context) {
         val now = SystemClock.elapsedRealtime()
+        if (lastHeartbeatWriteMs > 0L && now - lastHeartbeatWriteMs in 0 until A11Y_HEARTBEAT_WRITE_MS) return
+        lastHeartbeatWriteMs = now
         prefs(ctx).edit {
             putBoolean(KEY_A11Y_CONNECTED, true)
             putLong(KEY_A11Y_LAST_HEARTBEAT_MS, now)
@@ -210,6 +217,7 @@ object BlockingRuntime {
 
     // Called when the Accessibility service disconnects or is destroyed.
     fun markAccessibilityDisconnected(ctx: Context) {
+        lastHeartbeatWriteMs = 0L
         prefs(ctx).edit { putBoolean(KEY_A11Y_CONNECTED, false) }
     }
 

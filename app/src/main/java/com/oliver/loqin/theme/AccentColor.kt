@@ -99,6 +99,22 @@ object AccentColor {
         androidx.core.graphics.ColorUtils.calculateContrast(0xFF1B1B18.toInt(), accent or 0xFF000000.toInt()) >
             androidx.core.graphics.ColorUtils.calculateContrast(android.graphics.Color.WHITE, accent or 0xFF000000.toInt())
 
+    /**
+     * The accent nudged toward [ink] until it reaches [minContrast] against [background], for
+     * bars, checks and text that carry meaning: soft accents (Soft Blue, Amber) are too pale on
+     * white to read as a state on their own.
+     */
+    fun readableOn(accent: Int, background: Int, ink: Int, minContrast: Double): Int {
+        var color = accent or 0xFF000000.toInt()
+        val bg = background or 0xFF000000.toInt()
+        var step = 0
+        while (androidx.core.graphics.ColorUtils.calculateContrast(color, bg) < minContrast && step < 10) {
+            color = androidx.core.graphics.ColorUtils.blendARGB(color, ink, 0.12f)
+            step++
+        }
+        return color
+    }
+
     fun getActiveColor(context: Context): ColorStateList = ColorStateList.valueOf(getAccentColorInt(context))
 
     /**

@@ -12,7 +12,9 @@
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:fitsSystemWindows="true">
+        android:background="@color/foqos_bg"
+        android:fitsSystemWindows="true"
+        app:liftOnScroll="false">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
@@ -37,16 +39,18 @@
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content">
+        android:layout_height="wrap_content"
+        android:background="@color/foqos_bg"
+        app:liftOnScroll="false">
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/cardWebsiteRuleSettings"
             style="@style/LoqIn.Card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
+            android:layout_marginStart="16dp"
             android:layout_marginTop="4dp"
-            android:layout_marginEnd="12dp"
+            android:layout_marginEnd="16dp"
             android:layout_marginBottom="8dp"
             app:cardUseCompatPadding="false"
             app:layout_scrollFlags="scroll">
@@ -69,23 +73,34 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:minHeight="42dp"
+                            android:minHeight="48dp"
                             android:maxLines="2"
                             android:text="@string/profile_rule_mode_block"
-                            android:textSize="12sp"
-                            app:cornerRadius="14dp" />
+                            android:textSize="13sp"
+                            app:cornerRadius="16dp" />
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnWebsiteModeAllow"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:minHeight="42dp"
+                            android:minHeight="48dp"
                             android:maxLines="2"
                             android:text="@string/profile_rule_mode_allow"
-                            android:textSize="12sp"
-                            app:cornerRadius="14dp" />
+                            android:textSize="13sp"
+                            app:cornerRadius="16dp" />
                     </com.google.android.material.button.MaterialButtonToggleGroup>
+
+                    <TextView
+                        android:id="@+id/tvWebsiteRuleModeSummary"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="8dp"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginEnd="8dp"
+                        android:layout_marginBottom="4dp"
+                        android:textColor="?android:attr/textColorSecondary"
+                        android:textSize="12.5sp" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 
@@ -96,8 +111,8 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
             android:paddingBottom="4dp">
 
             <com.google.android.material.textfield.TextInputLayout
@@ -145,8 +160,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:scrollbars="none"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
+            android:clipToPadding="false"
+            android:paddingStart="12dp"
+            android:paddingEnd="12dp"
             android:paddingBottom="4dp">
 
             <com.google.android.material.chip.ChipGroup
@@ -176,9 +192,9 @@
                 android:id="@+id/list"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:paddingStart="8dp"
+                android:paddingStart="12dp"
                 android:paddingTop="4dp"
-                android:paddingEnd="8dp"
+                android:paddingEnd="12dp"
                 android:paddingBottom="24dp"
                 android:clipToPadding="false" />
 
@@ -187,9 +203,9 @@
                 android:id="@+id/emptyCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="24dp"
+                android:layout_marginStart="16dp"
                 android:layout_marginTop="20dp"
-                android:layout_marginEnd="24dp"
+                android:layout_marginEnd="16dp"
                 android:layout_gravity="top"
                 android:visibility="gone">
 

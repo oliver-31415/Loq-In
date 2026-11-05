@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="breaks_page_limits_header">Limits</string>
+    <string name="breaks_page_today_header">Heute</string>
+    <string name="breaks_page_no_limit">Kein Limit</string>
+    <string name="breaks_page_summary_unlimited">Keine Pausenlimits</string>
+    <string name="breaks_page_minutes_fmt">%1$d min</string>
+    <string name="breaks_today_none_left">Heute keine Pausen mehr übrig</string>
+    <string name="breaks_today_next_fmt">Nächste Pause: bis zu %1$d min</string>
+    <plurals name="breaks_hero_count_suffix">
+        <item quantity="one">von %1$d Pause übrig</item>
+        <item quantity="other">von %1$d Pausen übrig</item>
+    </plurals>
+    <string name="breaks_hero_minutes_suffix_fmt">von %1$d min übrig</string>
+    <string name="breaks_minutes_left_fmt">%1$d von %2$d min Pausenzeit übrig</string>
+    <string name="breaks_minutes_used_fmt">%1$d min Pausenzeit heute genutzt</string>
+    <string name="breaks_limit_count_sub">Wie viele Pausen du nehmen kannst</string>
+    <string name="breaks_limit_length_sub">Minuten, die eine Pause dauern kann</string>
+    <string name="breaks_limit_total_sub">Minuten für alle Pausen heute</string>
+    <string name="breaks_chip_other">Andere</string>
+    <string name="breaks_chip_custom_cd">%1$s, benutzerdefiniert, zum Ändern tippen</string>
+    <string name="breaks_page_footer">Eine Pause pausiert die Blockierung. Aufgebraucht? Die nächste Pause gibt es morgen.</string>
+</resources>

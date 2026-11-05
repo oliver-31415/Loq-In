@@ -16,13 +16,14 @@
     <!-- ====================================================== -->
     <!-- Settings sections -->
     <!-- ====================================================== -->
-    <string name="settings_section_controls">Controls</string>
+    <string name="settings_section_protection">Protection</string>
     <string name="settings_section_personalization">Personalization</string>
-    <string name="settings_section_reliability">Permissions &amp; reliability</string>
-    <string name="settings_section_data">Account &amp; data</string>
-    <string name="settings_section_help">Help &amp; about</string>
+    <string name="settings_section_system">System</string>
+    <string name="settings_section_help_info">Help &amp; info</string>
     <string name="settings_section_info">Info</string>
     <string name="settings_section_developer">Developer</string>
+    <string name="settings_setup_guide_title">Setup guide</string>
+    <string name="settings_setup_guide_summary">Walk through setup, permissions and features again</string>
 
     <!-- ====================================================== -->
     <!-- Controls -->
@@ -40,7 +41,7 @@
     <string name="settings_theme_title">Appearance</string>
     <string name="settings_theme_summary">Theme, colors &amp; language</string>
     <string name="settings_display_shortcuts_title">Widgets &amp; shortcuts</string>
-    <string name="settings_display_shortcuts_summary">Manage Quick Settings tiles and Android widgets</string>
+    <string name="settings_display_shortcuts_summary">Quick Settings tiles and widgets</string>
 
     <!-- ====================================================== -->
     <!-- Permissions and reliability -->
@@ -48,7 +49,7 @@
     <string name="settings_permissions_reliability_title">Permissions &amp; reliability</string>
     <string name="settings_permissions_reliability_summary">Permissions and background reliability</string>
     <string name="pref_permissions_title">Permissions</string>
-    <string name="pref_permissions_summary">Check and manage the system permissions Loq In needs.</string>
+    <string name="pref_permissions_summary">System permissions Loq In needs</string>
     <string name="settings_emergency_unlock_title">Emergency unlock</string>
     <string name="settings_emergency_unlock_summary">Start, pause, resume, or end Emergency unlock</string>
 
@@ -60,11 +61,8 @@
     <string name="account_restricted_open_message">Loq In is active. Account can still be viewed, but protection-related options cannot be changed until Loq In is turned off.</string>
     <string name="account_open_restricted">Open Account</string>
     <string name="account_section_activity_history">Activity &amp; history</string>
-    <string name="account_section_security_access">Security &amp; access</string>
-    <string name="account_section_setup_data">Setup &amp; data</string>
-    <string name="account_overview_title">Loq In overview</string>
+    <string name="account_section_your_data">Your data</string>
     <string name="account_overview_summary">Counters, schedules and actions at a glance</string>
-    <string name="account_keys_codes_title">My keys and codes</string>
     <string name="account_keys_codes_summary">NFC tags, QR and barcode keys</string>
     <string name="settings_account_title">Account</string>
     <string name="settings_account_summary">Backup &amp; emergency PIN</string>
@@ -100,4 +98,5 @@
     <string name="pref_reset_app_data_confirm_message">This will remove all local profiles, rules, statistics, paired tags and settings on this device. Cloud backups are not deleted automatically.</string>
     <string name="pref_reset_app_data_done">All local data was cleared.</string>
 
+    <string name="settings_row_locked_state">Locked while Loq In is on</string>
 </resources>

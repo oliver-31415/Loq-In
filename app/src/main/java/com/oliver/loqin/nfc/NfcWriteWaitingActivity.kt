@@ -36,12 +36,12 @@ import android.os.Vibrator
 import android.os.VibratorManager
 import android.widget.FrameLayout
 import android.widget.TextView
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.edit
 import androidx.lifecycle.lifecycleScope
 import androidx.preference.PreferenceManager
 import com.oliver.loqin.R
+import com.oliver.loqin.ui.dialog.InputSheet
 import com.oliver.loqin.data.prefs.AppLogStore
 import com.oliver.loqin.data.prefs.BlockingToggleKeys
 import com.oliver.loqin.data.prefs.NfcDiagnosticsStore
@@ -554,22 +554,22 @@ class NfcWriteWaitingActivity : AppCompatActivity() {
         val etName = view.findViewById<TextInputEditText>(R.id.etTagName)
         val etNote = view.findViewById<TextInputEditText>(R.id.etTagNote)
 
-        MaterialAlertDialogBuilder(this)
-            .setTitle(getString(R.string.paired_tag_pair_prompt_title))
-            .setMessage(getString(R.string.paired_tag_pair_prompt_message))
-            .setView(view)
-            .setPositiveButton(getString(R.string.paired_tag_pair_prompt_save)) { _, _ ->
-                NfcUidPairingStore.setTagMeta(
-                    this,
-                    uid,
-                    etName.text?.toString(),
-                    etNote.text?.toString(),
-                )
-                onDone()
-            }
-            .setNegativeButton(getString(R.string.paired_tag_pair_prompt_skip)) { _, _ -> onDone() }
-            .setCancelable(false)
-            .showAccented()
+        val sheet = InputSheet(this, getString(R.string.paired_tag_pair_prompt_title))
+        sheet.message(getString(R.string.paired_tag_pair_prompt_message))
+        sheet.content(view)
+        // Closing the sheet any way (Skip, the close button, a swipe) continues like Skip.
+        sheet.setOnDismissListener { onDone() }
+        sheet.secondary(getString(R.string.paired_tag_pair_prompt_skip)) { sheet.dismiss() }
+        sheet.primary(getString(R.string.paired_tag_pair_prompt_save)) {
+            NfcUidPairingStore.setTagMeta(
+                this,
+                uid,
+                etName.text?.toString(),
+                etNote.text?.toString(),
+            )
+            sheet.dismiss()
+        }
+        sheet.show()
     }
 
     private fun performSuccessHapticOnce() {

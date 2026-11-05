@@ -129,10 +129,7 @@ object UiConsistency {
                 val isInfoOrStatus = idName.contains("info", ignoreCase = true) ||
                     idName.contains("status", ignoreCase = true) ||
                     idName.contains("badge", ignoreCase = true)
-                if (idName == "btnTestScheduleInfo") {
-                    // The per-schedule action is an inspection affordance, not a highlighted state.
-                    view.imageTintList = ColorStateList.valueOf(neutral)
-                } else if (isInfoOrStatus && !hasToolbarParent(view)) {
+                if (isInfoOrStatus && !hasToolbarParent(view)) {
                     view.imageTintList = ColorStateList.valueOf(accent)
                 }
             }

@@ -86,23 +86,7 @@ class ListGroupLayout @JvmOverloads constructor(
         visible.forEachIndexed { index, child ->
             val top = if (index == 0) outerCorner else innerCorner
             val bottom = if (index == visible.lastIndex) outerCorner else innerCorner
-            val shape = ShapeAppearanceModel.builder()
-                .setTopLeftCornerSize(top)
-                .setTopRightCornerSize(top)
-                .setBottomLeftCornerSize(bottom)
-                .setBottomRightCornerSize(bottom)
-                .build()
-            val fill = MaterialShapeDrawable(shape).apply { fillColor = ColorStateList.valueOf(segmentColor) }
-            child.background = if (child.isClickable) {
-                val ripple = MaterialColors.getColor(child, com.google.android.material.R.attr.colorOnSurface, Color.BLACK)
-                RippleDrawable(
-                    ColorStateList.valueOf(ColorUtils.setAlphaComponent(ripple, 0x1F)),
-                    fill,
-                    MaterialShapeDrawable(shape),
-                )
-            } else {
-                fill
-            }
+            child.background = segmentBackground(child, top, bottom, segmentColor)
             (child.layoutParams as? MarginLayoutParams)?.let { lp ->
                 val wantTop = if (index == 0) 0 else gap
                 if (lp.topMargin != wantTop) {
@@ -110,6 +94,29 @@ class ListGroupLayout @JvmOverloads constructor(
                     child.layoutParams = lp
                 }
             }
+        }
+    }
+
+    companion object {
+        /**
+         * One segment's fill (with a clipped ripple when [view] is clickable), for rows drawn
+         * outside a ListGroupLayout, e.g. a RecyclerView list that wants the same grouped look.
+         */
+        fun segmentBackground(view: View, topCorner: Float, bottomCorner: Float, color: Int): android.graphics.drawable.Drawable {
+            val shape = ShapeAppearanceModel.builder()
+                .setTopLeftCornerSize(topCorner)
+                .setTopRightCornerSize(topCorner)
+                .setBottomLeftCornerSize(bottomCorner)
+                .setBottomRightCornerSize(bottomCorner)
+                .build()
+            val fill = MaterialShapeDrawable(shape).apply { fillColor = ColorStateList.valueOf(color) }
+            if (!view.isClickable) return fill
+            val ripple = MaterialColors.getColor(view, com.google.android.material.R.attr.colorOnSurface, Color.BLACK)
+            return RippleDrawable(
+                ColorStateList.valueOf(ColorUtils.setAlphaComponent(ripple, 0x1F)),
+                fill,
+                MaterialShapeDrawable(shape),
+            )
         }
     }
 }

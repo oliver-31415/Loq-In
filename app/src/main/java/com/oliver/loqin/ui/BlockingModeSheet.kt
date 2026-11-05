@@ -21,22 +21,17 @@ package com.oliver.loqin.ui
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
-import android.content.res.ColorStateList
-import android.graphics.Color
-import android.graphics.drawable.GradientDrawable
-import android.graphics.drawable.RippleDrawable
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
-import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
-import androidx.core.graphics.ColorUtils
 import androidx.core.view.isVisible
 import com.oliver.loqin.R
+import com.oliver.loqin.theme.CustomAccentApplier
 import com.oliver.loqin.data.prefs.AutomationModeStore
 import com.oliver.loqin.data.prefs.ScanCodeStore
 import com.oliver.loqin.feature.qr.QrGenerateActivity
@@ -65,13 +60,19 @@ object BlockingModeSheet {
         onModeChanged: (AutomationModeStore.Mode) -> Unit = {},
     ) {
         val sheet = BottomSheetDialog(activity)
+        // Taller than most screens: scroll inside the expanded sheet.
         sheet.setContentView(
-            buildContent(
-                activity = activity,
-                includeHeader = true,
-                onClose = { sheet.dismiss() },
-                onModeChanged = onModeChanged,
-            )
+            androidx.core.widget.NestedScrollView(activity).apply {
+                setBackgroundResource(R.drawable.sheet_profile_bg)
+                addView(
+                    buildContent(
+                        activity = activity,
+                        includeHeader = true,
+                        onClose = { sheet.dismiss() },
+                        onModeChanged = onModeChanged,
+                    )
+                )
+            }
         )
         // Tall sheet: open expanded so as many modes as possible are visible without dragging.
         sheet.behavior.skipCollapsed = true
@@ -103,56 +104,10 @@ object BlockingModeSheet {
         onClose: (() -> Unit)?,
         onModeChanged: (AutomationModeStore.Mode) -> Unit,
     ): LinearLayout {
-        val onSurface = ContextCompat.getColor(activity, R.color.foqos_on_surface)
         val onSurfaceSoft = ContextCompat.getColor(activity, R.color.foqos_on_surface_variant)
         val accent = AccentColor.getAccentColorInt(activity)
-        val surfaceVariant = ContextCompat.getColor(activity, R.color.foqos_surface_variant)
 
-        fun dp(value: Float): Int =
-            (value * activity.resources.displayMetrics.density + 0.5f).toInt()
-
-        fun rowBg(selected: Boolean): GradientDrawable = GradientDrawable().apply {
-            cornerRadius = dp(16f).toFloat()
-            setColor(
-                if (selected) ColorUtils.compositeColors(ColorUtils.setAlphaComponent(accent, 0x18), surfaceVariant)
-                else surfaceVariant
-            )
-            setStroke(dp(2f), if (selected) accent else Color.TRANSPARENT)
-        }
-
-        fun roundelBg(): GradientDrawable = GradientDrawable().apply {
-            shape = GradientDrawable.OVAL
-            setColor(ContextCompat.getColor(activity, R.color.foqos_surface))
-        }
-
-        fun createEditButton(onClick: () -> Unit, sizeDp: Float = 34f, iconSizeDp: Float = 17f): View {
-            return FrameLayout(activity).apply {
-                val base = roundelBg()
-                val mask = GradientDrawable().apply {
-                    shape = GradientDrawable.OVAL
-                    setColor(Color.WHITE)
-                }
-                background = RippleDrawable(
-                    ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 0x33)),
-                    base,
-                    mask,
-                )
-                isClickable = true
-                isFocusable = true
-                contentDescription = activity.getString(R.string.edit)
-                layoutParams = LinearLayout.LayoutParams(dp(sizeDp), dp(sizeDp)).apply {
-                    marginStart = dp(6f)
-                }
-                addView(ImageView(activity).apply {
-                    setImageResource(R.drawable.edit_24)
-                    setColorFilter(accent)
-                    layoutParams = FrameLayout.LayoutParams(dp(iconSizeDp), dp(iconSizeDp)).apply {
-                        gravity = Gravity.CENTER
-                    }
-                })
-                setOnClickListener { onClick() }
-            }
-        }
+        fun dp(value: Float): Int = SheetRows.dp(activity, value)
 
         fun isNfcTagWritingLocked(): Boolean =
             EditingLockGuard.isLocked(activity) &&
@@ -196,60 +151,24 @@ object BlockingModeSheet {
             orientation = LinearLayout.VERTICAL
             val pad = dp(16f)
             setPadding(pad, if (includeHeader) dp(8f) else dp(4f), pad, dp(22f))
-            if (includeHeader) {
-                setBackgroundColor(ContextCompat.getColor(activity, R.color.foqos_surface))
-            }
+            if (includeHeader) setBackgroundResource(R.drawable.sheet_profile_bg)
         }
 
         if (includeHeader) {
-            // Grab handle
-            list.addView(View(activity).apply {
-                background = GradientDrawable().apply {
-                    cornerRadius = dp(2f).toFloat()
-                    setColor(ColorUtils.setAlphaComponent(onSurfaceSoft, 0x61))
+            list.addView(
+                SheetRows.header(activity, list, activity.getString(R.string.blocking_mode_title)) {
+                    onClose?.invoke()
                 }
-                layoutParams = LinearLayout.LayoutParams(dp(36f), dp(4f)).apply {
-                    gravity = Gravity.CENTER_HORIZONTAL
-                }
-            })
-
-            // Title + close
-            val header = LinearLayout(activity).apply {
-                orientation = LinearLayout.HORIZONTAL
-                gravity = Gravity.CENTER_VERTICAL
-                setPadding(0, dp(12f), 0, dp(4f))
-            }
-            header.addView(TextView(activity).apply {
-                text = activity.getString(R.string.blocking_mode_title)
-                textSize = 22f
-                setTypeface(typeface, android.graphics.Typeface.BOLD)
-                setTextColor(onSurface)
-                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-            })
-            header.addView(FrameLayout(activity).apply {
-                background = roundelBg()
-                isClickable = true
-                isFocusable = true
-                contentDescription = activity.getString(R.string.close)
-                setOnClickListener { onClose?.invoke() }
-                addView(TextView(activity).apply {
-                    text = "\u2715"
-                    importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
-                    textSize = 14f
-                    setTextColor(onSurface)
-                    layoutParams = FrameLayout.LayoutParams(
-                        LinearLayout.LayoutParams.WRAP_CONTENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT,
-                    ).apply { gravity = Gravity.CENTER }
-                })
-                layoutParams = LinearLayout.LayoutParams(dp(34f), dp(34f))
-            })
-            list.addView(header)
+            )
         }
+        // Sheets get tonal segments; the onboarding page sits on the page background.
+        val mixedGroup = SheetRows.group(activity, list, onSurface = includeHeader)
+        val singleGroup = SheetRows.group(activity, list, onSurface = includeHeader)
 
         var current = AutomationModeStore.getMode(activity)
 
-        val modeRowViews = mutableListOf<Pair<AutomationModeStore.Mode, View>>()
+
+        val modeRows = mutableListOf<Pair<AutomationModeStore.Mode, SheetRows.Row>>()
 
         fun modeRow(
             mode: AutomationModeStore.Mode,
@@ -257,58 +176,25 @@ object BlockingModeSheet {
             descRes: Int,
             iconRes: Int,
             supported: Boolean,
+            parent: LinearLayout,
             onEdit: (() -> Unit)? = null,
-        ): LinearLayout {
-            val isSelected = mode == current
-            val row = LinearLayout(activity).apply {
-                orientation = LinearLayout.HORIZONTAL
-                gravity = Gravity.CENTER_VERTICAL
-                setPadding(dp(10f), dp(13f), dp(10f), dp(13f))
-                background = rowBg(isSelected)
-                isClickable = supported
-                isFocusable = supported
-                alpha = if (supported) 1f else 0.4f
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                )
-            }
-            row.addView(FrameLayout(activity).apply {
-                background = roundelBg()
-                addView(ImageView(activity).apply {
-                    setImageResource(iconRes)
-                    setColorFilter(accent)
-                    layoutParams = FrameLayout.LayoutParams(dp(19f), dp(19f)).apply {
-                        gravity = Gravity.CENTER
-                    }
-                })
-                layoutParams = LinearLayout.LayoutParams(dp(38f), dp(38f))
-            })
-            val texts = LinearLayout(activity).apply {
-                orientation = LinearLayout.VERTICAL
-                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
-                    marginStart = dp(12f)
-                }
-            }
-            texts.addView(TextView(activity).apply {
-                text = activity.getString(nameRes)
-                textSize = 15f
-                setTypeface(typeface, android.graphics.Typeface.BOLD)
-                setTextColor(onSurface)
-            })
-            texts.addView(TextView(activity).apply {
-                text = if (supported) activity.getString(descRes)
-                else activity.getString(R.string.blocking_mode_unsupported)
-                textSize = 12f
-                setTextColor(onSurfaceSoft)
-            })
-            row.addView(texts)
-
+        ): SheetRows.Row {
+            val row = SheetRows.row(
+                activity,
+                parent,
+                iconRes,
+                activity.getString(nameRes),
+                if (supported) activity.getString(descRes) else activity.getString(R.string.blocking_mode_unsupported),
+                accent,
+            )
+            row.root.isClickable = supported
+            row.root.isFocusable = supported
+            row.root.alpha = if (supported) 1f else 0.4f
             if (onEdit != null && supported) {
-                row.addView(createEditButton(onEdit, sizeDp = 34f, iconSizeDp = 17f))
+                row.trailing.addView(SheetRows.editButton(activity, accent, onEdit))
             }
-
-            modeRowViews += mode to row
+            row.setSelected(mode == current, accent)
+            modeRows += mode to row
             return row
         }
 
@@ -319,49 +205,50 @@ object BlockingModeSheet {
             R.string.blocking_mode_mixed_desc,
             R.drawable.security_24,
             supported = true,
-        )
-        val mixedSubmenu = LinearLayout(activity).apply {
-            orientation = LinearLayout.VERTICAL
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-            ).apply { topMargin = dp(8f) }
-        }
+            parent = mixedGroup,
+        ).root
+        // The channels are rows of the Mixed group itself (segments follow visibility).
+        val mixedSubmenu = mutableListOf<View>()
 
         var mixedExpanded = true
         val mixedChannelsArrow = ImageView(activity).apply {
             setImageResource(R.drawable.keyboard_arrow_right_24)
             setColorFilter(onSurfaceSoft)
-        }
-
-        fun applyMixedChannelsVisibility() {
-            val showChannels = current == AutomationModeStore.Mode.MIXED && mixedExpanded
-            mixedSubmenu.isVisible = showChannels
-            mixedChannelsArrow.animate()
-                .rotation(if (mixedExpanded) 90f else 0f)
-                .setDuration(140)
-                .start()
+            importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
         }
 
         val mixedChannelsHeader = LinearLayout(activity).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(10f), dp(8f), dp(10f), dp(4f))
+            minimumHeight = dp(48f)
+            setPadding(dp(20f), dp(8f), dp(16f), dp(8f))
             isClickable = true
             isFocusable = true
-            setBackgroundResource(android.R.attr.selectableItemBackground.resId(activity))
             addView(TextView(activity).apply {
                 text = activity.getString(R.string.toggle_section_mixed_channels)
-                textSize = 13f
+                setTextAppearance(R.style.TextAppearance_LoqIn_RowSummary)
                 setTypeface(typeface, android.graphics.Typeface.BOLD)
-                setTextColor(onSurfaceSoft)
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             })
             addView(mixedChannelsArrow)
-            setOnClickListener {
-                mixedExpanded = !mixedExpanded
-                applyMixedChannelsVisibility()
-            }
+        }
+
+        fun applyMixedChannelsVisibility() {
+            val mixedOn = current == AutomationModeStore.Mode.MIXED
+            mixedChannelsHeader.isVisible = mixedOn
+            mixedSubmenu.forEach { it.isVisible = mixedOn && mixedExpanded && it.tag != HIDDEN_TAG }
+            androidx.core.view.ViewCompat.setStateDescription(
+                mixedChannelsHeader,
+                activity.getString(if (mixedExpanded) R.string.a11y_state_expanded else R.string.a11y_state_collapsed),
+            )
+            mixedChannelsArrow.animate()
+                .rotation(if (mixedExpanded) 90f else 0f)
+                .setDuration(140)
+                .start()
+        }
+        mixedChannelsHeader.setOnClickListener {
+            mixedExpanded = !mixedExpanded
+            applyMixedChannelsVisibility()
         }
 
         fun channelSwitchRow(
@@ -373,41 +260,26 @@ object BlockingModeSheet {
             setter: (Boolean) -> Unit,
             onChanged: ((Boolean) -> Unit)? = null,
             indent: Boolean = false,
-            into: LinearLayout = mixedSubmenu,
             onEdit: (() -> Unit)? = null,
-        ) {
+        ): View {
             val switch = MaterialSwitch(activity).apply {
                 isChecked = getter()
                 isEnabled = supported
-                alpha = if (supported) 1f else 0.4f
-                thumbTintList = ColorStateList(
-                    arrayOf(intArrayOf(-android.R.attr.state_checked), intArrayOf(android.R.attr.state_checked)),
-                    intArrayOf(Color.WHITE, Color.WHITE),
-                )
-                trackTintList = ColorStateList(
-                    arrayOf(
-                        intArrayOf(-android.R.attr.state_checked),
-                        intArrayOf(android.R.attr.state_checked),
-                    ),
-                    intArrayOf(
-                        ColorUtils.setAlphaComponent(onSurfaceSoft, 0x55),
-                        ColorUtils.setAlphaComponent(accent, 0x88),
-                    ),
-                )
+                thumbIconDrawable = ContextCompat.getDrawable(activity, R.drawable.loqin_switch_thumb_icon)
+                CustomAccentApplier.tintSwitch(this)
             }
-            val row = LinearLayout(activity).apply {
-                orientation = LinearLayout.HORIZONTAL
-                gravity = Gravity.CENTER_VERTICAL
-                setPadding(dp(10f), dp(6f), dp(10f), dp(6f))
-                alpha = if (supported) 1f else 0.4f
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                ).apply {
-                    marginStart = if (indent) dp(14f) else 0
-                }
-                setOnClickListener { switch.toggle() }
-            }
+            val row = SheetRows.row(
+                activity,
+                mixedGroup,
+                iconRes,
+                activity.getString(titleRes),
+                activity.getString(summaryRes),
+                accent,
+            )
+            row.root.alpha = if (supported) 1f else 0.4f
+            row.root.isClickable = supported
+            if (indent) row.root.setPaddingRelative(dp(44f), row.root.paddingTop, row.root.paddingEnd, row.root.paddingBottom)
+            row.root.setOnClickListener { switch.toggle() }
             var suppressSwitchListener = false
             switch.setOnCheckedChangeListener { _, checked ->
                 if (suppressSwitchListener) return@setOnCheckedChangeListener
@@ -422,69 +294,41 @@ object BlockingModeSheet {
                     suppressSwitchListener = true
                     switch.isChecked = !checked
                     suppressSwitchListener = false
-                    row.showWarnPill(R.string.mixed_channels_locked_while_loqin_enabled)
+                    row.root.showWarnPill(R.string.mixed_channels_locked_while_loqin_enabled)
                     return@setOnCheckedChangeListener
                 }
                 setter(checked)
                 onChanged?.invoke(checked)
             }
-            row.addView(FrameLayout(activity).apply {
-                background = roundelBg()
-                addView(ImageView(activity).apply {
-                    setImageResource(iconRes)
-                    setColorFilter(if (supported) accent else onSurfaceSoft)
-                    layoutParams = FrameLayout.LayoutParams(dp(17f), dp(17f)).apply {
-                        gravity = Gravity.CENTER
-                    }
-                })
-                layoutParams = LinearLayout.LayoutParams(dp(34f), dp(34f))
-            })
-            val texts = LinearLayout(activity).apply {
-                orientation = LinearLayout.VERTICAL
-                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
-                    marginStart = dp(12f)
-                }
-            }
-            texts.addView(TextView(activity).apply {
-                text = activity.getString(titleRes)
-                textSize = 14f
-                setTypeface(typeface, android.graphics.Typeface.BOLD)
-                setTextColor(onSurface)
-            })
-            texts.addView(TextView(activity).apply {
-                text = activity.getString(summaryRes)
-                textSize = 11.5f
-                setTextColor(onSurfaceSoft)
-            })
-            row.addView(texts)
             if (onEdit != null && supported) {
-                row.addView(createEditButton(onEdit, sizeDp = 32f, iconSizeDp = 16f).apply {
-                    (layoutParams as LinearLayout.LayoutParams).apply {
-                        marginStart = dp(6f)
-                        marginEnd = dp(6f)
-                    }
-                })
+                row.trailing.addView(SheetRows.editButton(activity, accent, onEdit))
             }
-            row.addView(switch)
-            into.addView(row)
+            row.trailing.addView(switch)
+            mixedSubmenu += row.root
+            return row.root
         }
+
+        mixedGroup.addView(mixedRow)
+        mixedGroup.addView(mixedChannelsHeader)
 
         // Manual controls: when full control is OFF, buttons/tiles may still ENABLE
         // protection — the nested "enable-only" switch mirrors Feature access.
-        val enableOnlyRow = LinearLayout(activity).apply {
-            orientation = LinearLayout.VERTICAL
-            visibility = if (AutomationModeStore.isMixedAllowButton(activity)) View.GONE else View.VISIBLE
-        }
-        channelSwitchRow(
-            R.drawable.security_24,
-            R.string.pref_mixed_allow_button_title,
-            R.string.pref_mixed_allow_button_summary,
-            supported = true,
-            getter = { AutomationModeStore.isMixedAllowButton(activity) },
-            setter = { AutomationModeStore.setMixedAllowButton(activity, it) },
-            onChanged = { manualAllowed -> enableOnlyRow.isVisible = !manualAllowed },
+        var enableOnlyRow: View? = null
+        mixedGroup.addView(
+            channelSwitchRow(
+                R.drawable.security_24,
+                R.string.pref_mixed_allow_button_title,
+                R.string.pref_mixed_allow_button_summary,
+                supported = true,
+                getter = { AutomationModeStore.isMixedAllowButton(activity) },
+                setter = { AutomationModeStore.setMixedAllowButton(activity, it) },
+                onChanged = { manualAllowed ->
+                    enableOnlyRow?.tag = if (manualAllowed) HIDDEN_TAG else null
+                    applyMixedChannelsVisibility()
+                },
+            )
         )
-        channelSwitchRow(
+        enableOnlyRow = channelSwitchRow(
             R.drawable.lock_24,
             R.string.pref_allow_button_enable_title,
             R.string.pref_allow_button_enable_summary,
@@ -492,10 +336,11 @@ object BlockingModeSheet {
             getter = { AutomationModeStore.isButtonEnableAllowed(activity) },
             setter = { AutomationModeStore.setButtonEnableAllowed(activity, it) },
             indent = true,
-            into = enableOnlyRow,
-        )
-        mixedSubmenu.addView(enableOnlyRow)
-        channelSwitchRow(
+        ).also {
+            if (AutomationModeStore.isMixedAllowButton(activity)) it.tag = HIDDEN_TAG
+            mixedGroup.addView(it)
+        }
+        mixedGroup.addView(channelSwitchRow(
             R.drawable.schedule_24,
             R.string.pref_mixed_allow_schedule_title,
             R.string.pref_mixed_allow_schedule_summary,
@@ -503,8 +348,8 @@ object BlockingModeSheet {
             getter = { AutomationModeStore.isMixedAllowSchedule(activity) },
             setter = { AutomationModeStore.setMixedAllowSchedule(activity, it) },
             onEdit = ::editSchedule,
-        )
-        channelSwitchRow(
+        ))
+        mixedGroup.addView(channelSwitchRow(
             R.drawable.nfc_24,
             R.string.pref_mixed_allow_nfc_title,
             R.string.pref_mixed_allow_nfc_summary,
@@ -512,8 +357,8 @@ object BlockingModeSheet {
             getter = { AutomationModeStore.isMixedAllowNfc(activity) },
             setter = { AutomationModeStore.setMixedAllowNfc(activity, it) },
             onEdit = ::editNfc,
-        )
-        channelSwitchRow(
+        ))
+        mixedGroup.addView(channelSwitchRow(
             R.drawable.qr_code_24,
             R.string.pref_mixed_allow_qr_title,
             R.string.pref_mixed_allow_qr_summary,
@@ -521,8 +366,8 @@ object BlockingModeSheet {
             getter = { AutomationModeStore.isMixedAllowQr(activity) },
             setter = { AutomationModeStore.setMixedAllowQr(activity, it) },
             onEdit = ::editQr,
-        )
-        channelSwitchRow(
+        ))
+        mixedGroup.addView(channelSwitchRow(
             R.drawable.barcode_24,
             R.string.pref_mixed_allow_barcode_title,
             R.string.pref_mixed_allow_barcode_summary,
@@ -530,7 +375,7 @@ object BlockingModeSheet {
             getter = { AutomationModeStore.isMixedAllowBarcode(activity) },
             setter = { AutomationModeStore.setMixedAllowBarcode(activity, it) },
             onEdit = ::editBarcode,
-        )
+        ))
 
         // A scan-only mode without a code is a lockout waiting to happen: ask for the code now.
         fun promptScanSetupIfMissing(mode: AutomationModeStore.Mode) {
@@ -571,17 +416,13 @@ object BlockingModeSheet {
             current = mode
             AutomationModeStore.setMode(activity, mode)
             onModeChanged(mode)
-            modeRowViews.forEach { (m, rowView) ->
-                rowView.background = rowBg(m == mode)
-            }
+            modeRows.forEach { (m, row) -> row.setSelected(m == mode, accent) }
             applyMixedChannelsVisibility()
             promptScanSetupIfMissing(mode)
         }
 
         mixedRow.setOnClickListener { selectMode(AutomationModeStore.Mode.MIXED, mixedRow) }
-        list.addView(mixedRow)
-        list.addView(mixedChannelsHeader)
-        list.addView(mixedSubmenu)
+        list.addView(mixedGroup)
 
         // ---- Single-channel modes: select and close ----
         data class SingleModeSpec(
@@ -629,24 +470,25 @@ object BlockingModeSheet {
                 spec.descRes,
                 spec.iconRes,
                 supported = AutomationModeStore.isModeSupported(activity, spec.mode),
+                parent = singleGroup,
                 onEdit = spec.onEdit,
-            )
-            row.layoutParams = (row.layoutParams as LinearLayout.LayoutParams).apply {
-                topMargin = dp(8f)
-            }
+            ).root
             row.setOnClickListener {
                 if (!AutomationModeStore.isModeSupported(activity, spec.mode)) {
                     return@setOnClickListener
                 }
                 selectMode(spec.mode, row)
             }
-            list.addView(row)
+            singleGroup.addView(row)
         }
+        list.addView(singleGroup)
 
         applyMixedChannelsVisibility()
 
         return list
     }
+
+    private const val HIDDEN_TAG = "hidden_channel"
 
     private data class ScanSetupPrompt(
         val titleRes: Int,

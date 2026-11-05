@@ -16,11 +16,7 @@
     <!-- ====================================================== -->
     <!-- Settings sections -->
     <!-- ====================================================== -->
-    <string name="settings_section_controls">Steuerung</string>
     <string name="settings_section_personalization">Personalisierung</string>
-    <string name="settings_section_reliability">Berechtigungen &amp; Zuverlässigkeit</string>
-    <string name="settings_section_data">Konto &amp; Daten</string>
-    <string name="settings_section_help">Hilfe &amp; Über</string>
     <string name="settings_section_info">Info</string>
     <string name="settings_section_developer">Entwickler</string>
 
@@ -40,7 +36,7 @@
     <string name="settings_theme_title">Erscheinungsbild</string>
     <string name="settings_theme_summary">Design, Farben &amp; Sprache</string>
     <string name="settings_display_shortcuts_title">Widgets &amp; Verknüpfungen</string>
-    <string name="settings_display_shortcuts_summary">Schnelleinstellungs-Kacheln und Android-Widgets verwalten</string>
+    <string name="settings_display_shortcuts_summary">Schnelleinstellungs-Kacheln und Widgets</string>
 
     <!-- ====================================================== -->
     <!-- Permissions and reliability -->
@@ -48,7 +44,7 @@
     <string name="settings_permissions_reliability_title">Berechtigungen &amp; Zuverlässigkeit</string>
     <string name="settings_permissions_reliability_summary">Berechtigungen und Hintergrundzuverlässigkeit</string>
     <string name="pref_permissions_title">Berechtigungen</string>
-    <string name="pref_permissions_summary">Die Systemberechtigungen prüfen und verwalten, die Loq In benötigt.</string>
+    <string name="pref_permissions_summary">Systemberechtigungen, die Loq In benötigt</string>
     <string name="settings_emergency_unlock_title">Notfall-Entsperrung</string>
     <string name="settings_emergency_unlock_summary">Notfall-Entsperrung starten, pausieren, fortsetzen oder beenden</string>
 
@@ -60,11 +56,7 @@
     <string name="account_restricted_open_message">Loq In ist aktiv. Das Konto kann weiterhin angesehen werden, aber schutzrelevante Optionen lassen sich erst ändern, wenn Loq In deaktiviert ist.</string>
     <string name="account_open_restricted">Konto öffnen</string>
     <string name="account_section_activity_history">Aktivität &amp; Verlauf</string>
-    <string name="account_section_security_access">Sicherheit &amp; Zugriff</string>
-    <string name="account_section_setup_data">Einrichtung &amp; Daten</string>
-    <string name="account_overview_title">Loq In-Übersicht</string>
     <string name="account_overview_summary">Zähler, Pläne und Aktionen im Überblick</string>
-    <string name="account_keys_codes_title">Meine Schlüssel und Codes</string>
     <string name="account_keys_codes_summary">NFC-Tags, QR- und Barcode-Schlüssel</string>
     <string name="settings_account_title">Konto</string>
     <string name="settings_account_summary">Backup &amp; Notfall-PIN</string>
@@ -100,4 +92,11 @@
     <string name="pref_reset_app_data_confirm_message">Dadurch werden alle lokalen Profile, Regeln, Statistiken, gekoppelten Tags und Einstellungen auf diesem Gerät entfernt. Cloud-Backups werden nicht automatisch gelöscht.</string>
     <string name="pref_reset_app_data_done">Alle lokalen Daten wurden gelöscht.</string>
 
+    <string name="settings_section_protection">Schutz</string>
+    <string name="settings_section_system">System</string>
+    <string name="settings_section_help_info">Hilfe &amp; Info</string>
+    <string name="settings_setup_guide_title">Einrichtungsassistent</string>
+    <string name="settings_setup_guide_summary">Einrichtung, Berechtigungen und Funktionen erneut durchlaufen</string>
+    <string name="account_section_your_data">Eigene Daten</string>
+    <string name="settings_row_locked_state">Gesperrt, solange Loq In aktiv ist</string>
 </resources>

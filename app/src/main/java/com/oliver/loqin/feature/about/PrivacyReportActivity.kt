@@ -160,7 +160,7 @@ class PrivacyReportActivity : TilesInfoActivity() {
             Tile(
                 title = getString(R.string.privacy_report_delete_title),
                 subtitle = getString(R.string.privacy_report_delete_summary),
-                sectionTitle = getString(R.string.privacy_report_section_actions),
+                sectionTitle = getString(R.string.privacy_report_section_delete),
                 iconRes = R.drawable.delete_24,
                 onClick = { confirmDeleteAllData() },
                 destructive = true,

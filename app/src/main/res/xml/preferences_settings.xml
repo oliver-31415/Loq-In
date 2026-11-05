@@ -7,7 +7,7 @@
         android:key="category_settings_controls"
         android:order="5"
         android:layout="@layout/item_pref_section_header"
-        android:title="@string/settings_section_controls"
+        android:title="@string/settings_section_protection"
         app:iconSpaceReserved="false" />
 
     <!-- BLOCKING CONTROLS -->
@@ -75,7 +75,7 @@
         android:key="category_settings_reliability"
         android:order="35"
         android:layout="@layout/item_pref_section_header"
-        android:title="@string/settings_section_reliability"
+        android:title="@string/settings_section_system"
         app:iconSpaceReserved="false" />
 
     <!-- PERMISSIONS & RELIABILITY -->
@@ -173,7 +173,7 @@
         android:key="category_settings_help"
         android:order="55"
         android:layout="@layout/item_pref_section_header"
-        android:title="@string/settings_section_help"
+        android:title="@string/settings_section_help_info"
         app:iconSpaceReserved="false" />
 
     <!-- HELP & ABOUT -->

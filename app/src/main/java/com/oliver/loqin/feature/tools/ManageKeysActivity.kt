@@ -90,7 +90,7 @@ class ManageKeysActivity : AppCompatActivity() {
         val entry = ScanActionHistoryStore.get(this, source)
         if (entry == null) {
             view.text = getString(R.string.scan_last_action_none)
-            view.alpha = 0.68f
+            view.alpha = 1f
             view.visibility = View.VISIBLE
             return
         }

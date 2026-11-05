@@ -5,11 +5,11 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="20dp">
+    android:paddingTop="4dp">
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tilDomain"
-        style="@style/LoqIn.TextInputLayout"
+        style="@style/LoqIn.SheetField"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:hint="@string/domain_rule_hint_example"
@@ -27,7 +27,7 @@
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tilMode"
-        style="@style/LoqIn.DropdownLayout"
+        style="@style/LoqIn.SheetField.Dropdown"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
@@ -35,7 +35,7 @@
 
         <com.google.android.material.textfield.MaterialAutoCompleteTextView
             android:id="@+id/acMode"
-            style="@style/LoqIn.AutoCompleteText"
+            style="@style/LoqIn.SheetDropdownText"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:inputType="none"
@@ -44,7 +44,7 @@
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tilDailyLimit"
-        style="@style/LoqIn.TextInputLayout"
+        style="@style/LoqIn.SheetField"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"

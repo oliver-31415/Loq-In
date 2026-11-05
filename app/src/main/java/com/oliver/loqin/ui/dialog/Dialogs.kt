@@ -58,25 +58,22 @@ object Dialogs {
 }
 
 /**
- * Rounded, dark-aware text input for dialogs (replaces the old underline EditText).
- * Colors resolve from the caller's theme — Theme.LoqIn maps all M3 roles to the
- * night-aware foqos_* tokens, so the field reads correctly in light AND dark mode.
+ * Tonal text input for sheets and dialogs, matching LoqIn.SheetField: filled with the
+ * list-segment colour, no outline until focused. Colours are night-aware foqos_* tokens.
  */
 fun Context.styledDialogEditText(): android.widget.EditText {
     fun dp(v: Int): Int = (v * resources.displayMetrics.density + 0.5f).toInt()
     val accent = AccentColor.getAccentColorInt(this)
     val onSurface = MaterialColors.getColor(this, com.google.android.material.R.attr.colorOnSurface, Color.BLACK)
-    val surfaceVariant = androidx.core.content.ContextCompat.getColor(this, R.color.foqos_surface_variant)
-    val outlineColor = ColorUtils.setAlphaComponent(onSurface, 0x2E)
+    val fill = androidx.core.content.ContextCompat.getColor(this, R.color.foqos_surface_container)
 
     val unFocusedBg = android.graphics.drawable.GradientDrawable().apply {
-        cornerRadius = dp(16).toFloat()
-        setColor(surfaceVariant)
-        setStroke(dp(1), outlineColor)
+        cornerRadius = dp(20).toFloat()
+        setColor(fill)
     }
     val focusedBg = android.graphics.drawable.GradientDrawable().apply {
-        cornerRadius = dp(16).toFloat()
-        setColor(surfaceVariant)
+        cornerRadius = dp(20).toFloat()
+        setColor(fill)
         setStroke(dp(2), accent)
     }
     val bgStateList = android.graphics.drawable.StateListDrawable().apply {
@@ -90,8 +87,8 @@ fun Context.styledDialogEditText(): android.widget.EditText {
         setHintTextColor(ColorUtils.setAlphaComponent(onSurface, 0x66))
         highlightColor = ColorUtils.setAlphaComponent(accent, 0x40)
         background = bgStateList
-        setPadding(dp(16), dp(13), dp(16), dp(13))
-        textSize = 16f
+        setPadding(dp(16), dp(16), dp(16), dp(16))
+        textSize = 17f
         runCatching {
             CustomAccentApplier.tintEditTextCursorAndSelection(this, accent)
         }
@@ -99,8 +96,8 @@ fun Context.styledDialogEditText(): android.widget.EditText {
 }
 
 /**
- * Foqos-style single-input dialog (rename / create): dark-aware surface,
- * rounded field, accent-filled Save button, keyboard raised.
+ * Single text input (rename / create) as an [InputSheet]: tonal field with the
+ * keyboard raised, and a Save button that stays disabled while the text is blank.
  */
 fun Context.showLoqInInputDialog(
     title: CharSequence,
@@ -108,44 +105,60 @@ fun Context.showLoqInInputDialog(
     hint: CharSequence? = null,
     confirmText: CharSequence = getString(R.string.save),
     onConfirm: (String) -> Unit
-): AlertDialog {
-    val input = styledDialogEditText().apply {
-        initialText?.let {
-            setText(it)
-            setSelection(it.length)
-        }
-        hint?.let { this.hint = it }
-    }
-    val container = android.widget.FrameLayout(this).apply {
-        val padH = (24 * resources.displayMetrics.density + 0.5f).toInt()
-        val padTop = (12 * resources.displayMetrics.density + 0.5f).toInt()
-        val padBottom = (4 * resources.displayMetrics.density + 0.5f).toInt()
-        setPadding(padH, padTop, padH, padBottom)
-        addView(input)
-    }
-    val dialog = MaterialAlertDialogBuilder(this)
-        .setTitle(title)
-        .setView(container)
-        .setPositiveButton(confirmText) { _, _ -> onConfirm(input.text.toString().trim()) }
-        .setNegativeButton(R.string.cancel, null)
-        .create()
-    // Width (and soft-input mode) must be set before show: changing the window
-    // size in OnShow lays out twice and makes the dialog visibly jump.
-    dialog.applyLoqInDialogWidth(0.90f)
-    dialog.applyLoqInDialogCorners()
-    dialog.window?.setSoftInputMode(
-        android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE
+): InputSheet {
+    val sheet = InputSheet(this, title)
+    val field = sheet.field(
+        hint = hint ?: title,
+        text = initialText,
+        inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_SENTENCES,
+        focus = true,
     )
-    dialog.setOnShowListener {
-        dialog.styleLoqInDialogButtons()
-        // An empty name can't be saved; keep the action disabled instead of closing silently.
-        val positive = dialog.getButton(AlertDialog.BUTTON_POSITIVE)
-        positive?.isEnabled = input.text.toString().isNotBlank()
-        input.doAfterTextChanged { positive?.isEnabled = !it.isNullOrBlank() }
-        input.requestFocus()
+    val input = field.editText!!
+    val save = sheet.primary(confirmText) {
+        sheet.dismiss()
+        onConfirm(input.text.toString().trim())
     }
-    dialog.show()
-    return dialog
+    save.isEnabled = input.text.isNotBlank()
+    input.doAfterTextChanged { save.isEnabled = !it.isNullOrBlank() }
+    input.setOnEditorActionListener { _, _, _ ->
+        if (save.isEnabled) save.performClick()
+        true
+    }
+    sheet.show()
+    return sheet
+}
+
+/**
+ * Whole-number input as an [InputSheet]. Values outside [range] show [invalidMessage]
+ * under the field and keep the sheet open.
+ */
+fun Context.showLoqInNumberInput(
+    title: CharSequence,
+    hint: CharSequence,
+    confirmText: CharSequence,
+    range: IntRange,
+    invalidMessage: CharSequence,
+    initialValue: Int? = null,
+    onPicked: (Int) -> Unit,
+): InputSheet {
+    val sheet = InputSheet(this, title)
+    val field = sheet.field(
+        hint = hint,
+        text = initialValue?.toString(),
+        inputType = android.text.InputType.TYPE_CLASS_NUMBER,
+        focus = true,
+    )
+    sheet.primary(confirmText) {
+        val value = field.editText?.text?.toString()?.trim()?.toIntOrNull()
+        if (value == null || value !in range) {
+            field.error = invalidMessage
+            return@primary
+        }
+        sheet.dismiss()
+        onPicked(value)
+    }
+    sheet.show()
+    return sheet
 }
 
 data class LoqInDialogOption(
@@ -980,48 +993,26 @@ fun Context.styleLoqInFormButtons(
     }
 }
 
+/**
+ * Hosts a form layout in an [InputSheet]. The layout's own Cancel/Save row is hidden and
+ * the sheet's Save button clicks [saveButton], so callers keep their click listener on it.
+ */
 fun Context.showLoqInFormDialog(
     title: CharSequence,
     content: View,
     cancelButton: MaterialButton,
     saveButton: MaterialButton,
     saveIsAdd: Boolean = false,
-    widthFraction: Float = 0.94f
-): AlertDialog {
-    val hostActivity = findActivity()
-    hostActivity?.let { activity ->
-        runCatching { CustomAccentApplier.applyToView(content, activity) }
+): InputSheet {
+    (saveButton.parent as? View)?.visibility = View.GONE
+    val sheet = InputSheet(this, title)
+    sheet.content(content)
+    sheet.primary(getString(if (saveIsAdd) R.string.create else R.string.save)) {
+        saveButton.performClick()
     }
-
-    val dialog = MaterialAlertDialogBuilder(this)
-        .setTitle(title)
-        .setView(content)
-        .create()
-    dialog.applyLoqInDialogWidth(widthFraction)
-    dialog.applyLoqInDialogCorners()
-    dialog.setOnShowListener {
-        runCatching { CustomAccentApplier.applyToDialog(dialog) }
-        styleLoqInFormButtons(
-            deleteButton = null,
-            cancelButton = cancelButton,
-            saveButton = saveButton,
-            destructiveButtonVisible = false,
-            saveIsAdd = saveIsAdd
-        )
-        longArrayOf(0L, 120L, 360L, 720L).forEach { delay ->
-            content.postDelayed(
-                {
-                    hostActivity?.let { activity ->
-                        runCatching { CustomAccentApplier.applyToView(content, activity) }
-                    }
-                },
-                delay
-            )
-        }
-    }
-    dialog.show()
-    cancelButton.setOnClickListener { dialog.dismiss() }
-    return dialog
+    cancelButton.setOnClickListener { sheet.dismiss() }
+    sheet.show()
+    return sheet
 }
 
 fun Context.showInfoDialog(@StringRes titleRes: Int, @StringRes messageRes: Int) {

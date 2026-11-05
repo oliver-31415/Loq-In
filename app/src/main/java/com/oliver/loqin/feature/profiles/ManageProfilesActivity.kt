@@ -30,13 +30,13 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.graphics.ColorUtils
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.oliver.loqin.R
+import com.oliver.loqin.ui.dialog.InputSheet
 import com.oliver.loqin.data.prefs.DomainLimitStore
 import com.oliver.loqin.data.prefs.DomainVisitLimitStore
 import com.oliver.loqin.data.prefs.PauseRuleStore
@@ -60,12 +60,10 @@ import com.oliver.loqin.ui.showLoqInStatus
 import com.oliver.loqin.ui.dialog.showDestructiveAccented
 import com.oliver.loqin.ui.dialog.LoqInDialogOption
 import com.oliver.loqin.ui.dialog.showLoqInOptionDialog
-import com.oliver.loqin.ui.dialog.styleLoqInDialogButtons
 import com.oliver.loqin.util.LocaleHelper
 import com.oliver.loqin.util.EditingLockGuard
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.card.MaterialCardView
-import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import kotlinx.coroutines.launch
@@ -320,43 +318,30 @@ class ManageProfilesActivity : AppCompatActivity() {
         val currentLength = input.text?.length ?: 0
         input.setSelection(currentLength.coerceAtMost(input.length()))
 
-        val dialog = MaterialAlertDialogBuilder(this)
-            .setTitle(title)
-            .setView(content)
-            .setPositiveButton(positiveText, null)
-            .setNegativeButton(R.string.cancel, null)
-            .create()
-
-        dialog.setOnShowListener {
-            dialog.styleLoqInDialogButtons()
-
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                if (isProfileLockActive() && !allowWhileLocked) {
-                    dialog.dismiss()
-                    syncProfileLockUi()
-                    return@setOnClickListener
-                }
-                val name = input.text?.toString()?.trim().orEmpty()
-                when {
-                    name.length < 2 -> {
-                        tilProfile.error = getString(R.string.profile_name_too_short)
-                    }
-                    else -> {
-                        tilProfile.error = null
-                        val description = descriptionInput.text?.toString()?.trim().orEmpty()
-                        val error = onSubmit(name, description)
-                        if (error == null) {
-                            dialog.dismiss()
-                        } else {
-                            tilProfile.error = error
-                        }
-                    }
-                }
+        val sheet = InputSheet(this, title)
+        sheet.content(content)
+        sheet.primary(positiveText) {
+            if (isProfileLockActive() && !allowWhileLocked) {
+                sheet.dismiss()
+                syncProfileLockUi()
+                return@primary
+            }
+            val name = input.text?.toString()?.trim().orEmpty()
+            if (name.length < 2) {
+                tilProfile.error = getString(R.string.profile_name_too_short)
+                return@primary
+            }
+            tilProfile.error = null
+            val description = descriptionInput.text?.toString()?.trim().orEmpty()
+            val error = onSubmit(name, description)
+            if (error == null) {
+                sheet.dismiss()
+            } else {
+                tilProfile.error = error
             }
         }
-
-        input.requestFocus()
-        dialog.show()
+        sheet.focus(input)
+        sheet.show()
     }
 
     private fun deleteProfile(name: String) {

@@ -54,7 +54,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
-                <!-- Loq In overview -->
+                <!-- Loq In stats -->
                 <LinearLayout
                     android:id="@+id/cardAccountOverview"
                     android:layout_width="match_parent"
@@ -86,7 +86,7 @@
                         <TextView
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="@string/account_overview_title"
+                            android:text="@string/loqin_overview_title"
                             android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
 
                         <TextView
@@ -211,189 +211,19 @@
                 </LinearLayout>
             </com.oliver.loqin.ui.widgets.ListGroupLayout>
 
-            <!-- Security & access -->
+            <!-- Your data -->
             <TextView
                 style="@style/LoqIn.SectionHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="16dp"
                 android:layout_marginBottom="6dp"
-                android:text="@string/account_section_security_access" />
+                android:text="@string/account_section_your_data" />
 
             <com.oliver.loqin.ui.widgets.ListGroupLayout
                 style="@style/LoqIn.ListGroup"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
-
-                <!-- App lock -->
-                <LinearLayout
-                    android:id="@+id/cardAccountAppLock"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:minHeight="72dp"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:paddingStart="20dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
-                    android:clickable="true"
-                    android:focusable="true">
-
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:contentDescription="@null"
-                        android:src="@drawable/lock_24"
-                        app:tint="?attr/colorPrimary" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="14dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="@string/pref_app_lock_title"
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="@string/pref_app_lock_summary"
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
-                    </LinearLayout>
-
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:contentDescription="@null"
-                        android:src="@drawable/keyboard_arrow_right_24"
-                        app:tint="?attr/colorOnSurfaceVariant" />
-                </LinearLayout>
-
-
-                <!-- My keys and codes -->
-                <LinearLayout
-                    android:id="@+id/cardAccountKeysCodes"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:minHeight="72dp"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:paddingStart="20dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
-                    android:clickable="true"
-                    android:focusable="true">
-
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:contentDescription="@null"
-                        android:src="@drawable/nfc_24"
-                        app:tint="?attr/colorPrimary" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="14dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="@string/account_keys_codes_title"
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="@string/account_keys_codes_summary"
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
-                    </LinearLayout>
-
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:contentDescription="@null"
-                        android:src="@drawable/keyboard_arrow_right_24"
-                        app:tint="?attr/colorOnSurfaceVariant" />
-                </LinearLayout>
-            </com.oliver.loqin.ui.widgets.ListGroupLayout>
-
-            <!-- Setup & data -->
-            <TextView
-                style="@style/LoqIn.SectionHeader"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:layout_marginBottom="6dp"
-                android:text="@string/account_section_setup_data" />
-
-            <com.oliver.loqin.ui.widgets.ListGroupLayout
-                style="@style/LoqIn.ListGroup"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-
-                <!-- Onboarding -->
-                <LinearLayout
-                    android:id="@+id/cardAccountOnboarding"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:minHeight="72dp"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:paddingStart="20dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
-                    android:clickable="true"
-                    android:focusable="true">
-
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:contentDescription="@null"
-                        android:src="@drawable/play_arrow_24"
-                        app:tint="?attr/colorPrimary" />
-
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="14dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:text="@string/pref_tutorial_title"
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
-
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="@string/pref_tutorial_summary"
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
-                    </LinearLayout>
-
-                    <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:contentDescription="@null"
-                        android:src="@drawable/keyboard_arrow_right_24"
-                        app:tint="?attr/colorOnSurfaceVariant" />
-                </LinearLayout>
-
 
                 <!-- Privacy & data -->
                 <LinearLayout
