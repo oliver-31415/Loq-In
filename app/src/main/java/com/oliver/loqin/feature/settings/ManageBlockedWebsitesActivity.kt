@@ -39,7 +39,7 @@ import androidx.core.graphics.ColorUtils
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
@@ -317,7 +317,16 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
             override fun isReadOnly(): Boolean = websiteEditingLocked()
         })
 
-        rv.layoutManager = LinearLayoutManager(this)
+        val layoutManager = GridLayoutManager(this, 3)
+        layoutManager.spanSizeLookup = object : GridLayoutManager.SpanSizeLookup() {
+            override fun getSpanSize(position: Int): Int = when (adapter.getItemViewType(position)) {
+                WebsiteRuleTileAdapter.VIEW_TYPE_SECTION_HEADER,
+                WebsiteRuleTileAdapter.VIEW_TYPE_PATHS_PANEL,
+                WebsiteRuleTileAdapter.VIEW_TYPE_SHOW_SUGGESTIONS -> 3
+                else -> 1
+            }
+        }
+        rv.layoutManager = layoutManager
         rv.adapter = adapter
 
         DomainBlockStore.migrateLegacyDomainsIntoCurrentProfileIfNeeded(this)
@@ -356,11 +365,6 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
             if (actionId == android.view.inputmethod.EditorInfo.IME_ACTION_SEARCH ||
                 actionId == android.view.inputmethod.EditorInfo.IME_ACTION_DONE
             ) {
-                // Enter on a site with no rule adds it, like the "Add …" row.
-                val typed = searchQuery.trim()
-                if (typed.isNotBlank() && adapter.tileAt(0) is WebsiteTile.AddCustom) {
-                    if (canAddBlockedWebsite()) showAddDialog(typed) else denyWebsiteEditWithPopover()
-                }
                 etSearch.clearFocus()
                 true
             } else {
@@ -532,13 +536,6 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
     ): List<WebsiteTile> {
         val tiles = mutableListOf<WebsiteTile>()
 
-        // Typing a site that has no rule yet: offer to add it first, ahead of any matches.
-        val typedHost = query.trim().lowercase().removePrefix("https://").removePrefix("http://").removePrefix("www.")
-            .substringBefore('/')
-        if (typedHost.isNotBlank() && groups.none { it.host.equals(typedHost, ignoreCase = true) }) {
-            tiles += WebsiteTile.AddCustom(query = query.trim())
-        }
-
         if (groups.isNotEmpty()) {
             tiles += WebsiteTile.SectionHeader("rules", getString(R.string.website_section_your_rules))
             for (group in groups) {
@@ -573,8 +570,6 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
                     hostEnabled = hostEnabled,
                     pending = pending,
                     expanded = false,
-                    groupTop = group == groups.first(),
-                    groupBottom = group == groups.last(),
                 )
             }
         }
@@ -585,13 +580,30 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
                 getString(R.string.website_section_suggestions),
                 actionLabel = getString(R.string.website_hide_suggestions),
             )
-            tiles += WebsiteTile.SuggestionChips(suggestions = suggestions)
+            for (suggestion in suggestions) {
+                tiles += WebsiteTile.HostTile(
+                    key = "sug:${suggestion.host}",
+                    host = suggestion.host,
+                    hostRule = null,
+                    pathRuleCount = suggestion.quickPaths.size,
+                    totalRuleCount = 0,
+                    isHardBlocked = true,
+                    limitMin = 0,
+                    enabled = false,
+                    pending = false,
+                    expanded = false,
+                    suggestion = suggestion,
+                )
+            }
         }
 
         if (!suggestionsVisible() && query.isBlank() && groups.isNotEmpty()) {
             tiles += WebsiteTile.ShowSuggestions()
         }
 
+        if (query.isNotBlank() && groups.isEmpty()) {
+            tiles += WebsiteTile.AddCustom(query = query)
+        }
         return tiles
     }
 
@@ -909,7 +921,8 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
 
     private fun updateMenuState() {
         invalidateOptionsMenu()
-        // Adding lives in the search field ("Add …" row / Enter), so the separate button stays hidden.
+        findViewById<MaterialButton>(R.id.btnAddWebsite)?.visibility =
+            if (isSelectionMode) View.GONE else View.VISIBLE
         toolbar.updateSelectionSubtitle(
             selectionMode = isSelectionMode,
             selectedCount = selectedDomains.size,

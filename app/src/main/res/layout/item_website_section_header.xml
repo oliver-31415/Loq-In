@@ -22,8 +22,6 @@
         android:id="@+id/tvHeaderAction"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:gravity="center_vertical"
-        android:minHeight="48dp"
         android:background="?attr/selectableItemBackground"
         android:paddingStart="10dp"
         android:paddingTop="4dp"

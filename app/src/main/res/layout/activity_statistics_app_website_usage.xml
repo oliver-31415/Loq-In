@@ -74,74 +74,7 @@
                 android:textSize="14.5sp"
                 android:textStyle="bold" />
 
-                        <!-- Tracking off: one explanation and one action instead of an empty dashboard. -->
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/cardTrackingOff"
-                style="@style/LoqIn.Card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:visibility="gone"
-                app:cardUseCompatPadding="false">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center_horizontal"
-                    android:orientation="vertical"
-                    android:padding="24dp">
-
-                    <ImageView
-                        android:id="@+id/ivTrackingOff"
-                        android:layout_width="64dp"
-                        android:layout_height="64dp"
-                        android:background="@drawable/bg_roundel_accent"
-                        android:importantForAccessibility="no"
-                        android:padding="17dp"
-                        android:src="@drawable/bar_chart_24" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="14dp"
-                        android:accessibilityHeading="true"
-                        android:gravity="center"
-                        android:text="@string/usage_tracking_off_title"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textSize="20sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:gravity="center"
-                        android:lineSpacingExtra="2dp"
-                        android:text="@string/usage_tracking_off_body"
-                        android:textColor="?android:attr/textColorSecondary"
-                        android:textSize="14.5sp" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnTrackingOn"
-                        style="@style/LoqIn.Button"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="18dp"
-                        android:minHeight="52dp"
-                        android:text="@string/usage_tracking_off_action" />
-
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:gravity="center"
-                        android:text="@string/usage_tracking_off_next"
-                        android:textColor="?android:attr/textColorSecondary"
-                        android:textSize="13sp" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
-
-<com.google.android.material.button.MaterialButtonToggleGroup
+            <com.google.android.material.button.MaterialButtonToggleGroup
                 android:id="@+id/chipGroupRange"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"

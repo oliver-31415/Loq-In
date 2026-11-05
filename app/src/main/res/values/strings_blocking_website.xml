@@ -26,7 +26,7 @@
     <string name="website_rule_mode_block_summary">Selected enabled websites are blocked while this profile is active.</string>
     <string name="website_rule_mode_allow_summary">Selected enabled websites are allowed. Other websites are blocked while this profile is active.</string>
     <string name="blocked_websites_add_title">Add website</string>
-    <string name="search_websites">Search or add a website</string>
+    <string name="search_websites">Search websites</string>
 
     <!-- ====================================================== -->
     <!-- Rule editor -->
@@ -42,7 +42,7 @@
     <string name="rule_daily_limit">Daily limit</string>
     <string name="website_mode_limits">Set limits</string>
     <string name="website_rule_pending">Pending — applies after the delay</string>
-    <string name="website_rule_disabled">Paused</string>
+    <string name="website_rule_disabled">Rule disabled</string>
     <string name="website_rule_toggle">Enable website rule</string>
     <string name="rule_blocked">Blocked</string>
     <string name="domain_limit_required">Please enter a daily limit in minutes.</string>
@@ -82,14 +82,14 @@
     <string name="website_tile_open_pages">Show path rules</string>
     <string name="website_tile_suggested">Suggested</string>
     <string name="website_tile_whole_site">Whole site</string>
-    <string name="website_tile_paths_only">Only some pages</string>
+    <string name="website_tile_paths_only">Paths only</string>
     <plurals name="website_tile_page_count">
         <item quantity="one">%1$d page</item>
         <item quantity="other">%1$d pages</item>
     </plurals>
     <string name="website_section_your_rules">Your rules</string>
     <string name="website_section_suggestions">Suggestions</string>
-    <string name="website_add_custom_tile">Add %1$s</string>
+    <string name="website_add_custom_tile">Add \"%1$s\"</string>
     <string name="website_quick_paths_title">Quick paths</string>
     <string name="website_quick_path_added">Added %1$s</string>
     <string name="website_delete_rule">Delete rule</string>
@@ -124,7 +124,4 @@
     <string name="website_limit_sentence_opens_only_fmt">Up to %1$d visits per day</string>
     <string name="website_limit_required">Enter at least one limit or choose Block always.</string>
 
-    <string name="website_row_whole_site_blocked">Whole site blocked</string>
-    <string name="website_row_whole_site_allowed">Whole site allowed</string>
-    <string name="website_suggestion_add_cd">Add %1$s</string>
 </resources>

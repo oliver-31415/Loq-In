@@ -26,7 +26,7 @@
     <string name="website_rule_mode_block_summary">Ausgewählte aktivierte Websites werden blockiert, solange dieses Profil aktiv ist.</string>
     <string name="website_rule_mode_allow_summary">Ausgewählte aktivierte Websites sind erlaubt. Andere Websites werden blockiert, solange dieses Profil aktiv ist.</string>
     <string name="blocked_websites_add_title">Website hinzufügen</string>
-    <string name="search_websites">Website suchen oder hinzufügen</string>
+    <string name="search_websites">Websites suchen</string>
 
     <!-- ====================================================== -->
     <!-- Rule editor -->
@@ -42,7 +42,7 @@
     <string name="rule_daily_limit">Tägliches Limit</string>
     <string name="website_mode_limits">Limits festlegen</string>
     <string name="website_rule_pending">Vorgemerkt — wird nach der Verzögerung angewendet</string>
-    <string name="website_rule_disabled">Pausiert</string>
+    <string name="website_rule_disabled">Regel deaktiviert</string>
     <string name="website_rule_toggle">Website-Regel aktivieren</string>
     <string name="rule_blocked">Blockiert</string>
     <string name="domain_limit_required">Bitte gib ein Tageslimit in Minuten ein.</string>
@@ -82,14 +82,14 @@
     <string name="website_tile_open_pages">Pfadregeln anzeigen</string>
     <string name="website_tile_suggested">Vorschlag</string>
     <string name="website_tile_whole_site">Ganze Website</string>
-    <string name="website_tile_paths_only">Nur manche Seiten</string>
+    <string name="website_tile_paths_only">Nur Pfade</string>
     <plurals name="website_tile_page_count">
         <item quantity="one">%1$d Seite</item>
         <item quantity="other">%1$d Seiten</item>
     </plurals>
     <string name="website_section_your_rules">Deine Regeln</string>
     <string name="website_section_suggestions">Vorschläge</string>
-    <string name="website_add_custom_tile">%1$s hinzufügen</string>
+    <string name="website_add_custom_tile">„%1$s“ hinzufügen</string>
     <string name="website_quick_paths_title">Schnellpfade</string>
     <string name="website_quick_path_added">%1$s hinzugefügt</string>
     <string name="website_delete_rule">Regel löschen</string>
@@ -124,7 +124,4 @@
     <string name="website_limit_sentence_opens_only_fmt">Bis zu %1$d Besuche pro Tag</string>
     <string name="website_limit_required">Gib mindestens ein Limit ein oder wähle „Immer blockieren“.</string>
 
-    <string name="website_row_whole_site_blocked">Ganze Website blockiert</string>
-    <string name="website_row_whole_site_allowed">Ganze Website erlaubt</string>
-    <string name="website_suggestion_add_cd">%1$s hinzufügen</string>
 </resources>

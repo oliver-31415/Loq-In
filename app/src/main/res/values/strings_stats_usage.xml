@@ -485,8 +485,4 @@
     <string name="usage_export_progress">Exporting usage data…</string>
     <string name="usage_export_done">Usage data exported.</string>
     <string name="usage_export_failed">Usage data could not be exported.</string>
-    <string name="usage_tracking_off_title">Usage tracking is off</string>
-    <string name="usage_tracking_off_body">Loq In counts screen time, opens and blocked attempts with its Accessibility service. Usage is recorded on this device.</string>
-    <string name="usage_tracking_off_action">Open Accessibility settings</string>
-    <string name="usage_tracking_off_next">Find Loq In there, then switch it on.</string>
 </resources>

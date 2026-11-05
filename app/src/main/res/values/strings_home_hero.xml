@@ -4,16 +4,4 @@
     <string name="home_state_not_protecting">Not protecting</string>
     <string name="home_state_break_fmt">On a break · %1$s left</string>
     <string name="home_state_off">Off</string>
-    <string name="home_hero_why_accessibility">The Accessibility service is off, so nothing is blocked right now.</string>
-    <string name="home_hero_why_setup_fmt">Finish setup: %1$s</string>
-    <string name="home_hero_fix">Fix it</string>
-    <string name="home_end_break">End break now</string>
-    <string name="home_rules_apps">Apps</string>
-    <string name="home_rules_websites">Websites</string>
-    <string name="home_rules_in_app">In-app</string>
-    <string name="home_rules_schedules">Schedules</string>
-    <string name="home_insights_link">Insights</string>
-    <string name="home_week_label">Last 7 days</string>
-    <string name="home_week_up_fmt">+%1$d%% vs the week before</string>
-    <string name="home_week_down_fmt">−%1$d%% vs the week before</string>
 </resources>

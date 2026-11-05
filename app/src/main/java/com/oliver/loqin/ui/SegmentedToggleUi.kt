@@ -82,19 +82,6 @@ object SegmentedToggleUi {
                 .setAllCornerSizes(pill)
                 .build()
             parent.innerCornerSize = pill
-
-            // Long labels (German, large text) wrap rather than ellipsize; if a segment still
-            // can't fit its label, the icon gives up its room.
-            buttons.forEach { button ->
-                button.maxLines = 2
-                button.ellipsize = android.text.TextUtils.TruncateAt.END
-                button.post {
-                    val layout = button.layout ?: return@post
-                    if (button.icon != null && (0 until layout.lineCount).any { layout.getEllipsisCount(it) > 0 }) {
-                        button.icon = null
-                    }
-                }
-            }
         }
 
         val buttonCornerRadius = dp(context, 100)
@@ -141,14 +128,16 @@ object SegmentedToggleUi {
             if (selected) {
                 // Concrete accent container: ?attr/colorPrimaryContainer doesn't follow a
                 // custom accent (see AccentColor.getAccentContainerColorInt).
-                // The selected segment is a white pill with a readable-accent outline and label:
-                // a pale container alone was ~1:1 against the track, so selection read only as bold.
-                val strong = RuleTileStyle.strongAccent(context)
-                button.backgroundTintList = ColorStateList.valueOf(surfaceColor)
-                button.strokeColor = ColorStateList.valueOf(strong)
-                button.strokeWidth = dp(context, 2)
-                button.setTextColor(AccentColor.readableOn(strong, surfaceColor, onSurfaceColor, 4.5))
-                button.iconTint = ColorStateList.valueOf(strong)
+                val selectedBg = ColorUtils.compositeColors(
+                    AccentColor.getAccentContainerColorInt(context),
+                    surfaceColor,
+                )
+                val onSelected = onSurfaceColor
+                button.backgroundTintList = ColorStateList.valueOf(selectedBg)
+                button.strokeColor = ColorStateList.valueOf(Color.TRANSPARENT)
+                button.strokeWidth = 0
+                button.setTextColor(onSelected)
+                button.iconTint = ColorStateList.valueOf(accent)
                 button.setTypeface(button.typeface, Typeface.BOLD)
                 button.rippleColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 0x25))
                 button.alpha = 1f
@@ -156,15 +145,10 @@ object SegmentedToggleUi {
                 button.backgroundTintList = ColorStateList.valueOf(Color.TRANSPARENT)
                 button.strokeColor = ColorStateList.valueOf(Color.TRANSPARENT)
                 button.strokeWidth = 0
-                // Darker than on-surface-variant: the grey label sat at ~3.8:1 on the grey track.
-                val unselectedText = ColorUtils.blendARGB(
-                    MaterialColors.getColor(
-                        context,
-                        com.google.android.material.R.attr.colorOnSurfaceVariant,
-                        ColorUtils.setAlphaComponent(onSurfaceColor, 0x88),
-                    ),
-                    onSurfaceColor,
-                    0.35f,
+                val unselectedText = MaterialColors.getColor(
+                    context,
+                    com.google.android.material.R.attr.colorOnSurfaceVariant,
+                    ColorUtils.setAlphaComponent(onSurfaceColor, 0x88),
                 )
                 button.setTextColor(unselectedText)
                 button.iconTint = ColorStateList.valueOf(unselectedText)

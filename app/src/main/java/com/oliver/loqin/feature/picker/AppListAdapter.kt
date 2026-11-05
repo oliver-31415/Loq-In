@@ -22,7 +22,7 @@ import android.content.Context
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.content.res.ColorStateList
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
@@ -53,8 +53,7 @@ class AppListAdapter(
     private val currentProfileProvider: () -> String?,
     private val isAllowModeProvider: () -> Boolean = { false },
     private val onSetLimitClicked: (app: AppEntry) -> Unit,
-    /** Press and hold (or the TalkBack action): the app's sheet with its limit and rules. */
-    private val onAppMenuRequested: ((app: AppEntry) -> Unit)? = null,
+    private val onSetSessionLimitClicked: ((app: AppEntry) -> Unit)? = null,
     private val onWebsiteRulesClicked: ((app: AppEntry) -> Unit)? = null,
     private val onInAppRulesClicked: ((app: AppEntry) -> Unit)? = null,
     private val onProtectedSelectionRequested: ((app: AppEntry, onAllowed: () -> Unit) -> Unit)? = null,
@@ -220,25 +219,11 @@ class AppListAdapter(
         filter(query, null)
     }
 
-    /** Filter chips beyond categories: the picked apps, or apps with a limit. */
-    enum class StatusFilter { SELECTED, LIMITED }
-
-    fun limitedCount(context: Context): Int {
-        val profile = currentProfileProvider.invoke()
-        return allApps.count { hasPinnedLimit(context, profile, it) }
-    }
-
-    fun filter(query: String?, category: AppCategory?, status: StatusFilter? = null, context: Context? = null) {
+    fun filter(query: String?, category: AppCategory?) {
         val q = query?.trim()?.lowercase(Locale.getDefault()).orEmpty()
-        val profile = currentProfileProvider.invoke()
         val newList = allApps.filter { entry ->
             (category == null || entry.appCategory == category) &&
-                (q.isBlank() || entry.labelLower.contains(q) || entry.pkgLower.contains(q)) &&
-                when (status) {
-                    null -> true
-                    StatusFilter.SELECTED -> managed.contains(entry.packageName)
-                    StatusFilter.LIMITED -> context != null && hasPinnedLimit(context, profile, entry)
-                }
+                (q.isBlank() || entry.labelLower.contains(q) || entry.pkgLower.contains(q))
         }
 
         submitList(newList)
@@ -260,9 +245,10 @@ class AppListAdapter(
         private val tvSub: TextView = v.findViewById(R.id.tvSub)
         private val ivChecked: ImageView = v.findViewById(R.id.ivChecked)
 
-        private val ivWebsiteRules: ImageView = v.findViewById(R.id.ivWebsiteRules)
-        private val ivInAppRules: ImageView = v.findViewById(R.id.ivInAppRules)
-        private var menuActionId: Int = View.NO_ID
+        private val btnLimit: ImageButton = v.findViewById(R.id.btnLimit)
+        private val viewLimitDot: View = v.findViewById(R.id.viewLimitDot)
+        private val btnWebsiteRules: ImageButton = v.findViewById(R.id.btnWebsiteRules)
+        private val btnInAppRules: ImageButton = v.findViewById(R.id.btnInAppRules)
 
         private var current: AppEntry? = null
         private var currentSelected = false
@@ -278,23 +264,20 @@ class AppListAdapter(
             RuleTileStyle.apply(cardRoot, selected, currentPending)
             val showBadge = selected || currentPending
             ivChecked.visibility = if (showBadge) View.VISIBLE else View.GONE
-            if (showBadge) RuleTileStyle.bindBadge(ivChecked, currentPending)
-            tvLabel.setTypeface(
-                android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL),
-                if (selected) android.graphics.Typeface.BOLD else android.graphics.Typeface.NORMAL,
-            )
-            cardRoot.isSelected = selected
-            androidx.core.view.ViewCompat.setStateDescription(
-                cardRoot,
-                ctx.getString(
-                    when {
-                        currentPending -> R.string.app_picker_pending_badge
-                        !selected -> R.string.state_off
-                        isAllowModeProvider.invoke() -> R.string.app_picker_state_allowed
-                        else -> R.string.app_picker_state_blocked
-                    }
-                ),
-            )
+            if (showBadge) {
+                // Hourglass = a change is queued. Everything else (blocked or limited) uses the
+                // check; a limit is already shown by the "N min/day" subtitle, and a stopwatch
+                // badge read as a delay timer.
+                ivChecked.setImageResource(
+                    if (currentPending) R.drawable.hourglass_24 else R.drawable.check_circle_24
+                )
+                ivChecked.alpha = if (currentPending) 0.85f else 1f
+                ivChecked.contentDescription = when {
+                    currentPending -> ctx.getString(R.string.app_picker_pending_badge)
+                    currentHasLimit -> ctx.getString(R.string.app_picker_limited_badge)
+                    else -> ctx.getString(R.string.app_picker_blocked_badge)
+                }
+            }
         }
 
         fun bind(item: AppEntry) {
@@ -341,21 +324,9 @@ class AppListAdapter(
             val hasLimit = hasDailyLimit || hasSessionLimit || hasAttemptLimit
             currentHasLimit = hasLimit
 
+            viewLimitDot.visibility = if (hasLimit) View.VISIBLE else View.GONE
             if (hasLimit) {
                 tvSub.visibility = View.VISIBLE
-                val strong = RuleTileStyle.strongAccent(ctx)
-                tvSub.setTextColor(strong)
-                tvSub.setCompoundDrawablesRelativeWithIntrinsicBounds(
-                    androidx.core.content.ContextCompat.getDrawable(ctx, R.drawable.timer_24)?.mutate()?.apply {
-                        val size = dp(11f)
-                        setBounds(0, 0, size, size)
-                        setTint(strong)
-                    },
-                    null, null, null,
-                )
-                tvSub.setCompoundDrawablesRelative(tvSub.compoundDrawablesRelative[0]?.apply {
-                    setBounds(0, 0, dp(11f), dp(11f))
-                }, null, null, null)
                 // Compact tile labels: long "Daily limit: …" style labels overflow the square tile.
                 tvSub.text = buildString {
                     if (hasDailyLimit) {
@@ -393,13 +364,11 @@ class AppListAdapter(
             ivAppIcon.alpha = if (dimmed) 0.45f else 1f
             tvLabel.alpha = if (dimmed) 0.55f else 1f
             updateTileState(intendedSelected)
-            // One spoken line: name, then limit and rule markers; the state is the state description.
-            cardRoot.contentDescription = listOfNotNull(
-                item.label,
-                tvSub.text.takeIf { hasLimit }?.let { ctx.getString(R.string.app_picker_tile_limit_cd_fmt, it) },
-                ctx.getString(R.string.app_picker_website_rules_open).takeIf { item.isAvailable && hasWebsiteRulesShortcut(item) },
-                ctx.getString(R.string.app_picker_in_app_rules_open).takeIf { item.isAvailable && inAppRulesActive },
-            ).joinToString(", ")
+            cardRoot.contentDescription = when {
+                intendedSelected && hasLimit -> ctx.getString(R.string.app_picker_tile_limited_desc, item.label)
+                intendedSelected -> ctx.getString(R.string.app_picker_tile_selected_desc, item.label)
+                else -> ctx.getString(R.string.app_picker_tile_unselected_desc, item.label)
+            }
 
             fun onTileToggle() {
                 val checked = !intendedSelected
@@ -493,40 +462,86 @@ class AppListAdapter(
 
             cardRoot.setOnClickListener { onTileToggle() }
             cardRoot.setOnLongClickListener {
-                // The sheet opens while protection is active; each editor's gate decides on save.
-                onAppMenuRequested?.invoke(item)
+                // The limit editor opens while protection is active; the gate decides on save.
+                onSetSessionLimitClicked?.invoke(item)
                 true
             }
-            if (menuActionId != View.NO_ID) {
-                androidx.core.view.ViewCompat.removeAccessibilityAction(cardRoot, menuActionId)
-                menuActionId = View.NO_ID
-            }
-            if (item.isAvailable && onAppMenuRequested != null) {
-                menuActionId = androidx.core.view.ViewCompat.addAccessibilityAction(
-                    cardRoot, ctx.getString(R.string.app_picker_sheet_action),
-                ) { _, _ -> onAppMenuRequested.invoke(item); true }
-            }
 
-            bindRuleMarkers(item, inAppRulesActive)
+            bindRowActionButtons(item)
         }
 
-        /** Small outlined markers for apps that also have website or in-app rules. */
-        private fun bindRuleMarkers(item: AppEntry, inAppRulesActive: Boolean) {
+        private fun bindRowActionButtons(item: AppEntry) {
             val ctx = itemView.context
-            val strong = RuleTileStyle.strongAccent(ctx)
-            val outline = androidx.core.graphics.ColorUtils.setAlphaComponent(strong, 0x80)
-            fun style(marker: ImageView, show: Boolean) {
-                marker.visibility = if (show) View.VISIBLE else View.GONE
-                if (!show) return
-                marker.background = android.graphics.drawable.GradientDrawable().apply {
-                    shape = android.graphics.drawable.GradientDrawable.OVAL
-                    setColor(androidx.core.content.ContextCompat.getColor(ctx, R.color.foqos_surface))
-                    setStroke(dp(1.5f), outline)
+            val profile = currentProfileProvider.invoke()
+            val isBrowser = hasWebsiteRulesShortcut(item)
+
+            // Browsers get a dedicated website-rules button (left); supported apps with
+            // active in-app rules get a dedicated in-app button. The schedule button
+            // on the right is the same plain limit button as on every other app.
+            if (item.isAvailable && isBrowser) {
+                btnWebsiteRules.visibility = View.VISIBLE
+                val readOnly = isReadOnlyProvider.invoke()
+                btnWebsiteRules.isEnabled = true
+                btnWebsiteRules.alpha = if (readOnly) 0.45f else 1f
+                btnWebsiteRules.setColorFilter(AccentColor.getAccentColorInt(ctx))
+                btnWebsiteRules.setOnClickListener {
+                    if (isReadOnlyProvider.invoke()) {
+                        itemView.showWarnPill(R.string.toast_disable_loqin_to_edit_app_limits)
+                        return@setOnClickListener
+                    }
+                    onWebsiteRulesClicked?.invoke(item)
                 }
-                androidx.core.widget.ImageViewCompat.setImageTintList(marker, ColorStateList.valueOf(strong))
+            } else {
+                btnWebsiteRules.visibility = View.GONE
+                btnWebsiteRules.setOnClickListener(null)
             }
-            style(ivWebsiteRules, item.isAvailable && hasWebsiteRulesShortcut(item))
-            style(ivInAppRules, item.isAvailable && inAppRulesActive)
+
+            // Dedicated shortcut to the in-app rules page while rules are active for this profile.
+            if (item.isAvailable && hasActiveInAppRules(ctx, profile, item)) {
+                btnInAppRules.visibility = View.VISIBLE
+                val readOnly = isReadOnlyProvider.invoke()
+                btnInAppRules.isEnabled = true
+                btnInAppRules.alpha = if (readOnly) 0.45f else 1f
+                btnInAppRules.setColorFilter(AccentColor.getAccentColorInt(ctx))
+                btnInAppRules.setOnClickListener {
+                    if (isReadOnlyProvider.invoke()) {
+                        itemView.showWarnPill(R.string.toast_disable_loqin_to_edit_app_limits)
+                        return@setOnClickListener
+                    }
+                    onInAppRulesClicked?.invoke(item)
+                }
+            } else {
+                btnInAppRules.visibility = View.GONE
+                btnInAppRules.setOnClickListener(null)
+            }
+
+            // Plain limit/schedule button, same as every other app.
+            btnLimit.setImageResource(R.drawable.schedule_24)
+            btnLimit.contentDescription = ctx.getString(R.string.set_daily_limit_for_fmt, item.label)
+            btnLimit.setColorFilter(AccentColor.getAccentColorInt(ctx))
+
+            if (item.isAvailable) {
+                btnLimit.visibility = View.VISIBLE
+                val readOnly = isReadOnlyProvider.invoke()
+                btnLimit.isEnabled = true
+                btnLimit.alpha = if (readOnly) 0.62f else 1f
+                btnLimit.setOnClickListener { onSetLimitClicked(item) }
+                btnLimit.setOnLongClickListener {
+                    onSetSessionLimitClicked?.invoke(item)
+                    true
+                }
+            } else {
+                btnLimit.visibility = View.GONE
+                btnLimit.isEnabled = false
+                btnLimit.alpha = 0.45f
+                btnLimit.setOnClickListener {
+                    itemView.showWarnPill(R.string.cannot_set_limit_unavailable)
+                }
+                btnLimit.setOnLongClickListener {
+                    itemView.showWarnPill(R.string.cannot_set_limit_unavailable)
+                    true
+                }
+            }
         }
 
     }

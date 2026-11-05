@@ -99,6 +99,4 @@
     <string name="settings_setup_guide_summary">Einrichtung, Berechtigungen und Funktionen erneut durchlaufen</string>
     <string name="account_section_your_data">Eigene Daten</string>
     <string name="settings_row_locked_state">Gesperrt, solange Loq In aktiv ist</string>
-    <string name="state_selected_profile">Aktuelles Profil</string>
-    <string name="state_not_selected_profile">Nicht das aktuelle Profil</string>
 </resources>

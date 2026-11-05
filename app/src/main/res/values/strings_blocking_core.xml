@@ -23,7 +23,7 @@
     <!-- ====================================================== -->
     <!-- Automatic blocking -->
     <!-- ====================================================== -->
-    <string name="app_picker_auto_block_new_apps_title">Block new apps</string>
+    <string name="app_picker_auto_block_new_apps_title">Automatically block newly installed apps</string>
     <string name="app_picker_auto_block_new_apps_summary">Newly installed launchable apps are added to this profile automatically. Safety-sensitive apps are skipped.</string>
 
     <!-- ====================================================== -->
@@ -31,18 +31,4 @@
     <!-- ====================================================== -->
     <string name="rules_tighten_only_active_message">You can add more protection while Loq In is active. Removing existing protection or widening allowed exceptions still requires an allowed control action.</string>
 
-    <string name="app_picker_auto_block_new_apps_row_sub">Apps you install later start blocked</string>
-    <string name="app_picker_hold_tip">Press and hold an app for its daily limit and rules. Apps with a limit show it under the name.</string>
-    <string name="app_picker_hold_tip_dismiss">Got it</string>
-    <string name="app_picker_filter_blocked_fmt">Blocked · %1$d</string>
-    <string name="app_picker_filter_allowed_fmt">Allowed · %1$d</string>
-    <string name="app_picker_filter_limits_fmt">Limits · %1$d</string>
-    <string name="app_picker_state_blocked">Blocked</string>
-    <string name="app_picker_state_allowed">Allowed</string>
-    <string name="app_picker_tile_limit_cd_fmt">daily limit %1$s</string>
-    <string name="app_picker_sheet_action">Limit and rules</string>
-    <string name="app_picker_sheet_limit">Daily limit</string>
-    <string name="app_picker_sheet_limit_sub">Minutes, opens or time per visit</string>
-    <string name="app_picker_sheet_in_app">In-app rules</string>
-    <string name="app_picker_sheet_websites">Website rules</string>
 </resources>

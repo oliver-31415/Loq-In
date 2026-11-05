@@ -54,6 +54,7 @@
     <string name="in_app_surface_spotlight_label">Spotlight</string>
     <string name="in_app_surface_following_label">Gefolgt</string>
     <string name="in_app_surface_always_block">Immer blockieren</string>
+    <string name="in_app_app_diagnostic_stale">v%1$s · nach einem App-Update möglicherweise veraltet</string>
     <string name="in_app_status_supported">Verfügbar</string>
     <string name="in_app_status_experimental">Experimentell</string>
     <string name="in_app_status_not_installed">Nicht installiert</string>
@@ -81,13 +82,4 @@
     <string name="in_app_block_entire_message">Die In-App-Regel bleibt aktiv. Wenn du die ganze App blockierst, wird alles in %1$s blockiert, nicht nur der ausgewählte Bereich.</string>
     <string name="in_app_block_entire_confirm">Ganze App blockieren</string>
     <string name="in_app_block_entire_later">Nicht jetzt</string>
-    <string name="in_app_count_blocked_fmt">%1$d von %2$d blockiert</string>
-    <string name="in_app_count_allowed_fmt">%1$d von %2$d erlaubt</string>
-    <string name="in_app_youtube_native_limit_row_sub">Aktiviere auch YouTubes eigenes Shorts-Limit</string>
-    <plurals name="in_app_not_installed_title">
-        <item quantity="one">%d App nicht installiert</item>
-        <item quantity="other">%d Apps nicht installiert</item>
-    </plurals>
-    <string name="in_app_not_installed_sub_fmt">%1$s · du kannst trotzdem Regeln festlegen</string>
-    <string name="in_app_detected_versions_fmt">Aktualisiert, seit Loq In die Bereiche zuletzt gesehen hat: %1$s. Bei großen App-Updates kann ein Loq In-Update nötig sein.</string>
 </resources>

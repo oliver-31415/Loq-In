@@ -29,13 +29,13 @@ import androidx.appcompat.widget.SwitchCompat
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.card.MaterialCardView
 import com.oliver.loqin.R
 import com.oliver.loqin.data.prefs.ProfileStore
 import com.oliver.loqin.data.prefs.WebsiteRuleModeStore
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.theme.CustomAccentApplier
-import com.oliver.loqin.ui.RuleTileStyle
-import com.oliver.loqin.ui.widgets.ListGroupLayout
+import com.oliver.loqin.ui.StackSquareCardView
 
 /** One path-rule row rendered inside a [WebsiteTile.PathsPanel] or the paths overlay sheet. */
 data class WebsitePathRow(
@@ -52,8 +52,9 @@ data class WebsitePathRow(
 )
 
 /**
- * Items of the website rules list. A host groups its host-level rule (if any) with its path
- * rules in one row of the grouped "Your rules" list; suggestions are one wrapping set of chips.
+ * Grid tiles for website rules. A host groups its host-level rule (if any) with its path rules:
+ * the square tile shows the favicon and stack depth. Section headers and the "add custom" tile
+ * round out the list.
  */
 sealed class WebsiteTile {
     abstract val key: String
@@ -84,14 +85,6 @@ sealed class WebsiteTile {
         val pending: Boolean,
         val expanded: Boolean,
         val suggestion: WebsiteSuggestion? = null,
-        /** First / last row of the "Your rules" group, for its segment corners. */
-        val groupTop: Boolean = false,
-        val groupBottom: Boolean = false,
-    ) : WebsiteTile()
-
-    data class SuggestionChips(
-        override val key: String = "suggestion_chips",
-        val suggestions: List<WebsiteSuggestion>,
     ) : WebsiteTile()
 
     data class PathsPanel(
@@ -111,7 +104,10 @@ sealed class WebsiteTile {
     ) : WebsiteTile()
 }
 
-/** Adapter for the website rules list: headers, the add row, rule rows and suggestion chips. */
+/**
+ * Adapter for the website rule grid. Section headers and expanded path panels span the full
+ * three-column grid; host tiles and the "add custom" tile occupy one cell.
+ */
 class WebsiteRuleTileAdapter(
     private val listener: Listener,
 ) : RecyclerView.Adapter<RecyclerView.ViewHolder>() {
@@ -161,7 +157,6 @@ class WebsiteRuleTileAdapter(
         is WebsiteTile.PathsPanel -> VIEW_TYPE_PATHS_PANEL
         is WebsiteTile.AddCustom -> VIEW_TYPE_ADD_CUSTOM
         is WebsiteTile.ShowSuggestions -> VIEW_TYPE_SHOW_SUGGESTIONS
-        is WebsiteTile.SuggestionChips -> VIEW_TYPE_SUGGESTION_CHIPS
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
@@ -170,15 +165,13 @@ class WebsiteRuleTileAdapter(
             VIEW_TYPE_SECTION_HEADER ->
                 HeaderVH(inflater.inflate(R.layout.item_website_section_header, parent, false))
             VIEW_TYPE_HOST_TILE ->
-                HostVH(inflater.inflate(R.layout.item_website_rule_row, parent, false))
-            VIEW_TYPE_SUGGESTION_CHIPS ->
-                ChipsVH(inflater.inflate(R.layout.item_website_suggestion_chips, parent, false))
+                HostVH(inflater.inflate(R.layout.grid_website_tile, parent, false))
             VIEW_TYPE_PATHS_PANEL ->
                 PanelVH(inflater.inflate(R.layout.item_website_paths_panel, parent, false))
             VIEW_TYPE_SHOW_SUGGESTIONS ->
                 ShowSuggestionsVH(inflater.inflate(R.layout.item_website_show_suggestions, parent, false))
             else ->
-                AddCustomVH(inflater.inflate(R.layout.item_website_add_row, parent, false))
+                AddCustomVH(inflater.inflate(R.layout.item_website_add_custom, parent, false))
         }
     }
 
@@ -189,7 +182,6 @@ class WebsiteRuleTileAdapter(
             is WebsiteTile.PathsPanel -> (holder as PanelVH).bind(item)
             is WebsiteTile.AddCustom -> (holder as AddCustomVH).bind(item)
             is WebsiteTile.ShowSuggestions -> (holder as ShowSuggestionsVH).bind(item)
-            is WebsiteTile.SuggestionChips -> (holder as ChipsVH).bind(item)
         }
     }
 
@@ -198,10 +190,6 @@ class WebsiteRuleTileAdapter(
         private val tvHeaderAction: TextView = itemView.findViewById(R.id.tvHeaderAction)
         fun bind(item: WebsiteTile.SectionHeader) {
             tvHeader.text = item.title
-            // Readable accent: the soft accent alone is too pale on the page for a heading.
-            val strong = RuleTileStyle.strongAccent(itemView.context)
-            tvHeader.setTextColor(strong)
-            tvHeaderAction.setTextColor(strong)
             val label = item.actionLabel
             if (label.isNullOrBlank()) {
                 tvHeaderAction.visibility = View.GONE
@@ -227,37 +215,33 @@ class WebsiteRuleTileAdapter(
 
         fun bind(item: WebsiteTile.AddCustom) {
             val ctx = itemView.context
-            val density = ctx.resources.displayMetrics.density
             tvAddLabel.text = ctx.getString(R.string.website_add_custom_tile, item.query)
-            ivAddIcon.setColorFilter(RuleTileStyle.strongAccent(ctx))
-            itemView.background = ListGroupLayout.segmentBackground(
-                itemView, 20 * density, 20 * density, ContextCompat.getColor(ctx, R.color.foqos_surface),
-            )
+            ivAddIcon.setColorFilter(AccentColor.getAccentColorInt(ctx))
             itemView.setOnClickListener { listener.onAddCustom(item.query) }
         }
     }
 
     private inner class HostVH(itemView: View) : RecyclerView.ViewHolder(itemView) {
+        private val rowRoot: StackSquareCardView = itemView.findViewById(R.id.rowRoot)
         private val ivSiteIcon: ImageView = itemView.findViewById(R.id.ivSiteIcon)
         private val tvLabel: TextView = itemView.findViewById(R.id.tvLabel)
         private val tvSub: TextView = itemView.findViewById(R.id.tvSub)
         private val btnLimit: ImageButton = itemView.findViewById(R.id.btnLimit)
-        private val ivTrailing: ImageView = itemView.findViewById(R.id.ivTrailing)
+        private val viewLimitDot: View = itemView.findViewById(R.id.viewLimitDot)
+        private val btnPages: ImageButton = itemView.findViewById(R.id.btnPages)
+        private val tvPagesCount: TextView = itemView.findViewById(R.id.tvPagesCount)
+        private val ivChecked: ImageView = itemView.findViewById(R.id.ivChecked)
+        private val ivSuggested: ImageView = itemView.findViewById(R.id.ivSuggested)
 
         private var boundHost: String? = null
 
         fun bind(item: WebsiteTile.HostTile) {
             val ctx = itemView.context
-            val density = ctx.resources.displayMetrics.density
-            val strong = RuleTileStyle.strongAccent(ctx)
-            val surface = ContextCompat.getColor(ctx, R.color.foqos_surface)
-            val secondary = com.google.android.material.color.MaterialColors.getColor(
-                itemView, android.R.attr.textColorSecondary,
-            )
+            val accent = AccentColor.getAccentColorInt(ctx)
             val selecting = listener.isSelectionMode()
             val selected = selecting && listener.isSelected(item.host)
+            val isSuggestion = item.suggestion != null
             val hasLimit = item.limitMin > 0 || item.sessionLimitMin > 0 || item.visitLimit > 0
-            val paused = !item.enabled && !item.pending
 
             tvLabel.text = item.host
             boundHost = item.host
@@ -266,78 +250,82 @@ class WebsiteRuleTileAdapter(
                 if (boundHost == item.host) ivSiteIcon.setImageDrawable(drawable)
             }
 
-            // What the rule covers, with an icon so it isn't text-only: whole site, some pages,
-            // paused, or its limits.
-            val status = subLabel(item, ctx)
-            val pages = if (item.pathRuleCount > 0) ctx.resources.getQuantityString(
-                R.plurals.website_tile_page_count, item.pathRuleCount, item.pathRuleCount,
-            ) else null
-            tvSub.text = listOfNotNull(status.takeIf { it.isNotBlank() }, pages).joinToString(" · ")
+            tvSub.text = subLabel(item, ctx)
             tvSub.visibility = if (tvSub.text.isNullOrBlank()) View.GONE else View.VISIBLE
-            val statusIcon = when {
-                paused -> R.drawable.toggle_off_24
-                hasLimit -> R.drawable.timer_24
-                item.hostRule == null || !item.hostEnabled -> R.drawable.layers_24
-                else -> R.drawable.language_24
-            }
-            tvSub.setCompoundDrawablesRelative(
-                ContextCompat.getDrawable(ctx, statusIcon)?.mutate()?.apply {
-                    val size = (16 * density).toInt()
-                    setBounds(0, 0, size, size)
-                    setTint(secondary)
-                },
-                null, null, null,
+
+            rowRoot.stackDepth = (item.totalRuleCount - 1).coerceIn(0, StackSquareCardView.MAX_DEPTH)
+
+            // Tick means "selected in multi-select", never "rule is active". On suggestion
+            // tiles it replaces the plus badge so the two never overlap.
+            ivChecked.visibility = if (selected) View.VISIBLE else View.GONE
+            ivSuggested.visibility = if (isSuggestion && !selected) View.VISIBLE else View.GONE
+
+            btnLimit.visibility = if (selecting || isSuggestion) View.GONE else View.VISIBLE
+            viewLimitDot.visibility =
+                if (!isSuggestion && hasLimit) View.VISIBLE else View.GONE
+            btnLimit.setColorFilter(accent)
+            btnLimit.alpha = if (listener.isReadOnly()) 0.45f else 1f
+
+            val hasPaths = item.pathRuleCount > 0
+            btnPages.visibility = if (hasPaths) View.VISIBLE else View.GONE
+            tvPagesCount.visibility = if (hasPaths) View.VISIBLE else View.GONE
+            tvPagesCount.text = ctx.resources.getQuantityString(
+                R.plurals.website_tile_page_count,
+                item.pathRuleCount,
+                item.pathRuleCount,
             )
+            btnPages.setColorFilter(accent)
 
             val contentAlpha = when {
                 item.pending -> 0.62f
-                paused -> 0.55f
-                else -> 1f
+                isSuggestion -> 1f
+                item.enabled -> 1f
+                else -> 0.52f
             }
             ivSiteIcon.alpha = contentAlpha
             tvLabel.alpha = contentAlpha
+            tvSub.alpha = if (item.enabled) 0.70f else 0.56f
 
-            val rowColor = if (selected) {
-                ColorUtils.compositeColors(ColorUtils.setAlphaComponent(strong, 0x2E), surface)
-            } else surface
-            itemView.background = ListGroupLayout.segmentBackground(
-                itemView,
-                if (item.groupTop) 24 * density else 6 * density,
-                if (item.groupBottom) 24 * density else 6 * density,
-                rowColor,
-            )
-            (itemView.layoutParams as? RecyclerView.LayoutParams)?.let { lp ->
-                val want = if (item.groupTop) 0 else (2 * density).toInt()
-                if (lp.topMargin != want) {
-                    lp.topMargin = want
-                    itemView.layoutParams = lp
+            val density = ctx.resources.displayMetrics.density
+            (rowRoot as? MaterialCardView)?.let { card ->
+                val defaultStroke = ContextCompat.getColor(ctx, R.color.foqos_outline_variant)
+                val defaultBg = ContextCompat.getColor(ctx, R.color.foqos_surface)
+                val accentActive = !isSuggestion && item.enabled
+                card.strokeColor = when {
+                    selected -> accent
+                    accentActive -> ColorUtils.setAlphaComponent(accent, 0x88)
+                    else -> defaultStroke
                 }
+                // Flat unless the tile marks selection or an enabled rule; the default outline is gone.
+                card.strokeWidth = when {
+                    selected -> (2f * density).toInt()
+                    accentActive -> (1.5f * density).toInt()
+                    else -> 0
+                }
+                card.setCardBackgroundColor(
+                    if (selected) ColorUtils.setAlphaComponent(accent, 0x30) else defaultBg
+                )
             }
+            // Unselected tiles step back during selection so the chosen one is unmistakable.
+            rowRoot.alpha =
+                if (listener.isSelectionMode() && !selected && !isSuggestion) 0.4f else 1f
 
-            btnLimit.visibility = if (selecting) View.GONE else View.VISIBLE
-            btnLimit.setColorFilter(if (hasLimit) strong else secondary)
-            btnLimit.alpha = if (listener.isReadOnly()) 0.45f else 1f
-            ivTrailing.setImageResource(
-                when {
-                    !selecting -> R.drawable.keyboard_arrow_right_24
-                    selected -> R.drawable.check_circle_24
-                    else -> R.drawable.circle_outline_24
-                }
-            )
-            ivTrailing.setColorFilter(if (selected) strong else secondary)
-
-            itemView.contentDescription = listOfNotNull(item.host, tvSub.text?.toString()).joinToString(", ")
             itemView.setOnClickListener {
-                if (listener.isSelectionMode()) listener.onHostSelection(item.host, false)
-                else listener.onHostExpand(item.host)
+                when {
+                    listener.isSelectionMode() -> listener.onHostSelection(item.host, isSuggestion)
+                    isSuggestion -> item.suggestion?.let { listener.onSuggestionAdd(it) }
+                    else -> listener.onHostToggle(item.host)
+                }
             }
             itemView.setOnLongClickListener {
-                listener.onHostLongPress(item.host, false)
+                listener.onHostLongPress(item.host, isSuggestion)
                 true
             }
             btnLimit.setOnClickListener {
                 if (!listener.isReadOnly()) listener.onHostLimit(item.host)
             }
+            btnPages.setOnClickListener { listener.onHostExpand(item.host) }
+            tvPagesCount.setOnClickListener { listener.onHostExpand(item.host) }
         }
 
         /**
@@ -365,67 +353,10 @@ class WebsiteRuleTileAdapter(
             }
             if (item.isHardBlocked) {
                 return ctx.getString(
-                    if (isAllowMode(ctx)) R.string.website_row_whole_site_allowed else R.string.website_row_whole_site_blocked
+                    if (isAllowMode(ctx)) R.string.rule_allowed else R.string.rule_blocked
                 )
             }
             return ""
-        }
-    }
-
-    /** Suggestions: one outlined "+ favicon domain" chip each; long-press selects several. */
-    private inner class ChipsVH(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        private val group: com.google.android.material.chip.ChipGroup = itemView as com.google.android.material.chip.ChipGroup
-
-        fun bind(item: WebsiteTile.SuggestionChips) {
-            val ctx = itemView.context
-            val density = ctx.resources.displayMetrics.density
-            val strong = RuleTileStyle.strongAccent(ctx)
-            val ink = com.google.android.material.color.MaterialColors.getColor(
-                itemView, com.google.android.material.R.attr.colorOnSurface,
-            )
-            val outline = ContextCompat.getColor(ctx, R.color.foqos_outline)
-            group.removeAllViews()
-            for (suggestion in item.suggestions) {
-                val selected = listener.isSelectionMode() && listener.isSelected(suggestion.host)
-                val chip = com.google.android.material.chip.Chip(ctx).apply {
-                    text = suggestion.host
-                    isCheckable = false
-                    chipMinHeight = 40 * density
-                    shapeAppearanceModel = shapeAppearanceModel.withCornerSize(
-                        com.google.android.material.shape.RelativeCornerSize(0.5f)
-                    )
-                    chipBackgroundColor = android.content.res.ColorStateList.valueOf(
-                        if (selected) ColorUtils.compositeColors(ColorUtils.setAlphaComponent(strong, 0x2E), ContextCompat.getColor(ctx, R.color.foqos_surface))
-                        else ContextCompat.getColor(ctx, R.color.foqos_surface)
-                    )
-                    chipStrokeWidth = if (selected) 0f else density
-                    chipStrokeColor = android.content.res.ColorStateList.valueOf(ColorUtils.blendARGB(outline, ink, 0.12f))
-                    setTextColor(ink)
-                    textSize = 14f
-                    // The site's favicon leads; the trailing "+" (a check while selected) says what a tap does.
-                    chipIconSize = 22 * density
-                    isChipIconVisible = true
-                    WebsiteIconCache.load(ctx, suggestion.host) { favicon ->
-                        if (text == suggestion.host) chipIcon = favicon
-                    }
-                    closeIcon = ContextCompat.getDrawable(ctx, if (selected) R.drawable.check_circle_24 else R.drawable.add_24)
-                    closeIconTint = android.content.res.ColorStateList.valueOf(strong)
-                    closeIconSize = 20 * density
-                    isCloseIconVisible = true
-                    closeIconContentDescription = ctx.getString(R.string.website_suggestion_add_cd, suggestion.host)
-                    setOnCloseIconClickListener { performClick() }
-                    contentDescription = ctx.getString(R.string.website_suggestion_add_cd, suggestion.host)
-                    setOnClickListener {
-                        if (listener.isSelectionMode()) listener.onHostSelection(suggestion.host, true)
-                        else listener.onSuggestionAdd(suggestion)
-                    }
-                    setOnLongClickListener {
-                        listener.onHostLongPress(suggestion.host, true)
-                        true
-                    }
-                }
-                group.addView(chip)
-            }
         }
     }
 
@@ -483,7 +414,6 @@ class WebsiteRuleTileAdapter(
         const val VIEW_TYPE_PATHS_PANEL = 2
         const val VIEW_TYPE_ADD_CUSTOM = 3
         const val VIEW_TYPE_SHOW_SUGGESTIONS = 4
-        const val VIEW_TYPE_SUGGESTION_CHIPS = 5
 
         fun isAllowMode(ctx: android.content.Context): Boolean =
             WebsiteRuleModeStore.isAllowMode(

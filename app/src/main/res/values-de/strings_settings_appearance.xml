@@ -74,7 +74,7 @@
     </string-array>
 
     <string name="pref_language_title">Sprache</string>
-    <string name="pref_language_english">English</string>
+    <string name="pref_language_english">Englisch</string>
     <string name="pref_language_german">Deutsch</string>
 
     <!-- ====================================================== -->
@@ -86,7 +86,7 @@
     <string name="pref_language_summary">Wähle die App-Sprache.</string>
     <string-array name="pref_language_entries">
         <item>System</item>
-        <item>English</item>
+        <item>Englisch</item>
         <item>Deutsch</item>
     </string-array>
 

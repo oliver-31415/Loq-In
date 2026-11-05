@@ -116,7 +116,6 @@ class AppearanceActivity : AppCompatActivity() {
         setupLanguage()
         setupAccentSelector()
         updateAllSummaries()
-        com.oliver.loqin.ui.AccentContrast.strengthen(findViewById(android.R.id.content))
     }
 
     override fun onResume() {
