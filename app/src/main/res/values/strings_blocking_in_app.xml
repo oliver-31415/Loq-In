@@ -82,4 +82,49 @@
     <string name="in_app_block_entire_message">The in-app rule stays active. Blocking the entire app blocks everything in %1$s, not just the selected area.</string>
     <string name="in_app_block_entire_confirm">Block entire app</string>
     <string name="in_app_block_entire_later">Not now</string>
+
+    <string name="in_app_locked_banner">Loq In is on: you can block more, but turn it off to unblock.</string>
+    <string name="in_app_master_block_title">Block short videos in every app</string>
+    <string name="in_app_master_allow_title">Allow short videos in every app</string>
+    <string name="in_app_master_sub_fmt">Shorts, Reels, Spotlight · %1$s</string>
+    <string name="in_app_master_state_all">on in every app</string>
+    <string name="in_app_master_state_none">off</string>
+    <string name="in_app_master_state_mixed_fmt">%1$d of %2$d apps</string>
+    <string name="in_app_count_blocked_fmt">%1$d of %2$d blocked</string>
+    <string name="in_app_count_allowed_fmt">%1$d of %2$d allowed</string>
+    <string name="in_app_outcome_block_one_fmt">Opening %1$s sends you back.</string>
+    <string name="in_app_outcome_block_many_fmt">%1$d sections are hidden. Opening one sends you back.</string>
+    <string name="in_app_outcome_allow_none">Every section listed here is blocked.</string>
+    <string name="in_app_outcome_allow_fmt">Only %1$s stays available. The other %2$d listed sections are blocked.</string>
+    <string name="in_app_see_where">See where</string>
+    <string name="in_app_see_where_cd_fmt">See where in %1$s</string>
+    <string name="in_app_tag_blocked">Blocked</string>
+    <string name="in_app_tag_allowed">Allowed</string>
+    <string name="in_app_tag_pending">Pending</string>
+    <string name="in_app_row_locked">locked while Loq In is on</string>
+    <string name="in_app_extra_shorts_sub">Also set YouTube\'s own Shorts limit</string>
+    <string name="in_app_footnote_stale_fmt">%1$s updated since Loq In last checked it (%2$s). If blocked sections show up again, update Loq In.</string>
+    <string name="in_app_footnote_checked_fmt">Checked on %1$s %2$s</string>
+    <plurals name="in_app_not_installed_title"><item quantity="one">%d app not installed</item><item quantity="other">%d apps not installed</item></plurals>
+    <string name="in_app_not_installed_sub_fmt">Rules apply when you install them · %1$s</string>
+    <string name="in_app_not_installed_none">none set</string>
+    <plurals name="in_app_not_installed_set"><item quantity="one">%d rule set</item><item quantity="other">%d rules set</item></plurals>
+    <string name="in_app_desc_yt_shorts">The Shorts tab and Shorts in your feed</string>
+    <string name="in_app_desc_yt_subs">The Subscriptions tab</string>
+    <string name="in_app_desc_yt_you">Your library, history and playlists</string>
+    <string name="in_app_desc_yt_mini">The small player when you leave a video</string>
+    <string name="in_app_desc_yt_pip">Videos floating over other apps</string>
+    <string name="in_app_desc_ig_reels">The Reels tab and Reels in your feed</string>
+    <string name="in_app_desc_ig_search">Search and Explore</string>
+    <string name="in_app_desc_ig_stories">Stories at the top of your feed</string>
+    <string name="in_app_desc_x_home">The For you timeline</string>
+    <string name="in_app_desc_x_search">Search and Explore</string>
+    <string name="in_app_desc_x_grok">The Grok assistant</string>
+    <string name="in_app_desc_x_notif">The Notifications tab</string>
+    <string name="in_app_desc_snap_spotlight">The Spotlight tab</string>
+    <string name="in_app_desc_snap_stories">Stories from friends and creators</string>
+    <string name="in_app_desc_snap_map">The Snap Map</string>
+    <string name="in_app_desc_snap_following">The Following feed</string>
+    <string name="in_app_desc_fb_reels">The Reels tab and Reels in your feed</string>
+    <string name="in_app_desc_fb_marketplace">Buying and selling</string>
 </resources>

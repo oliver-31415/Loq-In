@@ -64,4 +64,11 @@
     <color name="widget_scanner_title">@color/foqos_on_surface</color>
     <color name="widget_scanner_text">@color/foqos_on_surface_variant</color>
 
+
+    <!-- =========================
+         IN-APP BLOCKING WARNING
+         ========================= -->
+    <color name="in_app_warn_bg">#FFFFF8E8</color>
+    <color name="in_app_warn_fg">#FF6B4500</color>
+
 </resources>

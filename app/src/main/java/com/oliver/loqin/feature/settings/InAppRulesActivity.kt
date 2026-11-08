@@ -45,14 +45,12 @@ import com.oliver.loqin.data.prefs.SurfaceLimitStore
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.theme.CustomAccentApplier
 import com.oliver.loqin.ui.EdgeToEdgeUtils
-import com.oliver.loqin.ui.RuleTile
 import com.oliver.loqin.ui.SegmentedToggleUi
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.showWarnPill
 import com.oliver.loqin.ui.dialog.LoqInInfoRow
 import com.oliver.loqin.ui.dialog.showLoqInInfoDialog
 import com.oliver.loqin.ui.dialog.styleLoqInDialogButtons
-import com.oliver.loqin.ui.widgets.TileGridLayout
 import com.oliver.loqin.util.EditingLockGuard
 import com.oliver.loqin.util.PackageLaunchIntentCompat
 import com.oliver.loqin.util.RelativeTimeFormatter
@@ -177,10 +175,23 @@ class InAppRulesActivity : AppCompatActivity() {
             return
         }
 
-        visibleGroups.forEach { (group, status) ->
-            val section = buildGroupSection(group, status)
-            container.addView(section)
-            if (group.packageName == focusPackage) focusView = section
+        buildPageTop()
+        val (absent, present) = visibleGroups.partition { (_, status) -> status == AppInstallStatus.NOT_INSTALLED }
+        present.forEach { (group, status) ->
+            val card = buildAppCardView(group, status)
+            container.addView(card)
+            if (group.packageName == focusPackage) focusView = card
+        }
+        if (absent.isNotEmpty()) {
+            if (absent.any { it.first.packageName == focusPackage }) notInstalledExpanded = true
+            container.addView(buildNotInstalledFold(absent.map { it.first }))
+            if (notInstalledExpanded) {
+                absent.forEach { (group, status) ->
+                    val card = buildAppCardView(group, status)
+                    container.addView(card)
+                    if (group.packageName == focusPackage) focusView = card
+                }
+            }
         }
 
         focusView?.let { targetView ->
@@ -395,77 +406,6 @@ class InAppRulesActivity : AppCompatActivity() {
         }
     }
 
-    private fun buildGroupSection(group: AppGroup, status: AppInstallStatus): View {
-        val isYouTube = group.packageName == "com.google.android.youtube"
-        val installed = status == AppInstallStatus.INSTALLED
-
-        val section = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        }
-
-        // Header: app icon + name, like a website rule's favicon; the right side holds either
-        // why the app can't be used (status pill) or YouTube's extra Shorts setup link.
-        val header = layoutInflater.inflate(R.layout.item_website_section_header, section, false)
-        header.findViewById<TextView>(R.id.tvHeader).apply {
-            text = getString(group.titleRes)
-            val icon = installedPackage(group)?.let { pkg ->
-                runCatching { packageManager.getApplicationIcon(pkg) }.getOrNull()
-            }
-            if (icon != null) {
-                icon.setBounds(0, 0, dp(20), dp(20))
-                setCompoundDrawablesRelative(icon, null, null, null)
-                compoundDrawablePadding = dp(8)
-            }
-            gravity = Gravity.CENTER_VERTICAL
-        }
-        header.findViewById<TextView>(R.id.tvHeaderAction).apply {
-            when {
-                !installed -> {
-                    text = getString(
-                        if (status == AppInstallStatus.DISABLED) R.string.in_app_status_disabled
-                        else R.string.in_app_status_not_installed
-                    )
-                    isClickable = false
-                    isFocusable = false
-                    background = GradientDrawable().apply {
-                        cornerRadius = dp(99).toFloat()
-                        setColor(ColorUtils.setAlphaComponent(onSurfaceColor(), 0x14))
-                    }
-                    setTextColor(ColorUtils.setAlphaComponent(onSurfaceColor(), 0xAA))
-                    setPadding(dp(10), dp(4), dp(10), dp(4))
-                    textSize = 11.5f
-                    visibility = View.VISIBLE
-                }
-                isYouTube -> {
-                    text = getString(R.string.in_app_youtube_native_limit_compact_title)
-                    setOnClickListener { showYouTubeNativeLimitGuide() }
-                    visibility = View.VISIBLE
-                }
-                else -> visibility = View.GONE
-            }
-        }
-        section.addView(header)
-
-        appUpdateWarning(group)?.let { section.addView(buildNoteRow(it, R.drawable.info_24)) }
-
-        val grid = TileGridLayout(this).apply {
-            columns = RuleTile.COMPACT_COLUMNS
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        }
-        group.surfaces.forEach { surface ->
-            grid.addView(buildSurfaceTile(surface, group.packageName, grid, installed).root)
-        }
-        section.addView(grid)
-        return section
-    }
-
     /** The package actually serving this group (for YouTube, an enabled patched build wins). */
     private fun installedPackage(group: AppGroup): String? {
         val candidates = if (group.packageName == "com.google.android.youtube") {
@@ -524,48 +464,15 @@ class InAppRulesActivity : AppCompatActivity() {
         return AppInstallStatus.NOT_INSTALLED
     }
 
-    /** A quiet caption under a section heading, aligned with the heading text. */
-    private fun buildNoteRow(message: String, iconRes: Int): View {
-        return LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                marginStart = dp(4)
-                marginEnd = dp(4)
-                bottomMargin = dp(6)
-            }
-            val secondary = MaterialColors.getColor(this, android.R.attr.textColorSecondary)
-            addView(ImageView(this@InAppRulesActivity).apply {
-                setImageResource(iconRes)
-                imageTintList = ColorStateList.valueOf(secondary)
-                layoutParams = LinearLayout.LayoutParams(dp(14), dp(14)).apply { marginEnd = dp(6) }
-            })
-            addView(TextView(this@InAppRulesActivity).apply {
-                text = message
-                textSize = 12.5f
-                setTextColor(secondary)
-            })
-        }
-    }
-
-    private fun appUpdateWarning(group: AppGroup): String? {
-        val pkg = installedPackage(group) ?: return null
-        val info = runCatching { packageManager.getPackageInfo(pkg, 0) }.getOrNull() ?: return null
-        val version = info.versionName.orEmpty().ifBlank { return null }
-        val lastDetected = InAppDetectionStore.lastForAny(this, group.surfaces.mapNotNull { it.surfaceKey })
-        if (lastDetected <= 0L || info.lastUpdateTime <= lastDetected) return null
-        return getString(R.string.in_app_app_diagnostic_stale, version)
-    }
-
     private fun surfaceIconRes(surfaceKey: String?): Int = when (surfaceKey) {
         "yt:shorts", "ig:reels", "snap:spotlight", "fb:reels" -> R.drawable.play_arrow_24
-        "yt:subscriptions", "x:foryou", "fb:marketplace" -> R.drawable.apps_24
+        "yt:subscriptions" -> R.drawable.list_alt_24
+        "x:foryou" -> R.drawable.loqin_home_nav_24
+        "fb:marketplace" -> R.drawable.dashboard_24
         "yt:you", "snap:following" -> R.drawable.account_box_24
-        "yt:miniplayer", "x:grok" -> R.drawable.layers_24
-        "yt:pip" -> R.drawable.share_24
+        "yt:miniplayer" -> R.drawable.layers_24
+        "x:grok" -> R.drawable.star_24
+        "yt:pip" -> R.drawable.open_in_new_24
         "ig:search", "x:search" -> R.drawable.search_24
         "ig:stories", "snap:stories" -> R.drawable.photo_camera_24
         "x:notifications" -> R.drawable.notifications_24
@@ -573,47 +480,225 @@ class InAppRulesActivity : AppCompatActivity() {
         else -> R.drawable.apps_24
     }
 
-    private fun buildSurfaceTile(surface: Surface, packageName: String, parent: ViewGroup, installed: Boolean): RuleTile {
-        val tile = RuleTile.inflate(parent, compact = true)
-        val prefKey = surface.prefKey
-        val readOnly = EditingLockGuard.isLocked(this)
-        val currentChecked = prefKey?.let { readProfileBool(it) } ?: false
-        val pendingSelected = prefKey?.let { pendingInAppSelections[it] }
-        val canToggleWhileLocked = prefKey != null && run {
-            if (ProtectionChangeGate.isEditingUnlocked(this)) return@run true
-            val direction = ProtectionChangePolicy.inAppDirection(
-                allowMode = isInAppAllowMode(),
-                currentSelected = currentChecked,
-                requestedSelected = !currentChecked,
-            )
-            ProtectionChangeGate.decision(this, direction) != ProtectionChangePolicy.Decision.DENY
-        }
-        if (currentChecked && !readOnly && pendingSelected == null) {
-            surface.surfaceKey?.let { setSurfaceRuleForMode(it, checked = true) }
-        }
-        val shown = pendingSelected ?: currentChecked
-        // The mode card already says Block/Allow selected, so the tile is just the section's name.
-        val label = getString(surface.labelRes)
-        val onTap: (() -> Unit)? = prefKey?.let { key ->
-            { onSurfaceTapped(tile, surface, packageName, key) }
-        }
+    // ===== New In-app card page (replaces buildGroupSection / buildSurfaceTile) =====
 
-        tile.setSymbol(surfaceIconRes(surface.surfaceKey))
-        tile.setText(label)
-        tile.root.contentDescription = ruleSwitchText(label)
-        // Tap the tile to pick it, with the same check badge as a picked app.
-        tile.setToggle(null)
-        tile.setState(on = shown, pending = pendingSelected != null)
-        tile.setDimmed(prefKey == null || (readOnly && !canToggleWhileLocked))
-        // Not installed: the rule still applies once it is, so keep the name readable.
-        if (!installed && !shown) tile.icon.alpha = 0.6f
-        tile.root.setOnClickListener(onTap?.let { tap -> View.OnClickListener { tap() } })
-        return tile
+    private var notInstalledExpanded = false
+
+    private data class Freshness(val version: String?, val stale: Boolean, val everDetected: Boolean)
+
+    private fun freshness(group: AppGroup): Freshness {
+        val pkg = installedPackage(group) ?: return Freshness(null, false, false)
+        val info = runCatching { packageManager.getPackageInfo(pkg, 0) }.getOrNull() ?: return Freshness(null, false, false)
+        val version = info.versionName?.takeIf { it.isNotBlank() }
+        val lastDetected = InAppDetectionStore.lastForAny(this, group.surfaces.mapNotNull { it.surfaceKey })
+        return Freshness(version, lastDetected > 0L && info.lastUpdateTime > lastDetected, lastDetected > 0L)
     }
 
-    private fun onSurfaceTapped(tile: RuleTile, surface: Surface, packageName: String, prefKey: String) {
+    private fun shownState(surface: Surface): Boolean {
+        val key = surface.prefKey ?: return false
+        return pendingInAppSelections[key] ?: readProfileBool(key)
+    }
+
+    private fun surfaceDescriptionRes(surfaceKey: String?): Int = when (surfaceKey) {
+        "yt:shorts" -> R.string.in_app_desc_yt_shorts
+        "yt:subscriptions" -> R.string.in_app_desc_yt_subs
+        "yt:you" -> R.string.in_app_desc_yt_you
+        "yt:miniplayer" -> R.string.in_app_desc_yt_mini
+        "yt:pip" -> R.string.in_app_desc_yt_pip
+        "ig:reels" -> R.string.in_app_desc_ig_reels
+        "ig:search" -> R.string.in_app_desc_ig_search
+        "ig:stories" -> R.string.in_app_desc_ig_stories
+        "x:foryou" -> R.string.in_app_desc_x_home
+        "x:search" -> R.string.in_app_desc_x_search
+        "x:grok" -> R.string.in_app_desc_x_grok
+        "x:notifications" -> R.string.in_app_desc_x_notif
+        "snap:spotlight" -> R.string.in_app_desc_snap_spotlight
+        "snap:stories" -> R.string.in_app_desc_snap_stories
+        "snap:map" -> R.string.in_app_desc_snap_map
+        "snap:following" -> R.string.in_app_desc_snap_following
+        "fb:reels" -> R.string.in_app_desc_fb_reels
+        "fb:marketplace" -> R.string.in_app_desc_fb_marketplace
+        else -> 0
+    }
+
+    private val shortVideoKeys = setOf("yt:shorts", "ig:reels", "snap:spotlight", "fb:reels")
+
+    /** Lock banner and the "short videos in every app" master switch, above the app cards. */
+    private fun buildPageTop() {
+        if (EditingLockGuard.isLocked(this)) {
+            container.addView(InAppRuleViews.lockBanner(this, getString(R.string.in_app_locked_banner)))
+        }
+        val shortVideo = groups().flatMap { g -> g.surfaces.filter { it.surfaceKey in shortVideoKeys }.map { g to it } }
+        if (shortVideo.isEmpty()) return
+        val onCount = shortVideo.count { (_, s) -> shownState(s) }
+        val state = when (onCount) {
+            shortVideo.size -> MasterState.ON
+            0 -> MasterState.OFF
+            else -> MasterState.MIXED
+        }
+        val stateText = when (state) {
+            MasterState.ON -> getString(R.string.in_app_master_state_all)
+            MasterState.OFF -> getString(R.string.in_app_master_state_none)
+            MasterState.MIXED -> getString(R.string.in_app_master_state_mixed_fmt, onCount, shortVideo.size)
+        }
+        val allow = isInAppAllowMode()
+        container.addView(
+            InAppRuleViews.masterCard(
+                this,
+                getString(if (allow) R.string.in_app_master_allow_title else R.string.in_app_master_block_title),
+                getString(R.string.in_app_master_sub_fmt, stateText),
+                state,
+                stateText,
+                EditingLockGuard.isLocked(this),
+            ) {
+                // Mixed or off → turn every short-video section on; all on → turn them off.
+                val target = state != MasterState.ON
+                val anchor = container
+                shortVideo.forEach { (g, s) ->
+                    val key = s.prefKey ?: return@forEach
+                    if (shownState(s) != target) toggleSurface(s, g.packageName, key, anchor, requested = target, rerender = false, offerWholeApp = false)
+                }
+                anchor.post { render() }
+            }
+        )
+    }
+
+    private fun buildAppCardView(group: AppGroup, status: AppInstallStatus): View {
+        val allow = isInAppAllowMode()
+        val readOnly = EditingLockGuard.isLocked(this)
+        val installed = status == AppInstallStatus.INSTALLED
+        val appName = getString(group.titleRes)
+        val icon = installedPackage(group)?.let { pkg -> runCatching { packageManager.getApplicationIcon(pkg) }.getOrNull() }
+        val countable = group.surfaces.filter { it.prefKey != null }
+        val onSurfaces = countable.filter { shownState(it) }
+
+        val rows = group.surfaces.map { surface ->
+            val prefKey = surface.prefKey
+            val current = prefKey?.let { readProfileBool(it) } ?: false
+            val pending = prefKey?.let { pendingInAppSelections[it] } != null
+            val on = shownState(surface)
+            val canToggleWhileLocked = prefKey != null && run {
+                if (ProtectionChangeGate.isEditingUnlocked(this)) return@run true
+                val direction = ProtectionChangePolicy.inAppDirection(allowMode = allow, currentSelected = current, requestedSelected = !current)
+                ProtectionChangeGate.decision(this, direction) != ProtectionChangePolicy.Decision.DENY
+            }
+            if (current && !readOnly && !pending) surface.surfaceKey?.let { setSurfaceRuleForMode(it, checked = true) }
+            val (tag, tagAccent) = when {
+                pending -> getString(R.string.in_app_tag_pending) to false
+                allow && on -> getString(R.string.in_app_tag_allowed) to true
+                allow && !on -> getString(R.string.in_app_tag_blocked) to false
+                on -> getString(R.string.in_app_tag_blocked) to true
+                else -> null to false
+            }
+            val lockedDisabled = prefKey == null || (readOnly && !canToggleWhileLocked)
+            val spoken = listOfNotNull(tag ?: getString(R.string.state_off), getString(R.string.in_app_row_locked).takeIf { lockedDisabled })
+                .joinToString(" · ")
+            SectionRowModel(
+                key = surface.surfaceKey ?: prefKey ?: getString(surface.labelRes),
+                iconRes = surfaceIconRes(surface.surfaceKey),
+                title = getString(surface.labelRes),
+                description = surfaceDescriptionRes(surface.surfaceKey).takeIf { it != 0 }?.let { getString(it) },
+                on = on,
+                tag = tag,
+                tagAccent = tagAccent,
+                pending = pending,
+                lockedDisabled = lockedDisabled,
+                stateDescription = spoken,
+            )
+        }
+
+        val labels = onSurfaces.map { getString(it.labelRes) }
+        val outcome = when {
+            !installed -> null
+            allow && labels.isEmpty() -> getString(R.string.in_app_outcome_allow_none)
+            allow -> getString(R.string.in_app_outcome_allow_fmt, labels.joinToString(", "), countable.size - labels.size)
+            labels.size == 1 -> getString(R.string.in_app_outcome_block_one_fmt, labels.first())
+            labels.size > 1 -> getString(R.string.in_app_outcome_block_many_fmt, labels.size)
+            else -> null
+        }
+        val fresh = freshness(group)
+        val footnote = when {
+            fresh.stale && fresh.version != null -> getString(R.string.in_app_footnote_stale_fmt, appName, fresh.version)
+            fresh.everDetected && fresh.version != null -> getString(R.string.in_app_footnote_checked_fmt, appName, fresh.version)
+            else -> null
+        }
+        val pillText = when (status) {
+            AppInstallStatus.NOT_INSTALLED -> getString(R.string.in_app_status_not_installed)
+            AppInstallStatus.DISABLED -> getString(R.string.in_app_status_disabled)
+            else -> getString(if (allow) R.string.in_app_count_allowed_fmt else R.string.in_app_count_blocked_fmt, onSurfaces.size, countable.size)
+        }
+        val model = AppCardModel(
+            packageName = group.packageName,
+            appName = appName,
+            icon = icon,
+            pillText = pillText,
+            pillAccent = installed && onSurfaces.isNotEmpty(),
+            outcome = outcome,
+            showSeeWhere = installed && outcome != null,
+            seeWhereLabel = getString(R.string.in_app_see_where),
+            seeWhereCd = getString(R.string.in_app_see_where_cd_fmt, appName),
+            rows = rows,
+            extraShorts = if (group.packageName == "com.google.android.youtube" && installed) {
+                getString(R.string.in_app_youtube_native_limit_compact_title) to getString(R.string.in_app_extra_shorts_sub)
+            } else null,
+            footnote = footnote,
+            footnoteWarning = fresh.stale,
+        )
+        val bySurfaceKey = group.surfaces.associateBy { it.surfaceKey ?: it.prefKey ?: getString(it.labelRes) }
+        return InAppRuleViews.appCard(
+            this,
+            model,
+            onRowClick = { key, rowView ->
+                val surface = bySurfaceKey[key] ?: return@appCard
+                val prefKey = surface.prefKey ?: return@appCard
+                toggleSurface(surface, group.packageName, prefKey, rowView)
+            },
+            onSeeWhere = {
+                val keys = onSurfaces.mapNotNull { it.surfaceKey }.toSet()
+                val all = countable.mapNotNull { it.surfaceKey }.toSet()
+                InAppWhereSheet.show(
+                    this, appName, icon, installedPackage(group) ?: group.packageName,
+                    blockedSurfaceKeys = if (allow) all - keys else keys,
+                    allowMode = allow,
+                    allowedSurfaceKeys = if (allow) keys else emptySet(),
+                )
+            },
+            onExtraShorts = { showYouTubeNativeLimitGuide() },
+        )
+    }
+
+    private fun buildNotInstalledFold(absent: List<AppGroup>): View {
+        val rulesSet = absent.sumOf { g -> g.surfaces.count { shownState(it) } }
+        val setText = if (rulesSet == 0) getString(R.string.in_app_not_installed_none)
+        else resources.getQuantityString(R.plurals.in_app_not_installed_set, rulesSet, rulesSet)
+        return InAppRuleViews.notInstalledRow(
+            this,
+            absent.map { getString(it.titleRes).take(1) },
+            resources.getQuantityString(R.plurals.in_app_not_installed_title, absent.size, absent.size),
+            getString(R.string.in_app_not_installed_sub_fmt, setText),
+            notInstalledExpanded,
+            getString(if (notInstalledExpanded) R.string.a11y_state_expanded else R.string.a11y_state_collapsed),
+        ) {
+            notInstalledExpanded = !notInstalledExpanded
+            render()
+        }
+    }
+
+    /**
+     * Applies one section change through the protection gate. [requested] null flips the shown
+     * state; the master switch passes an explicit target and renders once at the end.
+     */
+    private fun toggleSurface(
+        surface: Surface,
+        packageName: String,
+        prefKey: String,
+        anchor: View,
+        requested: Boolean? = null,
+        rerender: Boolean = true,
+        offerWholeApp: Boolean = true,
+    ) {
         val before = readProfileBool(prefKey)
-        val checked = !(pendingInAppSelections[prefKey] ?: before)
+        val checked = requested ?: !(pendingInAppSelections[prefKey] ?: before)
         when (ProtectionChangeGate.requestInAppSelection(
             context = this,
             profile = currentProfile(),
@@ -626,25 +711,16 @@ class InAppRulesActivity : AppCompatActivity() {
         )) {
             ProtectionChangePolicy.Result.APPLIED -> {
                 BlockingRuntime.ensureRunning(this)
-                if (checked) {
-                    maybeOfferWholeAppBlock(packageName, appLabel(packageName))
-                }
-                tile.root.post { render() }
+                if (checked && offerWholeApp) maybeOfferWholeAppBlock(packageName, appLabel(packageName))
             }
-
-            ProtectionChangePolicy.Result.QUEUED -> {
-                ProtectionFeedback.showQueued(this)
-                tile.root.post { render() }
-            }
-
+            ProtectionChangePolicy.Result.QUEUED -> ProtectionFeedback.showQueued(this)
             ProtectionChangePolicy.Result.DENIED -> {
                 if (EditingLockGuard.isLocked(this)) {
-                    findViewById<View>(android.R.id.content)
-                        .showWarnPill(R.string.rules_tighten_only_active_message)
+                    findViewById<View>(android.R.id.content).showWarnPill(R.string.rules_tighten_only_active_message)
                 }
-                tile.root.post { render() }
             }
         }
+        if (rerender) anchor.post { render() }
     }
 
     private fun groups(): List<AppGroup> = listOf(
