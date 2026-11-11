@@ -26,13 +26,11 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import androidx.core.widget.TextViewCompat
 import androidx.preference.PreferenceManager
 import com.google.android.material.switchmaterial.SwitchMaterial
@@ -42,12 +40,10 @@ import com.oliver.loqin.data.prefs.ActiveDurationStore
 import com.oliver.loqin.data.prefs.AppLaunchCountStore
 import com.oliver.loqin.data.prefs.BarcodeScanCountStore
 import com.oliver.loqin.data.prefs.BlockCategoryCountStore
-import com.oliver.loqin.data.prefs.BlockCountStore
 import com.oliver.loqin.data.prefs.EmergencyUnlockCountStore
 import com.oliver.loqin.data.prefs.LimitHitCountStore
 import com.oliver.loqin.data.prefs.NfcScanCountStore
 import com.oliver.loqin.data.prefs.QrScanCountStore
-import com.oliver.loqin.data.prefs.ScheduleExecutionCountStore
 import com.oliver.loqin.data.prefs.LoqInActionCountStore
 import com.oliver.loqin.data.prefs.TempEnableCountStore
 import com.oliver.loqin.feature.stats.StatsFormat
@@ -65,9 +61,7 @@ import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.text.NumberFormat
-import java.text.SimpleDateFormat
 import java.util.Calendar
-import java.util.Locale
 
 /**
  * Loq In Stats: counters for scans, protection activity, actions and schedules.
@@ -122,8 +116,6 @@ class LoqInOverviewActivity : AppCompatActivity() {
             title = getString(R.string.loqin_overview_title)
             setNavigationIcon(R.drawable.keyboard_arrow_left_24)
             setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
-            setBackgroundColor(AccentColor.getToolbarBackgroundColor(this@LoqInOverviewActivity))
-            navigationIcon?.mutate()?.setTint(toolbarIconColor())
             menu.add(R.string.loqin_overview_info_title).apply {
                 setIcon(R.drawable.info_24)
                 icon?.mutate()?.setTint(toolbarIconColor())
@@ -166,21 +158,9 @@ class LoqInOverviewActivity : AppCompatActivity() {
             )
         )
 
-        val cards = LoqInInsightsCards(this)
-        insightsCards = cards
-        content.addView(cards.heroView, insightsCardParams())
-        content.addView(cards.pauseView, insightsCardParams())
-
-        rangeGroup = MaterialButtonToggleGroup(this).apply {
-            isSingleSelection = true
-            isSelectionRequired = true
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                bottomMargin = dp(14)
-            }
-        }
+        // The range bar sits right under the top bar, as on every statistics page; it drives the
+        // counter tiles. The screen time cards below carry their own 7 / 30 days control.
+        rangeGroup = StatsPageUi.rangeBar(this)
         addRangeButton(Range.TODAY, R.string.stats_range_today)
         addRangeButton(Range.WEEK, R.string.stats_range_week)
         addRangeButton(Range.MONTH, R.string.stats_range_month)
@@ -188,7 +168,7 @@ class LoqInOverviewActivity : AppCompatActivity() {
         addRangeButton(Range.OVERALL, R.string.loqin_overview_range_overall)
         content.addView(rangeGroup)
 
-        PageUi.addSectionHeader(content, R.string.loqin_overview_section_activity)
+        PageUi.addSectionHeader(content, R.string.loqin_overview_section_activity, first = true)
         activityGrid = newStatGrid()
         content.addView(activityGrid)
 
@@ -199,6 +179,14 @@ class LoqInOverviewActivity : AppCompatActivity() {
         PageUi.addSectionHeader(content, R.string.loqin_overview_section_actions)
         actionsGrid = newStatGrid()
         content.addView(actionsGrid)
+
+        val cards = LoqInInsightsCards(this)
+        insightsCards = cards
+        content.addView(cards.heroView, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ).apply { topMargin = resources.getDimensionPixelSize(R.dimen.section_gap) })
+        content.addView(cards.pauseView, StatsPageUi.blockParams(this))
 
         // Patterns entry and the weekly summary switch: one grouped list, standard rows.
         val moreGroup = LayoutInflater.from(this).inflate(R.layout.list_group_on_page, content, false) as ViewGroup
@@ -231,13 +219,6 @@ class LoqInOverviewActivity : AppCompatActivity() {
         syncStatsArchive()
     }
 
-    private fun insightsCardParams(): LinearLayout.LayoutParams = LinearLayout.LayoutParams(
-        LinearLayout.LayoutParams.MATCH_PARENT,
-        LinearLayout.LayoutParams.WRAP_CONTENT
-    ).apply {
-        bottomMargin = dp(14)
-    }
-
     private fun syncStatsArchive() {
         if (archiveSyncRunning || !UsageStatsRepo.hasUsageAccess(this)) {
             return
@@ -256,17 +237,8 @@ class LoqInOverviewActivity : AppCompatActivity() {
     }
 
     private fun addRangeButton(range: Range, labelRes: Int) {
-        val button = MaterialButton(
-            this,
-            null,
-            com.google.android.material.R.attr.materialButtonOutlinedStyle
-        ).apply {
-            id = View.generateViewId()
-            text = getString(labelRes)
-            isCheckable = true
-            // Size, label and selection come from SegmentedToggleUi; five segments need slim padding.
-            setPadding(dp(3), 0, dp(3), 0)
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
+        // Size, label and selection come from SegmentedToggleUi.
+        val button = StatsPageUi.rangeSegment(this, getString(labelRes)).apply {
             setOnClickListener {
                 selectRange(range)
             }

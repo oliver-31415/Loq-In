@@ -19,22 +19,19 @@
 package com.oliver.loqin.feature.usage
 
 import android.content.Context
-import android.content.res.ColorStateList
-import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.text.InputType
 import android.view.Gravity
 import android.view.View
-import android.widget.FrameLayout
+import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
+import androidx.core.widget.TextViewCompat
 import androidx.core.widget.doAfterTextChanged
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
-import com.google.android.material.card.MaterialCardView
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.textfield.TextInputLayout
@@ -45,6 +42,7 @@ import com.oliver.loqin.data.prefs.ProfileStore
 import com.oliver.loqin.data.prefs.UsageStore
 import com.oliver.loqin.feature.stats.StatsFormat
 import com.oliver.loqin.theme.AccentColor
+import com.oliver.loqin.ui.PageUi
 import com.oliver.loqin.ui.SegmentedToggleUi
 import com.oliver.loqin.ui.dialog.InputSheet
 import com.oliver.loqin.ui.widgets.BudgetRingView
@@ -72,14 +70,13 @@ class LoqInInsightsCards(private val activity: AppCompatActivity) {
 
     private val rangeButtons = linkedMapOf<Int, MaterialButton>()
     private lateinit var rangeGroup: MaterialButtonToggleGroup
-    private lateinit var topRow: View
     private lateinit var headline: TextView
     private lateinit var subline: TextView
     private lateinit var emptyText: TextView
     private lateinit var chartGroup: LinearLayout
     private lateinit var chart: StackedDailyBarChartView
     private lateinit var legend: ChipGroup
-    private lateinit var goalSlot: FrameLayout
+    private lateinit var goalSlot: ViewGroup
     private lateinit var ringColumn: LinearLayout
     private lateinit var ring: BudgetRingView
     private lateinit var ringLabel: TextView
@@ -120,48 +117,20 @@ class LoqInInsightsCards(private val activity: AppCompatActivity) {
     // Hero card
     // ---------------------------------------------------------------------
 
+    // Same anatomy as every statistics summary card: label, hero value, comparison line; the goal
+    // ring sits at the end, and the card's own 7 / 30 days control sits above its chart.
     private fun buildHero(): View {
-        val card = card()
-        val col = LinearLayout(ctx).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(16), dp(16), dp(16), dp(16))
-        }
-        card.addView(col)
-
-        rangeGroup = MaterialButtonToggleGroup(ctx).apply {
-            isSingleSelection = true
-            isSelectionRequired = true
-            layoutParams = matchWrap().apply { bottomMargin = dp(12) }
-        }
-        addRangeButton(7, R.string.charts_range_7_days)
-        addRangeButton(30, R.string.charts_range_30_days)
-        rangeGroup.check(rangeButtons.getValue(rangeDays).id)
-        syncRangeUi()
-        col.addView(rangeGroup)
-
-        headline = TextView(ctx).apply {
-            textSize = 26f
-            typeface = Typeface.DEFAULT_BOLD
-            setTextColor(onSurface())
-        }
-        subline = TextView(ctx).apply {
-            textSize = 13f
-            alpha = 0.72f
-        }
-        val texts = LinearLayout(ctx).apply {
-            orientation = LinearLayout.VERTICAL
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-            addView(headline)
-            addView(subline)
-        }
+        val card = StatsPageUi.summaryCard(LinearLayout(ctx), ctx.getString(R.string.app_limit_section_time), "")
+        val col = card.content
+        headline = card.value
+        subline = card.comparison
 
         ring = BudgetRingView(ctx).apply {
             layoutParams = LinearLayout.LayoutParams(dp(64), dp(64))
         }
         ringLabel = TextView(ctx).apply {
-            textSize = 12f
             gravity = Gravity.CENTER_HORIZONTAL
-            setTextColor(onSurface())
+            TextViewCompat.setTextAppearance(this, R.style.TextAppearance_LoqIn_StatLabel)
         }
         ringColumn = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
@@ -170,40 +139,39 @@ class LoqInInsightsCards(private val activity: AppCompatActivity) {
             isFocusable = true
             setOnClickListener { showGoalDialog() }
             addView(ring)
-            addView(ringLabel)
-        }
-        setGoalButton = MaterialButton(ctx).apply {
-            text = ctx.getString(R.string.charts_goal_set)
-            setAllCaps(false)
-            backgroundTintList = ColorStateList.valueOf(android.graphics.Color.TRANSPARENT)
-            setTextColor(AccentColor.getAccentColorInt(ctx))
-            setOnClickListener { showGoalDialog() }
-        }
-        goalSlot = FrameLayout(ctx).apply {
-            layoutParams = LinearLayout.LayoutParams(
+            addView(ringLabel, LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { marginStart = dp(12) }
+            ).apply { topMargin = dp(4) })
+        }
+        setGoalButton = MaterialButton(ctx, null, androidx.appcompat.R.attr.borderlessButtonStyle).apply {
+            text = ctx.getString(R.string.charts_goal_set)
+            TextViewCompat.setTextAppearance(this, R.style.TextAppearance_LoqIn_Button)
+            setTextColor(PageUi.readableAccent(ctx))
+            minHeight = ctx.resources.getDimensionPixelSize(R.dimen.touch_target)
+            setOnClickListener { showGoalDialog() }
+        }
+        goalSlot = card.trailing.apply {
+            visibility = View.VISIBLE
             addView(ringColumn)
             addView(setGoalButton)
         }
 
-        topRow = LinearLayout(ctx).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            addView(texts)
-            addView(goalSlot)
-        }
-        col.addView(topRow)
-
         emptyText = TextView(ctx).apply {
             text = ctx.getString(R.string.charts_empty_insights)
-            textSize = 14f
-            alpha = 0.72f
-            setPadding(0, dp(24), 0, dp(8))
+            TextViewCompat.setTextAppearance(this, R.style.TextAppearance_LoqIn_RowSummary)
             visibility = View.GONE
         }
-        col.addView(emptyText)
+        col.addView(emptyText, matchWrap().apply { topMargin = dp(4) })
+
+        rangeGroup = MaterialButtonToggleGroup(ctx).apply {
+            isSingleSelection = true
+            isSelectionRequired = true
+        }
+        addRangeButton(7, R.string.charts_range_7_days)
+        addRangeButton(30, R.string.charts_range_30_days)
+        rangeGroup.check(rangeButtons.getValue(rangeDays).id)
+        syncRangeUi()
 
         chart = StackedDailyBarChartView(ctx).apply {
             layoutParams = matchWrap().apply { height = dp(168) }
@@ -217,11 +185,12 @@ class LoqInInsightsCards(private val activity: AppCompatActivity) {
         chartGroup = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
             layoutParams = matchWrap().apply { topMargin = dp(16) }
+            addView(rangeGroup, matchWrap().apply { bottomMargin = dp(16) })
             addView(chart)
             addView(legend)
         }
         col.addView(chartGroup)
-        return card
+        return card.view
     }
 
     private fun addRangeButton(days: Int, labelRes: Int) {
@@ -233,17 +202,7 @@ class LoqInInsightsCards(private val activity: AppCompatActivity) {
             id = View.generateViewId()
             text = ctx.getString(labelRes)
             isCheckable = true
-            minWidth = 0
-            minimumWidth = 0
-            minHeight = dp(40)
-            minimumHeight = dp(40)
-            insetTop = 0
-            insetBottom = 0
-            setPadding(dp(3), 0, dp(3), 0)
-            cornerRadius = dp(14)
-            setAllCaps(false)
-            textSize = 12f
-            layoutParams = LinearLayout.LayoutParams(0, dp(40), 1f)
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             setOnClickListener { selectRange(days) }
         }
         rangeButtons[days] = button
@@ -318,25 +277,36 @@ class LoqInInsightsCards(private val activity: AppCompatActivity) {
     private fun applyHero(data: HeroData) {
         val hasData = data.hasData
         emptyText.visibility = if (hasData) View.GONE else View.VISIBLE
-        topRow.visibility = if (hasData) View.VISIBLE else View.GONE
+        // Without data the card keeps its label and says why it is empty.
+        headline.visibility = if (hasData) View.VISIBLE else View.GONE
+        goalSlot.visibility = if (hasData) View.VISIBLE else View.GONE
         chartGroup.visibility = if (hasData) View.VISIBLE else View.GONE
-        if (!hasData) return
+        if (!hasData) {
+            subline.visibility = View.GONE
+            return
+        }
 
         headline.text = ctx.getString(
             R.string.charts_headline_per_day,
             StatsFormat.prettyMs(averagePerDay(data.currentMs, data.currentDaysWithData))
         )
-        val subText = changeText(UsageComparison.summaryChange(
-                averagePerDay(data.currentMs, data.currentDaysWithData),
-                averagePerDay(data.previousMs, data.previousDaysWithData),
-            ), data.days)
-        subline.text = subText
-        subline.visibility = if (subText == null) View.GONE else View.VISIBLE
+        val change = UsageComparison.summaryChange(
+            averagePerDay(data.currentMs, data.currentDaysWithData),
+            averagePerDay(data.previousMs, data.previousDaysWithData),
+        )
+        // Same tone rule as the other summary cards: warning only for more screen time.
+        StatsPageUi.setComparisonLine(subline, changeText(change, data.days), more = isIncrease(change))
 
         chart.setData(data.result, data.labels, data.goalMin * MS_PER_MIN)
         chart.contentDescription = ctx.getString(R.string.charts_chart_description, data.days)
         renderLegend(data)
         renderGoal(data.goalMin, data.todayMs)
+    }
+
+    private fun isIncrease(change: UsageComparison.Change?): Boolean = when (change) {
+        is UsageComparison.Change.Percent -> change.value > 0
+        is UsageComparison.Change.Minutes -> change.value > 0
+        else -> false
     }
 
     private fun changeText(change: UsageComparison.Change?, days: Int): String? {
@@ -453,40 +423,20 @@ class LoqInInsightsCards(private val activity: AppCompatActivity) {
     // ---------------------------------------------------------------------
 
     private fun buildPause(): View {
-        val card = card()
-        val col = LinearLayout(ctx).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(16), dp(16), dp(16), dp(16))
-        }
-        card.addView(col)
+        val card = StatsPageUi.chartCard(LinearLayout(ctx), ctx.getString(R.string.charts_pause_title))
+        pauseSummary = card.summary.apply { visibility = View.VISIBLE }
 
-        col.addView(TextView(ctx).apply {
-            text = ctx.getString(R.string.charts_pause_title)
-            textSize = 16f
-            typeface = Typeface.DEFAULT_BOLD
-            setTextColor(onSurface())
-        })
-        pauseSummary = TextView(ctx).apply {
-            textSize = 13f
-            alpha = 0.72f
-            setPadding(0, dp(4), 0, dp(12))
-        }
-        col.addView(pauseSummary)
-
-        pauseRow = SplitBarRowView(ctx).apply {
-            layoutParams = matchWrap().apply { height = dp(96) }
-        }
-        col.addView(pauseRow)
+        pauseRow = SplitBarRowView(ctx)
+        card.addBody(pauseRow, matchWrap().apply { height = dp(96) })
 
         val legendRow = LinearLayout(ctx).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            layoutParams = matchWrap().apply { topMargin = dp(8) }
         }
         legendRow.addView(legendItem(AccentColor.getAccentColorInt(ctx), ctx.getString(R.string.charts_pause_legend_left)))
         legendRow.addView(legendItem(continuedColor(), ctx.getString(R.string.charts_pause_legend_continued)))
-        col.addView(legendRow)
-        return card
+        card.content.addView(legendRow, matchWrap().apply { topMargin = dp(8) })
+        return card.view
     }
 
     private data class PauseData(
@@ -589,20 +539,12 @@ class LoqInInsightsCards(private val activity: AppCompatActivity) {
             })
             addView(TextView(ctx).apply {
                 text = labelText
-                textSize = 12f
-                setTextColor(onSurface())
+                TextViewCompat.setTextAppearance(this, R.style.TextAppearance_LoqIn_StatLabel)
             })
         }
     }
 
     private fun continuedColor(): Int = ColorUtils.setAlphaComponent(onSurface(), CONTINUED_ALPHA)
-
-    private fun card(): MaterialCardView = MaterialCardView(ctx).apply {
-        cardElevation = 0f
-        radius = dp(16).toFloat()
-        strokeWidth = 0
-        setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.foqos_surface_variant))
-    }
 
     private fun matchWrap(): LinearLayout.LayoutParams = LinearLayout.LayoutParams(
         LinearLayout.LayoutParams.MATCH_PARENT,
