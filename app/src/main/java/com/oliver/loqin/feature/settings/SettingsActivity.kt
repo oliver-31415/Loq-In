@@ -579,7 +579,6 @@ class SettingsActivity : AppCompatActivity() {
             return
         }
 
-        com.oliver.loqin.ui.AccentContrast.strengthen(findViewById(android.R.id.content))
         val restricted = isRestrictedAccessActive()
         val controlSettingsRestricted = LoqInAppAccessGuard.isControlSettingsLocked(this)
 
@@ -604,15 +603,9 @@ class SettingsActivity : AppCompatActivity() {
     private fun applyRestrictedCardState(card: View, restricted: Boolean) {
         // Stay tappable: the section guards warn via pill instead of dead taps. Locked rows keep
         // full contrast and say so with a lock in place of the chevron (dimming read as disabled).
-        card.isEnabled = true
         card.isClickable = true
         card.isFocusable = true
-        card.alpha = 1f
-        ((card as? android.view.ViewGroup)?.let { it.getChildAt(it.childCount - 1) } as? android.widget.ImageView)
-            ?.setImageResource(if (restricted) R.drawable.lock_24 else R.drawable.keyboard_arrow_right_24)
-        androidx.core.view.ViewCompat.setStateDescription(
-            card, if (restricted) getString(R.string.settings_row_locked_state) else null,
-        )
+        com.oliver.loqin.ui.PageUi.setRowLocked(card, restricted, getString(R.string.settings_row_locked_state))
     }
 
     private fun openControlSettingsSection(open: () -> Unit) {

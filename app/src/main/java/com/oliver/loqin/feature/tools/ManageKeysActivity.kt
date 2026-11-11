@@ -37,7 +37,7 @@ import com.oliver.loqin.feature.settings.ManagePairedTagsActivity
 import com.oliver.loqin.nfc.NfcWriterActivity
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.ui.EdgeToEdgeUtils
-import com.oliver.loqin.ui.LockedUi
+import com.oliver.loqin.ui.PageUi
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.showWarnPill
 import com.oliver.loqin.util.EditingLockGuard
@@ -239,12 +239,9 @@ class ManageKeysActivity : AppCompatActivity() {
     }
 
     private fun applyLockedCardState(view: View, locked: Boolean) {
-        view.alpha = if (locked) lockedCardAlpha() else 1f
         // Keep clicks enabled so locked cards can explain why they cannot be opened.
-        view.isEnabled = true
+        PageUi.setRowLocked(view, locked)
     }
-
-    private fun lockedCardAlpha(): Float = LockedUi.cardAlpha(this)
 
     private fun isNfcTagWritingLocked(): Boolean {
         return EditingLockGuard.isLocked(this)

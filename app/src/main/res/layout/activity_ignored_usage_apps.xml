@@ -82,10 +82,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:minHeight="44dp"
-                            android:maxLines="2"
-                            android:text="@string/hidden_apps_tab_pickers"
-                            android:textSize="12sp" />
+                            android:text="@string/hidden_apps_tab_pickers" />
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnHiddenUsageInsights"
@@ -93,10 +90,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:minHeight="44dp"
-                            android:maxLines="2"
-                            android:text="@string/hidden_apps_tab_usage"
-                            android:textSize="12sp" />
+                            android:text="@string/hidden_apps_tab_usage" />
                     </com.google.android.material.button.MaterialButtonToggleGroup>
 
                     <TextView
@@ -231,14 +225,16 @@
 
     <!-- Pinned bottom action: outside the scrolling container so it can never
          scroll away with the grid -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnSaveIgnoredApps"
-        style="@style/LoqIn.Button"
+    <LinearLayout
+        style="@style/LoqIn.BottomBar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
-        android:layout_marginTop="6dp"
-        android:layout_marginEnd="12dp"
-        android:layout_marginBottom="4dp"
-        android:text="@string/save" />
+        android:layout_height="wrap_content">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSaveIgnoredApps"
+            style="@style/LoqIn.Button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/save" />
+    </LinearLayout>
 </LinearLayout>

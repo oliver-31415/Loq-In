@@ -21,11 +21,11 @@ package com.oliver.loqin.feature.usage
 import android.content.Context
 import android.content.Intent
 import android.graphics.Color
-import android.graphics.Typeface
 import android.os.Bundle
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -33,7 +33,7 @@ import android.widget.ScrollView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
-import androidx.core.view.setPadding
+import androidx.core.widget.TextViewCompat
 import androidx.preference.PreferenceManager
 import com.google.android.material.switchmaterial.SwitchMaterial
 import com.oliver.loqin.BuildConfig
@@ -54,6 +54,7 @@ import com.oliver.loqin.feature.stats.StatsFormat
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.theme.CustomAccentApplier
 import com.oliver.loqin.ui.EdgeToEdgeUtils
+import com.oliver.loqin.ui.PageUi
 import com.oliver.loqin.ui.SegmentedToggleUi
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.dialog.showAccented
@@ -153,8 +154,8 @@ class LoqInOverviewActivity : AppCompatActivity() {
         val scroll = ScrollView(this)
         val content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(16))
         }
+        PageUi.applyPageContentPadding(content)
         scroll.addView(content)
         root.addView(
             scroll,
@@ -187,31 +188,31 @@ class LoqInOverviewActivity : AppCompatActivity() {
         addRangeButton(Range.OVERALL, R.string.loqin_overview_range_overall)
         content.addView(rangeGroup)
 
-        content.addView(sectionTitle(R.string.loqin_overview_section_activity))
+        PageUi.addSectionHeader(content, R.string.loqin_overview_section_activity)
         activityGrid = newStatGrid()
         content.addView(activityGrid)
 
-        content.addView(sectionTitle(R.string.loqin_overview_section_scans).apply {
-            (layoutParams as? LinearLayout.LayoutParams)?.topMargin = dp(20)
-        })
+        PageUi.addSectionHeader(content, R.string.loqin_overview_section_scans)
         scansGrid = newStatGrid()
         content.addView(scansGrid)
 
-        content.addView(sectionTitle(R.string.loqin_overview_section_actions).apply {
-            (layoutParams as? LinearLayout.LayoutParams)?.topMargin = dp(20)
-        })
+        PageUi.addSectionHeader(content, R.string.loqin_overview_section_actions)
         actionsGrid = newStatGrid()
         content.addView(actionsGrid)
 
-        content.addView(buildPatternsRow())
-
-        content.addView(buildWeeklySummaryToggle())
+        // Patterns entry and the weekly summary switch: one grouped list, standard rows.
+        val moreGroup = LayoutInflater.from(this).inflate(R.layout.list_group_on_page, content, false) as ViewGroup
+        (moreGroup.layoutParams as? ViewGroup.MarginLayoutParams)?.topMargin =
+            resources.getDimensionPixelSize(R.dimen.section_gap)
+        moreGroup.addView(buildPatternsRow())
+        moreGroup.addView(buildWeeklySummaryToggle())
+        content.addView(moreGroup)
 
         content.addView(TextView(this).apply {
             text = getString(R.string.loqin_overview_storage_note)
-            textSize = 13f
-            alpha = 0.72f
-            setPadding(0, dp(16), 0, dp(12))
+            TextViewCompat.setTextAppearance(this, R.style.TextAppearance_LoqIn_RowSummary)
+            val side = resources.getDimensionPixelSize(R.dimen.row_padding_start)
+            setPaddingRelative(side, dp(16), side, 0)
         })
 
         setContentView(root)
@@ -263,17 +264,9 @@ class LoqInOverviewActivity : AppCompatActivity() {
             id = View.generateViewId()
             text = getString(labelRes)
             isCheckable = true
-            minWidth = 0
-            minimumWidth = 0
-            minHeight = dp(40)
-            minimumHeight = dp(40)
-            insetTop = 0
-            insetBottom = 0
+            // Size, label and selection come from SegmentedToggleUi; five segments need slim padding.
             setPadding(dp(3), 0, dp(3), 0)
-            cornerRadius = dp(14)
-            setAllCaps(false)
-            textSize = 12f
-            layoutParams = LinearLayout.LayoutParams(0, dp(40), 1f)
+            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             setOnClickListener {
                 selectRange(range)
             }
@@ -302,26 +295,33 @@ class LoqInOverviewActivity : AppCompatActivity() {
     // Tiles
     // ---------------------------------------------------------------------
 
+    // The header above already leaves the 8dp header gap.
     private fun newStatGrid(): LinearLayout = LinearLayout(this).apply {
         orientation = LinearLayout.VERTICAL
         layoutParams = LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             LinearLayout.LayoutParams.WRAP_CONTENT
-        ).apply { topMargin = dp(8) }
+        )
     }
 
     private fun fillStatGrid(grid: LinearLayout, stats: List<Stat>) {
         grid.removeAllViews()
         val columns = 3
-        val spacing = dp(4)
+        // tile_gap between tiles; the outer tiles line up with the page gutter.
+        val gap = resources.getDimensionPixelSize(R.dimen.tile_gap)
+        val spacing = gap / 2
         val inflater = LayoutInflater.from(this)
-        stats.chunked(columns).forEach { chunk ->
+        stats.chunked(columns).forEachIndexed { rowIndex, chunk ->
             val row = LinearLayout(this).apply {
                 orientation = LinearLayout.HORIZONTAL
                 layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.MATCH_PARENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT
-                )
+                ).apply {
+                    marginStart = -spacing
+                    marginEnd = -spacing
+                    topMargin = if (rowIndex == 0) 0 else gap
+                }
             }
             chunk.forEach { stat ->
                 val tile = inflater.inflate(R.layout.grid_stat_tile, row, false)
@@ -340,7 +340,10 @@ class LoqInOverviewActivity : AppCompatActivity() {
                     0,
                     LinearLayout.LayoutParams.WRAP_CONTENT,
                     1f
-                ).apply { setMargins(spacing, spacing, spacing, spacing) }
+                ).apply {
+                    marginStart = spacing
+                    marginEnd = spacing
+                }
                 row.addView(tile)
             }
             repeat(columns - chunk.size) {
@@ -576,40 +579,24 @@ class LoqInOverviewActivity : AppCompatActivity() {
         }
     }
 
-    private fun onSurfaceColor(): Int {
-        return MaterialColors.getColor(
-            this,
-            com.google.android.material.R.attr.colorOnSurface,
-            Color.GRAY
-        )
-    }
-
     // Entry row to the Patterns screen (weekday heatmap, first pickup and protection charts).
     private fun buildPatternsRow(): View {
         val texts = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-            addView(TextView(this@LoqInOverviewActivity).apply {
-                text = getString(R.string.patterns_row_title)
-                textSize = 15f
-                setTextColor(onSurfaceColor())
-            })
-            addView(TextView(this@LoqInOverviewActivity).apply {
-                text = getString(R.string.patterns_row_summary)
-                textSize = 13f
-                alpha = 0.72f
-            })
+            addView(rowTitle(R.string.patterns_row_title))
+            addView(rowSummary(R.string.patterns_row_summary))
         }
         val arrow = ImageView(this).apply {
             setImageResource(R.drawable.keyboard_arrow_right_24)
-            imageTintList = android.content.res.ColorStateList.valueOf(onSurfaceColor())
+            imageTintList = android.content.res.ColorStateList.valueOf(
+                MaterialColors.getColor(this, com.google.android.material.R.attr.colorOnSurfaceVariant, Color.GRAY)
+            )
             importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
+            val size = resources.getDimensionPixelSize(R.dimen.row_icon_size)
+            layoutParams = LinearLayout.LayoutParams(size, size).apply { marginStart = dp(8) }
         }
-        return LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            minimumHeight = dp(56)
-            setPadding(0, dp(20), 0, 0)
+        return listRow().apply {
             isClickable = true
             isFocusable = true
             setOnClickListener {
@@ -634,22 +621,17 @@ class LoqInOverviewActivity : AppCompatActivity() {
         val texts = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-            addView(TextView(this@LoqInOverviewActivity).apply {
-                text = getString(R.string.weekly_summary_toggle_title)
-                textSize = 15f
-                setTextColor(onSurfaceColor())
-            })
-            addView(TextView(this@LoqInOverviewActivity).apply {
-                text = getString(R.string.weekly_summary_toggle_summary)
-                textSize = 13f
-                alpha = 0.72f
-            })
+            addView(rowTitle(R.string.weekly_summary_toggle_title))
+            addView(rowSummary(R.string.weekly_summary_toggle_summary))
         }
-        return LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            minimumHeight = dp(56)
-            setPadding(0, dp(20), 0, 0)
+        (switch.layoutParams as? LinearLayout.LayoutParams ?: LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+        )).let { lp ->
+            lp.marginStart = resources.getDimensionPixelSize(R.dimen.row_trailing_gap)
+            switch.layoutParams = lp
+        }
+        return listRow().apply {
             isClickable = true
             setOnClickListener { switch.toggle() }
             if (BuildConfig.DEBUG) {
@@ -664,24 +646,36 @@ class LoqInOverviewActivity : AppCompatActivity() {
         }
     }
 
-    private fun sectionTitle(textRes: Int): TextView {
-        return TextView(this).apply {
-            text = getString(textRes)
-            textSize = 14f
-            typeface = Typeface.DEFAULT_BOLD
-            setTextColor(
-                MaterialColors.getColor(
-                    this@LoqInOverviewActivity,
-                    com.google.android.material.R.attr.colorOnSurface,
-                    Color.GRAY
-                )
-            )
-            alpha = 0.72f
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            )
-        }
+    // A LoqIn.ListRow (no leading icon) for the rows built in code.
+    private fun listRow(): LinearLayout = LinearLayout(this).apply {
+        orientation = LinearLayout.HORIZONTAL
+        gravity = Gravity.CENTER_VERTICAL
+        minimumHeight = resources.getDimensionPixelSize(R.dimen.row_min_height)
+        val vertical = resources.getDimensionPixelSize(R.dimen.row_padding_vertical)
+        setPaddingRelative(
+            resources.getDimensionPixelSize(R.dimen.row_padding_start),
+            vertical,
+            resources.getDimensionPixelSize(R.dimen.row_padding_end),
+            vertical,
+        )
+        layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+        )
+    }
+
+    private fun rowTitle(textRes: Int): TextView = TextView(this).apply {
+        setText(textRes)
+        TextViewCompat.setTextAppearance(this, R.style.TextAppearance_LoqIn_RowTitle)
+    }
+
+    private fun rowSummary(textRes: Int): TextView = TextView(this).apply {
+        setText(textRes)
+        TextViewCompat.setTextAppearance(this, R.style.TextAppearance_LoqIn_RowSummary)
+        layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+        ).apply { topMargin = dp(2) }
     }
 
     private fun showInfo() {

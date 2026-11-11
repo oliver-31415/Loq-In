@@ -59,7 +59,8 @@ class ProtectionChangesActivity : AppCompatActivity() {
 
     private lateinit var tvChangeDelayValue: TextView
     private lateinit var tvChangeDelaySummary: TextView
-    private lateinit var tvPendingEmpty: TextView
+    private lateinit var tvPendingEmpty: View
+    private lateinit var cardPendingChanges: View
     private lateinit var tvPendingSummary: TextView
     private lateinit var pendingFooter: View
     private lateinit var pendingContainer: LinearLayout
@@ -94,6 +95,7 @@ class ProtectionChangesActivity : AppCompatActivity() {
             )
         }
         tvPendingEmpty = findViewById(R.id.tvPendingEmpty)
+        cardPendingChanges = findViewById(R.id.cardPendingChanges)
         tvPendingSummary = findViewById(R.id.tvPendingSummary)
         pendingFooter = findViewById(R.id.pendingFooter)
         pendingContainer = findViewById(R.id.pendingChangesContainer)
@@ -124,6 +126,7 @@ class ProtectionChangesActivity : AppCompatActivity() {
         val pending = ProtectionChangeGate.pendingChanges(this)
         val hasPending = pending.isNotEmpty()
         tvPendingEmpty.visibility = if (hasPending) View.GONE else View.VISIBLE
+        cardPendingChanges.visibility = if (hasPending) View.VISIBLE else View.GONE
         pendingFooter.visibility = if (hasPending) View.VISIBLE else View.GONE
         pendingActionsRow.visibility = if (hasPending) View.VISIBLE else View.GONE
         btnApplyAllPending.visibility =
