@@ -42,6 +42,7 @@ import androidx.core.text.HtmlCompat
 import androidx.core.view.doOnLayout
 import androidx.core.view.isVisible
 import androidx.core.view.updateLayoutParams
+import androidx.core.widget.TextViewCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.oliver.loqin.R
 import com.oliver.loqin.blocking.LoqInAccessibilityService
@@ -63,6 +64,8 @@ import com.oliver.loqin.feature.usage.IgnoredUsageAppsActivity
 import com.oliver.loqin.feature.usage.UsageStatsRepo
 import com.oliver.loqin.security.AppLockStore
 import com.oliver.loqin.theme.AccentColor
+import com.oliver.loqin.ui.PageUi
+import com.oliver.loqin.ui.SheetRows
 import com.oliver.loqin.util.BatteryOptimizationRequest
 import com.oliver.loqin.util.PackageManagerApiCompat
 import com.oliver.loqin.util.PermissionSetupChecks
@@ -205,27 +208,21 @@ class OnboardingPagerAdapter(
                 btn.isEnabled = true
                 btn.alpha = 1f
                 btn.backgroundTintList = ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 0x22))
-                btn.setTextColor(accent)
-                btn.strokeColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 0x55))
-                btn.strokeWidth = (1 * itemView.resources.displayMetrics.density).toInt()
+                btn.setTextColor(PageUi.readableAccent(activity))
                 btn.setOnClickListener { runPageAction(activity, page, accent) }
             } else if (completed) {
                 btn.text = page.completedLabel ?: activity.getString(R.string.onb_granted)
                 btn.isEnabled = false
                 btn.alpha = 0.9f
                 btn.backgroundTintList = ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 0x1A))
-                btn.setTextColor(accent)
-                btn.strokeColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 0x44))
-                btn.strokeWidth = (1 * itemView.resources.displayMetrics.density).toInt()
+                btn.setTextColor(PageUi.readableAccent(activity))
                 btn.setOnClickListener(null)
             } else if (hasAction) {
                 btn.text = page.actionLabel
                 btn.isEnabled = true
                 btn.alpha = 1f
                 btn.backgroundTintList = ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 0x22))
-                btn.setTextColor(accent)
-                btn.strokeColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 0x55))
-                btn.strokeWidth = (1 * itemView.resources.displayMetrics.density).toInt()
+                btn.setTextColor(PageUi.readableAccent(activity))
                 btn.setOnClickListener { runPageAction(activity, page, accent) }
             } else {
                 btn.setOnClickListener(null)
@@ -271,7 +268,8 @@ class OnboardingPagerAdapter(
             fun applyCenteredScrollSpacing() {
                 val dynamicTop = if (isUsagePreview) dp(12f) else dp(16f)
                 val dynamicBottom = if (isPermissionOverview) dp(28f) else dp(20f)
-                pageContent.setPadding(dp(20f), dynamicTop, dp(20f), dynamicBottom)
+                val side = itemView.resources.getDimensionPixelSize(R.dimen.page_margin)
+                pageContent.setPadding(side, dynamicTop, side, dynamicBottom)
                 pageContent.gravity = android.view.Gravity.CENTER_HORIZONTAL
 
                 iconCard.updateLayoutParams<ViewGroup.LayoutParams> {
@@ -1369,97 +1367,27 @@ class OnboardingPagerAdapter(
             page: OnboardingPage,
             accent: Int
         ) {
-            val density = itemView.resources.displayMetrics.density
-            fun dp(value: Float): Int = (value * density).toInt()
-
-            val surface = ContextCompat.getColor(activity, R.color.foqos_surface)
+            // A grouped list on the page, as in Settings: one segment per row, no dividers.
             val onSurface = ContextCompat.getColor(activity, R.color.foqos_on_surface)
-            val outline = ContextCompat.getColor(activity, R.color.foqos_outline_variant)
-            val dividerColor = ColorUtils.setAlphaComponent(outline, 130)
-
-            val groupedCard = MaterialCardView(activity).apply {
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                ).apply { topMargin = dp(12f) }
-                radius = dp(16f).toFloat()
-                cardElevation = 0f
-                strokeWidth = dp(1f)
-                strokeColor = outline
-                setCardBackgroundColor(surface)
+            val group = SheetRows.group(activity, detailsContainer, onSurface = false).apply {
+                (layoutParams as? ViewGroup.MarginLayoutParams)?.topMargin =
+                    itemView.resources.getDimensionPixelSize(R.dimen.block_gap)
             }
-
-            val cardContent = LinearLayout(activity).apply {
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
+            page.detailRows.forEachIndexed { index, rowText ->
+                val row = SheetRows.row(
+                    activity,
+                    group,
+                    iconForDetailRow(page, index) ?: 0,
+                    rowText,
+                    accent = PageUi.readableAccent(activity),
                 )
-                orientation = LinearLayout.VERTICAL
+                // Sentences, not titles: body weight in the on-surface colour.
+                TextViewCompat.setTextAppearance(row.title, R.style.TextAppearance_LoqIn_RowSummary)
+                row.title.setTextColor(onSurface)
+                row.root.isFocusable = false
+                group.addView(row.root)
             }
-
-            val rows = page.detailRows
-            rows.forEachIndexed { index, rowText ->
-                val iconRes = iconForDetailRow(page, index)
-                val rowView = LinearLayout(activity).apply {
-                    layoutParams = LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT
-                    )
-                    orientation = LinearLayout.HORIZONTAL
-                    gravity = android.view.Gravity.CENTER_VERTICAL
-                    setPadding(dp(16f), dp(13f), dp(16f), dp(13f))
-                }
-
-                if (iconRes != null) {
-                    val iconBg = GradientDrawable().apply {
-                        shape = GradientDrawable.RECTANGLE
-                        cornerRadius = dp(10f).toFloat()
-                        setColor(ColorUtils.setAlphaComponent(accent, 26))
-                    }
-                    val leadingIcon = ImageView(activity).apply {
-                        layoutParams = LinearLayout.LayoutParams(dp(36f), dp(36f)).apply {
-                            marginEnd = dp(14f)
-                        }
-                        background = iconBg
-                        setPadding(dp(7f), dp(7f), dp(7f), dp(7f))
-                        setImageResource(iconRes)
-                        imageTintList = ColorStateList.valueOf(accent)
-                        contentDescription = null
-                    }
-                    rowView.addView(leadingIcon)
-                }
-
-                val textView = TextView(activity).apply {
-                    layoutParams = LinearLayout.LayoutParams(
-                        0,
-                        LinearLayout.LayoutParams.WRAP_CONTENT,
-                        1f
-                    )
-                    text = rowText
-                    textSize = 14.5f
-                    setTextColor(onSurface)
-                    setLineSpacing(0f, 1.15f)
-                }
-                rowView.addView(textView)
-                cardContent.addView(rowView)
-
-                if (index < rows.size - 1) {
-                    val divider = View(activity).apply {
-                        layoutParams = LinearLayout.LayoutParams(
-                            LinearLayout.LayoutParams.MATCH_PARENT,
-                            dp(1f)
-                        ).apply {
-                            marginStart = if (iconRes != null) dp(66f) else dp(16f)
-                            marginEnd = dp(16f)
-                        }
-                        setBackgroundColor(dividerColor)
-                    }
-                    cardContent.addView(divider)
-                }
-            }
-
-            groupedCard.addView(cardContent)
-            detailsContainer.addView(groupedCard)
+            detailsContainer.addView(group)
         }
 
         private fun addDetailRow(activity: Activity, text: String, accent: Int, iconRes: Int?) {

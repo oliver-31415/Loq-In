@@ -12,9 +12,9 @@
         android:layout_height="wrap_content"
         android:orientation="vertical"
         android:gravity="top|center_horizontal"
-        android:paddingStart="24dp"
+        android:paddingStart="@dimen/page_margin"
         android:paddingTop="12dp"
-        android:paddingEnd="24dp"
+        android:paddingEnd="@dimen/page_margin"
         android:paddingBottom="24dp">
 
         <com.google.android.material.card.MaterialCardView
@@ -73,9 +73,7 @@
             android:layout_marginTop="8dp"
             android:gravity="center"
             android:text="@string/onb_page_desc_placeholder"
-            android:textColor="@color/foqos_on_surface_variant"
-            android:textSize="14.5sp"
-            android:lineSpacingExtra="3dp"
+            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
             android:textAlignment="center" />
 
         <LinearLayout
@@ -88,7 +86,7 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_action"
-            style="@style/LoqIn.OutlinedButton"
+            style="@style/LoqIn.TonalButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
