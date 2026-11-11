@@ -30,7 +30,7 @@ import com.oliver.loqin.feature.usage.LoqInOverviewActivity
 import com.oliver.loqin.feature.usage.ScreenUnlocksActivity
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.ui.EdgeToEdgeUtils
-import com.oliver.loqin.ui.LockedUi
+import com.oliver.loqin.ui.PageUi
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.dialog.showAccented
 import com.oliver.loqin.ui.showWarnPillOnContent
@@ -84,9 +84,10 @@ class AccountActivity : AppCompatActivity() {
     }
 
     private fun syncLockedCardState() {
-        // Dimmed like other locked rows, but still tappable for the warning pill.
-        findViewById<View>(R.id.cardAccountBlockedNotifications)?.alpha =
-            if (EditingLockGuard.isLocked(this)) LockedUi.cardAlpha(this) else 1f
+        // Shared locked look (lock in place of the chevron), still tappable for the warning pill.
+        findViewById<View>(R.id.cardAccountBlockedNotifications)?.let {
+            PageUi.setRowLocked(it, EditingLockGuard.isLocked(this), getString(R.string.settings_row_locked_state))
+        }
     }
 
     companion object {

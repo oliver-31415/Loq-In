@@ -45,6 +45,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.oliver.loqin.R
+import com.oliver.loqin.ui.widgets.EmptyStateView
 import com.oliver.loqin.data.prefs.AppLogStore
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.ui.EdgeToEdgeUtils
@@ -55,7 +56,6 @@ import com.oliver.loqin.ui.dialog.showAccented
 import com.oliver.loqin.ui.dialog.showLoqInOptionDialog
 import com.oliver.loqin.util.LocaleHelper
 import com.google.android.material.appbar.MaterialToolbar
-import com.google.android.material.card.MaterialCardView
 import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.color.MaterialColors
@@ -68,8 +68,7 @@ import java.util.Locale
 class SupportLogActivity : AppCompatActivity() {
 
     private lateinit var rvSupportLogs: RecyclerView
-    private lateinit var cardEmptyLogs: MaterialCardView
-    private lateinit var tvEmptyLogs: TextView
+    private lateinit var cardEmptyLogs: EmptyStateView
     private lateinit var chipGroup: ChipGroup
     private lateinit var searchBoxLayout: TextInputLayout
     private lateinit var etSearch: TextInputEditText
@@ -103,7 +102,6 @@ class SupportLogActivity : AppCompatActivity() {
 
         rvSupportLogs = findViewById(R.id.rvSupportLogs)
         cardEmptyLogs = findViewById(R.id.cardEmptyLogs)
-        tvEmptyLogs = findViewById(R.id.tvEmptyLogs)
         chipGroup = findViewById(R.id.chipGroupFilters)
         searchBoxLayout = findViewById(R.id.searchBoxLayout)
         etSearch = findViewById(R.id.etSearch)
@@ -366,9 +364,9 @@ class SupportLogActivity : AppCompatActivity() {
         if (filtered.isEmpty()) {
             cardEmptyLogs.visibility = View.VISIBLE
             if (allEntries.isEmpty()) {
-                tvEmptyLogs.text = getString(R.string.support_logs_view_empty)
+                cardEmptyLogs.setTitle(R.string.support_logs_view_empty)
             } else {
-                tvEmptyLogs.text = getString(R.string.support_logs_empty_search)
+                cardEmptyLogs.setTitle(R.string.support_logs_empty_search)
             }
         } else {
             cardEmptyLogs.visibility = View.GONE

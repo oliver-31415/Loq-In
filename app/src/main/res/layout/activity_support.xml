@@ -23,13 +23,9 @@
 
     <!-- Content -->
     <androidx.core.widget.NestedScrollView
+        style="@style/LoqIn.PageContent"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingStart="16dp"
-        android:paddingTop="12dp"
-        android:paddingEnd="16dp"
-        android:paddingBottom="32dp"
-        android:clipToPadding="false"
         android:fillViewport="true"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
@@ -38,53 +34,49 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <!-- Contact: the page's one primary action. -->
             <com.google.android.material.card.MaterialCardView
-                style="@style/LoqIn.Card"
+                style="@style/LoqIn.PageCard"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/section_first_gap">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="18dp">
+                    android:padding="@dimen/page_card_padding">
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/support_hero_title"
-                        android:textAppearance="@style/TextAppearance.Material3.TitleLarge"
-                        android:textColor="@color/loqin_text_primary"
-                        android:textStyle="bold" />
+                        android:textAppearance="@style/LoqIn.Api34SafeText.TitleLarge"
+                        android:textColor="?attr/colorOnSurface" />
 
                     <TextView
+                        style="@style/LoqIn.RowSummary"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:text="@string/support_desc"
-                        android:textAppearance="@style/TextAppearance.Material3.BodyMedium"
-                        android:textColor="@color/loqin_text_secondary" />
+                        android:text="@string/support_desc" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnOpenEmail"
-                        style="@style/LoqIn.PrimaryButton"
+                        style="@style/LoqIn.Button"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="18dp"
-                        android:minHeight="52dp"
-                        android:text="@string/support_open_email"
-                        app:icon="@drawable/send_24"
-                        app:iconGravity="textStart"
-                        app:iconPadding="8dp" />
+                        android:layout_marginTop="16dp"
+                        android:text="@string/support_open_email" />
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
+                        android:layout_marginTop="8dp"
                         android:gravity="center"
                         android:text="@string/support_response_time_short"
-                        android:textAppearance="@style/TextAppearance.Material3.BodySmall"
-                        android:textColor="@color/loqin_text_secondary" />
+                        android:textAppearance="?attr/textAppearanceBodySmall"
+                        android:textColor="?attr/colorOnSurfaceVariant" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -92,76 +84,56 @@
                 style="@style/LoqIn.SectionHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
-                android:layout_marginTop="24dp"
                 android:text="@string/support_diagnostics_section" />
 
             <com.oliver.loqin.ui.widgets.ListGroupLayout
                 style="@style/LoqIn.ListGroup"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp">
+                android:layout_height="wrap_content">
 
-                <androidx.constraintlayout.widget.ConstraintLayout
+                <LinearLayout
                     android:id="@+id/rowViewLogs"
+                    style="@style/LoqIn.ListRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:minHeight="82dp"
-                    android:paddingStart="20dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="14dp"
-                    android:paddingBottom="14dp"
                     android:clickable="true"
                     android:focusable="true">
 
                     <ImageView
                         android:id="@+id/ivViewLogs"
+                        style="@style/LoqIn.RowIcon"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:contentDescription="@null"
-                        android:src="@drawable/list_alt_24"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintStart_toStartOf="parent"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:tint="?attr/colorPrimary" />
+                        android:src="@drawable/list_alt_24" />
 
-                    <TextView
-                        android:id="@+id/tvViewLogsTitle"
+                    <LinearLayout
+                        style="@style/LoqIn.RowText"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="14dp"
-                        android:text="@string/support_logs_unified_title"
-                        app:layout_constraintEnd_toStartOf="@id/ivViewLogsChevron"
-                        app:layout_constraintStart_toEndOf="@id/ivViewLogs"
-                        app:layout_constraintTop_toTopOf="parent"
-                        android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
+                        android:layout_height="wrap_content">
 
-                    <TextView
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="14dp"
-                        android:layout_marginTop="3dp"
-                        android:text="@string/support_logs_unified_desc"
-                        android:textColor="@color/loqin_text_secondary"
-                        android:textSize="12sp"
-                        android:maxLines="2"
-                        app:layout_constraintEnd_toStartOf="@id/ivViewLogsChevron"
-                        app:layout_constraintStart_toEndOf="@id/ivViewLogs"
-                        app:layout_constraintTop_toBottomOf="@id/tvViewLogsTitle" />
+                        <TextView
+                            android:id="@+id/tvViewLogsTitle"
+                            style="@style/LoqIn.RowTitle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/support_logs_unified_title" />
+
+                        <TextView
+                            style="@style/LoqIn.RowSummary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/support_logs_unified_desc" />
+                    </LinearLayout>
 
                     <ImageView
                         android:id="@+id/ivViewLogsChevron"
+                        style="@style/LoqIn.RowChevron"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
-                        android:contentDescription="@string/open"
-                        android:src="@drawable/keyboard_arrow_right_24"
-                        app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintEnd_toEndOf="parent"
-                        app:layout_constraintTop_toTopOf="parent"
-                        app:tint="?attr/colorOnSurfaceVariant" />
-                </androidx.constraintlayout.widget.ConstraintLayout>
+                        android:contentDescription="@string/open" />
+                </LinearLayout>
             </com.oliver.loqin.ui.widgets.ListGroupLayout>
-
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
