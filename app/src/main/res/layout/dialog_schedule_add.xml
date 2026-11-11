@@ -32,14 +32,12 @@
 
     <!-- 2A. ATTACHED PROFILE (When locked to a profile - no wireframe, no text saying 'locked') -->
     <com.google.android.material.card.MaterialCardView
-        style="@style/LoqIn.Card"
-        app:cardUseCompatPadding="false"
+        style="@style/LoqIn.PageCard.OnSurface"
         android:id="@+id/cardAttachedProfile"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="12dp"
         android:visibility="gone"
-        app:cardBackgroundColor="@color/foqos_surface_variant"
         tools:visibility="visible">
 
         <LinearLayout
@@ -72,7 +70,7 @@
                     android:letterSpacing="0.06"
                     android:text="@string/schedules_field_profile"
                     android:textAllCaps="true"
-                    android:textColor="?android:attr/textColorSecondary"
+                    android:textColor="?attr/colorOnSurfaceVariant"
                     android:textSize="11sp"
                     android:textStyle="bold" />
 
@@ -93,7 +91,7 @@
                 android:alpha="0.4"
                 android:contentDescription="@null"
                 android:src="@drawable/lock_24"
-                app:tint="?android:attr/textColorSecondary" />
+                app:tint="?attr/colorOnSurfaceVariant" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
@@ -176,12 +174,10 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnScanWifi"
-            style="@style/Widget.Material3.Button.TonalButton"
+            style="@style/LoqIn.TonalButton"
             android:layout_width="match_parent"
-            android:layout_height="44dp"
+            android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:minHeight="44dp"
-            app:strokeWidth="0dp"
             android:text="@string/schedules_wifi_pick_action"
             app:icon="@drawable/wifi_24"
             app:iconGravity="textStart" />
@@ -219,24 +215,20 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnUseConnectedBt"
-            style="@style/Widget.Material3.Button.TonalButton"
+            style="@style/LoqIn.TonalButton"
             android:layout_width="match_parent"
-            android:layout_height="44dp"
+            android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:minHeight="44dp"
-            app:strokeWidth="0dp"
             android:text="@string/schedules_bt_use_connected"
             app:icon="@drawable/bluetooth_24"
             app:iconGravity="textStart" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnPickPairedBt"
-            style="@style/Widget.Material3.Button.TonalButton"
+            style="@style/LoqIn.TonalButton"
             android:layout_width="match_parent"
-            android:layout_height="44dp"
+            android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:minHeight="44dp"
-            app:strokeWidth="0dp"
             android:text="@string/schedules_bt_pick_paired"
             app:icon="@drawable/bluetooth_24"
             app:iconGravity="textStart" />
@@ -281,7 +273,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
             android:layout_marginStart="4dp"
-            android:textColor="?android:attr/textColorSecondary"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="12sp"
             android:visibility="gone"
             tools:text="Selected: Central Park (250m radius)"
@@ -289,24 +281,20 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnLocationSearchInline"
-            style="@style/Widget.Material3.Button.TonalButton"
+            style="@style/LoqIn.TonalButton"
             android:layout_width="match_parent"
-            android:layout_height="44dp"
+            android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:minHeight="44dp"
-            app:strokeWidth="0dp"
             android:text="@string/schedules_location_map_picker_search_action"
             app:icon="@drawable/search_24"
             app:iconGravity="textStart" />
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnUseCurrentLocation"
-            style="@style/Widget.Material3.Button.TonalButton"
+            style="@style/LoqIn.TonalButton"
             android:layout_width="match_parent"
-            android:layout_height="44dp"
+            android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:minHeight="44dp"
-            app:strokeWidth="0dp"
             android:text="@string/schedules_location_pick_current"
             app:icon="@drawable/location_on_24"
             app:iconGravity="textStart" />
@@ -328,7 +316,7 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:gravity="center"
-            android:textColor="?android:attr/textColorSecondary"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="12sp"
             android:visibility="gone"
             tools:text="No matching locations found"
@@ -347,12 +335,10 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnOpenMapPicker"
-            style="@style/Widget.Material3.Button.TonalButton"
+            style="@style/LoqIn.TonalButton"
             android:layout_width="match_parent"
-            android:layout_height="44dp"
+            android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
-            android:minHeight="44dp"
-            app:strokeWidth="0dp"
             android:text="@string/schedules_location_open_map_picker"
             app:icon="@drawable/location_on_24"
             app:iconGravity="textStart" />
@@ -531,20 +517,18 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="6dp"
             android:layout_marginStart="4dp"
-            android:textColor="?android:attr/textColorSecondary"
+            android:textColor="?attr/colorOnSurfaceVariant"
             android:textSize="12.5sp"
             tools:text="Blocks apps while connected, and unblocks when disconnected." />
     </LinearLayout>
 
     <!-- 8. UNIFIED TIMING & DAYS CARD (Tonal surface, no harsh wireframes) -->
     <com.google.android.material.card.MaterialCardView
-        style="@style/LoqIn.Card"
-        app:cardUseCompatPadding="false"
+        style="@style/LoqIn.PageCard.OnSurface"
         android:id="@+id/cardTimingContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="12dp"
-        app:cardBackgroundColor="@color/foqos_surface_variant">
+        android:layout_marginBottom="12dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -594,7 +578,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
                         android:text="@string/schedules_247_subtitle_conn"
-                        android:textColor="?android:attr/textColorSecondary"
+                        android:textColor="?attr/colorOnSurfaceVariant"
                         android:textSize="12sp" />
                 </LinearLayout>
 
@@ -659,7 +643,7 @@
                         android:layout_height="wrap_content"
                         android:layout_marginTop="2dp"
                         android:text="@string/schedules_all_day_subtitle"
-                        android:textColor="?android:attr/textColorSecondary"
+                        android:textColor="?attr/colorOnSurfaceVariant"
                         android:textSize="12sp" />
                 </LinearLayout>
 
@@ -694,8 +678,7 @@
 
                 <!-- Start Time Tile -->
                 <com.google.android.material.card.MaterialCardView
-                    style="@style/LoqIn.Card"
-                    app:cardUseCompatPadding="false"
+                    style="@style/LoqIn.PageCard.OnSurface"
                     android:id="@+id/cardStartTime"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -719,7 +702,7 @@
                             android:textStyle="bold"
                             android:textAllCaps="true"
                             android:letterSpacing="0.06"
-                            android:textColor="?android:attr/textColorSecondary" />
+                            android:textColor="?attr/colorOnSurfaceVariant" />
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -758,12 +741,11 @@
                     android:src="@drawable/play_arrow_24"
                     android:alpha="0.4"
                     android:contentDescription="@null"
-                    app:tint="?android:attr/textColorSecondary" />
+                    app:tint="?attr/colorOnSurfaceVariant" />
 
                 <!-- End Time Tile -->
                 <com.google.android.material.card.MaterialCardView
-                    style="@style/LoqIn.Card"
-                    app:cardUseCompatPadding="false"
+                    style="@style/LoqIn.PageCard.OnSurface"
                     android:id="@+id/cardEndTime"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
@@ -787,7 +769,7 @@
                             android:textStyle="bold"
                             android:textAllCaps="true"
                             android:letterSpacing="0.06"
-                            android:textColor="?android:attr/textColorSecondary" />
+                            android:textColor="?attr/colorOnSurfaceVariant" />
 
                         <LinearLayout
                             android:layout_width="match_parent"
@@ -843,9 +825,9 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/chipMon"
-                        style="@style/Widget.Material3.Button.UnelevatedButton"
+                        style="@style/LoqIn.TonalButton"
                         android:layout_width="0dp"
-                        android:layout_height="40dp"
+                        android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:layout_marginEnd="3dp"
                         android:checkable="true"
@@ -853,17 +835,13 @@
                         android:insetBottom="0dp"
                         android:minWidth="0dp"
                         android:padding="0dp"
-                        android:text="@string/day_short_mon"
-                        android:textSize="12.5sp"
-                        android:textStyle="bold"
-                        app:cornerRadius="12dp"
-                        app:strokeWidth="0dp" />
+                        android:text="@string/day_short_mon" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/chipTue"
-                        style="@style/Widget.Material3.Button.UnelevatedButton"
+                        style="@style/LoqIn.TonalButton"
                         android:layout_width="0dp"
-                        android:layout_height="40dp"
+                        android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:layout_marginEnd="3dp"
                         android:checkable="true"
@@ -871,17 +849,13 @@
                         android:insetBottom="0dp"
                         android:minWidth="0dp"
                         android:padding="0dp"
-                        android:text="@string/day_short_tue"
-                        android:textSize="12.5sp"
-                        android:textStyle="bold"
-                        app:cornerRadius="12dp"
-                        app:strokeWidth="0dp" />
+                        android:text="@string/day_short_tue" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/chipWed"
-                        style="@style/Widget.Material3.Button.UnelevatedButton"
+                        style="@style/LoqIn.TonalButton"
                         android:layout_width="0dp"
-                        android:layout_height="40dp"
+                        android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:layout_marginEnd="3dp"
                         android:checkable="true"
@@ -889,17 +863,13 @@
                         android:insetBottom="0dp"
                         android:minWidth="0dp"
                         android:padding="0dp"
-                        android:text="@string/day_short_wed"
-                        android:textSize="12.5sp"
-                        android:textStyle="bold"
-                        app:cornerRadius="12dp"
-                        app:strokeWidth="0dp" />
+                        android:text="@string/day_short_wed" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/chipThu"
-                        style="@style/Widget.Material3.Button.UnelevatedButton"
+                        style="@style/LoqIn.TonalButton"
                         android:layout_width="0dp"
-                        android:layout_height="40dp"
+                        android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:layout_marginEnd="3dp"
                         android:checkable="true"
@@ -907,17 +877,13 @@
                         android:insetBottom="0dp"
                         android:minWidth="0dp"
                         android:padding="0dp"
-                        android:text="@string/day_short_thu"
-                        android:textSize="12.5sp"
-                        android:textStyle="bold"
-                        app:cornerRadius="12dp"
-                        app:strokeWidth="0dp" />
+                        android:text="@string/day_short_thu" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/chipFri"
-                        style="@style/Widget.Material3.Button.UnelevatedButton"
+                        style="@style/LoqIn.TonalButton"
                         android:layout_width="0dp"
-                        android:layout_height="40dp"
+                        android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:layout_marginEnd="3dp"
                         android:checkable="true"
@@ -925,17 +891,13 @@
                         android:insetBottom="0dp"
                         android:minWidth="0dp"
                         android:padding="0dp"
-                        android:text="@string/day_short_fri"
-                        android:textSize="12.5sp"
-                        android:textStyle="bold"
-                        app:cornerRadius="12dp"
-                        app:strokeWidth="0dp" />
+                        android:text="@string/day_short_fri" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/chipSat"
-                        style="@style/Widget.Material3.Button.UnelevatedButton"
+                        style="@style/LoqIn.TonalButton"
                         android:layout_width="0dp"
-                        android:layout_height="40dp"
+                        android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:layout_marginEnd="3dp"
                         android:checkable="true"
@@ -943,28 +905,20 @@
                         android:insetBottom="0dp"
                         android:minWidth="0dp"
                         android:padding="0dp"
-                        android:text="@string/day_short_sat"
-                        android:textSize="12.5sp"
-                        android:textStyle="bold"
-                        app:cornerRadius="12dp"
-                        app:strokeWidth="0dp" />
+                        android:text="@string/day_short_sat" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/chipSun"
-                        style="@style/Widget.Material3.Button.UnelevatedButton"
+                        style="@style/LoqIn.TonalButton"
                         android:layout_width="0dp"
-                        android:layout_height="40dp"
+                        android:layout_height="wrap_content"
                         android:layout_weight="1"
                         android:checkable="true"
                         android:insetTop="0dp"
                         android:insetBottom="0dp"
                         android:minWidth="0dp"
                         android:padding="0dp"
-                        android:text="@string/day_short_sun"
-                        android:textSize="12.5sp"
-                        android:textStyle="bold"
-                        app:cornerRadius="12dp"
-                        app:strokeWidth="0dp" />
+                        android:text="@string/day_short_sun" />
                 </LinearLayout>
 
                 <!-- Quick Presets Row (Clean tonal pills, no wireframe strokes) -->
@@ -976,57 +930,45 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/chipWeekdays"
-                        style="@style/Widget.Material3.Button.UnelevatedButton"
+                        style="@style/LoqIn.TonalButton"
                         android:layout_width="0dp"
-                        android:layout_height="36dp"
+                        android:layout_height="wrap_content"
                         android:layout_marginEnd="4dp"
                         android:layout_weight="1"
                         android:insetTop="0dp"
                         android:insetBottom="0dp"
-                        android:minHeight="36dp"
                         android:padding="0dp"
                         android:text="@string/schedules_group_weekdays"
                         android:textColor="?attr/colorOnSurface"
-                        android:textSize="11.5sp"
-                        app:backgroundTint="@color/foqos_surface"
-                        app:cornerRadius="12dp"
-                        app:strokeWidth="0dp" />
+                        app:backgroundTint="@color/foqos_surface" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/chipWeekend"
-                        style="@style/Widget.Material3.Button.UnelevatedButton"
+                        style="@style/LoqIn.TonalButton"
                         android:layout_width="0dp"
-                        android:layout_height="36dp"
+                        android:layout_height="wrap_content"
                         android:layout_marginHorizontal="2dp"
                         android:layout_weight="1"
                         android:insetTop="0dp"
                         android:insetBottom="0dp"
-                        android:minHeight="36dp"
                         android:padding="0dp"
                         android:text="@string/schedules_group_weekend"
                         android:textColor="?attr/colorOnSurface"
-                        android:textSize="11.5sp"
-                        app:backgroundTint="@color/foqos_surface"
-                        app:cornerRadius="12dp"
-                        app:strokeWidth="0dp" />
+                        app:backgroundTint="@color/foqos_surface" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/chipToday"
-                        style="@style/Widget.Material3.Button.UnelevatedButton"
+                        style="@style/LoqIn.TonalButton"
                         android:layout_width="0dp"
-                        android:layout_height="36dp"
+                        android:layout_height="wrap_content"
                         android:layout_marginStart="4dp"
                         android:layout_weight="1"
                         android:insetTop="0dp"
                         android:insetBottom="0dp"
-                        android:minHeight="36dp"
                         android:padding="0dp"
                         android:text="@string/schedules_group_all"
                         android:textColor="?attr/colorOnSurface"
-                        android:textSize="11.5sp"
-                        app:backgroundTint="@color/foqos_surface"
-                        app:cornerRadius="12dp"
-                        app:strokeWidth="0dp" />
+                        app:backgroundTint="@color/foqos_surface" />
                 </LinearLayout>
             </LinearLayout>
 
@@ -1055,8 +997,7 @@
 
                     <!-- Start Date Tile -->
                     <com.google.android.material.card.MaterialCardView
-                        style="@style/LoqIn.Card"
-                        app:cardUseCompatPadding="false"
+                        style="@style/LoqIn.PageCard.OnSurface"
                         android:id="@+id/cardStartDate"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -1080,7 +1021,7 @@
                                 android:textStyle="bold"
                                 android:textAllCaps="true"
                                 android:letterSpacing="0.06"
-                                android:textColor="?android:attr/textColorSecondary" />
+                                android:textColor="?attr/colorOnSurfaceVariant" />
 
                             <LinearLayout
                                 android:layout_width="match_parent"
@@ -1117,12 +1058,11 @@
                         android:src="@drawable/play_arrow_24"
                         android:alpha="0.4"
                         android:contentDescription="@null"
-                        app:tint="?android:attr/textColorSecondary" />
+                        app:tint="?attr/colorOnSurfaceVariant" />
 
                     <!-- End Date Tile -->
                     <com.google.android.material.card.MaterialCardView
-                        style="@style/LoqIn.Card"
-                        app:cardUseCompatPadding="false"
+                        style="@style/LoqIn.PageCard.OnSurface"
                         android:id="@+id/cardEndDate"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
@@ -1146,7 +1086,7 @@
                                 android:textStyle="bold"
                                 android:textAllCaps="true"
                                 android:letterSpacing="0.06"
-                                android:textColor="?android:attr/textColorSecondary" />
+                                android:textColor="?attr/colorOnSurfaceVariant" />
 
                             <LinearLayout
                                 android:layout_width="match_parent"

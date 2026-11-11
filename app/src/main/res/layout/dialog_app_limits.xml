@@ -32,7 +32,7 @@
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
                 android:maxLines="1"
-                android:textColor="@color/foqos_on_surface"
+                android:textColor="?attr/colorOnSurface"
                 android:textSize="17sp"
                 android:textStyle="bold" />
 
@@ -43,46 +43,40 @@
                 android:layout_marginTop="1dp"
                 android:ellipsize="end"
                 android:maxLines="4"
-                android:textColor="@color/foqos_on_surface_variant"
-                android:textSize="12.5sp" />
+                android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
         </LinearLayout>
     </LinearLayout>
 
     <!-- Live sentence summary -->
     <com.google.android.material.card.MaterialCardView
-        style="@style/LoqIn.Card"
+        style="@style/LoqIn.PageCard.OnSurface"
         android:id="@+id/cardAppLimitSummary"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
-        app:cardBackgroundColor="@color/foqos_surface_variant">
+        android:layout_marginTop="@dimen/block_gap">
 
         <TextView
             android:id="@+id/tvAppLimitSentence"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:minLines="2"
-            android:paddingHorizontal="12dp"
-            android:paddingVertical="10dp"
-            android:textColor="@color/foqos_on_surface"
-            android:textSize="13.5sp" />
+            android:padding="16dp"
+            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
+            android:textColor="?attr/colorOnSurface" />
     </com.google.android.material.card.MaterialCardView>
 
     <!-- 1. Daily screen time -->
     <com.google.android.material.card.MaterialCardView
-        style="@style/LoqIn.Card"
+        style="@style/LoqIn.PageCard.OnSurface"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        app:cardBackgroundColor="@color/foqos_surface_variant">
+        android:layout_marginTop="@dimen/block_gap">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingHorizontal="12dp"
-            android:paddingTop="10dp"
-            android:paddingBottom="12dp">
+            android:padding="16dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -91,12 +85,12 @@
                 android:orientation="horizontal">
 
                 <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:layout_marginEnd="10dp"
+                    style="@style/LoqIn.RowIcon"
+                    android:layout_width="@dimen/row_icon_size"
+                    android:layout_height="@dimen/row_icon_size"
+                    android:layout_marginEnd="@dimen/row_icon_gap"
                     android:contentDescription="@null"
-                    android:src="@drawable/schedule_24"
-                    app:tint="?attr/colorPrimary" />
+                    android:src="@drawable/schedule_24" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -108,21 +102,19 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/app_limit_section_time"
-                        android:textColor="@color/foqos_on_surface"
-                        android:textSize="14.5sp"
-                        android:textStyle="bold" />
+                        android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
 
                     <TextView
                         android:id="@+id/tvAppLimitTimeSubtitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/app_limit_time_subtitle"
-                        android:textColor="@color/foqos_on_surface_variant"
-                        android:textSize="12sp" />
+                        android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
                 </LinearLayout>
 
-                <androidx.appcompat.widget.SwitchCompat
+                <com.google.android.material.materialswitch.MaterialSwitch
                     android:id="@+id/swAppLimitTime"
+                    style="@style/LoqIn.RowSwitch"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
             </LinearLayout>
@@ -142,21 +134,19 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnTimeMinus"
-                        style="@style/Widget.Material3.Button.TonalButton"
-                        android:layout_width="42dp"
-                        android:layout_height="42dp"
-                        android:insetTop="0dp"
-                        android:insetBottom="0dp"
+                        style="@style/LoqIn.TonalButton"
+                        android:layout_width="@dimen/touch_target"
+                        android:layout_height="@dimen/touch_target"
                         android:minWidth="0dp"
+                        android:paddingStart="0dp"
+                        android:paddingEnd="0dp"
                         android:contentDescription="@string/app_limit_a11y_time_decrease"
                         android:text=""
                         app:backgroundTint="@color/foqos_surface"
-                        app:cornerRadius="14dp"
                         app:icon="@drawable/remove_24"
                         app:iconGravity="textStart"
                         app:iconPadding="0dp"
-                        app:iconTint="@color/foqos_on_surface"
-                        app:strokeWidth="0dp" />
+                        app:iconTint="?attr/colorOnSurface" />
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/tilAppLimitTime"
@@ -179,21 +169,19 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnTimePlus"
-                        style="@style/Widget.Material3.Button.TonalButton"
-                        android:layout_width="42dp"
-                        android:layout_height="42dp"
-                        android:insetTop="0dp"
-                        android:insetBottom="0dp"
+                        style="@style/LoqIn.TonalButton"
+                        android:layout_width="@dimen/touch_target"
+                        android:layout_height="@dimen/touch_target"
                         android:minWidth="0dp"
+                        android:paddingStart="0dp"
+                        android:paddingEnd="0dp"
                         android:contentDescription="@string/app_limit_a11y_time_increase"
                         android:text=""
                         app:backgroundTint="@color/foqos_surface"
-                        app:cornerRadius="14dp"
                         app:icon="@drawable/add_24"
                         app:iconGravity="textStart"
                         app:iconPadding="0dp"
-                        app:iconTint="@color/foqos_on_surface"
-                        app:strokeWidth="0dp" />
+                        app:iconTint="?attr/colorOnSurface" />
                 </LinearLayout>
 
                 <LinearLayout
@@ -204,71 +192,59 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/pillTime15"
-                        style="@style/Widget.Material3.Button.TonalButton"
+                        style="@style/LoqIn.TonalButton"
                         android:layout_width="0dp"
-                        android:layout_height="32dp"
+                        android:layout_height="wrap_content"
                         android:layout_marginEnd="4dp"
                         android:layout_weight="1"
-                        android:insetTop="0dp"
-                        android:insetBottom="0dp"
-                        android:minHeight="32dp"
                         android:text="@string/app_limit_pill_15m"
-                        android:textColor="@color/foqos_on_surface"
-                        android:textSize="12sp"
-                        app:backgroundTint="@color/foqos_surface"
-                        app:cornerRadius="12dp"
-                        app:strokeWidth="0dp" />
+                        android:minWidth="0dp"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="4dp"
+                        android:textColor="?attr/colorOnSurface"
+                        app:backgroundTint="@color/foqos_surface" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/pillTime30"
-                        style="@style/Widget.Material3.Button.TonalButton"
+                        style="@style/LoqIn.TonalButton"
                         android:layout_width="0dp"
-                        android:layout_height="32dp"
+                        android:layout_height="wrap_content"
                         android:layout_marginHorizontal="2dp"
                         android:layout_weight="1"
-                        android:insetTop="0dp"
-                        android:insetBottom="0dp"
-                        android:minHeight="32dp"
                         android:text="@string/app_limit_pill_30m"
-                        android:textColor="@color/foqos_on_surface"
-                        android:textSize="12sp"
-                        app:backgroundTint="@color/foqos_surface"
-                        app:cornerRadius="12dp"
-                        app:strokeWidth="0dp" />
+                        android:minWidth="0dp"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="4dp"
+                        android:textColor="?attr/colorOnSurface"
+                        app:backgroundTint="@color/foqos_surface" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/pillTime60"
-                        style="@style/Widget.Material3.Button.TonalButton"
+                        style="@style/LoqIn.TonalButton"
                         android:layout_width="0dp"
-                        android:layout_height="32dp"
+                        android:layout_height="wrap_content"
                         android:layout_marginHorizontal="2dp"
                         android:layout_weight="1"
-                        android:insetTop="0dp"
-                        android:insetBottom="0dp"
-                        android:minHeight="32dp"
                         android:text="@string/app_limit_pill_1h"
-                        android:textColor="@color/foqos_on_surface"
-                        android:textSize="12sp"
-                        app:backgroundTint="@color/foqos_surface"
-                        app:cornerRadius="12dp"
-                        app:strokeWidth="0dp" />
+                        android:minWidth="0dp"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="4dp"
+                        android:textColor="?attr/colorOnSurface"
+                        app:backgroundTint="@color/foqos_surface" />
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/pillTime120"
-                        style="@style/Widget.Material3.Button.TonalButton"
+                        style="@style/LoqIn.TonalButton"
                         android:layout_width="0dp"
-                        android:layout_height="32dp"
+                        android:layout_height="wrap_content"
                         android:layout_marginStart="4dp"
                         android:layout_weight="1"
-                        android:insetTop="0dp"
-                        android:insetBottom="0dp"
-                        android:minHeight="32dp"
                         android:text="@string/app_limit_pill_2h"
-                        android:textColor="@color/foqos_on_surface"
-                        android:textSize="12sp"
-                        app:backgroundTint="@color/foqos_surface"
-                        app:cornerRadius="12dp"
-                        app:strokeWidth="0dp" />
+                        android:minWidth="0dp"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="4dp"
+                        android:textColor="?attr/colorOnSurface"
+                        app:backgroundTint="@color/foqos_surface" />
                 </LinearLayout>
 
                 <TextView
@@ -276,54 +252,36 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="10dp"
                     android:text="@string/app_limit_reset_label"
-                    android:textColor="@color/foqos_on_surface_variant"
-                    android:textSize="12.5sp" />
+                    android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
 
                 <FrameLayout
                     android:id="@+id/containerAppLimitReset"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:background="@drawable/bg_segmented_track"
-                    android:padding="3dp">
+                    android:layout_marginTop="4dp">
 
                     <com.google.android.material.button.MaterialButtonToggleGroup
                         android:id="@+id/toggleAppLimitReset"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:background="@android:color/transparent"
                         app:selectionRequired="true"
                         app:singleSelection="true">
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnAppLimitResetDaily"
-                            style="@style/Widget.Material3.Button.TextButton"
+                            style="@style/LoqIn.Segment"
                             android:layout_width="0dp"
-                            android:layout_height="34dp"
-                            android:layout_margin="1dp"
+                            android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:insetTop="0dp"
-                            android:insetBottom="0dp"
-                            android:minHeight="34dp"
-                            android:text="@string/app_limit_reset_daily"
-                            android:textSize="12sp"
-                            app:cornerRadius="11dp"
-                            app:strokeWidth="0dp" />
+                            android:text="@string/app_limit_reset_daily" />
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnAppLimitResetProtection"
-                            style="@style/Widget.Material3.Button.TextButton"
+                            style="@style/LoqIn.Segment"
                             android:layout_width="0dp"
-                            android:layout_height="34dp"
-                            android:layout_margin="1dp"
+                            android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:insetTop="0dp"
-                            android:insetBottom="0dp"
-                            android:minHeight="34dp"
-                            android:text="@string/app_limit_reset_protection"
-                            android:textSize="12sp"
-                            app:cornerRadius="11dp"
-                            app:strokeWidth="0dp" />
+                            android:text="@string/app_limit_reset_protection" />
                     </com.google.android.material.button.MaterialButtonToggleGroup>
                 </FrameLayout>
 
@@ -332,27 +290,23 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:textColor="@color/foqos_on_surface_variant"
-                    android:textSize="12sp" />
+                    android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
             </LinearLayout>
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
     <!-- 2. App opens -->
     <com.google.android.material.card.MaterialCardView
-        style="@style/LoqIn.Card"
+        style="@style/LoqIn.PageCard.OnSurface"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        app:cardBackgroundColor="@color/foqos_surface_variant">
+        android:layout_marginTop="@dimen/block_gap">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingHorizontal="12dp"
-            android:paddingTop="10dp"
-            android:paddingBottom="12dp">
+            android:padding="16dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -361,12 +315,12 @@
                 android:orientation="horizontal">
 
                 <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:layout_marginEnd="10dp"
+                    style="@style/LoqIn.RowIcon"
+                    android:layout_width="@dimen/row_icon_size"
+                    android:layout_height="@dimen/row_icon_size"
+                    android:layout_marginEnd="@dimen/row_icon_gap"
                     android:contentDescription="@null"
-                    android:src="@drawable/open_in_new_24"
-                    app:tint="?attr/colorPrimary" />
+                    android:src="@drawable/open_in_new_24" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -379,21 +333,19 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/app_limit_section_opens"
-                        android:textColor="@color/foqos_on_surface"
-                        android:textSize="14.5sp"
-                        android:textStyle="bold" />
+                        android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
 
                     <TextView
                         android:id="@+id/tvAppLimitOpensSubtitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/app_limit_opens_subtitle"
-                        android:textColor="@color/foqos_on_surface_variant"
-                        android:textSize="12sp" />
+                        android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
                 </LinearLayout>
 
-                <androidx.appcompat.widget.SwitchCompat
+                <com.google.android.material.materialswitch.MaterialSwitch
                     android:id="@+id/swAppLimitOpens"
+                    style="@style/LoqIn.RowSwitch"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
             </LinearLayout>
@@ -408,21 +360,19 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnOpensMinus"
-                    style="@style/Widget.Material3.Button.TonalButton"
-                    android:layout_width="42dp"
-                    android:layout_height="42dp"
-                    android:insetTop="0dp"
-                    android:insetBottom="0dp"
+                    style="@style/LoqIn.TonalButton"
+                    android:layout_width="@dimen/touch_target"
+                    android:layout_height="@dimen/touch_target"
                     android:minWidth="0dp"
+                    android:paddingStart="0dp"
+                    android:paddingEnd="0dp"
                     android:contentDescription="@string/app_limit_a11y_opens_decrease"
                     android:text=""
                     app:backgroundTint="@color/foqos_surface"
-                    app:cornerRadius="14dp"
                     app:icon="@drawable/remove_24"
                     app:iconGravity="textStart"
                     app:iconPadding="0dp"
-                    app:iconTint="@color/foqos_on_surface"
-                    app:strokeWidth="0dp" />
+                    app:iconTint="?attr/colorOnSurface" />
 
                 <com.google.android.material.textfield.TextInputLayout
                     android:id="@+id/tilAppLimitAttempts"
@@ -445,40 +395,35 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnOpensPlus"
-                    style="@style/Widget.Material3.Button.TonalButton"
-                    android:layout_width="42dp"
-                    android:layout_height="42dp"
-                    android:insetTop="0dp"
-                    android:insetBottom="0dp"
+                    style="@style/LoqIn.TonalButton"
+                    android:layout_width="@dimen/touch_target"
+                    android:layout_height="@dimen/touch_target"
                     android:minWidth="0dp"
+                    android:paddingStart="0dp"
+                    android:paddingEnd="0dp"
                     android:contentDescription="@string/app_limit_a11y_opens_increase"
                     android:text=""
                     app:backgroundTint="@color/foqos_surface"
-                    app:cornerRadius="14dp"
                     app:icon="@drawable/add_24"
                     app:iconGravity="textStart"
                     app:iconPadding="0dp"
-                    app:iconTint="@color/foqos_on_surface"
-                    app:strokeWidth="0dp" />
+                    app:iconTint="?attr/colorOnSurface" />
             </LinearLayout>
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
     <!-- 3. Single session cap -->
     <com.google.android.material.card.MaterialCardView
-        style="@style/LoqIn.Card"
+        style="@style/LoqIn.PageCard.OnSurface"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        app:cardBackgroundColor="@color/foqos_surface_variant">
+        android:layout_marginTop="@dimen/block_gap">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingHorizontal="12dp"
-            android:paddingTop="10dp"
-            android:paddingBottom="12dp">
+            android:padding="16dp">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -487,12 +432,12 @@
                 android:orientation="horizontal">
 
                 <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:layout_marginEnd="10dp"
+                    style="@style/LoqIn.RowIcon"
+                    android:layout_width="@dimen/row_icon_size"
+                    android:layout_height="@dimen/row_icon_size"
+                    android:layout_marginEnd="@dimen/row_icon_gap"
                     android:contentDescription="@null"
-                    android:src="@drawable/timer_24"
-                    app:tint="?attr/colorPrimary" />
+                    android:src="@drawable/timer_24" />
 
                 <LinearLayout
                     android:layout_width="0dp"
@@ -504,20 +449,18 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/app_limit_section_visit"
-                        android:textColor="@color/foqos_on_surface"
-                        android:textSize="14.5sp"
-                        android:textStyle="bold" />
+                        android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
 
                     <TextView
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/app_limit_visit_subtitle"
-                        android:textColor="@color/foqos_on_surface_variant"
-                        android:textSize="12sp" />
+                        android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
                 </LinearLayout>
 
-                <androidx.appcompat.widget.SwitchCompat
+                <com.google.android.material.materialswitch.MaterialSwitch
                     android:id="@+id/swAppLimitVisit"
+                    style="@style/LoqIn.RowSwitch"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content" />
             </LinearLayout>
@@ -537,21 +480,19 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnVisitMinus"
-                        style="@style/Widget.Material3.Button.TonalButton"
-                        android:layout_width="42dp"
-                        android:layout_height="42dp"
-                        android:insetTop="0dp"
-                        android:insetBottom="0dp"
+                        style="@style/LoqIn.TonalButton"
+                        android:layout_width="@dimen/touch_target"
+                        android:layout_height="@dimen/touch_target"
                         android:minWidth="0dp"
+                        android:paddingStart="0dp"
+                        android:paddingEnd="0dp"
                         android:contentDescription="@string/app_limit_a11y_visit_decrease"
                         android:text=""
                         app:backgroundTint="@color/foqos_surface"
-                        app:cornerRadius="14dp"
                         app:icon="@drawable/remove_24"
                         app:iconGravity="textStart"
                         app:iconPadding="0dp"
-                        app:iconTint="@color/foqos_on_surface"
-                        app:strokeWidth="0dp" />
+                        app:iconTint="?attr/colorOnSurface" />
 
                     <com.google.android.material.textfield.TextInputLayout
                         android:id="@+id/tilAppLimitPerVisit"
@@ -574,21 +515,19 @@
 
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btnVisitPlus"
-                        style="@style/Widget.Material3.Button.TonalButton"
-                        android:layout_width="42dp"
-                        android:layout_height="42dp"
-                        android:insetTop="0dp"
-                        android:insetBottom="0dp"
+                        style="@style/LoqIn.TonalButton"
+                        android:layout_width="@dimen/touch_target"
+                        android:layout_height="@dimen/touch_target"
                         android:minWidth="0dp"
+                        android:paddingStart="0dp"
+                        android:paddingEnd="0dp"
                         android:contentDescription="@string/app_limit_a11y_visit_increase"
                         android:text=""
                         app:backgroundTint="@color/foqos_surface"
-                        app:cornerRadius="14dp"
                         app:icon="@drawable/add_24"
                         app:iconGravity="textStart"
                         app:iconPadding="0dp"
-                        app:iconTint="@color/foqos_on_surface"
-                        app:strokeWidth="0dp" />
+                        app:iconTint="?attr/colorOnSurface" />
                 </LinearLayout>
 
                 <TextView
@@ -596,38 +535,35 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="6dp"
-                    android:textColor="@color/status_warning"
-                    android:textSize="12.5sp"
+                    style="@style/LoqIn.RowStatus.Warning"
                     android:visibility="gone" />
             </LinearLayout>
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
     <com.google.android.material.card.MaterialCardView
-        style="@style/LoqIn.Card"
+        style="@style/LoqIn.PageCard.OnSurface"
         android:id="@+id/cardAppPause"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:visibility="gone"
-        app:cardBackgroundColor="@color/foqos_surface_variant">
+        android:layout_marginTop="@dimen/block_gap"
+        android:visibility="gone">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center_vertical"
-            android:minHeight="48dp"
+            android:minHeight="@dimen/row_min_height_one_line"
             android:orientation="horizontal"
-            android:paddingHorizontal="12dp"
-            android:paddingVertical="10dp">
+            android:padding="16dp">
 
             <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:layout_marginEnd="10dp"
+                style="@style/LoqIn.RowIcon"
+                android:layout_width="@dimen/row_icon_size"
+                android:layout_height="@dimen/row_icon_size"
+                android:layout_marginEnd="@dimen/row_icon_gap"
                 android:contentDescription="@null"
-                android:src="@drawable/timer_24"
-                app:tint="?attr/colorPrimary" />
+                android:src="@drawable/timer_24" />
 
             <LinearLayout
                 android:layout_width="0dp"
@@ -639,20 +575,18 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/app_limit_section_pause"
-                    android:textColor="@color/foqos_on_surface"
-                    android:textSize="14.5sp"
-                    android:textStyle="bold" />
+                    android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
 
                 <TextView
                     android:id="@+id/tvAppPauseSubtitle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="@color/foqos_on_surface_variant"
-                    android:textSize="12sp" />
+                    android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
             </LinearLayout>
 
-            <androidx.appcompat.widget.SwitchCompat
+            <com.google.android.material.materialswitch.MaterialSwitch
                 android:id="@+id/swAppPause"
+                style="@style/LoqIn.RowSwitch"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content" />
         </LinearLayout>
