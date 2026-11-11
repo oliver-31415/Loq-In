@@ -37,6 +37,7 @@ import com.oliver.loqin.security.AppLockStore
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.theme.CustomAccentApplier
 import com.oliver.loqin.ui.EdgeToEdgeUtils
+import com.oliver.loqin.ui.PageUi
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.showWarnPill
 import com.oliver.loqin.ui.dialog.EmergencyPinDialog
@@ -44,14 +45,14 @@ import com.oliver.loqin.ui.dialog.PinEntryDialog
 import com.oliver.loqin.util.LocaleHelper
 import com.oliver.loqin.util.ManagedDevicePolicyHelper
 import com.google.android.material.appbar.MaterialToolbar
-import com.google.android.material.switchmaterial.SwitchMaterial
+import com.google.android.material.materialswitch.MaterialSwitch
 
 class AppLockSettingsActivity : AppCompatActivity() {
 
     private lateinit var toolbar: MaterialToolbar
-    private lateinit var switchEnabled: SwitchMaterial
-    private lateinit var switchBiometric: SwitchMaterial
-    private lateinit var switchStrictProtection: SwitchMaterial
+    private lateinit var switchEnabled: MaterialSwitch
+    private lateinit var switchBiometric: MaterialSwitch
+    private lateinit var switchStrictProtection: MaterialSwitch
     private lateinit var rowSetPin: View
     private lateinit var tvSetPinLabel: TextView
     private lateinit var tvStrictProtectionSummary: TextView
@@ -179,7 +180,7 @@ class AppLockSettingsActivity : AppCompatActivity() {
         switchBiometric.isChecked = AppLockStore.isBiometricEnabled(this)
         switchStrictProtection.isChecked = strictProtectionEnabled
         switchStrictProtection.isEnabled = true
-        findViewById<View>(R.id.rowStrictProtection).alpha = 1f
+        PageUi.setRowDimmed(findViewById(R.id.rowStrictProtection), false)
         tvStrictProtectionSummary.text = when {
             strictProtectionConfigured && deviceOwner && managedBlock == true &&
                 (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.R || managedUserControlDisabled == true) ->
@@ -203,7 +204,7 @@ class AppLockSettingsActivity : AppCompatActivity() {
             if (AppLockStore.hasPin(this)) R.string.app_lock_change_pin_title else R.string.app_lock_set_pin_title
         )
         switchBiometric.isEnabled = AppLockStore.hasPin(this)
-        findViewById<View>(R.id.rowAppLockBiometric).alpha = if (AppLockStore.hasPin(this)) 1f else 0.65f
+        PageUi.setRowDimmed(findViewById(R.id.rowAppLockBiometric), !AppLockStore.hasPin(this))
 
         toolbar.subtitle = getString(
             if (appLockEnabled) R.string.state_enabled else R.string.state_disabled

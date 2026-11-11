@@ -213,6 +213,12 @@ class AppearanceActivity : AppCompatActivity() {
         val items = values.mapIndexed { index, value -> value to entries.getOrElse(index) { value } } +
             (CUSTOM to getString(R.string.pref_accent_custom_title))
 
+        // The grid starts at the row text column; drop to fewer columns when 48dp swatches
+        // would not fit (narrow phones, large display size).
+        val availableDp = resources.configuration.screenWidthDp - SWATCH_GRID_INSET_DP
+        val columns = (availableDp / SWATCH_TOUCH_DP).coerceIn(1, GRID_COLUMNS)
+        gridAccentSwatches.columnCount = columns
+
         items.forEachIndexed { index, (value, name) ->
             val isCustom = value == CUSTOM
             val swatch = AccentSwatchView(this).apply {
@@ -227,8 +233,8 @@ class AppearanceActivity : AppCompatActivity() {
             gridAccentSwatches.addView(
                 swatch,
                 GridLayout.LayoutParams(
-                    GridLayout.spec(index / GRID_COLUMNS),
-                    GridLayout.spec(index % GRID_COLUMNS, GridLayout.CENTER, 1f),
+                    GridLayout.spec(index / columns),
+                    GridLayout.spec(index % columns, GridLayout.CENTER, 1f),
                 ),
             )
             swatchViews[value] = swatch
@@ -354,6 +360,10 @@ class AppearanceActivity : AppCompatActivity() {
         const val KEY_LANGUAGE = "pref_language"
         const val CUSTOM = "custom"
         const val GRID_COLUMNS = 5
+
+        // Page gutters (2 x 16dp) + row padding (20dp + 16dp) + icon and gap (24dp + 16dp).
+        private const val SWATCH_GRID_INSET_DP = 108
+        private const val SWATCH_TOUCH_DP = 48
         const val SELECTION_ANIMATION_MS = 220L
     }
 }
