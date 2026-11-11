@@ -23,6 +23,7 @@
 
     <!-- Content -->
     <androidx.core.widget.NestedScrollView
+        style="@style/LoqIn.PageContent"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fillViewport="true"
@@ -31,16 +32,14 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:padding="16dp"
-            android:paddingBottom="24dp">
+            android:orientation="vertical">
 
             <!-- QR Image -->
             <ImageView
                 android:id="@+id/ivQr"
                 android:layout_width="match_parent"
                 android:layout_height="320dp"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="@dimen/section_first_gap"
                 android:contentDescription="@string/qr_title"
                 android:scaleType="fitCenter" />
 
@@ -120,9 +119,9 @@
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnCopy"
-                    style="@style/LoqIn.Button"
+                    style="@style/LoqIn.TonalButton"
                     android:layout_width="0dp"
-                    android:layout_height="48dp"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="@string/action_copy"
                     app:icon="@drawable/content_copy_24"
@@ -137,7 +136,7 @@
                     android:id="@+id/btnShare"
                     style="@style/LoqIn.Button"
                     android:layout_width="0dp"
-                    android:layout_height="48dp"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="@string/share"
                     app:icon="@drawable/share_24"

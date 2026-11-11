@@ -25,75 +25,26 @@
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/recycler"
+            style="@style/LoqIn.PageContent"
             android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:paddingTop="16dp"
-            android:paddingBottom="120dp"
-            android:clipToPadding="false" />
+            android:layout_height="match_parent" />
 
-        <com.google.android.material.card.MaterialCardView
+        <!-- Shown instead of the list while it is empty. -->
+        <com.oliver.loqin.ui.widgets.EmptyStateView
             android:id="@+id/tvEmpty"
-            style="@style/LoqIn.Card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="24dp"
-            android:layout_marginEnd="8dp"
-            android:layout_gravity="top"
-            android:visibility="gone">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:gravity="center_horizontal"
-                android:padding="22dp">
-
-                <ImageView
-                    android:layout_width="34dp"
-                    android:layout_height="34dp"
-                    android:contentDescription="@null"
-                    android:importantForAccessibility="no"
-                    android:src="@drawable/nfc_24"
-                    app:tint="?attr/colorPrimary" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="10dp"
-                    android:gravity="center"
-                    android:text="@string/paired_tags_empty_title"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:gravity="center"
-                    android:text="@string/paired_tags_empty_body"
-                    android:textColor="?android:attr/textColorSecondary"
-                    android:textSize="13sp" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btnEmptyAddTag"
-                    style="@style/LoqIn.OutlinedButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="14dp"
-                    android:text="@string/empty_action_add_first_tag"
-                    android:textAllCaps="false"
-                    app:icon="@drawable/nfc_24"
-                    app:iconGravity="textStart"
-                    app:iconPadding="6dp" />
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+            android:layout_marginStart="@dimen/page_margin"
+            android:layout_marginTop="@dimen/page_top_padding"
+            android:layout_marginEnd="@dimen/page_margin"
+            android:visibility="gone"
+            app:emptyActionText="@string/empty_action_add_first_tag"
+            app:emptyBody="@string/paired_tags_empty_body"
+            app:emptyIcon="@drawable/nfc_24"
+            app:emptyTitle="@string/paired_tags_empty_title" />
     </FrameLayout>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

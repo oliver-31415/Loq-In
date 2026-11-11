@@ -207,7 +207,7 @@ class QrGenerateActivity : AppCompatActivity() {
 
     private fun applyAccent() {
         val tint = AccentColor.getActiveColor(this)
-        b.btnCopy.backgroundTintList = tint
+        // Copy stays the tonal secondary action; Share is the one filled primary.
         b.btnShare.backgroundTintList = tint
         // Dropdown outlines otherwise keep the compile-time default green.
         val accentInt = AccentColor.getAccentColorInt(this)

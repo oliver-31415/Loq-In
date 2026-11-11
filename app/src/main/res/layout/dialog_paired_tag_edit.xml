@@ -8,12 +8,11 @@
     android:paddingBottom="4dp">
 
     <TextView
+        style="@style/LoqIn.SectionHeader.Inline"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
-        android:text="@string/dialog_section_details"
-        android:textSize="14sp"
-        android:textStyle="bold" />
+        android:text="@string/dialog_section_details" />
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tilTagUid"
@@ -82,12 +81,11 @@
     </com.google.android.material.textfield.TextInputLayout>
 
     <TextView
+        style="@style/LoqIn.SectionHeader.Inline"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="@string/manage_barcodes_action_section_title"
-        android:textSize="14sp"
-        android:textStyle="bold" />
+        android:text="@string/manage_barcodes_action_section_title" />
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tilTagProfile"
@@ -136,8 +134,10 @@
         android:layout_marginTop="3dp"
         android:visibility="gone"
         android:text="@string/paired_tag_use_written_helper"
-        android:textColor="?android:attr/textColorSecondary"
-        android:textSize="11sp" />
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:textColor="?attr/colorOnSurfaceVariant" />
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tilTagMinutes"
@@ -165,7 +165,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
-        android:minHeight="48dp"
         android:visibility="gone"
         android:text="@string/paired_tag_rewrite_action"
         app:icon="@drawable/nfc_24"
@@ -173,12 +172,11 @@
         app:iconPadding="10dp" />
 
     <TextView
+        style="@style/LoqIn.SectionHeader.Inline"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="@string/manage_barcodes_limits_section_title"
-        android:textSize="14sp"
-        android:textStyle="bold" />
+        android:text="@string/manage_barcodes_limits_section_title" />
 
     <com.google.android.material.textfield.TextInputLayout
         style="@style/LoqIn.SheetField"
@@ -203,8 +201,10 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
         android:text="@string/paired_tag_daily_limit_helper"
-        android:textColor="?android:attr/textColorSecondary"
-        android:textSize="11sp" />
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:textColor="?attr/colorOnSurfaceVariant" />
 
     <com.google.android.material.textfield.TextInputLayout
         style="@style/LoqIn.SheetField"
@@ -229,8 +229,10 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
         android:text="@string/paired_tag_cooldown_helper"
-        android:textColor="?android:attr/textColorSecondary"
-        android:textSize="11sp" />
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:textColor="?attr/colorOnSurfaceVariant" />
 
     <LinearLayout
         android:id="@+id/rowButtons"

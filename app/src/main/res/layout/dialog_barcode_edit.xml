@@ -8,12 +8,11 @@
     android:paddingBottom="4dp">
 
     <TextView
+        style="@style/LoqIn.SectionHeader.Inline"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="4dp"
-        android:text="@string/dialog_section_details"
-        android:textSize="14sp"
-        android:textStyle="bold" />
+        android:text="@string/dialog_section_details" />
 
     <com.google.android.material.textfield.TextInputLayout
         style="@style/LoqIn.SheetField"
@@ -74,12 +73,11 @@
     </com.google.android.material.textfield.TextInputLayout>
 
     <TextView
+        style="@style/LoqIn.SectionHeader.Inline"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="@string/manage_barcodes_action_section_title"
-        android:textSize="14sp"
-        android:textStyle="bold" />
+        android:text="@string/manage_barcodes_action_section_title" />
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tilProfile"
@@ -141,12 +139,11 @@
     </com.google.android.material.textfield.TextInputLayout>
 
     <TextView
+        style="@style/LoqIn.SectionHeader.Inline"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="@string/manage_barcodes_limits_section_title"
-        android:textSize="14sp"
-        android:textStyle="bold" />
+        android:text="@string/manage_barcodes_limits_section_title" />
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -181,8 +178,10 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
                 android:text="@string/manage_barcodes_daily_limit_helper"
-                android:textColor="?android:attr/textColorSecondary"
-                android:textSize="11sp" />
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant" />
         </LinearLayout>
 
         <Space
@@ -216,8 +215,10 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="2dp"
                 android:text="@string/manage_barcodes_cooldown_helper"
-                android:textColor="?android:attr/textColorSecondary"
-                android:textSize="11sp" />
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant" />
         </LinearLayout>
     </LinearLayout>
 
