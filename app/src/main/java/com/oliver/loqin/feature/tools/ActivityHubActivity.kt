@@ -19,16 +19,12 @@
 package com.oliver.loqin.feature.tools
 
 import android.content.Intent
-import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.View
-import android.widget.ImageView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.WindowInsetsControllerCompat
 import com.oliver.loqin.R
 import com.oliver.loqin.feature.usage.AppWebsiteUsageActivity
 import com.oliver.loqin.feature.usage.ScreenUnlocksActivity
-import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.ui.EdgeToEdgeUtils
 import com.oliver.loqin.ui.ThemeUtils
 import com.google.android.material.appbar.MaterialToolbar
@@ -44,7 +40,6 @@ class ActivityHubActivity : AppCompatActivity() {
 
         setupViews()
         setupToolbar()
-        tintActivityIcons()
         setupActivityCardActions()
     }
 
@@ -60,25 +55,8 @@ class ActivityHubActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(false)
         toolbar.setNavigationIcon(R.drawable.keyboard_arrow_left_24)
         toolbar.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
-        toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
         toolbar.title = getString(R.string.nav_activity)
         supportActionBar?.title = getString(R.string.nav_activity)
-    }
-
-    private fun tintActivityIcons() {
-        val iconTint = ColorStateList.valueOf(AccentColor.getAccentColorInt(this))
-
-        listOf(
-            R.id.ivAppWebsiteUsageIcon,
-            R.id.ivScreenUnlocksIcon,
-        ).forEach { iconId ->
-            findViewById<ImageView>(iconId)?.let { icon ->
-                icon.imageTintList = iconTint
-                icon.setColorFilter(iconTint.defaultColor)
-                icon.isEnabled = true
-                icon.alpha = 1f
-            }
-        }
     }
 
     private fun setupActivityCardActions() {
