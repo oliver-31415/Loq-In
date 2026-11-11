@@ -1,19 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    "Your rules" / "Suggestions" header in the website grid: a LoqIn.SectionHeader whose row also
-    holds an optional action ("Hide suggestions"). The grid's 12dp padding plus the 4dp margin puts
-    the row on the page gutter; the 16dp padding gives the header text the standard header inset.
-    The tiles below carry a 4dp top margin, so 4dp here makes the usual 8dp header-to-content gap;
-    the adapter swaps the 24dp top gap for the first-header gap on the first header.
+    "Your rules" / "Suggestions" header in the website grid (also the "Your schedules" header): a
+    LoqIn.SectionHeader whose row also holds an optional action ("Hide suggestions", "Reorder").
+    The row is always 48dp tall so the action keeps its touch target and every header sits the same
+    way; that centres the header line with ~16dp above and below it, so 8dp on top keeps the 24dp
+    section rhythm. The grid's 12dp padding plus the 4dp side margins puts the row on the page
+    gutter and the 16dp padding gives the text the standard header inset; -4dp at the bottom
+    cancels the tiles' own 4dp margin. The adapter drops the top margin on the first header.
 -->
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginStart="4dp"
-    android:layout_marginTop="@dimen/section_gap"
+    android:layout_marginTop="8dp"
     android:layout_marginEnd="4dp"
-    android:layout_marginBottom="4dp"
+    android:layout_marginBottom="-4dp"
     android:paddingStart="16dp"
     android:paddingEnd="4dp"
     android:gravity="center_vertical"

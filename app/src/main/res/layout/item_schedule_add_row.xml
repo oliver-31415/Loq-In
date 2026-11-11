@@ -5,43 +5,42 @@
     android:layout_height="wrap_content"
     android:orientation="vertical">
 
+    <!-- One-line list row (LoqIn.ListRow.OneLine height); its segment background is set in code. -->
     <LinearLayout
         android:id="@+id/scheduleAddRow"
+        style="@style/LoqIn.ListRow"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:minHeight="@dimen/row_min_height_one_line"
         android:clickable="true"
-        android:focusable="true"
-        android:gravity="center_vertical"
-        android:minHeight="60dp"
-        android:orientation="horizontal"
-        android:paddingStart="20dp"
-        android:paddingEnd="16dp">
+        android:focusable="true">
 
         <ImageView
             android:id="@+id/scheduleAddIcon"
-            android:layout_width="24dp"
-            android:layout_height="24dp"
-            android:importantForAccessibility="no"
+            style="@style/LoqIn.RowIcon"
+            android:layout_width="@dimen/row_icon_size"
+            android:layout_height="@dimen/row_icon_size"
+            android:contentDescription="@null"
             android:src="@drawable/add_24" />
 
         <TextView
             android:id="@+id/scheduleAddLabel"
+            style="@style/LoqIn.RowTitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
+            android:layout_marginStart="@dimen/row_icon_gap"
             android:layout_weight="1"
-            android:text="@string/schedule_tile_add_label"
-            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
+            android:text="@string/schedule_tile_add_label" />
     </LinearLayout>
 
+    <!-- Footer note under the group, on the section-header text inset -->
     <TextView
         android:id="@+id/scheduleListNote"
+        style="@style/LoqIn.RowSummary"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="12dp"
-        android:layout_marginEnd="8dp"
-        android:text="@string/schedules_list_priority_note"
-        android:textColor="?android:attr/textColorSecondary"
-        android:textSize="13sp" />
+        android:layout_marginTop="@dimen/block_gap"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:text="@string/schedules_list_priority_note" />
 </LinearLayout>

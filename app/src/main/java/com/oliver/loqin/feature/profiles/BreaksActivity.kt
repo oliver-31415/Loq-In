@@ -20,7 +20,6 @@ package com.oliver.loqin.feature.profiles
 
 import android.content.res.ColorStateList
 import android.os.Bundle
-import android.view.Gravity
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
@@ -41,7 +40,6 @@ import com.google.android.material.chip.Chip
 import com.google.android.material.chip.ChipGroup
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.progressindicator.LinearProgressIndicator
-import com.google.android.material.shape.RelativeCornerSize
 import com.oliver.loqin.R
 import com.oliver.loqin.data.prefs.EmergencyPinStore
 import com.oliver.loqin.data.prefs.ProfileStore
@@ -49,7 +47,8 @@ import com.oliver.loqin.data.prefs.TempPauseStore
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.theme.CustomAccentApplier
 import com.oliver.loqin.ui.EdgeToEdgeUtils
-import com.oliver.loqin.ui.RuleTileStyle
+import com.oliver.loqin.ui.FilterChipUi
+import com.oliver.loqin.ui.PageUi
 import com.oliver.loqin.ui.SheetRows
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.dialog.EmergencyPinDialog
@@ -178,9 +177,9 @@ class BreaksActivity : AppCompatActivity() {
     private fun surface(): Int = ContextCompat.getColor(this, R.color.foqos_surface)
     private fun ink(): Int = MaterialColors.getColor(todayBig, com.google.android.material.R.attr.colorOnSurface)
 
-    /** Accent strong enough to carry meaning (bars, selected chips) on the card surface. */
+    /** Accent strong enough to carry meaning (bars, row icons) on the card surface. */
     private fun strongAccent(): Int =
-        RuleTileStyle.strongAccent(this)
+        PageUi.readableAccent(this)
 
     private fun render() {
         CustomAccentApplier.applyIfNeeded(this)
@@ -198,7 +197,6 @@ class BreaksActivity : AppCompatActivity() {
         limitSection(Cap.PER_PAUSE, caps.maxMinutesPerPause, locked)
         limitSection(Cap.PER_DAY, caps.maxMinutesPerDay, locked)
         groupLimits.refreshSegments()
-        com.oliver.loqin.ui.AccentContrast.strengthen(findViewById(R.id.root))
     }
 
     private fun renderToday(profile: String, caps: TempPauseStore.Caps, usedCount: Int, usedMinutes: Int, locked: Boolean) {
@@ -283,10 +281,17 @@ class BreaksActivity : AppCompatActivity() {
 
     private fun limitSection(cap: Cap, value: Int, locked: Boolean) {
         val ctx = this
+        // A LoqIn.ListRow (paddings, icon, text column) with its option chips underneath.
+        val res = ctx.resources
         val section = LinearLayout(ctx).apply {
             orientation = LinearLayout.VERTICAL
-            val padH = SheetRows.dp(ctx, 18f)
-            setPadding(padH, SheetRows.dp(ctx, 16f), SheetRows.dp(ctx, 14f), SheetRows.dp(ctx, 14f))
+            minimumHeight = res.getDimensionPixelSize(R.dimen.row_min_height)
+            setPaddingRelative(
+                res.getDimensionPixelSize(R.dimen.row_padding_start),
+                res.getDimensionPixelSize(R.dimen.row_padding_vertical),
+                res.getDimensionPixelSize(R.dimen.row_padding_end),
+                res.getDimensionPixelSize(R.dimen.row_padding_vertical),
+            )
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
             )
@@ -298,8 +303,9 @@ class BreaksActivity : AppCompatActivity() {
                 setImageResource(cap.iconRes)
                 imageTintList = ColorStateList.valueOf(strong)
                 importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
-                layoutParams = LinearLayout.LayoutParams(SheetRows.dp(ctx, 24f), SheetRows.dp(ctx, 24f)).apply {
-                    marginEnd = SheetRows.dp(ctx, 16f)
+                val size = res.getDimensionPixelSize(R.dimen.row_icon_size)
+                layoutParams = LinearLayout.LayoutParams(size, size).apply {
+                    marginEnd = res.getDimensionPixelSize(R.dimen.row_icon_gap)
                 }
             })
             addView(LinearLayout(ctx).apply {
@@ -310,10 +316,15 @@ class BreaksActivity : AppCompatActivity() {
                     androidx.core.widget.TextViewCompat.setTextAppearance(this, R.style.TextAppearance_LoqIn_RowTitle)
                     ViewCompat.setAccessibilityHeading(this, true)
                 })
-                addView(TextView(ctx).apply {
-                    text = getString(cap.subRes)
-                    androidx.core.widget.TextViewCompat.setTextAppearance(this, R.style.TextAppearance_LoqIn_RowSummary)
-                })
+                addView(
+                    TextView(ctx).apply {
+                        text = getString(cap.subRes)
+                        androidx.core.widget.TextViewCompat.setTextAppearance(this, R.style.TextAppearance_LoqIn_RowSummary)
+                    },
+                    LinearLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
+                    ).apply { topMargin = SheetRows.dp(ctx, 2f) },
+                )
             })
         })
 
@@ -322,7 +333,7 @@ class BreaksActivity : AppCompatActivity() {
             chipSpacingVertical = 0
             layoutParams = LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT
-            ).apply { topMargin = SheetRows.dp(ctx, 6f) }
+            ).apply { topMargin = SheetRows.dp(ctx, 4f) }
         }
         val custom = value > 0 && value !in cap.presets
         chips.addView(limitChip(getString(R.string.breaks_page_no_limit), null, value <= 0, locked) {
@@ -348,8 +359,8 @@ class BreaksActivity : AppCompatActivity() {
     }
 
     /**
-     * One limit choice. Not a checkable Chip: the selected look is drawn here so a locked page
-     * can keep the chosen value fully readable (a lock in place of the check) while the rest fade.
+     * One limit choice. Not checkable: FilterChipUi draws the selected look, so a locked page can
+     * keep the chosen value fully readable (with a lock) while the rest fade.
      */
     private fun limitChip(
         label: String,
@@ -360,55 +371,28 @@ class BreaksActivity : AppCompatActivity() {
         onPick: () -> Unit,
     ): Chip {
         val ctx = this
-        val strong = strongAccent()
         val ink = ink()
-        val outline = ContextCompat.getColor(ctx, R.color.foqos_outline)
-        val muted = MaterialColors.getColor(todayBig, android.R.attr.textColorSecondary)
-        return Chip(ctx).apply {
-            text = label
+        val muted = MaterialColors.getColor(todayBig, com.google.android.material.R.attr.colorOnSurfaceVariant)
+        // The shared filter chip (LoqIn.FilterChip: 36dp pill, 48dp touch target, selected =
+        // accent container like a selected segment). A locked page keeps the chosen value fully
+        // readable with a lock on it, while the other choices fade.
+        return FilterChipUi.create(ctx, label).apply {
             isCheckable = false
-            chipMinHeight = SheetRows.dp(ctx, 40f).toFloat()
-            textStartPadding = SheetRows.dp(ctx, 3f).toFloat()
-            textEndPadding = SheetRows.dp(ctx, 3f).toFloat()
-            shapeAppearanceModel = shapeAppearanceModel.withCornerSize(RelativeCornerSize(0.5f))
-            setTextAppearanceResource(R.style.TextAppearance_LoqIn_RowSummary)
-            textSize = 14f
-            typeface = android.graphics.Typeface.create("sans-serif-medium", android.graphics.Typeface.NORMAL)
-            gravity = Gravity.CENTER
-            minWidth = SheetRows.dp(ctx, 48f)
+            FilterChipUi.setSelected(this, selected)
             when {
                 selected && locked -> {
-                    val fill = ContextCompat.getColor(ctx, R.color.foqos_surface_variant)
-                    chipBackgroundColor = ColorStateList.valueOf(fill)
-                    chipStrokeWidth = 0f
-                    setTextColor(ink)
+                    chipBackgroundColor = ColorStateList.valueOf(ContextCompat.getColor(ctx, R.color.foqos_surface_variant))
                     chipIcon = ContextCompat.getDrawable(ctx, R.drawable.lock_24)
                     chipIconTint = ColorStateList.valueOf(muted)
                 }
-                selected -> {
-                    val fill = ColorUtils.compositeColors(ColorUtils.setAlphaComponent(strong, 0x2E), surface())
-                    val onFill = AccentColor.readableOn(strong, fill, ink, 4.5)
-                    chipBackgroundColor = ColorStateList.valueOf(fill)
-                    chipStrokeWidth = 0f
-                    setTextColor(onFill)
-                    chipIcon = ContextCompat.getDrawable(ctx, R.drawable.check_circle_24)
-                    chipIconTint = ColorStateList.valueOf(onFill)
-                }
-                else -> {
-                    chipBackgroundColor = ColorStateList.valueOf(surface())
-                    chipStrokeWidth = SheetRows.dp(ctx, 1f).toFloat()
-                    chipStrokeColor = ColorStateList.valueOf(
-                        if (locked) outline else ColorUtils.blendARGB(outline, ink, 0.15f)
-                    )
-                    setTextColor(if (locked) ColorUtils.setAlphaComponent(ink, 0x73) else ink)
-                }
+                !selected && locked -> setTextColor(ColorUtils.setAlphaComponent(ink, 0x73))
             }
-            isChipIconVisible = selected
+            isChipIconVisible = selected && locked
             chipIconSize = SheetRows.dp(ctx, 18f).toFloat()
-            iconStartPadding = if (selected) SheetRows.dp(ctx, 6f).toFloat() else 0f
+            iconStartPadding = if (selected && locked) SheetRows.dp(ctx, 4f).toFloat() else 0f
+            closeIconTint = ColorStateList.valueOf(ink)
             if (edit && !locked) {
                 closeIcon = ContextCompat.getDrawable(ctx, R.drawable.edit_24)
-                closeIconTint = chipIconTint
                 closeIconSize = SheetRows.dp(ctx, 16f).toFloat()
                 isCloseIconVisible = true
                 setOnCloseIconClickListener { onPick() }

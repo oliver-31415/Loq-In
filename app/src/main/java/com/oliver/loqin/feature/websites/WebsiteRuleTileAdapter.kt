@@ -186,13 +186,12 @@ class WebsiteRuleTileAdapter(
     private inner class HeaderVH(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val tvHeader: TextView = itemView.findViewById(R.id.tvHeader)
         private val tvHeaderAction: TextView = itemView.findViewById(R.id.tvHeaderAction)
+        private val headerTopGap = (itemView.layoutParams as? ViewGroup.MarginLayoutParams)?.topMargin ?: 0
         fun bind(item: WebsiteTile.SectionHeader) {
             tvHeader.text = item.title
-            // LoqIn.SectionHeader rhythm: the first header sits closer to the page top.
+            // The first header sits right under the sticky search; later ones keep the layout's gap.
             (itemView.layoutParams as? ViewGroup.MarginLayoutParams)?.let { lp ->
-                val gap = itemView.resources.getDimensionPixelSize(
-                    if (bindingAdapterPosition == 0) R.dimen.section_first_gap else R.dimen.section_gap
-                )
+                val gap = if (bindingAdapterPosition == 0) 0 else headerTopGap
                 if (lp.topMargin != gap) {
                     lp.topMargin = gap
                     itemView.layoutParams = lp

@@ -28,13 +28,10 @@
     <!-- Content -->
     <androidx.core.widget.NestedScrollView
         android:id="@+id/scrollBreaks"
+        style="@style/LoqIn.PageContent"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:clipToPadding="false"
         android:fillViewport="true"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp"
-        android:paddingBottom="24dp"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
@@ -46,26 +43,21 @@
                  bars fill with what remains, so they empty as breaks are used. -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardToday"
-                style="@style/LoqIn.Card"
+                style="@style/LoqIn.PageCard"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
-                android:layout_marginTop="4dp"
-                android:layout_marginEnd="4dp"
-                app:cardUseCompatPadding="false">
+                android:layout_height="wrap_content">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="20dp">
+                    android:padding="@dimen/page_card_padding">
 
                     <TextView
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/breaks_page_today_header"
-                        android:textColor="?android:attr/textColorSecondary"
-                        android:textSize="14sp" />
+                        android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
 
                     <LinearLayout
                         android:id="@+id/todayHero"
@@ -145,73 +137,72 @@
                             android:layout_height="wrap_content"
                             android:layout_marginEnd="12dp"
                             android:layout_weight="1"
-                            android:textColor="?android:attr/textColorSecondary"
-                            android:textSize="14sp" />
+                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnResetToday"
                             style="@style/LoqIn.TonalButton"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:minHeight="48dp"
                             android:text="@string/temp_pause_reset_today"
                             app:icon="@drawable/pin_24" />
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
+            <!-- 48dp header row: 8dp + its centring = the 24dp section gap -->
             <include
                 android:id="@+id/headerLimits"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
                 layout="@layout/item_website_section_header" />
 
-            <!-- Shown while protection is on: limits are read-only until Loq In is turned off. -->
+            <!-- Shown while protection is on: limits are read-only until Loq In is turned off.
+                 On the section-header text inset, above the group. -->
             <LinearLayout
                 android:id="@+id/lockNote"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
-                android:layout_marginEnd="4dp"
-                android:layout_marginBottom="2dp"
+                android:layout_marginBottom="@dimen/section_header_gap"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
                 android:gravity="center_vertical"
                 android:orientation="horizontal"
                 android:visibility="gone">
 
                 <ImageView
-                    android:layout_width="14dp"
-                    android:layout_height="14dp"
-                    android:layout_marginEnd="6dp"
+                    android:layout_width="16dp"
+                    android:layout_height="16dp"
+                    android:layout_marginEnd="8dp"
                     android:importantForAccessibility="no"
                     android:src="@drawable/lock_24"
-                    app:tint="?android:attr/textColorSecondary" />
+                    app:tint="?attr/colorOnSurfaceVariant" />
 
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:text="@string/edit_locked_manage_temp_pauses"
-                    android:textColor="?android:attr/textColorSecondary"
-                    android:textSize="12.5sp" />
+                    android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
             </LinearLayout>
 
             <com.oliver.loqin.ui.widgets.ListGroupLayout
                 android:id="@+id/groupLimits"
                 style="@style/LoqIn.ListGroup"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
-                android:layout_marginTop="4dp"
-                android:layout_marginEnd="4dp" />
+                android:layout_height="wrap_content" />
 
+            <!-- Footer note under the group, on the section-header text inset -->
             <TextView
                 android:id="@+id/limitsFooter"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
-                android:layout_marginTop="10dp"
-                android:layout_marginEnd="8dp"
+                android:layout_marginTop="@dimen/block_gap"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
                 android:text="@string/breaks_page_footer"
-                android:textColor="?android:attr/textColorSecondary"
-                android:textSize="12.5sp" />
+                android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
