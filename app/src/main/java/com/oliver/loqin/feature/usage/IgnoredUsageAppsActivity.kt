@@ -42,6 +42,7 @@ import com.oliver.loqin.data.statistics.UsageInsightsAppCatalog
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.theme.CustomAccentApplier
 import com.oliver.loqin.ui.EdgeToEdgeUtils
+import com.oliver.loqin.ui.FilterChipUi
 import com.oliver.loqin.ui.SegmentedToggleUi
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.dialog.showAccented
@@ -232,29 +233,15 @@ class IgnoredUsageAppsActivity : AppCompatActivity() {
         val group = findViewById<ChipGroup>(R.id.chipFilters) ?: return
 
         fun refreshChecks() {
-            val accent = AccentColor.getAccentColorInt(this)
-            val density = resources.displayMetrics.density
             for (i in 0 until group.childCount) {
                 val chip = group.getChildAt(i) as? Chip ?: continue
-                val selected = chip.tag == currentFilter
-                chip.isChecked = selected
-                chip.chipBackgroundColor = ColorStateList.valueOf(
-                    if (selected) ColorUtils.setAlphaComponent(accent, 0x2E) else android.graphics.Color.TRANSPARENT
-                )
-                chip.chipStrokeColor = ColorStateList.valueOf(
-                    if (selected) accent else ContextCompat.getColor(this, R.color.foqos_outline_variant)
-                )
-                chip.chipStrokeWidth = 1f * density
+                FilterChipUi.setSelected(chip, chip.tag == currentFilter)
             }
         }
 
         fun addChip(label: String, filter: HiddenAppFilter) {
-            val chip = Chip(this, null, com.google.android.material.R.style.Widget_Material3_Chip_Suggestion).apply {
-                text = label
-                isClickable = true
-                isFocusable = true
+            val chip = FilterChipUi.create(this, label).apply {
                 tag = filter
-                id = View.generateViewId()
                 setOnClickListener {
                     currentFilter = tag as HiddenAppFilter
                     refreshChecks()

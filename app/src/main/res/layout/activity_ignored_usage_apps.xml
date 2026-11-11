@@ -48,19 +48,19 @@
             android:id="@+id/appBarLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:background="@color/foqos_bg"
             app:liftOnScroll="false">
 
-            <!-- Section options: scrolls away with the grid -->
+            <!-- Section options: scrolls away with the grid. Same stack as App rules,
+                 Website rules and In-app rules: mode card, search, filter chips. -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardHiddenSection"
-                style="@style/LoqIn.Card"
+                style="@style/LoqIn.PageCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:layout_marginTop="4dp"
-                android:layout_marginEnd="12dp"
-                android:layout_marginBottom="8dp"
-                app:cardUseCompatPadding="false"
+                android:layout_marginStart="@dimen/page_margin"
+                android:layout_marginTop="@dimen/page_top_padding"
+                android:layout_marginEnd="@dimen/page_margin"
                 app:layout_scrollFlags="scroll">
 
                 <LinearLayout
@@ -82,10 +82,7 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:minHeight="44dp"
-                            android:maxLines="2"
-                            android:text="@string/hidden_apps_tab_pickers"
-                            android:textSize="12sp" />
+                            android:text="@string/hidden_apps_tab_pickers" />
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnHiddenUsageInsights"
@@ -93,20 +90,19 @@
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:minHeight="44dp"
-                            android:maxLines="2"
-                            android:text="@string/hidden_apps_tab_usage"
-                            android:textSize="12sp" />
+                            android:text="@string/hidden_apps_tab_usage" />
                     </com.google.android.material.button.MaterialButtonToggleGroup>
 
+                    <!-- 8dp card padding + 12dp = the 20dp text inset of a list row -->
                     <TextView
                         android:id="@+id/tvSectionDescription"
+                        style="@style/LoqIn.RowSummary"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:textColor="?attr/colorOnSurfaceVariant"
-                        android:textSize="12sp"
-                        android:lineSpacingExtra="2dp" />
+                        android:layout_marginStart="12dp"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginEnd="12dp"
+                        android:layout_marginBottom="8dp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -116,8 +112,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
+                android:paddingTop="@dimen/block_gap"
                 android:paddingBottom="4dp">
 
                 <com.google.android.material.textfield.TextInputLayout
@@ -125,13 +120,8 @@
                     style="@style/LoqIn.SearchField"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    app:boxStrokeWidth="0dp"
-                    app:boxStrokeWidthFocused="0dp"
-                    app:boxCornerRadiusTopStart="24dp"
-                    app:boxCornerRadiusTopEnd="24dp"
-                    app:boxCornerRadiusBottomStart="24dp"
-                    app:boxCornerRadiusBottomEnd="24dp"
+                    android:layout_marginStart="@dimen/page_margin"
+                    android:layout_marginEnd="@dimen/page_margin"
                     app:endIconMode="clear_text">
 
                     <com.google.android.material.textfield.TextInputEditText
@@ -143,18 +133,23 @@
                         android:imeOptions="actionSearch" />
                 </com.google.android.material.textfield.TextInputLayout>
 
-                <!-- Suggested / All / Hidden filter chips -->
+                <!-- Suggested / All / Hidden filter chips: scroll edge to edge, start on the page gutter -->
                 <HorizontalScrollView
                     android:id="@+id/filterScroll"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
+                    android:layout_marginTop="4dp"
+                    android:paddingStart="@dimen/page_margin"
+                    android:paddingEnd="@dimen/page_margin"
+                    android:clipToPadding="false"
                     android:scrollbars="none">
 
                     <com.google.android.material.chip.ChipGroup
                         android:id="@+id/chipFilters"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        app:chipSpacingHorizontal="8dp"
+                        app:singleLine="true"
                         app:singleSelection="false" />
                 </HorizontalScrollView>
 
@@ -163,7 +158,9 @@
                     android:id="@+id/bulkBar"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="6dp"
+                    android:layout_marginStart="@dimen/page_margin"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginEnd="@dimen/page_margin"
                     android:orientation="horizontal"
                     android:visibility="gone">
 
@@ -171,14 +168,9 @@
                         android:id="@+id/btnSelectAll"
                         style="@style/LoqIn.TonalButton"
                         android:layout_width="0dp"
-                        android:layout_height="40dp"
+                        android:layout_height="wrap_content"
                         android:layout_weight="1"
-                        android:insetTop="0dp"
-                        android:insetBottom="0dp"
-                        android:maxLines="1"
-                        android:minHeight="40dp"
                         android:text="@string/hidden_apps_select_all"
-                        android:textSize="12sp"
                         app:icon="@drawable/check_circle_24"
                         app:iconGravity="textStart" />
 
@@ -186,59 +178,54 @@
                         android:id="@+id/btnClearAll"
                         style="@style/LoqIn.TonalButton"
                         android:layout_width="0dp"
-                        android:layout_height="40dp"
+                        android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
                         android:layout_weight="1"
-                        android:insetTop="0dp"
-                        android:insetBottom="0dp"
-                        android:maxLines="1"
-                        android:minHeight="40dp"
                         android:text="@string/hidden_apps_clear_all"
-                        android:textSize="12sp"
                         app:icon="@drawable/close_24"
                         app:iconGravity="textStart" />
                 </LinearLayout>
 
+                <!-- Count: inset like a section header / the search text -->
                 <TextView
                     android:id="@+id/tvIgnoredCount"
+                    style="@style/LoqIn.RowSummary"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:textColor="?attr/colorOnSurfaceVariant"
-                    android:textSize="13sp" />
+                    android:layout_marginStart="@dimen/page_margin"
+                    android:layout_marginTop="4dp"
+                    android:layout_marginEnd="@dimen/page_margin"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp" />
             </LinearLayout>
         </com.google.android.material.appbar.AppBarLayout>
 
-        <!-- Content -->
-        <LinearLayout
-            android:id="@+id/content"
+        <!-- Content: tiles carry half the tile gap as margin (4dp), so 12dp padding
+             puts the outer tile edges on the 16dp page gutter -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvIgnoredUsageApps"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:orientation="vertical"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            android:paddingBottom="8dp"
-            app:layout_behavior="@string/appbar_scrolling_view_behavior">
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rvIgnoredUsageApps"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:paddingBottom="24dp"
-                android:clipToPadding="false" />
-        </LinearLayout>
+            android:paddingStart="12dp"
+            android:paddingTop="4dp"
+            android:paddingEnd="12dp"
+            android:paddingBottom="@dimen/page_bottom_padding"
+            android:clipToPadding="false"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior" />
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 
     <!-- Pinned bottom action: outside the scrolling container so it can never
          scroll away with the grid -->
-    <com.google.android.material.button.MaterialButton
-        android:id="@+id/btnSaveIgnoredApps"
-        style="@style/LoqIn.Button"
+    <LinearLayout
+        style="@style/LoqIn.BottomBar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
-        android:layout_marginTop="6dp"
-        android:layout_marginEnd="12dp"
-        android:layout_marginBottom="4dp"
-        android:text="@string/save" />
+        android:layout_height="wrap_content">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSaveIgnoredApps"
+            style="@style/LoqIn.Button"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/save" />
+    </LinearLayout>
 </LinearLayout>

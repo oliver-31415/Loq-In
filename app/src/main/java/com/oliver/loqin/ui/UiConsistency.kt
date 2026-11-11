@@ -28,11 +28,13 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.graphics.ColorUtils
+import com.oliver.loqin.R
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.theme.CustomAccentApplier
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.card.MaterialCardView
 import com.google.android.material.chip.Chip
+import com.oliver.loqin.ui.widgets.ListGroupLayout
 import java.util.WeakHashMap
 
 /**
@@ -44,6 +46,7 @@ import java.util.WeakHashMap
  */
 object UiConsistency {
     private val originalAlpha = WeakHashMap<View, Float>()
+    private val dimmedRows = WeakHashMap<View, Boolean>()
 
     fun apply(activity: Activity) {
         val root = activity.findViewById<View>(android.R.id.content) ?: return
@@ -67,11 +70,21 @@ object UiConsistency {
         val onSurface = resolveColor(activity, com.google.android.material.R.attr.colorOnSurface, Color.WHITE)
         val neutral = ColorUtils.setAlphaComponent(onSurface, 0x8F)
 
-        val baseAlpha = originalAlpha.getOrPut(view) { view.alpha }
-        if (!view.isEnabled) {
-            view.alpha = minOf(baseAlpha, 0.55f)
-        } else if (view.alpha <= 0.56f && baseAlpha > 0.56f) {
-            view.alpha = baseAlpha
+        if (view is ViewGroup && view.parent is ListGroupLayout) {
+            // A grouped-list row keeps its segment solid and fades only its content.
+            if (!view.isEnabled) {
+                dimmedRows[view] = true
+                PageUi.setRowDimmed(view, true)
+            } else if (dimmedRows.remove(view) != null) {
+                PageUi.setRowDimmed(view, false)
+            }
+        } else {
+            val baseAlpha = originalAlpha.getOrPut(view) { view.alpha }
+            if (!view.isEnabled) {
+                view.alpha = minOf(baseAlpha, 0.55f)
+            } else if (view.alpha <= 0.56f && baseAlpha > 0.56f) {
+                view.alpha = baseAlpha
+            }
         }
 
         when (view) {
@@ -93,7 +106,7 @@ object UiConsistency {
                 view.buttonTintList = ColorStateList(states, colors)
             }
 
-            is Chip -> if (view.isCheckable) {
+            is Chip -> if (view.isCheckable && view.getTag(R.id.tag_filter_chip) == null) {
                 val baseBackground = view.chipBackgroundColor?.defaultColor
                     ?: resolveColor(activity, com.google.android.material.R.attr.colorSurfaceVariant, Color.TRANSPARENT)
                 val states = arrayOf(
@@ -129,10 +142,7 @@ object UiConsistency {
                 val isInfoOrStatus = idName.contains("info", ignoreCase = true) ||
                     idName.contains("status", ignoreCase = true) ||
                     idName.contains("badge", ignoreCase = true)
-                if (idName == "btnTestScheduleInfo") {
-                    // The per-schedule action is an inspection affordance, not a highlighted state.
-                    view.imageTintList = ColorStateList.valueOf(neutral)
-                } else if (isInfoOrStatus && !hasToolbarParent(view)) {
+                if (isInfoOrStatus && !hasToolbarParent(view)) {
                     view.imageTintList = ColorStateList.valueOf(accent)
                 }
             }

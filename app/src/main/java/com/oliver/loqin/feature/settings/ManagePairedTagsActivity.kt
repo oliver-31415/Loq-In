@@ -29,7 +29,6 @@ import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.TextView
-import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -40,6 +39,8 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.oliver.loqin.R
+import com.oliver.loqin.ui.PageUi
+import com.oliver.loqin.ui.widgets.EmptyStateView
 import com.oliver.loqin.data.prefs.AppLogStore
 import com.oliver.loqin.data.prefs.NfcTempDisableLimiterStore
 import com.oliver.loqin.data.prefs.NfcUidPairingStore
@@ -71,7 +72,7 @@ import java.util.Locale
 class ManagePairedTagsActivity : AppCompatActivity() {
 
     private lateinit var recycler: RecyclerView
-    private lateinit var empty: View
+    private lateinit var empty: EmptyStateView
     private lateinit var toolbar: MaterialToolbar
     private val selectedUids: MutableSet<String> = linkedSetOf()
     private var selectionMode: Boolean = false
@@ -221,7 +222,7 @@ class ManagePairedTagsActivity : AppCompatActivity() {
             }
         )
 
-        findViewById<View>(R.id.btnEmptyAddTag)?.setOnClickListener { showAddDialog() }
+        empty.setOnActionClickListener { showAddDialog() }
     }
 
     private fun notifySelectionUiChanged() {
@@ -736,9 +737,10 @@ class ManagePairedTagsActivity : AppCompatActivity() {
             // Keep the list compact: name + NFC ID only. Details stay available in the edit dialog.
             holder.note.visibility = if (item.enabled) View.GONE else View.VISIBLE
             holder.note.text = if (item.enabled) "" else holder.itemView.context.getString(R.string.paired_tag_disabled)
-            val contentAlpha = if (item.enabled) 1f else 0.56f
+            // Disabled tag: its text fades like a dimmed row; the switch shows the state itself.
+            val contentAlpha = if (item.enabled) 1f else PageUi.disabledAlpha(holder.itemView.context)
             holder.name.alpha = contentAlpha
-            holder.uid.alpha = if (item.enabled) 0.80f else 0.56f
+            holder.uid.alpha = contentAlpha
 
             val sel = isSelectionMode.invoke()
             holder.swEnabled.visibility = if (sel) View.GONE else View.VISIBLE

@@ -236,6 +236,22 @@ object TempPauseStore {
         return PauseResult.Granted(minutes * 60_000L)
     }
 
+    /**
+     * Gives back a pause just taken (the Undo right after starting a break): one break and its
+     * [minutes], never below zero, and only for today's tally.
+     */
+    fun refundPause(ctx: Context, profile: String, minutes: Int) {
+        val p = resolveProfile(ctx, profile)
+        val sp = ctx.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+        if (sp.getString(key(p, KEY_DAY), null) != todayKey(ctx)) return
+        val (usedCount, usedMin) = usageRaw(ctx, p)
+        sp.edit {
+            putInt(key(p, KEY_USED_COUNT), (usedCount - 1).coerceAtLeast(0))
+            putInt(key(p, KEY_USED_MIN), (usedMin - minutes.coerceAtLeast(1)).coerceAtLeast(0))
+        }
+        AppLogStore.append(ctx, "Profiles", "Temp pause refunded (undo) profile=$p minutes=$minutes")
+    }
+
     /** Outcome of [tryConsumePause]. */
     sealed interface PauseResult {
         data class Granted(val grantedMs: Long) : PauseResult

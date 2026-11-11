@@ -27,6 +27,7 @@ import android.graphics.Color
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -39,10 +40,12 @@ import androidx.core.content.ContextCompat
 import androidx.core.widget.ImageViewCompat
 import com.oliver.loqin.R
 import com.oliver.loqin.theme.AccentColor
+import com.oliver.loqin.ui.EdgeToEdgeUtils
+import com.oliver.loqin.ui.PageUi
+import com.oliver.loqin.ui.SheetRows
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.showWarnPill
 import com.oliver.loqin.ui.showWarnPillOnContent
-import com.oliver.loqin.ui.widgets.ListGroupLayout
 import com.oliver.loqin.util.LocaleHelper
 import com.google.android.material.appbar.MaterialToolbar
 
@@ -85,6 +88,8 @@ abstract class TilesInfoActivity : AppCompatActivity() {
         setContentView(R.layout.activity_tiles_info)
 
         setupToolbar()
+        EdgeToEdgeUtils.setupClassic(activity = this, toolbar = toolbar)
+        EdgeToEdgeUtils.applyThemedSystemBars(this)
         setupContent()
         refreshTiles()
     }
@@ -95,9 +100,8 @@ abstract class TilesInfoActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         toolbar.setNavigationOnClickListener { finish() }
         toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
+        // Title and back chevron colours come from the theme's LoqIn.TopBar.
         val toolbarIconColor = readableToolbarIconColor()
-        toolbar.navigationIcon?.mutate()?.setTint(toolbarIconColor)
-        toolbar.setTitleTextColor(toolbarIconColor)
 
         val title = screenTitle()
         supportActionBar?.title = title
@@ -130,14 +134,11 @@ abstract class TilesInfoActivity : AppCompatActivity() {
             .forEachIndexed { groupIndex, (section, groupTiles) ->
                 section?.let { rowsContainer.addView(createSectionTitle(it, groupIndex > 0)) }
 
-                val group = ListGroupLayout(this).apply {
+                val group = SheetRows.group(this, rowsContainer, onSurface = false).apply {
                     layoutParams = LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
                         LinearLayout.LayoutParams.WRAP_CONTENT
-                    ).apply {
-                        topMargin = dp(6)
-                        bottomMargin = dp(6)
-                    }
+                    )
                 }
 
                 groupTiles.forEach { tile ->
@@ -148,15 +149,14 @@ abstract class TilesInfoActivity : AppCompatActivity() {
             }
     }
 
+    /** Same header as the Settings and Account pages (page_section_header.xml, readable accent). */
     private fun createSectionTitle(title: String, hasTopMargin: Boolean): TextView =
-        TextView(this).apply {
+        (LayoutInflater.from(this).inflate(R.layout.page_section_header, rowsContainer, false) as TextView).apply {
             text = title
-            setTextColor(AccentColor.getAccentColorInt(this@TilesInfoActivity))
-            textSize = 12.5f
-            typeface = android.graphics.Typeface.DEFAULT_BOLD
-            letterSpacing = 0.06f
-            isAllCaps = true
-            setPadding(dp(4), if (hasTopMargin) dp(14) else dp(2), dp(4), dp(5))
+            setTextColor(PageUi.readableAccent(this@TilesInfoActivity))
+            (layoutParams as? ViewGroup.MarginLayoutParams)?.topMargin = resources.getDimensionPixelSize(
+                if (hasTopMargin) R.dimen.section_gap else R.dimen.section_first_gap
+            )
         }
 
     private fun createTileRow(inflater: LayoutInflater, tile: Tile): View {
@@ -192,7 +192,8 @@ abstract class TilesInfoActivity : AppCompatActivity() {
             else -> null
         }
         resolvedSubtitleColor?.let { subtitleView.setTextColor(it) }
-        subtitleView.alpha = tile.subtitleAlpha ?: if (resolvedSubtitleColor != null) 1f else 0.72f
+        // RowSummary already carries the muted colour; only an explicit override fades it further.
+        subtitleView.alpha = tile.subtitleAlpha ?: 1f
 
         root.isClickable = clickAction != null || tile.onLongClick != null
         root.setOnClickListener { clickAction?.invoke() }
@@ -213,7 +214,6 @@ abstract class TilesInfoActivity : AppCompatActivity() {
                 copyButton.visibility = View.VISIBLE
                 copyButton.setImageResource(tile.actionIconRes ?: R.drawable.content_copy_24)
                 copyButton.contentDescription = getString(R.string.action_copy)
-                copyButton.alpha = 0.72f
                 ImageViewCompat.setImageTintList(copyButton, accentTint)
                 copyButton.setOnClickListener { tapped ->
                     copyToClipboard(tile.copyValue)
@@ -224,7 +224,6 @@ abstract class TilesInfoActivity : AppCompatActivity() {
                 copyButton.visibility = View.VISIBLE
                 copyButton.setImageResource(tile.actionIconRes ?: R.drawable.open_in_new_24)
                 copyButton.contentDescription = tile.title
-                copyButton.alpha = 0.7f
                 ImageViewCompat.setImageTintList(copyButton, accentTint)
                 copyButton.setOnClickListener { clickAction.invoke() }
             }
@@ -241,9 +240,6 @@ abstract class TilesInfoActivity : AppCompatActivity() {
         val clipboardManager = getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
         clipboardManager.setPrimaryClip(ClipData.newPlainText("Loq In", text))
     }
-
-    private fun dp(value: Int): Int =
-        (value * resources.displayMetrics.density + 0.5f).toInt()
 
     private fun readableToolbarIconColor(): Int {
         val night = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==

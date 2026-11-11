@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="break_sheet_title">Take a break</string>
+    <string name="break_sheet_subtitle">Blocking comes back on by itself when the break ends.</string>
+    <string name="break_sheet_title_enable">Turn on for a while</string>
+    <plurals name="break_sheet_left_fmt">
+        <item quantity="one">%1$d of %2$d break left today</item>
+        <item quantity="other">%1$d of %2$d breaks left today</item>
+    </plurals>
+    <string name="break_sheet_each_fmt">up to %1$d min each</string>
+    <string name="break_sheet_minutes_left_fmt">%1$d min left today</string>
+    <string name="break_sheet_over_limit">over your limit</string>
+    <string name="break_sheet_longest_fmt">%1$s · your longest</string>
+    <string name="break_sheet_preset_cd">%1$d minutes</string>
+    <string name="break_sheet_preset_over_cd">%1$d minutes, unavailable, over your limit</string>
+    <string name="break_started_fmt">Break started · blocking back at %1$s</string>
+    <string name="break_started_undo">Undo</string>
+    <string name="break_sheet_custom_range_fmt">1–%1$d min</string>
+    <string name="blocked_title_app_fmt">%1$s is blocked</string>
+    <string name="blocked_focus_today_fmt">You\'ve stayed focused for %1$s today.</string>
+    <string name="blocked_focus_h_m_fmt">%1$d h %2$d min</string>
+    <string name="blocked_focus_h_fmt">%1$d h</string>
+    <string name="blocked_focus_m_fmt">%1$d min</string>
+    <plurals name="blocked_break_left_fmt">
+        <item quantity="one">Take a break · %1$d left today</item>
+        <item quantity="other">Take a break · %1$d left today</item>
+    </plurals>
+    <string name="blocked_break_plain">Take a break</string>
+</resources>

@@ -19,16 +19,19 @@
 package com.oliver.loqin.feature.faq
 
 import android.content.res.ColorStateList
+import android.graphics.Color
 import android.text.method.LinkMovementMethod
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import com.oliver.loqin.R
 import com.oliver.loqin.theme.AccentColor
+import com.oliver.loqin.ui.PageUi
 import com.google.android.material.card.MaterialCardView
 
 class FaqAdapter(
@@ -90,6 +93,8 @@ class FaqAdapter(
 
     inner class FaqVH(v: View) : RecyclerView.ViewHolder(v) {
 
+        private val card: MaterialCardView = v.findViewById(R.id.cardFaqItem)
+        private val root: View = v.findViewById(R.id.root)
         private val tvHeader: TextView = v.findViewById(R.id.tvHeader)
         private val questionRow: View = v.findViewById(R.id.questionRow)
         private val tvQuestion: TextView = v.findViewById(R.id.tvQuestion)
@@ -105,15 +110,18 @@ class FaqAdapter(
 
             when (item) {
                 is FaqListItem.Header -> {
+                    // A section header on the page, not a card: header inset, section gap above.
+                    setCardLook(false)
                     tvHeader.isVisible = true
                     tvHeader.text = item.title
-                    tvHeader.setTextColor(accent)
+                    tvHeader.setTextColor(PageUi.readableAccent(ctx))
 
                     questionRow.isVisible = false
                     tvAnswer.isVisible = false
                 }
 
                 is FaqListItem.Item -> {
+                    setCardLook(true)
                     tvHeader.isVisible = false
                     questionRow.isVisible = true
 
@@ -154,6 +162,27 @@ class FaqAdapter(
                 }
 
                 is FaqListItem.Folder -> Unit
+            }
+        }
+
+        private fun setCardLook(asCard: Boolean) {
+            val res = itemView.resources
+            card.setCardBackgroundColor(
+                if (asCard) ContextCompat.getColor(itemView.context, R.color.foqos_surface) else Color.TRANSPARENT
+            )
+            card.isClickable = asCard
+            if (asCard) {
+                val side = res.getDimensionPixelSize(R.dimen.page_card_padding)
+                val vertical = res.getDimensionPixelSize(R.dimen.row_padding_vertical)
+                root.setPaddingRelative(side, vertical, side, vertical)
+            } else {
+                // The previous card's 8dp bottom margin plus this padding make the 24dp section gap.
+                root.setPaddingRelative(
+                    res.getDimensionPixelSize(R.dimen.page_margin),
+                    res.getDimensionPixelSize(R.dimen.section_gap) - res.getDimensionPixelSize(R.dimen.section_header_gap),
+                    res.getDimensionPixelSize(R.dimen.page_margin),
+                    0,
+                )
             }
         }
     }

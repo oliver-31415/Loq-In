@@ -1,81 +1,71 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- One paired NFC tag: a flat page card holding a shared list row with an on/off switch. -->
 <com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    style="@style/LoqIn.Card"
+    style="@style/LoqIn.PageCard"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="6dp"
-    app:cardUseCompatPadding="false">
+    android:layout_marginBottom="8dp">
 
     <LinearLayout
+        style="@style/LoqIn.ListRow"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:padding="12dp">
+        android:layout_height="wrap_content">
 
         <ImageView
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            style="@style/LoqIn.RowIcon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
             android:contentDescription="@null"
             android:src="@drawable/nfc_24" />
 
-        <Space
-            android:layout_width="12dp"
-            android:layout_height="1dp" />
-
         <LinearLayout
+            style="@style/LoqIn.RowText"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
+            android:layout_height="wrap_content">
 
             <TextView
                 android:id="@+id/tvName"
+                style="@style/LoqIn.RowTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/paired_tag_default_name"
-                android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
+                android:ellipsize="end"
                 android:maxLines="1"
-                android:ellipsize="end" />
+                android:text="@string/paired_tag_default_name" />
 
             <TextView
                 android:id="@+id/tvUid"
+                style="@style/LoqIn.RowSummary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:alpha="0.8"
-                android:text="@string/paired_tag_uid_placeholder"
-                android:textSize="13sp"
+                android:ellipsize="end"
                 android:fontFamily="monospace"
                 android:maxLines="1"
-                android:ellipsize="end" />
+                android:text="@string/paired_tag_uid_placeholder" />
 
             <TextView
                 android:id="@+id/tvNote"
+                style="@style/LoqIn.RowStatus"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:visibility="gone"
-                android:alpha="0.86"
-                android:text="@string/paired_tag_note_placeholder"
-                android:textSize="14sp"
+                android:ellipsize="end"
                 android:maxLines="2"
-                android:ellipsize="end" />
+                android:text="@string/paired_tag_note_placeholder"
+                android:visibility="gone" />
         </LinearLayout>
 
-        <androidx.appcompat.widget.SwitchCompat
+        <com.google.android.material.materialswitch.MaterialSwitch
             android:id="@+id/swTagEnabled"
+            style="@style/LoqIn.RowSwitch"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
             android:contentDescription="@string/paired_tag_enabled_toggle" />
 
         <com.google.android.material.checkbox.MaterialCheckBox
             android:id="@+id/cbSelect"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/row_trailing_gap"
             android:clickable="false"
             android:focusable="false"
             android:visibility="gone" />

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Statistics pages (feature/usage/StatsPageUi.kt); the page rhythm itself is in dimens_page.xml. -->
+<resources>
+    <!-- Icon-only calendar segment at the end of every statistics range bar. -->
+    <dimen name="stats_calendar_segment_width">56dp</dimen>
+    <!-- Full-colour app icon at the start of a statistics row (the 24dp row icon is for symbols). -->
+    <dimen name="stats_app_icon_size">40dp</dimen>
+</resources>

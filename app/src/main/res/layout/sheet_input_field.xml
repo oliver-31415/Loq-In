@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Tonal text field for InputSheet: filled, rounded, no outline or underline. -->
+<com.google.android.material.textfield.TextInputLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/LoqIn.SheetField"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginTop="16dp">
+
+    <com.google.android.material.textfield.TextInputEditText
+        android:id="@+id/sheetFieldInput"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="17sp" />
+</com.google.android.material.textfield.TextInputLayout>

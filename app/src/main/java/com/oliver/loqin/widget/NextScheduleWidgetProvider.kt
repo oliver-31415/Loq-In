@@ -30,9 +30,8 @@ import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import com.oliver.loqin.R
 import com.oliver.loqin.data.prefs.AutomationModeStore
+import com.oliver.loqin.data.prefs.ScheduleNext
 import com.oliver.loqin.data.prefs.SchedulePlanner
-import com.oliver.loqin.data.prefs.ScheduleStore
-import com.oliver.loqin.data.prefs.ScheduleWindow
 import com.oliver.loqin.feature.entry.QuickActionIconFactory
 import com.oliver.loqin.feature.schedule.SchedulesActivity
 import com.oliver.loqin.feature.theme.AccentColor
@@ -191,98 +190,16 @@ class NextScheduleWidgetProvider : AppWidgetProvider() {
             if (SchedulePlanner.getNextBoundaryMillis(context) <= 0L) {
                 return null
             }
-            val schedules = ScheduleStore.getAll(context)
-                .filter { it.enabled }
-                .filterNot { schedule ->
-                    val isConnectionOnly = !schedule.wifiSsid.isNullOrBlank() || (!schedule.btDeviceName.isNullOrBlank() || !schedule.btDeviceAddress.isNullOrBlank())
-                    isConnectionOnly && schedule.startMinutes == 0 && schedule.endMinutes >= 1439
-                }
-            if (schedules.isEmpty()) {
-                return null
-            }
-
-            val now = Calendar.getInstance()
-            val nowMs = now.timeInMillis
-            var best: BoundaryInfo? = null
-
-            fun consider(candidate: BoundaryInfo) {
-                if (candidate.timeMillis <= nowMs) {
-                    return
-                }
-                if (best == null || candidate.timeMillis < best!!.timeMillis) {
-                    best = candidate
-                }
-            }
-
-            schedules.forEach { schedule ->
-                when (schedule.type) {
-                    ScheduleStore.Type.WEEKLY -> {
-                        for (offset in -1 until 14) {
-                            val day = Calendar.getInstance().apply {
-                                timeInMillis = nowMs
-                                add(Calendar.DAY_OF_YEAR, offset)
-                            }
-                            val bit = ScheduleStore.Days.fromCalendarDay(day.get(Calendar.DAY_OF_WEEK))
-                            if (schedule.daysMask and bit == 0) continue
-                            considerBoundary(context, schedule, day)?.let(::consider)
-                            considerBoundary(context, schedule, day, endBoundary = true)?.let(::consider)
-                        }
-                    }
-                    ScheduleStore.Type.ONE_TIME -> {
-                        if (schedule.startDate <= 0 || schedule.endDate <= 0) return@forEach
-                        for (offset in -1 until 30) {
-                            val day = Calendar.getInstance().apply {
-                                timeInMillis = nowMs
-                                add(Calendar.DAY_OF_YEAR, offset)
-                            }
-                            val ymd = day.get(Calendar.YEAR) * 10000 + (day.get(Calendar.MONTH) + 1) * 100 + day.get(Calendar.DAY_OF_MONTH)
-                            if (ymd !in schedule.startDate..schedule.endDate) continue
-                            considerBoundary(context, schedule, day)?.let(::consider)
-                            considerBoundary(context, schedule, day, endBoundary = true)?.let(::consider)
-                        }
-                    }
-                }
-            }
-
-            return best
-        }
-
-        private fun considerBoundary(
-            context: Context,
-            schedule: ScheduleStore.Schedule,
-            day: Calendar,
-            endBoundary: Boolean = false,
-        ): BoundaryInfo? {
-            if (endBoundary && !isRangeAction(schedule.action)) {
-                return null
-            }
-            val timeMillis = if (endBoundary) {
-                // Next morning for overnight windows, next midnight for all-day ones.
-                ScheduleWindow.endOfWindowStartingOn(schedule, day).timeInMillis
-            } else {
-                (day.clone() as Calendar).apply {
-                    set(Calendar.HOUR_OF_DAY, schedule.startMinutes / 60)
-                    set(Calendar.MINUTE, schedule.startMinutes % 60)
-                    set(Calendar.SECOND, 0)
-                    set(Calendar.MILLISECOND, 0)
-                }.timeInMillis
-            }
+            val next = ScheduleNext.find(context) ?: return null
+            val schedule = next.schedule
             return BoundaryInfo(
-                timeMillis = timeMillis,
+                timeMillis = next.timeMillis,
                 label = schedule.title.ifBlank {
                     schedule.note.ifBlank {
                         schedule.profile.ifBlank { context.getString(R.string.widget_next_schedule_name) }
                     }
                 }
             )
-        }
-
-        private fun isRangeAction(action: ScheduleStore.Action): Boolean {
-            return when (action) {
-                ScheduleStore.Action.ENABLE_AND_DISABLE,
-                ScheduleStore.Action.DISABLE_AND_ENABLE -> true
-                else -> false
-            }
         }
     }
 

@@ -12,16 +12,16 @@
     <!-- Close action -->
     <androidx.appcompat.widget.AppCompatImageButton
         android:id="@+id/closeButton"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
+        android:layout_width="@dimen/touch_target"
+        android:layout_height="@dimen/touch_target"
         android:layout_marginTop="30dp"
-        android:padding="8dp"
+        android:padding="12dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/nfc_close"
         android:src="@drawable/close_24"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:tint="?attr/colorSecondary" />
+        app:tint="?attr/colorOnSurfaceVariant" />
 
     <!-- Content -->
     <com.google.android.material.loadingindicator.LoadingIndicator

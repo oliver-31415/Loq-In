@@ -20,20 +20,13 @@ package com.oliver.loqin.feature.usage
 
 import android.content.Context
 import android.content.Intent
-import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Bundle
-import android.view.Gravity
 import android.view.View
-import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
-import android.widget.Space
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
-import androidx.core.graphics.ColorUtils
-import androidx.core.view.setPadding
 import androidx.core.view.isEmpty
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -44,13 +37,12 @@ import com.oliver.loqin.data.prefs.SwitchModeStore
 import com.oliver.loqin.feature.stats.StatsFormat
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.ui.EdgeToEdgeUtils
+import com.oliver.loqin.ui.PageUi
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.dialog.showAccented
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
-import com.google.android.material.button.MaterialButtonToggleGroup
-import com.google.android.material.card.MaterialCardView
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -69,14 +61,14 @@ class ActiveTimeActivity : AppCompatActivity() {
     private lateinit var totalValue: TextView
     private lateinit var totalSubtitle: TextView
     private lateinit var bucketContainer: LinearLayout
-    private lateinit var emptyText: TextView
+    private lateinit var emptyText: View
 
     private lateinit var chipToday: MaterialButton
     private lateinit var chipWeek: MaterialButton
     private lateinit var chipMonth: MaterialButton
     private lateinit var chipYear: MaterialButton
     private lateinit var chipCustom: MaterialButton
-    private lateinit var customRangeSummary: LinearLayout
+    private lateinit var customRangeSummary: View
     private lateinit var customRangeValue: TextView
 
     private var range: Range = Range.TODAY
@@ -111,8 +103,6 @@ class ActiveTimeActivity : AppCompatActivity() {
                     true
                 }
             }
-            setBackgroundColor(AccentColor.getToolbarBackgroundColor(this@ActiveTimeActivity))
-            navigationIcon?.mutate()?.setTint(toolbarIconColor())
         }
         root.addView(AppBarLayout(this).apply {
             fitsSystemWindows = true
@@ -131,8 +121,8 @@ class ActiveTimeActivity : AppCompatActivity() {
         val scroll = ScrollView(this)
         val content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(16))
         }
+        PageUi.applyPageContentPadding(content)
         scroll.addView(content)
         root.addView(scroll, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
@@ -140,14 +130,7 @@ class ActiveTimeActivity : AppCompatActivity() {
             1f
         ))
 
-        val chipGroup = MaterialButtonToggleGroup(this).apply {
-            isSingleSelection = true
-            isSelectionRequired = true
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { bottomMargin = dp(8) }
-        }
+        val chipGroup = StatsPageUi.rangeBar(this)
         chipToday = rangeButton(R.string.active_time_today, Range.TODAY)
         chipWeek = rangeButton(R.string.active_time_week, Range.WEEK)
         chipMonth = rangeButton(R.string.active_time_month, Range.MONTH)
@@ -155,81 +138,25 @@ class ActiveTimeActivity : AppCompatActivity() {
         chipCustom = calendarRangeButton(Range.CUSTOM)
         listOf(chipToday, chipWeek, chipMonth, chipYear, chipCustom).forEach(chipGroup::addView)
         content.addView(chipGroup)
-        customRangeSummary = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            visibility = View.GONE
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { bottomMargin = dp(8) }
-        }
-        customRangeValue = TextView(this).apply {
-            textSize = 13f
-            typeface = android.graphics.Typeface.DEFAULT_BOLD
-            setTextColor(MaterialColors.getColor(this@ActiveTimeActivity, com.google.android.material.R.attr.colorOnSurface, Color.WHITE))
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-        }
-        val clearCustomRange = MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-            text = getString(R.string.stats_range_clear)
-            minWidth = 0
-            minimumWidth = 0
-            minHeight = dp(36)
-            minimumHeight = dp(36)
-            insetTop = 0
-            insetBottom = 0
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-                dp(36)
-            )
-            setOnClickListener {
-                customRangeStartMillis = null
-                customRangeEndMillis = null
-                setRange(Range.TODAY, chipToday.id)
-            }
-        }
-        customRangeSummary.addView(customRangeValue)
-        customRangeSummary.addView(clearCustomRange)
+        customRangeSummary = StatsPageUi.customRangeRow(content) {
+            customRangeStartMillis = null
+            customRangeEndMillis = null
+            setRange(Range.TODAY, chipToday.id)
+        }.apply { visibility = View.GONE }
+        customRangeValue = customRangeSummary.findViewById(R.id.statsCustomRangeValue)
         content.addView(customRangeSummary)
 
         chipGroup.check(chipToday.id)
         syncRangeChipUi(chipToday.id)
 
-        val totalCard = MaterialCardView(this).apply {
-            radius = dp(26).toFloat()
-            cardElevation = dp(2).toFloat()
-            useCompatPadding = true
-            applyLoqInCardColors()
-        }
-        val totalContent = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(16))
-        }
-        totalContent.addView(TextView(this).apply {
-            text = getString(R.string.active_time_total_label)
-            textSize = 14f
-            alpha = 0.74f
-        })
-        totalValue = TextView(this).apply {
-            textSize = 30f
-            typeface = android.graphics.Typeface.DEFAULT_BOLD
-            setTextColor(AccentColor.getAccentColorInt(this@ActiveTimeActivity))
-        }
-        totalContent.addView(totalValue)
-        totalSubtitle = TextView(this).apply {
-            textSize = 13f
-            alpha = 0.78f
-        }
-        totalContent.addView(totalSubtitle)
-        totalCard.addView(totalContent)
-        content.addView(totalCard)
+        val totalCard = StatsPageUi.summaryCard(content, getString(R.string.active_time_total_label), "")
+        totalValue = totalCard.value
+        totalSubtitle = totalCard.comparison
+        content.addView(totalCard.view)
 
-        emptyText = TextView(this).apply {
-            text = getString(R.string.active_time_no_data)
-            textSize = 14f
-            alpha = 0.72f
+        emptyText = StatsPageUi.emptyState(this, getString(R.string.active_time_no_data), R.drawable.schedule_24).apply {
             visibility = View.GONE
-            setPadding(dp(12))
+            layoutParams = StatsPageUi.blockParams(this@ActiveTimeActivity)
         }
         content.addView(emptyText)
 
@@ -254,51 +181,19 @@ class ActiveTimeActivity : AppCompatActivity() {
         }
     }
 
-    private fun rangeButton(labelRes: Int, target: Range): MaterialButton {
-        return MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-            id = View.generateViewId()
-            text = getString(labelRes)
-            isCheckable = true
-            minWidth = 0
-            minimumWidth = 0
-            setPadding(dp(4), 0, dp(4), 0)
-            minHeight = dp(40)
-            insetTop = 0
-            insetBottom = 0
-            cornerRadius = dp(14)
-            setAllCaps(false)
-            layoutParams = LinearLayout.LayoutParams(0, dp(40), 1f)
+    private fun rangeButton(labelRes: Int, target: Range): MaterialButton =
+        StatsPageUi.rangeSegment(this, getString(labelRes)).apply {
             setOnClickListener {
                 setRange(target, id)
             }
         }
-    }
 
-    private fun calendarRangeButton(target: Range): MaterialButton {
-        return MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-            id = View.generateViewId()
-            text = ""
-            contentDescription = getString(R.string.activity_history_range_custom)
-            icon = ContextCompat.getDrawable(this@ActiveTimeActivity, R.drawable.calendar_month_24)
-            iconTint = ColorStateList.valueOf(AccentColor.getAccentColorInt(this@ActiveTimeActivity))
-            iconPadding = 0
-            iconGravity = MaterialButton.ICON_GRAVITY_TEXT_START
-            isCheckable = true
-            minWidth = 0
-            minimumWidth = 0
-            setPadding(dp(8), 0, dp(8), 0)
-            gravity = Gravity.CENTER
-            minHeight = dp(40)
-            insetTop = 0
-            insetBottom = 0
-            cornerRadius = dp(14)
-            setAllCaps(false)
-            layoutParams = LinearLayout.LayoutParams(dp(44), dp(40))
+    private fun calendarRangeButton(target: Range): MaterialButton =
+        StatsPageUi.calendarSegment(this).apply {
             setOnClickListener {
                 if (target == Range.CUSTOM) showCustomRangePicker()
             }
         }
-    }
 
     private fun setRange(target: Range, chipId: Int) {
         if (!ensureRangeAllowed(target)) {
@@ -433,7 +328,7 @@ class ActiveTimeActivity : AppCompatActivity() {
                 StatsFormat.prettyMs(totalMs / averageDays)
             )
         }
-        totalSubtitle.text = subtitleParts.joinToString(separator = " · ")
+        StatsPageUi.setComparisonLine(totalSubtitle, subtitleParts.joinToString(separator = " · "), more = false)
 
         renderBuckets(bucketsForRange())
 
@@ -460,17 +355,17 @@ class ActiveTimeActivity : AppCompatActivity() {
             return
         }
 
+        if (buckets.isEmpty()) return
         val max = buckets.maxOfOrNull { it.valueMs }?.coerceAtLeast(1L) ?: 1L
+        val group = StatsPageUi.listGroup(bucketContainer, afterHeader = false)
         buckets.forEach { bucket ->
-            val card = MaterialCardView(this).apply {
-                radius = dp(26).toFloat()
-                cardElevation = dp(1).toFloat()
-                useCompatPadding = true
-                applyLoqInCardColors()
-                isClickable = true
-                isFocusable = true
-                foreground = selectableItemBackground()
-                setOnClickListener {
+            group.addView(
+                StatsPageUi.barRow(
+                    parent = group,
+                    title = bucket.label,
+                    value = StatsFormat.prettyMs(bucket.valueMs),
+                    fraction = bucket.valueMs.toFloat() / max.toFloat(),
+                ) {
                     startActivity(ActiveTimeDetailActivity.intent(
                         context = this@ActiveTimeActivity,
                         label = bucket.label,
@@ -478,50 +373,9 @@ class ActiveTimeActivity : AppCompatActivity() {
                         isMonth = range == Range.YEAR
                     ))
                 }
-            }
-            val row = LinearLayout(this).apply {
-                orientation = LinearLayout.VERTICAL
-                setPadding(dp(14), dp(12), dp(14), dp(12))
-            }
-
-            val line = LinearLayout(this).apply {
-                orientation = LinearLayout.HORIZONTAL
-            }
-            line.addView(TextView(this).apply {
-                text = bucket.label
-                textSize = 14f
-            }, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-            line.addView(TextView(this).apply {
-                text = StatsFormat.prettyMs(bucket.valueMs)
-                textSize = 14f
-                typeface = android.graphics.Typeface.DEFAULT_BOLD
-            })
-            row.addView(line)
-
-            val barBg = android.graphics.drawable.GradientDrawable().apply {
-                cornerRadius = dp(999).toFloat()
-                setColor(resolveColor(com.google.android.material.R.attr.colorSurfaceVariant))
-            }
-            val bar = android.widget.FrameLayout(this).apply {
-                background = barBg
-            }
-            val fill = View(this).apply {
-                background = android.graphics.drawable.GradientDrawable().apply {
-                    cornerRadius = dp(999).toFloat()
-                    setColor(AccentColor.getAccentColorInt(this@ActiveTimeActivity))
-                }
-            }
-            val fraction = (bucket.valueMs.toFloat() / max.toFloat()).coerceIn(0.04f, 1f)
-            bar.addView(fill, android.widget.FrameLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT).apply {
-                width = (resources.displayMetrics.widthPixels * 0.72f * fraction).toInt().coerceAtLeast(dp(6))
-            })
-            row.addView(bar, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(8)).apply {
-                topMargin = dp(6)
-            })
-
-            card.addView(row)
-            bucketContainer.addView(card)
+            )
         }
+        bucketContainer.addView(group)
     }
 
     private fun renderTodayDetails() {
@@ -529,104 +383,41 @@ class ActiveTimeActivity : AppCompatActivity() {
         val timeFormat = DateFormat.getTimeInstance(DateFormat.SHORT)
         val sessions = ActiveDurationStore.daySessions(this, now)
 
-        bucketContainer.addView(todaySectionHeader(getString(R.string.active_time_sessions_title)))
+        StatsPageUi.addSectionHeader(bucketContainer, getString(R.string.active_time_sessions_title))
         if (sessions.isEmpty()) {
-            bucketContainer.addView(todayEmptyText(getString(R.string.active_time_no_sessions)))
+            bucketContainer.addView(StatsPageUi.emptyState(this, getString(R.string.active_time_no_sessions)))
         } else {
+            val group = StatsPageUi.listGroup(bucketContainer)
             sessions.forEachIndexed { index, session ->
-                bucketContainer.addView(todayDetailCard(
+                group.addView(StatsPageUi.row(
+                    parent = group,
                     title = getString(R.string.active_time_session_title, index + 1),
                     summary = "${timeFormat.format(Date(session.startMs))} – ${timeFormat.format(Date(session.endMs))}",
                     value = StatsFormat.prettyMs(session.durationMs),
                     iconRes = R.drawable.schedule_24
                 ))
             }
+            bucketContainer.addView(group)
         }
 
-        bucketContainer.addView(todaySectionHeader(getString(R.string.active_time_activity_history_title)))
+        StatsPageUi.addSectionHeader(bucketContainer, getString(R.string.active_time_activity_history_title))
         val historyEntries = ActivityHistoryRepository.entriesForDay(this, now, limit = 40)
             .sortedByDescending { it.timeMillis }
         if (historyEntries.isEmpty()) {
-            bucketContainer.addView(todayEmptyText(getString(R.string.active_time_activity_history_empty)))
+            bucketContainer.addView(StatsPageUi.emptyState(this, getString(R.string.active_time_activity_history_empty)))
         } else {
+            val group = StatsPageUi.listGroup(bucketContainer)
             historyEntries.forEach { entry ->
-                bucketContainer.addView(todayDetailCard(
+                group.addView(StatsPageUi.row(
+                    parent = group,
                     title = entry.title,
                     summary = entry.summary,
                     value = timeFormat.format(Date(entry.timeMillis)),
                     iconRes = entry.iconRes
                 ))
             }
+            bucketContainer.addView(group)
         }
-    }
-
-    private fun todaySectionHeader(title: String): TextView = TextView(this).apply {
-        text = title
-        textSize = 14f
-        typeface = android.graphics.Typeface.DEFAULT_BOLD
-        alpha = 0.82f
-        setPadding(dp(4), dp(18), dp(4), dp(4))
-    }
-
-    private fun todayEmptyText(message: String): TextView = TextView(this).apply {
-        text = message
-        textSize = 13f
-        alpha = 0.72f
-        setPadding(dp(12), dp(10), dp(12), dp(10))
-    }
-
-    private fun todayDetailCard(
-        title: String,
-        summary: String,
-        value: String,
-        iconRes: Int,
-    ): MaterialCardView {
-        val card = MaterialCardView(this).apply {
-            radius = dp(26).toFloat()
-            cardElevation = dp(1).toFloat()
-            useCompatPadding = true
-            applyLoqInCardColors()
-        }
-
-        val row = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(14), dp(14), dp(14), dp(14))
-        }
-
-        row.addView(ImageView(this).apply {
-            setImageResource(iconRes)
-            imageTintList = ColorStateList.valueOf(AccentColor.getAccentColorInt(this@ActiveTimeActivity))
-            contentDescription = null
-        }, LinearLayout.LayoutParams(dp(24), dp(24)))
-        row.addView(Space(this), LinearLayout.LayoutParams(dp(12), 1))
-
-        val textColumn = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-        }
-        textColumn.addView(TextView(this).apply {
-            text = title
-            textSize = 15f
-            typeface = android.graphics.Typeface.DEFAULT_BOLD
-        })
-        if (summary.isNotBlank()) {
-            textColumn.addView(TextView(this).apply {
-                text = summary
-                textSize = 13f
-                alpha = 0.72f
-            })
-        }
-        row.addView(textColumn, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-        row.addView(TextView(this).apply {
-            text = value
-            textSize = 14f
-            typeface = android.graphics.Typeface.DEFAULT_BOLD
-            gravity = Gravity.END
-            setPadding(dp(8), 0, 0, 0)
-        })
-
-        card.addView(row)
-        return card
     }
 
     private fun daysElapsedThisMonth(): Int {
@@ -679,12 +470,6 @@ class ActiveTimeActivity : AppCompatActivity() {
         }.timeInMillis
     }
 
-    private fun selectableItemBackground(): android.graphics.drawable.Drawable? {
-        val typedValue = android.util.TypedValue()
-        theme.resolveAttribute(android.R.attr.selectableItemBackground, typedValue, true)
-        return ContextCompat.getDrawable(this, typedValue.resourceId)
-    }
-
     private fun resolveColor(attr: Int): Int {
         val typedValue = android.util.TypedValue()
         theme.resolveAttribute(attr, typedValue, true)
@@ -698,15 +483,6 @@ class ActiveTimeActivity : AppCompatActivity() {
             typedValue.data,
             resources.displayMetrics
         )
-    }
-
-    private fun dp(value: Int): Int =
-        (value * resources.displayMetrics.density + 0.5f).toInt()
-
-    private fun MaterialCardView.applyLoqInCardColors() {
-        setCardBackgroundColor(ContextCompat.getColor(this@ActiveTimeActivity, R.color.foqos_surface))
-        strokeColor = ContextCompat.getColor(this@ActiveTimeActivity, R.color.foqos_outline_variant)
-        strokeWidth = dp(1)
     }
 
     companion object {

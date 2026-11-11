@@ -23,13 +23,9 @@
 
     <!-- Content -->
     <ScrollView
+        style="@style/LoqIn.PageContent"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingStart="16dp"
-        android:paddingTop="12dp"
-        android:paddingEnd="16dp"
-        android:paddingBottom="96dp"
-        android:clipToPadding="false"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
@@ -39,7 +35,7 @@
 
             <!-- Emergency PIN -->
             <TextView
-                style="@style/LoqIn.SectionHeader"
+                style="@style/LoqIn.SectionHeader.First"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/app_lock_section_emergency_pin" />
@@ -47,288 +43,249 @@
             <com.oliver.loqin.ui.widgets.ListGroupLayout
                 style="@style/LoqIn.ListGroup"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp">
-<LinearLayout
-                android:id="@+id/rowEmergencyPin"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:minHeight="72dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingStart="20dp"
-                android:paddingTop="14dp"
-                android:paddingEnd="16dp"
-                android:paddingBottom="14dp"
-                android:clickable="true"
-                android:focusable="true">
-
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:contentDescription="@null"
-                    android:src="@drawable/pin_24"
-                    app:tint="?attr/colorPrimary" />
+                android:layout_height="wrap_content">
 
                 <LinearLayout
-                    android:layout_width="0dp"
+                    android:id="@+id/rowEmergencyPin"
+                    style="@style/LoqIn.ListRow"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="14dp"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
+                    android:clickable="true"
+                    android:focusable="true">
 
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/app_lock_emergency_pin_title"
-                        android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
+                    <ImageView
+                        style="@style/LoqIn.RowIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/pin_24" />
 
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="@string/app_lock_emergency_pin_summary"
-                        android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
+                    <LinearLayout
+                        style="@style/LoqIn.RowText"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            style="@style/LoqIn.RowTitle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/app_lock_emergency_pin_title" />
+
+                        <TextView
+                            style="@style/LoqIn.RowSummary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/app_lock_emergency_pin_summary" />
+                    </LinearLayout>
+
+                    <ImageView
+                        style="@style/LoqIn.RowChevron"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="@string/open" />
                 </LinearLayout>
-
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:contentDescription="@string/open"
-                    android:src="@drawable/keyboard_arrow_right_24"
-                    app:tint="?attr/colorOnSurfaceVariant" />
-            </LinearLayout>
             </com.oliver.loqin.ui.widgets.ListGroupLayout>
 
-            <!-- Strict Protection -->
+            <!-- Uninstall protection -->
             <TextView
                 style="@style/LoqIn.SectionHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
                 android:text="@string/app_lock_section_strict_protection" />
 
             <com.oliver.loqin.ui.widgets.ListGroupLayout
                 style="@style/LoqIn.ListGroup"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp">
-<LinearLayout
-                android:id="@+id/rowStrictProtection"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:minHeight="72dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical"
-                android:paddingStart="20dp"
-                android:paddingTop="14dp"
-                android:paddingEnd="16dp"
-                android:paddingBottom="14dp"
-                android:clickable="true"
-                android:focusable="true">
-
-                <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:contentDescription="@null"
-                    android:src="@drawable/security_24"
-                    app:tint="?attr/colorPrimary" />
+                android:layout_height="wrap_content">
 
                 <LinearLayout
-                    android:layout_width="0dp"
+                    android:id="@+id/rowStrictProtection"
+                    style="@style/LoqIn.ListRow"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="14dp"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
+                    android:clickable="true"
+                    android:focusable="true">
 
-                    <TextView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/app_lock_strict_protection_title"
-                        android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
+                    <ImageView
+                        style="@style/LoqIn.RowIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/security_24" />
 
-                    <TextView
-                        android:id="@+id/tvStrictProtectionSummary"
-                        android:layout_width="match_parent"
+                    <LinearLayout
+                        style="@style/LoqIn.RowText"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            style="@style/LoqIn.RowTitle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/app_lock_strict_protection_title" />
+
+                        <TextView
+                            android:id="@+id/tvStrictProtectionSummary"
+                            style="@style/LoqIn.RowSummary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/app_lock_strict_protection_summary" />
+                    </LinearLayout>
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchStrictProtection"
+                        style="@style/LoqIn.RowSwitch"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="@string/app_lock_strict_protection_summary"
-                        android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
+                        android:layout_gravity="center_vertical" />
                 </LinearLayout>
-
-                <com.google.android.material.switchmaterial.SwitchMaterial
-                    android:id="@+id/switchStrictProtection"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    app:showText="false" />
-            </LinearLayout>
             </com.oliver.loqin.ui.widgets.ListGroupLayout>
+
+            <!-- Caption attached to the group above. -->
+            <TextView
+                style="@style/LoqIn.RowSummary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/section_header_gap"
+                android:paddingStart="@dimen/page_margin"
+                android:paddingEnd="@dimen/page_margin"
+                android:text="@string/app_lock_strict_protection_footnote" />
 
             <!-- Lock Access -->
             <TextView
                 style="@style/LoqIn.SectionHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
                 android:text="@string/app_lock_section_lock_access" />
 
             <com.oliver.loqin.ui.widgets.ListGroupLayout
                 style="@style/LoqIn.ListGroup"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="6dp">
+                android:layout_height="wrap_content">
 
                 <!-- Enable App Lock -->
                 <LinearLayout
                     android:id="@+id/rowAppLockEnabled"
+                    style="@style/LoqIn.ListRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:minHeight="72dp"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:paddingStart="20dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
                     android:clickable="true"
                     android:focusable="true">
 
                     <ImageView
+                        style="@style/LoqIn.RowIcon"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:contentDescription="@null"
-                        android:src="@drawable/lock_24"
-                        app:tint="?attr/colorPrimary" />
+                        android:src="@drawable/lock_24" />
 
                     <LinearLayout
+                        style="@style/LoqIn.RowText"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="14dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:layout_height="wrap_content">
 
                         <TextView
+                            style="@style/LoqIn.RowTitle"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="@string/app_lock_enable_title"
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
+                            android:text="@string/app_lock_enable_title" />
 
                         <TextView
+                            style="@style/LoqIn.RowSummary"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="@string/app_lock_enable_summary"
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
+                            android:text="@string/app_lock_enable_summary" />
                     </LinearLayout>
 
-                    <com.google.android.material.switchmaterial.SwitchMaterial
+                    <com.google.android.material.materialswitch.MaterialSwitch
                         android:id="@+id/switchAppLockEnabled"
+                        style="@style/LoqIn.RowSwitch"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        app:showText="false" />
+                        android:layout_gravity="center_vertical" />
                 </LinearLayout>
-
 
                 <!-- Biometric Unlock -->
                 <LinearLayout
                     android:id="@+id/rowAppLockBiometric"
+                    style="@style/LoqIn.ListRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:minHeight="72dp"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:paddingStart="20dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
                     android:clickable="true"
                     android:focusable="true">
 
                     <ImageView
+                        style="@style/LoqIn.RowIcon"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:contentDescription="@null"
-                        android:src="@drawable/fingerprint_24"
-                        app:tint="?attr/colorPrimary" />
+                        android:src="@drawable/fingerprint_24" />
 
                     <LinearLayout
+                        style="@style/LoqIn.RowText"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="14dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:layout_height="wrap_content">
 
                         <TextView
+                            style="@style/LoqIn.RowTitle"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="@string/app_lock_biometric_title"
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
+                            android:text="@string/app_lock_biometric_title" />
 
                         <TextView
+                            style="@style/LoqIn.RowSummary"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="@string/app_lock_biometric_summary"
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
+                            android:text="@string/app_lock_biometric_summary" />
                     </LinearLayout>
 
-                    <com.google.android.material.switchmaterial.SwitchMaterial
+                    <com.google.android.material.materialswitch.MaterialSwitch
                         android:id="@+id/switchAppLockBiometric"
+                        style="@style/LoqIn.RowSwitch"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        app:showText="false" />
+                        android:layout_gravity="center_vertical" />
                 </LinearLayout>
-
 
                 <!-- Set / Change PIN -->
                 <LinearLayout
                     android:id="@+id/rowSetPin"
+                    style="@style/LoqIn.ListRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:minHeight="72dp"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:paddingStart="20dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
                     android:clickable="true"
                     android:focusable="true">
 
                     <ImageView
+                        style="@style/LoqIn.RowIcon"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
                         android:contentDescription="@null"
-                        android:src="@drawable/pin_24"
-                        app:tint="?attr/colorPrimary" />
+                        android:src="@drawable/pin_24" />
 
                     <LinearLayout
+                        style="@style/LoqIn.RowText"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="14dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:layout_height="wrap_content">
 
                         <TextView
                             android:id="@+id/tvSetPinLabel"
+                            style="@style/LoqIn.RowTitle"
                             android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
+                            android:layout_height="wrap_content" />
 
                         <TextView
+                            style="@style/LoqIn.RowSummary"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="@string/app_lock_change_pin_summary"
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
+                            android:text="@string/app_lock_change_pin_summary" />
                     </LinearLayout>
 
                     <ImageView
+                        style="@style/LoqIn.RowChevron"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
-                        android:contentDescription="@string/open"
-                        android:src="@drawable/keyboard_arrow_right_24"
-                        app:tint="?attr/colorOnSurfaceVariant" />
+                        android:contentDescription="@string/open" />
                 </LinearLayout>
             </com.oliver.loqin.ui.widgets.ListGroupLayout>
 

@@ -6,11 +6,11 @@
     android:id="@+id/root"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:minHeight="72dp"
-    android:paddingStart="20dp"
-    android:paddingTop="14dp"
-    android:paddingEnd="16dp"
-    android:paddingBottom="14dp"
+    android:minHeight="@dimen/row_min_height"
+    android:paddingStart="@dimen/row_padding_start"
+    android:paddingTop="@dimen/row_padding_vertical"
+    android:paddingEnd="@dimen/row_padding_end"
+    android:paddingBottom="@dimen/row_padding_vertical"
     tools:ignore="Overdraw">
 
     <ImageView
@@ -27,32 +27,34 @@
 
     <TextView
         android:id="@+id/tvTitle"
+        style="@style/LoqIn.RowTitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="16dp"
-        style="@style/TextAppearance.LoqIn.RowTitle"
+        android:layout_marginStart="@dimen/row_icon_gap"
+        app:layout_constraintBottom_toTopOf="@id/tvSubtitle"
         app:layout_constraintEnd_toStartOf="@id/btnCopy"
         app:layout_constraintStart_toEndOf="@id/ivIcon"
         app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="packed"
         app:layout_goneMarginStart="0dp" />
 
     <TextView
         android:id="@+id/tvSubtitle"
+        style="@style/LoqIn.RowSummary"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:paddingTop="3dp"
-        style="@style/TextAppearance.LoqIn.RowSummary"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toStartOf="@id/btnCopy"
         app:layout_constraintStart_toStartOf="@id/tvTitle"
         app:layout_constraintTop_toBottomOf="@id/tvTitle" />
 
     <ImageButton
         android:id="@+id/btnCopy"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
+        android:layout_width="@dimen/touch_target"
+        android:layout_height="@dimen/touch_target"
+        android:layout_marginStart="4dp"
         android:background="?attr/selectableItemBackgroundBorderless"
         android:visibility="gone"
-        android:alpha="0.72"
         android:contentDescription="@string/action_copy"
         android:scaleType="center"
         app:layout_constraintBottom_toBottomOf="parent"

@@ -6,7 +6,10 @@
     android:layout_height="match_parent"
     android:gravity="center"
     android:orientation="vertical"
-    android:padding="32dp">
+    android:paddingStart="32dp"
+    android:paddingTop="32dp"
+    android:paddingEnd="32dp"
+    android:paddingBottom="28dp">
 
     <ImageView
         android:id="@+id/pauseAppIcon"
@@ -32,8 +35,8 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
         android:gravity="center"
-        android:textColor="?attr/colorOnSurface"
-        android:textSize="15sp" />
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textSize="16sp" />
 
     <TextView
         android:id="@+id/pauseWeeklyOutcome"
@@ -41,8 +44,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
         android:gravity="center"
-        android:textColor="?attr/colorOnSurfaceVariant"
-        android:textSize="13sp"
+        android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
         android:visibility="gone" />
 
     <TextView
@@ -51,6 +53,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="28dp"
         android:gravity="center"
+        android:textColor="?attr/colorOnSurface"
         android:textSize="52sp"
         android:fontFamily="sans-serif-medium"
         android:textStyle="bold" />
@@ -61,7 +64,6 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="32dp"
-        android:minHeight="56dp"
         android:text="@string/pause_leave" />
 
     <com.google.android.material.button.MaterialButton
@@ -69,7 +71,6 @@
         style="@style/LoqIn.TextButton"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:minHeight="48dp"
+        android:layout_marginTop="4dp"
         android:enabled="false" />
 </LinearLayout>

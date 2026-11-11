@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One schedule in the Schedules list: trigger icon, name (+ Active), when, a 24h strip for
+     time windows, and the on/off switch (a drag handle in reorder mode, a check while selecting).
+     Its grouped-list segment background is set in code from the row's position. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/scheduleRow"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:clickable="true"
+    android:focusable="true"
+    android:minHeight="@dimen/row_min_height"
+    android:orientation="horizontal"
+    android:paddingStart="@dimen/row_padding_start"
+    android:paddingTop="@dimen/row_padding_vertical"
+    android:paddingEnd="@dimen/row_padding_end"
+    android:paddingBottom="@dimen/row_padding_vertical">
+
+    <ImageView
+        android:id="@+id/scheduleIcon"
+        style="@style/LoqIn.RowIcon"
+        android:layout_width="@dimen/row_icon_size"
+        android:layout_height="@dimen/row_icon_size"
+        android:layout_marginTop="2dp"
+        android:importantForAccessibility="no" />
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/row_icon_gap"
+        android:layout_weight="1"
+        android:orientation="vertical">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/scheduleTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                style="@style/LoqIn.RowTitle"
+                android:ellipsize="end"
+                android:maxLines="2" />
+
+            <TextView
+                android:id="@+id/scheduleActive"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:fontFamily="sans-serif-medium"
+                android:maxLines="1"
+                android:paddingStart="8dp"
+                android:paddingTop="2dp"
+                android:paddingEnd="8dp"
+                android:paddingBottom="2dp"
+                android:text="@string/schedules_row_active"
+                android:textSize="12sp"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/scheduleSub"
+            style="@style/LoqIn.RowSummary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="2" />
+
+        <com.oliver.loqin.feature.schedule.ScheduleTimelineView
+            android:id="@+id/scheduleTimeline"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:importantForAccessibility="no"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/row_trailing_gap"
+        android:minWidth="@dimen/touch_target"
+        android:minHeight="@dimen/touch_target">
+
+        <com.google.android.material.materialswitch.MaterialSwitch
+            android:id="@+id/scheduleSwitch"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center" />
+
+        <ImageView
+            android:id="@+id/scheduleHandle"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center"
+            android:contentDescription="@string/schedules_reorder_handle_desc"
+            android:padding="12dp"
+            android:src="@drawable/drag_handle_24"
+            android:visibility="gone"
+            app:tint="?attr/colorOnSurfaceVariant" />
+
+        <ImageView
+            android:id="@+id/scheduleCheck"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_gravity="center"
+            android:importantForAccessibility="no"
+            android:padding="12dp"
+            android:visibility="gone" />
+    </FrameLayout>
+</LinearLayout>

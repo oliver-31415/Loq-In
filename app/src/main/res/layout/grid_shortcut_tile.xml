@@ -1,20 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Quick Settings / widget shortcut tile. Mirrors grid_app_tile.xml (App rules)
-    so the Widgets & shortcuts grid reads as the same square-card component:
-    square card, accent icon, bold label and an optional top-right badge.
+    Quick Settings / widget shortcut tile: the shared flat square tile (as grid_stat_tile.xml),
+    readable-accent icon, label and an optional top-right badge (added / opens Android's flow).
 -->
 <com.oliver.loqin.ui.SquareCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    style="@style/LoqIn.TileCard"
     android:id="@+id/tileRoot"
+    style="@style/LoqIn.StatTile"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:foreground="?attr/selectableItemBackground"
     android:clickable="true"
     android:focusable="true"
-    app:cardUseCompatPadding="false">
+    android:foreground="?attr/selectableItemBackground">
 
     <FrameLayout
         android:layout_width="match_parent"
@@ -30,32 +28,29 @@
 
             <ImageView
                 android:id="@+id/ivTileIcon"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:contentDescription="@null"
-                app:tint="?attr/colorPrimary" />
+                style="@style/LoqIn.StatIcon"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:contentDescription="@null" />
 
             <TextView
                 android:id="@+id/tvTileLabel"
+                style="@style/LoqIn.StatLabel"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:ellipsize="end"
-                android:gravity="center"
-                android:maxLines="2"
-                android:textColor="?android:attr/textColorPrimary"
-                android:textSize="11sp"
-                android:textStyle="bold" />
+                android:layout_marginTop="8dp"
+                android:maxLines="3"
+                android:textColor="?attr/colorOnSurface" />
         </LinearLayout>
 
         <ImageView
             android:id="@+id/ivTileBadge"
-            android:layout_width="22dp"
-            android:layout_height="22dp"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
             android:layout_gravity="top|end"
             android:contentDescription="@null"
             android:src="@drawable/check_circle_24"
             android:visibility="gone"
-            app:tint="?attr/colorPrimary" />
+            app:tint="?attr/colorOnSurfaceVariant" />
     </FrameLayout>
 </com.oliver.loqin.ui.SquareCardView>

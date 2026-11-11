@@ -25,4 +25,9 @@
     <color name="widget_scanner_title">@color/foqos_on_surface</color>
     <color name="widget_scanner_text">@color/foqos_on_surface_variant</color>
 
+
+    <!-- In-app blocking warning -->
+    <color name="in_app_warn_bg">#FF3A2E14</color>
+    <color name="in_app_warn_fg">#FFF5C26B</color>
+
 </resources>

@@ -43,35 +43,33 @@
                 android:id="@+id/tvSheetProfileName"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:textColor="?attr/colorOnSurface"
                 android:textSize="24sp"
                 android:textStyle="bold"
-                android:textColor="?attr/colorOnSurface"
                 tools:text="Work Profile" />
 
             <TextView
+                style="@style/LoqIn.RowSummary"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:text="@string/profile_sheet_tap_to_rename"
-                android:textSize="12sp"
-                android:textColor="?android:attr/textColorSecondary" />
+                android:text="@string/profile_sheet_tap_to_rename" />
         </LinearLayout>
 
         <FrameLayout
             android:id="@+id/btnSheetClose"
-            android:layout_width="36dp"
-            android:layout_height="36dp"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
             android:layout_marginStart="12dp"
-            android:background="@drawable/bg_roundel_neutral"
+            android:background="@drawable/bg_sheet_close"
             android:clickable="true"
-            android:focusable="true"
-            tools:ignore="UseCompoundDrawables">
+            android:contentDescription="@string/close"
+            android:focusable="true">
 
             <ImageView
                 android:layout_width="16dp"
                 android:layout_height="16dp"
                 android:layout_gravity="center"
-                android:contentDescription="@string/cancel"
+                android:importantForAccessibility="no"
                 android:src="@drawable/close_24"
                 app:tint="?attr/colorOnSurface" />
         </FrameLayout>
@@ -86,292 +84,243 @@
 
         <LinearLayout
             android:id="@+id/rowSheetApps"
+            style="@style/LoqIn.ListRow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:minHeight="72dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingStart="20dp"
-            android:paddingTop="14dp"
-            android:paddingEnd="16dp"
-            android:paddingBottom="14dp"
             android:clickable="true"
             android:focusable="true">
 
             <ImageView
+                style="@style/LoqIn.RowIcon"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:contentDescription="@null"
-                android:src="@drawable/apps_24"
-                app:tint="?attr/colorPrimary" />
+                android:src="@drawable/apps_24" />
 
             <LinearLayout
+                style="@style/LoqIn.RowText"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="14dp"
-                android:layout_weight="1"
-                android:orientation="vertical">
+                android:layout_height="wrap_content">
 
                 <TextView
+                    style="@style/LoqIn.RowTitle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/profile_sheet_apps"
-                    android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
+                    android:text="@string/profile_sheet_apps" />
 
                 <TextView
+                    style="@style/LoqIn.RowSummary"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="@string/profile_sheet_apps_summary"
-                    android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
+                    android:text="@string/profile_sheet_apps_summary" />
             </LinearLayout>
 
             <ImageView
+                style="@style/LoqIn.RowChevron"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:contentDescription="@null"
-                android:src="@drawable/keyboard_arrow_right_24"
-                app:tint="?attr/colorOnSurfaceVariant" />
+                android:contentDescription="@null" />
         </LinearLayout>
 
         <LinearLayout
             android:id="@+id/rowSheetWebsites"
+            style="@style/LoqIn.ListRow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:minHeight="72dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingStart="20dp"
-            android:paddingTop="14dp"
-            android:paddingEnd="16dp"
-            android:paddingBottom="14dp"
             android:clickable="true"
             android:focusable="true">
 
             <ImageView
+                style="@style/LoqIn.RowIcon"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:contentDescription="@null"
-                android:src="@drawable/language_24"
-                app:tint="?attr/colorPrimary" />
+                android:src="@drawable/language_24" />
 
             <LinearLayout
+                style="@style/LoqIn.RowText"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="14dp"
-                android:layout_weight="1"
-                android:orientation="vertical">
+                android:layout_height="wrap_content">
 
                 <TextView
+                    style="@style/LoqIn.RowTitle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/profile_sheet_websites"
-                    android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
+                    android:text="@string/profile_sheet_websites" />
 
                 <TextView
+                    style="@style/LoqIn.RowSummary"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="@string/profile_sheet_websites_summary"
-                    android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
+                    android:text="@string/profile_sheet_websites_summary" />
             </LinearLayout>
 
             <ImageView
+                style="@style/LoqIn.RowChevron"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:contentDescription="@null"
-                android:src="@drawable/keyboard_arrow_right_24"
-                app:tint="?attr/colorOnSurfaceVariant" />
+                android:contentDescription="@null" />
         </LinearLayout>
 
         <LinearLayout
             android:id="@+id/rowSheetInApp"
+            style="@style/LoqIn.ListRow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:minHeight="72dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingStart="20dp"
-            android:paddingTop="14dp"
-            android:paddingEnd="16dp"
-            android:paddingBottom="14dp"
             android:clickable="true"
             android:focusable="true">
 
             <ImageView
+                style="@style/LoqIn.RowIcon"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:contentDescription="@null"
-                android:src="@drawable/layers_24"
-                app:tint="?attr/colorPrimary" />
+                android:src="@drawable/layers_24" />
 
             <LinearLayout
+                style="@style/LoqIn.RowText"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="14dp"
-                android:layout_weight="1"
-                android:orientation="vertical">
+                android:layout_height="wrap_content">
 
                 <TextView
+                    style="@style/LoqIn.RowTitle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/profile_sheet_inapp"
-                    android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
+                    android:text="@string/profile_sheet_inapp" />
 
                 <TextView
+                    style="@style/LoqIn.RowSummary"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="@string/profile_sheet_inapp_summary"
-                    android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
+                    android:text="@string/profile_sheet_inapp_summary" />
             </LinearLayout>
 
             <ImageView
+                style="@style/LoqIn.RowChevron"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:contentDescription="@null"
-                android:src="@drawable/keyboard_arrow_right_24"
-                app:tint="?attr/colorOnSurfaceVariant" />
+                android:contentDescription="@null" />
         </LinearLayout>
 
         <LinearLayout
             android:id="@+id/rowSheetSchedules"
+            style="@style/LoqIn.ListRow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:minHeight="72dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingStart="20dp"
-            android:paddingTop="14dp"
-            android:paddingEnd="16dp"
-            android:paddingBottom="14dp"
             android:clickable="true"
             android:focusable="true">
 
             <ImageView
+                style="@style/LoqIn.RowIcon"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:contentDescription="@null"
-                android:src="@drawable/schedule_24"
-                app:tint="?attr/colorPrimary" />
+                android:src="@drawable/schedule_24" />
 
             <LinearLayout
+                style="@style/LoqIn.RowText"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="14dp"
-                android:layout_weight="1"
-                android:orientation="vertical">
+                android:layout_height="wrap_content">
 
                 <TextView
+                    style="@style/LoqIn.RowTitle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/profile_sheet_schedules"
-                    android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
+                    android:text="@string/profile_sheet_schedules" />
 
                 <TextView
+                    style="@style/LoqIn.RowSummary"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="@string/profile_sheet_schedules_summary"
-                    android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
+                    android:text="@string/profile_sheet_schedules_summary" />
             </LinearLayout>
 
             <ImageView
+                style="@style/LoqIn.RowChevron"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:contentDescription="@null"
-                android:src="@drawable/keyboard_arrow_right_24"
-                app:tint="?attr/colorOnSurfaceVariant" />
+                android:contentDescription="@null" />
         </LinearLayout>
 
         <LinearLayout
             android:id="@+id/rowSheetTempPauses"
+            style="@style/LoqIn.ListRow"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:minHeight="72dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingStart="20dp"
-            android:paddingTop="14dp"
-            android:paddingEnd="16dp"
-            android:paddingBottom="14dp"
             android:clickable="true"
             android:focusable="true">
 
             <ImageView
+                style="@style/LoqIn.RowIcon"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
                 android:contentDescription="@null"
-                android:src="@drawable/timer_24"
-                app:tint="?attr/colorPrimary" />
+                android:src="@drawable/timer_24" />
 
             <LinearLayout
+                style="@style/LoqIn.RowText"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="14dp"
-                android:layout_weight="1"
-                android:orientation="vertical">
+                android:layout_height="wrap_content">
 
                 <TextView
+                    style="@style/LoqIn.RowTitle"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/profile_sheet_pauses"
-                    android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
+                    android:text="@string/profile_sheet_pauses" />
 
                 <TextView
                     android:id="@+id/tvSheetTempPausesSummary"
+                    style="@style/LoqIn.RowSummary"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:text="@string/profile_sheet_pauses_summary"
-                    android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
+                    android:maxLines="1"
+                    android:ellipsize="end"
+                    android:text="@string/profile_sheet_pauses_summary" />
             </LinearLayout>
 
             <ImageView
+                style="@style/LoqIn.RowChevron"
                 android:layout_width="24dp"
                 android:layout_height="24dp"
-                android:contentDescription="@null"
-                android:src="@drawable/keyboard_arrow_right_24"
-                app:tint="?attr/colorOnSurfaceVariant" />
+                android:contentDescription="@null" />
         </LinearLayout>
 
     </com.oliver.loqin.ui.widgets.ListGroupLayout>
 
-    <!-- Danger -->
-    <LinearLayout
-        android:id="@+id/rowSheetDelete"
-        style="@style/LoqIn.SheetRow"
+    <!-- Danger: a group of its own, red icon and label (confirmation follows on tap) -->
+    <com.oliver.loqin.ui.widgets.ListGroupLayout
+        style="@style/LoqIn.ListGroup.OnSurface"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:paddingStart="10dp"
-        android:paddingTop="9dp"
-        android:paddingEnd="10dp"
-        android:paddingBottom="9dp"
-        android:background="@drawable/bg_tile_danger">
+        android:layout_marginTop="16dp">
 
-        <FrameLayout
-            android:layout_width="38dp"
-            android:layout_height="38dp"
-            android:background="@drawable/bg_roundel_danger">
+        <LinearLayout
+            android:id="@+id/rowSheetDelete"
+            style="@style/LoqIn.ListRow.OneLine"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:clickable="true"
+            android:focusable="true">
 
             <ImageView
-                android:layout_width="19dp"
-                android:layout_height="19dp"
-                android:layout_gravity="center"
+                android:layout_width="@dimen/row_icon_size"
+                android:layout_height="@dimen/row_icon_size"
                 android:contentDescription="@null"
                 android:src="@drawable/delete_24"
                 app:tint="@color/status_error" />
-        </FrameLayout>
 
-        <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_weight="1"
-            android:text="@string/profile_sheet_delete"
-            android:textSize="15sp"
-            android:textStyle="bold"
-            android:textColor="@color/status_error" />
-    </LinearLayout>
+            <LinearLayout
+                style="@style/LoqIn.RowText"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content">
+
+                <TextView
+                    style="@style/LoqIn.RowTitle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/profile_sheet_delete"
+                    android:textColor="@color/status_error" />
+            </LinearLayout>
+        </LinearLayout>
+    </com.oliver.loqin.ui.widgets.ListGroupLayout>
 </LinearLayout>

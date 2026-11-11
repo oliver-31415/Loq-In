@@ -26,19 +26,18 @@ import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
 import android.view.View
-import android.widget.TextView
 import androidx.activity.addCallback
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.oliver.loqin.R
+import com.oliver.loqin.ui.widgets.EmptyStateView
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.ui.EdgeToEdgeUtils
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.util.LocaleHelper
 import com.google.android.material.appbar.MaterialToolbar
-import com.google.android.material.button.MaterialButton
 import com.google.android.material.textfield.TextInputEditText
 
 class FaqActivity : AppCompatActivity() {
@@ -56,10 +55,7 @@ class FaqActivity : AppCompatActivity() {
     private lateinit var searchInput: TextInputEditText
 
     private lateinit var adapter: FaqAdapter
-    private lateinit var emptyState: View
-    private lateinit var emptyTitle: TextView
-    private lateinit var emptyBody: TextView
-    private lateinit var clearSearchButton: MaterialButton
+    private lateinit var emptyState: EmptyStateView
 
     private var categories: List<FaqCategory> = emptyList()
     private var currentCategory: FaqCategory? = null
@@ -119,13 +115,9 @@ class FaqActivity : AppCompatActivity() {
         recycler = findViewById(R.id.recycler)
         searchInput = findViewById(R.id.etFaqSearch)
         emptyState = findViewById(R.id.layoutFaqEmpty)
-        emptyTitle = findViewById(R.id.tvFaqEmptyTitle)
-        emptyBody = findViewById(R.id.tvFaqEmptyBody)
-        clearSearchButton = findViewById(R.id.btnFaqClearSearch)
 
-        emptyTitle.text = getString(R.string.faq_empty_title)
-        emptyBody.text = getString(R.string.faq_empty_body)
-        clearSearchButton.setOnClickListener {
+        // Only shown for a search without results, so its "Clear search" action always applies.
+        emptyState.setOnActionClickListener {
             searchInput.setText("")
             searchInput.requestFocus()
         }
@@ -221,7 +213,6 @@ class FaqActivity : AppCompatActivity() {
         val showEmpty = query.isNotBlank() && visibleItems.isEmpty()
         emptyState.visibility = if (showEmpty) View.VISIBLE else View.GONE
         recycler.visibility = if (showEmpty) View.GONE else View.VISIBLE
-        clearSearchButton.visibility = if (query.isBlank()) View.GONE else View.VISIBLE
     }
 
     private fun categoryFolderItems(): List<FaqListItem> {

@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The chosen custom date range under a statistics range bar, with its Clear action. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="@dimen/block_gap"
+    android:gravity="center_vertical"
+    android:orientation="horizontal"
+    android:paddingStart="@dimen/row_padding_start">
+
+    <TextView
+        android:id="@+id/statsCustomRangeValue"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:textAppearance="@style/TextAppearance.LoqIn.RowValue" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/statsCustomRangeClear"
+        style="@style/LoqIn.TextButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/row_trailing_gap"
+        android:text="@string/stats_range_clear" />
+</LinearLayout>

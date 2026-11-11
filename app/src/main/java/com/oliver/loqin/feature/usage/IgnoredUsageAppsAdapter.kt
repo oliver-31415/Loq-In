@@ -23,7 +23,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DiffUtil
@@ -32,6 +31,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.oliver.loqin.R
 import com.oliver.loqin.feature.picker.AppIconCache
 import com.oliver.loqin.theme.AccentColor
+import com.oliver.loqin.ui.PageUi
+import com.oliver.loqin.ui.RuleTileStyle
 import com.google.android.material.card.MaterialCardView
 import java.util.Locale
 
@@ -187,7 +188,7 @@ class IgnoredUsageAppsAdapter(
                     cornerRadius = dp(999).toFloat()
                     setColor(ColorUtils.setAlphaComponent(accent, 0x24))
                 }
-                tvSuggested.setTextColor(accent)
+                tvSuggested.setTextColor(PageUi.readableAccent(ctx))
             } else {
                 tvSuggested.background = null
             }
@@ -214,16 +215,8 @@ class IgnoredUsageAppsAdapter(
 
         private fun updateTileState(selected: Boolean) {
             val ctx = itemView.context
-            if (selected) {
-                val accent = AccentColor.getAccentColorInt(ctx)
-                cardRoot.strokeWidth = dp(2)
-                cardRoot.strokeColor = accent
-                cardRoot.setCardBackgroundColor(ColorUtils.setAlphaComponent(accent, 0x30))
-            } else {
-                // Flat when unselected; the accent outline marks selection.
-                cardRoot.strokeWidth = 0
-                cardRoot.setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.foqos_surface))
-            }
+            // Same tile states as App rules and Website rules.
+            RuleTileStyle.apply(cardRoot, selected)
             ivChecked.visibility = if (selected) View.VISIBLE else View.GONE
             cardRoot.contentDescription = if (selected) {
                 ctx.getString(R.string.hidden_apps_tile_selected_desc, tvLabel.text)

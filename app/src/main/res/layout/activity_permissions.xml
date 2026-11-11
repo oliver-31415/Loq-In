@@ -2,11 +2,10 @@
 <!--
     Permissions & Reliability.
 
-    Layout mirrors the onboarding setup pages: a scrolling column of full-width
-    setup cards grouped under flat section headers. The cards themselves are built
-    in code via SetupCardRow so this screen and onboarding share one component.
-    Section containers keep stable ids because deep links (EXTRA_FOCUS_SECTION /
-    EXTRA_FOCUS_TARGET) and the "issues" toolbar action scroll to them.
+    Section headers over grouped lists, like the rest of Settings. The rows are built in
+    code (PermissionRow, the shared row anatomy with a status line). Section containers keep
+    stable ids because deep links (EXTRA_FOCUS_SECTION / EXTRA_FOCUS_TARGET) and the "issues"
+    toolbar action scroll to them.
 -->
 <androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
@@ -31,13 +30,9 @@
 
     <ScrollView
         android:id="@+id/permissionsScroll"
+        style="@style/LoqIn.PageContent"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:clipToPadding="false"
-        android:paddingStart="16dp"
-        android:paddingTop="12dp"
-        android:paddingEnd="16dp"
-        android:paddingBottom="28dp"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
@@ -49,18 +44,16 @@
             <!-- Core -->
             <TextView
                 android:id="@+id/sectionCore"
-                style="@style/LoqIn.SectionHeader"
+                style="@style/LoqIn.SectionHeader.First"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:layout_marginBottom="2dp"
                 android:text="@string/permissions_section_core" />
 
-            <LinearLayout
+            <com.oliver.loqin.ui.widgets.ListGroupLayout
                 android:id="@+id/cardsCore"
+                style="@style/LoqIn.ListGroup"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical" />
+                android:layout_height="wrap_content" />
 
             <!-- Notifications -->
             <TextView
@@ -68,15 +61,13 @@
                 style="@style/LoqIn.SectionHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:layout_marginBottom="2dp"
                 android:text="@string/permissions_section_notifications" />
 
-            <LinearLayout
+            <com.oliver.loqin.ui.widgets.ListGroupLayout
                 android:id="@+id/cardsNotifications"
+                style="@style/LoqIn.ListGroup"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical" />
+                android:layout_height="wrap_content" />
 
             <!-- Schedule triggers -->
             <TextView
@@ -84,15 +75,13 @@
                 style="@style/LoqIn.SectionHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:layout_marginBottom="2dp"
                 android:text="@string/permissions_section_triggers" />
 
-            <LinearLayout
+            <com.oliver.loqin.ui.widgets.ListGroupLayout
                 android:id="@+id/cardsTriggers"
+                style="@style/LoqIn.ListGroup"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical" />
+                android:layout_height="wrap_content" />
 
             <!-- Battery & background -->
             <TextView
@@ -100,15 +89,13 @@
                 style="@style/LoqIn.SectionHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="20dp"
-                android:layout_marginBottom="2dp"
                 android:text="@string/permissions_section_battery" />
 
-            <LinearLayout
+            <com.oliver.loqin.ui.widgets.ListGroupLayout
                 android:id="@+id/cardsBattery"
+                style="@style/LoqIn.ListGroup"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical" />
+                android:layout_height="wrap_content" />
 
             <!-- OEM autostart / background restrictions (only shown on aggressive OEMs) -->
             <LinearLayout
@@ -123,15 +110,13 @@
                     style="@style/LoqIn.SectionHeader"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="20dp"
-                    android:layout_marginBottom="2dp"
                     android:text="@string/permissions_section_oem" />
 
-                <LinearLayout
+                <com.oliver.loqin.ui.widgets.ListGroupLayout
                     android:id="@+id/cardsAutostart"
+                    style="@style/LoqIn.ListGroup"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical" />
+                    android:layout_height="wrap_content" />
             </LinearLayout>
         </LinearLayout>
     </ScrollView>

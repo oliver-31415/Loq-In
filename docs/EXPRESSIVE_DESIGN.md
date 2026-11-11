@@ -107,3 +107,173 @@ rounded segment (24dp outer corners, 6dp inner corners, 2dp gap), as in Android 
 - Don't touch home-screen widgets (`widget_*.xml`, RemoteViews can't use these widgets).
 - Don't introduce new colours; new strings go through the Gemini translation rule.
 - Don't restyle charts/heatmaps' internals — only their containers.
+
+## Cohesion rules
+Every page is built from the pieces below and nothing else. Sizes live in `values/dimens_page.xml`,
+styles in `values/styles_page.xml` (+ `values/layout.xml`), code twins in `ui/PageUi.kt`. If a
+layout or Kotlin file sets a size, colour or typeface that one of these already owns, delete the
+local value. Proof screens that follow every rule: `activity_settings.xml`, `activity_manage_keys.xml`,
+`activity_protection_changes.xml`, `LoqInOverviewActivity.kt` + `grid_stat_tile.xml`.
+`activity_ignored_usage_apps.xml` shows the filter chips, segments and sticky bottom action.
+
+### Page container
+The scrolling container gets `LoqIn.PageContent` (16dp sides `@dimen/page_margin`, 8dp top,
+32dp bottom, `clipToPadding=false`). Remove its own `padding*`/`clipToPadding`; children add no
+horizontal margins, so headers, groups, cards and tiles all share one gutter.
+```xml
+<androidx.core.widget.NestedScrollView
+    android:id="@+id/..."
+    style="@style/LoqIn.PageContent"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    app:layout_behavior="@string/appbar_scrolling_view_behavior">
+```
+Code-built screens: `PageUi.applyPageContentPadding(contentView)`. Vertical rhythm: 24dp before a
+section (`@dimen/section_gap`), 8dp header-to-group (`@dimen/section_header_gap`), 12dp between two
+cards/groups in one section (`@dimen/block_gap`). A RecyclerView page uses `LoqIn.PageContent` too.
+
+### Section header
+`LoqIn.SectionHeader` carries its own margins (24dp top, 8dp bottom) and colour. The first header on a
+page uses `LoqIn.SectionHeader.First` (8dp top). A header text inside a row that also holds an action
+uses `LoqIn.SectionHeader.Inline` (no margins/padding; the row owns them, see
+`item_website_section_header.xml`). Never set `layout_margin*`, `textColor`, `textSize` on a header,
+and remove `layout_marginTop` from the group/card right after it.
+```xml
+<TextView style="@style/LoqIn.SectionHeader.First" android:layout_width="match_parent"
+    android:layout_height="wrap_content" android:text="@string/..." />
+<com.oliver.loqin.ui.widgets.ListGroupLayout style="@style/LoqIn.ListGroup"
+    android:layout_width="match_parent" android:layout_height="wrap_content"> ... </...>
+<TextView style="@style/LoqIn.SectionHeader" android:layout_width="match_parent"
+    android:layout_height="wrap_content" android:text="@string/..." />
+```
+The colour is the *readable* accent (`PageUi.readableAccent`, darker on light / lighter on dark until
+it reads), applied by the theme's `viewInflaterClass` (`ui/LoqInViewInflater.kt`) to any view whose
+`style=` is `LoqIn.SectionHeader*`, `LoqIn.StatValue`, `LoqIn.RowIcon`, `LoqIn.StatIcon` or
+`LoqIn.EmptyStateIcon`, for every preset and custom accent. No Activity code: don't call
+`AccentContrast.strengthen` or tint headers in Kotlin. Code-built headers:
+`PageUi.addSectionHeader(parent, R.string.x, first = false)` (inflates `page_section_header.xml`).
+
+### Top bar
+`style="@style/LoqIn.TopBar"` on every `MaterialToolbar` (it is also the theme's `toolbarStyle`, so
+toolbars built in code get it). Title 20sp medium (`TextAppearance.LoqIn.TopBarTitle`), subtitle 14sp
+on-surface-variant (`TextAppearance.LoqIn.TopBarSubtitle`). Back is always the chevron
+`@drawable/keyboard_arrow_left_24`: the theme's `homeAsUpIndicator` is the chevron, so
+`setDisplayHomeAsUpEnabled(true)` shows it too. Don't set title/subtitle sizes, colours or text
+appearances on toolbars, and don't use `abc_ic_ab_back_material` / arrow icons.
+
+### List row + status line
+Rows sit in `ListGroupLayout` (`LoqIn.ListGroup`, or `LoqIn.ListGroup.OnSurface` on sheets).
+```xml
+<LinearLayout android:id="@+id/rowX" style="@style/LoqIn.ListRow"
+    android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:clickable="true" android:focusable="true">
+    <ImageView style="@style/LoqIn.RowIcon" android:layout_width="24dp" android:layout_height="24dp"
+        android:contentDescription="@null" android:src="@drawable/..." />
+    <LinearLayout style="@style/LoqIn.RowText" android:layout_width="0dp"
+        android:layout_height="wrap_content">
+        <TextView style="@style/LoqIn.RowTitle" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:text="@string/..." />
+        <TextView style="@style/LoqIn.RowSummary" android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:text="@string/..." />
+        <TextView android:id="@+id/tvStatus" style="@style/LoqIn.RowStatus"
+            android:layout_width="match_parent" android:layout_height="wrap_content" />
+    </LinearLayout>
+    <ImageView style="@style/LoqIn.RowChevron" android:layout_width="24dp"
+        android:layout_height="24dp" android:contentDescription="@null" />
+</LinearLayout>
+```
+- Row: `LoqIn.ListRow` (72dp min, 20/16dp sides, 14dp vertical), `LoqIn.ListRow.OneLine` (56dp).
+- Text column: `LoqIn.RowText` (16dp after the icon); `LoqIn.RowText.NoIcon` when there is no icon.
+- Status line (optional third line): `LoqIn.RowStatus` (neutral), `.Positive` (`status_ok`),
+  `.Warning` (`status_warning`), `.Error` (`?attr/colorError`). The text must say the state in words;
+  colour only reinforces it. Switch tone from code with `PageUi.setRowStatus(tv, PageUi.Status.X)`.
+- Trailing: `LoqIn.RowChevron` (in-app), `LoqIn.RowExternal` (`open_in_new`, leaves the app),
+  `LoqIn.RowValue` (value text such as "Off"; neutral, not accent), `LoqIn.RowSwitch` on a switch.
+- Locked row that still explains itself on tap (protection on, feature off):
+  `PageUi.setRowLocked(row, locked, stateDescription)` — full contrast, lock icon instead of chevron.
+  Really disabled row: `PageUi.setRowDimmed(row, true)` — content at 38%, segment stays solid. Never
+  set `row.alpha` (it fades the white segment too); `UiConsistency` dims disabled group rows this way.
+- `python3 -I scripts/design/adopt_row_styles.py layout.xml` converts hand-written rows inside groups to
+  these styles (rows with unusual paddings are skipped; finish by hand and review `git diff`).
+
+### Cards
+A content card on a page (chart, form, text block) is `LoqIn.PageCard` (flat, 24dp corners like a
+group, **no built-in inset**), `LoqIn.PageCard.OnSurface` on sheets. Put its content in
+`android:padding="@dimen/page_card_padding"` (20dp). `LoqIn.Card` adds an invisible 8dp inset on each
+side (`cardUseCompatPadding`), which made cards sit 8dp further in than headers and groups; replace it
+with `LoqIn.PageCard` and give stacked cards `layout_marginTop="@dimen/block_gap"` instead. Grid tiles
+that rely on the inset for their gaps (`view_home_quick_actions.xml`, `grid_*_tile.xml`) can keep it.
+
+### Empty state
+One look: `com.oliver.loqin.ui.widgets.EmptyStateView` (flat page card, full content width, centred
+24dp accent icon, title in RowTitle, optional body in RowSummary, optional tonal action). Put it in
+place of the list it replaces (not inside a card or group) and toggle `visibility` as before.
+```xml
+<com.oliver.loqin.ui.widgets.EmptyStateView
+    android:id="@+id/emptyX"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    app:emptyIcon="@drawable/schedule_24"
+    app:emptyTitle="@string/..."
+    app:emptyBody="@string/..."
+    app:emptyActionText="@string/..." />
+```
+On a sheet add `style="@style/LoqIn.EmptyState.OnSurface"`. Code: `setTitle`, `setBody`, `setIcon`,
+`setAction(text) { ... }` or `setOnActionClickListener { ... }`. If Kotlin typed the old view as
+`TextView`, retype the field as `View`/`EmptyStateView` (keep the id). Hide the card that held the list
+while the empty state shows (see `ProtectionChangesActivity.refreshUi`).
+
+### Stat tile
+`grid_stat_tile.xml` is the one stat tile: `SquareCardView` in `LoqIn.StatTile` (flat, no stroke, no
+shadow), icon `LoqIn.StatIcon`, number `LoqIn.StatValue` (20sp bold, readable accent), label
+`LoqIn.StatLabel` (12sp on-surface-variant, 2 lines). Tiles are 3 per row with `@dimen/tile_gap`
+between them and the outer tiles on the page gutter (see `LoqInOverviewActivity.fillStatGrid`: half-gap
+margins on tiles, minus half-gap on the row). Don't use `LoqIn.StatChip` or elevated cards for stats.
+
+### Segmented control
+```xml
+<com.google.android.material.button.MaterialButtonToggleGroup android:id="@+id/toggleX"
+    android:layout_width="match_parent" android:layout_height="wrap_content"
+    app:singleSelection="true" app:selectionRequired="true">
+    <com.google.android.material.button.MaterialButton android:id="@+id/btnA"
+        style="@style/LoqIn.Segment" android:layout_width="0dp"
+        android:layout_height="wrap_content" android:layout_weight="1" android:text="@string/..." />
+    ...
+</com.google.android.material.button.MaterialButtonToggleGroup>
+```
+Then `SegmentedToggleUi.apply(context, buttons, selectedId)` on every selection change. It owns the
+size (48dp min touch height inside a 4dp pill track), label (`TextAppearance.LoqIn.Segment`, 14sp,
+medium weight when selected, wraps to 2 lines), colours and corners. Never set `textSize`, `minHeight`,
+`layout_height` in dp, `cornerRadius`, `singleLine` or tints on segments (it also clears fixed heights
+set from code). Code-built segments: `MaterialButton(ctx, null, materialButtonOutlinedStyle)` with
+`LayoutParams(0, WRAP_CONTENT, 1f)` and nothing else.
+
+### Filter chip
+All / Social / Video / Suggested / Hidden, log filters: `FilterChipUi.create(context, label)` (style
+`LoqIn.FilterChip` via the theme's `loqinFilterChipStyle`: 36dp pill, 48dp touch target, 14sp) and
+`FilterChipUi.setSelected(chip, selected)` for every chip after each tap (selected = accent-container
+fill and on-surface label, like a selected segment; unselected = outlined). In XML:
+`<com.google.android.material.chip.Chip style="@style/LoqIn.FilterChip" .../>`. Remove per-screen
+`refreshChecks` colour code and `Widget_Material3_Chip_Suggestion`.
+
+### Buttons and dialog actions
+Every button label is `TextAppearance.LoqIn.Button` (14sp medium, **no letter-spacing**, no caps):
+`LoqIn.Button`, `LoqIn.TonalButton`, `LoqIn.OutlinedButton`, `LoqIn.TextButton` (48dp touch) all use
+it. Alert dialogs get `LoqIn.DialogButton` through the dialog theme overlays, and
+`styleLoqInDialogButtons()` applies the same appearance. Never use
+`TextAppearance.MaterialComponents.Button` (0.09em tracking) or `Widget.Material3.Button.*` directly;
+use the LoqIn styles and drop local `textSize`/`minHeight` on them.
+
+### Sticky bottom action
+One primary action pinned under the scrolling content (Save, Done): a `LoqIn.BottomBar` container
+(page background, 16dp sides, 12dp top/bottom) holding one full-width `LoqIn.Button`. It is the last
+child of the vertical root, outside the scrolling view; `EdgeToEdgeUtils.setupClassic` already pads the
+root above the navigation bar, so add no inset code or margins.
+```xml
+<LinearLayout style="@style/LoqIn.BottomBar"
+    android:layout_width="match_parent" android:layout_height="wrap_content">
+    <com.google.android.material.button.MaterialButton android:id="@+id/btnSave"
+        style="@style/LoqIn.Button" android:layout_width="match_parent"
+        android:layout_height="wrap_content" android:text="@string/save" />
+</LinearLayout>
+```

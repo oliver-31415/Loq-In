@@ -156,7 +156,7 @@ For UI or navigation changes, verify at least:
 ### XML resource formatting
 - Layout roots keep the first Android namespace on the opening line; remaining namespaces and attributes use one line each.
 - Layout attributes use a stable order: ID/style, size, layout constraints and margins, behaviour, content, then app/tools attributes.
-- Screen section headings use `@style/LoqIn.SectionHeader`; use 24dp before a new section and 10dp between its heading and first card.
+- Screen section headings use `@style/LoqIn.SectionHeader`; use `LoqIn.SectionHeader` (24dp before, 8dp after, built into the style) and `LoqIn.SectionHeader.First` for the first; see EXPRESSIVE_DESIGN.md "Cohesion rules".
 - Standard UI vector icons use 24dp with a 960 × 960 viewport and `?attr/colorOnSurface`. Only path data should normally differ.
 - Intentional vector exceptions are brand-colour icons, Quick Settings bitmap-source icons, widget-colour icons, icon-only white blocker assets, stroked artwork, and non-square previews.
 - Drawable files omit the XML declaration and use the same attribute order: size/viewport, then `pathData`, fill and optional stroke attributes.

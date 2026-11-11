@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <!-- ====================================================== -->
+    <!-- In-app rules: "See where" sheet -->
+    <!-- ====================================================== -->
+    <string name="in_app_where_title_fmt">Where things are in %1$s</string>
+    <string name="in_app_where_shelf">In your feed · hidden</string>
+    <string name="in_app_where_block_fmt">%1$s blocked. Opening it sends you back.</string>
+    <string name="in_app_where_allow_fmt">Only %1$s stays available.</string>
+    <string name="in_app_where_allow_none">Nothing here stays available.</string>
+    <string name="in_app_where_also_fmt">Also blocked: %1$s</string>
+
+    <string name="in_app_where_tab_home">Home</string>
+    <string name="in_app_where_tab_create">Create</string>
+    <string name="in_app_where_tab_profile">Profile</string>
+    <string name="in_app_where_tab_messages">Messages</string>
+    <string name="in_app_where_tab_chat">Chat</string>
+    <string name="in_app_where_tab_camera">Camera</string>
+    <string name="in_app_where_tab_friends">Friends</string>
+    <string name="in_app_where_tab_menu">Menu</string>
+
+</resources>

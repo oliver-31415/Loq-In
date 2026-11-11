@@ -19,6 +19,7 @@
 package com.oliver.loqin.feature.theme
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.LinearGradient
@@ -54,10 +55,10 @@ class SpectrumPadView @JvmOverloads constructor(
 
     var onColorPicked: ((x: Float, y: Float) -> Unit)? = null
 
-    private var rainbowShader: Shader? = null
-    private var shadeShader: Shader? = null
-    private val rainbowPaint = Paint()
-    private val shadePaint = Paint()
+    // Pre-rendered on the CPU: drawing the shade gradient over the rainbow on the GPU
+    // segfaults the emulator's renderer (gfxstream), so the pad is drawn as one bitmap.
+    private var spectrum: Bitmap? = null
+    private val bitmapPaint = Paint(Paint.FILTER_BITMAP_FLAG)
     private val thumbPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply { style = Paint.Style.STROKE }
     private val thumbFillPaint = Paint(Paint.ANTI_ALIAS_FLAG)
 
@@ -81,27 +82,9 @@ class SpectrumPadView @JvmOverloads constructor(
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
         if (width <= 0 || height <= 0) return
-        if (rainbowShader == null) {
-            rainbowShader = LinearGradient(
-                0f, 0f, width.toFloat(), 0f,
-                intArrayOf(
-                    0xFFFF0000.toInt(), 0xFFFFFF00.toInt(), 0xFF00FF00.toInt(),
-                    0xFF00FFFF.toInt(), 0xFF0000FF.toInt(), 0xFFFF00FF.toInt(), 0xFFFF0000.toInt(),
-                ),
-                null, Shader.TileMode.CLAMP,
-            )
-            rainbowPaint.shader = rainbowShader
-            canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), rainbowPaint)
-            shadeShader = LinearGradient(
-                0f, 0f, 0f, height.toFloat(),
-                intArrayOf(Color.WHITE, 0x00FFFFFF, Color.BLACK),
-                floatArrayOf(0f, 0.5f, 1f),
-                Shader.TileMode.CLAMP,
-            )
-            shadePaint.shader = shadeShader
-        }
-        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), rainbowPaint)
-        canvas.drawRect(0f, 0f, width.toFloat(), height.toFloat(), shadePaint)
+        val bitmap = spectrum?.takeIf { it.width == width && it.height == height }
+            ?: renderSpectrum(width, height).also { spectrum = it }
+        canvas.drawBitmap(bitmap, 0f, 0f, bitmapPaint)
 
         val cx = spectrumX * width
         val cy = spectrumY * height
@@ -113,6 +96,29 @@ class SpectrumPadView @JvmOverloads constructor(
         canvas.drawCircle(cx, cy, radius, thumbPaint)
         thumbPaint.color = 0x66000000
         canvas.drawCircle(cx, cy, radius + thumbPaint.strokeWidth * 0.75f, thumbPaint)
+    }
+
+    private fun renderSpectrum(w: Int, h: Int): Bitmap {
+        val bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val c = Canvas(bitmap)
+        val paint = Paint()
+        paint.shader = LinearGradient(
+            0f, 0f, w.toFloat(), 0f,
+            intArrayOf(
+                0xFFFF0000.toInt(), 0xFFFFFF00.toInt(), 0xFF00FF00.toInt(),
+                0xFF00FFFF.toInt(), 0xFF0000FF.toInt(), 0xFFFF00FF.toInt(), 0xFFFF0000.toInt(),
+            ),
+            null, Shader.TileMode.CLAMP,
+        )
+        c.drawRect(0f, 0f, w.toFloat(), h.toFloat(), paint)
+        paint.shader = LinearGradient(
+            0f, 0f, 0f, h.toFloat(),
+            intArrayOf(Color.WHITE, 0x00FFFFFF, Color.BLACK),
+            floatArrayOf(0f, 0.5f, 1f),
+            Shader.TileMode.CLAMP,
+        )
+        c.drawRect(0f, 0f, w.toFloat(), h.toFloat(), paint)
+        return bitmap
     }
 
     private fun updateFromTouch(x: Float, y: Float) {

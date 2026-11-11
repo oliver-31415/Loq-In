@@ -1,82 +1,70 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- One saved barcode: a flat page card holding a shared list row (icon, name, code). -->
 <com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    style="@style/LoqIn.Card"
+    style="@style/LoqIn.PageCard"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="6dp"
-    app:cardUseCompatPadding="false">
+    android:layout_marginBottom="8dp">
 
     <LinearLayout
+        style="@style/LoqIn.ListRow"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:padding="12dp">
+        android:layout_height="wrap_content">
 
         <ImageView
             android:id="@+id/ivIcon"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            style="@style/LoqIn.RowIcon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
             android:contentDescription="@null"
             android:src="@drawable/barcode_24" />
 
-        <Space
-            android:layout_width="12dp"
-            android:layout_height="1dp" />
-
         <LinearLayout
+            style="@style/LoqIn.RowText"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
+            android:layout_height="wrap_content">
 
             <TextView
                 android:id="@+id/tvName"
+                style="@style/LoqIn.RowTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
-                android:maxLines="1"
-                android:ellipsize="end" />
+                android:ellipsize="end"
+                android:maxLines="1" />
 
             <TextView
                 android:id="@+id/tvRaw"
+                style="@style/LoqIn.RowSummary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:alpha="0.8"
-                android:textSize="13sp"
+                android:ellipsize="end"
                 android:fontFamily="monospace"
-                android:maxLines="1"
-                android:ellipsize="end" />
+                android:maxLines="1" />
 
             <TextView
                 android:id="@+id/tvMeta"
+                style="@style/LoqIn.RowStatus"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:visibility="gone"
-                android:alpha="0.72"
-                android:textSize="12sp"
+                android:ellipsize="end"
                 android:maxLines="3"
-                android:ellipsize="end" />
+                android:visibility="gone" />
 
             <TextView
                 android:id="@+id/tvAction"
+                style="@style/LoqIn.RowSummary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:alpha="0.86"
-                android:textSize="14sp"
-                android:maxLines="2"
-                android:ellipsize="end" />
+                android:ellipsize="end"
+                android:maxLines="2" />
         </LinearLayout>
 
         <com.google.android.material.checkbox.MaterialCheckBox
             android:id="@+id/cbSelect"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/row_trailing_gap"
             android:clickable="false"
             android:focusable="false"
             android:visibility="gone" />

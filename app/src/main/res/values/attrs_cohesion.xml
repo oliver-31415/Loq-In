@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Default styles for shared widgets, set by Theme.LoqIn.Base so code-built views match XML. -->
+    <attr name="loqinEmptyStateStyle" format="reference" />
+    <attr name="loqinFilterChipStyle" format="reference" />
+
+    <!-- com.oliver.loqin.ui.widgets.EmptyStateView -->
+    <declare-styleable name="EmptyStateView">
+        <attr name="emptyIcon" format="reference" />
+        <attr name="emptyTitle" format="string" />
+        <attr name="emptyBody" format="string" />
+        <attr name="emptyActionText" format="string" />
+    </declare-styleable>
+</resources>

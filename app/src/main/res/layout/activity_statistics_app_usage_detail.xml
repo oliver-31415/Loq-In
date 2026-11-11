@@ -1,9 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-  App usage detail — ground-up rebuild in the Foqos language.
-  One scroll: hero card (app + big total) → stat chips → limits cards →
-  chart card (segmented range + canvas chart, no XML button group) →
-  sessions timeline card. Everything rounded, everything accented live.
+  App usage detail: the statistics range bar under the top bar, the summary card (app, label,
+  hero total, opens / blocks), limits as a grouped list, then flat chart cards.
 -->
 <androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
@@ -27,13 +25,9 @@
     </com.google.android.material.appbar.AppBarLayout>
 
     <androidx.core.widget.NestedScrollView
+        style="@style/LoqIn.PageContent"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingStart="16dp"
-        android:paddingTop="12dp"
-        android:paddingEnd="16dp"
-        android:paddingBottom="28dp"
-        android:clipToPadding="false"
         android:fillViewport="true"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
@@ -42,112 +36,187 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
-            <!-- Hero: app identity + big total for the selected range -->
-            <com.google.android.material.card.MaterialCardView
-                style="@style/LoqIn.Card"
+            <!-- Range bar: same control as every statistics page (StatsPageUi.rangeBar). -->
+            <com.google.android.material.button.MaterialButtonToggleGroup
+                android:id="@+id/toggleRange"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                app:cardUseCompatPadding="false">
+                android:layout_marginBottom="@dimen/block_gap"
+                app:selectionRequired="true"
+                app:singleSelection="true">
 
-                <LinearLayout
-                    android:layout_width="match_parent"
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnRangeToday"
+                    style="@style/LoqIn.Segment"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical">
+                    android:layout_weight="1"
+                    android:paddingStart="4dp"
+                    android:paddingEnd="4dp"
+                    android:text="@string/usage_range_today" />
 
-                <LinearLayout
-                    android:layout_width="match_parent"
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnRangeWeek"
+                    style="@style/LoqIn.Segment"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:padding="16dp">
+                    android:layout_weight="1"
+                    android:paddingStart="4dp"
+                    android:paddingEnd="4dp"
+                    android:text="@string/usage_range_week" />
 
-                    <FrameLayout
-                        android:id="@+id/iconBackdrop"
-                        android:layout_width="56dp"
-                        android:layout_height="56dp"
-                        android:background="@drawable/bg_roundel_accent">
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnRangeMonth"
+                    style="@style/LoqIn.Segment"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:paddingStart="4dp"
+                    android:paddingEnd="4dp"
+                    android:text="@string/usage_range_month" />
 
-                        <ImageView
-                            android:id="@+id/icon"
-                            android:layout_width="34dp"
-                            android:layout_height="34dp"
-                            android:layout_gravity="center"
-                            android:contentDescription="@null"
-                            android:scaleType="centerInside" />
-                    </FrameLayout>
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnRangeYear"
+                    style="@style/LoqIn.Segment"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:paddingStart="4dp"
+                    android:paddingEnd="4dp"
+                    android:text="@string/usage_range_year" />
 
-                    <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="14dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnRangeCustom"
+                    style="@style/LoqIn.Segment"
+                    android:layout_width="@dimen/stats_calendar_segment_width"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="0dp"
+                    android:paddingEnd="0dp"
+                    android:contentDescription="@string/activity_history_range_custom"
+                    android:text=""
+                    app:icon="@drawable/calendar_month_24"
+                    app:iconGravity="textStart"
+                    app:iconPadding="0dp" />
+            </com.google.android.material.button.MaterialButtonToggleGroup>
 
-                        <TextView
-                            android:id="@+id/detailTitle"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:textColor="?attr/colorOnSurface"
-                            android:textSize="20sp"
-                            android:textStyle="bold"
-                            android:maxLines="2"
-                            android:ellipsize="end" />
+            <!-- Same as stats_custom_range_row.xml. -->
+            <LinearLayout
+                android:id="@+id/customRangeSummary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/block_gap"
+                android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="@dimen/row_padding_start"
+                android:visibility="gone">
 
-                        <TextView
-                            android:id="@+id/detailSubtitle"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="3dp"
-                            android:alpha="0.72"
-                            android:textColor="?attr/colorOnSurface"
-                            android:textSize="13sp" />
-                    </LinearLayout>
+                <TextView
+                    android:id="@+id/customRangeValue"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:textAppearance="@style/TextAppearance.LoqIn.RowValue" />
 
-                    <ImageButton
-                        android:id="@+id/btnEditLimits"
-                        android:layout_width="48dp"
-                        android:layout_height="48dp"
-                        android:layout_marginStart="8dp"
-                        android:padding="12dp"
-                        android:background="?attr/selectableItemBackgroundBorderless"
-                        android:contentDescription="@string/edit_limits"
-                        app:srcCompat="@drawable/tune_24"
-                        app:tint="?attr/colorPrimary" />
-                </LinearLayout>
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnClearCustomRange"
+                    style="@style/LoqIn.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/row_trailing_gap"
+                    android:text="@string/stats_range_clear" />
+            </LinearLayout>
+
+            <!-- Summary card: app, then label / hero total / opens and blocks for the range. -->
+            <com.google.android.material.card.MaterialCardView
+                style="@style/LoqIn.PageCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="16dp">
+                    android:padding="@dimen/page_card_padding">
+
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center_vertical"
+                        android:orientation="horizontal">
+
+                        <FrameLayout
+                            android:id="@+id/iconBackdrop"
+                            android:layout_width="48dp"
+                            android:layout_height="48dp"
+                            android:background="@drawable/bg_roundel_accent">
+
+                            <ImageView
+                                android:id="@+id/icon"
+                                android:layout_width="32dp"
+                                android:layout_height="32dp"
+                                android:layout_gravity="center"
+                                android:contentDescription="@null"
+                                android:scaleType="centerInside" />
+                        </FrameLayout>
+
+                        <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/row_icon_gap"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                            <TextView
+                                android:id="@+id/detailTitle"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:ellipsize="end"
+                                android:maxLines="2"
+                                android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
+
+                            <TextView
+                                android:id="@+id/detailSubtitle"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="2dp"
+                                android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
+                        </LinearLayout>
+
+                        <ImageButton
+                            android:id="@+id/btnEditLimits"
+                            android:layout_width="@dimen/touch_target"
+                            android:layout_height="@dimen/touch_target"
+                            android:layout_marginStart="8dp"
+                            android:background="?attr/selectableItemBackgroundBorderless"
+                            android:contentDescription="@string/edit_limits"
+                            android:padding="12dp"
+                            app:srcCompat="@drawable/tune_24"
+                            app:tint="?attr/colorOnSurfaceVariant" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/todayUsageCaption"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="16dp"
+                        android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
 
                     <TextView
                         android:id="@+id/todayUsage"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:textColor="?attr/colorPrimary"
-                        android:textSize="30sp"
-                        android:textStyle="bold" />
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:alpha="0.7"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textSize="12sp"
-                        android:id="@+id/todayUsageCaption" />
+                        android:layout_marginTop="4dp"
+                        android:textAppearance="@style/TextAppearance.LoqIn.HeroValue" />
 
                     <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
+                        android:baselineAligned="false"
                         android:orientation="horizontal">
 
                         <com.google.android.material.card.MaterialCardView
-                            style="@style/LoqIn.StatChip"
+                            style="@style/LoqIn.PageCard.OnSurface"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1">
@@ -157,18 +226,19 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:gravity="center"
-                                android:paddingTop="10dp"
-                                android:paddingBottom="10dp"
-                                android:textSize="14sp"
-                                android:textStyle="bold" />
+                                android:paddingStart="8dp"
+                                android:paddingTop="12dp"
+                                android:paddingEnd="8dp"
+                                android:paddingBottom="12dp"
+                                android:textAppearance="@style/TextAppearance.LoqIn.RowValue" />
                         </com.google.android.material.card.MaterialCardView>
 
                         <Space
-                            android:layout_width="10dp"
+                            android:layout_width="@dimen/tile_gap"
                             android:layout_height="1dp" />
 
                         <com.google.android.material.card.MaterialCardView
-                            style="@style/LoqIn.StatChip"
+                            style="@style/LoqIn.PageCard.OnSurface"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1">
@@ -178,12 +248,12 @@
                                 android:layout_width="match_parent"
                                 android:layout_height="wrap_content"
                                 android:gravity="center"
-                                android:paddingTop="10dp"
-                                android:paddingBottom="10dp"
-                                android:textSize="14sp"
-                                android:textStyle="bold" />
+                                android:paddingStart="8dp"
+                                android:paddingTop="12dp"
+                                android:paddingEnd="8dp"
+                                android:paddingBottom="12dp"
+                                android:textAppearance="@style/TextAppearance.LoqIn.RowValue" />
                         </com.google.android.material.card.MaterialCardView>
-                    </LinearLayout>
                     </LinearLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -193,304 +263,208 @@
                 style="@style/LoqIn.SectionHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
                 android:text="@string/usage_details_limits_section" />
 
-            <LinearLayout
+            <com.oliver.loqin.ui.widgets.ListGroupLayout
+                style="@style/LoqIn.ListGroup"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:orientation="horizontal"
-                android:baselineAligned="false">
+                android:layout_height="wrap_content">
 
-                <com.google.android.material.card.MaterialCardView
+                <LinearLayout
                     android:id="@+id/cardLimitTime"
-                    style="@style/LoqIn.Card"
-                    android:layout_width="0dp"
+                    style="@style/LoqIn.ListRow.OneLine"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:foreground="?attr/selectableItemBackground"
                     android:clickable="true"
-                    android:focusable="true"
-                    app:cardUseCompatPadding="true">
+                    android:focusable="true">
+
+                    <ImageView
+                        style="@style/LoqIn.RowIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/timer_24" />
 
                     <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="14dp">
+                        style="@style/LoqIn.RowText"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content">
 
                         <TextView
+                            style="@style/LoqIn.RowTitle"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:alpha="0.7"
-                            android:text="@string/limit_time_action"
-                            android:textColor="?attr/colorOnSurface"
-                            android:textSize="12sp" />
-
-                        <TextView
-                            android:id="@+id/tvDailyLimitValue"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:text="@string/no_limit"
-                            android:textColor="?attr/colorOnSurface"
-                            android:textSize="15sp"
-                            android:textStyle="bold" />
+                            android:text="@string/limit_time_action" />
                     </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
 
-                <Space
-                    android:layout_width="10dp"
-                    android:layout_height="1dp" />
+                    <TextView
+                        android:id="@+id/tvDailyLimitValue"
+                        style="@style/LoqIn.RowValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/no_limit" />
 
-                <com.google.android.material.card.MaterialCardView
+                    <ImageView
+                        style="@style/LoqIn.RowChevron"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="@null" />
+                </LinearLayout>
+
+                <LinearLayout
                     android:id="@+id/cardLimitAttempts"
-                    style="@style/LoqIn.Card"
-                    android:layout_width="0dp"
+                    style="@style/LoqIn.ListRow.OneLine"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:foreground="?attr/selectableItemBackground"
                     android:clickable="true"
-                    android:focusable="true"
-                    app:cardUseCompatPadding="true">
+                    android:focusable="true">
+
+                    <ImageView
+                        style="@style/LoqIn.RowIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/app_blocking_black_24" />
 
                     <LinearLayout
+                        style="@style/LoqIn.RowText"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            style="@style/LoqIn.RowTitle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/limit_attempts_action" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tvDailyAttemptLimitValue"
+                        style="@style/LoqIn.RowValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/no_limit" />
+
+                    <ImageView
+                        style="@style/LoqIn.RowChevron"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="@null" />
+                </LinearLayout>
+
+                <!-- Session limit progress: a third, information-only segment when a limit is set. -->
+                <LinearLayout
+                    android:id="@+id/sessionLimitContainer"
+                    style="@style/LoqIn.ListRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:visibility="gone">
+
+                    <TextView
+                        android:id="@+id/sessionLimitLabel"
+                        style="@style/LoqIn.RowTitle"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="14dp">
+                        android:text="@string/session_limit_current_label" />
 
-                        <TextView
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:alpha="0.7"
-                            android:text="@string/limit_attempts_action"
-                            android:textColor="?attr/colorOnSurface"
-                            android:textSize="12sp" />
+                    <TextView
+                        android:id="@+id/sessionLimitSummary"
+                        style="@style/LoqIn.RowSummary"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:ellipsize="end"
+                        android:maxLines="2"
+                        android:text="" />
 
-                        <TextView
-                            android:id="@+id/tvDailyAttemptLimitValue"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:text="@string/no_limit"
-                            android:textColor="?attr/colorOnSurface"
-                            android:textSize="15sp"
-                            android:textStyle="bold" />
-                    </LinearLayout>
-                </com.google.android.material.card.MaterialCardView>
-            </LinearLayout>
+                    <ProgressBar
+                        android:id="@+id/sessionLimitProgress"
+                        style="?android:attr/progressBarStyleHorizontal"
+                        android:layout_width="match_parent"
+                        android:layout_height="6dp"
+                        android:layout_marginTop="8dp"
+                        android:max="100"
+                        android:progress="0" />
+                </LinearLayout>
+            </com.oliver.loqin.ui.widgets.ListGroupLayout>
 
             <TextView
                 android:id="@+id/tvLimitHint"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:alpha="0.7"
-                android:visibility="gone"
+                android:layout_marginTop="8dp"
+                android:paddingStart="@dimen/row_padding_start"
+                android:paddingEnd="@dimen/row_padding_start"
                 android:text="@string/limits_quick_edit_hint"
-                android:textColor="?attr/colorOnSurface" />
+                android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
+                android:visibility="gone" />
 
-            <LinearLayout
-                android:id="@+id/sessionLimitContainer"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:orientation="vertical"
-                android:visibility="gone">
-
-                <TextView
-                    android:id="@+id/sessionLimitLabel"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:alpha="0.88"
-                    android:text="@string/session_limit_current_label"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textSize="12sp"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:id="@+id/sessionLimitSummary"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="3dp"
-                    android:alpha="0.78"
-                    android:text=""
-                    android:textColor="?attr/colorOnSurface"
-                    android:textSize="12sp"
-                    android:maxLines="1"
-                    android:ellipsize="end" />
-
-                <ProgressBar
-                    android:id="@+id/sessionLimitProgress"
-                    style="?android:attr/progressBarStyleHorizontal"
-                    android:layout_width="match_parent"
-                    android:layout_height="5dp"
-                    android:layout_marginTop="5dp"
-                    android:max="100"
-                    android:progress="0" />
-            </LinearLayout>
-
-            <!-- Usage over time: segmented range + one chart card -->
+            <!-- Usage over time -->
             <TextView
                 style="@style/LoqIn.SectionHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
                 android:text="@string/usage_details_activity_section" />
 
             <com.google.android.material.card.MaterialCardView
-                style="@style/LoqIn.Card"
+                style="@style/LoqIn.PageCard"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                app:cardUseCompatPadding="false">
+                android:layout_height="wrap_content">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
-
-                    <com.google.android.material.button.MaterialButtonToggleGroup
-                        android:id="@+id/toggleRange"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        app:selectionRequired="true"
-                        app:singleSelection="true">
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnRangeToday"
-                            style="@style/LoqIn.Segment"
-                            android:layout_width="0dp"
-                            android:layout_height="44dp"
-                            android:layout_weight="1"
-                            android:text="@string/usage_range_today" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnRangeWeek"
-                            style="@style/LoqIn.Segment"
-                            android:layout_width="0dp"
-                            android:layout_height="44dp"
-                            android:layout_weight="1"
-                            android:text="@string/usage_range_week" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnRangeMonth"
-                            style="@style/LoqIn.Segment"
-                            android:layout_width="0dp"
-                            android:layout_height="44dp"
-                            android:layout_weight="1"
-                            android:text="@string/usage_range_month" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnRangeYear"
-                            style="@style/LoqIn.Segment"
-                            android:layout_width="0dp"
-                            android:layout_height="44dp"
-                            android:layout_weight="1"
-                            android:text="@string/usage_range_year" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnRangeCustom"
-                            style="@style/LoqIn.Segment"
-                            android:layout_width="52dp"
-                            android:layout_height="44dp"
-                            android:minWidth="0dp"
-                            android:gravity="center"
-                            android:contentDescription="@string/activity_history_range_custom"
-                            android:text=""
-                            app:icon="@drawable/calendar_month_24"
-                            app:iconGravity="textStart"
-                            app:iconPadding="0dp" />
-                    </com.google.android.material.button.MaterialButtonToggleGroup>
-
-                    <LinearLayout
-                        android:id="@+id/customRangeSummary"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:visibility="gone">
-
-                        <TextView
-                            android:id="@+id/customRangeValue"
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:textColor="?attr/colorOnSurface"
-                            android:textSize="13sp"
-                            android:textStyle="bold" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/btnClearCustomRange"
-                            style="@style/LoqIn.OutlinedButton.CompactSegment"
-                            android:layout_width="wrap_content"
-                            android:layout_height="36dp"
-                            android:minWidth="0dp"
-                            android:text="@string/stats_range_clear" />
-                    </LinearLayout>
+                    android:padding="@dimen/page_card_padding">
 
                     <TextView
                         android:id="@+id/chartSummary"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="14dp"
-                        android:alpha="0.75"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textSize="13sp" />
+                        android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
 
                     <com.oliver.loqin.ui.widgets.UsageDetailChartView
                         android:id="@+id/chart"
                         android:layout_width="match_parent"
                         android:layout_height="170dp"
-                        android:layout_marginTop="8dp" />
+                        android:layout_marginTop="16dp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Opens vs blocks: hidden until there is data -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardOpensBlocks"
-                style="@style/LoqIn.Card"
+                style="@style/LoqIn.PageCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:visibility="gone"
-                app:cardUseCompatPadding="false">
+                android:layout_marginTop="@dimen/block_gap"
+                android:visibility="gone">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:padding="@dimen/page_card_padding">
 
                     <TextView
                         android:id="@+id/tvOpensBlocksTitle"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/charts_opens_title"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
+                        android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
 
                     <TextView
                         android:id="@+id/tvOpensBlocksHeadline"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:alpha="0.75"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textSize="13sp" />
+                        android:layout_marginTop="2dp"
+                        android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
 
                     <TextView
                         android:id="@+id/tvOpensBlocksTrend"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:alpha="0.75"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textSize="13sp"
+                        android:layout_marginTop="2dp"
+                        android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
                         android:visibility="gone" />
 
                     <!-- Shown only when the page has no explicit range, so the card picks its own. -->
@@ -498,7 +472,7 @@
                         android:id="@+id/toggleOpensBlocksRange"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
+                        android:layout_marginTop="16dp"
                         android:visibility="gone"
                         app:selectionRequired="true"
                         app:singleSelection="true">
@@ -507,7 +481,7 @@
                             android:id="@+id/btnOpensBlocksWeek"
                             style="@style/LoqIn.Segment"
                             android:layout_width="0dp"
-                            android:layout_height="44dp"
+                            android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:text="@string/charts_range_week" />
 
@@ -515,7 +489,7 @@
                             android:id="@+id/btnOpensBlocksMonth"
                             style="@style/LoqIn.Segment"
                             android:layout_width="0dp"
-                            android:layout_height="44dp"
+                            android:layout_height="wrap_content"
                             android:layout_weight="1"
                             android:text="@string/charts_range_month" />
                     </com.google.android.material.button.MaterialButtonToggleGroup>
@@ -524,100 +498,86 @@
                         android:id="@+id/chartOpensBlocks"
                         android:layout_width="match_parent"
                         android:layout_height="150dp"
-                        android:layout_marginTop="8dp" />
+                        android:layout_marginTop="16dp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Pause results for this app: hidden unless the app has a pause rule or outcomes in range -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardPauseResults"
-                style="@style/LoqIn.Card"
+                style="@style/LoqIn.PageCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:visibility="gone"
-                app:cardUseCompatPadding="false">
+                android:layout_marginTop="@dimen/block_gap"
+                android:visibility="gone">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:padding="@dimen/page_card_padding">
 
                     <TextView
                         android:id="@+id/tvPauseTitle"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/charts_pause_title"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
+                        android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
 
                     <TextView
                         android:id="@+id/tvPauseSummary"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:alpha="0.75"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textSize="13sp" />
+                        android:layout_marginTop="2dp"
+                        android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
 
                     <com.oliver.loqin.ui.widgets.PauseSplitBarView
                         android:id="@+id/chartPauseSplit"
                         android:layout_width="match_parent"
                         android:layout_height="140dp"
-                        android:layout_marginTop="8dp" />
+                        android:layout_marginTop="16dp" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <!-- Session lengths: hidden until there are sessions in range -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardSessionLengths"
-                style="@style/LoqIn.Card"
+                style="@style/LoqIn.PageCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:visibility="gone"
-                app:cardUseCompatPadding="false">
+                android:layout_marginTop="@dimen/block_gap"
+                android:visibility="gone">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:padding="@dimen/page_card_padding">
 
                     <TextView
                         android:id="@+id/tvSessionsTitle"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:text="@string/charts_sessions_title"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textSize="15sp"
-                        android:textStyle="bold" />
+                        android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
 
                     <TextView
                         android:id="@+id/tvSessionsCount"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:alpha="0.75"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textSize="13sp" />
+                        android:layout_marginTop="2dp"
+                        android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
 
                     <com.oliver.loqin.ui.widgets.SessionLengthHistogramView
                         android:id="@+id/chartSessions"
                         android:layout_width="match_parent"
                         android:layout_height="150dp"
-                        android:layout_marginTop="8dp" />
+                        android:layout_marginTop="16dp" />
 
                     <TextView
                         android:id="@+id/tvSessionsHint"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:alpha="0.75"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textSize="13sp"
+                        android:layout_marginTop="12dp"
+                        android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
                         android:visibility="gone" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>

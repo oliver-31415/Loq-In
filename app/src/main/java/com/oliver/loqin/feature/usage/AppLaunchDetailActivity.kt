@@ -20,29 +20,25 @@ package com.oliver.loqin.feature.usage
 
 import android.content.Context
 import android.content.Intent
-import android.graphics.Typeface
-import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
 import android.provider.Settings
-import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
-import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import com.oliver.loqin.R
 import com.oliver.loqin.data.prefs.AppLaunchCountStore
 import com.oliver.loqin.data.prefs.UsageStore
 import com.oliver.loqin.feature.stats.StatsFormat
-import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.ui.EdgeToEdgeUtils
+import com.oliver.loqin.ui.PageUi
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.util.LocaleHelper
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.appbar.MaterialToolbar
-import com.google.android.material.card.MaterialCardView
 import java.text.DateFormat
 import java.util.Date
 
@@ -73,7 +69,6 @@ class AppLaunchDetailActivity : AppCompatActivity() {
             title = label
             setNavigationIcon(R.drawable.keyboard_arrow_left_24)
             setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
-            setBackgroundColor(AccentColor.getToolbarBackgroundColor(this@AppLaunchDetailActivity))
         }
         UsageInfoAction.attach(this, toolbar, R.string.app_launches_info_title, R.string.app_launches_info_body)
         root.addView(AppBarLayout(this).apply {
@@ -86,8 +81,8 @@ class AppLaunchDetailActivity : AppCompatActivity() {
 
         content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(16), dp(16), dp(16), dp(24))
         }
+        PageUi.applyPageContentPadding(content)
         root.addView(ScrollView(this).apply { addView(content) }, LinearLayout.LayoutParams(
             LinearLayout.LayoutParams.MATCH_PARENT,
             0,
@@ -100,7 +95,7 @@ class AppLaunchDetailActivity : AppCompatActivity() {
 
     private fun load() {
         content.removeAllViews()
-        content.addView(messageCard(getString(R.string.usage_timeline_loading)))
+        content.addView(StatsPageUi.emptyState(this, getString(R.string.usage_timeline_loading)))
         val ctx = applicationContext
         val pkg = packageName
         val range = rangeName
@@ -140,157 +135,59 @@ class AppLaunchDetailActivity : AppCompatActivity() {
         val effectiveTotal = totalMs.takeIf { it > 0L } ?: sessions.sumOf { it.durationMs }
         if (effectiveLaunches <= 0 && effectiveTotal <= 0L) {
             val message = if (hasUsageAccess) R.string.usage_timeline_empty else R.string.usage_timeline_permission_needed
-            content.addView(messageCard(getString(message)).apply {
+            content.addView(StatsPageUi.emptyState(this, getString(message), R.drawable.apps_24).apply {
                 if (!hasUsageAccess) setOnClickListener { startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS)) }
             })
             return
         }
         content.addView(headerCard(effectiveLaunches, effectiveTotal))
         if (sessions.isEmpty()) {
-            content.addView(messageCard(getString(R.string.usage_timeline_recent_details_unavailable)))
+            content.addView(
+                StatsPageUi.emptyState(this, getString(R.string.usage_timeline_recent_details_unavailable)).apply {
+                    layoutParams = StatsPageUi.blockParams(this@AppLaunchDetailActivity)
+                }
+            )
             return
         }
-        content.addView(sectionTitle(getString(R.string.usage_timeline_title)))
 
+        // One header per day (newest first); each day's sessions form one grouped list.
         val grouped = sessions.asReversed().groupBy { DateFormat.getDateInstance(DateFormat.MEDIUM).format(Date(it.startMs)) }
         grouped.forEach { (date, daySessions) ->
-            content.addView(dayTitle(date))
-            daySessions.forEachIndexed { index, session ->
-                content.addView(timelineRow(session, first = index == 0, last = index == daySessions.lastIndex))
-            }
+            StatsPageUi.addSectionHeader(content, date)
+            val group = StatsPageUi.listGroup(content)
+            daySessions.forEach { session -> group.addView(timelineRow(group, session)) }
+            content.addView(group)
         }
     }
 
-    private fun headerCard(launches: Int, totalMs: Long): MaterialCardView {
-        val card = baseCard()
-        val row = LinearLayout(this).apply {
-            gravity = Gravity.CENTER_VERTICAL
-            orientation = LinearLayout.HORIZONTAL
-            setPadding(dp(16), dp(14), dp(16), dp(14))
-        }
-        row.addView(ImageView(this).apply {
+    private fun headerCard(launches: Int, totalMs: Long): View {
+        val card = StatsPageUi.summaryCard(
+            content,
+            getString(R.string.app_launches_total_title),
+            resources.getQuantityString(R.plurals.app_launches_count, launches, launches)
+        )
+        card.setComparison(
+            getString(
+                R.string.app_launch_detail_summary,
+                resources.getQuantityString(R.plurals.app_launches_count, launches, launches),
+                StatsFormat.prettyMsWithSeconds(totalMs)
+            )
+        )
+        val iconSize = resources.getDimensionPixelSize(R.dimen.stats_app_icon_size)
+        card.trailing.addView(ImageView(this).apply {
             setImageDrawable(appIcon(packageName))
-            layoutParams = LinearLayout.LayoutParams(dp(48), dp(48))
-        })
-        row.addView(LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
-                marginStart = dp(14)
-            }
-            addView(TextView(this@AppLaunchDetailActivity).apply {
-                text = label
-                textSize = 17f
-                setTypeface(typeface, Typeface.BOLD)
-            })
-            addView(TextView(this@AppLaunchDetailActivity).apply {
-                text = getString(
-                    R.string.app_launch_detail_summary,
-                    resources.getQuantityString(R.plurals.app_launches_count, launches, launches),
-                    StatsFormat.prettyMsWithSeconds(totalMs)
-                )
-                alpha = 0.75f
-                textSize = 13f
-            })
-        })
-        card.addView(row)
-        return card
+            contentDescription = null
+        }, iconSize, iconSize)
+        card.trailing.visibility = View.VISIBLE
+        return card.view
     }
 
-    private fun timelineRow(session: UsageTimelineRepo.AppSession, first: Boolean, last: Boolean): View {
-        return LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            addView(timelineMarker(first, last))
-            addView(MaterialCardView(this@AppLaunchDetailActivity).apply {
-                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
-                    bottomMargin = dp(8)
-                }
-                radius = dp(22).toFloat()
-                setCardBackgroundColor(ContextCompat.getColor(this@AppLaunchDetailActivity, R.color.foqos_surface))
-                addView(LinearLayout(this@AppLaunchDetailActivity).apply {
-                    gravity = Gravity.CENTER_VERTICAL
-                    orientation = LinearLayout.HORIZONTAL
-                    setPadding(dp(14), dp(12), dp(14), dp(12))
-                    addView(LinearLayout(this@AppLaunchDetailActivity).apply {
-                        orientation = LinearLayout.VERTICAL
-                        layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-                        addView(TextView(this@AppLaunchDetailActivity).apply {
-                            text = timeText(session.startMs)
-                            textSize = 15f
-                            setTypeface(typeface, Typeface.BOLD)
-                        })
-                        addView(TextView(this@AppLaunchDetailActivity).apply {
-                            text = getString(R.string.usage_timeline_row, label, timeText(session.startMs), timeText(session.endMs), StatsFormat.prettyMsWithSeconds(session.durationMs))
-                            alpha = 0.72f
-                            textSize = 12.5f
-                        })
-                    })
-                    addView(TextView(this@AppLaunchDetailActivity).apply {
-                        text = StatsFormat.prettyMsWithSeconds(session.durationMs)
-                        textSize = 13f
-                        setTypeface(typeface, Typeface.BOLD)
-                        setTextColor(AccentColor.getAccentColorInt(this@AppLaunchDetailActivity))
-                    })
-                })
-            })
-        }
-    }
-
-    private fun timelineMarker(first: Boolean, last: Boolean): LinearLayout {
-        val lineColor = ContextCompat.getColor(this, R.color.foqos_outline_variant)
-        return LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER_HORIZONTAL
-            layoutParams = LinearLayout.LayoutParams(dp(28), LinearLayout.LayoutParams.MATCH_PARENT)
-            addView(View(this@AppLaunchDetailActivity).apply {
-                setBackgroundColor(if (first) android.graphics.Color.TRANSPARENT else lineColor)
-            }, LinearLayout.LayoutParams(dp(1), dp(12)))
-            addView(View(this@AppLaunchDetailActivity).apply {
-                background = GradientDrawable().apply {
-                    shape = GradientDrawable.OVAL
-                    setColor(AccentColor.getAccentColorInt(this@AppLaunchDetailActivity))
-                }
-            }, LinearLayout.LayoutParams(dp(10), dp(10)))
-            addView(View(this@AppLaunchDetailActivity).apply {
-                setBackgroundColor(if (last) android.graphics.Color.TRANSPARENT else lineColor)
-            }, LinearLayout.LayoutParams(dp(1), 0, 1f))
-        }
-    }
-
-    private fun messageCard(message: String): MaterialCardView {
-        val card = baseCard()
-        card.addView(TextView(this).apply {
-            text = message
-            textSize = 14f
-            alpha = 0.82f
-            setPadding(dp(16), dp(16), dp(16), dp(16))
-        })
-        return card
-    }
-
-    private fun sectionTitle(textValue: String): TextView = TextView(this).apply {
-        text = textValue
-        textSize = 16f
-        setTypeface(typeface, Typeface.BOLD)
-        setPadding(0, dp(18), 0, dp(4))
-    }
-
-    private fun dayTitle(textValue: String): TextView = TextView(this).apply {
-        text = textValue
-        textSize = 15f
-        setTypeface(typeface, Typeface.BOLD)
-        setPadding(dp(28), dp(10), 0, dp(6))
-    }
-
-    private fun baseCard(): MaterialCardView {
-        return MaterialCardView(this).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { topMargin = dp(10) }
-            radius = dp(22).toFloat()
-            setCardBackgroundColor(ContextCompat.getColor(this@AppLaunchDetailActivity, R.color.foqos_surface))
-        }
-    }
+    private fun timelineRow(parent: ViewGroup, session: UsageTimelineRepo.AppSession): View =
+        StatsPageUi.row(
+            parent = parent,
+            title = "${timeText(session.startMs)}–${timeText(session.endMs)}",
+            value = StatsFormat.prettyMsWithSeconds(session.durationMs),
+        )
 
     private fun appIcon(packageName: String) =
         runCatching { packageManager.getApplicationIcon(packageName) }.getOrNull()
@@ -303,8 +200,6 @@ class AppLaunchDetailActivity : AppCompatActivity() {
         theme.resolveAttribute(android.R.attr.actionBarSize, typedValue, true)
         return android.util.TypedValue.complexToDimensionPixelSize(typedValue.data, resources.displayMetrics)
     }
-
-    private fun dp(value: Int): Int = (value * resources.displayMetrics.density + 0.5f).toInt()
 
     companion object {
         private const val EXTRA_PACKAGE = "package"

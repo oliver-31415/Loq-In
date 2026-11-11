@@ -1,0 +1,251 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Shared page building blocks (docs/EXPRESSIVE_DESIGN.md, "Cohesion rules"). Every screen is
+    assembled from these; don't recreate their sizes or colours in a layout or in Kotlin.
+-->
+<resources>
+
+    <!-- =========================
+         PAGE
+         ========================= -->
+    <!-- The scrolling content container (NestedScrollView / ScrollView / RecyclerView) of a page. -->
+    <style name="LoqIn.PageContent">
+        <item name="android:paddingStart">@dimen/page_margin</item>
+        <item name="android:paddingEnd">@dimen/page_margin</item>
+        <item name="android:paddingTop">@dimen/page_top_padding</item>
+        <item name="android:paddingBottom">@dimen/page_bottom_padding</item>
+        <item name="android:clipToPadding">false</item>
+        <item name="android:scrollbarStyle">outsideOverlay</item>
+    </style>
+
+    <!-- Sticky bottom action bar under the scrolling content. Holds one LoqIn.Button (match_parent).
+         The page background shows behind it; EdgeToEdgeUtils.setupClassic adds the nav-bar inset. -->
+    <style name="LoqIn.BottomBar">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:orientation">vertical</item>
+        <item name="android:paddingStart">@dimen/page_margin</item>
+        <item name="android:paddingEnd">@dimen/page_margin</item>
+        <item name="android:paddingTop">12dp</item>
+        <item name="android:paddingBottom">12dp</item>
+        <item name="android:background">?android:attr/colorBackground</item>
+    </style>
+
+    <!-- =========================
+         CARDS
+         ========================= -->
+    <!--
+        A flat content card on a page: same colour, corners and width as a ListGroup, so a card and a
+        group under one another line up. Unlike LoqIn.Card it has no built-in compat inset (LoqIn.Card
+        keeps an 8dp invisible inset on every side, which is why its cards sat further in than headers).
+    -->
+    <style name="LoqIn.PageCard" parent="LoqIn.Card">
+        <item name="shapeAppearance">@style/ShapeAppearance.LoqIn.PageCard</item>
+        <item name="cardUseCompatPadding">false</item>
+        <item name="cardPreventCornerOverlap">false</item>
+    </style>
+
+    <!-- A page card on a sheet or dialog (white surface): tonal so it stays visible. -->
+    <style name="LoqIn.PageCard.OnSurface">
+        <item name="cardBackgroundColor">@color/foqos_surface_container</item>
+    </style>
+
+    <style name="ShapeAppearance.LoqIn.PageCard" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">@dimen/page_card_corner</item>
+    </style>
+
+    <!-- =========================
+         LIST ROW ANATOMY (inside LoqIn.ListGroup)
+         ========================= -->
+    <!-- One-line row (title only, or title + switch). -->
+    <style name="LoqIn.ListRow.OneLine">
+        <item name="android:minHeight">@dimen/row_min_height_one_line</item>
+    </style>
+
+    <!-- Leading 24dp icon. The accent is upgraded to the readable accent by LoqInViewInflater. -->
+    <style name="LoqIn.RowIcon">
+        <item name="android:layout_width">@dimen/row_icon_size</item>
+        <item name="android:layout_height">@dimen/row_icon_size</item>
+        <item name="android:importantForAccessibility">no</item>
+        <item name="tint">?attr/colorPrimary</item>
+    </style>
+
+    <!-- Vertical text column between the icon and the trailing element. -->
+    <style name="LoqIn.RowText">
+        <item name="android:layout_width">0dp</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_weight">1</item>
+        <item name="android:layout_marginStart">@dimen/row_icon_gap</item>
+        <item name="android:orientation">vertical</item>
+    </style>
+
+    <!-- Text column for a row without a leading icon. -->
+    <style name="LoqIn.RowText.NoIcon">
+        <item name="android:layout_marginStart">0dp</item>
+    </style>
+
+    <style name="LoqIn.RowTitle">
+        <item name="android:textAppearance">@style/TextAppearance.LoqIn.RowTitle</item>
+    </style>
+
+    <style name="LoqIn.RowSummary">
+        <item name="android:layout_marginTop">2dp</item>
+        <item name="android:textAppearance">@style/TextAppearance.LoqIn.RowSummary</item>
+    </style>
+
+    <!--
+        Optional third line that states the row's current status in words ("No successful scan
+        yet", "Not connected"). Colour only reinforces the words; never rely on it alone.
+    -->
+    <style name="LoqIn.RowStatus">
+        <item name="android:layout_marginTop">2dp</item>
+        <item name="android:textAppearance">@style/TextAppearance.LoqIn.RowStatus</item>
+    </style>
+
+    <style name="LoqIn.RowStatus.Positive">
+        <item name="android:textAppearance">@style/TextAppearance.LoqIn.RowStatus.Positive</item>
+    </style>
+
+    <style name="LoqIn.RowStatus.Warning">
+        <item name="android:textAppearance">@style/TextAppearance.LoqIn.RowStatus.Warning</item>
+    </style>
+
+    <style name="LoqIn.RowStatus.Error">
+        <item name="android:textAppearance">@style/TextAppearance.LoqIn.RowStatus.Error</item>
+    </style>
+
+    <style name="TextAppearance.LoqIn.RowStatus" parent="TextAppearance.LoqIn.RowSummary">
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+    </style>
+
+    <style name="TextAppearance.LoqIn.RowStatus.Positive">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/status_ok</item>
+    </style>
+
+    <style name="TextAppearance.LoqIn.RowStatus.Warning">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">@color/status_warning</item>
+    </style>
+
+    <style name="TextAppearance.LoqIn.RowStatus.Error">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textColor">?attr/colorError</item>
+    </style>
+
+    <!-- Trailing value text ("Off", "15 min") before the chevron. -->
+    <style name="LoqIn.RowValue">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginStart">@dimen/row_trailing_gap</item>
+        <item name="android:textAppearance">@style/TextAppearance.LoqIn.RowValue</item>
+    </style>
+
+    <style name="TextAppearance.LoqIn.RowValue" parent="TextAppearance.LoqIn.RowSummary">
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
+    <!-- Trailing chevron: opens another screen inside Loq In. -->
+    <style name="LoqIn.RowChevron">
+        <item name="android:layout_width">@dimen/row_icon_size</item>
+        <item name="android:layout_height">@dimen/row_icon_size</item>
+        <item name="android:layout_marginStart">8dp</item>
+        <item name="android:importantForAccessibility">no</item>
+        <item name="android:src">@drawable/keyboard_arrow_right_24</item>
+        <item name="tint">?attr/colorOnSurfaceVariant</item>
+    </style>
+
+    <!-- Trailing "open externally" icon: leaves Loq In (Android settings, another app, web). -->
+    <style name="LoqIn.RowExternal" parent="LoqIn.RowChevron">
+        <item name="android:src">@drawable/open_in_new_24</item>
+    </style>
+
+    <!-- Trailing switch. -->
+    <style name="LoqIn.RowSwitch">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:layout_marginStart">@dimen/row_trailing_gap</item>
+    </style>
+
+    <!-- =========================
+         EMPTY STATE (com.oliver.loqin.ui.widgets.EmptyStateView)
+         ========================= -->
+    <style name="LoqIn.EmptyState" parent="LoqIn.PageCard" />
+
+    <style name="LoqIn.EmptyState.OnSurface">
+        <item name="cardBackgroundColor">@color/foqos_surface_container</item>
+    </style>
+
+    <style name="LoqIn.EmptyStateIcon">
+        <item name="android:layout_width">@dimen/row_icon_size</item>
+        <item name="android:layout_height">@dimen/row_icon_size</item>
+        <item name="android:importantForAccessibility">no</item>
+        <item name="tint">?attr/colorPrimary</item>
+    </style>
+
+    <!-- =========================
+         STAT TILE (grid_stat_tile.xml)
+         ========================= -->
+    <!-- Flat tile: no stroke, no shadow; accent number over a muted label. -->
+    <style name="LoqIn.StatTile" parent="LoqIn.PageCard" />
+
+    <style name="LoqIn.StatIcon">
+        <item name="android:layout_width">@dimen/row_icon_size</item>
+        <item name="android:layout_height">@dimen/row_icon_size</item>
+        <item name="android:importantForAccessibility">no</item>
+        <item name="tint">?attr/colorPrimary</item>
+    </style>
+
+    <style name="LoqIn.StatValue">
+        <item name="android:layout_marginTop">8dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:textAppearance">@style/TextAppearance.LoqIn.StatValue</item>
+    </style>
+
+    <style name="LoqIn.StatLabel">
+        <item name="android:layout_marginTop">2dp</item>
+        <item name="android:gravity">center</item>
+        <item name="android:maxLines">2</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:textAppearance">@style/TextAppearance.LoqIn.StatLabel</item>
+    </style>
+
+    <style name="TextAppearance.LoqIn.StatValue" parent="TextAppearance.AppCompat.Medium">
+        <item name="android:textSize">20sp</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">?attr/colorPrimary</item>
+    </style>
+
+    <style name="TextAppearance.LoqIn.StatLabel" parent="TextAppearance.AppCompat.Small">
+        <item name="android:textSize">12sp</item>
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+    </style>
+
+    <!-- =========================
+         FILTER CHIP (All / Social / Video ...)
+         ========================= -->
+    <!-- Selection colours are applied by FilterChipUi so they follow every accent. -->
+    <style name="LoqIn.FilterChip" parent="Widget.Material3.Chip.Filter">
+        <item name="shapeAppearance">@style/ShapeAppearance.LoqIn.Pill</item>
+        <item name="chipMinHeight">36dp</item>
+        <item name="ensureMinTouchTargetSize">true</item>
+        <item name="android:textAppearance">@style/TextAppearance.LoqIn.Chip</item>
+        <item name="chipStartPadding">8dp</item>
+        <item name="chipEndPadding">8dp</item>
+        <item name="chipStrokeWidth">1dp</item>
+        <item name="chipStrokeColor">@color/foqos_outline</item>
+        <item name="chipBackgroundColor">@android:color/transparent</item>
+        <item name="checkedIconVisible">false</item>
+        <item name="chipIconVisible">false</item>
+        <item name="closeIconVisible">false</item>
+    </style>
+
+    <style name="TextAppearance.LoqIn.Chip" parent="TextAppearance.LoqIn.Button">
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+    </style>
+
+</resources>

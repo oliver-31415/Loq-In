@@ -22,32 +22,25 @@ import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import androidx.annotation.StringRes
-import android.text.InputType
 import android.text.format.DateUtils
 import android.view.View
 import android.view.ViewGroup
-import android.widget.EditText
-import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.divider.MaterialDivider
 import com.oliver.loqin.R
+import com.oliver.loqin.ui.dialog.InputSheet
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.theme.CustomAccentApplier
 import com.oliver.loqin.ui.EdgeToEdgeUtils
 import com.oliver.loqin.ui.ThemeUtils
-import com.oliver.loqin.ui.dialog.LoqInDialogOption
 import com.oliver.loqin.ui.dialog.padForNavigationBar
 import com.oliver.loqin.ui.dialog.showAccented
-import com.oliver.loqin.ui.dialog.showLoqInOptionDialog
-import com.oliver.loqin.ui.dialog.styleLoqInDialogButtons
-import com.oliver.loqin.ui.showWarnPill
 import com.oliver.loqin.util.PendingChange
 import com.oliver.loqin.util.PendingChangeType
 import com.oliver.loqin.util.ProtectionChangeGate
@@ -66,7 +59,8 @@ class ProtectionChangesActivity : AppCompatActivity() {
 
     private lateinit var tvChangeDelayValue: TextView
     private lateinit var tvChangeDelaySummary: TextView
-    private lateinit var tvPendingEmpty: TextView
+    private lateinit var tvPendingEmpty: View
+    private lateinit var cardPendingChanges: View
     private lateinit var tvPendingSummary: TextView
     private lateinit var pendingFooter: View
     private lateinit var pendingContainer: LinearLayout
@@ -101,6 +95,7 @@ class ProtectionChangesActivity : AppCompatActivity() {
             )
         }
         tvPendingEmpty = findViewById(R.id.tvPendingEmpty)
+        cardPendingChanges = findViewById(R.id.cardPendingChanges)
         tvPendingSummary = findViewById(R.id.tvPendingSummary)
         pendingFooter = findViewById(R.id.pendingFooter)
         pendingContainer = findViewById(R.id.pendingChangesContainer)
@@ -131,6 +126,7 @@ class ProtectionChangesActivity : AppCompatActivity() {
         val pending = ProtectionChangeGate.pendingChanges(this)
         val hasPending = pending.isNotEmpty()
         tvPendingEmpty.visibility = if (hasPending) View.GONE else View.VISIBLE
+        cardPendingChanges.visibility = if (hasPending) View.VISIBLE else View.GONE
         pendingFooter.visibility = if (hasPending) View.VISIBLE else View.GONE
         pendingActionsRow.visibility = if (hasPending) View.VISIBLE else View.GONE
         btnApplyAllPending.visibility =
@@ -241,9 +237,15 @@ class ProtectionChangesActivity : AppCompatActivity() {
             hint.text = getString(R.string.protection_change_delay_locked)
         }
 
+        // The wheels sit on a tonal panel, like the fields in other input sheets.
         val wheels = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = android.view.Gravity.CENTER
+            setPadding(dp(8), dp(4), dp(8), dp(12))
+            background = android.graphics.drawable.GradientDrawable().apply {
+                cornerRadius = dp(24).toFloat()
+                setColor(androidx.core.content.ContextCompat.getColor(this@ProtectionChangesActivity, R.color.foqos_surface_container))
+            }
         }
         listOf(
             daysPicker to R.string.protection_change_delay_unit_days,
@@ -273,14 +275,14 @@ class ProtectionChangesActivity : AppCompatActivity() {
 
         val container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(16), dp(8), dp(16), dp(4))
+            setPadding(0, dp(8), 0, 0)
             addView(totalLabel)
             addView(
                 wheels,
                 LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.WRAP_CONTENT,
-                ).apply { topMargin = dp(4) },
+                ).apply { topMargin = dp(12) },
             )
             addView(
                 hint,
@@ -291,30 +293,22 @@ class ProtectionChangesActivity : AppCompatActivity() {
             )
         }
 
-        val dialog = MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.protection_change_delay_title)
-            .setView(container)
-            .setNegativeButton(R.string.cancel, null)
-            .setPositiveButton(R.string.save, null)
-            .create()
+        val sheet = InputSheet(this, getString(R.string.protection_change_delay_title))
+        sheet.content(container)
         daysPicker.setOnValueChangedListener { _, _, _ -> refresh() }
         hoursPicker.setOnValueChangedListener { _, _, _ -> refresh() }
         minutesPicker.setOnValueChangedListener { _, _, _ -> refresh() }
-        dialog.setOnShowListener {
-            dialog.styleLoqInDialogButtons()
-            refresh()
-            dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                val minutes = selectedMinutes()
-                if (locked && minutes < current) {
-                    refresh()
-                    return@setOnClickListener
-                }
-                dialog.dismiss()
-                applyDelay(minutes)
+        sheet.primary(getString(R.string.save)) {
+            val minutes = selectedMinutes()
+            if (locked && minutes < current) {
+                refresh()
+                return@primary
             }
+            sheet.dismiss()
+            applyDelay(minutes)
         }
-        dialog.show()
         refresh()
+        sheet.show()
     }
 
     private fun numberPicker(minValue: Int, maxValue: Int, value: Int): android.widget.NumberPicker =

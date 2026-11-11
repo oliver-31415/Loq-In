@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="in_app_where_title_fmt">Wo was in %1$s ist</string>
+    <string name="in_app_where_shelf">In deinem Feed · ausgeblendet</string>
+    <string name="in_app_where_block_fmt">%1$s blockiert. Beim Öffnen wirst du zurückgeleitet.</string>
+    <string name="in_app_where_allow_fmt">Nur %1$s bleibt verfügbar.</string>
+    <string name="in_app_where_allow_none">Hier bleibt nichts verfügbar.</string>
+    <string name="in_app_where_also_fmt">Auch blockiert: %1$s</string>
+    <string name="in_app_where_tab_home">Startseite</string>
+    <string name="in_app_where_tab_create">Erstellen</string>
+    <string name="in_app_where_tab_profile">Profil</string>
+    <string name="in_app_where_tab_messages">Nachrichten</string>
+    <string name="in_app_where_tab_chat">Chat</string>
+    <string name="in_app_where_tab_camera">Kamera</string>
+    <string name="in_app_where_tab_friends">Freunde</string>
+    <string name="in_app_where_tab_menu">Menü</string>
+</resources>

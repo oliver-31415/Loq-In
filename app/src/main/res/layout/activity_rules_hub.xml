@@ -21,14 +21,12 @@
     </com.google.android.material.appbar.AppBarLayout>
 
     <!-- Content -->
+    <!-- 96dp bottom padding clears the bottom navigation -->
     <androidx.core.widget.NestedScrollView
+        style="@style/LoqIn.PageContent"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingStart="16dp"
-        android:paddingTop="12dp"
-        android:paddingEnd="16dp"
         android:paddingBottom="96dp"
-        android:clipToPadding="false"
         android:fillViewport="true"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
@@ -38,7 +36,7 @@
             android:orientation="vertical">
 
             <TextView
-                style="@style/LoqIn.SectionHeader"
+                style="@style/LoqIn.SectionHeader.First"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/rules_hub_profiles_section" />
@@ -46,57 +44,46 @@
             <com.oliver.loqin.ui.widgets.ListGroupLayout
                 style="@style/LoqIn.ListGroup"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp">
+                android:layout_height="wrap_content">
 
                 <LinearLayout
                     android:id="@+id/cardManageProfiles"
+                    style="@style/LoqIn.ListRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:minHeight="72dp"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:paddingStart="20dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
                     android:clickable="true"
                     android:focusable="true">
 
                     <ImageView
+                        style="@style/LoqIn.RowIcon"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
-                        android:contentDescription="@string/rules_profiles_title"
-                        android:src="@drawable/switch_account_24"
-                        app:tint="?attr/colorPrimary" />
+                        android:contentDescription="@null"
+                        android:src="@drawable/switch_account_24" />
 
                     <LinearLayout
+                        style="@style/LoqIn.RowText"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="14dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:layout_height="wrap_content">
 
                         <TextView
+                            style="@style/LoqIn.RowTitle"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="@string/rules_profiles_title"
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
+                            android:text="@string/rules_profiles_title" />
 
                         <TextView
+                            style="@style/LoqIn.RowSummary"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="@string/rules_profiles_summary"
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
+                            android:text="@string/rules_profiles_summary" />
                     </LinearLayout>
 
                     <ImageView
+                        style="@style/LoqIn.RowChevron"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
-                        android:contentDescription="@string/open"
-                        android:src="@drawable/keyboard_arrow_right_24"
-                        app:tint="?attr/colorOnSurfaceVariant" />
+                        android:contentDescription="@null" />
                 </LinearLayout>
             </com.oliver.loqin.ui.widgets.ListGroupLayout>
 
@@ -104,213 +91,171 @@
                 style="@style/LoqIn.SectionHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
                 android:text="@string/rules_hub_categories_section" />
 
             <com.oliver.loqin.ui.widgets.ListGroupLayout
                 style="@style/LoqIn.ListGroup"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp">
+                android:layout_height="wrap_content">
 
                 <LinearLayout
                     android:id="@+id/cardManageApps"
+                    style="@style/LoqIn.ListRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:minHeight="72dp"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:paddingStart="20dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
                     android:clickable="true"
                     android:focusable="true">
 
                     <ImageView
+                        style="@style/LoqIn.RowIcon"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
-                        android:contentDescription="@string/rules_apps_title"
-                        android:src="@drawable/apps_24"
-                        app:tint="?attr/colorPrimary" />
+                        android:contentDescription="@null"
+                        android:src="@drawable/apps_24" />
 
                     <LinearLayout
+                        style="@style/LoqIn.RowText"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="14dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:layout_height="wrap_content">
 
                         <TextView
+                            style="@style/LoqIn.RowTitle"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="@string/rules_apps_title"
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
+                            android:text="@string/rules_apps_title" />
 
                         <TextView
+                            style="@style/LoqIn.RowSummary"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="@string/rules_apps_summary"
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
+                            android:text="@string/rules_apps_summary" />
                     </LinearLayout>
 
                     <ImageView
+                        style="@style/LoqIn.RowChevron"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
-                        android:contentDescription="@string/open"
-                        android:src="@drawable/keyboard_arrow_right_24"
-                        app:tint="?attr/colorOnSurfaceVariant" />
+                        android:contentDescription="@null" />
                 </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/cardManageWebsites"
+                    style="@style/LoqIn.ListRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:minHeight="72dp"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:paddingStart="20dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
                     android:clickable="true"
                     android:focusable="true">
 
                     <ImageView
+                        style="@style/LoqIn.RowIcon"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
-                        android:contentDescription="@string/rules_websites_title"
-                        android:src="@drawable/language_24"
-                        app:tint="?attr/colorPrimary" />
+                        android:contentDescription="@null"
+                        android:src="@drawable/language_24" />
 
                     <LinearLayout
+                        style="@style/LoqIn.RowText"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="14dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:layout_height="wrap_content">
 
                         <TextView
+                            style="@style/LoqIn.RowTitle"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="@string/rules_websites_title"
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
+                            android:text="@string/rules_websites_title" />
 
                         <TextView
+                            style="@style/LoqIn.RowSummary"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="@string/rules_websites_summary"
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
+                            android:text="@string/rules_websites_summary" />
                     </LinearLayout>
 
                     <ImageView
+                        style="@style/LoqIn.RowChevron"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
-                        android:contentDescription="@string/open"
-                        android:src="@drawable/keyboard_arrow_right_24"
-                        app:tint="?attr/colorOnSurfaceVariant" />
+                        android:contentDescription="@null" />
                 </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/cardInAppBlocking"
+                    style="@style/LoqIn.ListRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:minHeight="72dp"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:paddingStart="20dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
                     android:clickable="true"
                     android:focusable="true">
 
                     <ImageView
+                        style="@style/LoqIn.RowIcon"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
-                        android:contentDescription="@string/rules_inapp_title"
-                        android:src="@drawable/layers_24"
-                        app:tint="?attr/colorPrimary" />
+                        android:contentDescription="@null"
+                        android:src="@drawable/layers_24" />
 
                     <LinearLayout
+                        style="@style/LoqIn.RowText"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="14dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:layout_height="wrap_content">
 
                         <TextView
+                            style="@style/LoqIn.RowTitle"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="@string/rules_inapp_title"
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
+                            android:text="@string/rules_inapp_title" />
 
                         <TextView
+                            style="@style/LoqIn.RowSummary"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="@string/rules_inapp_summary"
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
+                            android:text="@string/rules_inapp_summary" />
                     </LinearLayout>
 
                     <ImageView
+                        style="@style/LoqIn.RowChevron"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
-                        android:contentDescription="@string/open"
-                        android:src="@drawable/keyboard_arrow_right_24"
-                        app:tint="?attr/colorOnSurfaceVariant" />
+                        android:contentDescription="@null" />
                 </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/cardSchedules"
+                    style="@style/LoqIn.ListRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:minHeight="72dp"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:paddingStart="20dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
                     android:clickable="true"
                     android:focusable="true">
 
                     <ImageView
+                        style="@style/LoqIn.RowIcon"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
-                        android:contentDescription="@string/rules_schedules_title"
-                        android:src="@drawable/schedule_24"
-                        app:tint="?attr/colorPrimary" />
+                        android:contentDescription="@null"
+                        android:src="@drawable/schedule_24" />
 
                     <LinearLayout
+                        style="@style/LoqIn.RowText"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="14dp"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:layout_height="wrap_content">
 
                         <TextView
+                            style="@style/LoqIn.RowTitle"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:text="@string/rules_schedules_title"
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
+                            android:text="@string/rules_schedules_title" />
 
                         <TextView
+                            style="@style/LoqIn.RowSummary"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="@string/rules_schedules_summary"
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
+                            android:text="@string/rules_schedules_summary" />
                     </LinearLayout>
 
                     <ImageView
+                        style="@style/LoqIn.RowChevron"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
-                        android:contentDescription="@string/open"
-                        android:src="@drawable/keyboard_arrow_right_24"
-                        app:tint="?attr/colorOnSurfaceVariant" />
+                        android:contentDescription="@null" />
                 </LinearLayout>
             </com.oliver.loqin.ui.widgets.ListGroupLayout>
         </LinearLayout>

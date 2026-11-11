@@ -51,12 +51,10 @@ import android.view.MenuItem
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
-import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
-import android.widget.Toast
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AlertDialog
@@ -67,13 +65,12 @@ import androidx.core.content.edit
 import androidx.core.graphics.ColorUtils
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.drawable.toDrawable
-import androidx.core.net.toUri
+import androidx.core.view.iterator
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.updatePadding
+import androidx.core.view.updateLayoutParams
 import androidx.core.view.isVisible
-import androidx.core.view.iterator
 import androidx.core.widget.NestedScrollView
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -115,6 +112,7 @@ import com.oliver.loqin.data.prefs.SessionMissedNotificationsStore
 import com.oliver.loqin.data.prefs.BlockedNotificationEvent
 import com.oliver.loqin.feature.onboarding.OnboardingActivity
 import com.oliver.loqin.feature.picker.AppPickerActivity
+import com.oliver.loqin.feature.profiles.BreaksActivity
 import com.oliver.loqin.feature.profiles.TempPauseDialogs
 import com.oliver.loqin.feature.profiles.ManageProfilesActivity
 import com.oliver.loqin.feature.qr.QrGenerateActivity
@@ -141,19 +139,16 @@ import com.oliver.loqin.ui.dialog.ClockDurationDialSheet
 import com.oliver.loqin.ui.dialog.Dialogs
 import com.oliver.loqin.ui.dialog.EmergencyPinDialog
 import com.oliver.loqin.ui.dialog.padForNavigationBar
-import com.oliver.loqin.ui.dialog.styledDialogEditText
-import com.oliver.loqin.ui.dialog.applyLoqInDialogWidth
 import com.oliver.loqin.ui.dialog.showAccented
 import com.oliver.loqin.ui.dialog.showDestructiveAccented
 import com.oliver.loqin.ui.dialog.showLoqInInputDialog
-import com.oliver.loqin.ui.dialog.styleLoqInDialogButtons
+import com.oliver.loqin.ui.dialog.showLoqInNumberInput
 import com.oliver.loqin.ui.dialog.LoqInDialogOption
 import com.oliver.loqin.ui.dialog.showLoqInOptionDialog
 import com.oliver.loqin.ui.LoqInDropdownAdapter
 import com.oliver.loqin.util.ActivityTransitionCompat
 import com.oliver.loqin.util.EditingLockGuard
 import com.oliver.loqin.util.LocaleHelper
-import com.oliver.loqin.util.LoqInAppAccessGuard
 import com.oliver.loqin.util.PlayStoreUpdatePrompt
 import com.oliver.loqin.util.ProtectionStatusNotifier
 import com.oliver.loqin.util.BatteryOptimizationCompat
@@ -194,6 +189,8 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         const val EXTRA_SKIP_ONBOARDING_GATE_ONCE = "extra_skip_onboarding_gate_once"
+        /** From the block screen: open the Take a break sheet once Home is up. */
+        const val EXTRA_OPEN_BREAK_SHEET = "extra_open_break_sheet"
 
         private const val PREFS_UI_HINTS = "loqin_ui_hints"
         private const val KEY_TEMP_MODE_DISCOVERED = "temp_mode_discovered"
@@ -232,6 +229,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var rowActiveProfile: View
     private lateinit var tvNfcLockedHint: TextView
     private lateinit var btnToggle: MaterialButton
+    private lateinit var tvHeroState: TextView
     private lateinit var btnSimplePickApps: MaterialButton
     private lateinit var tvTempHint: LinearLayout
     private lateinit var tvEmergencyHint: LinearLayout
@@ -242,7 +240,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var layoutHomeRoot: LinearLayout
     private lateinit var layoutStatusContent: LinearLayout
     private lateinit var layoutProtectionStatus: View
-    private lateinit var cardStatus: MaterialCardView
+    private lateinit var cardStatus: View
     private lateinit var spaceBeforeStatusCard: View
     private var bottomNavTourScheduled = false
     private var bottomNavTourShowing = false
@@ -260,14 +258,13 @@ class MainActivity : AppCompatActivity() {
     private lateinit var cardSetup: MaterialCardView
     private lateinit var tvSetupTitle: TextView
     private lateinit var tvSetupSubtitle: TextView
-    private lateinit var tvSetupDesc: TextView
     private lateinit var btnFinishSetup: MaterialButton
 
     // Activity heatmap (Foqos-style)
     private lateinit var cardActivity: MaterialCardView
     private lateinit var activityHeatmap: FoqosHeatmapView
     private lateinit var tvHeatmapLegend: TextView
-    private lateinit var btnActivityHide: LinearLayout
+    private lateinit var btnActivityHide: MaterialButton
     private lateinit var tvHeroProfileName: TextView
     private lateinit var tvHeroChips: TextView
     private lateinit var tvHeroStrategy: TextView
@@ -282,7 +279,7 @@ class MainActivity : AppCompatActivity() {
 
     // Foqos-style profile rows
     private lateinit var profileRowsContainer: LinearLayout
-    private lateinit var btnManageProfiles: LinearLayout
+    private lateinit var btnManageProfiles: View
 
     // Quick actions tiles
     private lateinit var tileManageApps: MaterialCardView
@@ -378,6 +375,9 @@ class MainActivity : AppCompatActivity() {
             intent?.removeExtra(QuickActionReceiver.EXTRA_PENDING_DISABLE)
         }
         setContentView(R.layout.activity_main)
+        if (savedInstanceState == null && android.animation.ValueAnimator.areAnimatorsEnabled()) {
+            playHomeEntrance()
+        }
 
         // Ensure the flow in SwitchModeStore reflects the current prefs
         SwitchModeStore.ensureInit(applicationContext)
@@ -421,10 +421,13 @@ class MainActivity : AppCompatActivity() {
 
         scrollMain = findViewById(R.id.scrollMain)
         // Foqos restyle: toolbar is inline in the scroll (scrolls away like Foqos's title),
-        // so the scroll view must consume the status-bar inset itself.
+        // so the scroll view must consume the status-bar inset itself. Content scrolls on under a
+        // page-coloured scrim of the same height instead of under the clock and system icons.
+        val statusBarScrim = findViewById<View>(R.id.homeStatusBarScrim)
         ViewCompat.setOnApplyWindowInsetsListener(scrollMain) { v, insets ->
             val status = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
             v.updatePadding(top = status + homeDp(4f))
+            statusBarScrim.updateLayoutParams { height = status }
             insets
         }
 
@@ -443,16 +446,16 @@ class MainActivity : AppCompatActivity() {
         tvActiveDuration.isClickable = true
         tvActiveDuration.isFocusable = true
         tvActiveDuration.setOnClickListener {
-            if (protectionNotRunning) {
-                startActivity(Intent(this, PermissionsActivity::class.java))
-            } else {
-                startActivity(ActiveTimeActivity.intent(this))
+            when {
+                heroTimerRemainingMs() > 0L -> if (showTempToggleSheet()) markTempModeDiscovered(showSnack = false)
+                else -> startActivity(ActiveTimeActivity.intent(this))
             }
         }
         tvActiveProfile = findViewById(R.id.tvActiveProfile)
         rowActiveProfile = findViewById(R.id.rowActiveProfile)
         tvNfcLockedHint = findViewById(R.id.tvNfcLockedHint)
         btnToggle = findViewById(R.id.btnToggle)
+        tvHeroState = findViewById(R.id.tvHeroState)
         btnSimplePickApps = findViewById(R.id.btnSimplePickApps)
         tvTempHint = findViewById(R.id.tvTempHint)
         tvEmergencyHint = findViewById(R.id.tvEmergencyHint)
@@ -467,7 +470,6 @@ class MainActivity : AppCompatActivity() {
         cardSetup = findViewById(R.id.cardSetup)
         tvSetupTitle = findViewById(R.id.tvSetupTitle)
         tvSetupSubtitle = findViewById(R.id.tvSetupSubtitle)
-        tvSetupDesc = findViewById(R.id.tvSetupDesc)
         btnFinishSetup = findViewById(R.id.btnFinishSetup)
 
         cardActivity = findViewById(R.id.cardActivity)
@@ -482,6 +484,11 @@ class MainActivity : AppCompatActivity() {
         tvHeroStatApps = findViewById(R.id.tvHeroStatApps)
         tvHeroStatDomains = findViewById(R.id.tvHeroStatDomains)
         tvHeroStatBlocks = findViewById(R.id.tvHeroStatBlocks)
+        // Home scrolling gives the active hero blob a little inertia.
+        findViewById<androidx.core.widget.NestedScrollView>(R.id.scrollMain)
+            ?.setOnScrollChangeListener { _: androidx.core.widget.NestedScrollView, _, scrollY, _, oldScrollY ->
+                (heroProfileRoot.background as? HeroBlobDrawable)?.nudge((scrollY - oldScrollY).toFloat())
+            }
         findViewById<View>(R.id.heroProfileRoot).setOnClickListener {
             ProfileStore.getCurrent(this)?.let { openProfileEditSheet(it) }
         }
@@ -495,8 +502,7 @@ class MainActivity : AppCompatActivity() {
             activityHidden = !activityHidden
             val gridVisible = !activityHidden
             cardActivity.visibility = if (gridVisible) View.VISIBLE else View.GONE
-            btnActivityHide.findViewById<TextView>(R.id.tvHeaderPillLabel)?.text =
-                getString(if (gridVisible) R.string.activity_hide else R.string.activity_show)
+            btnActivityHide.setText(if (gridVisible) R.string.activity_hide else R.string.activity_show)
         }
         findViewById<View>(R.id.btnMoreInsights)?.setOnClickListener {
             ActivityTransitionCompat.switchWithoutAnimation(
@@ -586,6 +592,7 @@ class MainActivity : AppCompatActivity() {
         btnFinishSetup.setOnClickListener {
             startActivity(Intent(this, PermissionsActivity::class.java))
         }
+        cardSetup.setOnClickListener { btnFinishSetup.performClick() }
 
         // Quick actions
         rowQuickActionsHeader.setOnClickListener { toggleQuickActionsExpanded() }
@@ -712,6 +719,14 @@ class MainActivity : AppCompatActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         setIntent(intent)
+        openBreakSheetIfAsked()
+    }
+
+    private fun openBreakSheetIfAsked() {
+        val current = intent ?: return
+        if (!current.getBooleanExtra(EXTRA_OPEN_BREAK_SHEET, false)) return
+        current.removeExtra(EXTRA_OPEN_BREAK_SHEET)
+        window.decorView.post { showTempToggleSheet() }
     }
 
     /** Runs a widget/tile action deferred by App lock, once the PIN has been entered. */
@@ -732,6 +747,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        openBreakSheetIfAsked()
         runPendingQuickAction()
         syncScanQuickActions()
         refreshActivityHeatmap()
@@ -1083,22 +1099,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun applyAccentToButtons() {
-        val accent = AccentColor.getAccentColorInt(this)
-        val tint = ColorStateList.valueOf(accent)
-        val onAccent = if (AccentColor.prefersDarkText(accent)) {
-            Color.BLACK
-        } else {
-            Color.WHITE
-        }
-
         if (::btnToggle.isInitialized) {
             styleHeroToggle(SwitchModeStore.isEnabled(this))
         }
-        btnFinishSetup.backgroundTintList = tint
-        btnFinishSetup.setTextColor(onAccent)
-        // Make the icon match the button text (otherwise it may stay default/black).
-        btnFinishSetup.iconTint = ColorStateList.valueOf(onAccent)
-
     }
 
     private fun applyPressScale(v: View) {
@@ -1337,6 +1340,26 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * "Break started · back at 2:55 PM" with Undo for a few seconds: breaks are limited, so a
+     * mis-tap gives the break (and its minutes) back.
+     */
+    private fun showBreakStartedUndo(profile: String, minutes: Int) {
+        val backAt = java.text.DateFormat.getTimeInstance(java.text.DateFormat.SHORT)
+            .format(java.util.Date(System.currentTimeMillis() + minutes * 60_000L))
+        com.google.android.material.snackbar.Snackbar.make(
+            snackRoot(),
+            getString(R.string.break_started_fmt, backAt),
+            8_000,
+        ).setAction(R.string.break_started_undo) {
+            if (SwitchModeStore.getTemporaryRemainingMillis(this) > 0L) {
+                SwitchModeStore.cancelTemporaryDisable(this)
+                TempPauseStore.refundPause(this, profile, minutes)
+                updateSwitchState()
+            }
+        }.applyLoqInStyle().show()
+    }
+
     private fun showTempToggleSheet(): Boolean {
         val enabledNow = SwitchModeStore.isEnabled(this)
         val tempDisableRemaining = SwitchModeStore.getTemporaryRemainingMillis(this)
@@ -1383,7 +1406,6 @@ class MainActivity : AppCompatActivity() {
         val lockedByNfc = (mode == TempSheetMode.DISABLE && isNfcLocked())
 
         val accent = AccentColor.getAccentColorInt(this)
-        val tint = ColorStateList.valueOf(accent)
 
         val sheet = BottomSheetDialog(this)
         val parent = findViewById<ViewGroup>(android.R.id.content)
@@ -1391,7 +1413,6 @@ class MainActivity : AppCompatActivity() {
         sheet.setContentView(view)
         sheet.prepareExpandedSheet()
 
-        val ivIcon = view.findViewById<ImageView>(R.id.ivIcon)
         val tvTitle = view.findViewById<TextView>(R.id.tvTitle)
         val tvSubtitle = view.findViewById<TextView>(R.id.tvSubtitle)
         val tvNote = view.findViewById<TextView>(R.id.tvNote)
@@ -1412,39 +1433,29 @@ class MainActivity : AppCompatActivity() {
         val preset60m = view.findViewById<View>(R.id.preset60m)
 
         val rowCustomDuration = view.findViewById<View>(R.id.rowCustomDuration)
-        val roundelCustom = view.findViewById<View>(R.id.roundelCustom)
-        val ivCustomIcon = view.findViewById<ImageView>(R.id.ivCustomIcon)
-
         val rowPauseUntil = view.findViewById<View>(R.id.rowPauseUntil)
-        val roundelPauseUntil = view.findViewById<View>(R.id.roundelPauseUntil)
-        val ivPauseUntilIcon = view.findViewById<ImageView>(R.id.ivPauseUntilIcon)
         val tvPauseUntilTitle = view.findViewById<TextView>(R.id.tvPauseUntilTitle)
         val tvPauseUntilSubtitle = view.findViewById<TextView>(R.id.tvPauseUntilSubtitle)
 
         val cardLockedNotice = view.findViewById<View>(R.id.cardLockedNotice)
         val tvLockedNotice = view.findViewById<TextView>(R.id.tvLockedNotice)
 
-        val surfaceVariant = ContextCompat.getColor(this, R.color.foqos_surface_variant)
+        // Tonal blocks on the white sheet, like LoqIn.ListGroup.OnSurface segments.
+        val surfaceVariant = ContextCompat.getColor(this, R.color.foqos_surface_container)
         val onSurface = ContextCompat.getColor(this, R.color.foqos_on_surface)
-
-        ivIcon.imageTintList = tint
-        view.findViewById<View>(R.id.roundelBg)?.background =
-            GradientDrawable().apply {
-                shape = GradientDrawable.OVAL
-                setColor(AccentColor.getAccentContainerColorInt(this@MainActivity))
-            }
 
         btnClose.setOnClickListener { sheet.dismiss() }
 
         if (mode == TempSheetMode.DISABLE) {
-            tvTitle.text = getString(R.string.nfc_action_temp_disable)
+            // Same words as the Home tile and the Breaks page.
+            tvTitle.text = getString(R.string.break_sheet_title)
             tvSubtitle.text = if (lockedByNfc) {
                 getString(R.string.dashboard_temp_sheet_sub_disable_locked)
             } else {
-                getString(R.string.dashboard_temp_sheet_sub_disable)
+                getString(R.string.break_sheet_subtitle)
             }
         } else {
-            tvTitle.text = getString(R.string.nfc_action_temp_enable)
+            tvTitle.text = getString(R.string.break_sheet_title_enable)
             val currentProfile = ProfileStore.getCurrent(this).orEmpty().trim()
             tvSubtitle.text = if (currentProfile.isBlank()) {
                 getString(R.string.dashboard_temp_sheet_sub_enable)
@@ -1458,25 +1469,53 @@ class MainActivity : AppCompatActivity() {
                 .getBoolean(ToggleOptionsActivity.KEY_LOCK_ACTIVE_TEMPORARY_TIMER, true)
 
         tvNote.text = getString(R.string.nfc_temp_hint_timer_behavior)
+        // The subtitle already says blocking comes back by itself, so the note only stays for enabling.
+        tvNote.isVisible = mode == TempSheetMode.ENABLE
+        val tvLimitStrip = view.findViewById<TextView>(R.id.tvLimitStrip)
+        if (hasCaps && !hasActive) {
+            val caps = TempPauseStore.getCaps(this, currentProfile)
+            val parts = buildList {
+                if (caps.maxCountPerDay > 0) add(resources.getQuantityString(
+                    R.plurals.break_sheet_left_fmt, caps.maxCountPerDay, remainingPauses.coerceAtLeast(0), caps.maxCountPerDay,
+                ))
+                if (caps.maxMinutesPerPause > 0) add(getString(R.string.break_sheet_each_fmt, caps.maxMinutesPerPause))
+                if (caps.maxMinutesPerDay > 0) add(getString(R.string.break_sheet_minutes_left_fmt, remainingMinutes.coerceAtLeast(0)))
+            }
+            val strong = RuleTileStyle.strongAccent(this)
+            val fill = ColorUtils.compositeColors(ColorUtils.setAlphaComponent(strong, 0x22), ContextCompat.getColor(this, R.color.foqos_surface))
+            val ink = AccentColor.readableOn(strong, fill, onSurface, 4.5)
+            tvLimitStrip.isVisible = parts.isNotEmpty()
+            tvLimitStrip.text = parts.joinToString(" · ")
+            tvLimitStrip.setTextColor(ink)
+            tvLimitStrip.background = GradientDrawable().apply {
+                cornerRadius = 16 * resources.displayMetrics.density
+                setColor(fill)
+            }
+            tvLimitStrip.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                ContextCompat.getDrawable(this, R.drawable.info_24)?.mutate()?.apply { setTint(ink) }, null, null, null,
+            )
+        } else {
+            tvLimitStrip.isVisible = false
+        }
 
         if (lockedByNfc) {
             cardLockedNotice.visibility = View.VISIBLE
             cardLockedNotice.background = GradientDrawable().apply {
-                cornerRadius = 14 * resources.displayMetrics.density + 0.5f
+                cornerRadius = 16 * resources.displayMetrics.density + 0.5f
                 setColor(surfaceVariant)
             }
             tvLockedNotice.text = getString(R.string.dashboard_temp_hint_locked_nfc)
         } else if (lockActiveTimerChanges) {
             cardLockedNotice.visibility = View.VISIBLE
             cardLockedNotice.background = GradientDrawable().apply {
-                cornerRadius = 14 * resources.displayMetrics.density + 0.5f
+                cornerRadius = 16 * resources.displayMetrics.density + 0.5f
                 setColor(surfaceVariant)
             }
             tvLockedNotice.text = getString(R.string.dashboard_temp_active_changes_locked)
         } else if (isPauseExhausted) {
             cardLockedNotice.visibility = View.VISIBLE
             cardLockedNotice.background = GradientDrawable().apply {
-                cornerRadius = 14 * resources.displayMetrics.density + 0.5f
+                cornerRadius = 16 * resources.displayMetrics.density + 0.5f
                 setColor(surfaceVariant)
             }
             tvLockedNotice.text = if (remainingPauses <= 0) {
@@ -1554,7 +1593,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         fun applyCardStyle(v: View) {
-            val r = 14 * resources.displayMetrics.density + 0.5f
+            val r = 16 * resources.displayMetrics.density + 0.5f
             v.background = GradientDrawable().apply {
                 cornerRadius = r
                 setColor(surfaceVariant)
@@ -1581,43 +1620,70 @@ class MainActivity : AppCompatActivity() {
             }
             sheet.dismiss()
             updateSwitchState()
+            if (mode == TempSheetMode.DISABLE) showBreakStartedUndo(currentProfile, minutes)
         }
 
         if (!lockedByNfc && !lockActiveTimerChanges && !isPauseExhausted) {
             layoutPresetsSection.visibility = View.VISIBLE
             layoutMoreOptionsSection.visibility = View.VISIBLE
 
+            // Over-limit presets stay visible and readable, with a lock and the reason, so the
+            // limit is clear before tapping rather than refused after.
             fun setupPreset(v: View, minutes: Int) {
                 applyCardStyle(v)
+                val group = v as ViewGroup
+                val number = group.getChildAt(0) as TextView
+                val unit = group.getChildAt(1) as TextView
+                val hours = minutes >= 60 && minutes % 60 == 0
+                number.text = if (hours) (minutes / 60).toString() else minutes.toString()
+                val unitText = getString(if (hours) R.string.temp_duration_unit_hour else R.string.temp_pause_unit_minutes)
+                v.alpha = 1f
                 if (minutes > maxAllowed) {
-                    v.alpha = 0.35f
+                    number.alpha = 0.4f
+                    unit.alpha = 1f
+                    unit.text = getString(R.string.break_sheet_over_limit)
+                    unit.setCompoundDrawablesRelativeWithIntrinsicBounds(
+                        ContextCompat.getDrawable(this, R.drawable.lock_24)?.mutate()?.apply {
+                            setTint(ContextCompat.getColor(this@MainActivity, R.color.foqos_on_surface_variant))
+                            setBounds(0, 0, homeDp(14f), homeDp(14f))
+                        }, null, null, null,
+                    )
+                    unit.setCompoundDrawablesRelative(unit.compoundDrawablesRelative[0]?.apply {
+                        setBounds(0, 0, homeDp(14f), homeDp(14f))
+                    }, null, null, null)
+                    unit.compoundDrawablePadding = homeDp(4f)
+                    unit.setTextColor(ContextCompat.getColor(this, R.color.foqos_on_surface_variant))
+                    v.contentDescription = getString(R.string.break_sheet_preset_over_cd, minutes)
                     v.setOnClickListener { tapped ->
                         tapped.showWarnPill(getString(R.string.temp_pause_exceeds_limit, maxAllowed))
                     }
                 } else {
-                    v.alpha = 1.0f
+                    number.alpha = 1f
+                    unit.alpha = 0.75f
+                    unit.text = if (minutes == maxAllowed && hasCaps) getString(R.string.break_sheet_longest_fmt, unitText) else unitText
+                    unit.setCompoundDrawablesRelative(null, null, null, null)
+                    v.contentDescription = getString(R.string.break_sheet_preset_cd, minutes)
                     v.setOnClickListener { setDuration(minutes) }
                 }
             }
 
             setupPreset(preset5m, 5)
-            setupPreset(preset15m, 15)
-            setupPreset(preset30m, 30)
-            setupPreset(preset60m, 60)
+            setupPreset(preset15m, 10)
+            setupPreset(preset30m, 15)
+            setupPreset(preset60m, 30)
 
-            applyCardStyle(rowCustomDuration)
-            roundelCustom.background = GradientDrawable().apply {
-                shape = GradientDrawable.OVAL
-                setColor(ColorUtils.compositeColors(ColorUtils.setAlphaComponent(accent, 0x22), surfaceVariant))
+            // With limits, say the range the picker will accept.
+            if (hasCaps && maxAllowed in 1 until Int.MAX_VALUE) {
+                view.findViewById<TextView>(R.id.tvCustomSubtitle)?.text =
+                    getString(R.string.break_sheet_custom_range_fmt, maxAllowed)
             }
-            ivCustomIcon.imageTintList = tint
             if (maxAllowed < 1) {
-                rowCustomDuration.alpha = 0.35f
+                PageUi.setRowDimmed(rowCustomDuration, true)
                 rowCustomDuration.setOnClickListener { tapped ->
                     tapped.showWarnPill(getString(R.string.temp_pause_exhausted))
                 }
             } else {
-                rowCustomDuration.alpha = 1.0f
+                PageUi.setRowDimmed(rowCustomDuration, false)
                 rowCustomDuration.setOnClickListener {
                     sheet.dismiss()
                     showClockDialDurationPicker(mode) { minutes -> setDuration(minutes) }
@@ -1628,12 +1694,6 @@ class MainActivity : AppCompatActivity() {
                 val options = buildPauseUntilOptions(sheet)
                 if (options.isNotEmpty()) {
                     rowPauseUntil.visibility = View.VISIBLE
-                    applyCardStyle(rowPauseUntil)
-                    roundelPauseUntil.background = GradientDrawable().apply {
-                        shape = GradientDrawable.OVAL
-                        setColor(ColorUtils.compositeColors(ColorUtils.setAlphaComponent(accent, 0x22), surfaceVariant))
-                    }
-                    ivPauseUntilIcon.imageTintList = tint
 
                     if (options.size == 1) {
                         tvPauseUntilTitle.text = options.first().label
@@ -1752,47 +1812,14 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showCustomTempMinutesInput(onPicked: (Int) -> Unit) {
-        val input = styledDialogEditText().apply {
-            inputType = InputType.TYPE_CLASS_NUMBER
-            hint = getString(R.string.minutes_hint)
-        }
-
-        val container = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            val pad = (20 * resources.displayMetrics.density + 0.5f).toInt()
-            setPadding(pad, (8 * resources.displayMetrics.density + 0.5f).toInt(), pad, 0)
-            addView(
-                input,
-                LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT
-                )
-            )
-        }
-
-        val dialog = MaterialAlertDialogBuilder(this)
-            .setTitle(R.string.custom_minutes_title)
-            .setView(container)
-            .setNegativeButton(R.string.cancel, null)
-            .setPositiveButton(R.string.custom_minutes_confirm) { _, _ ->
-                val m = input.text?.toString()?.trim()?.toIntOrNull()
-                if (m == null || m < 1 || m > 1440) {
-                    input.showWarnPill(R.string.nfc_time_custom_invalid)
-                    return@setPositiveButton
-                }
-                onPicked(m)
-            }
-            .create()
-
-        dialog.applyLoqInDialogWidth(0.90f)
-        dialog.window?.setSoftInputMode(
-            android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE
+        showLoqInNumberInput(
+            title = getString(R.string.custom_minutes_title),
+            hint = getString(R.string.minutes_hint),
+            confirmText = getString(R.string.custom_minutes_confirm),
+            range = 1..1440,
+            invalidMessage = getString(R.string.nfc_time_custom_invalid),
+            onPicked = onPicked,
         )
-        dialog.setOnShowListener {
-            dialog.styleLoqInDialogButtons()
-            input.requestFocus()
-        }
-        dialog.show()
     }
 
     private fun openRulesDestination(
@@ -1847,180 +1874,63 @@ class MainActivity : AppCompatActivity() {
     // =========================
     // Foqos-style profile edit sheet (SPA: all profile edits from the home pill)
     // =========================
-    /** Foqos-style quick profile switcher. */
+    /** Quick profile switcher, in the same grouped-list style as the profile sheet. */
     private fun openSwitchProfileSheet() {
         val profiles = ProfileStore.getProfiles(this).toList().sorted()
         val current = ProfileStore.getCurrent(this)
         val sheet = BottomSheetDialog(this)
-        val onSurface = ContextCompat.getColor(this@MainActivity, com.oliver.loqin.R.color.foqos_on_surface)
-        val onSurfaceSoft = ContextCompat.getColor(this@MainActivity, com.oliver.loqin.R.color.foqos_on_surface_variant)
-        val accent = AccentColor.getAccentColorInt(this)
-
-        val surfaceVariant = ContextCompat.getColor(this@MainActivity, com.oliver.loqin.R.color.foqos_surface_variant)
-
-        fun profileRowBg(selected: Boolean): android.graphics.drawable.GradientDrawable =
-            android.graphics.drawable.GradientDrawable().apply {
-                cornerRadius = homeDp(16f).toFloat()
-                setColor(
-                    if (selected) ColorUtils.compositeColors(ColorUtils.setAlphaComponent(accent, 0x18), surfaceVariant)
-                    else surfaceVariant
-                )
-                setStroke(
-                    homeDp(2f),
-                    if (selected) accent else Color.TRANSPARENT
-                )
-            }
-
-        fun roundelBg(): android.graphics.drawable.GradientDrawable =
-            android.graphics.drawable.GradientDrawable().apply {
-                shape = android.graphics.drawable.GradientDrawable.OVAL
-                setColor(foqosSurfaceColor())
-            }
+        val accent = PageUi.readableAccent(this)
 
         val list = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             val pad = homeDp(16f)
             setPadding(pad, homeDp(8f), pad, homeDp(22f))
-            setBackgroundColor(ContextCompat.getColor(this@MainActivity, com.oliver.loqin.R.color.foqos_surface))
+            setBackgroundResource(R.drawable.sheet_profile_bg)
         }
+        list.addView(SheetRows.header(this, list, getString(R.string.profile_rows_switch)) { sheet.dismiss() })
 
-        // Grab handle
-        list.addView(View(this).apply {
-            background = android.graphics.drawable.GradientDrawable().apply {
-                cornerRadius = homeDp(2f).toFloat()
-                setColor(ColorUtils.setAlphaComponent(onSurfaceSoft, 0x61))
-            }
-            layoutParams = LinearLayout.LayoutParams(homeDp(36f), homeDp(4f)).apply {
-                gravity = android.view.Gravity.CENTER_HORIZONTAL
-            }
-        })
-
-        // Title + close
-        val header = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = android.view.Gravity.CENTER_VERTICAL
-            setPadding(0, homeDp(12f), 0, 0)
-        }
-        header.addView(TextView(this).apply {
-            text = getString(R.string.profile_rows_switch)
-            textSize = 22f
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-            setTextColor(onSurface)
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-        })
-        header.addView(FrameLayout(this).apply {
-            background = roundelBg()
-            isClickable = true
-            isFocusable = true
-            contentDescription = this@MainActivity.getString(R.string.close)
-            setOnClickListener { sheet.dismiss() }
-            addView(TextView(this@MainActivity).apply {
-                text = "\u2715"
-                importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO
-                textSize = 14f
-                setTextColor(onSurface)
-                layoutParams = FrameLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                ).apply { gravity = android.view.Gravity.CENTER }
-            })
-            layoutParams = LinearLayout.LayoutParams(homeDp(34f), homeDp(34f))
-        })
-        list.addView(header)
-
-        // Create new profile (accent tile)
-        val newRow = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = android.view.Gravity.CENTER_VERTICAL
-            val padV = homeDp(11f)
-            setPadding(homeDp(10f), padV, homeDp(10f), padV)
-            background = profileRowBg(false).apply { setStroke(homeDp(1f), ColorUtils.setAlphaComponent(accent, 0x66)) }
-            isClickable = true
-            isFocusable = true
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT,
-            ).apply { topMargin = homeDp(14f) }
-        }
-        val newIcon = TextView(this).apply {
-            text = "\uFF0B"
-            textSize = 16f
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-            setTextColor(accent)
-            gravity = android.view.Gravity.CENTER
-            layoutParams = LinearLayout.LayoutParams(homeDp(38f), homeDp(38f)).apply {
-                background = roundelBg()
-            }
-        }
-        val newLabel = TextView(this).apply {
-            text = getString(R.string.profile_sheet_new_profile)
-            textSize = 15f
-            setTypeface(typeface, android.graphics.Typeface.BOLD)
-            setTextColor(accent)
-            layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
-                marginStart = homeDp(12f)
-            }
-        }
-        newRow.addView(newIcon)
-        newRow.addView(newLabel)
-        newRow.setOnClickListener {
+        // Create new profile
+        val newGroup = SheetRows.group(this, list)
+        val newRow = SheetRows.row(this, newGroup, R.drawable.add_24, getString(R.string.profile_sheet_new_profile), accent = accent)
+        newRow.title.setTextColor(accent)
+        newRow.root.isClickable = true
+        newRow.root.setOnClickListener {
             // Creating is allowed while active (as in Manage profiles); showCreateProfileDialog
             // only activates the new profile when switching is unlocked.
             sheet.dismiss()
             showCreateProfileDialog()
         }
-        list.addView(newRow)
+        newGroup.addView(newRow.root)
+        list.addView(newGroup)
 
-        val profileRows = mutableListOf<Pair<String, View>>()
-        profiles.forEachIndexed { index, profile ->
-            val isSelected = profile == current
-            val row = LinearLayout(this).apply {
-                orientation = LinearLayout.HORIZONTAL
-                gravity = android.view.Gravity.CENTER_VERTICAL
-                val padV = homeDp(11f)
-                setPadding(homeDp(12f), padV, homeDp(12f), padV)
-                background = profileRowBg(isSelected)
-                isClickable = true
-                isFocusable = true
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                ).apply { topMargin = homeDp(8f) }
-            }
-            val name = TextView(this).apply {
-                text = profile
-                textSize = 16f
-                setTypeface(typeface, android.graphics.Typeface.BOLD)
-                setTextColor(onSurface)
-                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
-            }
-            row.addView(name)
+        val profileGroup = SheetRows.group(this, list)
+        val profileRows = mutableListOf<Pair<String, SheetRows.Row>>()
+        profiles.forEach { profile ->
+            val row = SheetRows.row(this, profileGroup, R.drawable.layers_24, profile, accent = accent)
+            row.root.isClickable = true
+            row.setSelected(profile == current, accent)
             profileRows += profile to row
-            row.setOnClickListener {
+            row.root.setOnClickListener {
                 // Read the live current profile: the `current` snapshot above
                 // goes stale after the first switch while the sheet is open.
                 if (profile != ProfileStore.getCurrent(this@MainActivity)) {
-                    // Only move the highlight when the switch actually happened:
+                    // Only move the check when the switch actually happened:
                     // a blocked tap warns via pill and must not look selected.
                     // Anchor to the sheet window so the pill is visible above it.
-                    if (!switchToProfile(profile, anchor = row)) {
+                    if (!switchToProfile(profile, anchor = row.root)) {
                         return@setOnClickListener
                     }
                 }
-                profileRows.forEach { (p, r) ->
-                    r.background = profileRowBg(p == profile)
-                }
+                profileRows.forEach { (p, r) -> r.setSelected(p == profile, accent) }
             }
-            list.addView(row)
+            profileGroup.addView(row.root)
         }
+        list.addView(profileGroup)
 
         sheet.setContentView(list)
         sheet.padForNavigationBar()
         sheet.show()
     }
-
-    private fun foqosSurfaceColor(): Int =
-        ContextCompat.getColor(this@MainActivity, com.oliver.loqin.R.color.foqos_surface)
 
     private fun openProfileEditSheet(profile: String) {
         val sheet = BottomSheetDialog(this)
@@ -2030,36 +1940,7 @@ class MainActivity : AppCompatActivity() {
         sheet.behavior.skipCollapsed = true
         sheet.behavior.state = BottomSheetBehavior.STATE_EXPANDED
 
-        // Row icons + green labels follow the live accent (?attr/colorPrimary would fall
-        // back to the compile-time green since Home never applies an accent theme variant).
-        val sheetAccent = AccentColor.getAccentColorInt(this)
-        val sheetGreen = ContextCompat.getColor(this, R.color.accent_default_blue) and 0x00FFFFFF
-        val dangerRow = view.findViewById<View>(R.id.rowSheetDelete)
-        fun inDangerRow(v: android.view.View): Boolean {
-            var p = v.parent
-            while (p is android.view.View) {
-                if (p === dangerRow) return true
-                p = p.parent
-            }
-            return false
-        }
-        fun tintAccented(v: android.view.View) {
-            when (v) {
-                is android.view.ViewGroup -> for (i in 0 until v.childCount) tintAccented(v.getChildAt(i))
-                is android.widget.TextView -> if (!inDangerRow(v) &&
-                    (v.currentTextColor and 0x00FFFFFF) == sheetGreen
-                ) {
-                    v.setTextColor(sheetAccent)
-                }
-                is android.widget.ImageView -> if (!inDangerRow(v)) {
-                    androidx.core.widget.ImageViewCompat.setImageTintList(
-                        v,
-                        android.content.res.ColorStateList.valueOf(sheetAccent)
-                    )
-                }
-            }
-        }
-        tintAccented(view)
+        // Row icons get the readable live accent from LoqInViewInflater (style LoqIn.RowIcon).
 
         val nameView = view.findViewById<TextView>(R.id.tvSheetProfileName)
         nameView.text = profile
@@ -2111,21 +1992,17 @@ class MainActivity : AppCompatActivity() {
         }
         val tvTempPausesSummary = view.findViewById<TextView>(R.id.tvSheetTempPausesSummary)
         fun refreshTempPausesSummary() {
-            tvTempPausesSummary?.text = TempPauseDialogs.summaryText(this, currentProfileName)
+            tvTempPausesSummary?.text = TempPauseDialogs.capsSummaryText(this, currentProfileName)
         }
         refreshTempPausesSummary()
-        // Temporary pause limits cannot change while protection is active:
-        // gray the row out and warn immediately instead of opening the editor.
+        // Opens even while protection is on: the page shows today's breaks and keeps the limits read-only.
         view.findViewById<View>(R.id.rowSheetTempPauses)?.apply {
-            alpha = if (EditingLockGuard.isLocked(this@MainActivity)) 0.45f else 1f
-            setOnClickListener { tapped ->
-                if (EditingLockGuard.isLocked(this@MainActivity)) {
-                    tapped.showWarnPill(R.string.edit_locked_manage_temp_pauses)
-                    return@setOnClickListener
-                }
-                TempPauseDialogs.show(this@MainActivity, currentProfileName) {
-                    refreshTempPausesSummary()
-                }
+            setOnClickListener {
+                sheet.dismiss()
+                startActivity(
+                    Intent(this@MainActivity, BreaksActivity::class.java)
+                        .putExtra(BreaksActivity.EXTRA_PROFILE_NAME, currentProfileName)
+                )
             }
         }
         view.findViewById<View>(R.id.rowSheetDelete).setOnClickListener {
@@ -2250,6 +2127,44 @@ class MainActivity : AppCompatActivity() {
         tvHeatmapLegend.text = sb
     }
 
+    /** The hero's one true state (Protecting / Not protecting / On a break / Off) as a chip. */
+    private fun refreshHeroState() {
+        if (!::tvHeroState.isInitialized) return
+        val enabled = SwitchModeStore.isEnabled(this)
+        val breakMs = SwitchModeStore.getTemporaryRemainingMillis(this)
+        val onBreak = !enabled && breakMs > 0L
+        val broken = enabled && !BlockingRuntime.isAccessibilityActive(this)
+        val accent = AccentColor.getAccentColorInt(this)
+        val onSurface = ContextCompat.getColor(this, R.color.foqos_on_surface)
+
+        val (iconRes, label) = when {
+            onBreak -> R.drawable.timer_24 to getString(R.string.home_state_break_fmt, formatRemainingShort(breakMs))
+            broken -> R.drawable.security_24 to getString(R.string.home_state_not_protecting)
+            enabled -> R.drawable.check_circle_24 to getString(R.string.home_state_protecting)
+            else -> R.drawable.lock_open_24 to getString(R.string.home_state_off)
+        }
+        val (chipBg, chipInk) = when {
+            broken -> 0xFFFFF3D6.toInt() to 0xFF5C3B00.toInt()
+            enabled -> ColorUtils.setAlphaComponent(Color.WHITE, 0xF2) to
+                AccentColor.readableOn(accent, Color.WHITE, Color.BLACK, 4.5)
+            else -> AccentColor.getAccentContainerColorInt(this) to onSurface
+        }
+        tvHeroState.text = label
+        tvHeroState.setTextColor(chipInk)
+        tvHeroState.background = GradientDrawable().apply {
+            cornerRadius = homeDp(999f).toFloat()
+            setColor(chipBg)
+        }
+        tvHeroState.setCompoundDrawablesRelative(
+            ContextCompat.getDrawable(this, iconRes)?.mutate()?.apply {
+                val size = homeDp(16f)
+                setBounds(0, 0, size, size)
+                setTint(chipInk)
+            },
+            null, null, null,
+        )
+    }
+
     /** Foqos hero card: active profile name, feature chips and stat columns. */
     private fun refreshProfileHero(current: String?) {
         val profile = current ?: return
@@ -2310,6 +2225,92 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    /**
+     * Home's cards rise into place one after another on a fresh launch (M3 emphasized
+     * decelerate). Runs once, after the first layout, so it sees the final card visibility.
+     */
+    private fun playHomeEntrance() {
+        val content = findViewById<androidx.core.widget.NestedScrollView>(R.id.scrollMain)
+            ?.getChildAt(0) as? android.view.ViewGroup ?: return
+        val rise = homeDp(28f).toFloat()
+        val easing = android.view.animation.PathInterpolator(0.05f, 0.7f, 0.1f, 1f)
+        for (i in 0 until content.childCount) {
+            val child = content.getChildAt(i)
+            child.alpha = 0f
+            child.translationY = rise
+        }
+        content.post {
+            var shown = 0
+            for (i in 0 until content.childCount) {
+                val child = content.getChildAt(i)
+                if (child.visibility != View.VISIBLE) {
+                    child.alpha = 1f
+                    child.translationY = 0f
+                    continue
+                }
+                child.animate()
+                    .alpha(1f)
+                    .translationY(0f)
+                    .setStartDelay(40L * shown)
+                    .setDuration(500L)
+                    .setInterpolator(easing)
+                    .start()
+                shown++
+            }
+        }
+    }
+
+    // The hero card's buttons and rows consume most touches, so the active blob would rarely see
+    // a press. Forward every touch inside the card to it without consuming anything.
+    private val heroTouchLocation = IntArray(2)
+
+    override fun dispatchTouchEvent(ev: android.view.MotionEvent): Boolean {
+        val blob = if (::heroProfileRoot.isInitialized) heroProfileRoot.background as? HeroBlobDrawable else null
+        if (blob != null) {
+            heroProfileRoot.getLocationOnScreen(heroTouchLocation)
+            val x = ev.rawX - heroTouchLocation[0]
+            val y = ev.rawY - heroTouchLocation[1]
+            val inside = x >= 0 && y >= 0 && x <= heroProfileRoot.width && y <= heroProfileRoot.height
+            when (ev.actionMasked) {
+                android.view.MotionEvent.ACTION_DOWN -> {
+                    heroBlobDragging = false
+                    heroTouchStartX = ev.rawX
+                    heroTouchStartY = ev.rawY
+                    if (inside) blob.touch(x, y, down = true)
+                }
+                android.view.MotionEvent.ACTION_MOVE -> {
+                    if (inside || heroBlobDragging) blob.touch(x, y, down = true) else blob.touch(x, y, down = false)
+                    // A sideways drag on the card plays with the blob: cancel the card's own tap
+                    // so letting go doesn't open whatever row the finger started on. Vertical
+                    // drags stay with the page scroll.
+                    val dx = kotlin.math.abs(ev.rawX - heroTouchStartX)
+                    val dy = kotlin.math.abs(ev.rawY - heroTouchStartY)
+                    if (!heroBlobDragging && inside && dx > heroTouchSlop && dx > dy * 1.5f) {
+                        heroBlobDragging = true
+                        val cancel = android.view.MotionEvent.obtain(ev)
+                        cancel.action = android.view.MotionEvent.ACTION_CANCEL
+                        super.dispatchTouchEvent(cancel)
+                        cancel.recycle()
+                    }
+                }
+                android.view.MotionEvent.ACTION_UP,
+                android.view.MotionEvent.ACTION_CANCEL -> blob.touch(x.coerceIn(0f, heroProfileRoot.width.toFloat()), y.coerceIn(0f, heroProfileRoot.height.toFloat()), down = false)
+            }
+            if (heroBlobDragging) {
+                if (ev.actionMasked == android.view.MotionEvent.ACTION_UP || ev.actionMasked == android.view.MotionEvent.ACTION_CANCEL) {
+                    heroBlobDragging = false
+                }
+                return true
+            }
+        }
+        return super.dispatchTouchEvent(ev)
+    }
+
+    private var heroBlobDragging = false
+    private var heroTouchStartX = 0f
+    private var heroTouchStartY = 0f
+    private val heroTouchSlop by lazy { android.view.ViewConfiguration.get(this).scaledTouchSlop.toFloat() }
+
     private var lastHeroArtActive: Boolean? = null
     private var lastHeroArtAccent: Int? = null
 
@@ -2326,16 +2327,39 @@ class MainActivity : AppCompatActivity() {
         lastHeroArtActive = active
         lastHeroArtAccent = accent
 
-        val radius = homeDp(28f).toFloat()
+        val radius = resources.getDimension(R.dimen.page_card_corner)
         if (!active) {
             val gd = android.graphics.drawable.GradientDrawable().apply {
-                // Idle hero: a tonal container like the rest of the app, no outline.
-                setColor(ContextCompat.getColor(this@MainActivity, com.oliver.loqin.R.color.foqos_surface_container_high))
+                // Idle hero: a flat page card like the rest of the app, no outline.
+                setColor(ContextCompat.getColor(this@MainActivity, com.oliver.loqin.R.color.foqos_surface))
                 cornerRadius = radius
             }
-            heroProfileRoot.background = gd
+            // Coming from the active art: let the blob shrink back into the button over the idle card.
+            val blob = heroProfileRoot.background as? HeroBlobDrawable
+            if (blob != null && android.animation.ValueAnimator.areAnimatorsEnabled()) {
+                // Detach the blob first: replacing a background clears its callback, which would
+                // otherwise happen after the layer took it over and stop the animation.
+                heroProfileRoot.background = null
+                heroProfileRoot.background = android.graphics.drawable.LayerDrawable(arrayOf(gd, blob))
+                blob.collapse()
+            } else {
+                heroProfileRoot.background = gd
+            }
         } else {
-            heroProfileRoot.background = HeroArtDrawable(accent, radius)
+            heroProfileRoot.background = HeroBlobDrawable(accent, radius).also { blob ->
+                // Bloom out of the Enable/Disable button.
+                if (::btnToggle.isInitialized && heroProfileRoot.width > 0 && heroProfileRoot.height > 0) {
+                    var x = btnToggle.width / 2f
+                    var y = btnToggle.height / 2f
+                    var v: View? = btnToggle
+                    while (v != null && v !== heroProfileRoot) {
+                        x += v.left
+                        y += v.top
+                        v = v.parent as? View
+                    }
+                    blob.bloomFrom(x / heroProfileRoot.width, y / heroProfileRoot.height)
+                }
+            }
         }
         applyHeroIdleContrast(!active)
     }
@@ -2456,28 +2480,46 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private enum class HeroPillStyle { FROSTED, TONAL }
+
+    /** Remaining time of a running break (temporary disable) or temporary enable, else 0. */
+    private fun heroTimerRemainingMs(): Long =
+        SwitchModeStore.getTemporaryRemainingMillis(this).takeIf { it > 0L }
+            ?: SwitchModeStore.getTemporaryEnableRemainingMillis(this).coerceAtLeast(0L)
+
     /**
-     * Active-session timer pill next to the launcher pill inside the hero card.
-     * Only shown while blocking is active (saturated hero art), so it is styled
-     * as a frosted translucent white pill — color-independent. [warning] switches it to a
-     * solid warning pill for "Not protecting".
+     * Status pill next to the launcher pill inside the hero card. FROSTED sits on the
+     * saturated blob art (translucent white, colour-independent); TONAL sits on the calm
+     * idle card (accent container, e.g. a break countdown); WARNING is the solid
+     * "Not protecting" pill.
      */
-    private fun styleActiveDurationPill(warning: Boolean = false) {
+    private fun styleActiveDurationPill(style: HeroPillStyle = HeroPillStyle.FROSTED) {
         val bg = GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
             cornerRadius = homeDp(999f).toFloat()
-            if (warning) {
-                setColor(ContextCompat.getColor(this@MainActivity, R.color.status_warning))
-            } else {
-                setColor(ColorUtils.setAlphaComponent(Color.WHITE, 0x2B))
-                setStroke(homeDp(1f), ColorUtils.setAlphaComponent(Color.WHITE, 0x55))
+            when (style) {
+                HeroPillStyle.TONAL -> setColor(AccentColor.getAccentContainerColorInt(this@MainActivity))
+                HeroPillStyle.FROSTED -> {
+                    setColor(ColorUtils.setAlphaComponent(Color.WHITE, 0x2B))
+                    setStroke(homeDp(1f), ColorUtils.setAlphaComponent(Color.WHITE, 0x55))
+                }
             }
         }
         tvActiveDuration.background = bg
-        tvActiveDuration.setTextColor(Color.WHITE)
+        tvActiveDuration.setTextColor(
+            if (style == HeroPillStyle.TONAL) {
+                MaterialColors.getColor(tvActiveDuration, com.google.android.material.R.attr.colorOnSurface)
+            } else {
+                Color.WHITE
+            }
+        )
         tvActiveDuration.setPadding(homeDp(14f), homeDp(4f), homeDp(14f), homeDp(4f))
     }
 
+    /**
+     * "Not protecting · fix" next to the button squeezes both (the label broke mid-word at
+     * large font sizes), so the warning gets its own full-width line under the button.
+     */
     private fun homeDp(value: Float): Int =
         (value * resources.displayMetrics.density + 0.5f).toInt()
 
@@ -2512,6 +2554,8 @@ class MainActivity : AppCompatActivity() {
             else -> String.format(Locale.getDefault(), "%dm", minutes)
         }
     }
+
+    private var lastSetupProtectionWanted: Boolean? = null
 
     private fun updateSetupCard() {
         val missing = mutableListOf<String>()
@@ -2561,21 +2605,15 @@ class MainActivity : AppCompatActivity() {
         }
 
         if (show) {
-            val missingText = resources.getQuantityString(
-                R.plurals.dashboard_badge_missing,
-                missing.size,
-                missing.size
+            // Protection switched on without accessibility blocks nothing, so say that plainly;
+            // anything else missing only makes blocking less reliable.
+            val protectionWanted = SwitchModeStore.isEnabled(this)
+            tvSetupTitle.text = getString(
+                if (accessibilityOk || !protectionWanted) R.string.dashboard_setup_title
+                else R.string.home_warning_not_protecting
             )
-            tvSetupTitle.text = missingText
-            tvSetupTitle.setTextColor(AccentColor.getAccentColorInt(this))
-            tvSetupSubtitle.text = resources.getQuantityString(
-                R.plurals.dashboard_setup_subtitle_missing,
-                missing.size
-            )
-            val bulletList = missing.joinToString(separator = "\n") { "• $it" }
-            tvSetupDesc.text = bulletList
+            tvSetupSubtitle.text = missing.joinToString(separator = " · ")
         }
-
     }
 
     private fun homeLayoutMode(): String = HomeModeDialogHelper.currentHomeLayoutMode(this)
@@ -3454,7 +3492,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private var lastTickSignature: String? = null
-    private var protectionNotRunning = false
 
     private fun updateSwitchState() {
         SwitchModeStore.finishTemporaryDisableIfExpired(this)
@@ -3562,18 +3599,31 @@ class MainActivity : AppCompatActivity() {
 
         // "Active now" while the accessibility service isn't running would claim protection that
         // isn't happening (the most common blocker complaint); say so and link to the fix.
-        protectionNotRunning = enabled && !BlockingRuntime.isAccessibilityActive(this)
-        val showActiveTimerOnHome = enabled && (shouldShowHomeActiveTimer() || protectionNotRunning)
+        val protectionNotRunning = enabled && !BlockingRuntime.isAccessibilityActive(this)
+        if (lastSetupProtectionWanted != enabled) {
+            lastSetupProtectionWanted = enabled
+            updateSetupCard()
+        }
+        // A running break / timed enable shows its countdown in the hero itself (it used to
+        // be visible only in the small quick-action tile below).
+        val heroTimerMs = if (tempDisableRemaining > 0L) tempDisableRemaining else tempEnableRemaining.coerceAtLeast(0L)
+        // The setup banner above the hero carries the warning, so the hero only drops its
+        // "Active now" claim instead of repeating it.
+        val showActiveTimerOnHome = heroTimerMs > 0L ||
+            (enabled && !protectionNotRunning && shouldShowHomeActiveTimer())
         val activeDurationMs = SwitchModeStore.getActiveDurationMillis(this)
         tvActiveDuration.isVisible = showActiveTimerOnHome
         if (showActiveTimerOnHome) {
-            styleActiveDurationPill(warning = protectionNotRunning)
-            tvActiveDuration.text = if (protectionNotRunning) {
-                getString(R.string.home_protection_not_running)
-            } else {
-                getString(R.string.dashboard_active_duration_fmt, formatActiveDuration(activeDurationMs))
+            styleActiveDurationPill(
+                if (enabled) HeroPillStyle.FROSTED else HeroPillStyle.TONAL
+            )
+            tvActiveDuration.text = when {
+                heroTimerMs > 0L -> getString(R.string.tile_temp_subtitle_time, formatRemainingShort(heroTimerMs))
+                else -> getString(R.string.dashboard_active_duration_fmt, formatActiveDuration(activeDurationMs))
             }
         }
+
+        refreshHeroState()
 
         // The heatmap's "today" must never read BELOW the running session: tick accrual
         // pauses on reinstalls/screen-off, so while blocking is active we lift the
@@ -3723,8 +3773,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Quick-entry action tiles (temporary timer / emergency bypass): neutral
-     * sub-card at rest, accent-tinted while their feature is running — the same
+     * Quick-entry action tiles (temporary timer / emergency bypass): plain page
+     * tile at rest, accent-tinted while their feature is running — the same
      * tile design reads in both enabled and disabled mode.
      */
     private fun styleQuickTile(tile: LinearLayout, title: TextView, active: Boolean) {
@@ -3735,7 +3785,7 @@ class MainActivity : AppCompatActivity() {
                 setColor(ColorUtils.setAlphaComponent(accent, 0x1F))
                 setStroke(homeDp(1f), ColorUtils.setAlphaComponent(accent, 0x55))
             } else {
-                setColor(ContextCompat.getColor(this@MainActivity, R.color.foqos_surface_container))
+                setColor(ContextCompat.getColor(this@MainActivity, R.color.foqos_surface))
             }
         }
         tile.background = bg
@@ -4745,13 +4795,6 @@ class MainActivity : AppCompatActivity() {
         }
         view.findViewById<TextView>(R.id.tvSessionMissedSubtitle)?.text = subtitleText
 
-        view.findViewById<View>(R.id.roundelBg)?.background = GradientDrawable().apply {
-            shape = GradientDrawable.OVAL
-            setColor(AccentColor.getAccentContainerColorInt(this@MainActivity))
-        }
-        view.findViewById<ImageView>(R.id.ivIcon)?.imageTintList =
-            ColorStateList.valueOf(AccentColor.getAccentColorInt(this@MainActivity))
-
         view.findViewById<View>(R.id.btnClose)?.setOnClickListener {
             sheet.dismiss()
         }
@@ -4974,7 +5017,7 @@ class MainActivity : AppCompatActivity() {
     }
 }
 
-// Foqos-style hero artwork rendering is now located in HeroArtRenderer.kt
+// The active hero artwork is HeroBlobDrawable; widget snapshots go through HeroArtRenderer.
 
 
 

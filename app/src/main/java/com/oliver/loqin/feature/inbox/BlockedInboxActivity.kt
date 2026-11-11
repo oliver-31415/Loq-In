@@ -18,7 +18,6 @@
 
 package com.oliver.loqin.feature.inbox
 
-import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.view.Menu
@@ -38,7 +37,6 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.oliver.loqin.R
 import com.oliver.loqin.util.EditingLockGuard
-import android.widget.Toast
 import com.oliver.loqin.data.prefs.BlockedInboxStore
 import com.oliver.loqin.data.prefs.SessionMissedNotificationsStore
 import com.oliver.loqin.data.prefs.BlockedNotificationEvent
@@ -54,7 +52,6 @@ import com.oliver.loqin.ui.dialog.showDestructiveAccented
 import com.oliver.loqin.ui.dialog.styleLoqInDialogButtons
 import com.oliver.loqin.widget.BlockedNotificationsWidgetProvider
 import com.google.android.material.appbar.MaterialToolbar
-import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
 import java.text.DateFormat
@@ -92,7 +89,6 @@ class BlockedInboxActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         toolbar.setNavigationOnClickListener { finish() }
-        toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
 
         sortNewestFirst = prefs.getBoolean(KEY_SORT_NEWEST, true)
         appFilter = prefs.getString(KEY_APP_FILTER, null)?.takeIf { it.isNotBlank() }
@@ -521,8 +517,8 @@ class BlockedInboxActivity : AppCompatActivity() {
                     card.strokeColor = accent
                     card.setCardBackgroundColor(ColorUtils.setAlphaComponent(accent, 0x14))
                 } else {
-                    card.strokeWidth = (1 * holder.itemView.resources.displayMetrics.density).toInt().coerceAtLeast(1)
-                    card.strokeColor = ContextCompat.getColor(ctx, R.color.foqos_outline_variant)
+                    // Flat page card, like every other card on the page.
+                    card.strokeWidth = 0
                     card.setCardBackgroundColor(ContextCompat.getColor(ctx, R.color.foqos_surface))
                 }
             }

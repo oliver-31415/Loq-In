@@ -12,7 +12,9 @@
     <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:fitsSystemWindows="true">
+        android:background="@color/foqos_bg"
+        android:fitsSystemWindows="true"
+        app:liftOnScroll="false">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/toolbar"
@@ -20,8 +22,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:minHeight="?attr/actionBarSize"
-            android:background="@android:color/transparent"
-            app:backgroundTint="@android:color/transparent"
             app:navigationIcon="@drawable/keyboard_arrow_left_24"
             app:title="@string/website_rules_title" />
     </com.google.android.material.appbar.AppBarLayout>
@@ -31,31 +31,32 @@
         android:layout_height="0dp"
         android:layout_weight="1">
 
-    <!-- Collapsing header: the rule-mode card is the FIRST child so it gets a
-         real collapse range and scrolls 1:1; search + add + chips have no flags
-         so they pin beneath it. -->
-    <com.google.android.material.appbar.AppBarLayout
-        android:id="@+id/appBarLayout"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content">
-
-        <com.google.android.material.card.MaterialCardView
-            android:id="@+id/cardWebsiteRuleSettings"
-            style="@style/LoqIn.Card"
+        <!-- Collapsing header: the rule-mode card is the FIRST child so it gets a
+             real collapse range and scrolls 1:1; search + add + chips have no flags
+             so they pin beneath it. Same stack as App rules, In-app rules and
+             Hidden apps: mode card, search, filter chips. -->
+        <com.google.android.material.appbar.AppBarLayout
+            android:id="@+id/appBarLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_marginTop="4dp"
-            android:layout_marginEnd="12dp"
-            android:layout_marginBottom="8dp"
-            app:cardUseCompatPadding="false"
-            app:layout_scrollFlags="scroll">
+            android:background="@color/foqos_bg"
+            app:liftOnScroll="false">
 
-            <LinearLayout
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardWebsiteRuleSettings"
+                style="@style/LoqIn.PageCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="8dp">
+                android:layout_marginStart="@dimen/page_margin"
+                android:layout_marginTop="@dimen/page_top_padding"
+                android:layout_marginEnd="@dimen/page_margin"
+                app:layout_scrollFlags="scroll">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:padding="8dp">
 
                     <com.google.android.material.button.MaterialButtonToggleGroup
                         android:id="@+id/toggleWebsiteRuleMode"
@@ -66,191 +67,157 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnWebsiteModeBlock"
+                            style="@style/LoqIn.Segment"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:minHeight="42dp"
-                            android:maxLines="2"
-                            android:text="@string/profile_rule_mode_block"
-                            android:textSize="12sp"
-                            app:cornerRadius="14dp" />
+                            android:text="@string/profile_rule_mode_block" />
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnWebsiteModeAllow"
+                            style="@style/LoqIn.Segment"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:minHeight="42dp"
-                            android:maxLines="2"
-                            android:text="@string/profile_rule_mode_allow"
-                            android:textSize="12sp"
-                            app:cornerRadius="14dp" />
+                            android:text="@string/profile_rule_mode_allow" />
                     </com.google.android.material.button.MaterialButtonToggleGroup>
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
 
-        <!-- Sticky search + add: no scroll flags, so they pin below the toolbar
-             once the rule-mode card scrolls away -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp"
-            android:paddingBottom="4dp">
+                    <!-- 8dp card padding + 12dp = the 20dp text inset of a list row -->
+                    <TextView
+                        android:id="@+id/tvWebsiteRuleModeSummary"
+                        style="@style/LoqIn.RowSummary"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
+                        android:layout_marginTop="8dp"
+                        android:layout_marginEnd="12dp"
+                        android:layout_marginBottom="8dp" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
 
-            <com.google.android.material.textfield.TextInputLayout
-                android:id="@+id/searchBox"
-                style="@style/LoqIn.SearchField"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                app:boxStrokeWidth="0dp"
-                app:boxStrokeWidthFocused="0dp"
-                app:boxCornerRadiusTopStart="24dp"
-                app:boxCornerRadiusTopEnd="24dp"
-                app:boxCornerRadiusBottomStart="24dp"
-                app:boxCornerRadiusBottomEnd="24dp"
-                app:endIconMode="clear_text">
-
-                <com.google.android.material.textfield.TextInputEditText
-                    android:id="@+id/etSearch"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="@string/search_websites"
-                    android:inputType="text"
-                    android:imeOptions="actionSearch" />
-            </com.google.android.material.textfield.TextInputLayout>
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btnAddWebsite"
-                style="@style/Widget.Material3.Button.TonalButton"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:layout_marginStart="8dp"
-                android:insetTop="0dp"
-                android:insetBottom="0dp"
-                android:minWidth="0dp"
-                android:contentDescription="@string/blocked_websites_add_title"
-                app:cornerRadius="24dp"
-                app:icon="@drawable/add_24"
-                app:iconGravity="textStart"
-                app:iconPadding="0dp"
-                app:strokeWidth="0dp" />
-        </LinearLayout>
-
-        <!-- Sticky suggestion category chips: no scroll flags, so they pin with search -->
-        <HorizontalScrollView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:scrollbars="none"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
-            android:paddingBottom="4dp">
-
-            <com.google.android.material.chip.ChipGroup
-                android:id="@+id/chipCategories"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                app:chipSpacingHorizontal="4dp"
-                app:singleSelection="true"
-                app:selectionRequired="true" />
-        </HorizontalScrollView>
-    </com.google.android.material.appbar.AppBarLayout>
-
-    <!-- Content -->
-    <LinearLayout
-        android:id="@+id/content"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
-
-        <FrameLayout
-            android:id="@+id/listContainer"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
-
-            <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/list"
-                android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:paddingStart="8dp"
-                android:paddingTop="4dp"
-                android:paddingEnd="8dp"
-                android:paddingBottom="24dp"
-                android:clipToPadding="false" />
-
-            <com.google.android.material.card.MaterialCardView
-                style="@style/LoqIn.Card"
-                android:id="@+id/emptyCard"
+            <!-- Sticky search + add + chips: no scroll flags, so they pin below the
+                 toolbar once the rule-mode card scrolls away -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="24dp"
-                android:layout_marginTop="20dp"
-                android:layout_marginEnd="24dp"
-                android:layout_gravity="top"
-                android:visibility="gone">
+                android:orientation="vertical"
+                android:paddingTop="@dimen/block_gap"
+                android:paddingBottom="4dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:gravity="center_horizontal"
-                    android:padding="22dp">
+                    android:layout_marginStart="@dimen/page_margin"
+                    android:layout_marginEnd="@dimen/page_margin"
+                    android:gravity="center_vertical"
+                    android:orientation="horizontal">
 
-                    <ImageView
-                        android:id="@+id/ivEmptyWebsitesIcon"
-                        android:layout_width="34dp"
-                        android:layout_height="34dp"
-                        android:contentDescription="@null"
-                        android:importantForAccessibility="no"
-                        app:srcCompat="@drawable/language_24"
-                        app:tint="?attr/colorPrimary" />
-
-                    <TextView
-                        android:id="@+id/tvEmptyTitle"
-                        android:layout_width="match_parent"
+                    <com.google.android.material.textfield.TextInputLayout
+                        android:id="@+id/searchBox"
+                        style="@style/LoqIn.SearchField"
+                        android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="10dp"
-                        android:gravity="center"
-                        android:text="@string/blocked_websites_empty_title"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textSize="16sp"
-                        android:textStyle="bold" />
+                        android:layout_weight="1"
+                        app:endIconMode="clear_text">
 
-                    <TextView
-                        android:id="@+id/tvEmptyBody"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="4dp"
-                        android:gravity="center"
-                        android:text="@string/blocked_websites_empty_body"
-                        android:textColor="?android:attr/textColorSecondary"
-                        android:textSize="13sp" />
+                        <com.google.android.material.textfield.TextInputEditText
+                            android:id="@+id/etSearch"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:hint="@string/search_websites"
+                            android:inputType="text"
+                            android:imeOptions="actionSearch" />
+                    </com.google.android.material.textfield.TextInputLayout>
 
+                    <!-- Round tonal add button, as tall as the search field -->
                     <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnEmptyAddWebsite"
-                        style="@style/LoqIn.OutlinedButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="14dp"
-                        android:minHeight="40dp"
-                        android:text="@string/empty_action_add_first_website" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnEmptyShowSuggestions"
-                        style="@style/Widget.Material3.Button.TextButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:minHeight="40dp"
-                        android:text="@string/website_show_suggestions"
-                        android:visibility="gone" />
+                        android:id="@+id/btnAddWebsite"
+                        style="@style/LoqIn.TonalButton"
+                        android:layout_width="56dp"
+                        android:layout_height="56dp"
+                        android:layout_marginStart="8dp"
+                        android:minWidth="0dp"
+                        android:paddingStart="0dp"
+                        android:paddingEnd="0dp"
+                        android:contentDescription="@string/blocked_websites_add_title"
+                        app:icon="@drawable/add_24"
+                        app:iconGravity="textStart"
+                        app:iconPadding="0dp" />
                 </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+
+                <!-- Category filter chips: scroll edge to edge, start on the page gutter -->
+                <HorizontalScrollView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:paddingStart="@dimen/page_margin"
+                    android:paddingEnd="@dimen/page_margin"
+                    android:clipToPadding="false"
+                    android:scrollbars="none">
+
+                    <com.google.android.material.chip.ChipGroup
+                        android:id="@+id/chipCategories"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        app:chipSpacingHorizontal="8dp"
+                        app:singleLine="true"
+                        app:singleSelection="true"
+                        app:selectionRequired="true" />
+                </HorizontalScrollView>
+            </LinearLayout>
+        </com.google.android.material.appbar.AppBarLayout>
+
+        <!-- Content -->
+        <FrameLayout
+            android:id="@+id/listContainer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior">
+
+            <!-- Tiles carry half the tile gap as margin (4dp), so 12dp padding puts the
+                 outer tile edges on the 16dp page gutter -->
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/list"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:paddingStart="12dp"
+                android:paddingTop="4dp"
+                android:paddingEnd="12dp"
+                android:paddingBottom="@dimen/page_bottom_padding"
+                android:clipToPadding="false" />
+
+            <!-- Empty state: the add action is its primary action; "Show suggestions"
+                 comes back as a quiet text button under it while suggestions are hidden -->
+            <LinearLayout
+                android:id="@+id/emptyCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="top"
+                android:layout_marginStart="@dimen/page_margin"
+                android:layout_marginTop="@dimen/page_top_padding"
+                android:layout_marginEnd="@dimen/page_margin"
+                android:gravity="center_horizontal"
+                android:orientation="vertical"
+                android:visibility="gone">
+
+                <com.oliver.loqin.ui.widgets.EmptyStateView
+                    android:id="@+id/emptyWebsites"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    app:emptyIcon="@drawable/language_24"
+                    app:emptyTitle="@string/blocked_websites_empty_title"
+                    app:emptyBody="@string/blocked_websites_empty_body"
+                    app:emptyActionText="@string/empty_action_add_first_website" />
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnEmptyShowSuggestions"
+                    style="@style/LoqIn.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/website_show_suggestions"
+                    android:visibility="gone" />
+            </LinearLayout>
         </FrameLayout>
-    </LinearLayout>
     </androidx.coordinatorlayout.widget.CoordinatorLayout>
 </LinearLayout>

@@ -177,11 +177,13 @@ object ScheduleStore {
             return cachedList
         }
 
-        val arr = JSONArray(arrStr)
+        // Corrupt data (e.g. a damaged restore) must not crash the schedule receiver on every tick.
+        val arr = runCatching { JSONArray(arrStr) }.getOrElse { return emptyList() }
         val out = ArrayList<Schedule>()
 
         for (i in 0 until arr.length()) {
-            val o = arr.getJSONObject(i)
+            val o = arr.optJSONObject(i) ?: continue
+            if (!o.has("id")) continue
 
             val actionStr = o.optString("action", "ENABLE")
             val action = runCatching { Action.valueOf(actionStr) }.getOrElse { Action.ENABLE }
@@ -193,12 +195,12 @@ object ScheduleStore {
             }.getOrNull()
 
             out += Schedule(
-                id = o.getInt("id"),
+                id = o.optInt("id"),
                 enabled = o.optBoolean("enabled", true),
                 profile = o.optString("profile"),
                 title = o.optString("title"),
                 note = o.optString("note"),
-                type = Type.valueOf(o.optString("type", "WEEKLY")),
+                type = runCatching { Type.valueOf(o.optString("type", "WEEKLY")) }.getOrElse { Type.WEEKLY },
                 daysMask = o.optInt("daysMask"),
                 startMinutes = o.optInt("startMinutes"),
                 endMinutes = o.optInt("endMinutes"),

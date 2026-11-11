@@ -26,15 +26,13 @@ import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.widget.SwitchCompat
-import androidx.core.content.ContextCompat
-import androidx.core.graphics.ColorUtils
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.card.MaterialCardView
 import com.oliver.loqin.R
 import com.oliver.loqin.data.prefs.ProfileStore
 import com.oliver.loqin.data.prefs.WebsiteRuleModeStore
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.theme.CustomAccentApplier
+import com.oliver.loqin.ui.RuleTileStyle
 import com.oliver.loqin.ui.StackSquareCardView
 
 /** One path-rule row rendered inside a [WebsiteTile.PathsPanel] or the paths overlay sheet. */
@@ -188,8 +186,17 @@ class WebsiteRuleTileAdapter(
     private inner class HeaderVH(itemView: View) : RecyclerView.ViewHolder(itemView) {
         private val tvHeader: TextView = itemView.findViewById(R.id.tvHeader)
         private val tvHeaderAction: TextView = itemView.findViewById(R.id.tvHeaderAction)
+        private val headerTopGap = (itemView.layoutParams as? ViewGroup.MarginLayoutParams)?.topMargin ?: 0
         fun bind(item: WebsiteTile.SectionHeader) {
             tvHeader.text = item.title
+            // The first header sits right under the sticky search; later ones keep the layout's gap.
+            (itemView.layoutParams as? ViewGroup.MarginLayoutParams)?.let { lp ->
+                val gap = if (bindingAdapterPosition == 0) 0 else headerTopGap
+                if (lp.topMargin != gap) {
+                    lp.topMargin = gap
+                    itemView.layoutParams = lp
+                }
+            }
             val label = item.actionLabel
             if (label.isNullOrBlank()) {
                 tvHeaderAction.visibility = View.GONE
@@ -286,26 +293,14 @@ class WebsiteRuleTileAdapter(
             tvLabel.alpha = contentAlpha
             tvSub.alpha = if (item.enabled) 0.70f else 0.56f
 
-            val density = ctx.resources.displayMetrics.density
-            (rowRoot as? MaterialCardView)?.let { card ->
-                val defaultStroke = ContextCompat.getColor(ctx, R.color.foqos_outline_variant)
-                val defaultBg = ContextCompat.getColor(ctx, R.color.foqos_surface)
-                val accentActive = !isSuggestion && item.enabled
-                card.strokeColor = when {
-                    selected -> accent
-                    accentActive -> ColorUtils.setAlphaComponent(accent, 0x88)
-                    else -> defaultStroke
-                }
-                // Flat unless the tile marks selection or an enabled rule; the default outline is gone.
-                card.strokeWidth = when {
-                    selected -> (2.5f * density).toInt()
-                    accentActive -> (1.5f * density).toInt()
-                    else -> 0
-                }
-                card.setCardBackgroundColor(
-                    if (selected) ColorUtils.setAlphaComponent(accent, 0x40) else defaultBg
-                )
-            }
+            // Same tile states as App rules and Hidden apps: an enabled rule (or a tile picked in
+            // multi-select) is outlined and filled with the accent, a pending one is a lighter
+            // version of that, everything else stays flat.
+            RuleTileStyle.apply(
+                rowRoot,
+                on = selected || (!isSuggestion && item.enabled && !item.pending),
+                pending = !selected && !isSuggestion && item.pending,
+            )
             // Unselected tiles step back during selection so the chosen one is unmistakable.
             rowRoot.alpha =
                 if (listener.isSelectionMode() && !selected && !isSuggestion) 0.4f else 1f

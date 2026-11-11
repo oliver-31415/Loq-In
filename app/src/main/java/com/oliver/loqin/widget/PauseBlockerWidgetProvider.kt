@@ -26,7 +26,6 @@ import android.appwidget.AppWidgetProvider
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.os.Bundle
 import android.text.format.DateFormat
 import android.widget.RemoteViews
@@ -72,6 +71,7 @@ class PauseBlockerWidgetProvider : AppWidgetProvider() {
         // Single self-addressed minute-tick alarm while a break is running. It targets
         // this provider with ACTION_APPWIDGET_UPDATE, so no manifest change is needed.
         private const val TICK_REQUEST_CODE = 2400
+        private const val TICK_WINDOW_MS = 5_000L
         private const val TICK_INTERVAL_MS = 60_000L
 
         fun refreshAll(context: Context) {
@@ -202,16 +202,10 @@ class PauseBlockerWidgetProvider : AppWidgetProvider() {
             // The fired broadcast must carry the ids so onUpdate re-renders the widgets.
             val pi = tickPendingIntent(context, ids)
             am.cancel(piKey)
-            val canExact = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                runCatching { am.canScheduleExactAlarms() }.getOrDefault(false)
-            } else {
-                true
-            }
-            if (canExact) {
-                am.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pi)
-            } else {
-                am.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAt, pi)
-            }
+            // Display-only tick: a widget can't be seen with the screen off, so use a
+            // non-wakeup alarm (delivered as soon as the device is awake) with a short
+            // window instead of waking the phone every minute of the break.
+            am.setWindow(AlarmManager.RTC, triggerAt, TICK_WINDOW_MS, pi)
         }
 
         private fun tickPendingIntent(context: Context, ids: IntArray): PendingIntent =

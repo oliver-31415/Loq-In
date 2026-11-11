@@ -1554,7 +1554,9 @@ class LoqInAccessibilityService : AccessibilityService() {
 
         // Some apps produce very few accessibility events.
         // To avoid tracking the wrong foreground package (which would break real-time limits), prefer the active window package when available.
-        val rootPkg = runCatching { activeRootWithBudget("usage_tick")?.packageName?.toString() }.getOrNull()
+        // Screen off: nothing is in front, so skip the binder round-trip (it runs every second).
+        val rootPkg = if (!pm.isInteractive) null else
+            runCatching { activeRootWithBudget("usage_tick")?.packageName?.toString() }.getOrNull()
         if (!rootPkg.isNullOrBlank() && rootPkg != packageName && rootPkg != currentTopPkg) {
             currentTopPkg = rootPkg
             BlockingRuntime.markForegroundPackage(this, rootPkg, "active_window_root")
@@ -4129,12 +4131,6 @@ class LoqInAccessibilityService : AccessibilityService() {
         return null
     }
 
-    private fun containsPackageNode(root: AccessibilityNodeInfo, pkg: String): Boolean {
-        return findAnyNode(root) { node ->
-            node.packageName?.toString()?.lowercase(Locale.getDefault()) == pkg
-        } != null
-    }
-
     /**
      * Fork-aware variant of isRootFromPackage(root, PACKAGE_YOUTUBE).
      * ReVanced/Morphe rename the applicationId, so no accessibility node ever reports
@@ -4966,22 +4962,6 @@ class LoqInAccessibilityService : AccessibilityService() {
         val safeY = y.coerceIn(1f, height.toFloat() - 1f)
         val path = Path().apply { moveTo(safeX, safeY) }
         val stroke = GestureDescription.StrokeDescription(path, 0L, 50L)
-        val gesture = GestureDescription.Builder().addStroke(stroke).build()
-        return runCatching { dispatchGesture(gesture, null, null) }.getOrDefault(false)
-    }
-
-    private fun swipeScreen(fromX: Float, fromY: Float, toX: Float, toY: Float, durationMs: Long = 180L): Boolean {
-        val width = resources.displayMetrics.widthPixels.coerceAtLeast(1)
-        val height = resources.displayMetrics.heightPixels.coerceAtLeast(1)
-        val safeFromX = fromX.coerceIn(1f, width.toFloat() - 1f)
-        val safeFromY = fromY.coerceIn(1f, height.toFloat() - 1f)
-        val safeToX = toX.coerceIn(1f, width.toFloat() - 1f)
-        val safeToY = toY.coerceIn(1f, height.toFloat() - 1f)
-        val path = Path().apply {
-            moveTo(safeFromX, safeFromY)
-            lineTo(safeToX, safeToY)
-        }
-        val stroke = GestureDescription.StrokeDescription(path, 0L, durationMs)
         val gesture = GestureDescription.Builder().addStroke(stroke).build()
         return runCatching { dispatchGesture(gesture, null, null) }.getOrDefault(false)
     }
@@ -8323,36 +8303,6 @@ class LoqInAccessibilityService : AccessibilityService() {
             hops++
         }
         return null
-    }
-
-    private fun hasActiveYouTubeBottomLabel(
-        root: AccessibilityNodeInfo,
-        needles: List<String>
-    ): Boolean {
-        val width = resources.displayMetrics.widthPixels.coerceAtLeast(1)
-        val height = resources.displayMetrics.heightPixels.coerceAtLeast(1)
-        val bounds = Rect()
-        val found = findAnyNode(root) { node ->
-            val active = node.isSelected || node.isCheckedCompat()
-            if (!active) return@findAnyNode false
-            val nodePkg = node.packageName?.toString()?.lowercase(Locale.getDefault()).orEmpty()
-            if (nodePkg.isNotBlank() && !isYouTubePackage(nodePkg)) return@findAnyNode false
-
-            runCatching { node.getBoundsInScreen(bounds) }.getOrNull()
-            if (bounds.isEmpty) return@findAnyNode false
-            val centerY = bounds.exactCenterY() / height.toFloat()
-            if (centerY < 0.72f) return@findAnyNode false
-
-            val widthRatio = bounds.width() / width.toFloat()
-            val heightRatio = bounds.height() / height.toFloat()
-            if (widthRatio > 0.35f || heightRatio > 0.22f) return@findAnyNode false
-
-            val t = node.text?.toString().orEmpty()
-            val cd = node.contentDescription?.toString().orEmpty()
-            val vid = node.viewIdResourceName?.lowercase(Locale.getDefault()).orEmpty()
-            anyNeedleMatches(t, needles) || anyNeedleMatches(cd, needles) || anyNeedleMatches(vid, needles)
-        }
-        return found != null
     }
 
     private fun hasTopYouTubeLabel(root: AccessibilityNodeInfo, labels: List<String>, maxScreenPercent: Int = 45): Boolean {

@@ -19,9 +19,7 @@
 package com.oliver.loqin.feature.usage
 
 import android.content.Intent
-import android.content.res.ColorStateList
 import android.graphics.Color
-import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Bundle
 import android.provider.Settings
@@ -29,16 +27,15 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.widget.FrameLayout
-import android.widget.LinearLayout
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.oliver.loqin.R
+import com.oliver.loqin.ui.dialog.InputSheet
 import com.oliver.loqin.blocking.LoqInAccessibilityService
 import com.oliver.loqin.data.prefs.AttemptLimitStore
 import com.oliver.loqin.data.prefs.AppLogStore
@@ -62,8 +59,6 @@ import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.showWarnPillOnContent
 import com.oliver.loqin.ui.dialog.showAccented
 import com.oliver.loqin.util.PermissionUtils
-import com.google.android.material.button.MaterialButton
-import com.google.android.material.color.MaterialColors
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.MaterialAutoCompleteTextView
@@ -173,12 +168,6 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         b = ActivityStatisticsAppWebsiteUsageBinding.inflate(layoutInflater)
         setContentView(b.root)
-        b.webPlaceholder.background = GradientDrawable().apply {
-            shape = GradientDrawable.RECTANGLE
-            setColor(ContextCompat.getColor(this@AppWebsiteUsageActivity, R.color.loqin_card_bg))
-            setStroke(dp(1), ContextCompat.getColor(this@AppWebsiteUsageActivity, R.color.loqin_card_stroke))
-            cornerRadius = dp(20).toFloat()
-        }
 
         EdgeToEdgeUtils.setupClassic(
             activity = this,
@@ -191,11 +180,6 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
         b.toolbar.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
         b.btnStatsInfo.setOnClickListener { showStatisticsInfo() }
         b.btnStatsSortFilter.setOnClickListener { showSortFilterMenu(it) }
-        val accent = AccentColor.getAccentColorInt(this)
-        // Empty-state icon tint: framework/Material theme indirection can resolve
-        // to the base green at night instead of the live accent.
-        b.webPlaceholder.compoundDrawableTintList = ColorStateList.valueOf(accent)
-
         // Keep system bars dark for readability (matches Stats/Schedules).
         EdgeToEdgeUtils.applyThemedSystemBars(this)
 
@@ -270,7 +254,6 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
         b.toolbar.title = getString(R.string.statistics_usage_title)
         b.statsPageSubtitle.isVisible = false
 
-        configureRangeFilterButtons()
         b.recycler.layoutManager = LinearLayoutManager(this)
         b.recycler.adapter = adapter
 
@@ -428,20 +411,6 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
     }
 
     private fun applyAccentUi() {
-        val accent = AccentColor.getAccentColorInt(this)
-        val accentTint = ColorStateList.valueOf(accent)
-
-        b.toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
-        // Keep the back arrow readable on the accent toolbar.
-        val bg = AccentColor.getToolbarColor(this)
-        val navTint = if (MaterialColors.isColorLight(bg)) Color.BLACK else Color.WHITE
-        b.toolbar.navigationIcon?.mutate()?.setTint(navTint)
-        b.btnStatsInfo.imageTintList = ColorStateList.valueOf(navTint)
-        b.btnStatsSortFilter.imageTintList = ColorStateList.valueOf(navTint)
-        // Keep labels neutral (text-colored). Accent stays on toggles + progress bars.
-        b.btnOpenSettings.backgroundTintList = accentTint
-        b.totalTime.setTextColor(accent)
-
         syncTypeToggleUi()
     }
 
@@ -506,37 +475,6 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
         runCatching { picker.show(supportFragmentManager, "usage_stats_custom_range") }
             .onSuccess { UsageDatePickerAccentTint.apply(this, picker) }
             .onFailure { customRangePickerShowing = false }
-    }
-
-    private fun configureRangeFilterButtons() {
-        listOf(b.chipToday, b.chipWeek, b.chipMonth, b.chipYear).forEach { button ->
-            configureRangeButton(button, custom = false)
-        }
-        configureRangeButton(b.chipCustom, custom = true)
-    }
-
-    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
-
-    private fun configureRangeButton(button: MaterialButton, custom: Boolean) {
-        button.minWidth = 0
-        button.minimumWidth = 0
-        button.minHeight = dp(40)
-        button.minimumHeight = dp(40)
-        button.insetTop = 0
-        button.insetBottom = 0
-        button.iconPadding = 0
-        if (custom) {
-            button.iconGravity = MaterialButton.ICON_GRAVITY_TEXT_START
-        }
-        button.gravity = android.view.Gravity.CENTER
-        button.textSize = 14f
-        button.setAllCaps(false)
-        button.setPadding(if (custom) dp(8) else dp(4), 0, if (custom) dp(8) else dp(4), 0)
-        button.layoutParams = (button.layoutParams as LinearLayout.LayoutParams).apply {
-            width = if (custom) dp(44) else 0
-            height = dp(40)
-            weight = if (custom) 0f else 1f
-        }
     }
 
     private fun rangeForChipId(chipId: Int): Range {
@@ -785,6 +723,10 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
         } else {
             UsageComparison.summaryChange(currentMs, comparison.previousMs)
         }
+        if (currentMs <= 0L) {
+            StatsPageUi.setComparisonLine(b.totalComparison, getString(R.string.usage_chart_no_data), more = false)
+            return
+        }
         if (change == null) {
             b.totalComparison.isVisible = false
             return
@@ -811,16 +753,8 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
                 getString(R.string.usage_comparison_minutes_more, change.value, baseline) to change.value
             }
         }
-        b.totalComparison.text = text
-        // Calm accent for less screen time, the existing warning colour for more. The words carry the meaning too.
-        b.totalComparison.setTextColor(
-            when {
-                delta > 0 -> ContextCompat.getColor(this, R.color.status_warning)
-                delta < 0 -> AccentColor.getAccentColorInt(this)
-                else -> MaterialColors.getColor(b.totalComparison, com.google.android.material.R.attr.colorOnSurface)
-            }
-        )
-        b.totalComparison.isVisible = true
+        // Neutral, or the warning tone for more screen time. The words carry the meaning too.
+        StatsPageUi.setComparisonLine(b.totalComparison, text, more = delta > 0)
     }
 
     private fun applyRefreshData(range: Range, isWeb: Boolean, data: RefreshData) {
@@ -829,7 +763,7 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
         currentProfileName = data.profile
         updateStatisticsProfileSubtitle()
         b.statsPageSubtitle.isVisible = false
-        b.totalTime.text = if (data.summary.totalTimeMs <= 0L) "—" else StatsFormat.prettyMsWithSeconds(data.summary.totalTimeMs)
+        b.totalTime.text = if (data.summary.totalTimeMs <= 0L) StatsFormat.prettyMs(0L) else StatsFormat.prettyMsWithSeconds(data.summary.totalTimeMs)
         b.totalLabel.text = if (isWeb) getString(R.string.usage_total_screen_time_web) else getString(R.string.usage_total_screen_time)
         currentComparison = data.comparison
         applyComparisonUi(range, isWeb, data.summary.totalTimeMs, data.comparison)
@@ -845,18 +779,20 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
             val visibleEmpty = adapter.itemCount == 0
             b.webPlaceholder.isVisible = visibleEmpty
             if (visibleEmpty) {
-                b.webPlaceholder.text = when {
+                b.webPlaceholder.setBody(when {
                     !data.hasAccessibility -> getString(R.string.usage_websites_no_accessibility)
                     filter == Filter.BLOCKED_ONLY && currentWebsiteRuleSet.isEmpty() -> getString(R.string.usage_websites_no_blocked)
                     else -> getString(R.string.usage_websites_no_data)
-                }
+                })
+                setEmptyAction(!data.hasAccessibility)
             }
 
-            b.permHint.isVisible = !data.hasAccessibility
+            // With nothing listed, the empty state says it and carries the Open action itself.
+            b.permHint.isVisible = !data.hasAccessibility && !visibleEmpty
             if (!data.hasAccessibility) {
                 b.permHint.text = getString(R.string.usage_websites_no_accessibility)
             }
-            b.btnOpenSettings.isVisible = !data.hasAccessibility
+            b.btnOpenSettings.isVisible = !data.hasAccessibility && !visibleEmpty
             b.btnOpenSettings.text = getString(R.string.onb_open)
             b.btnOpenSettings.setOnClickListener {
                 AccessibilityDisclosure.openSettingsWithDisclosure(this)
@@ -877,23 +813,28 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
         val visibleEmpty = adapter.itemCount == 0
         b.webPlaceholder.isVisible = visibleEmpty
         if (visibleEmpty) {
-            b.webPlaceholder.text = when {
+            b.webPlaceholder.setBody(when {
                 !data.hasAccessibility -> getString(R.string.usage_apps_no_accessibility)
                 filter == Filter.BLOCKED_ONLY && currentBlockedSet.isEmpty() -> getString(R.string.usage_apps_no_blocked)
                 else -> getString(R.string.usage_apps_no_data)
-            }
+            })
+            setEmptyAction(!data.hasAccessibility)
         }
 
-        b.permHint.isVisible = !data.hasAccessibility && visibleEmpty
-        if (!data.hasAccessibility && visibleEmpty) {
-            b.permHint.text = getString(R.string.usage_apps_no_accessibility)
-        }
-        b.btnOpenSettings.isVisible = !data.hasAccessibility && visibleEmpty
-        b.btnOpenSettings.text = getString(R.string.onb_open)
-        b.btnOpenSettings.setOnClickListener {
-            AccessibilityDisclosure.openSettingsWithDisclosure(this)
-        }
+        // The empty state carries the accessibility message and its Open action.
+        b.permHint.isVisible = false
+        b.btnOpenSettings.isVisible = false
         b.rowTapHint.isVisible = !visibleEmpty
+    }
+
+    private fun setEmptyAction(needsAccessibility: Boolean) {
+        if (needsAccessibility) {
+            b.webPlaceholder.setAction(getString(R.string.onb_open)) {
+                AccessibilityDisclosure.openSettingsWithDisclosure(this)
+            }
+        } else {
+            b.webPlaceholder.setAction(null, null)
+        }
     }
 
     private fun getDeviceFallbackSummary(range: Range): UsageSummary {
@@ -1012,18 +953,17 @@ class AppWebsiteUsageActivity : AppCompatActivity() {
         }
         sortDropdown.setOnClickListener { sortDropdown.showDropDown() }
 
-        MaterialAlertDialogBuilder(this)
-            .setTitle(getString(R.string.stats_sort_filter_title))
-            .setView(v)
-            .setPositiveButton(getString(R.string.stats_apply)) { _, _ ->
-                filter = selectedFilter
-                sort = selectedSort
-                sortDir = selectedSortDir
-                updateStatisticsProfileSubtitle()
-                applyAndShowCurrent()
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .showAccented()
+        val sheet = InputSheet(this, getString(R.string.stats_sort_filter_title))
+        sheet.content(v)
+        sheet.primary(getString(R.string.stats_apply)) {
+            filter = selectedFilter
+            sort = selectedSort
+            sortDir = selectedSortDir
+            updateStatisticsProfileSubtitle()
+            applyAndShowCurrent()
+            sheet.dismiss()
+        }
+        sheet.show()
     }
 
     private fun applyAndShowCurrent() {

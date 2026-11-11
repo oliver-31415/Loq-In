@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Shared page rhythm (docs/EXPRESSIVE_DESIGN.md, "Cohesion rules"). Reference these instead of
+     typing dp values into layouts, so every page has the same gutters and spacing. -->
+<resources>
+    <!-- Horizontal gutter between the screen edge and every card, group, header and tile. -->
+    <dimen name="page_margin">16dp</dimen>
+    <!-- Space between the top bar and the first header / card. -->
+    <dimen name="page_top_padding">8dp</dimen>
+    <!-- Space under the last item so it can scroll clear of the gesture bar. -->
+    <dimen name="page_bottom_padding">32dp</dimen>
+
+    <!-- Space above a section header (between two sections). -->
+    <dimen name="section_gap">24dp</dimen>
+    <!-- Space above the first section header on a page (adds to page_top_padding). -->
+    <dimen name="section_first_gap">8dp</dimen>
+    <!-- Space between a section header and the group / card it introduces. -->
+    <dimen name="section_header_gap">8dp</dimen>
+    <!-- Space between two stacked cards or groups inside one section. -->
+    <dimen name="block_gap">12dp</dimen>
+
+    <!-- List rows (LoqIn.ListRow anatomy). -->
+    <dimen name="row_min_height">72dp</dimen>
+    <dimen name="row_min_height_one_line">56dp</dimen>
+    <dimen name="row_padding_start">20dp</dimen>
+    <dimen name="row_padding_end">16dp</dimen>
+    <dimen name="row_padding_vertical">14dp</dimen>
+    <dimen name="row_icon_size">24dp</dimen>
+    <dimen name="row_icon_gap">16dp</dimen>
+    <dimen name="row_trailing_gap">12dp</dimen>
+
+    <!-- Flat page cards (LoqIn.PageCard, empty state, stat tiles). -->
+    <dimen name="page_card_corner">24dp</dimen>
+    <dimen name="page_card_padding">20dp</dimen>
+    <dimen name="empty_state_padding">24dp</dimen>
+    <dimen name="tile_gap">8dp</dimen>
+
+    <!-- Minimum touch target for anything tappable. -->
+    <dimen name="touch_target">48dp</dimen>
+</resources>

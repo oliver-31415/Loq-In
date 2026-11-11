@@ -507,6 +507,11 @@
             android:name=".feature.settings.InAppRulesActivity"
             android:exported="false" />
 
+        <!-- Temporary pause limits and today's usage -->
+        <activity android:screenOrientation="portrait"
+            android:name=".feature.profiles.BreaksActivity"
+            android:exported="false" />
+
         <!-- Paired NFC tag management screen -->
         <activity android:screenOrientation="portrait"
             android:name=".feature.settings.ManagePairedTagsActivity"

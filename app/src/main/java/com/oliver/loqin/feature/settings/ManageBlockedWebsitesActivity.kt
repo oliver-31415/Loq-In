@@ -26,7 +26,6 @@ import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
-import android.view.ViewGroup
 import android.widget.AutoCompleteTextView
 import android.widget.FrameLayout
 import android.widget.ImageView
@@ -50,6 +49,7 @@ import com.google.android.material.chip.ChipGroup
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import com.oliver.loqin.R
+import com.oliver.loqin.ui.dialog.InputSheet
 import com.oliver.loqin.blocking.BlockingRuntime
 import com.oliver.loqin.data.prefs.DomainBlockStore
 import com.oliver.loqin.data.prefs.DomainLimitStore
@@ -69,8 +69,10 @@ import com.oliver.loqin.feature.websites.WebsiteTile
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.theme.CustomAccentApplier
 import com.oliver.loqin.ui.LoqInDropdownAdapter
+import com.oliver.loqin.ui.FilterChipUi
 import com.oliver.loqin.ui.SegmentedToggleUi
 import com.oliver.loqin.ui.ThemeUtils
+import com.oliver.loqin.ui.widgets.EmptyStateView
 import com.oliver.loqin.ui.dialog.showAccented
 import com.oliver.loqin.ui.dialog.showDestructiveAccented
 import com.oliver.loqin.ui.dialog.styleLoqInDestructivePositiveButton
@@ -122,16 +124,10 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
             alpha = if (canAdd && !isSelectionMode) 1f else 0.45f
             iconTint = ColorStateList.valueOf(AccentColor.getAccentColorInt(this@ManageBlockedWebsitesActivity))
         }
-        val accent = AccentColor.getAccentColorInt(this)
-        findViewById<View>(R.id.btnEmptyAddWebsite)?.apply {
+        emptyState.findViewById<View>(R.id.emptyStateAction)?.apply {
             isEnabled = true
             isClickable = true
             alpha = if (canAdd) 1f else 0.45f
-            (this as? MaterialButton)?.apply {
-                strokeColor = ColorStateList.valueOf(accent)
-                setTextColor(accent)
-                iconTint = ColorStateList.valueOf(accent)
-            }
         }
         findViewById<MaterialButtonToggleGroup>(R.id.toggleWebsiteRuleMode)?.apply {
             isEnabled = true
@@ -154,8 +150,7 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
 
     private var emptyCard: View? = null
     private lateinit var rv: RecyclerView
-    private lateinit var emptyTitle: TextView
-    private lateinit var emptyBody: TextView
+    private lateinit var emptyState: EmptyStateView
     private lateinit var adapter: WebsiteRuleTileAdapter
     private lateinit var toolbar: MaterialToolbar
     private var searchQuery: String = ""
@@ -184,11 +179,14 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         val allow = isAllowMode()
         toolbar.title = getString(R.string.website_rules_title)
         toolbar.subtitle = websiteRulesSubtitle()
-        emptyTitle.text = getString(
+        emptyState.setTitle(
             if (allow) R.string.allowed_websites_empty_title else R.string.blocked_websites_empty_title
         )
-        emptyBody.text = getString(
+        emptyState.setBody(
             if (allow) R.string.allowed_websites_empty_body else R.string.blocked_websites_empty_body
+        )
+        findViewById<TextView>(R.id.tvWebsiteRuleModeSummary)?.setText(
+            if (allow) R.string.website_rule_mode_allow_summary else R.string.website_rule_mode_block_summary
         )
         val targetId = if (allow) R.id.btnWebsiteModeAllow else R.id.btnWebsiteModeBlock
         val group = findViewById<MaterialButtonToggleGroup>(R.id.toggleWebsiteRuleMode)
@@ -289,11 +287,8 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         }
 
         rv = findViewById(R.id.list)
-        emptyTitle = findViewById(R.id.tvEmptyTitle)
-        emptyBody = findViewById(R.id.tvEmptyBody)
+        emptyState = findViewById(R.id.emptyWebsites)
         emptyCard = findViewById(R.id.emptyCard)
-        val accent = AccentColor.getAccentColorInt(this)
-        findViewById<ImageView>(R.id.ivEmptyWebsitesIcon)?.imageTintList = ColorStateList.valueOf(accent)
 
         adapter = WebsiteRuleTileAdapter(object : WebsiteRuleTileAdapter.Listener {
             override fun onHostToggle(host: String) = handleHostToggle(host)
@@ -338,10 +333,10 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
             }
             showAddDialog()
         }
-        findViewById<View>(R.id.btnEmptyAddWebsite).setOnClickListener {
+        emptyState.setOnActionClickListener {
             if (!canAddBlockedWebsite()) {
                 denyWebsiteEditWithPopover()
-                return@setOnClickListener
+                return@setOnActionClickListener
             }
             showAddDialog()
         }
@@ -349,6 +344,9 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
             handleSectionAction("suggestions_show")
         }
 
+        // Accent the search field like App rules and Hidden apps.
+        findViewById<TextInputLayout>(R.id.searchBox)
+            ?.setHintTextColor(ColorStateList.valueOf(AccentColor.getAccentColorInt(this)))
         val etSearch = findViewById<TextInputEditText>(R.id.etSearch)
         etSearch.addTextChangedListener(object : android.text.TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
@@ -403,35 +401,17 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
         )
 
         fun refreshChecks() {
-            val accent = AccentColor.getAccentColorInt(this)
-            val density = resources.displayMetrics.density
             for (i in 0 until group.childCount) {
                 val chip = group.getChildAt(i) as? Chip ?: continue
                 val selected = (chip.tag as? WebsiteSuggestionCategory) == suggestionCategory ||
                     (chip.tag == null && suggestionCategory == WebsiteSuggestionCategory.ALL)
-                chip.isChecked = selected
-                chip.chipBackgroundColor = ColorStateList.valueOf(
-                    if (selected) ColorUtils.setAlphaComponent(accent, 0x2E) else Color.TRANSPARENT
-                )
-                chip.chipStrokeColor = ColorStateList.valueOf(
-                    if (selected) accent
-                    else ContextCompat.getColor(this, R.color.foqos_outline_variant)
-                )
-                chip.chipStrokeWidth = 1f * density
+                FilterChipUi.setSelected(chip, selected)
             }
         }
 
         entries.forEach { (category, label) ->
-            val chip = Chip(
-                this,
-                null,
-                com.google.android.material.R.style.Widget_Material3_Chip_Suggestion
-            ).apply {
-                text = label
-                isClickable = true
-                isFocusable = true
+            val chip = FilterChipUi.create(this, label).apply {
                 tag = category
-                id = View.generateViewId()
                 setOnClickListener {
                     suggestionCategory = (tag as? WebsiteSuggestionCategory)
                         ?: WebsiteSuggestionCategory.ALL
@@ -1215,90 +1195,73 @@ class ManageBlockedWebsitesActivity : AppCompatActivity() {
             applyMode()
         }
 
-        val builder = AlertDialog.Builder(this)
-            .setTitle(title)
-            .setView(v)
-            .setPositiveButton(if (allowDomainEdit) R.string.website_add_selected else R.string.save, null)
-            .setNegativeButton(android.R.string.cancel, null)
+        val sheet = InputSheet(this, title)
+        sheet.content(v)
         if (!allowDomainEdit) {
-            builder.setNeutralButton(R.string.website_delete_rule, null)
+            sheet.secondary(getString(R.string.website_delete_rule), destructive = true) {
+                sheet.dismiss()
+                confirmDeleteSingle(initialDomain)
+            }
         }
-        val dlg = builder.create()
+        sheet.primary(getString(if (allowDomainEdit) R.string.website_add_selected else R.string.save)) {
+            if (websiteEditingLocked() && !tightenOnlyAdd) {
+                sheet.dismiss()
+                refreshList()
+                return@primary
+            }
+            val domainRaw = etDomain.text?.toString()?.trim().orEmpty()
 
-        dlg.setOnShowListener {
-            dlg.styleLoqInDialogButtons()
-            if (CustomAccentApplier.isCustomAccentEnabled(this)) {
-                runCatching { CustomAccentApplier.applyToDialog(dlg) }
+            if (domainRaw.isBlank()) {
+                tilDomain.error = getString(R.string.domain_required)
+                return@primary
             }
 
-            if (!allowDomainEdit) {
-                dlg.getButton(AlertDialog.BUTTON_NEUTRAL).setOnClickListener {
-                    dlg.dismiss()
-                    confirmDeleteSingle(initialDomain)
-                }
+            val normalized = DomainBlockStore.normalize(domainRaw)
+            if (normalized.isNullOrBlank()) {
+                tilDomain.error = getString(R.string.domain_invalid)
+                return@primary
+            }
+            if (isAllowMode() && DomainBlockStore.isPathRule(normalized)) {
+                tilDomain.error = getString(R.string.website_rule_path_allow_mode_error)
+                return@primary
+            }
+            tilDomain.error = null
+
+            val hardBlock = acMode.text?.toString() == modeAlways
+
+            if (tightenOnlyAdd && (!hardBlock || isAllowMode())) {
+                return@primary
             }
 
-            dlg.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener {
-                if (websiteEditingLocked() && !tightenOnlyAdd) {
-                    dlg.dismiss()
-                    refreshList()
-                    return@setOnClickListener
-                }
-                val domainRaw = etDomain.text?.toString()?.trim().orEmpty()
-
-                if (domainRaw.isBlank()) {
-                    tilDomain.error = getString(R.string.domain_required)
-                    return@setOnClickListener
-                }
-
-                val normalized = DomainBlockStore.normalize(domainRaw)
-                if (normalized.isNullOrBlank()) {
-                    tilDomain.error = getString(R.string.domain_invalid)
-                    return@setOnClickListener
-                }
-                if (isAllowMode() && DomainBlockStore.isPathRule(normalized)) {
-                    tilDomain.error = getString(R.string.website_rule_path_allow_mode_error)
-                    return@setOnClickListener
-                }
-                tilDomain.error = null
-
-                val hardBlock = acMode.text?.toString() == modeAlways
-
-                if (tightenOnlyAdd && (!hardBlock || isAllowMode())) {
-                    return@setOnClickListener
-                }
-
-                val profile = currentProfile()
-                if (hardBlock) {
-                    if (isAllowMode()) {
-                        DomainBlockStore.addDomainForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
-                        DomainBlockStore.setDomainEnabledForProfile(this@ManageBlockedWebsitesActivity, profile, normalized, true)
-                        DomainLimitStore.clearForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
-                    } else {
-                        DomainLimitStore.clearForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
-                        DomainBlockStore.addDomainForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
-                        DomainBlockStore.setDomainEnabledForProfile(this@ManageBlockedWebsitesActivity, profile, normalized, true)
-                    }
-                    BlockingRuntime.ensureRunning(this@ManageBlockedWebsitesActivity)
-                    refreshList()
-                    dlg.dismiss()
-                } else {
-                    // Limits mode: create the rule shell and open the limits screen.
-                    if (isAllowMode()) {
-                        DomainBlockStore.addDomainForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
-                    } else {
-                        DomainBlockStore.removeDomainForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
-                    }
+            val profile = currentProfile()
+            if (hardBlock) {
+                if (isAllowMode()) {
+                    DomainBlockStore.addDomainForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
                     DomainBlockStore.setDomainEnabledForProfile(this@ManageBlockedWebsitesActivity, profile, normalized, true)
-                    BlockingRuntime.ensureRunning(this@ManageBlockedWebsitesActivity)
-                    refreshList()
-                    dlg.dismiss()
-                    showWebsiteLimitsDialog(normalized)
+                    DomainLimitStore.clearForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
+                } else {
+                    DomainLimitStore.clearForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
+                    DomainBlockStore.addDomainForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
+                    DomainBlockStore.setDomainEnabledForProfile(this@ManageBlockedWebsitesActivity, profile, normalized, true)
                 }
+                BlockingRuntime.ensureRunning(this@ManageBlockedWebsitesActivity)
+                refreshList()
+                sheet.dismiss()
+            } else {
+                // Limits mode: create the rule shell and open the limits screen.
+                if (isAllowMode()) {
+                    DomainBlockStore.addDomainForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
+                } else {
+                    DomainBlockStore.removeDomainForProfile(this@ManageBlockedWebsitesActivity, profile, normalized)
+                }
+                DomainBlockStore.setDomainEnabledForProfile(this@ManageBlockedWebsitesActivity, profile, normalized, true)
+                BlockingRuntime.ensureRunning(this@ManageBlockedWebsitesActivity)
+                refreshList()
+                sheet.dismiss()
+                showWebsiteLimitsDialog(normalized)
             }
         }
-
-        dlg.show()
+        sheet.show()
     }
 
     private data class DomainRule(

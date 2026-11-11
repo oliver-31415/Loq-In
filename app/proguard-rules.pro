@@ -51,3 +51,6 @@
 # Keep the Play services task listeners used reflectively by CameraX/GMS callbacks in minified release builds.
 -keep class com.google.android.gms.tasks.OnSuccessListener { *; }
 -keep class com.google.android.gms.tasks.OnFailureListener { *; }
+
+# Theme viewInflaterClass (themes.xml): AppCompat instantiates it by name via reflection.
+-keep class com.oliver.loqin.ui.LoqInViewInflater { public <init>(); }

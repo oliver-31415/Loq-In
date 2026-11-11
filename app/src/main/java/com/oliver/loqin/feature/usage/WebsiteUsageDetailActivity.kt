@@ -20,18 +20,13 @@ package com.oliver.loqin.feature.usage
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
-import android.text.InputType
 import android.view.View
-import android.widget.EditText
-import android.widget.LinearLayout
-import android.widget.TextView
-import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.oliver.loqin.R
+import com.oliver.loqin.ui.dialog.showLoqInNumberInput
 import com.oliver.loqin.blocking.BlockingRuntime
 import com.oliver.loqin.data.prefs.DomainBlockStore
 import com.oliver.loqin.data.prefs.DomainLimitStore
@@ -45,17 +40,14 @@ import com.oliver.loqin.feature.stats.StatsFormat
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.ui.EdgeToEdgeUtils
 import com.oliver.loqin.ui.SegmentedToggleUi
-import com.oliver.loqin.ui.showWarnPill
 import com.oliver.loqin.ui.showWarnPillOnContent
 import com.oliver.loqin.ui.widgets.UsageDetailChartView
 import com.oliver.loqin.ui.ThemeUtils
-import com.oliver.loqin.ui.dialog.showAccented
 import com.oliver.loqin.ui.dialog.LoqInDialogOption
 import com.oliver.loqin.ui.dialog.showLoqInOptionDialog
 import com.oliver.loqin.ui.dialog.showLoqInMultiChoiceDialog
 import com.oliver.loqin.ui.dialog.styleLoqInDialogButtons
 import com.oliver.loqin.util.EditingLockGuard
-import com.google.android.material.button.MaterialButton
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -114,8 +106,6 @@ class WebsiteUsageDetailActivity : AppCompatActivity() {
         b = ActivityStatisticsWebsiteUsageDetailBinding.inflate(layoutInflater)
         setContentView(b.root)
 
-        b.toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
-        b.toolbar.navigationIcon?.mutate()?.setTint(toolbarIconColor())
         b.toolbar.setNavigationOnClickListener { finish() }
         // Explicit container wash: ?attr/colorPrimaryContainer in the roundel
         // drawable can resolve to the base green instead of the live accent.
@@ -321,9 +311,7 @@ class WebsiteUsageDetailActivity : AppCompatActivity() {
     }
 
     private fun setHeroTotal(caption: String, totalMs: Long) {
-        val accent = AccentColor.getAccentColorInt(this)
         b.rangeTotal.text = StatsFormat.prettyMsWithSeconds(totalMs)
-        b.rangeTotal.setTextColor(accent)
         b.rangeTotalCaption.text = caption
     }
 
@@ -359,10 +347,6 @@ class WebsiteUsageDetailActivity : AppCompatActivity() {
     private fun configureRangeFilterButtons() {
         syncRangeToggleUi()
         b.toggleRange.addOnButtonCheckedListener { _, _, _ -> syncRangeToggleUi() }
-        listOf(b.btnRangeToday, b.btnRangeWeek, b.btnRangeMonth, b.btnRangeYear).forEach { button ->
-            configureRangeButton(button, custom = false)
-        }
-        configureRangeButton(b.btnRangeCustom, custom = true)
     }
 
     private fun syncRangeToggleUi() {
@@ -373,28 +357,6 @@ class WebsiteUsageDetailActivity : AppCompatActivity() {
             buttons,
             if (checked != View.NO_ID) checked else b.btnRangeToday.id,
         )
-    }
-
-    private fun configureRangeButton(button: MaterialButton, custom: Boolean) {
-        button.minWidth = 0
-        button.minimumWidth = 0
-        button.minHeight = dp(40)
-        button.minimumHeight = dp(40)
-        button.insetTop = 0
-        button.insetBottom = 0
-        button.cornerRadius = dp(14)
-        button.iconPadding = 0
-        if (custom) {
-            button.iconGravity = MaterialButton.ICON_GRAVITY_TEXT_START
-        }
-        button.gravity = android.view.Gravity.CENTER
-        button.setAllCaps(false)
-        button.setPadding(if (custom) dp(8) else dp(4), 0, if (custom) dp(8) else dp(4), 0)
-        button.layoutParams = (button.layoutParams as LinearLayout.LayoutParams).apply {
-            width = if (custom) dp(44) else 0
-            height = dp(40)
-            weight = if (custom) 0f else 1f
-        }
     }
 
     private fun updateProfileSubtitle() {
@@ -469,8 +431,6 @@ class WebsiteUsageDetailActivity : AppCompatActivity() {
 
 
 
-
-    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
     private fun buildDayIndexLabels(count: Int): List<String> {
         return (1..count.coerceAtLeast(0)).map { it.toString() }
@@ -707,24 +667,13 @@ class WebsiteUsageDetailActivity : AppCompatActivity() {
         if (websiteEditingLocked()) {
             return
         }
-        val input = EditText(this).apply {
-            inputType = InputType.TYPE_CLASS_NUMBER
-            hint = getString(R.string.minutes_hint)
-        }
-
-        AlertDialog.Builder(this)
-            .setTitle(R.string.custom_minutes_title)
-            .setView(input)
-            .setPositiveButton(R.string.custom_minutes_confirm) { _, _ ->
-                val m = input.text?.toString()?.trim()?.toIntOrNull()
-                if (m == null || m < 0) {
-                    input.showWarnPill(R.string.invalid_value)
-                    return@setPositiveButton
-                }
-                applyDailyLimit(domain, m)
-            }
-            .setNegativeButton(android.R.string.cancel, null)
-            .showAccented()
+        showLoqInNumberInput(
+            title = getString(R.string.custom_minutes_title),
+            hint = getString(R.string.minutes_hint),
+            confirmText = getString(R.string.custom_minutes_confirm),
+            range = 0..24 * 60,
+            invalidMessage = getString(R.string.invalid_value),
+        ) { m -> applyDailyLimit(domain, m) }
     }
 
     private fun applyDailyLimit(domain: String, minutes: Int) {
