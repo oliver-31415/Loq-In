@@ -60,6 +60,7 @@ import com.oliver.loqin.feature.settings.InAppRulesActivity
 import com.oliver.loqin.feature.usage.QuickLimitDialogs
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.theme.CustomAccentApplier
+import com.oliver.loqin.ui.FilterChipUi
 import com.oliver.loqin.ui.SegmentedToggleUi
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.applyLoqInStyle
@@ -860,37 +861,17 @@ class AppPickerActivity : AppCompatActivity() {
         }
 
         fun refreshChecks() {
-            val accent = AccentColor.getAccentColorInt(this)
-            val density = resources.displayMetrics.density
             for (i in 0 until group.childCount) {
                 val chip = group.getChildAt(i) as? Chip ?: continue
                 val selected = (chip.tag as? AppCategory) == activeCategory ||
                     (chip.tag == null && activeCategory == null)
-                // Highlight manually: chip internal checked visuals proved unreliable.
-                chip.isChecked = selected
-                chip.chipBackgroundColor = ColorStateList.valueOf(
-                    if (selected) ColorUtils.setAlphaComponent(accent, 0x2E)
-                    else Color.TRANSPARENT
-                )
-                chip.chipStrokeColor = ColorStateList.valueOf(
-                    if (selected) accent
-                    else ContextCompat.getColor(this, R.color.foqos_outline_variant)
-                )
-                chip.chipStrokeWidth = 1f * density
+                FilterChipUi.setSelected(chip, selected)
             }
         }
 
         fun addChip(label: String, category: AppCategory?) {
-            val chip = Chip(
-                this,
-                null,
-                com.google.android.material.R.style.Widget_Material3_Chip_Suggestion
-            ).apply {
-                text = label
-                isClickable = true
-                isFocusable = true
+            val chip = FilterChipUi.create(this, label).apply {
                 tag = category
-                id = View.generateViewId()
                 setOnClickListener {
                     activeCategory = tag as? AppCategory
                     refreshChecks()

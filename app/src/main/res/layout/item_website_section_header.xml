@@ -1,13 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    "Your rules" / "Suggestions" header in the website grid: a LoqIn.SectionHeader whose row also
+    holds an optional action ("Hide suggestions"). The grid's 12dp padding plus the 4dp margin puts
+    the row on the page gutter; the 16dp padding gives the header text the standard header inset.
+    The tiles below carry a 4dp top margin, so 4dp here makes the usual 8dp header-to-content gap;
+    the adapter swaps the 24dp top gap for the first-header gap on the first header.
+-->
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginStart="4dp"
-    android:layout_marginTop="12dp"
+    android:layout_marginTop="@dimen/section_gap"
     android:layout_marginEnd="4dp"
     android:layout_marginBottom="4dp"
+    android:paddingStart="16dp"
+    android:paddingEnd="4dp"
     android:gravity="center_vertical"
+    android:minHeight="@dimen/touch_target"
     android:orientation="horizontal">
 
     <TextView
@@ -21,13 +31,12 @@
         android:id="@+id/tvHeaderAction"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:minHeight="@dimen/touch_target"
+        android:gravity="center"
         android:background="?attr/selectableItemBackground"
-        android:paddingStart="10dp"
-        android:paddingTop="4dp"
-        android:paddingEnd="0dp"
-        android:paddingBottom="4dp"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:textAppearance="@style/TextAppearance.LoqIn.Button"
         android:textColor="?attr/colorPrimary"
-        android:textSize="12sp"
-        android:textStyle="bold"
         android:visibility="gone" />
 </LinearLayout>

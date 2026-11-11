@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
     Hidden-apps tile. Mirrors grid_app_tile.xml (App rules) so the two screens
-    look like the same component: square card, plain app icon, bold label and a
-    top-right check badge for the selected state. Overlay action buttons are not
+    look like the same component: LoqIn.TileCard, 42dp app icon, bold label, a
+    top-right check badge and RuleTileStyle for the selected state. Overlay action buttons are not
     needed here because a tile only toggles visibility.
 -->
 <com.oliver.loqin.ui.SquareCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    style="@style/LoqIn.TileCard"
     android:id="@+id/rowRoot"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -16,11 +17,7 @@
     android:foreground="?attr/selectableItemBackground"
     android:clickable="true"
     android:focusable="true"
-    app:cardBackgroundColor="@color/foqos_surface"
-    app:cardCornerRadius="18dp"
-    app:cardElevation="0dp"
-    app:cardUseCompatPadding="false"
-    app:strokeWidth="0dp">
+    app:cardUseCompatPadding="false">
 
     <FrameLayout
         android:layout_width="match_parent"
@@ -38,8 +35,8 @@
 
             <ImageView
                 android:id="@+id/ivAppIcon"
-                android:layout_width="44dp"
-                android:layout_height="44dp"
+                android:layout_width="42dp"
+                android:layout_height="42dp"
                 android:contentDescription="@string/app_icon"
                 android:src="@android:drawable/sym_def_app_icon" />
 
@@ -49,7 +46,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:gravity="center"
-                android:textColor="?android:attr/textColorPrimary"
+                android:textColor="?attr/colorOnSurface"
                 android:textSize="12sp"
                 android:textStyle="bold"
                 android:maxLines="2"
@@ -57,17 +54,10 @@
 
             <TextView
                 android:id="@+id/tvSuggested"
+                style="@style/LoqIn.TileBadge"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="3dp"
-                android:gravity="center"
-                android:paddingStart="6dp"
-                android:paddingEnd="6dp"
-                android:paddingTop="1dp"
-                android:paddingBottom="1dp"
-                android:textColor="?attr/colorPrimary"
-                android:textSize="9.5sp"
-                android:textStyle="bold"
+                android:layout_marginTop="4dp"
                 android:maxLines="1"
                 android:ellipsize="end"
                 android:visibility="gone"
@@ -79,6 +69,8 @@
             android:layout_width="22dp"
             android:layout_height="22dp"
             android:layout_gravity="top|end"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="4dp"
             android:visibility="gone"
             android:contentDescription="@null"
             android:src="@drawable/check_circle_24"
