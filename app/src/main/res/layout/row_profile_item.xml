@@ -3,74 +3,57 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/cardProfile"
+    style="@style/LoqIn.PageCard"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginStart="2dp"
-    android:layout_marginTop="6dp"
-    android:layout_marginEnd="2dp"
-    android:layout_marginBottom="6dp"
-    android:foreground="?attr/selectableItemBackground"
-    app:cardBackgroundColor="@color/foqos_surface"
-    app:cardCornerRadius="20dp"
-    app:cardElevation="0dp"
-    app:cardUseCompatPadding="true"
-    app:strokeWidth="0dp">
+    android:layout_marginBottom="8dp"
+    android:foreground="?attr/selectableItemBackground">
 
     <LinearLayout
+        style="@style/LoqIn.ListRow"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical"
-        android:padding="14dp">
+        android:layout_height="wrap_content">
 
         <View
             android:id="@+id/viewActiveBar"
             android:layout_width="4dp"
             android:layout_height="42dp"
-            android:layout_marginEnd="10dp"
+            android:layout_marginEnd="12dp"
             android:background="?attr/colorPrimary"
             android:visibility="gone" />
 
         <ImageView
-            android:layout_width="22dp"
-            android:layout_height="22dp"
-            android:contentDescription="@string/edit"
-            android:src="@drawable/switch_account_24"
-            app:tint="?attr/colorOnSurface" />
-
-        <Space
-            android:layout_width="14dp"
-            android:layout_height="1dp" />
+            style="@style/LoqIn.RowIcon"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            android:contentDescription="@null"
+            android:src="@drawable/switch_account_24" />
 
         <LinearLayout
+            style="@style/LoqIn.RowText"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:orientation="vertical">
+            android:layout_height="wrap_content">
 
             <TextView
                 android:id="@+id/tvName"
-                android:textAppearance="?attr/textAppearanceBody1"
-                android:layout_width="wrap_content"
+                style="@style/LoqIn.RowTitle"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/profile_label_default"
-                android:textColor="?attr/colorOnSurface" />
+                android:text="@string/profile_label_default" />
 
             <TextView
                 android:id="@+id/tvSubtitle"
-                android:textAppearance="?attr/textAppearanceBody2"
-                android:layout_width="wrap_content"
+                style="@style/LoqIn.RowSummary"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:alpha="0.7"
-                android:text="@string/profile_row_subtitle"
-                android:textColor="?attr/colorOnSurface" />
+                android:text="@string/profile_row_subtitle" />
         </LinearLayout>
 
         <TextView
             android:id="@+id/tvActiveBadge"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/row_trailing_gap"
             android:paddingStart="10dp"
             android:paddingTop="6dp"
             android:paddingEnd="10dp"
@@ -81,16 +64,13 @@
             android:textSize="12sp"
             android:textStyle="bold" />
 
-        <Space
-            android:layout_width="10dp"
-            android:layout_height="1dp" />
-
         <ImageView
             android:id="@+id/ivProfileActionState"
-            android:layout_width="18dp"
-            android:layout_height="18dp"
+            android:layout_width="@dimen/row_icon_size"
+            android:layout_height="@dimen/row_icon_size"
+            android:layout_marginStart="@dimen/row_trailing_gap"
             android:contentDescription="@string/edit"
             android:src="@drawable/edit_24"
-            app:tint="?android:attr/textColorSecondary" />
+            app:tint="?attr/colorOnSurfaceVariant" />
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>
