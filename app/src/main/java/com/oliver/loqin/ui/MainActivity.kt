@@ -69,6 +69,7 @@ import androidx.core.view.iterator
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
+import androidx.core.view.updateLayoutParams
 import androidx.core.view.isVisible
 import androidx.core.widget.NestedScrollView
 import androidx.lifecycle.Lifecycle
@@ -239,7 +240,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var layoutHomeRoot: LinearLayout
     private lateinit var layoutStatusContent: LinearLayout
     private lateinit var layoutProtectionStatus: View
-    private lateinit var cardStatus: MaterialCardView
+    private lateinit var cardStatus: View
     private lateinit var spaceBeforeStatusCard: View
     private var bottomNavTourScheduled = false
     private var bottomNavTourShowing = false
@@ -263,7 +264,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var cardActivity: MaterialCardView
     private lateinit var activityHeatmap: FoqosHeatmapView
     private lateinit var tvHeatmapLegend: TextView
-    private lateinit var btnActivityHide: LinearLayout
+    private lateinit var btnActivityHide: MaterialButton
     private lateinit var tvHeroProfileName: TextView
     private lateinit var tvHeroChips: TextView
     private lateinit var tvHeroStrategy: TextView
@@ -278,7 +279,7 @@ class MainActivity : AppCompatActivity() {
 
     // Foqos-style profile rows
     private lateinit var profileRowsContainer: LinearLayout
-    private lateinit var btnManageProfiles: LinearLayout
+    private lateinit var btnManageProfiles: View
 
     // Quick actions tiles
     private lateinit var tileManageApps: MaterialCardView
@@ -420,10 +421,13 @@ class MainActivity : AppCompatActivity() {
 
         scrollMain = findViewById(R.id.scrollMain)
         // Foqos restyle: toolbar is inline in the scroll (scrolls away like Foqos's title),
-        // so the scroll view must consume the status-bar inset itself.
+        // so the scroll view must consume the status-bar inset itself. Content scrolls on under a
+        // page-coloured scrim of the same height instead of under the clock and system icons.
+        val statusBarScrim = findViewById<View>(R.id.homeStatusBarScrim)
         ViewCompat.setOnApplyWindowInsetsListener(scrollMain) { v, insets ->
             val status = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
             v.updatePadding(top = status + homeDp(4f))
+            statusBarScrim.updateLayoutParams { height = status }
             insets
         }
 
@@ -498,8 +502,7 @@ class MainActivity : AppCompatActivity() {
             activityHidden = !activityHidden
             val gridVisible = !activityHidden
             cardActivity.visibility = if (gridVisible) View.VISIBLE else View.GONE
-            btnActivityHide.findViewById<TextView>(R.id.tvHeaderPillLabel)?.text =
-                getString(if (gridVisible) R.string.activity_hide else R.string.activity_show)
+            btnActivityHide.setText(if (gridVisible) R.string.activity_hide else R.string.activity_show)
         }
         findViewById<View>(R.id.btnMoreInsights)?.setOnClickListener {
             ActivityTransitionCompat.switchWithoutAnimation(
@@ -2378,11 +2381,11 @@ class MainActivity : AppCompatActivity() {
         lastHeroArtActive = active
         lastHeroArtAccent = accent
 
-        val radius = homeDp(28f).toFloat()
+        val radius = resources.getDimension(R.dimen.page_card_corner)
         if (!active) {
             val gd = android.graphics.drawable.GradientDrawable().apply {
-                // Idle hero: a tonal container like the rest of the app, no outline.
-                setColor(ContextCompat.getColor(this@MainActivity, com.oliver.loqin.R.color.foqos_surface_container_high))
+                // Idle hero: a flat page card like the rest of the app, no outline.
+                setColor(ContextCompat.getColor(this@MainActivity, com.oliver.loqin.R.color.foqos_surface))
                 cornerRadius = radius
             }
             // Coming from the active art: let the blob shrink back into the button over the idle card.
@@ -3824,8 +3827,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Quick-entry action tiles (temporary timer / emergency bypass): neutral
-     * sub-card at rest, accent-tinted while their feature is running — the same
+     * Quick-entry action tiles (temporary timer / emergency bypass): plain page
+     * tile at rest, accent-tinted while their feature is running — the same
      * tile design reads in both enabled and disabled mode.
      */
     private fun styleQuickTile(tile: LinearLayout, title: TextView, active: Boolean) {
@@ -3836,7 +3839,7 @@ class MainActivity : AppCompatActivity() {
                 setColor(ColorUtils.setAlphaComponent(accent, 0x1F))
                 setStroke(homeDp(1f), ColorUtils.setAlphaComponent(accent, 0x55))
             } else {
-                setColor(ContextCompat.getColor(this@MainActivity, R.color.foqos_surface_container))
+                setColor(ContextCompat.getColor(this@MainActivity, R.color.foqos_surface))
             }
         }
         tile.background = bg
