@@ -23,8 +23,8 @@
 
         <ImageView
             android:id="@+id/icon"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="@dimen/stats_app_icon_size"
+            android:layout_height="@dimen/stats_app_icon_size"
             android:layout_gravity="center_vertical"
             android:contentDescription="@null"
             android:scaleType="centerInside" />

@@ -19,6 +19,9 @@
 package com.oliver.loqin.feature.usage
 
 import android.content.Context
+import android.graphics.Color
+import android.graphics.drawable.Drawable
+import android.graphics.drawable.GradientDrawable
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -27,11 +30,14 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.annotation.DrawableRes
 import androidx.core.content.ContextCompat
+import androidx.core.widget.ImageViewCompat
 import androidx.core.widget.TextViewCompat
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
 import com.google.android.material.card.MaterialCardView
+import com.google.android.material.color.MaterialColors
 import com.oliver.loqin.R
+import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.ui.PageUi
 import com.oliver.loqin.ui.widgets.EmptyStateView
 import com.oliver.loqin.ui.widgets.ListGroupLayout
@@ -195,18 +201,30 @@ object StatsPageUi {
         return group
     }
 
-    /** One standard row (icon, title, optional summary, optional trailing value and chevron). */
+    /**
+     * One standard row (icon, title, optional summary, optional trailing value and chevron).
+     * [appIcon] is a full-colour app icon: shown untinted at app-icon size instead of [iconRes].
+     */
     fun row(
         parent: ViewGroup,
         title: CharSequence,
         summary: CharSequence? = null,
         @DrawableRes iconRes: Int = 0,
         value: CharSequence? = null,
+        appIcon: Drawable? = null,
         onClick: (() -> Unit)? = null,
     ): View {
         val row = LayoutInflater.from(parent.context).inflate(R.layout.stats_list_row, parent, false)
         val icon = row.findViewById<ImageView>(R.id.statsRowIcon)
-        if (iconRes != 0) {
+        if (appIcon != null) {
+            ImageViewCompat.setImageTintList(icon, null)
+            icon.setImageDrawable(appIcon)
+            val size = parent.resources.getDimensionPixelSize(R.dimen.stats_app_icon_size)
+            icon.layoutParams = icon.layoutParams.apply {
+                width = size
+                height = size
+            }
+        } else if (iconRes != 0) {
             icon.setImageResource(iconRes)
         } else {
             icon.visibility = View.GONE
@@ -227,6 +245,52 @@ object StatsPageUi {
             row.setOnClickListener { onClick() }
             row.findViewById<View>(R.id.statsRowChevron).visibility = View.VISIBLE
         }
+        return row
+    }
+
+    /**
+     * A row with a proportion bar under its title (daily buckets, top apps): [fraction] of the
+     * longest entry, in the accent on a muted track. The value sits at the end like a RowValue.
+     */
+    fun barRow(
+        parent: ViewGroup,
+        title: CharSequence,
+        value: CharSequence,
+        fraction: Float,
+        @DrawableRes iconRes: Int = 0,
+        appIcon: Drawable? = null,
+        onClick: (() -> Unit)? = null,
+    ): View {
+        val row = row(parent, title, iconRes = iconRes, value = value, appIcon = appIcon, onClick = onClick)
+        val context = parent.context
+        val radius = dp(context, BAR_HEIGHT_DP).toFloat()
+        val track = LinearLayout(context).apply {
+            orientation = LinearLayout.HORIZONTAL
+            background = GradientDrawable().apply {
+                cornerRadius = radius
+                setColor(
+                    MaterialColors.getColor(
+                        context,
+                        com.google.android.material.R.attr.colorSurfaceVariant,
+                        Color.LTGRAY,
+                    )
+                )
+            }
+        }
+        val shown = fraction.coerceIn(MIN_BAR_FRACTION, 1f)
+        track.addView(View(context).apply {
+            background = GradientDrawable().apply {
+                cornerRadius = radius
+                setColor(AccentColor.getAccentColorInt(context))
+            }
+        }, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, shown))
+        track.addView(View(context), LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.MATCH_PARENT, 1f - shown))
+        row.findViewById<LinearLayout>(R.id.statsRowText).addView(
+            track,
+            LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, dp(context, BAR_HEIGHT_DP)).apply {
+                topMargin = dp(context, 8)
+            }
+        )
         return row
     }
 
@@ -257,5 +321,7 @@ object StatsPageUi {
         (value * context.resources.displayMetrics.density + 0.5f).toInt()
 
     private const val RANGE_SEGMENT_PADDING_DP = 4
+    private const val BAR_HEIGHT_DP = 6
+    private const val MIN_BAR_FRACTION = 0.04f
     private const val CARD_CONTENT_GAP_DP = 16
 }

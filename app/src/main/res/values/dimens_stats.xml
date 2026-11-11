@@ -3,4 +3,6 @@
 <resources>
     <!-- Icon-only calendar segment at the end of every statistics range bar. -->
     <dimen name="stats_calendar_segment_width">56dp</dimen>
+    <!-- Full-colour app icon at the start of a statistics row (the 24dp row icon is for symbols). -->
+    <dimen name="stats_app_icon_size">40dp</dimen>
 </resources>
