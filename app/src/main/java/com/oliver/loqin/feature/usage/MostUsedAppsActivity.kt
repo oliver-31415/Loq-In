@@ -20,36 +20,33 @@ package com.oliver.loqin.feature.usage
 
 import android.content.Context
 import android.content.Intent
-import android.content.res.ColorStateList
 import android.graphics.Color
-import android.graphics.Typeface
 import android.os.Bundle
 import android.provider.Settings
 import android.view.Gravity
 import android.view.View
+import android.view.ViewGroup
 import android.widget.FrameLayout
-import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
+import androidx.core.widget.TextViewCompat
 import androidx.core.graphics.ColorUtils
 import androidx.core.util.Pair
-import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.lifecycleScope
 import com.oliver.loqin.R
 import com.oliver.loqin.feature.onboarding.OnboardingUsageDonutView
 import com.oliver.loqin.feature.stats.StatsFormat
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.ui.EdgeToEdgeUtils
+import com.oliver.loqin.ui.PageUi
+import com.oliver.loqin.ui.SegmentedToggleUi
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.dialog.showAccented
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
-import com.google.android.material.button.MaterialButtonToggleGroup
-import com.google.android.material.card.MaterialCardView
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -102,8 +99,6 @@ class MostUsedAppsActivity : AppCompatActivity() {
             title = getString(R.string.most_used_apps_title)
             setNavigationIcon(R.drawable.keyboard_arrow_left_24)
             setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
-            setBackgroundColor(AccentColor.getToolbarBackgroundColor(this@MostUsedAppsActivity))
-            navigationIcon?.mutate()?.setTint(toolbarIconColor())
             menu.add(R.string.most_used_apps_info_title).apply {
                 setIcon(R.drawable.info_24)
                 icon?.mutate()?.setTint(toolbarIconColor())
@@ -133,12 +128,11 @@ class MostUsedAppsActivity : AppCompatActivity() {
 
         val scroll = ScrollView(this).apply {
             isFillViewport = true
-            clipToPadding = false
         }
         content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(16), dp(12), dp(16), dp(28))
         }
+        PageUi.applyPageContentPadding(content)
         scroll.addView(content)
         root.addView(
             scroll,
@@ -209,7 +203,7 @@ class MostUsedAppsActivity : AppCompatActivity() {
     private fun renderLoadingShell() {
         content.removeAllViews()
         addRangeControls()
-        content.addView(messageCard(getString(R.string.most_used_apps_loading)), sectionCardLayoutParams())
+        content.addView(StatsPageUi.emptyState(this, getString(R.string.most_used_apps_loading)))
     }
 
     private fun render(hasUsageAccess: Boolean, summary: UsageSummary) {
@@ -217,75 +211,48 @@ class MostUsedAppsActivity : AppCompatActivity() {
         addRangeControls()
 
         if (!hasUsageAccess) {
-            content.addView(messageCard(getString(R.string.most_used_apps_usage_access_needed)), sectionCardLayoutParams())
-            content.addView(MaterialButton(this).apply {
-                text = getString(R.string.usage_open_settings)
-                setOnClickListener {
-                    startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
+            content.addView(
+                StatsPageUi.emptyState(this, getString(R.string.most_used_apps_usage_access_needed), R.drawable.bar_chart_24).apply {
+                    setAction(getString(R.string.usage_open_settings)) {
+                        startActivity(Intent(Settings.ACTION_USAGE_ACCESS_SETTINGS))
+                    }
                 }
-            }, LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT).apply {
-                topMargin = dp(10)
-            })
+            )
             return
         }
 
         val apps = summary.topApps.filter { it.timeMs > 0L }
         if (summary.totalTimeMs <= 0L || apps.isEmpty()) {
-            content.addView(messageCard(getString(R.string.most_used_apps_empty)), sectionCardLayoutParams())
+            content.addView(StatsPageUi.emptyState(this, getString(R.string.most_used_apps_empty), R.drawable.bar_chart_24))
             return
         }
 
-        content.addView(distributionCard(summary, apps), sectionCardLayoutParams())
-        content.addView(sectionTitle(R.string.most_used_apps_ranking_title).apply {
-            (layoutParams as? LinearLayout.LayoutParams)?.topMargin = dp(22)
-        })
-
-        apps.forEachIndexed { index, app ->
-            content.addView(rankingCard(index + 1, app), sectionCardLayoutParams())
-        }
+        content.addView(distributionCard(summary, apps))
+        PageUi.addSectionHeader(content, R.string.most_used_apps_ranking_title)
+        val group = StatsPageUi.listGroup(content)
+        apps.forEachIndexed { index, app -> group.addView(rankingRow(group, index + 1, app)) }
+        content.addView(group)
     }
 
     private fun addRangeControls() {
         val ids = mutableMapOf<Int, Range>()
-        val group = MaterialButtonToggleGroup(this).apply {
-            isSingleSelection = true
-            isSelectionRequired = true
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { bottomMargin = dp(8) }
-        }
+        val group = StatsPageUi.rangeBar(this)
 
+        var checkedId = View.NO_ID
         Range.values().forEach { range ->
-            val button = MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-                id = View.generateViewId()
-                text = if (range == Range.CUSTOM) "" else getString(range.labelRes)
-                minWidth = 0
-                minimumWidth = 0
-                minHeight = dp(40)
-                minimumHeight = dp(40)
-                insetTop = 0
-                insetBottom = 0
-                setPadding(dp(4), 0, dp(4), 0)
-                cornerRadius = dp(14)
-                setAllCaps(false)
-                isCheckable = true
-                if (range == Range.CUSTOM) {
-                    contentDescription = getString(R.string.activity_history_range_custom)
-                    icon = ContextCompat.getDrawable(this@MostUsedAppsActivity, R.drawable.calendar_month_24)
-                    iconPadding = 0
-                    iconGravity = MaterialButton.ICON_GRAVITY_TEXT_START
-                    gravity = Gravity.CENTER
-                    layoutParams = LinearLayout.LayoutParams(dp(44), dp(40))
-                } else {
-                    layoutParams = LinearLayout.LayoutParams(0, dp(40), 1f)
-                }
+            val button = if (range == Range.CUSTOM) {
+                StatsPageUi.calendarSegment(this)
+            } else {
+                StatsPageUi.rangeSegment(this, getString(range.labelRes))
             }
             ids[button.id] = range
             group.addView(button)
-            styleRangeButton(button, range == currentRange)
-            if (range == currentRange) group.check(button.id)
+            if (range == currentRange) {
+                group.check(button.id)
+                checkedId = button.id
+            }
         }
+        SegmentedToggleUi.apply(this, ids.keys.mapNotNull { group.findViewById<MaterialButton>(it) }, checkedId)
 
         group.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (!isChecked) return@addOnButtonCheckedListener
@@ -309,38 +276,18 @@ class MostUsedAppsActivity : AppCompatActivity() {
         val end = customRangeEndMillis ?: return
         val fmt = DateFormat.getDateInstance(DateFormat.SHORT)
 
-        content.addView(LinearLayout(this).apply {
-            gravity = Gravity.CENTER_VERTICAL
-            orientation = LinearLayout.HORIZONTAL
-            setPadding(dp(4), dp(4), dp(4), dp(8))
-
-            addView(TextView(this@MostUsedAppsActivity).apply {
-                text = getString(
-                    R.string.activity_history_range_custom_value,
-                    fmt.format(Date(start)),
-                    fmt.format(Date(end))
-                )
-                textSize = 13f
-                setTypeface(typeface, Typeface.BOLD)
-                alpha = 0.82f
-            }, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-
-            addView(MaterialButton(this@MostUsedAppsActivity, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-                text = getString(R.string.stats_range_clear)
-                minWidth = 0
-                minimumWidth = 0
-                minHeight = dp(36)
-                insetTop = 0
-                insetBottom = 0
-                setPadding(dp(8), 0, dp(8), 0)
-                setOnClickListener {
-                    customRangeStartMillis = null
-                    customRangeEndMillis = null
-                    currentRange = Range.TODAY
-                    load()
-                }
-            })
-        })
+        val row = StatsPageUi.customRangeRow(content) {
+            customRangeStartMillis = null
+            customRangeEndMillis = null
+            currentRange = Range.TODAY
+            load()
+        }
+        row.findViewById<TextView>(R.id.statsCustomRangeValue).text = getString(
+            R.string.activity_history_range_custom_value,
+            fmt.format(Date(start)),
+            fmt.format(Date(end))
+        )
+        content.addView(row)
     }
 
     private fun showCustomRangePicker() {
@@ -374,39 +321,25 @@ class MostUsedAppsActivity : AppCompatActivity() {
             .onFailure { customRangePickerShowing = false }
     }
 
-    private fun distributionCard(summary: UsageSummary, apps: List<AppUsage>): MaterialCardView {
-        val card = baseCard()
-        card.addView(LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            setPadding(dp(16), dp(14), dp(16), dp(16))
-
-            addView(TextView(this@MostUsedAppsActivity).apply {
-                text = getString(R.string.most_used_apps_total_title)
-                textSize = 14f
-                alpha = 0.74f
+    private fun distributionCard(summary: UsageSummary, apps: List<AppUsage>): View {
+        val card = StatsPageUi.summaryCard(
+            content,
+            getString(R.string.most_used_apps_total_title),
+            StatsFormat.prettyMsWithSeconds(summary.totalTimeMs)
+        )
+        card.content.addView(FrameLayout(this).apply {
+            addView(OnboardingUsageDonutView(this@MostUsedAppsActivity).apply {
+                layoutParams = FrameLayout.LayoutParams(
+                    FrameLayout.LayoutParams.MATCH_PARENT,
+                    FrameLayout.LayoutParams.MATCH_PARENT
+                )
+                submitSegments(buildSegments(summary, apps))
             })
-            addView(TextView(this@MostUsedAppsActivity).apply {
-                text = StatsFormat.prettyMsWithSeconds(summary.totalTimeMs)
-                textSize = 30f
-                setTypeface(typeface, Typeface.BOLD)
-                setTextColor(AccentColor.getAccentColorInt(this@MostUsedAppsActivity))
-            })
-
-            addView(FrameLayout(this@MostUsedAppsActivity).apply {
-                layoutParams = LinearLayout.LayoutParams(dp(252), dp(252)).apply {
-                    gravity = Gravity.CENTER_HORIZONTAL
-                    topMargin = dp(10)
-                }
-                addView(OnboardingUsageDonutView(this@MostUsedAppsActivity).apply {
-                    layoutParams = FrameLayout.LayoutParams(
-                        FrameLayout.LayoutParams.MATCH_PARENT,
-                        FrameLayout.LayoutParams.MATCH_PARENT
-                    )
-                    submitSegments(buildSegments(summary, apps))
-                })
-            })
+        }, LinearLayout.LayoutParams(dp(252), dp(252)).apply {
+            gravity = Gravity.CENTER_HORIZONTAL
+            topMargin = dp(16)
         })
-        return card
+        return card.view
     }
 
     private fun buildSegments(summary: UsageSummary, apps: List<AppUsage>): List<OnboardingUsageDonutView.Segment> {
@@ -458,64 +391,26 @@ class MostUsedAppsActivity : AppCompatActivity() {
         return segments
     }
 
-    private fun rankingCard(rank: Int, app: AppUsage): MaterialCardView {
-        val card = baseCard()
-        val row = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(14), dp(12), dp(14), dp(12))
-        }
-
-        row.addView(TextView(this).apply {
+    private fun rankingRow(parent: ViewGroup, rank: Int, app: AppUsage): View {
+        val row = StatsPageUi.row(
+            parent = parent,
+            title = app.label,
+            summary = getString(
+                R.string.most_used_apps_row_summary,
+                StatsFormat.prettyMsWithSeconds(app.timeMs),
+                StatsFormat.prettyPercent(app.percent)
+            ),
+            appIcon = app.icon,
+        ) { openAppDetail(app) }
+        // Rank before the app icon, in the trailing-value style so it reads as a quiet label.
+        (row as ViewGroup).addView(TextView(this).apply {
             text = String.format(Locale.getDefault(), "%d", rank)
             gravity = Gravity.CENTER
-            textSize = 14f
-            setTypeface(typeface, Typeface.BOLD)
-            setTextColor(AccentColor.getAccentColorInt(this@MostUsedAppsActivity))
-        }, LinearLayout.LayoutParams(dp(28), dp(44)))
-
-        row.addView(ImageView(this).apply {
-            setImageDrawable(app.icon)
-            contentDescription = app.label
-        }, LinearLayout.LayoutParams(dp(44), dp(44)).apply {
-            marginStart = dp(4)
+            TextViewCompat.setTextAppearance(this, R.style.TextAppearance_LoqIn_RowValue)
+        }, 0, LinearLayout.LayoutParams(dp(24), LinearLayout.LayoutParams.WRAP_CONTENT).apply {
+            marginEnd = dp(8)
         })
-
-        row.addView(LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            addView(TextView(this@MostUsedAppsActivity).apply {
-                text = app.label
-                textSize = 16f
-                setTypeface(typeface, Typeface.BOLD)
-                maxLines = 2
-            })
-            addView(TextView(this@MostUsedAppsActivity).apply {
-                text = getString(
-                    R.string.most_used_apps_row_summary,
-                    StatsFormat.prettyMsWithSeconds(app.timeMs),
-                    StatsFormat.prettyPercent(app.percent)
-                )
-                textSize = 13f
-                alpha = 0.72f
-            })
-        }, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f).apply {
-            marginStart = dp(12)
-        })
-
-        row.addView(ImageView(this).apply {
-            setImageResource(R.drawable.keyboard_arrow_right_24)
-            imageTintList = ColorStateList.valueOf(
-                MaterialColors.getColor(this, com.google.android.material.R.attr.colorOnSurfaceVariant, Color.GRAY)
-            )
-            alpha = 0.72f
-        }, LinearLayout.LayoutParams(dp(20), dp(20)))
-
-        card.addView(row)
-        card.isClickable = true
-        card.isFocusable = true
-        card.foreground = selectableForeground()
-        card.setOnClickListener { openAppDetail(app) }
-        return card
+        return row
     }
 
     private fun openAppDetail(app: AppUsage) {
@@ -528,57 +423,6 @@ class MostUsedAppsActivity : AppCompatActivity() {
             customRangeEndMillis?.let { intent.putExtra(AppUsageDetailActivity.EXTRA_INITIAL_END_MS, it) }
         }
         startActivity(intent)
-    }
-
-    private fun messageCard(message: String): MaterialCardView = baseCard().apply {
-        addView(TextView(this@MostUsedAppsActivity).apply {
-            text = message
-            textSize = 15f
-            alpha = 0.82f
-            setPadding(dp(16), dp(16), dp(16), dp(16))
-        })
-    }
-
-    private fun sectionTitle(textRes: Int): TextView = TextView(this).apply {
-        text = getString(textRes)
-        textSize = 16f
-        setTypeface(typeface, Typeface.BOLD)
-        alpha = 0.82f
-        layoutParams = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        ).apply {
-            bottomMargin = dp(8)
-        }
-    }
-
-    private fun baseCard(): MaterialCardView = MaterialCardView(this).apply {
-        radius = dp(20).toFloat()
-        cardElevation = dp(1).toFloat()
-        strokeWidth = dp(1)
-        strokeColor = ContextCompat.getColor(this@MostUsedAppsActivity, R.color.foqos_outline_variant)
-        setCardBackgroundColor(ContextCompat.getColor(this@MostUsedAppsActivity, R.color.foqos_surface))
-    }
-
-    private fun sectionCardLayoutParams(): LinearLayout.LayoutParams = LinearLayout.LayoutParams(
-        LinearLayout.LayoutParams.MATCH_PARENT,
-        LinearLayout.LayoutParams.WRAP_CONTENT
-    ).apply {
-        bottomMargin = dp(10)
-    }
-
-    private fun styleRangeButton(button: MaterialButton, active: Boolean) {
-        val activeBg = AccentColor.getAccentColorInt(this)
-        val activeText = if (MaterialColors.isColorLight(activeBg)) Color.BLACK else Color.WHITE
-        val inactiveBg = MaterialColors.getColor(this, com.google.android.material.R.attr.colorSurfaceVariant, Color.TRANSPARENT)
-        val inactiveText = MaterialColors.getColor(this, com.google.android.material.R.attr.colorOnSurface, Color.WHITE)
-        val outline = MaterialColors.getColor(this, com.google.android.material.R.attr.colorOutline, inactiveText)
-        button.backgroundTintList = ColorStateList.valueOf(if (active) activeBg else inactiveBg)
-        button.setTextColor(if (active) activeText else inactiveText)
-        button.iconTint = ColorStateList.valueOf(if (active) activeText else inactiveText)
-        button.strokeColor = ColorStateList.valueOf(if (active) activeBg else outline)
-        button.strokeWidth = resources.displayMetrics.density.toInt().coerceAtLeast(1)
-        button.rippleColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(activeBg, 0x35))
     }
 
     private fun formatPercent(fraction: Float): String {
@@ -629,12 +473,6 @@ class MostUsedAppsActivity : AppCompatActivity() {
         } else {
             Color.WHITE
         }
-    }
-
-    private fun selectableForeground(): android.graphics.drawable.Drawable? {
-        val typed = android.util.TypedValue()
-        if (!theme.resolveAttribute(android.R.attr.selectableItemBackground, typed, true) || typed.resourceId == 0) return null
-        return ContextCompat.getDrawable(this, typed.resourceId)
     }
 
     private fun resolveColor(attr: Int): Int {

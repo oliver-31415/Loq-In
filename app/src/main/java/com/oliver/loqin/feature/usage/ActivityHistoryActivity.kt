@@ -30,19 +30,15 @@ import android.graphics.drawable.InsetDrawable
 import android.graphics.drawable.LayerDrawable
 import android.graphics.drawable.RippleDrawable
 import android.graphics.drawable.StateListDrawable
-import android.graphics.Typeface
 import android.os.Bundle
 import android.view.Gravity
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import android.text.TextUtils
 import android.widget.FrameLayout
-import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ScrollView
-import android.widget.Space
 import android.widget.TextView
 import androidx.annotation.StringRes
 import androidx.appcompat.app.AppCompatActivity
@@ -51,13 +47,14 @@ import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import androidx.core.graphics.drawable.DrawableCompat
 import androidx.core.view.ViewCompat
-import androidx.core.view.children
 import com.oliver.loqin.R
 import com.oliver.loqin.ui.dialog.InputSheet
 import com.oliver.loqin.data.prefs.ActivityHistoryLogStore
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.theme.CustomAccentApplier
 import com.oliver.loqin.ui.EdgeToEdgeUtils
+import com.oliver.loqin.ui.PageUi
+import com.oliver.loqin.ui.SegmentedToggleUi
 import com.oliver.loqin.ui.dialog.showAccented
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.LoqInDropdownAdapter
@@ -65,8 +62,6 @@ import com.oliver.loqin.util.LocaleHelper
 import com.google.android.material.appbar.AppBarLayout
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
-import com.google.android.material.button.MaterialButtonToggleGroup
-import com.google.android.material.card.MaterialCardView
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -112,8 +107,6 @@ class ActivityHistoryActivity : AppCompatActivity() {
             title = getString(R.string.active_time_activity_history_title)
             setNavigationIcon(R.drawable.keyboard_arrow_left_24)
             setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
-            setBackgroundColor(AccentColor.getToolbarBackgroundColor(this@ActivityHistoryActivity))
-            navigationIcon?.mutate()?.setTint(toolbarIconColor())
             menu.add(Menu.NONE, MENU_INFO, Menu.NONE, R.string.activity_history_info_title).apply {
                 setIcon(R.drawable.info_24)
                 icon?.mutate()?.setTint(toolbarIconColor())
@@ -156,8 +149,8 @@ class ActivityHistoryActivity : AppCompatActivity() {
         val scroll = ScrollView(this)
         val content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(dp(16), dp(16), dp(16), dp(24))
         }
+        PageUi.applyPageContentPadding(content)
         scroll.addView(
             content,
             ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT)
@@ -175,7 +168,6 @@ class ActivityHistoryActivity : AppCompatActivity() {
 
         entriesContainer = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            setPadding(0, dp(4), 0, 0)
         }
         content.addView(entriesContainer)
 
@@ -216,22 +208,18 @@ class ActivityHistoryActivity : AppCompatActivity() {
     private fun renderFilters() {
         filtersContainer.removeAllViews()
 
-        val rangeGroup = MaterialButtonToggleGroup(this).apply {
-            isSingleSelection = true
-            isSelectionRequired = true
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply { bottomMargin = dp(8) }
-        }
+        val rangeGroup = StatsPageUi.rangeBar(this)
 
         var checkedRangeId = View.NO_ID
-        RangeFilter.values().forEach { option ->
+        val buttons = RangeFilter.values().map { option ->
             val button = rangeButton(option)
             if (option == rangeFilter) checkedRangeId = button.id
             rangeGroup.addView(button)
+            button
         }
         if (checkedRangeId != View.NO_ID) rangeGroup.check(checkedRangeId)
+        // Style once the segments are in the group, so the group gets the shared pill track too.
+        SegmentedToggleUi.apply(this, buttons, checkedRangeId)
 
         filtersContainer.addView(rangeGroup)
 
@@ -255,35 +243,36 @@ class ActivityHistoryActivity : AppCompatActivity() {
                 }
             }
 
-        entriesContainer.addView(TextView(this).apply {
-            text = resources.getQuantityString(
-                R.plurals.activity_history_result_count,
-                entries.size,
-                entries.size
-            )
-            textSize = 12.5f
-            alpha = 0.72f
-            typeface = Typeface.DEFAULT_BOLD
-            setPadding(dp(4), dp(4), dp(4), dp(2))
-        })
+        // The result count heads the list, like a section header.
+        StatsPageUi.addSectionHeader(
+            entriesContainer,
+            resources.getQuantityString(R.plurals.activity_history_result_count, entries.size, entries.size),
+            first = true
+        )
 
         if (entries.isEmpty()) {
-            entriesContainer.addView(emptyText(getString(R.string.activity_history_recent_empty)))
+            entriesContainer.addView(
+                StatsPageUi.emptyState(this, getString(R.string.activity_history_recent_empty), R.drawable.list_alt_24)
+            )
             return
         }
 
         val dateFmt = DateFormat.getDateInstance(DateFormat.SHORT)
         val timeFmt = DateFormat.getTimeInstance(DateFormat.SHORT)
+        val group = StatsPageUi.listGroup(entriesContainer)
         entries.forEach { entry ->
             val date = Date(entry.timeMillis)
-            entriesContainer.addView(rowCard(
+            group.addView(StatsPageUi.row(
+                parent = group,
                 title = entry.title,
                 summary = entry.summary,
                 value = "${dateFmt.format(date)}\n${timeFmt.format(date)}",
                 iconRes = entry.iconRes,
-                entry = entry
-            ))
+            ) { showEntryDetailDialog(entry) }.apply {
+                findViewById<TextView>(R.id.statsRowValue).gravity = Gravity.END
+            })
         }
+        entriesContainer.addView(group)
     }
 
     private fun showSortFilterDialog() {
@@ -332,33 +321,13 @@ class ActivityHistoryActivity : AppCompatActivity() {
 
     private fun rangeButton(option: RangeFilter): MaterialButton {
         val active = option == rangeFilter
-        return MaterialButton(this, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-            id = View.generateViewId()
-            text = if (option == RangeFilter.CUSTOM) "" else rangeChipText(option)
-            isCheckable = true
+        val button = if (option == RangeFilter.CUSTOM) {
+            StatsPageUi.calendarSegment(this)
+        } else {
+            StatsPageUi.rangeSegment(this, rangeChipText(option))
+        }
+        return button.apply {
             isChecked = active
-            minWidth = 0
-            minimumWidth = 0
-            setPadding(dp(4), 0, dp(4), 0)
-            if (option == RangeFilter.CUSTOM) {
-                contentDescription = getString(R.string.activity_history_range_custom)
-                icon = ContextCompat.getDrawable(this@ActivityHistoryActivity, R.drawable.calendar_month_24)
-                iconPadding = 0
-                iconGravity = MaterialButton.ICON_GRAVITY_TEXT_START
-                setPadding(dp(8), 0, dp(8), 0)
-                gravity = Gravity.CENTER
-            }
-            minHeight = dp(40)
-            insetTop = 0
-            insetBottom = 0
-            cornerRadius = dp(14)
-            setAllCaps(false)
-            layoutParams = if (option == RangeFilter.CUSTOM) {
-                LinearLayout.LayoutParams(dp(44), dp(40))
-            } else {
-                LinearLayout.LayoutParams(0, dp(40), 1f)
-            }
-            styleRangeButton(this, active)
             setOnClickListener {
                 if (!ensureRangeAllowed(option)) {
                     refreshContent()
@@ -394,62 +363,18 @@ class ActivityHistoryActivity : AppCompatActivity() {
             fmt.format(Date(end))
         )
 
-        return MaterialCardView(this).apply {
-            layoutParams = LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT
-            ).apply {
-                topMargin = dp(6)
-            }
-            radius = dp(22).toFloat()
-            cardElevation = dp(1).toFloat()
-            useCompatPadding = true
-            applyLoqInCardColors()
-            isClickable = true
-            isFocusable = true
-            foreground = obtainStyledForeground()
-            setOnClickListener { showCustomRangePicker() }
-            addView(LinearLayout(this@ActivityHistoryActivity).apply {
-                orientation = LinearLayout.HORIZONTAL
-                gravity = Gravity.CENTER_VERTICAL
-                setPadding(dp(14), dp(12), dp(14), dp(12))
-
-                addView(ImageView(this@ActivityHistoryActivity).apply {
-                    setImageResource(R.drawable.calendar_month_24)
-                    imageTintList = ColorStateList.valueOf(AccentColor.getAccentColorInt(this@ActivityHistoryActivity))
-                    contentDescription = null
-                }, LinearLayout.LayoutParams(dp(22), dp(22)))
-
-                addView(Space(this@ActivityHistoryActivity), LinearLayout.LayoutParams(dp(12), 1))
-
-                addView(TextView(this@ActivityHistoryActivity).apply {
-                    text = value
-                    textSize = 14f
-                    typeface = Typeface.DEFAULT_BOLD
-                    maxLines = 1
-                    ellipsize = TextUtils.TruncateAt.END
-                }, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-
-                addView(MaterialButton(this@ActivityHistoryActivity, null, com.google.android.material.R.attr.materialButtonOutlinedStyle).apply {
-                    text = getString(R.string.stats_range_clear)
-                    minWidth = 0
-                    minimumWidth = 0
-                    minHeight = dp(36)
-                    minimumHeight = dp(36)
-                    insetTop = 0
-                    insetBottom = 0
-                    setOnClickListener {
-                        customRangeStartMillis = null
-                        customRangeEndMillis = null
-                        rangeFilter = RangeFilter.TODAY
-                        refreshContent()
-                    }
-                }, LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                    dp(36)
-                ))
-            })
+        val row = StatsPageUi.customRangeRow(filtersContainer) {
+            customRangeStartMillis = null
+            customRangeEndMillis = null
+            rangeFilter = RangeFilter.TODAY
+            refreshContent()
         }
+        row.findViewById<TextView>(R.id.statsCustomRangeValue).apply {
+            text = value
+            // Tapping the dates reopens the picker, as the old range card did.
+            setOnClickListener { showCustomRangePicker() }
+        }
+        return row
     }
 
     private fun showCustomRangePicker() {
@@ -771,82 +696,6 @@ class ActivityHistoryActivity : AppCompatActivity() {
             .showAccented()
     }
 
-
-    private fun styleRangeButton(button: MaterialButton, active: Boolean) {
-        // Shared segmented look: one pill control, filled-accent selection.
-        // (Same language as SegmentedToggleUi on the detail pages.)
-        val buttons = (button.parent as? android.view.ViewGroup)
-            ?.children
-            ?.filterIsInstance<com.google.android.material.button.MaterialButton>()
-            ?.toList() ?: listOf(button)
-        val selectedId = buttons.firstOrNull { it.isChecked }?.id ?: button.id
-        com.oliver.loqin.ui.SegmentedToggleUi.apply(this, buttons, selectedId)
-    }
-
-    private fun rowCard(
-        title: String,
-        summary: String,
-        value: String,
-        iconRes: Int,
-        entry: ActivityHistoryRepository.Entry? = null
-    ): MaterialCardView {
-        val card = MaterialCardView(this).apply {
-            radius = dp(26).toFloat()
-            cardElevation = dp(1).toFloat()
-            useCompatPadding = true
-            applyLoqInCardColors()
-            if (entry != null) {
-                isClickable = true
-                isFocusable = true
-                foreground = obtainStyledForeground()
-                setOnClickListener { showEntryDetailDialog(entry) }
-            }
-        }
-
-        val row = LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(14), dp(14), dp(14), dp(14))
-        }
-
-        row.addView(ImageView(this).apply {
-            setImageResource(iconRes)
-            imageTintList = ColorStateList.valueOf(AccentColor.getAccentColorInt(this@ActivityHistoryActivity))
-            contentDescription = null
-        }, LinearLayout.LayoutParams(dp(24), dp(24)))
-
-        row.addView(Space(this), LinearLayout.LayoutParams(dp(12), 1))
-
-        val texts = LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-        }
-        texts.addView(TextView(this).apply {
-            text = title
-            textSize = 15f
-            typeface = Typeface.DEFAULT_BOLD
-        })
-        if (summary.isNotBlank()) {
-            texts.addView(TextView(this).apply {
-                text = summary
-                textSize = 13f
-                alpha = 0.72f
-            })
-        }
-        row.addView(texts, LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f))
-
-        row.addView(TextView(this).apply {
-            text = value
-            textSize = 12.5f
-            typeface = Typeface.DEFAULT_BOLD
-            gravity = Gravity.END
-            includeFontPadding = false
-            setTextColor(AccentColor.getAccentColorInt(this@ActivityHistoryActivity))
-        })
-
-        card.addView(row)
-        return card
-    }
-
     private fun showEntryDetailDialog(entry: ActivityHistoryRepository.Entry) {
         val fmt = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.SHORT)
         val body = buildString {
@@ -865,29 +714,6 @@ class ActivityHistoryActivity : AppCompatActivity() {
             .setMessage(body)
             .setPositiveButton(android.R.string.ok, null)
             .showAccented()
-    }
-
-    private fun emptyText(textValue: String): TextView =
-        TextView(this).apply {
-            text = textValue
-            textSize = 14f
-            alpha = 0.72f
-            setPadding(dp(12), dp(16), dp(12), dp(16))
-        }
-
-    private fun MaterialCardView.applyLoqInCardColors() {
-        setCardBackgroundColor(ContextCompat.getColor(this@ActivityHistoryActivity, R.color.foqos_surface))
-        strokeColor = ContextCompat.getColor(this@ActivityHistoryActivity, R.color.foqos_outline_variant)
-        strokeWidth = dp(1)
-    }
-
-    private fun obtainStyledForeground(): Drawable? {
-        val out = android.util.TypedValue()
-        return if (theme.resolveAttribute(android.R.attr.selectableItemBackground, out, true)) {
-            ContextCompat.getDrawable(this, out.resourceId)
-        } else {
-            null
-        }
     }
 
     private fun resolveColor(attr: Int): Int {
@@ -921,9 +747,6 @@ class ActivityHistoryActivity : AppCompatActivity() {
             resources.displayMetrics
         )
     }
-
-    private fun dp(value: Int): Int =
-        (value * resources.displayMetrics.density + 0.5f).toInt()
 
     private enum class RangeFilter(@param:StringRes val labelRes: Int, val days: Int) {
         TODAY(R.string.stats_range_today, 1),
