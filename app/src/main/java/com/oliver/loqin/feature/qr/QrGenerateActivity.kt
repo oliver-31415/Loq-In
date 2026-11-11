@@ -29,7 +29,6 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.set
@@ -222,13 +221,6 @@ class QrGenerateActivity : AppCompatActivity() {
         setSupportActionBar(b.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         b.toolbar.setNavigationOnClickListener { finish() }
-
-        b.toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
-
-        b.toolbar.setNavigationIcon(R.drawable.keyboard_arrow_left_24)
-        b.toolbar.navigationIcon?.mutate()?.setTint(
-            ContextCompat.getColor(this, R.color.font_white)
-        )
     }
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {

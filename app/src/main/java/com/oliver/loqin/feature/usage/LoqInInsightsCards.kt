@@ -149,13 +149,19 @@ class LoqInInsightsCards(private val activity: AppCompatActivity) {
             TextViewCompat.setTextAppearance(this, R.style.TextAppearance_LoqIn_Button)
             setTextColor(PageUi.readableAccent(ctx))
             minHeight = ctx.resources.getDimensionPixelSize(R.dimen.touch_target)
+            // Flush with the card text above it.
+            setPaddingRelative(0, paddingTop, paddingEnd, paddingBottom)
             setOnClickListener { showGoalDialog() }
         }
         goalSlot = card.trailing.apply {
             visibility = View.VISIBLE
             addView(ringColumn)
-            addView(setGoalButton)
         }
+        // Under the text rather than beside it, so the hero value keeps one line.
+        col.addView(setGoalButton, LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        ))
 
         emptyText = TextView(ctx).apply {
             text = ctx.getString(R.string.charts_empty_insights)
@@ -283,6 +289,7 @@ class LoqInInsightsCards(private val activity: AppCompatActivity) {
         chartGroup.visibility = if (hasData) View.VISIBLE else View.GONE
         if (!hasData) {
             subline.visibility = View.GONE
+            setGoalButton.visibility = View.GONE
             return
         }
 

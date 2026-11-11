@@ -21,9 +21,12 @@ package com.oliver.loqin.ui
 import android.content.Context
 import android.content.res.ColorStateList
 import android.util.AttributeSet
+import android.view.View
+import androidx.appcompat.widget.AppCompatButton
 import androidx.appcompat.widget.AppCompatImageView
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.core.widget.ImageViewCompat
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.theme.MaterialComponentsViewInflater
 import com.oliver.loqin.R
 
@@ -53,6 +56,29 @@ class LoqInViewInflater : MaterialComponentsViewInflater() {
             ImageViewCompat.setImageTintList(view, ColorStateList.valueOf(PageUi.readableAccent(context)))
         }
         return view
+    }
+
+    // A text button is accent text on the page, so it needs the readable accent like a header.
+    override fun createButton(context: Context, attrs: AttributeSet): AppCompatButton =
+        super.createButton(context, attrs).also { tintTextButton(it, attrs) }
+
+    // Layouts mostly spell the tag out in full, which AppCompat doesn't route to createButton.
+    override fun createView(context: Context, name: String, attrs: AttributeSet): View? {
+        if (name == MaterialButton::class.java.name && attrs.styleAttribute == R.style.LoqIn_TextButton) {
+            return MaterialButton(context, attrs).also { tintTextButton(it, attrs) }
+        }
+        return super.createView(context, name, attrs)
+    }
+
+    private fun tintTextButton(view: AppCompatButton, attrs: AttributeSet) {
+        if (attrs.styleAttribute != R.style.LoqIn_TextButton) return
+        // Keep the disabled look the style's own colour list had.
+        val accent = ColorStateList(
+            arrayOf(intArrayOf(-android.R.attr.state_enabled), intArrayOf()),
+            intArrayOf(view.currentHintTextColor, PageUi.readableAccent(view.context)),
+        )
+        view.setTextColor(accent)
+        (view as? MaterialButton)?.iconTint = accent
     }
 
     private companion object {

@@ -1443,7 +1443,11 @@ open class ToggleOptionsActivity : AppCompatActivity() {
             }
             repeat(columns - chunk.size) {
                 row.addView(View(this).apply {
-                    layoutParams = LinearLayout.LayoutParams(0, 0, 1f)
+                    // Same margins as a tile, so a short row keeps the tile width.
+                    layoutParams = LinearLayout.LayoutParams(0, 0, 1f).apply {
+                        marginStart = spacing
+                        marginEnd = spacing
+                    }
                 })
             }
             container.addView(row)
