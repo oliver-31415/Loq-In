@@ -12,9 +12,8 @@
 
     <TextView
         android:id="@+id/tvHeader"
-        style="@style/LoqIn.SectionHeader"
+        style="@style/LoqIn.SectionHeader.Inline"
         android:layout_width="0dp"
-        android:paddingStart="0dp"
         android:layout_height="wrap_content"
         android:layout_weight="1" />
 

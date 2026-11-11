@@ -8,7 +8,7 @@
 
     <TextView
         android:id="@+id/tvStatsDropdownPrimaryLabel"
-        style="@style/LoqIn.SectionHeader"
+        style="@style/LoqIn.SectionHeader.First"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:paddingStart="0dp"

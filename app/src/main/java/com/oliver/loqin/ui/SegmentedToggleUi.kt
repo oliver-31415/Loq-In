@@ -25,6 +25,7 @@ import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.view.ViewGroup
 import androidx.core.content.ContextCompat
+import androidx.core.widget.TextViewCompat
 import androidx.core.graphics.ColorUtils
 import com.oliver.loqin.R
 import com.oliver.loqin.theme.AccentColor
@@ -35,7 +36,8 @@ import com.google.android.material.shape.AbsoluteCornerSize
 import com.google.android.material.shape.RelativeCornerSize
 import com.google.android.material.shape.ShapeAppearanceModel
 
-// Keeps two-option segmented controls visually consistent across LoqIn with modern capsule design.
+// Keeps segmented controls (two to five options) visually consistent across LoqIn: one height,
+// one label style, one selected treatment. Pair with style LoqIn.Segment on each button.
 object SegmentedToggleUi {
     fun apply(
         context: Context,
@@ -86,6 +88,7 @@ object SegmentedToggleUi {
             // Long labels (German, large text) wrap rather than ellipsize; if a segment still
             // can't fit its label, the icon gives up its room.
             buttons.forEach { button ->
+                button.isSingleLine = false
                 button.maxLines = 2
                 button.ellipsize = android.text.TextUtils.TruncateAt.END
                 button.post {
@@ -98,10 +101,22 @@ object SegmentedToggleUi {
         }
 
         val buttonCornerRadius = dp(context, 100)
-        val buttonHeight = dp(context, 44)
+        // One size everywhere: 48dp touch height (the track adds 4dp around it), one label style.
+        val buttonHeight = context.resources.getDimensionPixelSize(R.dimen.touch_target)
 
         buttons.forEach { button ->
             val selected = button.id == selectedId
+            if (button.getTag(R.id.tag_segment_styled) == null) {
+                button.setTag(R.id.tag_segment_styled, true)
+                TextViewCompat.setTextAppearance(button, R.style.TextAppearance_LoqIn_Segment)
+                // Screens used to pin 40dp heights; let the 48dp minimum and two-line labels fit.
+                button.layoutParams?.let { lp ->
+                    if (lp.height > 0) {
+                        lp.height = ViewGroup.LayoutParams.WRAP_CONTENT
+                        button.layoutParams = lp
+                    }
+                }
+            }
             button.minWidth = 0
             button.minimumWidth = 0
             button.minHeight = buttonHeight
@@ -151,7 +166,7 @@ object SegmentedToggleUi {
                 button.strokeWidth = 0
                 button.setTextColor(onSelected)
                 button.iconTint = ColorStateList.valueOf(accent)
-                button.setTypeface(button.typeface, Typeface.BOLD)
+                button.typeface = Typeface.create("sans-serif-medium", Typeface.NORMAL)
                 button.rippleColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(accent, 0x25))
                 button.alpha = 1f
             } else {
@@ -165,12 +180,15 @@ object SegmentedToggleUi {
                 )
                 button.setTextColor(unselectedText)
                 button.iconTint = ColorStateList.valueOf(unselectedText)
-                button.setTypeface(Typeface.create(button.typeface, Typeface.NORMAL), Typeface.NORMAL)
+                button.typeface = Typeface.create("sans-serif", Typeface.NORMAL)
                 button.rippleColor = ColorStateList.valueOf(ColorUtils.setAlphaComponent(onSurfaceColor, 0x1A))
                 button.alpha = 1f
             }
             button.jumpDrawablesToCurrentState()
         }
+        // The selected label's weight can change its line count; when this runs inside a layout
+        // pass (check listeners) that request is dropped, so ask again once it has finished.
+        (buttons.firstOrNull()?.parent as? ViewGroup)?.let { group -> group.post { group.requestLayout() } }
     }
 
     private fun dp(context: Context, value: Int): Int =

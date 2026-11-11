@@ -856,8 +856,11 @@ fun AlertDialog.styleLoqInDialogButtons() {
         b.setPaddingRelative(hp, vp, hp, vp)
         b.minHeight = dp(40)
         runCatching {
-            TextViewCompat.setTextAppearance(b, com.google.android.material.R.style.TextAppearance_MaterialComponents_Button)
+            // Same label as LoqIn.Button / LoqIn.TextButton. (TextAppearance.MaterialComponents.Button
+            // spaced dialog actions out with 0.09em letter-spacing.)
+            TextViewCompat.setTextAppearance(b, R.style.TextAppearance_LoqIn_Button)
         }
+        b.letterSpacing = 0f
         b.isAllCaps = false
     }
 

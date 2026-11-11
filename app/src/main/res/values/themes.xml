@@ -309,7 +309,6 @@
         <item name="textInputOutlinedExposedDropdownMenuStyle">@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu</item>
         <item name="textInputOutlinedStyle">@style/Widget.Material3.TextInputLayout.OutlinedBox</item>
         <item name="textInputStyle">?attr/textInputOutlinedStyle</item>
-        <item name="toolbarStyle">@style/Widget.Material3.Toolbar</item>
         <item name="toolbarSurfaceStyle">@style/Widget.Material3.Toolbar.Surface</item>
 
         <!-- Global Material component styles -->
@@ -328,6 +327,14 @@
         <!-- Expressive defaults (see docs/EXPRESSIVE_DESIGN.md) -->
         <item name="android:textViewStyle">@style/LoqIn.TextView</item>
         <item name="materialSwitchStyle">@style/LoqIn.Switch</item>
+
+        <!-- Cohesion (docs/EXPRESSIVE_DESIGN.md "Cohesion rules"): one top bar, one back chevron,
+             readable section headers and row icons for every accent, shared widget defaults. -->
+        <item name="viewInflaterClass">com.oliver.loqin.ui.LoqInViewInflater</item>
+        <item name="toolbarStyle">@style/LoqIn.TopBar</item>
+        <item name="homeAsUpIndicator">@drawable/keyboard_arrow_left_24</item>
+        <item name="loqinEmptyStateStyle">@style/LoqIn.EmptyState</item>
+        <item name="loqinFilterChipStyle">@style/LoqIn.FilterChip</item>
 
         <!-- Dialog overlay -->
         <item name="colorBackgroundFloating">@color/foqos_surface</item>
@@ -501,6 +508,9 @@
          Colors are night-aware: plain (framework/appcompat) dialogs and Material
          dialogs both resolve foqos_* tokens, which flip via values-night. -->
     <style name="ThemeOverlay.LoqIn.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="buttonBarPositiveButtonStyle">@style/LoqIn.DialogButton</item>
+        <item name="buttonBarNegativeButtonStyle">@style/LoqIn.DialogButton</item>
+        <item name="buttonBarNeutralButtonStyle">@style/LoqIn.DialogButton</item>
         <item name="elevationOverlayEnabled">false</item>
         <item name="colorSurface">@color/foqos_surface</item>
         <item name="colorOnSurface">@color/foqos_on_surface</item>
@@ -586,6 +596,9 @@
 
     <!-- Same tokens for plain androidx AlertDialog.Builder panels (alertDialogTheme). -->
     <style name="ThemeOverlay.LoqIn.Dialog.Alert" parent="ThemeOverlay.Material3.Dialog.Alert">
+        <item name="buttonBarPositiveButtonStyle">@style/LoqIn.DialogButton</item>
+        <item name="buttonBarNegativeButtonStyle">@style/LoqIn.DialogButton</item>
+        <item name="buttonBarNeutralButtonStyle">@style/LoqIn.DialogButton</item>
         <item name="colorPrimary">@color/foqos_on_surface</item>
         <item name="colorSecondary">@color/foqos_on_surface</item>
         <item name="colorSurface">@color/foqos_surface</item>

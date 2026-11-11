@@ -2,5 +2,7 @@
 <resources>
 
     <fraction name="locked_card_alpha">72%</fraction>
+    <!-- Content of a disabled / unavailable list row (PageUi.setRowDimmed); M3 disabled content. -->
+    <fraction name="row_disabled_alpha">38%</fraction>
 
 </resources>

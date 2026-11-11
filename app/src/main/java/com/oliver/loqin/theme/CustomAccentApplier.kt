@@ -548,7 +548,11 @@ object CustomAccentApplier {
                     if (view.id != View.NO_ID) view.resources.getResourceEntryName(view.id) else ""
                 }.getOrDefault("")
                 if (view.id == android.R.id.icon || idName.contains("icon", ignoreCase = true)) {
-                    if (view.drawable != null && view.imageTintList != null) {
+                    // Icons already in the readable accent (LoqIn.RowIcon / StatIcon) stay readable.
+                    val readable = com.oliver.loqin.ui.PageUi.readableAccent(view.context)
+                    if (view.drawable != null && view.imageTintList != null &&
+                        view.imageTintList?.defaultColor != readable
+                    ) {
                         view.imageTintList = ColorStateList.valueOf(accent)
                     }
                 }
