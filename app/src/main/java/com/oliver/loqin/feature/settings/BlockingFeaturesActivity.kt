@@ -22,8 +22,6 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.content.res.ColorStateList
-import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.view.View
@@ -35,7 +33,6 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.edit
-import androidx.core.graphics.ColorUtils
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -51,6 +48,7 @@ import com.oliver.loqin.data.prefs.SwitchModeStore
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.theme.CustomAccentApplier
 import com.oliver.loqin.ui.EdgeToEdgeUtils
+import com.oliver.loqin.ui.PageUi
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.applyLoqInStyle
 import com.oliver.loqin.ui.dialog.EmergencyPinDialog
@@ -64,10 +62,9 @@ import com.oliver.loqin.util.LocaleHelper
 import com.oliver.loqin.util.LoqInAppAccessGuard
 import com.oliver.loqin.util.PersistentStatusNotifier
 import com.google.android.material.appbar.MaterialToolbar
-import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
-import com.google.android.material.switchmaterial.SwitchMaterial
+import com.google.android.material.materialswitch.MaterialSwitch
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 import com.oliver.loqin.data.prefs.PickerLimitActionStore
@@ -87,20 +84,20 @@ import com.oliver.loqin.data.prefs.PickerLimitActionStore
  */
 class BlockingFeaturesActivity : AppCompatActivity() {
 
-    private val accentSwitches = mutableListOf<SwitchMaterial>()
+    private val accentSwitches = mutableListOf<MaterialSwitch>()
     private var updatingUi = false
 
-    private lateinit var switchMixedAllowAppPicking: SwitchMaterial
-    private lateinit var switchMixedAllowProfileSwitching: SwitchMaterial
-    private lateinit var switchMixedAllowNfcTagWriting: SwitchMaterial
-    private lateinit var switchEnablePairedUids: SwitchMaterial
-    private lateinit var switchAutoPairOnWrite: SwitchMaterial
-    private lateinit var switchBlockNotifications: SwitchMaterial
-    private lateinit var switchSessionMissedNotifications: SwitchMaterial
-    private lateinit var switchLockWarnings: SwitchMaterial
-    private lateinit var switchAutostart: SwitchMaterial
-    private lateinit var switchEmergency: SwitchMaterial
-    private lateinit var switchPersistentStatusNotification: SwitchMaterial
+    private lateinit var switchMixedAllowAppPicking: MaterialSwitch
+    private lateinit var switchMixedAllowProfileSwitching: MaterialSwitch
+    private lateinit var switchMixedAllowNfcTagWriting: MaterialSwitch
+    private lateinit var switchEnablePairedUids: MaterialSwitch
+    private lateinit var switchAutoPairOnWrite: MaterialSwitch
+    private lateinit var switchBlockNotifications: MaterialSwitch
+    private lateinit var switchSessionMissedNotifications: MaterialSwitch
+    private lateinit var switchLockWarnings: MaterialSwitch
+    private lateinit var switchAutostart: MaterialSwitch
+    private lateinit var switchEmergency: MaterialSwitch
+    private lateinit var switchPersistentStatusNotification: MaterialSwitch
 
     private lateinit var rowMixedAllowNfcTagWriting: View
     private lateinit var rowSessionMissedNotifications: View
@@ -329,7 +326,7 @@ class BlockingFeaturesActivity : AppCompatActivity() {
         }
     }
 
-    private fun bindAccessSwitch(sw: SwitchMaterial, onChecked: (Boolean) -> Unit) {
+    private fun bindAccessSwitch(sw: MaterialSwitch, onChecked: (Boolean) -> Unit) {
         sw.setOnCheckedChangeListener { buttonView, isChecked ->
             if (updatingUi) return@setOnCheckedChangeListener
             if (!canEditActiveAccess()) {
@@ -375,7 +372,7 @@ class BlockingFeaturesActivity : AppCompatActivity() {
         }
     }
 
-    private fun rowToggle(rowId: Int, sw: SwitchMaterial) {
+    private fun rowToggle(rowId: Int, sw: MaterialSwitch) {
         findViewById<View>(rowId).setOnClickListener { sw.toggle() }
     }
 
@@ -528,7 +525,7 @@ class BlockingFeaturesActivity : AppCompatActivity() {
         val blockNotifications = switchBlockNotifications.isChecked
         rowSessionMissedNotifications.isEnabled = blockNotifications
         rowSessionMissedNotifications.isClickable = blockNotifications
-        rowSessionMissedNotifications.alpha = if (blockNotifications) 1f else 0.5f
+        PageUi.setRowDimmed(rowSessionMissedNotifications, !blockNotifications)
         switchSessionMissedNotifications.isEnabled = blockNotifications
 
         rowChangeEmergencyPin.visibility =
@@ -537,7 +534,7 @@ class BlockingFeaturesActivity : AppCompatActivity() {
         val statusEnabled = switchPersistentStatusNotification.isChecked
         rowPersistentStatusNotificationMode.isEnabled = statusEnabled
         rowPersistentStatusNotificationMode.isClickable = statusEnabled
-        rowPersistentStatusNotificationMode.alpha = if (statusEnabled) 1f else 0.5f
+        PageUi.setRowDimmed(rowPersistentStatusNotificationMode, !statusEnabled)
         tvLimitRemovalModeValue.text = pickerLimitActionLabel(PickerLimitActionStore.get(this))
 
         tvPersistentStatusNotificationModeValue.text =
@@ -548,16 +545,20 @@ class BlockingFeaturesActivity : AppCompatActivity() {
 
     private fun applyLockedState() {
         val locked = LoqInAppAccessGuard.isControlSettingsLocked(this)
-        val rowAlpha = if (locked) 0.68f else 1f
-        val switchAlpha = if (locked) 0.58f else 1f
 
+        // Locked rows stay tappable to explain why (shared locked look: full contrast, the
+        // disabled switch shows the state).
         listOf(
             R.id.rowMixedAllowAppPicking,
             R.id.rowMixedAllowProfileSwitching,
             R.id.rowMixedAllowNfcTagWriting,
             R.id.rowAutostart,
             R.id.rowEmergency,
-        ).forEach { findViewById<View>(it)?.alpha = rowAlpha }
+        ).forEach { id ->
+            findViewById<View>(id)?.let {
+                PageUi.setRowLocked(it, locked, getString(R.string.settings_row_locked_state))
+            }
+        }
 
         listOf(
             switchMixedAllowAppPicking,
@@ -567,7 +568,6 @@ class BlockingFeaturesActivity : AppCompatActivity() {
             switchEmergency,
         ).forEach {
             it.isEnabled = !locked
-            it.alpha = switchAlpha
         }
     }
 
@@ -585,34 +585,6 @@ class BlockingFeaturesActivity : AppCompatActivity() {
     }
 
     private fun applySwitchAccentTints() {
-        val accent = AccentColor.getAccentColorInt(this)
-        val onSurface = MaterialColors.getColor(
-            this,
-            com.google.android.material.R.attr.colorOnSurface,
-            Color.DKGRAY
-        )
-
-        val thumbTint = ColorStateList(
-            arrayOf(
-                intArrayOf(android.R.attr.state_checked),
-                intArrayOf()
-            ),
-            intArrayOf(accent, Color.WHITE)
-        )
-        val trackTint = ColorStateList(
-            arrayOf(
-                intArrayOf(android.R.attr.state_checked),
-                intArrayOf()
-            ),
-            intArrayOf(
-                ColorUtils.setAlphaComponent(accent, 0x66),
-                ColorUtils.setAlphaComponent(onSurface, 0x3D)
-            )
-        )
-
-        accentSwitches.forEach { sw ->
-            sw.thumbTintList = thumbTint
-            sw.trackTintList = trackTint
-        }
+        accentSwitches.forEach { CustomAccentApplier.tintSwitch(it) }
     }
 }

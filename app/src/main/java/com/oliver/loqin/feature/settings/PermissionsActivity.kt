@@ -22,9 +22,6 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.content.res.Configuration
-import android.graphics.Color
-import android.graphics.Typeface
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
@@ -37,6 +34,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.AppCompatTextView
 import androidx.appcompat.widget.Toolbar
 import androidx.core.content.ContextCompat
+import androidx.core.widget.TextViewCompat
 import androidx.core.content.edit
 import androidx.core.net.toUri
 import androidx.core.view.isVisible
@@ -57,7 +55,6 @@ import com.oliver.loqin.feature.usage.UsageStatsRepo
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.theme.CustomAccentApplier
 import com.oliver.loqin.ui.EdgeToEdgeUtils
-import com.oliver.loqin.ui.SetupCardRow
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.showWarnPillOnContent
 import com.oliver.loqin.ui.dialog.LoqInInfoRow
@@ -76,11 +73,10 @@ import kotlinx.coroutines.launch
 /**
  * Permissions overview screen.
  *
- * Redesigned to use the same setup-card component as onboarding ([SetupCardRow]):
- * a section header followed by full-width cards, each with a status line and a
- * trailing check (satisfied) or chevron. Tapping a card requests the runtime
- * permission when missing, otherwise opens the relevant system settings. Long
- * explanations live behind the per-card info affordance.
+ * A section header followed by a grouped list of [PermissionRow]s, each with a status line
+ * that says (and shows with its tone and icon) whether the permission is ready or needs
+ * attention. Tapping a row requests the runtime permission when missing, otherwise opens the
+ * relevant system settings. Long explanations live behind the per-row info affordance.
  */
 class PermissionsActivity : AppCompatActivity() {
 
@@ -92,18 +88,18 @@ class PermissionsActivity : AppCompatActivity() {
         MISSING
     }
 
-    private val cards = mutableListOf<SetupCardRow.Holder>()
+    private val cards = mutableListOf<PermissionRow>()
 
-    private lateinit var accessibilityCard: SetupCardRow.Holder
-    private lateinit var usageAccessCard: SetupCardRow.Holder
-    private lateinit var notificationsCard: SetupCardRow.Holder
-    private lateinit var notificationAccessCard: SetupCardRow.Holder
-    private lateinit var locationCard: SetupCardRow.Holder
-    private lateinit var bluetoothCard: SetupCardRow.Holder
-    private lateinit var exactAlarmsCard: SetupCardRow.Holder
-    private lateinit var nfcCard: SetupCardRow.Holder
-    private lateinit var batteryCard: SetupCardRow.Holder
-    private lateinit var autostartCard: SetupCardRow.Holder
+    private lateinit var accessibilityCard: PermissionRow
+    private lateinit var usageAccessCard: PermissionRow
+    private lateinit var notificationsCard: PermissionRow
+    private lateinit var notificationAccessCard: PermissionRow
+    private lateinit var locationCard: PermissionRow
+    private lateinit var bluetoothCard: PermissionRow
+    private lateinit var exactAlarmsCard: PermissionRow
+    private lateinit var nfcCard: PermissionRow
+    private lateinit var batteryCard: PermissionRow
+    private lateinit var autostartCard: PermissionRow
 
     private lateinit var permissionStatusButton: AppCompatTextView
 
@@ -129,10 +125,6 @@ class PermissionsActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         toolbar.setNavigationOnClickListener { finish() }
         toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
-        val toolbarIconColor = toolbarForegroundColor()
-        toolbar.navigationIcon?.mutate()?.setTint(toolbarIconColor)
-        toolbar.setTitleTextColor(toolbarIconColor)
-
         setupPermissionStatusAction(toolbar)
 
         groupAutostart = findViewById(R.id.groupAutostart)
@@ -318,23 +310,21 @@ class PermissionsActivity : AppCompatActivity() {
         whyMessageProvider: (() -> String)? = null,
         required: Boolean = false,
         onClick: () -> Unit,
-    ): SetupCardRow.Holder {
-        val holder = SetupCardRow.build(
+    ): PermissionRow {
+        val holder = PermissionRow.build(
             this,
-            SetupCardRow.Spec(
-                title = getString(titleRes),
-                iconRes = iconRes,
-                info = getString(summaryRes),
-                onClick = onClick,
-                onInfoClick = {
-                    val message = whyMessageProvider?.invoke() ?: getString(whyMessageRes!!)
-                    showWhyDialog(getString(whyTitleRes), message)
-                },
-                infoContentDescription = getString(R.string.permissions_why_dialog_header),
-            ),
+            iconRes = iconRes,
+            title = getString(titleRes),
+            summary = getString(summaryRes),
+            infoContentDescription = getString(R.string.permissions_why_dialog_header),
+            onInfoClick = {
+                val message = whyMessageProvider?.invoke() ?: getString(whyMessageRes!!)
+                showWhyDialog(getString(whyTitleRes), message)
+            },
+            onClick = onClick,
         )
-        holder.card.tag = required
-        container.addView(holder.card)
+        holder.row.tag = required
+        container.addView(holder.row)
         cards += holder
         return holder
     }
@@ -436,7 +426,7 @@ class PermissionsActivity : AppCompatActivity() {
         // NFC
         val nfcSupported = AutomationModeStore.isNfcSupported(this)
         when {
-            !nfcSupported -> nfcCard.setState(getString(R.string.mode_not_supported_on_device), ok = false)
+            !nfcSupported -> nfcCard.setState(getString(R.string.mode_not_supported_on_device), ok = false, neutral = true)
             else -> when (NfcLaunchAccessCompat.state(this)) {
                 NfcLaunchAccessCompat.State.ALLOWED ->
                     nfcCard.setState(readyText, ok = true)
@@ -485,6 +475,7 @@ class PermissionsActivity : AppCompatActivity() {
                     else -> getString(R.string.permissions_autostart_desc)
                 },
                 ok = false,
+                neutral = true,
             )
             autostartCard.setLocked(permissionsLocked)
         }
@@ -578,9 +569,17 @@ class PermissionsActivity : AppCompatActivity() {
             else R.string.ok
         )
 
-        // Keep the toolbar action flat and consistently visible on every accent color.
-        val contentColor = ContextCompat.getColor(this, android.R.color.white)
-        val shield = ContextCompat.getDrawable(this, R.drawable.security_24)?.mutate()?.apply {
+        // The bar is the page colour: "Issues" in the error colour with an alert icon, otherwise
+        // the positive colour with a check, so the state reads by word and icon, not colour alone.
+        val contentColor = if (hasIssues) {
+            ContextCompat.getColor(this, R.color.status_error)
+        } else {
+            ContextCompat.getColor(this, R.color.status_ok)
+        }
+        val shield = ContextCompat.getDrawable(
+            this,
+            if (hasIssues) R.drawable.error_24 else R.drawable.check_circle_24,
+        )?.mutate()?.apply {
             setTint(contentColor)
         }
         permissionStatusButton.setCompoundDrawablesRelativeWithIntrinsicBounds(
@@ -603,9 +602,7 @@ class PermissionsActivity : AppCompatActivity() {
             gravity = Gravity.CENTER
             isSingleLine = true
             includeFontPadding = false
-            textSize = 13f
-            typeface = Typeface.DEFAULT_BOLD
-            setTextColor(ContextCompat.getColor(this@PermissionsActivity, android.R.color.white))
+            TextViewCompat.setTextAppearance(this, R.style.TextAppearance_LoqIn_Button)
             background = null
             compoundDrawablePadding =
                 resources.getDimensionPixelSize(R.dimen.permission_toolbar_status_icon_padding)
@@ -1029,12 +1026,6 @@ class PermissionsActivity : AppCompatActivity() {
     override fun onSupportNavigateUp(): Boolean {
         onBackPressedDispatcher.onBackPressed()
         return true
-    }
-
-    private fun toolbarForegroundColor(): Int {
-        val night = (resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
-            Configuration.UI_MODE_NIGHT_YES
-        return if (night) Color.WHITE else Color.BLACK
     }
 
     companion object {

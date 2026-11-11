@@ -34,19 +34,15 @@
         <!-- Search Bar (toggled by search icon in toolbar) -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/searchBoxLayout"
-            style="@style/LoqIn.TextInputLayout"
+            style="@style/LoqIn.SearchField"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="8dp"
-            android:layout_marginEnd="16dp"
+            android:layout_marginStart="@dimen/page_margin"
+            android:layout_marginTop="@dimen/page_top_padding"
+            android:layout_marginEnd="@dimen/page_margin"
             android:layout_marginBottom="4dp"
             android:hint="@string/support_logs_search_hint"
             android:visibility="gone"
-            app:boxCornerRadiusBottomEnd="16dp"
-            app:boxCornerRadiusBottomStart="16dp"
-            app:boxCornerRadiusTopEnd="16dp"
-            app:boxCornerRadiusTopStart="16dp"
             app:endIconMode="clear_text"
             app:startIconDrawable="@drawable/search_24">
 
@@ -64,10 +60,9 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:scrollbars="none"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
-            android:paddingTop="6dp"
-            android:paddingBottom="6dp"
+            android:paddingStart="@dimen/page_margin"
+            android:paddingEnd="@dimen/page_margin"
+            android:paddingTop="4dp"
             android:clipToPadding="false">
 
             <com.google.android.material.chip.ChipGroup
@@ -82,53 +77,24 @@
         <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="0dp"
-            android:layout_weight="1"
-            android:paddingStart="12dp"
-            android:paddingEnd="12dp">
+            android:layout_weight="1">
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rvSupportLogs"
+                style="@style/LoqIn.PageContent"
                 android:layout_width="match_parent"
-                android:layout_height="match_parent"
-                android:clipToPadding="false"
-                android:paddingTop="4dp"
-                android:paddingBottom="24dp" />
+                android:layout_height="match_parent" />
 
-            <com.google.android.material.card.MaterialCardView
+            <com.oliver.loqin.ui.widgets.EmptyStateView
                 android:id="@+id/cardEmptyLogs"
-                style="@style/LoqIn.Card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
+                android:layout_marginStart="@dimen/page_margin"
+                android:layout_marginTop="@dimen/page_top_padding"
+                android:layout_marginEnd="@dimen/page_margin"
                 android:visibility="gone"
-                app:cardUseCompatPadding="false">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:gravity="center_horizontal"
-                    android:padding="28dp">
-
-                    <ImageView
-                        android:id="@+id/ivEmptyIcon"
-                        android:layout_width="36dp"
-                        android:layout_height="36dp"
-                        android:contentDescription="@null"
-                        android:src="@drawable/description_24"
-                        app:tint="?attr/colorOnSurfaceVariant" />
-
-                    <TextView
-                        android:id="@+id/tvEmptyLogs"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        android:gravity="center"
-                        android:text="@string/support_logs_view_empty"
-                        android:textAppearance="?attr/textAppearanceBodyMedium"
-                        android:textColor="?attr/colorOnSurfaceVariant" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+                app:emptyIcon="@drawable/description_24"
+                app:emptyTitle="@string/support_logs_view_empty" />
         </FrameLayout>
     </LinearLayout>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

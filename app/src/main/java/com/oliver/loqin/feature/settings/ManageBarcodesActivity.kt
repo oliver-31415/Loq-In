@@ -39,6 +39,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.oliver.loqin.R
+import com.oliver.loqin.ui.widgets.EmptyStateView
 import com.oliver.loqin.data.prefs.AutomationModeStore
 import com.oliver.loqin.data.prefs.ProfileStore
 import com.oliver.loqin.data.prefs.ScanCodeStore
@@ -77,7 +78,7 @@ class ManageBarcodesActivity : AppCompatActivity() {
     }
 
     private lateinit var recycler: RecyclerView
-    private lateinit var empty: View
+    private lateinit var empty: EmptyStateView
     private lateinit var adapter: CodeAdapter
     private lateinit var toolbar: MaterialToolbar
     private val selectedRawValues: MutableSet<String> = linkedSetOf()
@@ -181,7 +182,7 @@ class ManageBarcodesActivity : AppCompatActivity() {
             }
         )
 
-        findViewById<View>(R.id.btnEmptyAddBarcode)?.setOnClickListener { showAddChoiceDialog() }
+        empty.setOnActionClickListener { showAddChoiceDialog() }
         contentInitialized = true
     }
 

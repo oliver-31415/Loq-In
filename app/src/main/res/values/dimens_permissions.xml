@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="permission_toolbar_status_icon_padding">5dp</dimen>
+    <!-- Permissions rows (PermissionRow): status-line icon, line gaps and the info button. -->
+    <dimen name="permission_status_icon_size">18dp</dimen>
+    <dimen name="permission_status_icon_gap">6dp</dimen>
+    <dimen name="permission_row_line_gap">2dp</dimen>
+    <dimen name="permission_info_gap">4dp</dimen>
+    <dimen name="permission_info_padding">14dp</dimen>
 </resources>
