@@ -6,13 +6,23 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
-    <!-- Topbar -->
-    <com.google.android.material.appbar.MaterialToolbar
-        android:id="@+id/toolbarLocationMapPicker"
+    <!-- Topbar: in an AppBarLayout with fitsSystemWindows like every page, which is what
+         EdgeToEdgeUtils.setupClassic expects for the status-bar inset -->
+    <com.google.android.material.appbar.AppBarLayout
         android:layout_width="match_parent"
-        android:layout_height="?attr/actionBarSize"
-        android:title="@string/schedules_location_map_picker_title"
-        app:navigationIcon="?attr/homeAsUpIndicator" />
+        android:layout_height="wrap_content"
+        android:fitsSystemWindows="true"
+        app:liftOnScroll="false">
+
+        <com.google.android.material.appbar.MaterialToolbar
+            android:id="@+id/toolbarLocationMapPicker"
+            style="@style/LoqIn.TopBar"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:minHeight="?attr/actionBarSize"
+            app:navigationIcon="@drawable/keyboard_arrow_left_24"
+            app:title="@string/schedules_location_map_picker_title" />
+    </com.google.android.material.appbar.AppBarLayout>
 
     <!-- Content -->
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -20,14 +30,14 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:paddingStart="16dp"
-        android:paddingTop="12dp"
-        android:paddingEnd="16dp"
+        android:paddingStart="@dimen/page_margin"
+        android:paddingTop="@dimen/page_top_padding"
+        android:paddingEnd="@dimen/page_margin"
         android:paddingBottom="12dp">
 
         <TextView
             android:id="@+id/tvMapPickerBody"
-            android:textAppearance="?attr/textAppearanceBody2"
+            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:text="@string/schedules_location_map_picker_body"
@@ -37,7 +47,7 @@
 
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/layoutMapLocationQuery"
-            style="@style/LoqIn.TextInputLayout"
+            style="@style/LoqIn.SearchField"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
@@ -45,21 +55,19 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/tvMapPickerBody"
-            app:boxBackgroundMode="outline"
             app:helperText="@string/schedules_location_picker_helper">
 
             <com.google.android.material.textfield.TextInputEditText
                 android:id="@+id/inputMapLocationQuery"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:minHeight="64dp"
                 android:inputType="textCapSentences"
                 android:imeOptions="actionSearch" />
         </com.google.android.material.textfield.TextInputLayout>
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnMapPickerSearch"
-            style="@style/LoqIn.OutlinedButton"
+            style="@style/LoqIn.TonalButton"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
@@ -83,7 +91,7 @@
 
         <TextView
             android:id="@+id/tvMapPickerSelection"
-            android:textAppearance="?attr/textAppearanceBody2"
+            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:text="@string/schedules_location_map_picker_no_selection"
@@ -93,6 +101,7 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnMapPickerUseSelection"
+            style="@style/LoqIn.Button"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"

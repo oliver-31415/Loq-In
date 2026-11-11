@@ -1,13 +1,25 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    "Your rules" / "Suggestions" header in the website grid (also the "Your schedules" header): a
+    LoqIn.SectionHeader whose row also holds an optional action ("Hide suggestions", "Reorder").
+    The row is always 48dp tall so the action keeps its touch target and every header sits the same
+    way; that centres the header line with ~16dp above and below it, so 8dp on top keeps the 24dp
+    section rhythm. The grid's 12dp padding plus the 4dp side margins puts the row on the page
+    gutter and the 16dp padding gives the text the standard header inset; -4dp at the bottom
+    cancels the tiles' own 4dp margin. The adapter drops the top margin on the first header.
+-->
 <LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginStart="4dp"
-    android:layout_marginTop="12dp"
+    android:layout_marginTop="8dp"
     android:layout_marginEnd="4dp"
-    android:layout_marginBottom="4dp"
+    android:layout_marginBottom="-4dp"
+    android:paddingStart="16dp"
+    android:paddingEnd="4dp"
     android:gravity="center_vertical"
+    android:minHeight="@dimen/touch_target"
     android:orientation="horizontal">
 
     <TextView
@@ -21,13 +33,12 @@
         android:id="@+id/tvHeaderAction"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:minHeight="@dimen/touch_target"
+        android:gravity="center"
         android:background="?attr/selectableItemBackground"
-        android:paddingStart="10dp"
-        android:paddingTop="4dp"
-        android:paddingEnd="0dp"
-        android:paddingBottom="4dp"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:textAppearance="@style/TextAppearance.LoqIn.Button"
         android:textColor="?attr/colorPrimary"
-        android:textSize="12sp"
-        android:textStyle="bold"
         android:visibility="gone" />
 </LinearLayout>

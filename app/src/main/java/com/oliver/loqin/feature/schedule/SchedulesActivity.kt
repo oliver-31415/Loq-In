@@ -101,6 +101,7 @@ import com.oliver.loqin.platform.receiver.schedule.ScheduleReceiver
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.theme.CustomAccentApplier
 import com.oliver.loqin.ui.EdgeToEdgeUtils
+import com.oliver.loqin.ui.widgets.EmptyStateView
 import com.oliver.loqin.ui.LoqInDropdownAdapter
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.applyLoqInStyle
@@ -393,8 +394,6 @@ class SchedulesActivity : AppCompatActivity() {
         headerSchedules = findViewById(R.id.headerSchedules)
         headerSchedules.findViewById<TextView>(R.id.tvHeader).text = getString(R.string.schedules_list_header)
         headerSchedules.findViewById<TextView>(R.id.tvHeaderAction).apply {
-            minHeight = (48 * resources.displayMetrics.density).toInt()
-            gravity = android.view.Gravity.CENTER_VERTICAL
             setOnClickListener {
                 if (denyScheduleEditWithPopover()) return@setOnClickListener
                 isReorderMode = !isReorderMode
@@ -470,6 +469,11 @@ class SchedulesActivity : AppCompatActivity() {
             },
         )
         recycler.adapter = ConcatAdapter(adapter, addTileAdapter)
+        findViewById<EmptyStateView>(R.id.emptySchedules).setOnActionClickListener {
+            if (!denyScheduleEditWithPopover()) {
+                showNewScheduleTypeDialog()
+            }
+        }
         priorityDragHelper = ItemTouchHelper(priorityDragCallback(recycler)).apply {
             attachToRecyclerView(recycler)
         }
@@ -1042,7 +1046,15 @@ class SchedulesActivity : AppCompatActivity() {
         }
         updateScheduleHealthBanner()
         updateReorderHeader()
-        com.oliver.loqin.ui.AccentContrast.strengthen(headerSchedules)
+        // No schedules: the empty state (with Add schedule) stands in for the summary and list.
+        val empty = sorted.isEmpty()
+        findViewById<View>(R.id.scheduleSummary).isVisible = !empty
+        findViewById<View>(R.id.recyclerSchedules).isVisible = !empty
+        findViewById<EmptyStateView>(R.id.emptySchedules).apply {
+            isVisible = empty
+            // Stays tappable while locked: the add action warns via popover, like the Add row.
+            findViewById<View>(R.id.emptyStateAction)?.alpha = if (canEditSchedules()) 1f else 0.45f
+        }
     }
 
     private fun priorityDragCallback(recycler: RecyclerView) =

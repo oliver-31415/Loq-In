@@ -1,3 +1,21 @@
+/*
+ * Loq In
+ * Copyright (C) 2026 Loq In Contributors
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
 package com.oliver.loqin.feature.settings
 
 import android.content.Context
@@ -9,7 +27,6 @@ import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
-import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -24,7 +41,9 @@ import com.google.android.material.materialswitch.MaterialSwitch
 import com.oliver.loqin.R
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.theme.CustomAccentApplier
+import com.oliver.loqin.ui.PageUi
 import com.oliver.loqin.ui.RuleTileStyle
+import com.oliver.loqin.ui.widgets.ListGroupLayout
 
 enum class MasterState { ON, OFF, MIXED }
 
@@ -70,11 +89,9 @@ object InAppRuleViews {
         val surfaceVariant = ContextCompat.getColor(ctx, R.color.foqos_surface_variant)
         val onSurface = ContextCompat.getColor(ctx, R.color.foqos_on_surface)
         val onSurfaceVariant = ContextCompat.getColor(ctx, R.color.foqos_on_surface_variant)
-        val outlineVariant = ContextCompat.getColor(ctx, R.color.foqos_outline_variant)
         val strong: Int = RuleTileStyle.strongAccent(ctx)
         val wash: Int = ColorUtils.compositeColors(ColorUtils.setAlphaComponent(strong, 0x2E), surface)
         val washText: Int = AccentColor.readableOn(strong, wash, onSurface, 4.5)
-        val onTint: Int = ColorUtils.compositeColors(ColorUtils.setAlphaComponent(strong, 0x14), surface)
     }
 
     // ---------------------------------------------------------------- public
@@ -87,7 +104,9 @@ object InAppRuleViews {
             gravity = Gravity.CENTER_VERTICAL
             background = fill(p.surfaceVariant, dpF(ctx, 16))
             accessibilityLiveRegion = View.ACCESSIBILITY_LIVE_REGION_POLITE
-            layoutParams = LinearLayout.LayoutParams(MATCH, WRAP).apply { topMargin = dp(ctx, 4) }
+            layoutParams = LinearLayout.LayoutParams(MATCH, WRAP).apply {
+                topMargin = ctx.resources.getDimensionPixelSize(R.dimen.block_gap)
+            }
             addView(glyph(ctx, R.drawable.lock_24, p.onSurface), LinearLayout.LayoutParams(dp(ctx, 18), dp(ctx, 18)))
             addView(
                 label(ctx, text, 14f, p.onSurface),
@@ -106,38 +125,22 @@ object InAppRuleViews {
         onClick: () -> Unit,
     ): View {
         val p = Palette(ctx)
-        val card = newCard(ctx, p, vertical = false).apply {
-            setPadding(dp(ctx, 16), dp(ctx, 16), dp(ctx, 16), dp(ctx, 16))
-            gravity = Gravity.CENTER_VERTICAL
+        val row = listRow(ctx).apply {
             isClickable = true
             isFocusable = true
-            foreground = ripple(ctx)
             contentDescription = "$title, $subtitle"
             ViewCompat.setStateDescription(this, stateDescription)
             asSwitch(this)
+            addView(rowIcon(ctx, R.drawable.play_arrow_24, p.strong), rowIconParams(ctx))
+            addView(rowTexts(ctx, title, subtitle), rowTextParams(ctx))
+            val thumb = if (state == MasterState.MIXED) R.drawable.remove_24 else R.drawable.loqin_switch_thumb_icon
+            val sw = switchFor(ctx, checked = state == MasterState.ON, thumb = thumb).apply {
+                if (locked) alpha = 0.45f
+            }
+            addView(sw, rowSwitchParams(ctx))
         }
-
-        val roundel = FrameLayout(ctx).apply {
-            background = oval(p.wash)
-            setPadding(dp(ctx, 11), dp(ctx, 11), dp(ctx, 11), dp(ctx, 11))
-            addView(glyph(ctx, R.drawable.play_arrow_24, p.strong), FrameLayout.LayoutParams(MATCH, MATCH))
-        }
-        card.addView(roundel, LinearLayout.LayoutParams(dp(ctx, 44), dp(ctx, 44)))
-
-        val texts = box(ctx, vertical = true).apply {
-            addView(label(ctx, title, 16f, p.onSurface, medium))
-            addView(label(ctx, subtitle, 13.5f, p.onSurfaceVariant))
-        }
-        card.addView(texts, LinearLayout.LayoutParams(0, WRAP, 1f).apply { marginStart = dp(ctx, 14) })
-
-        val thumb = if (state == MasterState.MIXED) R.drawable.remove_24 else R.drawable.loqin_switch_thumb_icon
-        val sw = switchFor(ctx, checked = state == MasterState.ON, thumb = thumb).apply {
-            if (locked) alpha = 0.45f
-        }
-        card.addView(sw, LinearLayout.LayoutParams(WRAP, WRAP))
-
-        card.setOnClickListener { onClick() }
-        return card
+        row.setOnClickListener { onClick() }
+        return newGroup(ctx).apply { addView(row) }
     }
 
     fun appCard(
@@ -148,28 +151,24 @@ object InAppRuleViews {
         onExtraShorts: () -> Unit,
     ): View {
         val p = Palette(ctx)
-        val card = newCard(ctx, p, vertical = true)
+        // One grouped list per app: header (with its outcome line), a switch row per section,
+        // then the optional Extra Shorts row and footnote as further segments.
+        val group = newGroup(ctx)
 
-        card.addView(header(ctx, p, model))
-
-        model.outcome?.let { outcomeText ->
-            card.addView(outcomeRow(ctx, p, outcomeText, model, onSeeWhere))
-        }
+        group.addView(header(ctx, p, model, onSeeWhere))
 
         for (row in model.rows) {
-            card.addView(divider(ctx, p))
-            card.addView(sectionRow(ctx, p, row, onRowClick))
+            group.addView(sectionRow(ctx, p, row, onRowClick))
         }
 
         model.extraShorts?.let { (title, subtitle) ->
-            card.addView(extraShortsTile(ctx, p, title, subtitle, onExtraShorts))
+            group.addView(extraShortsRow(ctx, p, title, subtitle, onExtraShorts))
         }
 
         model.footnote?.let { note ->
-            card.addView(divider(ctx, p))
-            card.addView(footnoteRow(ctx, p, note, model.footnoteWarning))
+            group.addView(footnoteRow(ctx, p, note, model.footnoteWarning))
         }
-        return card
+        return group
     }
 
     fun notInstalledRow(
@@ -202,31 +201,24 @@ object InAppRuleViews {
             }
         }
 
-        val texts = box(ctx, vertical = true).apply {
-            addView(label(ctx, title, 15f, p.onSurface, medium))
-            addView(label(ctx, subtitle, 13f, p.onSurfaceVariant))
-        }
-
         val chevronRes = if (expanded) R.drawable.keyboard_arrow_up_24 else R.drawable.keyboard_arrow_down_24
-        val rowView = newCard(ctx, p, vertical = false).apply {
-            minimumHeight = dp(ctx, 64)
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(ctx, 16), dp(ctx, 12), dp(ctx, 16), dp(ctx, 12))
+        val rowView = listRow(ctx).apply {
             isClickable = true
             isFocusable = true
-            foreground = ripple(ctx)
             ViewCompat.setStateDescription(this, expandedState)
             addView(stack, LinearLayout.LayoutParams(WRAP, WRAP))
-            addView(texts, LinearLayout.LayoutParams(0, WRAP, 1f).apply { marginStart = dp(ctx, 12) })
-            addView(glyph(ctx, chevronRes, p.onSurfaceVariant), LinearLayout.LayoutParams(WRAP, WRAP))
+            addView(rowTexts(ctx, title, subtitle), rowTextParams(ctx))
+            addView(rowChevron(ctx, chevronRes, p.onSurfaceVariant), rowChevronParams(ctx))
         }
         rowView.setOnClickListener { onClick() }
-        return rowView
+        return newGroup(ctx).apply { addView(rowView) }
     }
 
     // ---------------------------------------------------------------- app card parts
 
-    private fun header(ctx: Context, p: Palette, model: AppCardModel): View {
+    // Header segment: app icon, name and count pill; the outcome line and "See where" sit under
+    // the name. A 28dp icon plus a 12dp gap puts the name on the row text column (24dp + 16dp).
+    private fun header(ctx: Context, p: Palette, model: AppCardModel, onSeeWhere: () -> Unit): View {
         val nameView = label(ctx, model.appName, 17f, p.onSurface, medium).apply {
             maxLines = 2
             ViewCompat.setAccessibilityHeading(this, true)
@@ -246,52 +238,62 @@ object InAppRuleViews {
             ImageView(ctx).apply { setImageDrawable(drawable) }
         } ?: glyph(ctx, R.drawable.apps_24, p.onSurfaceVariant)
 
-        return box(ctx).apply {
-            minimumHeight = dp(ctx, 56)
+        val titleLine = box(ctx).apply {
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(ctx, 16), dp(ctx, 14), dp(ctx, 16), dp(ctx, 6))
-            addView(iconView, LinearLayout.LayoutParams(dp(ctx, 36), dp(ctx, 36)))
+            addView(iconView, LinearLayout.LayoutParams(dp(ctx, 28), dp(ctx, 28)))
             addView(nameView, LinearLayout.LayoutParams(0, WRAP, 1f).apply { marginStart = dp(ctx, 12) })
             addView(pill, LinearLayout.LayoutParams(WRAP, WRAP).apply { marginStart = dp(ctx, 8) })
         }
+
+        val res = ctx.resources
+        return box(ctx, vertical = true).apply {
+            minimumHeight = res.getDimensionPixelSize(R.dimen.row_min_height_one_line)
+            gravity = Gravity.CENTER_VERTICAL
+            setPaddingRelative(
+                res.getDimensionPixelSize(R.dimen.row_padding_start),
+                res.getDimensionPixelSize(R.dimen.row_padding_vertical),
+                res.getDimensionPixelSize(R.dimen.row_padding_end),
+                res.getDimensionPixelSize(R.dimen.row_padding_vertical),
+            )
+            addView(titleLine, LinearLayout.LayoutParams(MATCH, WRAP))
+            model.outcome?.let { outcomeText ->
+                addView(outcomeLine(ctx, p, outcomeText, model, onSeeWhere), LinearLayout.LayoutParams(MATCH, WRAP))
+            }
+        }
     }
 
-    private fun outcomeRow(
+    private fun outcomeLine(
         ctx: Context,
         p: Palette,
         outcomeText: String,
         model: AppCardModel,
         onSeeWhere: () -> Unit,
     ): View {
-        val blended = ColorUtils.blendARGB(p.onSurfaceVariant, p.onSurface, 0.35f)
         return box(ctx).apply {
             gravity = Gravity.CENTER_VERTICAL
-            setPaddingRelative(dp(ctx, 64), 0, dp(ctx, 4), 0)
-            addView(label(ctx, outcomeText, 13.5f, blended), LinearLayout.LayoutParams(0, WRAP, 1f))
+            setPaddingRelative(dp(ctx, 28 + 12), dp(ctx, 4), 0, 0)
+            val outcome = TextView(ctx).apply {
+                TextViewCompat.setTextAppearance(this, R.style.TextAppearance_LoqIn_RowSummary)
+                text = outcomeText
+            }
+            addView(outcome, LinearLayout.LayoutParams(0, WRAP, 1f))
             if (model.showSeeWhere) {
                 val seeWhere = MaterialButton(ctx, null, androidx.appcompat.R.attr.borderlessButtonStyle).apply {
+                    TextViewCompat.setTextAppearance(this, R.style.TextAppearance_LoqIn_Button)
                     text = model.seeWhereLabel
                     isAllCaps = false
                     setTextColor(p.strong)
-                    minHeight = dp(ctx, 48)
+                    minHeight = ctx.resources.getDimensionPixelSize(R.dimen.touch_target)
                     minWidth = 0
                     contentDescription = model.seeWhereCd
                     setOnClickListener { onSeeWhere() }
                 }
-                addView(seeWhere, LinearLayout.LayoutParams(WRAP, WRAP))
+                addView(seeWhere, LinearLayout.LayoutParams(WRAP, WRAP).apply { marginStart = dp(ctx, 8) })
             }
         }
     }
 
     private fun sectionRow(ctx: Context, p: Palette, row: SectionRowModel, onRowClick: (String, View) -> Unit): View {
-        val iconFrame = FrameLayout(ctx).apply {
-            background = oval(p.wash)
-            addView(
-                glyph(ctx, row.iconRes, p.strong),
-                FrameLayout.LayoutParams(dp(ctx, 20), dp(ctx, 20), Gravity.CENTER),
-            )
-        }
-
         val titleView = TextView(ctx).apply {
             TextViewCompat.setTextAppearance(this, R.style.TextAppearance_LoqIn_RowTitle)
             text = row.title
@@ -321,9 +323,8 @@ object InAppRuleViews {
                 val summary = TextView(ctx).apply {
                     TextViewCompat.setTextAppearance(this, R.style.TextAppearance_LoqIn_RowSummary)
                     text = desc
-                    setTextSize(TypedValue.COMPLEX_UNIT_SP, 13f)
                 }
-                addView(summary, LinearLayout.LayoutParams(MATCH, WRAP))
+                addView(summary, LinearLayout.LayoutParams(MATCH, WRAP).apply { topMargin = dp(ctx, 2) })
             }
         }
 
@@ -332,70 +333,58 @@ object InAppRuleViews {
             if (row.lockedDisabled) alpha = 0.45f
         }
 
-        val rowView = box(ctx).apply {
-            minimumHeight = dp(ctx, 64)
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(ctx, 16), dp(ctx, 12), dp(ctx, 16), dp(ctx, 12))
-            if (row.on) setBackgroundColor(p.onTint)
-            foreground = ripple(ctx)
+        val rowView = listRow(ctx).apply {
             isClickable = true
             isFocusable = true
             contentDescription = listOfNotNull(row.title, row.description).joinToString(", ")
             ViewCompat.setStateDescription(this, row.stateDescription)
             asSwitch(this)
-            addView(iconFrame, LinearLayout.LayoutParams(dp(ctx, 36), dp(ctx, 36)))
-            addView(texts, LinearLayout.LayoutParams(0, WRAP, 1f).apply { marginStart = dp(ctx, 14) })
-            addView(sw, LinearLayout.LayoutParams(WRAP, WRAP).apply { marginStart = dp(ctx, 8) })
+            addView(rowIcon(ctx, row.iconRes, p.strong), rowIconParams(ctx))
+            addView(texts, rowTextParams(ctx))
+            addView(sw, rowSwitchParams(ctx))
         }
         rowView.setOnClickListener { onRowClick(row.key, rowView) }
         return rowView
     }
 
-    private fun extraShortsTile(
+    private fun extraShortsRow(
         ctx: Context,
         p: Palette,
         title: String,
         subtitle: String,
         onExtraShorts: () -> Unit,
     ): View {
-        val texts = box(ctx, vertical = true).apply {
-            addView(label(ctx, title, 14.5f, p.onSurface, medium))
-            addView(label(ctx, subtitle, 12.5f, p.onSurfaceVariant))
-        }
-        val tile = box(ctx).apply {
-            background = fill(p.surfaceVariant, dpF(ctx, 16))
-            minimumHeight = dp(ctx, 56)
-            gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(ctx, 14), dp(ctx, 10), dp(ctx, 14), dp(ctx, 10))
-            foreground = ripple(ctx)
+        val row = listRow(ctx).apply {
             isClickable = true
             isFocusable = true
-            layoutParams = LinearLayout.LayoutParams(MATCH, WRAP).apply {
-                setMargins(dp(ctx, 12), dp(ctx, 8), dp(ctx, 12), dp(ctx, 12))
-            }
-            addView(glyph(ctx, R.drawable.security_24, p.strong), LinearLayout.LayoutParams(dp(ctx, 22), dp(ctx, 22)))
-            addView(texts, LinearLayout.LayoutParams(0, WRAP, 1f).apply { marginStart = dp(ctx, 14) })
-            addView(
-                glyph(ctx, R.drawable.keyboard_arrow_right_24, p.onSurfaceVariant),
-                LinearLayout.LayoutParams(WRAP, WRAP),
-            )
+            addView(rowIcon(ctx, R.drawable.security_24, p.strong), rowIconParams(ctx))
+            addView(rowTexts(ctx, title, subtitle), rowTextParams(ctx))
+            addView(rowChevron(ctx, R.drawable.keyboard_arrow_right_24, p.onSurfaceVariant), rowChevronParams(ctx))
         }
-        tile.setOnClickListener { onExtraShorts() }
-        return tile
+        row.setOnClickListener { onExtraShorts() }
+        return row
     }
 
+    // Footnote segment: a status line (LoqIn.RowStatus) on the row text column.
     private fun footnoteRow(ctx: Context, p: Palette, note: String, warning: Boolean): View {
-        val ink = if (warning) ContextCompat.getColor(ctx, R.color.in_app_warn_fg) else p.onSurfaceVariant
+        val status = if (warning) PageUi.Status.WARNING else PageUi.Status.NEUTRAL
+        val ink = if (warning) ContextCompat.getColor(ctx, R.color.status_warning) else p.onSurfaceVariant
+        val res = ctx.resources
         return box(ctx).apply {
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(ctx, 16), dp(ctx, 10), dp(ctx, 16), dp(ctx, 14))
-            if (warning) setBackgroundColor(ContextCompat.getColor(ctx, R.color.in_app_warn_bg))
-            val iconRes = if (warning) R.drawable.info_24 else R.drawable.check_circle_24
-            addView(glyph(ctx, iconRes, ink), LinearLayout.LayoutParams(dp(ctx, 16), dp(ctx, 16)))
-            addView(
-                label(ctx, note, 12.5f, ink),
-                LinearLayout.LayoutParams(0, WRAP, 1f).apply { marginStart = dp(ctx, 8) },
+            setPaddingRelative(
+                res.getDimensionPixelSize(R.dimen.row_padding_start),
+                dp(ctx, 12),
+                res.getDimensionPixelSize(R.dimen.row_padding_end),
+                dp(ctx, 12),
             )
+            val iconRes = if (warning) R.drawable.info_24 else R.drawable.check_circle_24
+            addView(rowIcon(ctx, iconRes, ink), rowIconParams(ctx))
+            val text = TextView(ctx).apply {
+                TextViewCompat.setTextAppearance(this, status.styleRes)
+                this.text = note
+            }
+            addView(text, rowTextParams(ctx))
         }
     }
 
@@ -405,13 +394,65 @@ object InAppRuleViews {
 
     private fun dpF(ctx: Context, v: Int): Float = v * ctx.resources.displayMetrics.density
 
-    /** Page card: surface fill, 24dp corners, rows clipped to its outline. */
-    private fun newCard(ctx: Context, p: Palette, vertical: Boolean): LinearLayout =
-        LinearLayout(ctx).apply {
-            orientation = if (vertical) LinearLayout.VERTICAL else LinearLayout.HORIZONTAL
-            background = fill(p.surface, dpF(ctx, 24))
-            clipToOutline = true
-            layoutParams = LinearLayout.LayoutParams(MATCH, WRAP).apply { topMargin = dp(ctx, 12) }
+    /** A grouped list (LoqIn.ListGroup look) with the block gap above it. */
+    private fun newGroup(ctx: Context): ListGroupLayout =
+        ListGroupLayout(ctx).apply {
+            layoutParams = LinearLayout.LayoutParams(MATCH, WRAP).apply {
+                topMargin = ctx.resources.getDimensionPixelSize(R.dimen.block_gap)
+            }
+        }
+
+    /** A row with the LoqIn.ListRow paddings and minimum height. */
+    private fun listRow(ctx: Context): LinearLayout {
+        val res = ctx.resources
+        return box(ctx).apply {
+            minimumHeight = res.getDimensionPixelSize(R.dimen.row_min_height)
+            gravity = Gravity.CENTER_VERTICAL
+            setPaddingRelative(
+                res.getDimensionPixelSize(R.dimen.row_padding_start),
+                res.getDimensionPixelSize(R.dimen.row_padding_vertical),
+                res.getDimensionPixelSize(R.dimen.row_padding_end),
+                res.getDimensionPixelSize(R.dimen.row_padding_vertical),
+            )
+        }
+    }
+
+    private fun rowIcon(ctx: Context, res: Int, tint: Int): ImageView =
+        glyph(ctx, res, tint).apply { importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO }
+
+    private fun rowIconParams(ctx: Context): LinearLayout.LayoutParams {
+        val size = ctx.resources.getDimensionPixelSize(R.dimen.row_icon_size)
+        return LinearLayout.LayoutParams(size, size)
+    }
+
+    private fun rowTexts(ctx: Context, title: String, subtitle: String): LinearLayout =
+        box(ctx, vertical = true).apply {
+            addView(TextView(ctx).apply {
+                TextViewCompat.setTextAppearance(this, R.style.TextAppearance_LoqIn_RowTitle)
+                text = title
+            })
+            addView(
+                TextView(ctx).apply {
+                    TextViewCompat.setTextAppearance(this, R.style.TextAppearance_LoqIn_RowSummary)
+                    text = subtitle
+                },
+                LinearLayout.LayoutParams(MATCH, WRAP).apply { topMargin = dp(ctx, 2) },
+            )
+        }
+
+    private fun rowTextParams(ctx: Context): LinearLayout.LayoutParams =
+        LinearLayout.LayoutParams(0, WRAP, 1f).apply {
+            marginStart = ctx.resources.getDimensionPixelSize(R.dimen.row_icon_gap)
+        }
+
+    private fun rowChevron(ctx: Context, res: Int, tint: Int): ImageView = rowIcon(ctx, res, tint)
+
+    private fun rowChevronParams(ctx: Context): LinearLayout.LayoutParams =
+        rowIconParams(ctx).apply { marginStart = dp(ctx, 8) }
+
+    private fun rowSwitchParams(ctx: Context): LinearLayout.LayoutParams =
+        LinearLayout.LayoutParams(WRAP, WRAP).apply {
+            marginStart = ctx.resources.getDimensionPixelSize(R.dimen.row_trailing_gap)
         }
 
     private fun box(ctx: Context, vertical: Boolean = false): LinearLayout =
@@ -433,12 +474,6 @@ object InAppRuleViews {
             imageTintList = ColorStateList.valueOf(tint)
         }
 
-    private fun divider(ctx: Context, p: Palette): View =
-        View(ctx).apply {
-            setBackgroundColor(p.outlineVariant)
-            layoutParams = LinearLayout.LayoutParams(MATCH, dp(ctx, 1))
-        }
-
     private fun fill(color: Int, radius: Float, stroke: Int = 0, strokeWidth: Int = 0): GradientDrawable =
         GradientDrawable().apply {
             shape = GradientDrawable.RECTANGLE
@@ -446,18 +481,6 @@ object InAppRuleViews {
             setColor(color)
             if (strokeWidth > 0) setStroke(strokeWidth, stroke)
         }
-
-    private fun oval(color: Int): GradientDrawable =
-        GradientDrawable().apply {
-            shape = GradientDrawable.OVAL
-            setColor(color)
-        }
-
-    private fun ripple(ctx: Context): Drawable? {
-        val tv = TypedValue()
-        ctx.theme.resolveAttribute(android.R.attr.selectableItemBackground, tv, true)
-        return ContextCompat.getDrawable(ctx, tv.resourceId)
-    }
 
     private fun switchFor(ctx: Context, checked: Boolean, thumb: Int): MaterialSwitch =
         MaterialSwitch(ctx).apply {

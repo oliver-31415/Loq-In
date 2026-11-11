@@ -18,20 +18,15 @@
 
 package com.oliver.loqin.feature.settings
 
-import android.content.res.ColorStateList
-import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
-import android.view.Gravity
 import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.content.ContextCompat
 import androidx.core.graphics.ColorUtils
 import androidx.core.widget.NestedScrollView
 import com.oliver.loqin.R
@@ -46,6 +41,7 @@ import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.theme.CustomAccentApplier
 import com.oliver.loqin.ui.EdgeToEdgeUtils
 import com.oliver.loqin.ui.SegmentedToggleUi
+import com.oliver.loqin.ui.widgets.EmptyStateView
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.showWarnPill
 import com.oliver.loqin.ui.dialog.LoqInInfoRow
@@ -57,8 +53,6 @@ import com.oliver.loqin.util.RelativeTimeFormatter
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.button.MaterialButtonToggleGroup
-import com.google.android.material.card.MaterialCardView
-import com.google.android.material.color.MaterialColors
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.oliver.loqin.util.ProtectionFeedback
 import com.oliver.loqin.util.ProtectionChangePolicy
@@ -774,56 +768,16 @@ class InAppRulesActivity : AppCompatActivity() {
         )
     )
 
-    private fun emptyState(): View {
-        val card = MaterialCardView(this).apply {
+    private fun emptyState(): View =
+        EmptyStateView(this).apply {
             layoutParams = LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT,
-            ).apply {
-                topMargin = dp(8)
-                marginStart = dp(4)
-                marginEnd = dp(4)
-            }
-            setCardBackgroundColor(ContextCompat.getColor(this@InAppRulesActivity, R.color.foqos_surface))
-            // Flat tonal card: no outline, same 28dp shape as LoqIn.Card.
-            strokeWidth = 0
-            radius = dp(28).toFloat()
-            cardElevation = 0f
+            ).apply { topMargin = resources.getDimensionPixelSize(R.dimen.block_gap) }
+            setIcon(R.drawable.apps_24)
+            setTitle(R.string.in_app_rules_empty_installed)
+            setBody(R.string.in_app_rules_empty_installed_summary)
         }
-        card.addView(LinearLayout(this).apply {
-            orientation = LinearLayout.VERTICAL
-            gravity = Gravity.CENTER_HORIZONTAL
-            setPadding(dp(22), dp(22), dp(22), dp(22))
-            addView(ImageView(this@InAppRulesActivity).apply {
-                setImageResource(R.drawable.apps_24)
-                imageTintList = ColorStateList.valueOf(AccentColor.getAccentColorInt(this@InAppRulesActivity))
-                contentDescription = null
-                layoutParams = LinearLayout.LayoutParams(dp(34), dp(34))
-            })
-            addView(TextView(this@InAppRulesActivity).apply {
-                text = getString(R.string.in_app_rules_empty_installed)
-                setTypeface(typeface, Typeface.BOLD)
-                textSize = 16f
-                gravity = Gravity.CENTER
-                setTextColor(onSurfaceColor())
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                ).apply { topMargin = dp(10) }
-            })
-            addView(TextView(this@InAppRulesActivity).apply {
-                text = getString(R.string.in_app_rules_empty_installed_summary)
-                textSize = 13f
-                gravity = Gravity.CENTER
-                setTextColor(MaterialColors.getColor(this@InAppRulesActivity, android.R.attr.textColorSecondary, 0))
-                layoutParams = LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,
-                    LinearLayout.LayoutParams.WRAP_CONTENT,
-                ).apply { topMargin = dp(4) }
-            })
-        })
-        return card
-    }
 
     private fun currentProfile(): String =
         intent.getStringExtra(EXTRA_PROFILE_NAME)?.trim()?.takeIf { it.isNotBlank() }
@@ -832,9 +786,4 @@ class InAppRulesActivity : AppCompatActivity() {
     private fun readProfileBool(baseKey: String): Boolean {
         return InAppRuleStore.isRuleSelected(this, currentProfile(), baseKey)
     }
-
-    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
-
-    private fun onSurfaceColor(): Int =
-        MaterialColors.getColor(this, com.google.android.material.R.attr.colorOnSurface, 0)
 }

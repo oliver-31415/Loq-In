@@ -4,7 +4,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:minHeight="56dp"
+    android:minHeight="@dimen/row_min_height_one_line"
     android:orientation="horizontal"
     android:gravity="center_vertical"
     android:paddingStart="16dp"
@@ -19,12 +19,10 @@
         android:id="@+id/radio"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="10dp"
+        android:layout_marginEnd="8dp"
         android:clickable="false"
         android:focusable="false"
         android:text=""
-        android:scaleX="1.0"
-        android:scaleY="1.0"
         app:useMaterialThemeColors="false" />
 
     <TextView

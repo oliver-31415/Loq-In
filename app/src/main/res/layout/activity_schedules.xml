@@ -25,10 +25,11 @@
             app:title="@string/schedules_title" />
     </com.google.android.material.appbar.AppBarLayout>
 
-    <!-- Content -->
+    <!-- Content: everything on the 16dp page gutter -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:paddingTop="@dimen/page_top_padding"
         android:orientation="vertical"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
@@ -36,30 +37,42 @@
             android:id="@+id/scheduleSummary"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="4dp"
-            android:layout_marginEnd="16dp"
-            android:layout_marginBottom="8dp"
+            android:layout_marginStart="@dimen/page_margin"
+            android:layout_marginEnd="@dimen/page_margin"
             layout="@layout/view_rule_summary" />
 
         <include
             android:id="@+id/cardScheduleHealth"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="16dp"
-            android:layout_marginTop="12dp"
-            android:layout_marginEnd="16dp"
+            android:layout_marginStart="@dimen/page_margin"
+            android:layout_marginTop="@dimen/block_gap"
+            android:layout_marginEnd="@dimen/page_margin"
             android:visibility="gone"
             layout="@layout/view_status_card" />
 
+        <!-- No schedules yet: replaces the summary card and the list; its button is the page's
+             one action -->
+        <com.oliver.loqin.ui.widgets.EmptyStateView
+            android:id="@+id/emptySchedules"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/page_margin"
+            android:layout_marginTop="@dimen/block_gap"
+            android:layout_marginEnd="@dimen/page_margin"
+            android:visibility="gone"
+            app:emptyIcon="@drawable/schedule_24"
+            app:emptyTitle="@string/schedule_tile_summary_empty"
+            app:emptyActionText="@string/schedule_tile_add_label" />
+
+        <!-- 48dp header row (holds Reorder): 8dp + its centring = the 24dp section gap -->
         <include
             android:id="@+id/headerSchedules"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginStart="20dp"
-            android:layout_marginTop="12dp"
-            android:layout_marginEnd="20dp"
-            android:layout_marginBottom="4dp"
+            android:layout_marginStart="@dimen/page_margin"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="@dimen/page_margin"
             layout="@layout/item_website_section_header" />
 
         <androidx.recyclerview.widget.RecyclerView
@@ -67,8 +80,8 @@
             android:layout_width="match_parent"
             android:layout_height="0dp"
             android:layout_weight="1"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
+            android:paddingStart="@dimen/page_margin"
+            android:paddingEnd="@dimen/page_margin"
             android:paddingBottom="120dp"
             android:clipToPadding="false" />
     </LinearLayout>

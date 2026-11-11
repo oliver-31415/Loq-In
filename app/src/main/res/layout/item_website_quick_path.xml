@@ -2,7 +2,7 @@
 <com.google.android.material.chip.Chip
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/chipQuickPath"
-    style="@style/Widget.Material3.Chip.Suggestion"
+    style="@style/LoqIn.FilterChip"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:layout_margin="3dp" />
+    android:layout_margin="4dp" />

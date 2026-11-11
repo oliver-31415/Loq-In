@@ -26,13 +26,9 @@
     <!-- Content -->
     <androidx.core.widget.NestedScrollView
         android:id="@+id/scrollContent"
+        style="@style/LoqIn.PageContent"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingStart="12dp"
-        android:paddingTop="0dp"
-        android:paddingEnd="12dp"
-        android:paddingBottom="24dp"
-        android:clipToPadding="false"
         android:fillViewport="true"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
@@ -42,16 +38,12 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <!-- Same mode card as App rules, Website rules and Hidden apps -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardInAppRuleSettings"
-                style="@style/LoqIn.Card"
+                style="@style/LoqIn.PageCard"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="4dp"
-                android:layout_marginTop="4dp"
-                android:layout_marginEnd="4dp"
-                android:layout_marginBottom="8dp"
-                app:cardUseCompatPadding="false">
+                android:layout_height="wrap_content">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -68,38 +60,32 @@
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnInAppModeBlock"
+                            style="@style/LoqIn.Segment"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:minHeight="48dp"
-                            android:maxLines="2"
-                            android:text="@string/in_app_rule_mode_block"
-                            android:textSize="13sp"
-                            app:cornerRadius="16dp" />
+                            android:text="@string/in_app_rule_mode_block" />
 
                         <com.google.android.material.button.MaterialButton
                             android:id="@+id/btnInAppModeAllow"
+                            style="@style/LoqIn.Segment"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:minHeight="48dp"
-                            android:maxLines="2"
-                            android:text="@string/in_app_rule_mode_allow"
-                            android:textSize="13sp"
-                            app:cornerRadius="16dp" />
+                            android:text="@string/in_app_rule_mode_allow" />
                     </com.google.android.material.button.MaterialButtonToggleGroup>
 
+                    <!-- 8dp card padding + 12dp = the 20dp text inset of a list row -->
                     <TextView
                         android:id="@+id/tvInAppRuleModeSummary"
+                        style="@style/LoqIn.RowSummary"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
+                        android:layout_marginStart="12dp"
                         android:layout_marginTop="8dp"
-                        android:layout_marginEnd="8dp"
-                        android:layout_marginBottom="4dp"
-                        android:text="@string/in_app_rule_mode_block_summary"
-                        android:textColor="?android:attr/textColorSecondary"
-                        android:textSize="12.5sp" />
+                        android:layout_marginEnd="12dp"
+                        android:layout_marginBottom="8dp"
+                        android:text="@string/in_app_rule_mode_block_summary" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
