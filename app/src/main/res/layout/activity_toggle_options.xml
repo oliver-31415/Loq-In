@@ -26,12 +26,9 @@
     <!-- Content -->
     <ScrollView
         android:id="@+id/scrollToggleOptions"
+        style="@style/LoqIn.PageContent"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingStart="16dp"
-        android:paddingTop="20dp"
-        android:paddingEnd="16dp"
-        android:paddingBottom="24dp"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
         <LinearLayout
@@ -41,125 +38,113 @@
 
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardNfcLockedHint"
-                style="@style/LoqIn.Card"
+                style="@style/LoqIn.PageCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="14dp"
+                android:layout_marginTop="@dimen/section_first_gap"
                 android:visibility="gone">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
                     android:gravity="center_vertical"
-                    android:padding="12dp">
+                    android:minHeight="@dimen/row_min_height"
+                    android:orientation="horizontal"
+                    android:paddingStart="@dimen/row_padding_start"
+                    android:paddingTop="@dimen/row_padding_vertical"
+                    android:paddingEnd="4dp"
+                    android:paddingBottom="@dimen/row_padding_vertical">
 
                     <ImageView
-                        android:layout_width="20dp"
-                        android:layout_height="20dp"
+                        style="@style/LoqIn.RowIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:contentDescription="@null"
-                        android:src="@drawable/info_24"
-                        app:tint="?attr/colorOnSurface" />
-
-                    <Space
-                        android:layout_width="10dp"
-                        android:layout_height="1dp" />
+                        android:src="@drawable/lock_24" />
 
                     <TextView
                         android:id="@+id/tvNfcLockedHint"
-                        android:textAppearance="?attr/textAppearanceBody2"
+                        style="@style/LoqIn.RowSummary"
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
+                        android:layout_marginStart="@dimen/row_icon_gap"
+                        android:layout_marginTop="0dp"
                         android:layout_weight="1"
-                        android:text="@string/toggle_locked_nfc_hint" />
+                        android:text="@string/toggle_locked_nfc_hint"
+                        android:textColor="?attr/colorOnSurface" />
 
                     <androidx.appcompat.widget.AppCompatImageButton
                         android:id="@+id/btnNfcLockedHowTo"
-                        android:layout_width="44dp"
-                        android:layout_height="44dp"
-                        android:padding="10dp"
+                        android:layout_width="@dimen/touch_target"
+                        android:layout_height="@dimen/touch_target"
+                        android:layout_marginStart="4dp"
                         android:background="?attr/selectableItemBackgroundBorderless"
                         android:contentDescription="@string/info"
+                        android:padding="14dp"
                         android:src="@drawable/info_24"
-                        app:tint="?attr/colorOnSurface" />
+                        app:tint="?attr/colorPrimary" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
-            <com.google.android.material.card.MaterialCardView
+            <!-- Intro: aligned with the section headers below it. -->
+            <LinearLayout
                 android:id="@+id/cardGuidedSetupHint"
-                style="@style/LoqIn.Card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                app:cardBackgroundColor="@android:color/transparent"
-                app:cardCornerRadius="0dp"
-                app:cardElevation="0dp"
-                app:cardUseCompatPadding="false"
-                app:strokeWidth="0dp">
+                android:layout_marginTop="@dimen/section_first_gap"
+                android:orientation="vertical"
+                android:paddingStart="@dimen/page_margin"
+                android:paddingEnd="@dimen/page_margin">
 
-                <LinearLayout
+                <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:paddingStart="4dp"
-                    android:paddingTop="4dp"
-                    android:paddingEnd="4dp"
-                    android:paddingBottom="6dp">
+                    android:text="@string/toggle_guided_card_title"
+                    android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
 
-                    <TextView
-                        android:textAppearance="?attr/textAppearanceSubtitle1"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:text="@string/toggle_guided_card_title" />
+                <TextView
+                    style="@style/LoqIn.RowSummary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/toggle_guided_card_body" />
 
-                    <TextView
-                        android:textAppearance="?attr/textAppearanceBody2"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="6dp"
-                        android:alpha="0.84"
-                        android:text="@string/toggle_guided_card_body" />
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/btnOpenFaqTips"
-                        style="@style/LoqIn.TextButton"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:text="@string/toggle_guided_card_action" />
-                </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+                <!-- Pulled back by the button's own padding so its label lines up with the text. -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btnOpenFaqTips"
+                    style="@style/LoqIn.TextButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="-12dp"
+                    android:layout_marginTop="4dp"
+                    android:text="@string/toggle_guided_card_action" />
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/tvManageBlockingModesTitle"
-                android:textAppearance="?attr/textAppearanceSubtitle1"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:layout_marginBottom="8dp"
+                android:layout_marginTop="@dimen/section_gap"
+                android:paddingStart="@dimen/page_margin"
+                android:paddingEnd="@dimen/page_margin"
                 android:text="@string/toggle_group_manage_blocking_modes"
-                android:textStyle="bold" />
+                android:textAppearance="?attr/textAppearanceTitleMedium" />
 
             <!-- Control modes: choose the primary automation/control mode -->
             <TextView
                 android:id="@+id/tvControlModeSection"
-                android:textAppearance="?attr/textAppearanceSubtitle1"
+                style="@style/LoqIn.SectionHeader.First"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="4dp"
-                android:gravity="center_vertical"
-                android:text="@string/toggle_section_control_mode"
-                android:drawablePadding="8dp"
-                app:drawableStartCompat="@drawable/sync_24"
-                app:drawableTint="?attr/colorOnSurface" />
+                android:text="@string/toggle_section_control_mode" />
 
             <TextView
                 android:id="@+id/tvControlModeSectionSummary"
-                android:textAppearance="?attr/textAppearanceBody2"
+                style="@style/LoqIn.RowSummary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:alpha="0.82"
+                android:layout_marginBottom="@dimen/section_header_gap"
+                android:paddingStart="@dimen/page_margin"
+                android:paddingEnd="@dimen/page_margin"
                 android:text="@string/toggle_section_control_mode_summary" />
 
             <com.oliver.loqin.ui.widgets.ListGroupLayout
@@ -170,903 +155,667 @@
 
                 <LinearLayout
                     android:id="@+id/rowModeSchedule"
+                    style="@style/LoqIn.ListRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:minHeight="72dp"
-                    android:paddingStart="20dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
                     android:clickable="true"
                     android:focusable="true">
 
                     <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
+                        style="@style/LoqIn.RowIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:contentDescription="@null"
-                        android:src="@drawable/alarm_24"
-                        app:tint="?attr/colorPrimary" />
+                        android:src="@drawable/alarm_24" />
 
-                    <Space
-                        android:layout_width="14dp"
-                        android:layout_height="1dp" />
 
                     <LinearLayout
+                        style="@style/LoqIn.RowText"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:layout_height="wrap_content">
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowTitle"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="@string/pref_mode_schedule_title" />
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowSummary"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
                             android:text="@string/pref_mode_schedule_summary" />
                     </LinearLayout>
 
-                    <com.google.android.material.switchmaterial.SwitchMaterial
+                    <com.google.android.material.materialswitch.MaterialSwitch
                         android:id="@+id/switchModeSchedule"
+                        style="@style/LoqIn.RowSwitch"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textOff=""
-                        android:textOn=""
-                        app:showText="false" />
+                        android:layout_height="wrap_content" />
                 </LinearLayout>
 
 
                 <LinearLayout
                     android:id="@+id/rowModeNfc"
+                    style="@style/LoqIn.ListRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:minHeight="72dp"
-                    android:paddingStart="20dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
                     android:clickable="true"
                     android:focusable="true">
 
                     <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
+                        style="@style/LoqIn.RowIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:contentDescription="@null"
-                        android:src="@drawable/nfc_24"
-                        app:tint="?attr/colorOnSurface" />
+                        android:src="@drawable/nfc_24" />
 
-                    <Space
-                        android:layout_width="14dp"
-                        android:layout_height="1dp" />
 
                     <LinearLayout
+                        style="@style/LoqIn.RowText"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:layout_height="wrap_content">
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowTitle"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="@string/pref_mode_nfc_title" />
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowSummary"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
                             android:text="@string/pref_mode_nfc_summary" />
                     </LinearLayout>
 
-                    <com.google.android.material.switchmaterial.SwitchMaterial
+                    <com.google.android.material.materialswitch.MaterialSwitch
                         android:id="@+id/switchModeNfc"
+                        style="@style/LoqIn.RowSwitch"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textOff=""
-                        android:textOn=""
-                        app:showText="false" />
+                        android:layout_height="wrap_content" />
                 </LinearLayout>
 
 
                 <LinearLayout
                     android:id="@+id/rowModeQr"
+                    style="@style/LoqIn.ListRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:minHeight="72dp"
-                    android:paddingStart="20dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
                     android:clickable="true"
                     android:focusable="true">
 
                     <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
+                        style="@style/LoqIn.RowIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:contentDescription="@null"
-                        android:src="@drawable/qr_code_24"
-                        app:tint="?attr/colorOnSurface" />
+                        android:src="@drawable/qr_code_24" />
 
-                    <Space
-                        android:layout_width="14dp"
-                        android:layout_height="1dp" />
 
                     <LinearLayout
+                        style="@style/LoqIn.RowText"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:layout_height="wrap_content">
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowTitle"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="@string/pref_mode_qr_title" />
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowSummary"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
                             android:text="@string/pref_mode_qr_summary" />
                     </LinearLayout>
 
-                    <com.google.android.material.switchmaterial.SwitchMaterial
+                    <com.google.android.material.materialswitch.MaterialSwitch
                         android:id="@+id/switchModeQr"
+                        style="@style/LoqIn.RowSwitch"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textOff=""
-                        android:textOn=""
-                        app:showText="false" />
+                        android:layout_height="wrap_content" />
                 </LinearLayout>
 
 
                 <LinearLayout
                     android:id="@+id/rowModeBarcode"
+                    style="@style/LoqIn.ListRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:minHeight="72dp"
-                    android:paddingStart="20dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
                     android:clickable="true"
                     android:focusable="true">
 
                     <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
+                        style="@style/LoqIn.RowIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:contentDescription="@null"
-                        android:src="@drawable/barcode_24"
-                        app:tint="?attr/colorOnSurface" />
+                        android:src="@drawable/barcode_24" />
 
-                    <Space
-                        android:layout_width="14dp"
-                        android:layout_height="1dp" />
 
                     <LinearLayout
+                        style="@style/LoqIn.RowText"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:layout_height="wrap_content">
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowTitle"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="@string/pref_mode_barcode_title" />
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowSummary"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
                             android:text="@string/pref_mode_barcode_summary" />
                     </LinearLayout>
 
-                    <com.google.android.material.switchmaterial.SwitchMaterial
+                    <com.google.android.material.materialswitch.MaterialSwitch
                         android:id="@+id/switchModeBarcode"
+                        style="@style/LoqIn.RowSwitch"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textOff=""
-                        android:textOn=""
-                        app:showText="false" />
+                        android:layout_height="wrap_content" />
                 </LinearLayout>
 
 
                 <LinearLayout
                     android:id="@+id/rowModeMixed"
+                    style="@style/LoqIn.ListRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:minHeight="72dp"
-                    android:paddingStart="20dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
                     android:clickable="true"
                     android:focusable="true">
 
                     <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
+                        style="@style/LoqIn.RowIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:contentDescription="@null"
-                        android:src="@drawable/sync_24"
-                        app:tint="?attr/colorOnSurface" />
+                        android:src="@drawable/sync_24" />
 
-                    <Space
-                        android:layout_width="14dp"
-                        android:layout_height="1dp" />
 
                     <LinearLayout
+                        style="@style/LoqIn.RowText"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:layout_height="wrap_content">
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowTitle"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="@string/pref_mode_mixed_title" />
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowSummary"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
                             android:text="@string/pref_mode_mixed_summary" />
                     </LinearLayout>
 
-                    <com.google.android.material.switchmaterial.SwitchMaterial
+                    <com.google.android.material.materialswitch.MaterialSwitch
                         android:id="@+id/switchModeMixed"
+                        style="@style/LoqIn.RowSwitch"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textOff=""
-                        android:textOn=""
-                        app:showText="false" />
+                        android:layout_height="wrap_content" />
                 </LinearLayout>
             </com.oliver.loqin.ui.widgets.ListGroupLayout>
 
             <!-- Mixed mode channels: allowed control methods and active-state exceptions -->
             <TextView
                 android:id="@+id/tvMixedChannelsSection"
-                android:textAppearance="?attr/textAppearanceSubtitle1"
+                style="@style/LoqIn.SectionHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
-                android:layout_marginBottom="10dp"
-                android:gravity="center_vertical"
-                android:text="@string/toggle_section_mixed_channels"
-                android:drawablePadding="8dp"
-                app:drawableStartCompat="@drawable/toggle_on_24"
-                app:drawableTint="?attr/colorOnSurface" />
+                android:text="@string/toggle_section_mixed_channels" />
 
             <TextView
                 android:id="@+id/tvMixedChannelsSectionSummary"
-                android:textAppearance="?attr/textAppearanceBody2"
+                style="@style/LoqIn.RowSummary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:alpha="0.82"
+                android:layout_marginBottom="@dimen/section_header_gap"
+                android:paddingStart="@dimen/page_margin"
+                android:paddingEnd="@dimen/page_margin"
                 android:text="@string/toggle_section_mixed_channels_summary" />
 
-            <com.google.android.material.card.MaterialCardView
+            <com.oliver.loqin.ui.widgets.ListGroupLayout
                 android:id="@+id/cardMixedChannels"
-                style="@style/LoqIn.Card"
+                style="@style/LoqIn.ListGroup"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:visibility="gone"
-                app:cardUseCompatPadding="true">
+                android:visibility="gone">
+
 
                 <LinearLayout
+                    android:id="@+id/rowMixedAllowSchedule"
+                    style="@style/LoqIn.ListRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <ImageView
+                        style="@style/LoqIn.RowIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/alarm_24" />
+
+
+                    <LinearLayout
+                        style="@style/LoqIn.RowText"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            style="@style/LoqIn.RowTitle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/pref_mixed_allow_schedule_title" />
+
+                        <TextView
+                            style="@style/LoqIn.RowSummary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/pref_mixed_allow_schedule_summary" />
+                    </LinearLayout>
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchMixedAllowSchedule"
+                        style="@style/LoqIn.RowSwitch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+
+                <LinearLayout
+                    android:id="@+id/rowMixedAllowNfc"
+                    style="@style/LoqIn.ListRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <ImageView
+                        style="@style/LoqIn.RowIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/nfc_24" />
+
+
+                    <LinearLayout
+                        style="@style/LoqIn.RowText"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            style="@style/LoqIn.RowTitle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/pref_mixed_allow_nfc_title" />
+
+                        <TextView
+                            style="@style/LoqIn.RowSummary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/pref_mixed_allow_nfc_summary" />
+                    </LinearLayout>
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchMixedAllowNfc"
+                        style="@style/LoqIn.RowSwitch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+
+                <LinearLayout
+                    android:id="@+id/rowMixedAllowQr"
+                    style="@style/LoqIn.ListRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <ImageView
+                        style="@style/LoqIn.RowIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/qr_code_24" />
+
+
+                    <LinearLayout
+                        style="@style/LoqIn.RowText"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            style="@style/LoqIn.RowTitle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/pref_mixed_allow_qr_title" />
+
+                        <TextView
+                            style="@style/LoqIn.RowSummary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/pref_mixed_allow_qr_summary" />
+                    </LinearLayout>
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchMixedAllowQr"
+                        style="@style/LoqIn.RowSwitch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+
+                <LinearLayout
+                    android:id="@+id/rowMixedAllowBarcode"
+                    style="@style/LoqIn.ListRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <ImageView
+                        style="@style/LoqIn.RowIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/apps_24" />
+
+
+                    <LinearLayout
+                        style="@style/LoqIn.RowText"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            style="@style/LoqIn.RowTitle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/pref_mixed_allow_barcode_title" />
+
+                        <TextView
+                            style="@style/LoqIn.RowSummary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/pref_mixed_allow_barcode_summary" />
+                    </LinearLayout>
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchMixedAllowBarcode"
+                        style="@style/LoqIn.RowSwitch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+
+                <LinearLayout
+                    android:id="@+id/rowMixedAllowButton"
+                    style="@style/LoqIn.ListRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <ImageView
+                        style="@style/LoqIn.RowIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/toggle_off_24" />
+
+
+                    <LinearLayout
+                        style="@style/LoqIn.RowText"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            style="@style/LoqIn.RowTitle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/pref_mixed_allow_button_title" />
+
+                        <TextView
+                            style="@style/LoqIn.RowSummary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/pref_mixed_allow_button_summary" />
+                    </LinearLayout>
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchMixedAllowButton"
+                        style="@style/LoqIn.RowSwitch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+
+                <LinearLayout
+                    android:id="@+id/rowMixedAllowAppPicking"
+                    style="@style/LoqIn.ListRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <ImageView
+                        style="@style/LoqIn.RowIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/apps_24" />
+
+
+                    <LinearLayout
+                        style="@style/LoqIn.RowText"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            style="@style/LoqIn.RowTitle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/pref_mixed_allow_app_picking_title" />
+
+                        <TextView
+                            style="@style/LoqIn.RowSummary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/pref_mixed_allow_app_picking_summary" />
+                    </LinearLayout>
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchMixedAllowAppPicking"
+                        style="@style/LoqIn.RowSwitch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+
+                <LinearLayout
+                    android:id="@+id/rowMixedAllowProfileSwitching"
+                    style="@style/LoqIn.ListRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <ImageView
+                        style="@style/LoqIn.RowIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/switch_account_24" />
+
+
+                    <LinearLayout
+                        style="@style/LoqIn.RowText"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            style="@style/LoqIn.RowTitle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/pref_mixed_allow_profile_switching_title" />
+
+                        <TextView
+                            style="@style/LoqIn.RowSummary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/pref_mixed_allow_profile_switching_summary" />
+                    </LinearLayout>
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchMixedAllowProfileSwitching"
+                        style="@style/LoqIn.RowSwitch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+
+                <LinearLayout
+                    android:id="@+id/rowMixedAllowScheduleEditing"
+                    style="@style/LoqIn.ListRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:padding="6dp">
+                    android:visibility="gone">
+
+                    <ImageView
+                        style="@style/LoqIn.RowIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/schedule_24" />
+
 
                     <LinearLayout
-                        android:id="@+id/rowMixedAllowSchedule"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:padding="14dp"
-                        android:background="?attr/selectableItemBackground">
+                        style="@style/LoqIn.RowText"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content">
 
-                        <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:contentDescription="@null"
-                            android:src="@drawable/alarm_24"
-                            app:tint="?attr/colorOnSurface" />
-
-                        <Space
-                            android:layout_width="14dp"
-                            android:layout_height="1dp" />
-
-                        <LinearLayout
-                            android:layout_width="0dp"
+                        <TextView
+                            style="@style/LoqIn.RowTitle"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
+                            android:text="@string/pref_mixed_allow_schedule_editing_title" />
 
-                            <TextView
-                                android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/pref_mixed_allow_schedule_title" />
-
-                            <TextView
-                                android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:text="@string/pref_mixed_allow_schedule_summary" />
-                        </LinearLayout>
-
-                        <com.google.android.material.switchmaterial.SwitchMaterial
-                            android:id="@+id/switchMixedAllowSchedule"
-                            android:layout_width="wrap_content"
+                        <TextView
+                            style="@style/LoqIn.RowSummary"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:textOff=""
-                            android:textOn=""
-                            app:showText="false" />
+                            android:text="@string/pref_mixed_allow_schedule_editing_summary" />
                     </LinearLayout>
 
-                    <View
-                        android:id="@+id/dividerAfterMixedAllowSchedule"
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="?attr/colorOnSurface"
-                        android:alpha="0.12" />
-
-                    <LinearLayout
-                        android:id="@+id/rowMixedAllowNfc"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:padding="14dp"
-                        android:background="?attr/selectableItemBackground">
-
-                        <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:contentDescription="@null"
-                            android:src="@drawable/nfc_24"
-                            app:tint="?attr/colorOnSurface" />
-
-                        <Space
-                            android:layout_width="14dp"
-                            android:layout_height="1dp" />
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/pref_mixed_allow_nfc_title" />
-
-                            <TextView
-                                android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:text="@string/pref_mixed_allow_nfc_summary" />
-                        </LinearLayout>
-
-                        <com.google.android.material.switchmaterial.SwitchMaterial
-                            android:id="@+id/switchMixedAllowNfc"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textOff=""
-                            android:textOn=""
-                            app:showText="false" />
-                    </LinearLayout>
-
-                    <View
-                        android:id="@+id/dividerAfterMixedAllowNfc"
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="?attr/colorOnSurface"
-                        android:alpha="0.12" />
-
-                    <LinearLayout
-                        android:id="@+id/rowMixedAllowQr"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:padding="14dp"
-                        android:background="?attr/selectableItemBackground">
-
-                        <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:contentDescription="@null"
-                            android:src="@drawable/qr_code_24"
-                            app:tint="?attr/colorOnSurface" />
-
-                        <Space
-                            android:layout_width="14dp"
-                            android:layout_height="1dp" />
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/pref_mixed_allow_qr_title" />
-
-                            <TextView
-                                android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:text="@string/pref_mixed_allow_qr_summary" />
-                        </LinearLayout>
-
-                        <com.google.android.material.switchmaterial.SwitchMaterial
-                            android:id="@+id/switchMixedAllowQr"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textOff=""
-                            android:textOn=""
-                            app:showText="false" />
-                    </LinearLayout>
-
-                    <View
-                        android:id="@+id/dividerAfterMixedAllowQr"
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="?attr/colorOnSurface"
-                        android:alpha="0.12" />
-
-                    <LinearLayout
-                        android:id="@+id/rowMixedAllowBarcode"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:padding="14dp"
-                        android:background="?attr/selectableItemBackground">
-
-                        <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:contentDescription="@null"
-                            android:src="@drawable/apps_24"
-                            app:tint="?attr/colorOnSurface" />
-
-                        <Space
-                            android:layout_width="14dp"
-                            android:layout_height="1dp" />
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/pref_mixed_allow_barcode_title" />
-
-                            <TextView
-                                android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:text="@string/pref_mixed_allow_barcode_summary" />
-                        </LinearLayout>
-
-                        <com.google.android.material.switchmaterial.SwitchMaterial
-                            android:id="@+id/switchMixedAllowBarcode"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textOff=""
-                            android:textOn=""
-                            app:showText="false" />
-                    </LinearLayout>
-
-                    <View
-                        android:id="@+id/dividerAfterMixedAllowBarcode"
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="?attr/colorOnSurface"
-                        android:alpha="0.12" />
-
-                    <LinearLayout
-                        android:id="@+id/rowMixedAllowButton"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:padding="14dp"
-                        android:background="?attr/selectableItemBackground">
-
-                        <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:contentDescription="@null"
-                            android:src="@drawable/toggle_off_24"
-                            app:tint="?attr/colorOnSurface" />
-
-                        <Space
-                            android:layout_width="14dp"
-                            android:layout_height="1dp" />
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/pref_mixed_allow_button_title" />
-
-                            <TextView
-                                android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:text="@string/pref_mixed_allow_button_summary" />
-                        </LinearLayout>
-
-                        <com.google.android.material.switchmaterial.SwitchMaterial
-                            android:id="@+id/switchMixedAllowButton"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textOff=""
-                            android:textOn=""
-                            app:showText="false" />
-                    </LinearLayout>
-
-                    <View
-                        android:id="@+id/dividerAfterMixedAllowButton"
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="?attr/colorOnSurface"
-                        android:alpha="0.12" />
-
-                    <LinearLayout
-                        android:id="@+id/rowMixedAllowAppPicking"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:padding="14dp"
-                        android:background="?attr/selectableItemBackground">
-
-                        <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:contentDescription="@null"
-                            android:src="@drawable/apps_24"
-                            app:tint="?attr/colorOnSurface" />
-
-                        <Space
-                            android:layout_width="14dp"
-                            android:layout_height="1dp" />
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/pref_mixed_allow_app_picking_title" />
-
-                            <TextView
-                                android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:text="@string/pref_mixed_allow_app_picking_summary" />
-                        </LinearLayout>
-
-                        <com.google.android.material.switchmaterial.SwitchMaterial
-                            android:id="@+id/switchMixedAllowAppPicking"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textOff=""
-                            android:textOn=""
-                            app:showText="false" />
-                    </LinearLayout>
-
-                    <View
-                        android:id="@+id/dividerAfterMixedAllowAppPicking"
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="?attr/colorOnSurface"
-                        android:alpha="0.12" />
-
-                    <LinearLayout
-                        android:id="@+id/rowMixedAllowProfileSwitching"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:padding="14dp"
-                        android:background="?attr/selectableItemBackground">
-
-                        <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:contentDescription="@null"
-                            android:src="@drawable/switch_account_24"
-                            app:tint="?attr/colorOnSurface" />
-
-                        <Space
-                            android:layout_width="14dp"
-                            android:layout_height="1dp" />
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/pref_mixed_allow_profile_switching_title" />
-
-                            <TextView
-                                android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:text="@string/pref_mixed_allow_profile_switching_summary" />
-                        </LinearLayout>
-
-                        <com.google.android.material.switchmaterial.SwitchMaterial
-                            android:id="@+id/switchMixedAllowProfileSwitching"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textOff=""
-                            android:textOn=""
-                            app:showText="false" />
-                    </LinearLayout>
-
-                    <View
-                        android:id="@+id/dividerAfterMixedAllowProfileSwitching"
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="?attr/colorOnSurface"
-                        android:alpha="0.12" />
-
-                    <LinearLayout
-                        android:id="@+id/rowMixedAllowScheduleEditing"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:padding="14dp"
-                        android:background="?attr/selectableItemBackground"
-                        android:visibility="gone">
-
-                        <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:contentDescription="@null"
-                            android:src="@drawable/schedule_24"
-                            app:tint="?attr/colorOnSurface" />
-
-                        <Space
-                            android:layout_width="14dp"
-                            android:layout_height="1dp" />
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/pref_mixed_allow_schedule_editing_title" />
-
-                            <TextView
-                                android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:text="@string/pref_mixed_allow_schedule_editing_summary" />
-                        </LinearLayout>
-
-                        <com.google.android.material.switchmaterial.SwitchMaterial
-                            android:id="@+id/switchMixedAllowScheduleEditing"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textOff=""
-                            android:textOn=""
-                            app:showText="false" />
-                    </LinearLayout>
-
-                    <View
-                        android:id="@+id/dividerAfterMixedAllowScheduleEditing"
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="?attr/colorOnSurface"
-                        android:alpha="0.12" />
-
-                    <LinearLayout
-                        android:id="@+id/rowAllowButtonEnable"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:padding="14dp"
-                        android:background="?attr/selectableItemBackground">
-
-                        <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:contentDescription="@null"
-                            android:src="@drawable/play_arrow_24"
-                            app:tint="?attr/colorOnSurface" />
-
-                        <Space
-                            android:layout_width="14dp"
-                            android:layout_height="1dp" />
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/pref_allow_button_enable_title" />
-
-                            <TextView
-                                android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:text="@string/pref_allow_button_enable_summary" />
-                        </LinearLayout>
-
-                        <com.google.android.material.switchmaterial.SwitchMaterial
-                            android:id="@+id/switchAllowButtonEnable"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textOff=""
-                            android:textOn=""
-                            app:showText="false" />
-                    </LinearLayout>
-
-                    <View
-                        android:id="@+id/dividerAfterAllowButtonEnable"
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="?attr/colorOnSurface"
-                        android:alpha="0.12" />
-
-                    <LinearLayout
-                        android:id="@+id/rowMixedAllowNfcTagWriting"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="horizontal"
-                        android:gravity="center_vertical"
-                        android:padding="14dp"
-                        android:background="?attr/selectableItemBackground">
-
-                        <ImageView
-                            android:layout_width="22dp"
-                            android:layout_height="22dp"
-                            android:contentDescription="@null"
-                            android:src="@drawable/nfc_24"
-                            app:tint="?attr/colorOnSurface" />
-
-                        <Space
-                            android:layout_width="14dp"
-                            android:layout_height="1dp" />
-
-                        <LinearLayout
-                            android:layout_width="0dp"
-                            android:layout_height="wrap_content"
-                            android:layout_weight="1"
-                            android:orientation="vertical">
-
-                            <TextView
-                                android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/pref_mixed_allow_nfc_tag_writing_title" />
-
-                            <TextView
-                                android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="2dp"
-                                android:text="@string/pref_mixed_allow_nfc_tag_writing_summary" />
-                        </LinearLayout>
-
-                        <com.google.android.material.switchmaterial.SwitchMaterial
-                            android:id="@+id/switchMixedAllowNfcTagWriting"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:textOff=""
-                            android:textOn=""
-                            app:showText="false" />
-                    </LinearLayout>
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchMixedAllowScheduleEditing"
+                        style="@style/LoqIn.RowSwitch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
                 </LinearLayout>
-            </com.google.android.material.card.MaterialCardView>
+
+
+                <LinearLayout
+                    android:id="@+id/rowAllowButtonEnable"
+                    style="@style/LoqIn.ListRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <ImageView
+                        style="@style/LoqIn.RowIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/play_arrow_24" />
+
+
+                    <LinearLayout
+                        style="@style/LoqIn.RowText"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            style="@style/LoqIn.RowTitle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/pref_allow_button_enable_title" />
+
+                        <TextView
+                            style="@style/LoqIn.RowSummary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/pref_allow_button_enable_summary" />
+                    </LinearLayout>
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchAllowButtonEnable"
+                        style="@style/LoqIn.RowSwitch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+
+
+                <LinearLayout
+                    android:id="@+id/rowMixedAllowNfcTagWriting"
+                    style="@style/LoqIn.ListRow"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content">
+
+                    <ImageView
+                        style="@style/LoqIn.RowIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
+                        android:contentDescription="@null"
+                        android:src="@drawable/nfc_24" />
+
+
+                    <LinearLayout
+                        style="@style/LoqIn.RowText"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content">
+
+                        <TextView
+                            style="@style/LoqIn.RowTitle"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/pref_mixed_allow_nfc_tag_writing_title" />
+
+                        <TextView
+                            style="@style/LoqIn.RowSummary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:text="@string/pref_mixed_allow_nfc_tag_writing_summary" />
+                    </LinearLayout>
+
+                    <com.google.android.material.materialswitch.MaterialSwitch
+                        android:id="@+id/switchMixedAllowNfcTagWriting"
+                        style="@style/LoqIn.RowSwitch"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" />
+                </LinearLayout>
+            </com.oliver.loqin.ui.widgets.ListGroupLayout>
 
             <TextView
                 android:id="@+id/tvManageOtherBlockingFeaturesTitle"
-                android:textAppearance="?attr/textAppearanceSubtitle1"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="22dp"
-                android:layout_marginBottom="8dp"
+                android:layout_marginTop="@dimen/section_gap"
+                android:paddingStart="@dimen/page_margin"
+                android:paddingEnd="@dimen/page_margin"
                 android:text="@string/toggle_group_manage_other_blocking_features"
-                android:textStyle="bold" />
+                android:textAppearance="?attr/textAppearanceTitleMedium" />
 
             <!-- Feature access while blocking -->
             <TextView
                 android:id="@+id/tvAdditionalFeaturesSection"
-                android:textAppearance="?attr/textAppearanceSubtitle1"
+                style="@style/LoqIn.SectionHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="22dp"
-                android:layout_marginBottom="10dp"
-                android:gravity="center_vertical"
-                android:text="@string/toggle_section_additional_features"
-                android:drawablePadding="8dp"
-                app:drawableStartCompat="@drawable/tune_24"
-                app:drawableTint="?attr/colorOnSurface" />
+                android:text="@string/toggle_section_additional_features" />
 
             <TextView
                 android:id="@+id/tvAdditionalFeaturesSectionSummary"
-                android:textAppearance="?attr/textAppearanceBody2"
+                style="@style/LoqIn.RowSummary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:alpha="0.82"
+                android:layout_marginBottom="@dimen/section_header_gap"
+                android:paddingStart="@dimen/page_margin"
+                android:paddingEnd="@dimen/page_margin"
                 android:text="@string/toggle_section_additional_features_summary" />
 
             <com.oliver.loqin.ui.widgets.ListGroupLayout
@@ -1078,190 +827,145 @@
                 <!-- Require NFC to disable LoqIn -->
                 <LinearLayout
                     android:id="@+id/rowRequireNfcUnlock"
+                    style="@style/LoqIn.ListRow"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:minHeight="72dp"
-                    android:paddingStart="20dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp">
+                    android:layout_height="wrap_content">
 
                     <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
+                        style="@style/LoqIn.RowIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:contentDescription="@null"
-                        android:src="@drawable/nfc_24"
-                        app:tint="?attr/colorOnSurface" />
+                        android:src="@drawable/nfc_24" />
 
-                    <Space
-                        android:layout_width="14dp"
-                        android:layout_height="1dp" />
 
                     <LinearLayout
+                        style="@style/LoqIn.RowText"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:layout_height="wrap_content">
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowTitle"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="@string/pref_require_nfc_unlock_title" />
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowSummary"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
                             android:text="@string/pref_require_nfc_unlock_summary" />
                     </LinearLayout>
 
-                    <com.google.android.material.switchmaterial.SwitchMaterial
+                    <com.google.android.material.materialswitch.MaterialSwitch
                         android:id="@+id/switchRequireNfcUnlock"
+                        style="@style/LoqIn.RowSwitch"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textOff=""
-                        android:textOn=""
-                        app:showText="false" />
+                        android:layout_height="wrap_content" />
                 </LinearLayout>
 
 
                 <!-- Paired NFC tag support -->
                 <LinearLayout
                     android:id="@+id/rowEnablePairedUids"
+                    style="@style/LoqIn.ListRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:minHeight="72dp"
-                    android:paddingStart="20dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
                     android:clickable="true"
                     android:focusable="true">
 
                     <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
+                        style="@style/LoqIn.RowIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:contentDescription="@null"
-                        android:src="@drawable/nfc_24"
-                        app:tint="?attr/colorOnSurface" />
+                        android:src="@drawable/nfc_24" />
 
-                    <Space
-                        android:layout_width="14dp"
-                        android:layout_height="1dp" />
 
                     <LinearLayout
+                        style="@style/LoqIn.RowText"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:layout_height="wrap_content">
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowTitle"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="@string/pref_enable_paired_uids_title" />
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowSummary"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
                             android:text="@string/pref_enable_paired_uids_summary" />
                     </LinearLayout>
 
-                    <com.google.android.material.switchmaterial.SwitchMaterial
+                    <com.google.android.material.materialswitch.MaterialSwitch
                         android:id="@+id/switchEnablePairedUids"
+                        style="@style/LoqIn.RowSwitch"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:textOff=""
-                        android:textOn=""
-                        app:showText="false" />
+                        android:layout_height="wrap_content" />
                 </LinearLayout>
 
 
                 <LinearLayout
                     android:id="@+id/rowAutoPairOnWrite"
+                    style="@style/LoqIn.ListRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:minHeight="72dp"
-                    android:paddingStart="20dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
                     android:clickable="true"
                     android:focusable="true">
 
                     <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
+                        style="@style/LoqIn.RowIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:contentDescription="@null"
-                        android:src="@drawable/nfc_24"
-                        app:tint="?attr/colorOnSurface" />
+                        android:src="@drawable/nfc_24" />
 
-                    <Space
-                        android:layout_width="14dp"
-                        android:layout_height="1dp" />
 
                     <LinearLayout
+                        style="@style/LoqIn.RowText"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:layout_height="wrap_content">
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowTitle"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="@string/pref_auto_pair_on_write_title" />
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowSummary"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
                             android:text="@string/pref_auto_pair_on_write_summary" />
                     </LinearLayout>
 
-                    <com.google.android.material.switchmaterial.SwitchMaterial
+                    <com.google.android.material.materialswitch.MaterialSwitch
                         android:id="@+id/switchAutoPairOnWrite"
+                        style="@style/LoqIn.RowSwitch"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textOff=""
-                        android:textOn=""
-                        app:showText="false" />
+                        android:layout_height="wrap_content" />
                 </LinearLayout>
             </com.oliver.loqin.ui.widgets.ListGroupLayout>
 
             <!-- System status: ongoing notification -->
             <TextView
                 android:id="@+id/tvDisplayStatusSection"
-                android:textAppearance="?attr/textAppearanceSubtitle1"
+                style="@style/LoqIn.SectionHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
-                android:layout_marginBottom="4dp"
-                android:gravity="center_vertical"
-                android:text="@string/toggle_subsection_status"
-                android:drawablePadding="8dp"
-                app:drawableStartCompat="@drawable/notifications_24"
-                app:drawableTint="?attr/colorOnSurface" />
+                android:text="@string/toggle_subsection_status" />
 
             <TextView
                 android:id="@+id/tvDisplayStatusSectionSummary"
-                android:textAppearance="?attr/textAppearanceBody2"
+                style="@style/LoqIn.RowSummary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:alpha="0.82"
+                android:layout_marginBottom="@dimen/section_header_gap"
+                android:paddingStart="@dimen/page_margin"
+                android:paddingEnd="@dimen/page_margin"
                 android:text="@string/toggle_subsection_status_summary" />
 
             <com.oliver.loqin.ui.widgets.ListGroupLayout
@@ -1272,135 +976,105 @@
 
                 <LinearLayout
                     android:id="@+id/rowPersistentStatusNotification"
+                    style="@style/LoqIn.ListRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:minHeight="72dp"
-                    android:paddingStart="20dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
                     android:clickable="true"
                     android:focusable="true">
 
                     <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
+                        style="@style/LoqIn.RowIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:contentDescription="@null"
-                        android:src="@drawable/notifications_24"
-                        app:tint="?attr/colorOnSurface" />
+                        android:src="@drawable/notifications_24" />
 
-                    <Space
-                        android:layout_width="14dp"
-                        android:layout_height="1dp" />
 
                     <LinearLayout
+                        style="@style/LoqIn.RowText"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:layout_height="wrap_content">
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowTitle"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="@string/pref_persistent_status_notification_title" />
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowSummary"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
                             android:text="@string/pref_persistent_status_notification_summary" />
                     </LinearLayout>
 
-                    <com.google.android.material.switchmaterial.SwitchMaterial
+                    <com.google.android.material.materialswitch.MaterialSwitch
                         android:id="@+id/switchPersistentStatusNotification"
+                        style="@style/LoqIn.RowSwitch"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textOff=""
-                        android:textOn=""
-                        app:showText="false" />
+                        android:layout_height="wrap_content" />
                 </LinearLayout>
 
 
                 <LinearLayout
                     android:id="@+id/rowPersistentStatusNotificationMode"
+                    style="@style/LoqIn.ListRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:minHeight="72dp"
-                    android:paddingStart="20dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
                     android:clickable="true"
                     android:focusable="true">
 
                     <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
+                        style="@style/LoqIn.RowIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:contentDescription="@null"
-                        android:src="@drawable/tune_24"
-                        app:tint="?attr/colorOnSurface" />
+                        android:src="@drawable/tune_24" />
 
-                    <Space
-                        android:layout_width="14dp"
-                        android:layout_height="1dp" />
 
                     <LinearLayout
+                        style="@style/LoqIn.RowText"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:layout_height="wrap_content">
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowTitle"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="@string/pref_persistent_status_notification_mode_title" />
 
                         <TextView
                             android:id="@+id/tvPersistentStatusNotificationModeValue"
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowSummary"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
                             android:text="@string/status_notification_mode_full" />
                     </LinearLayout>
 
                     <ImageView
+                        style="@style/LoqIn.RowChevron"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
-                        android:contentDescription="@string/open"
-                        android:src="@drawable/keyboard_arrow_right_24"
-                        app:tint="?attr/colorOnSurfaceVariant" />
+                        android:contentDescription="@string/open" />
                 </LinearLayout>
             </com.oliver.loqin.ui.widgets.ListGroupLayout>
 
             <!-- Safety & restrictions -->
             <TextView
                 android:id="@+id/tvSafetyControlsSection"
-                android:textAppearance="?attr/textAppearanceSubtitle1"
+                style="@style/LoqIn.SectionHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="22dp"
-                android:layout_marginBottom="10dp"
-                android:gravity="center_vertical"
-                android:text="@string/toggle_section_protection"
-                android:drawablePadding="8dp"
-                app:drawableStartCompat="@drawable/security_24"
-                app:drawableTint="?attr/colorOnSurface" />
+                android:text="@string/toggle_section_protection" />
 
             <TextView
                 android:id="@+id/tvProtectionSectionSummary"
-                android:textAppearance="?attr/textAppearanceBody2"
+                style="@style/LoqIn.RowSummary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:alpha="0.82"
+                android:layout_marginBottom="@dimen/section_header_gap"
+                android:paddingStart="@dimen/page_margin"
+                android:paddingEnd="@dimen/page_margin"
                 android:text="@string/toggle_section_protection_summary" />
 
             <com.oliver.loqin.ui.widgets.ListGroupLayout
@@ -1412,382 +1086,298 @@
                 <!-- Blocked-app notification filtering -->
                 <LinearLayout
                     android:id="@+id/rowBlockNotifications"
+                    style="@style/LoqIn.ListRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:minHeight="72dp"
-                    android:paddingStart="20dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
                     android:clickable="true"
                     android:focusable="true">
 
                     <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
+                        style="@style/LoqIn.RowIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:contentDescription="@null"
-                        android:src="@drawable/notifications_24"
-                        app:tint="?attr/colorOnSurface" />
+                        android:src="@drawable/notifications_24" />
 
-                    <Space
-                        android:layout_width="14dp"
-                        android:layout_height="1dp" />
 
                     <LinearLayout
+                        style="@style/LoqIn.RowText"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:layout_height="wrap_content">
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowTitle"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="@string/pref_block_notifications_title" />
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowSummary"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
                             android:text="@string/pref_block_notifications_summary" />
                     </LinearLayout>
 
-                    <com.google.android.material.switchmaterial.SwitchMaterial
+                    <com.google.android.material.materialswitch.MaterialSwitch
                         android:id="@+id/switchBlockNotifications"
+                        style="@style/LoqIn.RowSwitch"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textOff=""
-                        android:textOn=""
-                        app:showText="false" />
+                        android:layout_height="wrap_content" />
                 </LinearLayout>
 
 
                 <!-- Missed notifications recap popup at session end -->
                 <LinearLayout
                     android:id="@+id/rowSessionMissedNotifications"
+                    style="@style/LoqIn.ListRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:minHeight="72dp"
-                    android:paddingStart="20dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
                     android:clickable="true"
                     android:focusable="true">
 
                     <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
+                        style="@style/LoqIn.RowIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:contentDescription="@null"
-                        android:src="@drawable/notifications_24"
-                        app:tint="?attr/colorOnSurface" />
+                        android:src="@drawable/notifications_24" />
 
-                    <Space
-                        android:layout_width="14dp"
-                        android:layout_height="1dp" />
 
                     <LinearLayout
+                        style="@style/LoqIn.RowText"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:layout_height="wrap_content">
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowTitle"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="@string/pref_show_session_missed_notifications_title" />
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowSummary"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
                             android:text="@string/pref_show_session_missed_notifications_summary" />
                     </LinearLayout>
 
-                    <com.google.android.material.switchmaterial.SwitchMaterial
+                    <com.google.android.material.materialswitch.MaterialSwitch
                         android:id="@+id/switchSessionMissedNotifications"
+                        style="@style/LoqIn.RowSwitch"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textOff=""
-                        android:textOn=""
-                        app:showText="false" />
+                        android:layout_height="wrap_content" />
                 </LinearLayout>
 
 
                 <!-- Protection warning dialogs while Loq In is active -->
                 <LinearLayout
                     android:id="@+id/rowLockWarnings"
+                    style="@style/LoqIn.ListRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:minHeight="72dp"
-                    android:paddingStart="20dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
                     android:clickable="true"
                     android:focusable="true">
 
                     <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
+                        style="@style/LoqIn.RowIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:contentDescription="@null"
-                        android:src="@drawable/lock_24"
-                        app:tint="?attr/colorOnSurface" />
+                        android:src="@drawable/lock_24" />
 
-                    <Space
-                        android:layout_width="14dp"
-                        android:layout_height="1dp" />
 
                     <LinearLayout
+                        style="@style/LoqIn.RowText"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:layout_height="wrap_content">
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowTitle"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="@string/pref_show_lock_warnings_title" />
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowSummary"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
                             android:text="@string/pref_show_lock_warnings_summary" />
                     </LinearLayout>
 
-                    <com.google.android.material.switchmaterial.SwitchMaterial
+                    <com.google.android.material.materialswitch.MaterialSwitch
                         android:id="@+id/switchLockWarnings"
+                        style="@style/LoqIn.RowSwitch"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textOff=""
-                        android:textOn=""
-                        app:showText="false" />
+                        android:layout_height="wrap_content" />
                 </LinearLayout>
 
 
                 <!-- Start LoqIn after reboot -->
                 <LinearLayout
                     android:id="@+id/rowAutostart"
+                    style="@style/LoqIn.ListRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:minHeight="72dp"
-                    android:paddingStart="20dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
                     android:clickable="true"
                     android:focusable="true">
 
                     <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
+                        style="@style/LoqIn.RowIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:contentDescription="@null"
-                        android:src="@drawable/battery_24"
-                        app:tint="?attr/colorOnSurface" />
+                        android:src="@drawable/battery_24" />
 
-                    <Space
-                        android:layout_width="14dp"
-                        android:layout_height="1dp" />
 
                     <LinearLayout
+                        style="@style/LoqIn.RowText"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:layout_height="wrap_content">
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowTitle"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="@string/pref_autostart_title" />
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowSummary"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
                             android:text="@string/pref_autostart_summary" />
                     </LinearLayout>
 
-                    <com.google.android.material.switchmaterial.SwitchMaterial
+                    <com.google.android.material.materialswitch.MaterialSwitch
                         android:id="@+id/switchAutostart"
+                        style="@style/LoqIn.RowSwitch"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textOff=""
-                        android:textOn=""
-                        app:showText="false" />
+                        android:layout_height="wrap_content" />
                 </LinearLayout>
 
 
                 <!-- Emergency unlock feature -->
                 <LinearLayout
                     android:id="@+id/rowEmergency"
+                    style="@style/LoqIn.ListRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:minHeight="72dp"
-                    android:paddingStart="20dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
                     android:clickable="true"
                     android:focusable="true">
 
                     <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
+                        style="@style/LoqIn.RowIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:contentDescription="@null"
-                        android:src="@drawable/security_24"
-                        app:tint="?attr/colorOnSurface" />
+                        android:src="@drawable/security_24" />
 
-                    <Space
-                        android:layout_width="14dp"
-                        android:layout_height="1dp" />
 
                     <LinearLayout
+                        style="@style/LoqIn.RowText"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:layout_height="wrap_content">
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowTitle"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="@string/pref_emergency_title" />
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowSummary"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
                             android:text="@string/pref_emergency_summary" />
                     </LinearLayout>
 
-                    <com.google.android.material.switchmaterial.SwitchMaterial
+                    <com.google.android.material.materialswitch.MaterialSwitch
                         android:id="@+id/switchEmergency"
+                        style="@style/LoqIn.RowSwitch"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textOff=""
-                        android:textOn=""
-                        app:showText="false" />
+                        android:layout_height="wrap_content" />
                 </LinearLayout>
 
 
                 <!-- Change emergency PIN -->
                 <LinearLayout
                     android:id="@+id/rowChangeEmergencyPin"
+                    style="@style/LoqIn.ListRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:minHeight="72dp"
-                    android:paddingStart="20dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
                     android:clickable="true"
                     android:focusable="true">
 
                     <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
+                        style="@style/LoqIn.RowIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:contentDescription="@null"
-                        android:src="@drawable/lock_24"
-                        app:tint="?attr/colorOnSurface" />
+                        android:src="@drawable/lock_24" />
 
-                    <Space
-                        android:layout_width="14dp"
-                        android:layout_height="1dp" />
 
                     <LinearLayout
+                        style="@style/LoqIn.RowText"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:layout_height="wrap_content">
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowTitle"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="@string/pref_change_emergency_pin_title" />
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowSummary"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
                             android:text="@string/pref_change_emergency_pin_summary" />
                     </LinearLayout>
 
                     <ImageView
+                        style="@style/LoqIn.RowChevron"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
-                        android:contentDescription="@null"
-                        android:src="@drawable/keyboard_arrow_right_24"
-                        app:tint="?attr/colorOnSurfaceVariant" />
+                        android:contentDescription="@null" />
                 </LinearLayout>
             </com.oliver.loqin.ui.widgets.ListGroupLayout>
 
             <!-- Display & shortcuts overview -->
             <TextView
                 android:id="@+id/tvDisplayControlsSection"
-                android:textAppearance="?attr/textAppearanceSubtitle1"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="22dp"
-                android:layout_marginBottom="10dp"
-                android:gravity="center_vertical"
+                android:layout_marginTop="@dimen/section_gap"
+                android:paddingStart="@dimen/page_margin"
+                android:paddingEnd="@dimen/page_margin"
                 android:text="@string/toggle_section_ui"
-                android:drawablePadding="8dp"
-                app:drawableStartCompat="@drawable/dashboard_24"
-                app:drawableTint="?attr/colorOnSurface" />
+                android:textAppearance="?attr/textAppearanceTitleMedium" />
 
             <TextView
                 android:id="@+id/tvUiSectionSummary"
-                android:textAppearance="?attr/textAppearanceBody2"
+                style="@style/LoqIn.RowSummary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:alpha="0.82"
+                android:layout_marginBottom="@dimen/section_header_gap"
+                android:paddingStart="@dimen/page_margin"
+                android:paddingEnd="@dimen/page_margin"
                 android:text="@string/toggle_section_ui_summary" />
 
             <!-- In-app Home: LoqIn Home cards and shortcuts -->
             <TextView
                 android:id="@+id/tvDisplayHomeSection"
-                android:textAppearance="?attr/textAppearanceSubtitle1"
+                style="@style/LoqIn.SectionHeader.First"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:layout_marginBottom="4dp"
-                android:gravity="center_vertical"
-                android:text="@string/toggle_subsection_in_app_home"
-                android:drawablePadding="8dp"
-                app:drawableStartCompat="@drawable/dashboard_24"
-                app:drawableTint="?attr/colorOnSurface" />
+                android:text="@string/toggle_subsection_in_app_home" />
 
             <TextView
                 android:id="@+id/tvDisplayHomeSectionSummary"
-                android:textAppearance="?attr/textAppearanceBody2"
+                style="@style/LoqIn.RowSummary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="8dp"
-                android:alpha="0.82"
+                android:layout_marginBottom="@dimen/section_header_gap"
+                android:paddingStart="@dimen/page_margin"
+                android:paddingEnd="@dimen/page_margin"
                 android:text="@string/toggle_subsection_in_app_home_summary" />
 
             <com.oliver.loqin.ui.widgets.ListGroupLayout
@@ -1798,397 +1388,304 @@
 
                 <LinearLayout
                     android:id="@+id/rowHomeLayoutDetailed"
+                    style="@style/LoqIn.ListRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:minHeight="72dp"
-                    android:paddingStart="20dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
                     android:clickable="true"
                     android:focusable="true">
 
                     <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
+                        style="@style/LoqIn.RowIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:contentDescription="@null"
-                        android:src="@drawable/dashboard_24"
-                        app:tint="?attr/colorOnSurface" />
+                        android:src="@drawable/dashboard_24" />
 
-                    <Space
-                        android:layout_width="14dp"
-                        android:layout_height="1dp" />
 
                     <LinearLayout
+                        style="@style/LoqIn.RowText"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:layout_height="wrap_content">
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowTitle"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="@string/pref_home_layout_mode_title" />
 
                         <TextView
                             android:id="@+id/tvHomeLayoutModeSummary"
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowSummary"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
                             android:text="@string/pref_home_layout_mode_summary" />
                     </LinearLayout>
 
                     <TextView
                         android:id="@+id/tvHomeLayoutModeValue"
-                        android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
+                        style="@style/LoqIn.RowValue"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="10dp"
-                        android:alpha="0.82"
                         android:text="@string/home_layout_detailed" />
 
                     <ImageView
+                        style="@style/LoqIn.RowChevron"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
-                        android:layout_marginStart="8dp"
-                        android:contentDescription="@string/open"
-                        android:src="@drawable/keyboard_arrow_right_24"
-                        app:tint="?attr/colorOnSurfaceVariant" />
+                        android:contentDescription="@string/open" />
                 </LinearLayout>
 
 
                 <LinearLayout
                     android:id="@+id/rowHomeLayoutCustom"
+                    style="@style/LoqIn.ListRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:minHeight="72dp"
-                    android:paddingStart="20dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
                     android:clickable="true"
                     android:focusable="true"
                     android:visibility="gone">
 
                     <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
+                        style="@style/LoqIn.RowIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:contentDescription="@null"
-                        android:src="@drawable/tune_24"
-                        app:tint="?attr/colorOnSurface" />
+                        android:src="@drawable/tune_24" />
 
-                    <Space
-                        android:layout_width="14dp"
-                        android:layout_height="1dp" />
 
                     <LinearLayout
+                        style="@style/LoqIn.RowText"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:layout_height="wrap_content">
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowTitle"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="@string/pref_home_layout_custom_title" />
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowSummary"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
                             android:text="@string/pref_home_layout_custom_summary" />
                     </LinearLayout>
 
                     <ImageView
+                        style="@style/LoqIn.RowChevron"
                         android:layout_width="24dp"
                         android:layout_height="24dp"
-                        android:layout_marginStart="8dp"
-                        android:contentDescription="@string/open"
-                        android:src="@drawable/keyboard_arrow_right_24"
-                        app:tint="?attr/colorOnSurfaceVariant" />
+                        android:contentDescription="@string/open" />
                 </LinearLayout>
 
 
                 <LinearLayout
                     android:id="@+id/rowShowQuickActions"
+                    style="@style/LoqIn.ListRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:minHeight="72dp"
-                    android:paddingStart="20dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
                     android:clickable="true"
                     android:focusable="true">
 
                     <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
+                        style="@style/LoqIn.RowIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:contentDescription="@null"
-                        android:src="@drawable/apps_24"
-                        app:tint="?attr/colorOnSurface" />
+                        android:src="@drawable/apps_24" />
 
-                    <Space
-                        android:layout_width="14dp"
-                        android:layout_height="1dp" />
 
                     <LinearLayout
+                        style="@style/LoqIn.RowText"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:layout_height="wrap_content">
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowTitle"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="@string/pref_show_quick_actions_title" />
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowSummary"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
                             android:text="@string/pref_show_quick_actions_summary" />
                     </LinearLayout>
 
-                    <com.google.android.material.switchmaterial.SwitchMaterial
+                    <com.google.android.material.materialswitch.MaterialSwitch
                         android:id="@+id/switchShowQuickActions"
+                        style="@style/LoqIn.RowSwitch"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textOff=""
-                        android:textOn=""
-                        app:showText="false" />
+                        android:layout_height="wrap_content" />
                 </LinearLayout>
 
 
                 <LinearLayout
                     android:id="@+id/rowShowTemporaryMode"
+                    style="@style/LoqIn.ListRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:minHeight="72dp"
-                    android:paddingStart="20dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
                     android:clickable="true"
                     android:focusable="true">
 
                     <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
+                        style="@style/LoqIn.RowIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:contentDescription="@null"
-                        android:src="@drawable/schedule_24"
-                        app:tint="?attr/colorOnSurface" />
+                        android:src="@drawable/schedule_24" />
 
-                    <Space
-                        android:layout_width="14dp"
-                        android:layout_height="1dp" />
 
                     <LinearLayout
+                        style="@style/LoqIn.RowText"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:layout_height="wrap_content">
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowTitle"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="@string/pref_show_temporary_mode_title" />
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowSummary"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
                             android:text="@string/pref_show_temporary_mode_summary" />
                     </LinearLayout>
 
-                    <com.google.android.material.switchmaterial.SwitchMaterial
+                    <com.google.android.material.materialswitch.MaterialSwitch
                         android:id="@+id/switchShowTemporaryMode"
+                        style="@style/LoqIn.RowSwitch"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textOff=""
-                        android:textOn=""
-                        app:showText="false" />
+                        android:layout_height="wrap_content" />
                 </LinearLayout>
 
 
                 <LinearLayout
                     android:id="@+id/rowLockActiveTemporaryTimer"
+                    style="@style/LoqIn.ListRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:minHeight="72dp"
-                    android:paddingStart="20dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
                     android:clickable="true"
                     android:focusable="true">
 
                     <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
+                        style="@style/LoqIn.RowIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:contentDescription="@null"
-                        android:src="@drawable/lock_24"
-                        app:tint="?attr/colorOnSurface" />
+                        android:src="@drawable/lock_24" />
 
-                    <Space
-                        android:layout_width="14dp"
-                        android:layout_height="1dp" />
 
                     <LinearLayout
+                        style="@style/LoqIn.RowText"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:layout_height="wrap_content">
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowTitle"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="@string/pref_lock_active_temporary_timer_title" />
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowSummary"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
                             android:text="@string/pref_lock_active_temporary_timer_summary" />
                     </LinearLayout>
 
-                    <com.google.android.material.switchmaterial.SwitchMaterial
+                    <com.google.android.material.materialswitch.MaterialSwitch
                         android:id="@+id/switchLockActiveTemporaryTimer"
+                        style="@style/LoqIn.RowSwitch"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textOff=""
-                        android:textOn=""
-                        app:showText="false" />
+                        android:layout_height="wrap_content" />
                 </LinearLayout>
 
 
                 <LinearLayout
                     android:id="@+id/rowShowActiveDuration"
+                    style="@style/LoqIn.ListRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:minHeight="72dp"
-                    android:paddingStart="20dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
                     android:clickable="true"
                     android:focusable="true">
 
                     <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
+                        style="@style/LoqIn.RowIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:contentDescription="@null"
-                        android:src="@drawable/bar_chart_24"
-                        app:tint="?attr/colorPrimary" />
+                        android:src="@drawable/bar_chart_24" />
 
-                    <Space
-                        android:layout_width="14dp"
-                        android:layout_height="1dp" />
 
                     <LinearLayout
+                        style="@style/LoqIn.RowText"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:layout_height="wrap_content">
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowTitle"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="@string/pref_show_active_duration_title" />
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowSummary"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
                             android:text="@string/pref_show_active_duration_summary" />
                     </LinearLayout>
 
-                    <com.google.android.material.switchmaterial.SwitchMaterial
+                    <com.google.android.material.materialswitch.MaterialSwitch
                         android:id="@+id/switchShowActiveDuration"
+                        style="@style/LoqIn.RowSwitch"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textOff=""
-                        android:textOn=""
-                        app:showText="false" />
+                        android:layout_height="wrap_content" />
                 </LinearLayout>
 
 
                 <LinearLayout
                     android:id="@+id/rowShowEmergencyUnlock"
+                    style="@style/LoqIn.ListRow"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical"
-                    android:minHeight="72dp"
-                    android:paddingStart="20dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
                     android:clickable="true"
                     android:focusable="true">
 
                     <ImageView
-                        android:layout_width="22dp"
-                        android:layout_height="22dp"
+                        style="@style/LoqIn.RowIcon"
+                        android:layout_width="24dp"
+                        android:layout_height="24dp"
                         android:contentDescription="@null"
-                        android:src="@drawable/security_24"
-                        app:tint="?attr/colorOnSurface" />
+                        android:src="@drawable/security_24" />
 
-                    <Space
-                        android:layout_width="14dp"
-                        android:layout_height="1dp" />
 
                     <LinearLayout
+                        style="@style/LoqIn.RowText"
                         android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
+                        android:layout_height="wrap_content">
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowTitle"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:text="@string/pref_show_emergency_unlock_title" />
 
                         <TextView
-                            android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
-                            android:layout_width="wrap_content"
+                            style="@style/LoqIn.RowSummary"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
                             android:text="@string/pref_show_emergency_unlock_summary" />
                     </LinearLayout>
 
-                    <com.google.android.material.switchmaterial.SwitchMaterial
+                    <com.google.android.material.materialswitch.MaterialSwitch
                         android:id="@+id/switchShowEmergencyUnlock"
+                        style="@style/LoqIn.RowSwitch"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textOff=""
-                        android:textOn=""
-                        app:showText="false" />
+                        android:layout_height="wrap_content" />
                 </LinearLayout>
             </com.oliver.loqin.ui.widgets.ListGroupLayout>
 
@@ -2198,18 +1695,17 @@
                 style="@style/LoqIn.SectionHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:layout_marginBottom="4dp"
                 android:text="@string/toggle_subsection_tiles" />
 
             <TextView
                 android:id="@+id/tvDisplayTilesSectionSummary"
+                style="@style/LoqIn.RowSummary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="10dp"
-                android:text="@string/toggle_subsection_tiles_summary"
-                android:textColor="?android:attr/textColorSecondary"
-                android:textSize="13sp" />
+                android:layout_marginBottom="@dimen/section_header_gap"
+                android:paddingStart="@dimen/page_margin"
+                android:paddingEnd="@dimen/page_margin"
+                android:text="@string/toggle_subsection_tiles_summary" />
 
             <LinearLayout
                 android:id="@+id/cardDisplayTileControls"
@@ -2223,18 +1719,17 @@
                 style="@style/LoqIn.SectionHeader"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="22dp"
-                android:layout_marginBottom="4dp"
                 android:text="@string/toggle_subsection_widgets" />
 
             <TextView
                 android:id="@+id/tvDisplayWidgetsSectionSummary"
+                style="@style/LoqIn.RowSummary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="10dp"
-                android:text="@string/toggle_subsection_widgets_summary"
-                android:textColor="?android:attr/textColorSecondary"
-                android:textSize="13sp" />
+                android:layout_marginBottom="@dimen/section_header_gap"
+                android:paddingStart="@dimen/page_margin"
+                android:paddingEnd="@dimen/page_margin"
+                android:text="@string/toggle_subsection_widgets_summary" />
 
             <LinearLayout
                 android:id="@+id/cardDisplayWidgetControls"
