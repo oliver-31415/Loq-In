@@ -22,10 +22,8 @@ import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
 import android.os.Bundle
-import android.view.Gravity
 import android.view.View
 import android.view.MenuItem
-import android.widget.LinearLayout
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Lifecycle
@@ -49,6 +47,7 @@ import com.oliver.loqin.databinding.ActivityStatisticsAppUsageDetailBinding
 import com.oliver.loqin.feature.stats.StatsFormat
 import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.ui.EdgeToEdgeUtils
+import com.oliver.loqin.ui.PageUi
 import com.oliver.loqin.ui.SegmentedToggleUi
 import com.oliver.loqin.ui.ThemeUtils
 import com.oliver.loqin.ui.showWarnPillOnContent
@@ -59,7 +58,6 @@ import com.oliver.loqin.ui.dialog.styleLoqInDialogButtons
 import com.oliver.loqin.ui.widgets.UsageDetailChartView
 import com.oliver.loqin.util.EditingLockGuard
 import com.oliver.loqin.util.AppBlockSafety
-import com.google.android.material.button.MaterialButton
 import com.google.android.material.color.MaterialColors
 import com.google.android.material.datepicker.MaterialDatePicker
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -111,8 +109,9 @@ class AppUsageDetailActivity : AppCompatActivity() {
         b.cardLimitTime.isEnabled = !locked
         b.cardLimitAttempts.isEnabled = !locked
         b.btnEditLimits.isEnabled = !locked
-        b.cardLimitTime.alpha = if (locked) 0.62f else 1f
-        b.cardLimitAttempts.alpha = if (locked) 0.62f else 1f
+        // Rows in a group fade their content, not their segment.
+        PageUi.setRowDimmed(b.cardLimitTime, locked)
+        PageUi.setRowDimmed(b.cardLimitAttempts, locked)
         b.btnEditLimits.alpha = if (locked) 0.62f else 1f
     }
 
@@ -154,8 +153,6 @@ class AppUsageDetailActivity : AppCompatActivity() {
         b = ActivityStatisticsAppUsageDetailBinding.inflate(layoutInflater)
         setContentView(b.root)
 
-        b.toolbar.setBackgroundColor(AccentColor.getToolbarBackgroundColor(this))
-        b.toolbar.navigationIcon?.mutate()?.setTint(toolbarIconColor())
         b.toolbar.setNavigationOnClickListener { finish() }
         // Explicit container wash: ?attr/colorPrimaryContainer in the roundel
         // drawable can resolve to the base green instead of the live accent.
@@ -333,9 +330,8 @@ class AppUsageDetailActivity : AppCompatActivity() {
     }
 
     private fun setHeroTotal(caption: String, totalMs: Long) {
-        val accent = AccentColor.getAccentColorInt(this)
+        val accent = PageUi.readableAccent(this)
         b.todayUsage.text = StatsFormat.prettyMsWithSeconds(totalMs)
-        b.todayUsage.setTextColor(accent)
         b.todayUsageCaption.text = caption
         b.detailOpensChip.setTextColor(accent)
         b.detailAttemptsChip.setTextColor(accent)
@@ -602,10 +598,6 @@ class AppUsageDetailActivity : AppCompatActivity() {
     private fun configureRangeFilterButtons() {
         syncRangeToggleUi()
         b.toggleRange.addOnButtonCheckedListener { _, _, _ -> syncRangeToggleUi() }
-        listOf(b.btnRangeToday, b.btnRangeWeek, b.btnRangeMonth, b.btnRangeYear).forEach { button ->
-            configureRangeButton(button, custom = false)
-        }
-        configureRangeButton(b.btnRangeCustom, custom = true)
     }
 
     private fun syncRangeToggleUi() {
@@ -616,28 +608,6 @@ class AppUsageDetailActivity : AppCompatActivity() {
             buttons,
             if (checked != View.NO_ID) checked else b.btnRangeToday.id,
         )
-    }
-
-    private fun configureRangeButton(button: MaterialButton, custom: Boolean) {
-        button.minWidth = 0
-        button.minimumWidth = 0
-        button.minHeight = dp(40)
-        button.minimumHeight = dp(40)
-        button.insetTop = 0
-        button.insetBottom = 0
-        button.cornerRadius = dp(14)
-        button.iconPadding = 0
-        if (custom) {
-            button.iconGravity = MaterialButton.ICON_GRAVITY_TEXT_START
-        }
-        button.gravity = android.view.Gravity.CENTER
-        button.setAllCaps(false)
-        button.setPadding(if (custom) dp(8) else dp(4), 0, if (custom) dp(8) else dp(4), 0)
-        button.layoutParams = (button.layoutParams as LinearLayout.LayoutParams).apply {
-            width = if (custom) dp(44) else 0
-            height = dp(40)
-            weight = if (custom) 0f else 1f
-        }
     }
 
     private fun updateProfileSubtitle() {
@@ -707,8 +677,6 @@ class AppUsageDetailActivity : AppCompatActivity() {
             .onSuccess { UsageDatePickerAccentTint.apply(this, picker) }
             .onFailure { customRangePickerShowing = false }
     }
-
-    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
 
     private fun monthLabel(month1Based: Int, year: Int, shortYear: Boolean = false): String {
         val monthName = DateFormatSymbols.getInstance().shortMonths.getOrNull((month1Based - 1).coerceIn(0, 11)).orEmpty().trim().ifBlank { month1Based.toString() }
