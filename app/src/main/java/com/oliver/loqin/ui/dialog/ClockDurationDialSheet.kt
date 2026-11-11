@@ -59,7 +59,6 @@ object ClockDurationDialSheet {
         onDismissed: (() -> Unit)? = null,
     ) {
         val accent = AccentColor.getAccentColorInt(activity)
-        val tint = ColorStateList.valueOf(accent)
 
         val sheet = BottomSheetDialog(activity)
         val parent = activity.findViewById<ViewGroup>(android.R.id.content)
@@ -77,15 +76,7 @@ object ClockDurationDialSheet {
         val btnApplyDuration = view.findViewById<MaterialButton>(R.id.btnApplyDuration)
         val btnClose = view.findViewById<View>(R.id.btnClose)
 
-        view.findViewById<View>(R.id.roundelBg)?.background = GradientDrawable().apply {
-            shape = GradientDrawable.OVAL
-            setColor(AccentColor.getAccentContainerColorInt(activity))
-        }
-        // Set drawables in code: app:srcCompat is ignored when inflated by a non-AppCompat Activity.
-        view.findViewById<ImageView>(R.id.ivIcon)?.apply {
-            setImageResource(R.drawable.timer_24)
-            imageTintList = tint
-        }
+        // Tint in code: app:tint is ignored when inflated by a non-AppCompat Activity.
         view.findViewById<ImageView>(R.id.ivClose)?.apply {
             setImageResource(R.drawable.close_24)
             imageTintList = ColorStateList.valueOf(

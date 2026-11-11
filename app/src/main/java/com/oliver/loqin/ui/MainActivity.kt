@@ -69,6 +69,7 @@ import androidx.core.view.iterator
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
+import androidx.core.view.updateLayoutParams
 import androidx.core.view.isVisible
 import androidx.core.widget.NestedScrollView
 import androidx.lifecycle.Lifecycle
@@ -239,7 +240,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var layoutHomeRoot: LinearLayout
     private lateinit var layoutStatusContent: LinearLayout
     private lateinit var layoutProtectionStatus: View
-    private lateinit var cardStatus: MaterialCardView
+    private lateinit var cardStatus: View
     private lateinit var spaceBeforeStatusCard: View
     private var bottomNavTourScheduled = false
     private var bottomNavTourShowing = false
@@ -263,7 +264,7 @@ class MainActivity : AppCompatActivity() {
     private lateinit var cardActivity: MaterialCardView
     private lateinit var activityHeatmap: FoqosHeatmapView
     private lateinit var tvHeatmapLegend: TextView
-    private lateinit var btnActivityHide: LinearLayout
+    private lateinit var btnActivityHide: MaterialButton
     private lateinit var tvHeroProfileName: TextView
     private lateinit var tvHeroChips: TextView
     private lateinit var tvHeroStrategy: TextView
@@ -278,7 +279,7 @@ class MainActivity : AppCompatActivity() {
 
     // Foqos-style profile rows
     private lateinit var profileRowsContainer: LinearLayout
-    private lateinit var btnManageProfiles: LinearLayout
+    private lateinit var btnManageProfiles: View
 
     // Quick actions tiles
     private lateinit var tileManageApps: MaterialCardView
@@ -420,10 +421,13 @@ class MainActivity : AppCompatActivity() {
 
         scrollMain = findViewById(R.id.scrollMain)
         // Foqos restyle: toolbar is inline in the scroll (scrolls away like Foqos's title),
-        // so the scroll view must consume the status-bar inset itself.
+        // so the scroll view must consume the status-bar inset itself. Content scrolls on under a
+        // page-coloured scrim of the same height instead of under the clock and system icons.
+        val statusBarScrim = findViewById<View>(R.id.homeStatusBarScrim)
         ViewCompat.setOnApplyWindowInsetsListener(scrollMain) { v, insets ->
             val status = insets.getInsets(WindowInsetsCompat.Type.statusBars()).top
             v.updatePadding(top = status + homeDp(4f))
+            statusBarScrim.updateLayoutParams { height = status }
             insets
         }
 
@@ -498,8 +502,7 @@ class MainActivity : AppCompatActivity() {
             activityHidden = !activityHidden
             val gridVisible = !activityHidden
             cardActivity.visibility = if (gridVisible) View.VISIBLE else View.GONE
-            btnActivityHide.findViewById<TextView>(R.id.tvHeaderPillLabel)?.text =
-                getString(if (gridVisible) R.string.activity_hide else R.string.activity_show)
+            btnActivityHide.setText(if (gridVisible) R.string.activity_hide else R.string.activity_show)
         }
         findViewById<View>(R.id.btnMoreInsights)?.setOnClickListener {
             ActivityTransitionCompat.switchWithoutAnimation(
@@ -1403,7 +1406,6 @@ class MainActivity : AppCompatActivity() {
         val lockedByNfc = (mode == TempSheetMode.DISABLE && isNfcLocked())
 
         val accent = AccentColor.getAccentColorInt(this)
-        val tint = ColorStateList.valueOf(accent)
 
         val sheet = BottomSheetDialog(this)
         val parent = findViewById<ViewGroup>(android.R.id.content)
@@ -1411,7 +1413,6 @@ class MainActivity : AppCompatActivity() {
         sheet.setContentView(view)
         sheet.prepareExpandedSheet()
 
-        val ivIcon = view.findViewById<ImageView>(R.id.ivIcon)
         val tvTitle = view.findViewById<TextView>(R.id.tvTitle)
         val tvSubtitle = view.findViewById<TextView>(R.id.tvSubtitle)
         val tvNote = view.findViewById<TextView>(R.id.tvNote)
@@ -1432,27 +1433,16 @@ class MainActivity : AppCompatActivity() {
         val preset60m = view.findViewById<View>(R.id.preset60m)
 
         val rowCustomDuration = view.findViewById<View>(R.id.rowCustomDuration)
-        val roundelCustom = view.findViewById<View>(R.id.roundelCustom)
-        val ivCustomIcon = view.findViewById<ImageView>(R.id.ivCustomIcon)
-
         val rowPauseUntil = view.findViewById<View>(R.id.rowPauseUntil)
-        val roundelPauseUntil = view.findViewById<View>(R.id.roundelPauseUntil)
-        val ivPauseUntilIcon = view.findViewById<ImageView>(R.id.ivPauseUntilIcon)
         val tvPauseUntilTitle = view.findViewById<TextView>(R.id.tvPauseUntilTitle)
         val tvPauseUntilSubtitle = view.findViewById<TextView>(R.id.tvPauseUntilSubtitle)
 
         val cardLockedNotice = view.findViewById<View>(R.id.cardLockedNotice)
         val tvLockedNotice = view.findViewById<TextView>(R.id.tvLockedNotice)
 
-        val surfaceVariant = ContextCompat.getColor(this, R.color.foqos_surface_variant)
+        // Tonal blocks on the white sheet, like LoqIn.ListGroup.OnSurface segments.
+        val surfaceVariant = ContextCompat.getColor(this, R.color.foqos_surface_container)
         val onSurface = ContextCompat.getColor(this, R.color.foqos_on_surface)
-
-        ivIcon.imageTintList = tint
-        view.findViewById<View>(R.id.roundelBg)?.background =
-            GradientDrawable().apply {
-                shape = GradientDrawable.OVAL
-                setColor(AccentColor.getAccentContainerColorInt(this@MainActivity))
-            }
 
         btnClose.setOnClickListener { sheet.dismiss() }
 
@@ -1511,21 +1501,21 @@ class MainActivity : AppCompatActivity() {
         if (lockedByNfc) {
             cardLockedNotice.visibility = View.VISIBLE
             cardLockedNotice.background = GradientDrawable().apply {
-                cornerRadius = 14 * resources.displayMetrics.density + 0.5f
+                cornerRadius = 16 * resources.displayMetrics.density + 0.5f
                 setColor(surfaceVariant)
             }
             tvLockedNotice.text = getString(R.string.dashboard_temp_hint_locked_nfc)
         } else if (lockActiveTimerChanges) {
             cardLockedNotice.visibility = View.VISIBLE
             cardLockedNotice.background = GradientDrawable().apply {
-                cornerRadius = 14 * resources.displayMetrics.density + 0.5f
+                cornerRadius = 16 * resources.displayMetrics.density + 0.5f
                 setColor(surfaceVariant)
             }
             tvLockedNotice.text = getString(R.string.dashboard_temp_active_changes_locked)
         } else if (isPauseExhausted) {
             cardLockedNotice.visibility = View.VISIBLE
             cardLockedNotice.background = GradientDrawable().apply {
-                cornerRadius = 14 * resources.displayMetrics.density + 0.5f
+                cornerRadius = 16 * resources.displayMetrics.density + 0.5f
                 setColor(surfaceVariant)
             }
             tvLockedNotice.text = if (remainingPauses <= 0) {
@@ -1603,7 +1593,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         fun applyCardStyle(v: View) {
-            val r = 14 * resources.displayMetrics.density + 0.5f
+            val r = 16 * resources.displayMetrics.density + 0.5f
             v.background = GradientDrawable().apply {
                 cornerRadius = r
                 setColor(surfaceVariant)
@@ -1682,24 +1672,18 @@ class MainActivity : AppCompatActivity() {
             setupPreset(preset30m, 15)
             setupPreset(preset60m, 30)
 
-            applyCardStyle(rowCustomDuration)
             // With limits, say the range the picker will accept.
             if (hasCaps && maxAllowed in 1 until Int.MAX_VALUE) {
                 view.findViewById<TextView>(R.id.tvCustomSubtitle)?.text =
                     getString(R.string.break_sheet_custom_range_fmt, maxAllowed)
             }
-            roundelCustom.background = GradientDrawable().apply {
-                shape = GradientDrawable.OVAL
-                setColor(ColorUtils.compositeColors(ColorUtils.setAlphaComponent(accent, 0x22), surfaceVariant))
-            }
-            ivCustomIcon.imageTintList = tint
             if (maxAllowed < 1) {
-                rowCustomDuration.alpha = 0.35f
+                PageUi.setRowDimmed(rowCustomDuration, true)
                 rowCustomDuration.setOnClickListener { tapped ->
                     tapped.showWarnPill(getString(R.string.temp_pause_exhausted))
                 }
             } else {
-                rowCustomDuration.alpha = 1.0f
+                PageUi.setRowDimmed(rowCustomDuration, false)
                 rowCustomDuration.setOnClickListener {
                     sheet.dismiss()
                     showClockDialDurationPicker(mode) { minutes -> setDuration(minutes) }
@@ -1710,12 +1694,6 @@ class MainActivity : AppCompatActivity() {
                 val options = buildPauseUntilOptions(sheet)
                 if (options.isNotEmpty()) {
                     rowPauseUntil.visibility = View.VISIBLE
-                    applyCardStyle(rowPauseUntil)
-                    roundelPauseUntil.background = GradientDrawable().apply {
-                        shape = GradientDrawable.OVAL
-                        setColor(ColorUtils.compositeColors(ColorUtils.setAlphaComponent(accent, 0x22), surfaceVariant))
-                    }
-                    ivPauseUntilIcon.imageTintList = tint
 
                     if (options.size == 1) {
                         tvPauseUntilTitle.text = options.first().label
@@ -1901,7 +1879,7 @@ class MainActivity : AppCompatActivity() {
         val profiles = ProfileStore.getProfiles(this).toList().sorted()
         val current = ProfileStore.getCurrent(this)
         val sheet = BottomSheetDialog(this)
-        val accent = AccentColor.getAccentColorInt(this)
+        val accent = PageUi.readableAccent(this)
 
         val list = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -1962,36 +1940,7 @@ class MainActivity : AppCompatActivity() {
         sheet.behavior.skipCollapsed = true
         sheet.behavior.state = BottomSheetBehavior.STATE_EXPANDED
 
-        // Row icons + green labels follow the live accent (?attr/colorPrimary would fall
-        // back to the compile-time green since Home never applies an accent theme variant).
-        val sheetAccent = AccentColor.getAccentColorInt(this)
-        val sheetGreen = ContextCompat.getColor(this, R.color.accent_default_blue) and 0x00FFFFFF
-        val dangerRow = view.findViewById<View>(R.id.rowSheetDelete)
-        fun inDangerRow(v: android.view.View): Boolean {
-            var p = v.parent
-            while (p is android.view.View) {
-                if (p === dangerRow) return true
-                p = p.parent
-            }
-            return false
-        }
-        fun tintAccented(v: android.view.View) {
-            when (v) {
-                is android.view.ViewGroup -> for (i in 0 until v.childCount) tintAccented(v.getChildAt(i))
-                is android.widget.TextView -> if (!inDangerRow(v) &&
-                    (v.currentTextColor and 0x00FFFFFF) == sheetGreen
-                ) {
-                    v.setTextColor(sheetAccent)
-                }
-                is android.widget.ImageView -> if (!inDangerRow(v)) {
-                    androidx.core.widget.ImageViewCompat.setImageTintList(
-                        v,
-                        android.content.res.ColorStateList.valueOf(sheetAccent)
-                    )
-                }
-            }
-        }
-        tintAccented(view)
+        // Row icons get the readable live accent from LoqInViewInflater (style LoqIn.RowIcon).
 
         val nameView = view.findViewById<TextView>(R.id.tvSheetProfileName)
         nameView.text = profile
@@ -2378,11 +2327,11 @@ class MainActivity : AppCompatActivity() {
         lastHeroArtActive = active
         lastHeroArtAccent = accent
 
-        val radius = homeDp(28f).toFloat()
+        val radius = resources.getDimension(R.dimen.page_card_corner)
         if (!active) {
             val gd = android.graphics.drawable.GradientDrawable().apply {
-                // Idle hero: a tonal container like the rest of the app, no outline.
-                setColor(ContextCompat.getColor(this@MainActivity, com.oliver.loqin.R.color.foqos_surface_container_high))
+                // Idle hero: a flat page card like the rest of the app, no outline.
+                setColor(ContextCompat.getColor(this@MainActivity, com.oliver.loqin.R.color.foqos_surface))
                 cornerRadius = radius
             }
             // Coming from the active art: let the blob shrink back into the button over the idle card.
@@ -3824,8 +3773,8 @@ class MainActivity : AppCompatActivity() {
     }
 
     /**
-     * Quick-entry action tiles (temporary timer / emergency bypass): neutral
-     * sub-card at rest, accent-tinted while their feature is running — the same
+     * Quick-entry action tiles (temporary timer / emergency bypass): plain page
+     * tile at rest, accent-tinted while their feature is running — the same
      * tile design reads in both enabled and disabled mode.
      */
     private fun styleQuickTile(tile: LinearLayout, title: TextView, active: Boolean) {
@@ -3836,7 +3785,7 @@ class MainActivity : AppCompatActivity() {
                 setColor(ColorUtils.setAlphaComponent(accent, 0x1F))
                 setStroke(homeDp(1f), ColorUtils.setAlphaComponent(accent, 0x55))
             } else {
-                setColor(ContextCompat.getColor(this@MainActivity, R.color.foqos_surface_container))
+                setColor(ContextCompat.getColor(this@MainActivity, R.color.foqos_surface))
             }
         }
         tile.background = bg
@@ -4845,13 +4794,6 @@ class MainActivity : AppCompatActivity() {
             getString(R.string.session_missed_notifications_count_fmt, count)
         }
         view.findViewById<TextView>(R.id.tvSessionMissedSubtitle)?.text = subtitleText
-
-        view.findViewById<View>(R.id.roundelBg)?.background = GradientDrawable().apply {
-            shape = GradientDrawable.OVAL
-            setColor(AccentColor.getAccentContainerColorInt(this@MainActivity))
-        }
-        view.findViewById<ImageView>(R.id.ivIcon)?.imageTintList =
-            ColorStateList.valueOf(AccentColor.getAccentColorInt(this@MainActivity))
 
         view.findViewById<View>(R.id.btnClose)?.setOnClickListener {
             sheet.dismiss()

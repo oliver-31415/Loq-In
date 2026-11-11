@@ -7,83 +7,65 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:paddingStart="20dp"
-    android:paddingEnd="20dp"
-    android:paddingTop="12dp"
-    android:paddingBottom="24dp">
+    android:paddingStart="16dp"
+    android:paddingTop="8dp"
+    android:paddingEnd="16dp"
+    android:paddingBottom="22dp">
 
-    <!-- Top drag handle -->
+    <!-- Grab handle + title + close, as in every Home sheet (sheet_header.xml) -->
     <View
         android:id="@+id/dragHandle"
         android:layout_width="36dp"
         android:layout_height="4dp"
         android:layout_gravity="center_horizontal"
-        android:layout_marginBottom="14dp"
-        android:background="@drawable/bg_sheet_grab_handle" />
+        android:layout_marginTop="6dp"
+        android:background="@drawable/bg_grab_handle" />
 
-    <!-- Header: Accent roundel + titles + close button -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
-
-        <FrameLayout
-            android:id="@+id/roundelBg"
-            android:layout_width="44dp"
-            android:layout_height="44dp"
-            android:background="@drawable/bg_roundel_accent">
-
-            <ImageView
-                android:id="@+id/ivIcon"
-                android:layout_width="22dp"
-                android:layout_height="22dp"
-                android:layout_gravity="center"
-                android:contentDescription="@null"
-                app:srcCompat="@drawable/timer_24"
-                app:tint="?attr/colorPrimary" />
-        </FrameLayout>
+        android:layout_marginTop="12dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
 
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_marginEnd="8dp"
             android:layout_weight="1"
             android:orientation="vertical">
 
             <TextView
                 android:id="@+id/tvTitle"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/nfc_action_temp_disable"
                 android:textColor="?attr/colorOnSurface"
-                android:textSize="19sp"
+                android:textSize="24sp"
                 android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/tvSubtitle"
-                android:layout_width="wrap_content"
+                style="@style/LoqIn.RowSummary"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:alpha="0.7"
-                android:text="@string/dashboard_temp_sheet_sub_disable"
-                android:textColor="?attr/colorOnSurface"
-                android:textSize="13sp" />
+                android:text="@string/dashboard_temp_sheet_sub_disable" />
         </LinearLayout>
 
         <FrameLayout
             android:id="@+id/btnClose"
             android:layout_width="48dp"
             android:layout_height="48dp"
+            android:layout_marginStart="12dp"
+            android:background="@drawable/bg_sheet_close"
             android:clickable="true"
-            android:focusable="true"
-            android:background="@drawable/bg_roundel_neutral_close">
+            android:contentDescription="@string/close"
+            android:focusable="true">
 
             <ImageView
                 android:layout_width="16dp"
                 android:layout_height="16dp"
                 android:layout_gravity="center"
-                android:contentDescription="@string/cancel"
+                android:importantForAccessibility="no"
                 app:srcCompat="@drawable/close_24"
                 app:tint="?attr/colorOnSurface" />
         </FrameLayout>
@@ -94,15 +76,15 @@
         android:id="@+id/tvLimitStrip"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
-        android:drawablePadding="10dp"
+        android:layout_marginTop="16dp"
+        android:drawablePadding="12dp"
         android:gravity="center_vertical"
-        android:minHeight="48dp"
-        android:paddingStart="14dp"
+        android:minHeight="@dimen/touch_target"
+        android:paddingStart="16dp"
         android:paddingTop="10dp"
-        android:paddingEnd="14dp"
+        android:paddingEnd="16dp"
         android:paddingBottom="10dp"
-        android:textSize="14sp"
+        android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
         android:visibility="gone" />
 
     <!-- Active Timer Card (shown only when a timer is currently active) -->
@@ -151,13 +133,11 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnCancelTimer"
-            style="@style/LoqIn.TonalButton"
+            style="@style/LoqIn.Button"
             android:layout_width="match_parent"
-            android:layout_height="46dp"
+            android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
-            android:text="@string/dashboard_temp_sheet_cancel_timer"
-            android:textSize="14sp"
-            android:textStyle="bold" />
+            android:text="@string/dashboard_temp_sheet_cancel_timer" />
     </LinearLayout>
 
     <!-- Quick Presets Section -->
@@ -165,20 +145,14 @@
         android:id="@+id/layoutPresetsSection"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
+        android:layout_marginTop="8dp"
         android:orientation="vertical">
 
         <TextView
-            android:layout_width="wrap_content"
+            style="@style/LoqIn.SectionHeader.First"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/temp_duration_quick_presets"
-            android:textAllCaps="true"
-            android:textColor="?attr/colorOnSurface"
-            android:textSize="11sp"
-            android:textStyle="bold"
-            android:letterSpacing="0.08"
-            android:alpha="0.55"
-            android:layout_marginBottom="8dp" />
+            android:text="@string/temp_duration_quick_presets" />
 
         <!-- Row 1: 5 min, 15 min -->
         <LinearLayout
@@ -189,9 +163,10 @@
             <LinearLayout
                 android:id="@+id/preset5m"
                 android:layout_width="0dp"
-                android:layout_height="62dp"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:layout_marginEnd="5dp"
+                android:layout_marginEnd="4dp"
+                android:minHeight="64dp"
                 android:gravity="center"
                 android:orientation="horizontal"
                 android:clickable="true"
@@ -219,9 +194,10 @@
             <LinearLayout
                 android:id="@+id/preset15m"
                 android:layout_width="0dp"
-                android:layout_height="62dp"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:layout_marginStart="5dp"
+                android:layout_marginStart="4dp"
+                android:minHeight="64dp"
                 android:gravity="center"
                 android:orientation="horizontal"
                 android:clickable="true"
@@ -251,15 +227,16 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="@dimen/tile_gap"
             android:orientation="horizontal">
 
             <LinearLayout
                 android:id="@+id/preset30m"
                 android:layout_width="0dp"
-                android:layout_height="62dp"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:layout_marginEnd="5dp"
+                android:layout_marginEnd="4dp"
+                android:minHeight="64dp"
                 android:gravity="center"
                 android:orientation="horizontal"
                 android:clickable="true"
@@ -287,9 +264,10 @@
             <LinearLayout
                 android:id="@+id/preset60m"
                 android:layout_width="0dp"
-                android:layout_height="62dp"
+                android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:layout_marginStart="5dp"
+                android:layout_marginStart="4dp"
+                android:minHeight="64dp"
                 android:gravity="center"
                 android:orientation="horizontal"
                 android:clickable="true"
@@ -321,141 +299,104 @@
         android:id="@+id/layoutMoreOptionsSection"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
         android:orientation="vertical">
 
         <TextView
-            android:layout_width="wrap_content"
+            style="@style/LoqIn.SectionHeader"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/temp_duration_more_options"
-            android:textAllCaps="true"
-            android:textColor="?attr/colorOnSurface"
-            android:textSize="11sp"
-            android:textStyle="bold"
-            android:letterSpacing="0.08"
-            android:alpha="0.55"
-            android:layout_marginBottom="8dp" />
+            android:text="@string/temp_duration_more_options" />
 
-        <!-- Custom Duration Row -->
+        <com.oliver.loqin.ui.widgets.ListGroupLayout
+            style="@style/LoqIn.ListGroup.OnSurface"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
         <LinearLayout
             android:id="@+id/rowCustomDuration"
+            style="@style/LoqIn.ListRow"
             android:layout_width="match_parent"
-            android:layout_height="54dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingStart="14dp"
-            android:paddingEnd="14dp"
+            android:layout_height="wrap_content"
             android:clickable="true"
             android:focusable="true">
 
-            <FrameLayout
-                android:id="@+id/roundelCustom"
-                android:layout_width="32dp"
-                android:layout_height="32dp">
-
-                <ImageView
-                    android:id="@+id/ivCustomIcon"
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
-                    android:layout_gravity="center"
-                    android:contentDescription="@null"
-                    app:srcCompat="@drawable/edit_24" />
-            </FrameLayout>
+            <ImageView
+                android:id="@+id/ivCustomIcon"
+                style="@style/LoqIn.RowIcon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:contentDescription="@null"
+                app:srcCompat="@drawable/edit_24" />
 
             <LinearLayout
+                style="@style/LoqIn.RowText"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:layout_weight="1"
-                android:orientation="vertical">
+                android:layout_height="wrap_content">
 
                 <TextView
-                    android:layout_width="wrap_content"
+                    style="@style/LoqIn.RowTitle"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/custom_minutes"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textSize="14.5sp"
-                    android:textStyle="bold" />
+                    android:text="@string/custom_minutes" />
 
                 <TextView
                     android:id="@+id/tvCustomSubtitle"
-                    android:layout_width="wrap_content"
+                    style="@style/LoqIn.RowSummary"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:alpha="0.6"
-                    android:text="@string/minutes_hint"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textSize="12sp" />
+                    android:text="@string/minutes_hint" />
             </LinearLayout>
 
             <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:alpha="0.4"
-                android:contentDescription="@null"
-                app:srcCompat="@drawable/keyboard_arrow_right_24"
-                app:tint="?attr/colorOnSurface" />
+                style="@style/LoqIn.RowChevron"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:contentDescription="@null" />
         </LinearLayout>
 
         <!-- Pause Until Row (visible when mode == DISABLE) -->
         <LinearLayout
             android:id="@+id/rowPauseUntil"
+            style="@style/LoqIn.ListRow"
             android:layout_width="match_parent"
-            android:layout_height="54dp"
-            android:layout_marginTop="8dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:paddingStart="14dp"
-            android:paddingEnd="14dp"
+            android:layout_height="wrap_content"
             android:clickable="true"
             android:focusable="true">
 
-            <FrameLayout
-                android:id="@+id/roundelPauseUntil"
-                android:layout_width="32dp"
-                android:layout_height="32dp">
-
-                <ImageView
-                    android:id="@+id/ivPauseUntilIcon"
-                    android:layout_width="18dp"
-                    android:layout_height="18dp"
-                    android:layout_gravity="center"
-                    android:contentDescription="@null"
-                    app:srcCompat="@drawable/schedule_24" />
-            </FrameLayout>
+            <ImageView
+                android:id="@+id/ivPauseUntilIcon"
+                style="@style/LoqIn.RowIcon"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:contentDescription="@null"
+                app:srcCompat="@drawable/schedule_24" />
 
             <LinearLayout
+                style="@style/LoqIn.RowText"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:layout_weight="1"
-                android:orientation="vertical">
+                android:layout_height="wrap_content">
 
                 <TextView
                     android:id="@+id/tvPauseUntilTitle"
-                    android:layout_width="wrap_content"
+                    style="@style/LoqIn.RowTitle"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/dashboard_pause_until_title"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textSize="14.5sp"
-                    android:textStyle="bold" />
+                    android:text="@string/dashboard_pause_until_title" />
 
                 <TextView
                     android:id="@+id/tvPauseUntilSubtitle"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:alpha="0.6"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textSize="12sp" />
+                    style="@style/LoqIn.RowSummary"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content" />
             </LinearLayout>
 
             <ImageView
-                android:layout_width="20dp"
-                android:layout_height="20dp"
-                android:alpha="0.4"
-                android:contentDescription="@null"
-                app:srcCompat="@drawable/keyboard_arrow_right_24"
-                app:tint="?attr/colorOnSurface" />
+                style="@style/LoqIn.RowChevron"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
+                android:contentDescription="@null" />
         </LinearLayout>
+        </com.oliver.loqin.ui.widgets.ListGroupLayout>
     </LinearLayout>
 
     <!-- Locked Warning Card (visible when locked by NFC or active timer lock) -->
@@ -463,30 +404,29 @@
         android:id="@+id/cardLockedNotice"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
+        android:layout_marginTop="16dp"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:padding="14dp"
+        android:padding="16dp"
         android:visibility="gone"
         tools:visibility="visible">
 
         <ImageView
             android:id="@+id/ivLockedIcon"
-            android:layout_width="20dp"
-            android:layout_height="20dp"
+            android:layout_width="@dimen/row_icon_size"
+            android:layout_height="@dimen/row_icon_size"
             android:contentDescription="@null"
             app:srcCompat="@drawable/lock_24"
-            app:tint="?attr/colorOnSurface" />
+            app:tint="?attr/colorOnSurfaceVariant" />
 
         <TextView
             android:id="@+id/tvLockedNotice"
+            style="@style/LoqIn.RowSummary"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
-            android:layout_weight="1"
-            android:alpha="0.8"
-            android:textColor="?attr/colorOnSurface"
-            android:textSize="12.5sp" />
+            android:layout_marginStart="@dimen/row_icon_gap"
+            android:layout_marginTop="0dp"
+            android:layout_weight="1" />
     </LinearLayout>
 
     <!-- Footer Note -->
@@ -496,8 +436,6 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
         android:gravity="center"
-        android:alpha="0.5"
         android:text="@string/nfc_temp_hint_timer_behavior"
-        android:textColor="?attr/colorOnSurface"
-        android:textSize="11.5sp" />
+        android:textAppearance="@style/TextAppearance.LoqIn.StatLabel" />
 </LinearLayout>

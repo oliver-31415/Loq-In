@@ -38,7 +38,6 @@ import com.oliver.loqin.feature.qr.QrGenerateActivity
 import com.oliver.loqin.feature.schedule.SchedulesActivity
 import com.oliver.loqin.feature.settings.ManageBarcodesActivity
 import com.oliver.loqin.nfc.NfcWriterActivity
-import com.oliver.loqin.theme.AccentColor
 import com.oliver.loqin.ui.dialog.padForNavigationBar
 import com.oliver.loqin.ui.dialog.showAccented
 import com.oliver.loqin.util.EditingLockGuard
@@ -105,7 +104,7 @@ object BlockingModeSheet {
         onModeChanged: (AutomationModeStore.Mode) -> Unit,
     ): LinearLayout {
         val onSurfaceSoft = ContextCompat.getColor(activity, R.color.foqos_on_surface_variant)
-        val accent = AccentColor.getAccentColorInt(activity)
+        val accent = PageUi.readableAccent(activity)
 
         fun dp(value: Float): Int = SheetRows.dp(activity, value)
 
@@ -189,7 +188,7 @@ object BlockingModeSheet {
             )
             row.root.isClickable = supported
             row.root.isFocusable = supported
-            row.root.alpha = if (supported) 1f else 0.4f
+            PageUi.setRowDimmed(row.root, !supported)
             if (onEdit != null && supported) {
                 row.trailing.addView(SheetRows.editButton(activity, accent, onEdit))
             }
@@ -226,8 +225,7 @@ object BlockingModeSheet {
             isFocusable = true
             addView(TextView(activity).apply {
                 text = activity.getString(R.string.toggle_section_mixed_channels)
-                setTextAppearance(R.style.TextAppearance_LoqIn_RowSummary)
-                setTypeface(typeface, android.graphics.Typeface.BOLD)
+                setTextAppearance(R.style.TextAppearance_LoqIn_RowValue)
                 layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
             })
             addView(mixedChannelsArrow)
@@ -276,7 +274,7 @@ object BlockingModeSheet {
                 activity.getString(summaryRes),
                 accent,
             )
-            row.root.alpha = if (supported) 1f else 0.4f
+            PageUi.setRowDimmed(row.root, !supported)
             row.root.isClickable = supported
             if (indent) row.root.setPaddingRelative(dp(44f), row.root.paddingTop, row.root.paddingEnd, row.root.paddingBottom)
             row.root.setOnClickListener { switch.toggle() }
