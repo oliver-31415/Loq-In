@@ -3,8 +3,9 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:orientation="vertical"
-    android:paddingTop="4dp">
+    android:orientation="vertical">
+
+    <!-- Headers sit flush with the fields: the sheet owns the side padding. -->
 
     <TextView
         android:id="@+id/tvStatsDropdownPrimaryLabel"
@@ -19,13 +20,12 @@
         style="@style/LoqIn.SheetField.Dropdown"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
         app:boxBackgroundMode="outline"
         app:endIconMode="dropdown_menu"
         app:startIconDrawable="@drawable/tune_24">
 
         <com.google.android.material.textfield.MaterialAutoCompleteTextView
-        style="@style/LoqIn.SheetDropdownText"
+            style="@style/LoqIn.SheetDropdownText"
             android:id="@+id/dropdownStatsPrimary"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -40,7 +40,6 @@
         style="@style/LoqIn.SectionHeader"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
         android:paddingStart="0dp"
         android:paddingEnd="0dp"
         android:text="@string/stats_sort_title" />
@@ -49,13 +48,12 @@
         style="@style/LoqIn.SheetField.Dropdown"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
         app:boxBackgroundMode="outline"
         app:endIconMode="dropdown_menu"
         app:startIconDrawable="@drawable/sort_24">
 
         <com.google.android.material.textfield.MaterialAutoCompleteTextView
-        style="@style/LoqIn.SheetDropdownText"
+            style="@style/LoqIn.SheetDropdownText"
             android:id="@+id/dropdownStatsSort"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -69,7 +67,7 @@
         android:id="@+id/cbStatsExtraFilter"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
-        android:minHeight="44dp"
+        android:layout_marginTop="@dimen/block_gap"
+        android:minHeight="@dimen/touch_target"
         android:visibility="gone" />
 </LinearLayout>

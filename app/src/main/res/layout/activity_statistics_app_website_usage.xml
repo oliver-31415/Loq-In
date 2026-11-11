@@ -2,7 +2,6 @@
 <androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
@@ -47,13 +46,9 @@
 
     <!-- Content -->
     <androidx.core.widget.NestedScrollView
+        style="@style/LoqIn.PageContent"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:paddingStart="16dp"
-        android:paddingTop="8dp"
-        android:paddingEnd="16dp"
-        android:paddingBottom="24dp"
-        android:clipToPadding="false"
         android:fillViewport="true"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
@@ -66,18 +61,19 @@
                 android:id="@+id/statsPageSubtitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:layout_marginBottom="8dp"
-                android:alpha="0.82"
+                android:layout_marginBottom="@dimen/block_gap"
+                android:paddingStart="@dimen/row_padding_start"
+                android:paddingEnd="@dimen/row_padding_start"
                 android:text="@string/statistics_usage_subtitle_web"
-                android:textColor="?attr/colorOnSurface"
-                android:textSize="14.5sp"
-                android:textStyle="bold" />
+                android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
+                android:visibility="gone" />
 
+            <!-- Range bar: same control as every statistics page (StatsPageUi.rangeBar). -->
             <com.google.android.material.button.MaterialButtonToggleGroup
                 android:id="@+id/chipGroupRange"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginBottom="@dimen/block_gap"
                 app:selectionRequired="true"
                 app:singleSelection="true">
 
@@ -85,45 +81,49 @@
                     android:id="@+id/chipToday"
                     style="@style/LoqIn.Segment"
                     android:layout_width="0dp"
-                    android:layout_height="44dp"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="@string/stats_range_today"
-                    android:textAllCaps="false" />
+                    android:paddingStart="4dp"
+                    android:paddingEnd="4dp"
+                    android:text="@string/stats_range_today" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/chipWeek"
                     style="@style/LoqIn.Segment"
                     android:layout_width="0dp"
-                    android:layout_height="44dp"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="@string/stats_range_week"
-                    android:textAllCaps="false" />
+                    android:paddingStart="4dp"
+                    android:paddingEnd="4dp"
+                    android:text="@string/stats_range_week" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/chipMonth"
                     style="@style/LoqIn.Segment"
                     android:layout_width="0dp"
-                    android:layout_height="44dp"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="@string/stats_range_month"
-                    android:textAllCaps="false" />
+                    android:paddingStart="4dp"
+                    android:paddingEnd="4dp"
+                    android:text="@string/stats_range_month" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/chipYear"
                     style="@style/LoqIn.Segment"
                     android:layout_width="0dp"
-                    android:layout_height="44dp"
+                    android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="@string/stats_range_year"
-                    android:textAllCaps="false" />
+                    android:paddingStart="4dp"
+                    android:paddingEnd="4dp"
+                    android:text="@string/stats_range_year" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/chipCustom"
                     style="@style/LoqIn.Segment"
-                    android:layout_width="44dp"
-                    android:layout_height="44dp"
-                    android:minWidth="0dp"
-                    android:gravity="center"
+                    android:layout_width="@dimen/stats_calendar_segment_width"
+                    android:layout_height="wrap_content"
+                    android:paddingStart="0dp"
+                    android:paddingEnd="0dp"
                     android:contentDescription="@string/activity_history_range_custom"
                     android:text=""
                     app:icon="@drawable/calendar_month_24"
@@ -131,13 +131,15 @@
                     app:iconPadding="0dp" />
             </com.google.android.material.button.MaterialButtonToggleGroup>
 
+            <!-- Same as stats_custom_range_row.xml. -->
             <LinearLayout
                 android:id="@+id/customRangeSummary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:orientation="horizontal"
+                android:layout_marginBottom="@dimen/block_gap"
                 android:gravity="center_vertical"
+                android:orientation="horizontal"
+                android:paddingStart="@dimen/row_padding_start"
                 android:visibility="gone">
 
                 <TextView
@@ -145,62 +147,51 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:textColor="?attr/colorOnSurface"
-                    android:textSize="13sp"
-                    android:textStyle="bold" />
+                    android:textAppearance="@style/TextAppearance.LoqIn.RowValue" />
 
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btnClearCustomRange"
-                    style="@style/LoqIn.OutlinedButton.CompactSegment"
+                    style="@style/LoqIn.TextButton"
                     android:layout_width="wrap_content"
-                    android:layout_height="36dp"
-                    android:minWidth="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="@dimen/row_trailing_gap"
                     android:text="@string/stats_range_clear" />
             </LinearLayout>
 
+            <!-- Summary card: label, hero value, comparison line (same anatomy as stats_summary_card.xml). -->
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/cardUsageTotal"
-                style="@style/LoqIn.Card"
+                style="@style/LoqIn.PageCard"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                app:cardUseCompatPadding="true">
+                android:layout_height="wrap_content">
 
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="16dp">
+                    android:padding="@dimen/page_card_padding">
 
                     <TextView
                         android:id="@+id/totalLabel"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:alpha="0.74"
                         android:text="@string/usage_total_screen_time"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textSize="14sp" />
+                        android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
 
                     <TextView
                         android:id="@+id/totalTime"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:text="@string/usage_time_zero_long"
-                        android:textAppearance="?attr/textAppearanceHeadlineLarge"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textSize="30sp"
-                        android:textStyle="bold" />
+                        android:layout_marginTop="4dp"
+                        android:textAppearance="@style/TextAppearance.LoqIn.HeroValue" />
 
                     <TextView
                         android:id="@+id/totalComparison"
-                        android:layout_width="wrap_content"
+                        android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:textColor="?attr/colorOnSurface"
-                        android:textSize="13sp"
+                        android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
                         android:visibility="gone" />
-
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -208,7 +199,7 @@
                 android:id="@+id/toggleType"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="@dimen/section_gap"
                 app:selectionRequired="true"
                 app:singleSelection="true">
 
@@ -218,7 +209,6 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:minHeight="48dp"
                     android:text="@string/usage_apps_tab" />
 
                 <com.google.android.material.button.MaterialButton
@@ -227,37 +217,38 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:minHeight="48dp"
                     android:text="@string/usage_websites_tab" />
             </com.google.android.material.button.MaterialButtonToggleGroup>
 
             <TextView
                 android:id="@+id/rowTapHint"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:alpha="0.9"
+                android:layout_marginTop="@dimen/block_gap"
+                android:paddingStart="@dimen/row_padding_start"
+                android:paddingEnd="@dimen/row_padding_start"
                 android:text="@string/usage_row_tap_hint"
-                android:textColor="?android:attr/textColorSecondary"
-                android:textSize="12sp" />
+                android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
 
             <TextView
                 android:id="@+id/permHint"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:visibility="gone"
-                android:alpha="0.85"
-                android:text="@string/usage_access_needed_desc" />
+                android:layout_marginTop="@dimen/block_gap"
+                android:paddingStart="@dimen/row_padding_start"
+                android:paddingEnd="@dimen/row_padding_start"
+                android:text="@string/usage_access_needed_desc"
+                android:textAppearance="@style/TextAppearance.LoqIn.RowSummary"
+                android:visibility="gone" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnOpenSettings"
                 style="@style/LoqIn.Button"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:visibility="gone"
-                android:text="@string/usage_open_settings" />
+                android:layout_marginTop="@dimen/block_gap"
+                android:text="@string/usage_open_settings"
+                android:visibility="gone" />
 
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/recycler"
@@ -266,22 +257,14 @@
                 android:layout_marginTop="8dp"
                 android:nestedScrollingEnabled="false" />
 
-            <TextView
+            <com.oliver.loqin.ui.widgets.EmptyStateView
                 android:id="@+id/webPlaceholder"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                app:drawableTopCompat="@drawable/bar_chart_24"
-                android:drawablePadding="10dp"
-                android:gravity="center"
-                android:minHeight="104dp"
-                android:padding="18dp"
-                android:textAlignment="center"
-                android:textColor="?attr/colorOnSurface"
-                android:textSize="14sp"
+                android:layout_marginTop="@dimen/block_gap"
                 android:visibility="gone"
-                app:drawableTint="?attr/colorPrimary"
-                tools:text="@string/usage_websites_no_data" />
+                app:emptyIcon="@drawable/bar_chart_24"
+                app:emptyTitle="@string/usage_chart_no_data" />
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
