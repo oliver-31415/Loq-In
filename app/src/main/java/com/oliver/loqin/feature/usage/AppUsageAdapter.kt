@@ -31,6 +31,8 @@ import androidx.recyclerview.widget.RecyclerView
 import com.oliver.loqin.R
 import com.oliver.loqin.feature.stats.StatsFormat
 import com.oliver.loqin.theme.AccentColor
+import com.oliver.loqin.ui.PageUi
+import com.oliver.loqin.ui.widgets.ListGroupLayout
 import com.google.android.material.chip.Chip
 import com.google.android.material.color.MaterialColors
 
@@ -95,11 +97,35 @@ class AppUsageAdapter(
             sessionUsageProvider,
             rowDeltaProvider
         )
+        holder.applySegment(position, items.size)
     }
 
     override fun getItemCount(): Int = items.size
 
     class VH(v: View) : RecyclerView.ViewHolder(v) {
+        /** Draws this row as one segment of a grouped list (same look as ListGroupLayout). */
+        fun applySegment(position: Int, count: Int) {
+            val res = itemView.resources
+            val density = res.displayMetrics.density
+            val outer = SEGMENT_OUTER_DP * density
+            val inner = SEGMENT_INNER_DP * density
+            val top = if (position == 0) outer else inner
+            val bottom = if (position == count - 1) outer else inner
+            itemView.background = ListGroupLayout.segmentBackground(
+                itemView,
+                top,
+                bottom,
+                ContextCompat.getColor(itemView.context, R.color.foqos_surface),
+            )
+            (itemView.layoutParams as? ViewGroup.MarginLayoutParams)?.let { lp ->
+                val wantTop = if (position == 0) 0 else (SEGMENT_GAP_DP * density + 0.5f).toInt()
+                if (lp.topMargin != wantTop) {
+                    lp.topMargin = wantTop
+                    itemView.layoutParams = lp
+                }
+            }
+        }
+
         private val icon = v.findViewById<ImageView>(R.id.icon)
         private val name = v.findViewById<TextView>(R.id.name)
         private val time = v.findViewById<TextView>(R.id.time)
@@ -136,9 +162,9 @@ class AppUsageAdapter(
 
             // Keep usage bars/details CTA in sync with active accent (incl. custom colors)
             val accent = AccentColor.getAccentColorInt(ctx)
+            val readableAccent = PageUi.readableAccent(ctx)
             progress.progressTintList = ColorStateList.valueOf(accent)
-            details.setTextColor(accent)
-            btnEditLimits.imageTintList = ColorStateList.valueOf(accent)
+            details.setTextColor(readableAccent)
 
             val delta = rowDeltaProvider?.invoke(item)
             deltaText.isVisible = delta != null
@@ -150,10 +176,10 @@ class AppUsageAdapter(
                 }
                 // Sign carries the meaning; colour only reinforces it.
                 deltaText.setTextColor(
-                    when {
-                        delta > 0 -> ContextCompat.getColor(ctx, R.color.status_warning)
-                        delta < 0 -> accent
-                        else -> MaterialColors.getColor(deltaText, com.google.android.material.R.attr.colorOnSurface)
+                    if (delta > 0) {
+                        ContextCompat.getColor(ctx, R.color.status_warning)
+                    } else {
+                        MaterialColors.getColor(deltaText, com.google.android.material.R.attr.colorOnSurfaceVariant)
                     }
                 )
             }
@@ -163,16 +189,13 @@ class AppUsageAdapter(
             if (metrics != null) {
                 opensChip.text = metrics.opensLabel
                 attemptsChip.text = metrics.attemptsLabel
-                opensChip.setTextColor(accent)
-                attemptsChip.setTextColor(accent)
+                opensChip.setTextColor(readableAccent)
+                attemptsChip.setTextColor(readableAccent)
             }
 
             val badge = limitBadgeProvider?.invoke(item)?.trim().orEmpty()
             limitBadge.isVisible = badge.isNotBlank()
             limitBadge.text = badge
-            if (badge.isNotBlank()) {
-                limitBadge.setTextColor(accent)
-            }
 
             val sessionGraph = sessionUsageProvider?.invoke(item)
             sessionUsageContainer.isVisible = sessionGraph != null
@@ -226,3 +249,8 @@ private fun formatDeltaMinutes(ctx: android.content.Context, minutes: Int): Stri
         else -> ctx.getString(R.string.usage_row_delta_hm_fmt, hours, rest)
     }
 }
+
+// LoqIn.ListGroup corner and gap sizes, for rows drawn by the RecyclerView itself.
+private const val SEGMENT_OUTER_DP = 24f
+private const val SEGMENT_INNER_DP = 6f
+private const val SEGMENT_GAP_DP = 2f

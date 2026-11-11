@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A standard row for statistics lists built in code (StatsPageUi.row); goes in a ListGroupLayout. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/LoqIn.ListRow"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <ImageView
+        android:id="@+id/statsRowIcon"
+        style="@style/LoqIn.RowIcon"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:contentDescription="@null" />
+
+    <LinearLayout
+        android:id="@+id/statsRowText"
+        style="@style/LoqIn.RowText"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/statsRowTitle"
+            style="@style/LoqIn.RowTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:id="@+id/statsRowSummary"
+            style="@style/LoqIn.RowSummary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="gone" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/statsRowValue"
+        style="@style/LoqIn.RowValue"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone" />
+
+    <ImageView
+        android:id="@+id/statsRowChevron"
+        style="@style/LoqIn.RowChevron"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:contentDescription="@null"
+        android:visibility="gone" />
+</LinearLayout>

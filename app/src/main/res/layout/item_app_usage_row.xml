@@ -1,195 +1,187 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView
+<!--
+    One app / website row on App & website usage. The rows form one grouped list: AppUsageAdapter
+    gives each row its segment background (ListGroupLayout.segmentBackground) and the 2dp gap.
+-->
+<LinearLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    style="@style/LoqIn.Card"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginBottom="10dp"
-    android:foreground="?attr/selectableItemBackground"
-    android:clickable="true"
-    android:focusable="true"
-    app:cardUseCompatPadding="false">
+    android:minHeight="@dimen/row_min_height"
+    android:orientation="vertical"
+    android:paddingStart="@dimen/row_padding_start"
+    android:paddingTop="@dimen/row_padding_vertical"
+    android:paddingEnd="8dp"
+    android:paddingBottom="@dimen/row_padding_vertical">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:paddingStart="14dp"
-        android:paddingTop="10dp"
-        android:paddingEnd="14dp"
-        android:paddingBottom="10dp">
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/icon"
+            android:layout_width="@dimen/stats_app_icon_size"
+            android:layout_height="@dimen/stats_app_icon_size"
+            android:layout_gravity="center_vertical"
+            android:contentDescription="@null"
+            android:scaleType="centerInside" />
 
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
-
-            <ImageView
-                android:id="@+id/icon"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_gravity="center_vertical"
-                android:contentDescription="@null"
-                android:scaleType="centerInside" />
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:layout_weight="1"
-                android:orientation="vertical">
-
-                <TextView
-                    android:id="@+id/name"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="@string/usage_app_placeholder"
-                    android:textAppearance="@style/TextAppearance.LoqIn.RowTitle"
-                    android:maxLines="1"
-                    android:ellipsize="end" />
-
-                <TextView
-                    android:id="@+id/limitBadge"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:visibility="gone"
-                    android:alpha="0.88"
-                    android:text=""
-                    android:textColor="?attr/colorPrimary"
-                    android:textSize="11.5sp"
-                    android:maxLines="1"
-                    android:ellipsize="end" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:orientation="vertical"
-                android:gravity="end">
-
-                <TextView
-                    android:id="@+id/time"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/usage_time_zero_short"
-                    android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
-
-                <TextView
-                    android:id="@+id/deltaText"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textSize="12sp"
-                    android:visibility="gone" />
-
-                <LinearLayout
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical|end">
-
-                    <TextView
-                        android:id="@+id/percent"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/usage_percent_zero"
-                        android:textColor="?attr/colorOnSurfaceVariant"
-                        android:textSize="12sp" />
-
-                    <TextView
-                        android:id="@+id/details"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="8dp"
-                        android:alpha="0.92"
-                        android:text="@string/usage_open_details"
-                        android:textColor="?attr/colorPrimary"
-                        android:textSize="12sp"
-                        android:textStyle="bold" />
-                </LinearLayout>
-            </LinearLayout>
-
-            <!-- Quick limit editor (time/attempts) -->
-            <ImageButton
-                android:id="@+id/btnEditLimits"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_marginStart="8dp"
-                android:background="?attr/selectableItemBackgroundBorderless"
-                android:contentDescription="@string/edit_limits"
-                android:importantForAccessibility="yes"
-                app:srcCompat="@drawable/tune_24"
-                app:tint="?attr/colorOnSurface" />
-        </LinearLayout>
-
-        <ProgressBar
-            android:id="@+id/progress"
-            style="?android:attr/progressBarStyleHorizontal"
-            android:layout_width="match_parent"
-            android:layout_height="6dp"
-            android:layout_marginTop="7dp"
-            android:max="100"
-            android:progress="0" />
-
-        <LinearLayout
-            android:id="@+id/usageMetricRow"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:visibility="gone">
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/opensChip"
-                style="@style/LoqIn.Chip"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:clickable="false"
-                android:focusable="false"
-                android:text="@string/usage_opens_zero" />
-
-            <com.google.android.material.chip.Chip
-                android:id="@+id/attemptsChip"
-                style="@style/LoqIn.Chip"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"
-                android:clickable="false"
-                android:focusable="false"
-                android:text="@string/usage_attempts_zero" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/sessionUsageContainer"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:orientation="vertical"
-            android:visibility="gone">
+            android:layout_marginStart="@dimen/row_icon_gap"
+            android:layout_weight="1"
+            android:orientation="vertical">
 
             <TextView
-                android:id="@+id/sessionUsageText"
+                android:id="@+id/name"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:alpha="0.88"
-                android:text=""
-                android:textColor="?attr/colorOnSurface"
-                android:textSize="12sp"
+                android:ellipsize="end"
                 android:maxLines="1"
-                android:ellipsize="end" />
+                android:text="@string/usage_app_placeholder"
+                android:textAppearance="@style/TextAppearance.LoqIn.RowTitle" />
 
-            <ProgressBar
-                android:id="@+id/sessionProgress"
-                style="?android:attr/progressBarStyleHorizontal"
+            <TextView
+                android:id="@+id/limitBadge"
                 android:layout_width="match_parent"
-                android:layout_height="4dp"
-                android:layout_marginTop="4dp"
-                android:max="100"
-                android:progress="0" />
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:ellipsize="end"
+                android:maxLines="2"
+                android:text=""
+                android:textAppearance="@style/TextAppearance.LoqIn.RowStatus"
+                android:visibility="gone" />
         </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/row_trailing_gap"
+            android:gravity="end"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/time"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/usage_time_zero_short"
+                android:textAppearance="@style/TextAppearance.LoqIn.RowValue" />
+
+            <TextView
+                android:id="@+id/deltaText"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:textAppearance="@style/TextAppearance.LoqIn.StatLabel"
+                android:visibility="gone" />
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="2dp"
+                android:gravity="center_vertical|end"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/percent"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/usage_percent_zero"
+                    android:textAppearance="@style/TextAppearance.LoqIn.StatLabel" />
+
+                <TextView
+                    android:id="@+id/details"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:fontFamily="sans-serif-medium"
+                    android:text="@string/usage_open_details"
+                    android:textAppearance="@style/TextAppearance.LoqIn.StatLabel" />
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Quick limit editor (time/attempts) -->
+        <ImageButton
+            android:id="@+id/btnEditLimits"
+            android:layout_width="@dimen/touch_target"
+            android:layout_height="@dimen/touch_target"
+            android:layout_marginStart="4dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/edit_limits"
+            android:importantForAccessibility="yes"
+            android:padding="12dp"
+            app:srcCompat="@drawable/tune_24"
+            app:tint="?attr/colorOnSurfaceVariant" />
     </LinearLayout>
-</com.google.android.material.card.MaterialCardView>
+
+    <ProgressBar
+        android:id="@+id/progress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="6dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:max="100"
+        android:progress="0" />
+
+    <LinearLayout
+        android:id="@+id/usageMetricRow"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:visibility="gone">
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/opensChip"
+            style="@style/LoqIn.Chip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:clickable="false"
+            android:focusable="false"
+            android:text="@string/usage_opens_zero" />
+
+        <com.google.android.material.chip.Chip
+            android:id="@+id/attemptsChip"
+            style="@style/LoqIn.Chip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:clickable="false"
+            android:focusable="false"
+            android:text="@string/usage_attempts_zero" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/sessionUsageContainer"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:layout_marginEnd="8dp"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/sessionUsageText"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:text=""
+            android:textAppearance="@style/TextAppearance.LoqIn.StatLabel" />
+
+        <ProgressBar
+            android:id="@+id/sessionProgress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="4dp"
+            android:layout_marginTop="4dp"
+            android:max="100"
+            android:progress="0" />
+    </LinearLayout>
+</LinearLayout>

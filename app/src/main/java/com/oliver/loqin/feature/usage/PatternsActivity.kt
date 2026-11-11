@@ -156,11 +156,11 @@ class PatternsActivity : AppCompatActivity() {
         b.cardEmpty.isVisible = !enough
         b.contentGroup.isVisible = enough
         if (!enough) {
-            b.emptyProgress.text = getString(
+            b.cardEmpty.setBody(getString(
                 R.string.patterns_empty_progress,
                 snap.collected,
                 PatternsMath.MIN_DAYS_COLLECTED,
-            )
+            ))
             return
         }
 
