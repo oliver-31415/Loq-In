@@ -11,10 +11,9 @@
         android:id="@+id/tvLimitSubtitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="14dp"
+        android:layout_marginBottom="16dp"
         android:visibility="gone"
-        android:textColor="?android:attr/textColorSecondary"
-        android:textSize="13.5sp" />
+        android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tilType"
@@ -37,16 +36,17 @@
         android:id="@+id/tvLimitModeSummary"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
-        android:textColor="?android:attr/textColorSecondary"
-        android:textSize="13sp" />
+        android:layout_marginTop="8dp"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:textAppearance="@style/TextAppearance.LoqIn.RowSummary" />
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tilValue"
         style="@style/LoqIn.SheetField"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
+        android:layout_marginTop="16dp"
         android:hint="@string/minutes_hint"
         app:endIconMode="none">
 
@@ -62,7 +62,7 @@
         style="@style/LoqIn.SheetField.Dropdown"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
+        android:layout_marginTop="16dp"
         android:visibility="gone"
         android:hint="@string/limit_reset_mode_hint"
         app:endIconMode="dropdown_menu">

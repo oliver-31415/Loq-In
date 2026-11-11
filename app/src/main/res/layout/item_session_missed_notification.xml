@@ -1,13 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    style="@style/LoqIn.Card"
+    style="@style/LoqIn.PageCard.OnSurface"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginBottom="8dp"
-    app:cardElevation="0dp"
     android:foreground="?attr/selectableItemBackground">
 
     <LinearLayout
@@ -15,7 +13,7 @@
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:gravity="center_vertical"
-        android:paddingStart="16dp"
+        android:paddingStart="@dimen/row_padding_start"
         android:paddingTop="14dp"
         android:paddingEnd="16dp"
         android:paddingBottom="14dp">
@@ -31,7 +29,7 @@
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
+            android:layout_marginStart="@dimen/row_icon_gap"
             android:layout_weight="1"
             android:orientation="vertical">
 
